@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}账户{% endblock %}
+
+{% block content %}
+<h1 class="page-title">账户</h1>
+<p class="page-subtitle">你的登录账号和订阅信息</p>
+
+<div class="card" style="max-width: 720px;">
+  <div class="card-title">基本信息</div>
+  <div class="form-row">
+    <label>邮箱（用于登录）</label>
+    <input type="email" value="{{ user.email }}" disabled>
+  </div>
+  <div class="form-row">
+    <label>显示名</label>
+    <input type="text" value="{{ user.display_name or '' }}" placeholder="留空则用邮箱前缀">
+  </div>
+  <div class="form-row">
+    <label>偏好语言</label>
+    <input type="text" value="{{ user.preferred_lang }}" disabled style="width: 120px;">
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="button">保存（M2 接通）</button>
+  </div>
+</div>
+
+<div class="card" style="max-width: 720px;">
+  <div class="card-title">账号状态</div>
+  <table class="table" style="border: none;">
+    <tr>
+      <td class="muted" style="width: 140px;">用户 ID</td>
+      <td>{{ user.id }}</td>
+    </tr>
+    <tr>
+      <td class="muted">角色</td>
+      <td>{{ user.role }}</td>
+    </tr>
+    <tr>
+      <td class="muted">状态</td>
+      <td>{{ user.status }}</td>
+    </tr>
+    <tr>
+      <td class="muted">注册时间</td>
+      <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else '-' }}</td>
+    </tr>
+    <tr>
+      <td class="muted">最后登录</td>
+      <td>{{ user.last_login_at.strftime('%Y-%m-%d %H:%M') if user.last_login_at else '从未登录（M2）' }}</td>
+    </tr>
+    <tr>
+      <td class="muted">站点数</td>
+      <td>{{ site_count }}</td>
+    </tr>
+  </table>
+</div>
+
+<div class="card" style="max-width: 720px;">
+  <div class="card-title">订阅</div>
+  <p class="muted">订阅功能将在 M5（发布 + 优化）阶段开放。当前为开发模式，所有功能可用。</p>
+</div>
+
+<div class="card" style="max-width: 720px;">
+  <div class="card-title">危险操作</div>
+  <button class="btn" type="button">退出登录（M2 接通）</button>
+</div>
+{% endblock %}

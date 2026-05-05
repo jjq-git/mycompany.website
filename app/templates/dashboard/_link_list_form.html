@@ -1,0 +1,73 @@
+{# 通用 [{label, url}] 列表编辑器, 复用于菜单 / 页脚链接 #}
+{% macro link_list_form(items, action_url, page_title, page_subtitle) %}
+<h1 class="page-title">{{ page_title }}</h1>
+<p class="page-subtitle">{{ page_subtitle }}</p>
+
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}
+    <div class="card" style="max-width: 720px; background: #ecfdf5; border-color: #a7f3d0; color: #065f46;">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+
+<form method="post" action="{{ action_url }}" id="link-list-form">
+<div class="card" style="max-width: 720px;">
+  <table class="table" id="link-list" style="border: none;">
+    <thead>
+      <tr>
+        <th style="width: 40px;"></th>
+        <th>显示名</th>
+        <th>链接</th>
+        <th style="width: 80px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for it in items %}
+      <tr class="link-row">
+        <td>
+          <button type="button" class="btn" onclick="moveRow(this, -1)" title="上移">↑</button>
+          <button type="button" class="btn" onclick="moveRow(this, 1)" title="下移">↓</button>
+        </td>
+        <td><input type="text" name="label[]" value="{{ it.label or '' }}" required></td>
+        <td><input type="text" name="url[]" value="{{ it.url or '' }}" placeholder="/about 或 https://..." required></td>
+        <td><button type="button" class="btn" onclick="removeRow(this)">删除</button></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="form-actions">
+    <button type="button" class="btn" onclick="addRow()">+ 新增一项</button>
+    <button class="btn btn-primary" type="submit">保存</button>
+  </div>
+</div>
+</form>
+
+<script>
+function moveRow(btn, dir) {
+  const row = btn.closest('tr');
+  const sibling = dir < 0 ? row.previousElementSibling : row.nextElementSibling;
+  if (sibling) row.parentNode.insertBefore(dir < 0 ? row : sibling, dir < 0 ? sibling : row);
+}
+function removeRow(btn) {
+  const row = btn.closest('tr');
+  if (document.querySelectorAll('.link-row').length > 1 || confirm('删除最后一项？')) {
+    row.remove();
+  }
+}
+function addRow() {
+  const tbody = document.querySelector('#link-list tbody');
+  const tr = document.createElement('tr');
+  tr.className = 'link-row';
+  tr.innerHTML = `
+    <td>
+      <button type="button" class="btn" onclick="moveRow(this, -1)">↑</button>
+      <button type="button" class="btn" onclick="moveRow(this, 1)">↓</button>
+    </td>
+    <td><input type="text" name="label[]" required></td>
+    <td><input type="text" name="url[]" placeholder="/about 或 https://..." required></td>
+    <td><button type="button" class="btn" onclick="removeRow(this)">删除</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+</script>
+{% endmacro %}

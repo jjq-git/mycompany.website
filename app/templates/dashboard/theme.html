@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}主题色{% endblock %}
+
+{% block content %}
+<h1 class="page-title">主题色</h1>
+<p class="page-subtitle">影响网站的整体配色。修改后点"预览"重新构建查看效果。</p>
+
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}
+    <div class="card" style="max-width: 720px; background: #ecfdf5; border-color: #a7f3d0; color: #065f46;">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+
+<form method="post" action="{{ url_for('core.theme_edit') }}">
+<div class="card" style="max-width: 720px;">
+  {% set fields = [
+    ('accent', '强调色（按钮、链接、徽章）'),
+    ('bg', '背景色'),
+    ('surface', '卡片背景'),
+    ('text', '正文文字'),
+    ('text_muted', '次要文字'),
+    ('border', '边框'),
+  ] %}
+  {% for key, label in fields %}
+  <div class="form-row" style="display: flex; align-items: center; gap: 12px;">
+    <label style="flex: 1; margin: 0;">{{ label }}</label>
+    <input type="color" name="{{ key }}_color"
+           value="{{ theme.get(key) or default_theme.get(key) or '#000000' }}"
+           style="width: 50px; height: 36px; padding: 2px;">
+    <input type="text" name="{{ key }}"
+           value="{{ theme.get(key) or '' }}"
+           placeholder="留空使用模板默认 {{ default_theme.get(key, '') }}"
+           style="width: 200px; font-family: monospace;">
+  </div>
+  {% endfor %}
+  <p class="muted" style="font-size: 13px;">提示：留空则使用模板默认值。颜色值用 hex（如 <code>#22c55e</code>）。</p>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">保存</button>
+  </div>
+</div>
+</form>
+
+<script>
+// 拾色器和文本框双向同步
+document.querySelectorAll('input[type=color]').forEach(picker => {
+  const text = picker.nextElementSibling;
+  picker.addEventListener('input', () => text.value = picker.value);
+  text.addEventListener('input', () => {
+    if (/^#[0-9a-f]{6}$/i.test(text.value)) picker.value = text.value;
+  });
+});
+</script>
+{% endblock %}

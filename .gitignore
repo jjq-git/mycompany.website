@@ -1,0 +1,40 @@
+# Claude Code 本地配置
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+
+# Flask / 运行时产物
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# 项目运行时目录
+uploads/
+output/
+# 店主数据，不进 git（生产环境备份在别处）
+sites/
+
+# 环境变量
+.env
+.env.local
+
+# 私有文档（商业策略、定价、客户、凭证等，不进 git）
+.private/
+
+# IDE / 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

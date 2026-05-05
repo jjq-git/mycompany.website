@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}概览{% endblock %}
+
+{% block content %}
+<h1 class="page-title">概览</h1>
+<p class="page-subtitle">站点 <strong>{{ site.slug }}</strong> 的最新状态</p>
+
+<div class="stats">
+  <div class="stat">
+    <div class="stat-label">模板</div>
+    <div class="stat-value">{{ site.template.name if site.template else '未选择' }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">产品数</div>
+    <div class="stat-value">{{ counts.products }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">页面数</div>
+    <div class="stat-value">{{ counts.pages }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">最近发布</div>
+    <div class="stat-value muted" style="font-size: 14px;">尚未发布</div>
+  </div>
+</div>
+
+<div class="card" style="margin-top: 16px;">
+  <div class="card-title">下一步</div>
+  <ul style="margin: 0; padding-left: 20px; line-height: 1.9;">
+    <li>填写公司信息 → <a href="{{ url_for('core.company') }}">公司</a></li>
+    <li>添加产品 → <a href="{{ url_for('core.products') }}">产品</a></li>
+    <li>预览效果，确认无误后点右上角"发布"</li>
+  </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% from "dashboard/_link_list_form.html" import link_list_form %}
+{% block title %}页脚链接{% endblock %}
+{% block content %}
+{{ link_list_form(items, url_for('core.footer_edit'), '页脚链接', '网站底部的快速链接（如 关于 / 联系 / 隐私政策）') }}
+{% endblock %}

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ site.slug if site else '' }}{% endblock %} — mycompany.website</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">mycompany.website</div>
+
+  <button class="site-switcher" type="button" title="切换站点（M2 实现）">
+    {{ site.slug if site else '未选择站点' }}
+    <span aria-hidden="true">▾</span>
+  </button>
+
+  <a class="btn" href="{{ url_for('core.templates_gallery') }}" style="margin-left: 12px;">+ 新建站点</a>
+
+  <div class="spacer"></div>
+
+  <div class="actions">
+    <a class="btn" href="{{ url_for('core.build') }}" target="_blank">预览</a>
+    <button class="btn btn-primary" type="button">发布</button>
+    <span class="avatar" title="{{ user.email if user else '未登录' }}">
+      {{ (user.email[:1].upper() if user else '?') }}
+    </span>
+  </div>
+</header>
+
+<aside class="sidebar">
+  <a class="nav-item {% if active == 'overview' %}active{% endif %}"
+     href="{{ url_for('core.overview') }}">概览</a>
+
+  <div class="nav-section">内容</div>
+  <a class="nav-sub {% if active == 'company' %}active{% endif %}"
+     href="{{ url_for('core.company') }}">公司</a>
+  <a class="nav-sub {% if active == 'pages' %}active{% endif %}"
+     href="{{ url_for('core.pages') }}">页面</a>
+  {# 内容下方的项由模板的 datasets 决定 #}
+  {% set dataset_map = {
+    'products': ('products', '产品', url_for('core.products')),
+    'features': ('features', '功能', url_for('core.features')),
+    'posts':    ('blog',     '博客', url_for('core.blog')),
+  } %}
+  {% for ds in (template_meta.datasets if template_meta else []) %}
+    {% set entry = dataset_map.get(ds) %}
+    {% if entry %}
+    <a class="nav-sub {% if active == entry[0] %}active{% endif %}" href="{{ entry[2] }}">{{ entry[1] }}</a>
+    {% endif %}
+  {% endfor %}
+
+  <div class="nav-section">设置</div>
+  <a class="nav-sub {% if active == 'menu' %}active{% endif %}"
+     href="{{ url_for('core.menu_edit') }}">菜单</a>
+  <a class="nav-sub {% if active == 'social' %}active{% endif %}"
+     href="{{ url_for('core.social_edit') }}">社交链接</a>
+  <a class="nav-sub {% if active == 'footer' %}active{% endif %}"
+     href="{{ url_for('core.footer_edit') }}">页脚链接</a>
+  <a class="nav-sub {% if active == 'theme' %}active{% endif %}"
+     href="{{ url_for('core.theme_edit') }}">主题色</a>
+
+  <div class="nav-section">站点</div>
+  <a class="nav-item {% if active == 'template' %}active{% endif %}" href="#">模板</a>
+  <a class="nav-item {% if active == 'domain' %}active{% endif %}" href="#">域名</a>
+  <a class="nav-item {% if active == 'account' %}active{% endif %}"
+     href="{{ url_for('core.account') }}">账户</a>
+
+  {% if user and user.role == 'admin' %}
+  <div class="nav-section">管理员</div>
+  <a class="nav-item" href="{{ url_for('admin.users') }}">用户管理</a>
+  {% endif %}
+</aside>
+
+<main class="main">
+  {% block content %}{% endblock %}
+</main>
+
+</body>
+</html>

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} — 产品编辑{% endblock %}
+
+{% block content %}
+<a class="muted" href="{{ url_for('core.products') }}">← 返回产品列表</a>
+<h1 class="page-title" style="margin-top: 12px;">编辑产品</h1>
+<p class="page-subtitle">ID #{{ product.id }}</p>
+
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}
+    <div class="card" style="max-width: 720px; background: #ecfdf5; border-color: #a7f3d0; color: #065f46;">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+
+<form method="post" action="{{ url_for('core.product_edit', product_id=product.id) }}">
+<div class="card" style="max-width: 720px;">
+  <div class="form-row">
+    <label>名称</label>
+    <input type="text" name="name" value="{{ product.name or '' }}" required>
+  </div>
+  <div class="form-row">
+    <label>Slug（URL 用，英文）</label>
+    <input type="text" name="slug" value="{{ product.slug or '' }}" required>
+  </div>
+  <div class="form-row">
+    <label>分类</label>
+    <input type="text" name="category" value="{{ product.category or '' }}">
+  </div>
+  <div class="form-row">
+    <label>封面图 URL</label>
+    <input type="text" name="cover" value="{{ product.cover or '' }}" placeholder="/assets/host.png">
+  </div>
+  <div class="form-row">
+    <label>一句话简介</label>
+    <input type="text" name="summary" value="{{ product.summary or '' }}">
+  </div>
+  <div class="form-row">
+    <label>详细介绍</label>
+    <textarea name="description" style="min-height: 160px;">{{ product.description or '' }}</textarea>
+  </div>
+  <div class="form-row">
+    <label>规格（每行一条，格式：键: 值）</label>
+    <textarea name="specs" style="min-height: 120px; font-family: monospace;">{% for k, v in (product.specs or {}).items() %}{{ k }}: {{ v }}
+{% endfor %}</textarea>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">保存</button>
+    <a class="btn" href="{{ url_for('core.products') }}">取消</a>
+  </div>
+</div>
+</form>
+{% endblock %}

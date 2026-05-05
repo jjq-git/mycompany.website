@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="{{ lang | default('zh') }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ settings.company.name }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ base_url }}/static/css/main.css">
+  {% if theme %}
+  <style>
+    :root {
+      --bg: {{ theme.bg }};
+      --surface: {{ theme.surface }};
+      --text: {{ theme.text }};
+      --text-muted: {{ theme.text_muted }};
+      --accent: {{ theme.accent }};
+      --border: {{ theme.border }};
+    }
+  </style>
+  {% endif %}
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav">
+    <a class="brand" href="{{ base_url }}/">
+      {% if settings.company.logo %}<img src="{{ settings.company.logo }}" alt="">{% endif %}
+      <span>{{ settings.company.short_name or settings.company.name }}</span>
+    </a>
+    <nav class="menu">
+      {% for item in settings.menu %}
+      <a href="{{ base_url }}{{ item.url }}">{{ item.label }}</a>
+      {% endfor %}
+    </nav>
+  </div>
+</header>
+
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <strong>{{ settings.company.name }}</strong>
+      <p class="muted">{{ settings.company.short_name }}</p>
+    </div>
+
+    <div class="footer-col">
+      <h4>链接</h4>
+      <ul>
+        {% for link in settings.footer_links %}
+        <li><a href="{{ base_url }}{{ link.url }}">{{ link.label }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>关注</h4>
+      <ul class="social">
+        {% if settings.social.github %}<li><a href="{{ settings.social.github }}">GitHub</a></li>{% endif %}
+        {% if settings.social.twitter %}<li><a href="{{ settings.social.twitter }}">Twitter</a></li>{% endif %}
+        {% if settings.social.facebook %}<li><a href="{{ settings.social.facebook }}">Facebook</a></li>{% endif %}
+        {% if settings.social.linkedin %}<li><a href="{{ settings.social.linkedin }}">LinkedIn</a></li>{% endif %}
+        {% if settings.social.youtube %}<li><a href="{{ settings.social.youtube }}">YouTube</a></li>{% endif %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="container footer-bottom">
+    <span class="muted">© {{ year }} {{ settings.company.name }}</span>
+    {% if settings.company.icp %}
+    <span class="muted">{{ settings.company.icp }}</span>
+    {% endif %}
+  </div>
+</footer>
+
+</body>
+</html>

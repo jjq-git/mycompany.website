@@ -1,0 +1,20 @@
+{% extends "_base.html" %}
+{% block title %}博客 — {{ settings.company.name }}{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <h1>博客</h1>
+    <div class="post-grid">
+      {% for post in posts %}
+      <a class="post-card" href="{{ base_url }}/blog/{{ post.slug }}">
+        {% if post.cover %}<img src="{{ post.cover }}" alt="">{% endif %}
+        <div class="post-meta muted">{{ post.date }}</div>
+        <h3>{{ post.title }}</h3>
+        <p class="muted">{{ post.excerpt }}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

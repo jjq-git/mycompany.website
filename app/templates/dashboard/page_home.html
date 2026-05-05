@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}首页编辑{% endblock %}
+
+{% block content %}
+<a class="muted" href="{{ url_for('core.pages') }}">← 全部页面</a>
+<h1 class="page-title" style="margin-top: 12px;">首页</h1>
+<p class="page-subtitle">编辑各区块的内容和开关</p>
+
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}
+    <div class="card" style="max-width: 720px; background: #ecfdf5; border-color: #a7f3d0; color: #065f46;">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+
+<form method="post" action="{{ url_for('core.page_home') }}">
+
+<div class="card" style="max-width: 720px;">
+  <div class="card-title">Hero（首屏）</div>
+  <div class="form-row">
+    <label>主标题</label>
+    <input type="text" name="hero.title" value="{{ page.hero.title or '' }}">
+  </div>
+  <div class="form-row">
+    <label>副标题</label>
+    <input type="text" name="hero.subtitle" value="{{ page.hero.subtitle or '' }}">
+  </div>
+  <div class="form-row">
+    <label>徽章（可选，例如 "限时上线"）</label>
+    <input type="text" name="hero.badge" value="{{ page.hero.badge or '' }}">
+  </div>
+  <div class="form-row">
+    <label>按钮文字</label>
+    <input type="text" name="hero.cta_text" value="{{ page.hero.cta_text or '' }}">
+  </div>
+  <div class="form-row">
+    <label>按钮链接</label>
+    <input type="text" name="hero.cta_url" value="{{ page.hero.cta_url or '' }}" placeholder="/products">
+  </div>
+  <div class="form-row">
+    <label>背景视频 URL（优先）</label>
+    <input type="text" name="hero.video_url" value="{{ page.hero.video_url or '' }}" placeholder="/assets/hero.mp4">
+  </div>
+  <div class="form-row">
+    <label>背景图 URL（视频留空时使用）</label>
+    <input type="text" name="hero.background_image" value="{{ page.hero.background_image or '' }}" placeholder="/assets/hero.jpg">
+  </div>
+</div>
+
+{% set sections = [
+  ('featured_section', '产品矩阵'),
+  ('features_section', '功能亮点'),
+  ('about_brief', '关于一句话'),
+  ('blog_section', '博客最新'),
+  ('subscribe_section', '邮件订阅'),
+] %}
+
+{% for key, label in sections %}
+{% set sec = page[key] or {} %}
+<div class="card" style="max-width: 720px;">
+  <div class="card-title" style="display: flex; align-items: center; justify-content: space-between;">
+    <span>{{ label }}</span>
+    <label style="font-weight: normal; font-size: 13px;">
+      <input type="checkbox" name="{{ key }}.enabled" {% if sec.enabled %}checked{% endif %}>
+      启用
+    </label>
+  </div>
+  <div class="form-row">
+    <label>标题</label>
+    <input type="text" name="{{ key }}.title" value="{{ sec.title or '' }}">
+  </div>
+  {% if 'subtitle' in sec or key in ('featured_section', 'features_section', 'subscribe_section') %}
+  <div class="form-row">
+    <label>副标题 / 一句话</label>
+    <input type="text" name="{{ key }}.subtitle" value="{{ sec.subtitle or '' }}">
+  </div>
+  {% endif %}
+  {% if key == 'about_brief' %}
+  <div class="form-row">
+    <label>正文</label>
+    <textarea name="about_brief.body">{{ sec.body or '' }}</textarea>
+  </div>
+  <div class="form-row">
+    <label>按钮文字 / 链接</label>
+    <div style="display: flex; gap: 8px;">
+      <input type="text" name="about_brief.cta_text" value="{{ sec.cta_text or '' }}" placeholder="了解更多">
+      <input type="text" name="about_brief.cta_url" value="{{ sec.cta_url or '' }}" placeholder="/about">
+    </div>
+  </div>
+  {% endif %}
+  {% if key in ('features_section', 'blog_section') %}
+  <div class="form-row">
+    <label>显示数量</label>
+    <input type="number" name="{{ key }}.limit" value="{{ sec.limit or 6 }}" min="1" max="20" style="width: 100px;">
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+
+<div style="max-width: 720px;">
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">保存</button>
+  </div>
+</div>
+
+</form>
+{% endblock %}
