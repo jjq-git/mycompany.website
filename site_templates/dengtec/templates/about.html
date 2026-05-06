@@ -1,0 +1,82 @@
+{% extends "_base.html" %}
+{% block title %}{{ page.title | default(t.pages.about) }} - {{ t.company }}{% endblock %}
+{% block description %}{{ page.description | default(t.pages.aboutDesc) }}{% endblock %}
+
+{% block content %}
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h1 class="section-title">{{ page.hero_title | default(t.about.whoWeAre) }}</h1>
+      <p class="section-description">{{ page.hero_subtitle }}</p>
+    </div>
+
+    {# Stats #}
+    {% if page.stats %}
+    <div class="grid grid-4" style="margin-bottom: var(--spacing-3xl);">
+      {% for stat in page.stats %}
+      <div class="text-center">
+        <div class="stat-number">{{ stat.number }}{{ stat.suffix | default('') }}</div>
+        <div class="text-secondary">{{ stat.label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Who We Are #}
+    {% if page.who_we_are %}
+    <div style="margin-bottom: var(--spacing-3xl); max-width: 800px; margin-left: auto; margin-right: auto;">
+      <h2 class="section-title">{{ t.about.whoWeAre }}</h2>
+      <p style="line-height: 1.8; color: var(--color-text-secondary); white-space: pre-line;">{{ page.who_we_are }}</p>
+    </div>
+    {% endif %}
+
+    {# Core Values #}
+    {% if page.core_values %}
+    <h2 class="section-title">{{ t.about.coreValues }}</h2>
+    <div class="grid grid-3" style="margin-bottom: var(--spacing-3xl);">
+      {% for val in page.core_values %}
+      <div class="card">
+        <div class="card-body text-center">
+          <div style="font-size: 2rem; margin-bottom: 1rem;">{{ val.icon }}</div>
+          <h3 class="card-title">{{ val.title }}</h3>
+          <p class="card-text">{{ val.description }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Services #}
+    {% if page.services %}
+    {% if page.services.title %}
+    <h2 class="section-title">{{ page.services.title | default(t.about.whatWeDo) }}</h2>
+    <p class="section-description" style="margin-bottom: var(--spacing-2xl);">{{ page.services.description }}</p>
+    {% endif %}
+    {% if page.services.items %}
+    <div class="grid grid-3">
+      {% for svc in page.services.items %}
+      <div class="card">
+        <div class="card-body text-center">
+          <div style="font-size: 2rem; margin-bottom: 0.5rem;">{{ svc.icon }}</div>
+          <h3 class="card-title">{{ svc.title }}</h3>
+          <p class="card-text">{{ svc.description }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {# CTA #}
+    {% if page.cta_title %}
+    <div class="text-center" style="margin-top: var(--spacing-3xl); padding: var(--spacing-3xl); background: var(--color-bg-secondary); border-radius: var(--radius-lg);">
+      <h2>{{ page.cta_title }}</h2>
+      <p class="section-description">{{ page.cta_desc }}</p>
+      <a href="{{ base_url }}{{ page.cta_link }}" class="btn btn-primary btn-lg">{{ page.cta_btn }}</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

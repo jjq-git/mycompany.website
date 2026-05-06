@@ -1,0 +1,41 @@
+{% extends "_base.html" %}
+{% block title %}{{ t.pages.portfolioTitle }} - {{ t.company }}{% endblock %}
+{% block description %}{{ t.pages.portfolioDesc }}{% endblock %}
+
+{% block content %}
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h1 class="section-title">{{ t.pages.portfolioTitle }}</h1>
+      <p class="section-description">{{ t.pages.portfolioDesc }}</p>
+    </div>
+
+    {% if portfolio %}
+    <div class="grid grid-3">
+      {% for item in portfolio %}
+      <a href="{{ base_url }}/portfolio/{{ item.slug }}/" class="portfolio-card">
+        <div class="portfolio-card-image" style="background-image: url('{{ item.image }}')">
+          {% if not item.image %}
+          <div class="portfolio-card-placeholder">📷</div>
+          {% endif %}
+        </div>
+        <div class="portfolio-card-body">
+          <h3 class="portfolio-card-title">{{ item.title }}</h3>
+          <div class="portfolio-card-date">{{ item.date }}</div>
+          <div class="portfolio-card-tags">
+            {% for tag in item.tags[:3] %}
+            <span class="portfolio-card-tag">{{ tag }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-center text-secondary">暂未添加项目</p>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}
