@@ -23,16 +23,14 @@
       </a>
 
       <nav class="header-nav" id="headerNav">
-        <a href="{{ base_url }}/{{ lang }}/" class="nav-link{% if current_path == '/' or current_path == '' %} active{% endif %}">{{ t.nav.home }}</a>
+        <a href="{{ base_url }}/{{ lang }}/" class="nav-link">{{ t.nav.home }}</a>
 
         {# Products Dropdown #}
         <div class="nav-dropdown" id="productsDropdown">
           <button class="nav-link nav-dropdown-toggle" onclick="toggleProductsDropdown(event)">
             {{ t.nav.products }}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="dropdown-chevron"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div class="nav-dropdown-menu" id="productsDropdownMenu">
-            {% set product_items = products or [] %}
             <a href="{{ base_url }}/{{ lang }}/products/silent-booth/" class="nav-dropdown-item">{{ t.nav.silentBooth | default('静音仓') }}</a>
             <a href="{{ base_url }}/{{ lang }}/products/props-display/" class="nav-dropdown-item">{{ t.nav.propsDisplay | default('产品展示') }}</a>
             <a href="{{ base_url }}/{{ lang }}/products/dry-ice-machine/" class="nav-dropdown-item">{{ t.nav.dryIceMachine | default('干冰机') }}</a>
@@ -41,8 +39,8 @@
 
         <a href="{{ base_url }}/{{ lang }}/portfolio/" class="nav-link">{{ t.nav.portfolio }}</a>
         <a href="{{ base_url }}/{{ lang }}/blog/" class="nav-link">{{ t.nav.blog }}</a>
-        <a href="{{ base_url }}/{{ lang }}/about/" class="nav-link">{{ t.nav.about }}</a>
-        <a href="{{ base_url }}/{{ lang }}/contact/" class="nav-link">{{ t.nav.contact }}</a>
+        <a href="https://rimu.me/" target="_blank" rel="noopener" class="nav-link">{{ t.nav.rimu | default('日目') }}</a>
+        <a href="#" class="nav-link" onclick="alert('{{ t.nav.posmOnlineAlert | default('在线设计功能开发中，敬请期待！') }}'); return false;">{{ t.nav.posm | default('在线设计') }}</a>
       </nav>
 
       <div class="header-actions">
@@ -119,6 +117,49 @@ function toggleLangDropdown(e) {
   menu.style.display = isOpen ? 'none' : 'block';
 }
 
+// --- Nav active state ---
+(function() {
+  var path = window.location.pathname;
+
+  // 剥离预览前缀、语言前缀和尾部斜杠
+  var cleaned = path.replace(/\/templates\/[^/]+\/preview/, '').replace(/^\/(zh-CN|zh-TW|en)/, '').replace(/\/$/, '') || '/';
+
+  // 首页: cleaned 是 / 或空
+  if (cleaned === '/' || cleaned === '') {
+    document.querySelectorAll('.header-nav .nav-link').forEach(function(l) { l.classList.remove('active'); });
+    var homeLink = document.querySelector('.header-nav .nav-link:first-child');
+    if (homeLink) homeLink.classList.add('active');
+    return;
+  }
+
+  // 先清除所有
+  document.querySelectorAll('.header-nav .nav-link').forEach(function(l) { l.classList.remove('active'); });
+
+  // 产品子页面
+  if (cleaned.indexOf('/products/') > -1) {
+    var dropdownToggle = document.querySelector('.nav-dropdown-toggle');
+    if (dropdownToggle) dropdownToggle.classList.add('active');
+    document.querySelectorAll('.nav-dropdown-item').forEach(function(item) {
+      var href = item.getAttribute('href') || '';
+      if (href.indexOf(cleaned.replace(/\/$/, '')) > -1) {
+        item.classList.add('active');
+      }
+    });
+    return;
+  }
+
+  // portfolio / blog
+  var pageLast = cleaned.split('/').pop();
+  document.querySelectorAll('.header-nav .nav-link:not(.nav-dropdown-toggle)').forEach(function(link) {
+    var href = link.getAttribute('href') || '';
+    if (href === 'https://rimu.me/' || href === '#') return;
+    var linkLast = href.replace(/\/$/, '').split('/').pop();
+    if (linkLast && pageLast === linkLast) {
+      link.classList.add('active');
+    }
+  });
+})();
+
 // Close dropdowns on outside click
 document.addEventListener('click', function(e) {
   var langMenu = document.getElementById('langDropdownMenu');
@@ -176,10 +217,11 @@ document.addEventListener('click', function(e) {
         </ul>
       </div>
       <div class="footer-col">
-        <h4>{{ t.contact.social | default('关注我们') }}</h4>
-        {% if settings.social and settings.social.kickstarter %}
-        <a href="{{ settings.social.kickstarter }}" target="_blank" rel="noopener">Kickstarter</a>
-        {% endif %}
+        <h4>{{ t.footer.about | default('关于我们') }}</h4>
+        <ul>
+          <li><a href="{{ base_url }}/{{ lang }}/about/">{{ t.nav.about | default('关于我们') }}</a></li>
+          <li><a href="{{ base_url }}/{{ lang }}/contact/">{{ t.nav.contact | default('联系') }}</a></li>
+        </ul>
       </div>
     </div>
     <div class="footer-bottom">

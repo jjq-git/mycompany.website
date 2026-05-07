@@ -1,81 +1,104 @@
 {% extends "_base.html" %}
-{% block title %}{{ page.title | default(t.pages.about) }} - {{ t.company }}{% endblock %}
-{% block description %}{{ page.description | default(t.pages.aboutDesc) }}{% endblock %}
+{% block title %}{{ t.pages.about }} - {{ t.company }}{% endblock %}
+{% block description %}{{ t.pages.aboutDesc }}{% endblock %}
 
 {% block content %}
 
 <section class="section">
   <div class="container">
     <div class="section-header">
-      <h1 class="section-title">{{ page.hero_title | default(t.about.whoWeAre) }}</h1>
-      <p class="section-description">{{ page.hero_subtitle }}</p>
+      <h1 class="section-title">{{ t.about.whoWeAre }}</h1>
+      <p class="section-description">{{ t.about.aboutHeroSubtitle | default('专注于为零售展示行业提供创新的电子产品解决方案') }}</p>
     </div>
 
     {# Stats #}
-    {% if page.stats %}
     <div class="grid grid-4" style="margin-bottom: var(--spacing-3xl);">
-      {% for stat in page.stats %}
       <div class="text-center">
-        <div class="stat-number">{{ stat.number }}{{ stat.suffix | default('') }}</div>
-        <div class="text-secondary">{{ stat.label }}</div>
+        <div class="stat-number">15</div>
+        <div class="text-secondary">{{ t.about.yearsExperience }}</div>
       </div>
-      {% endfor %}
+      <div class="text-center">
+        <div class="stat-number">200</div>
+        <div class="text-secondary">{{ t.about.projects }}</div>
+      </div>
+      <div class="text-center">
+        <div class="stat-number">30</div>
+        <div class="text-secondary">{{ t.about.partnerBrands }}</div>
+      </div>
+      <div class="text-center">
+        <div class="stat-number">98<span>%</span></div>
+        <div class="text-secondary">{{ t.about.qualityRate }}</div>
+      </div>
     </div>
-    {% endif %}
 
     {# Who We Are #}
-    {% if page.who_we_are %}
     <div style="margin-bottom: var(--spacing-3xl); max-width: 800px; margin-left: auto; margin-right: auto;">
       <h2 class="section-title">{{ t.about.whoWeAre }}</h2>
-      <p style="line-height: 1.8; color: var(--color-text-secondary); white-space: pre-line;">{{ page.who_we_are }}</p>
+      <p style="line-height: 1.8; color: var(--color-text-secondary); white-space: pre-line;">{{ t.about.aboutBody | default('') }}</p>
     </div>
-    {% endif %}
 
     {# Core Values #}
-    {% if page.core_values %}
     <h2 class="section-title">{{ t.about.coreValues }}</h2>
     <div class="grid grid-3" style="margin-bottom: var(--spacing-3xl);">
-      {% for val in page.core_values %}
-      <div class="card">
-        <div class="card-body text-center">
-          <div style="font-size: 2rem; margin-bottom: 1rem;">{{ val.icon }}</div>
-          <h3 class="card-title">{{ val.title }}</h3>
-          <p class="card-text">{{ val.description }}</p>
-        </div>
-      </div>
-      {% endfor %}
+      <div class="card"><div class="card-body text-center">
+        <div style="font-size: 2rem; margin-bottom: 1rem;">💡</div>
+        <h3 class="card-title">{{ t.about.valueInnovationTitle | default('创新驱动') }}</h3>
+        <p class="card-text">{{ t.about.valueInnovationDesc | default('') }}</p>
+      </div></div>
+      <div class="card"><div class="card-body text-center">
+        <div style="font-size: 2rem; margin-bottom: 1rem;">🛡️</div>
+        <h3 class="card-title">{{ t.about.valueQualityTitle | default('品质至上') }}</h3>
+        <p class="card-text">{{ t.about.valueQualityDesc | default('') }}</p>
+      </div></div>
+      <div class="card"><div class="card-body text-center">
+        <div style="font-size: 2rem; margin-bottom: 1rem;">👥</div>
+        <h3 class="card-title">{{ t.about.valueCustomerTitle | default('客户为本') }}</h3>
+        <p class="card-text">{{ t.about.valueCustomerDesc | default('') }}</p>
+      </div></div>
     </div>
-    {% endif %}
 
     {# Services #}
-    {% if page.services %}
-    {% if page.services.title %}
-    <h2 class="section-title">{{ page.services.title | default(t.about.whatWeDo) }}</h2>
-    <p class="section-description" style="margin-bottom: var(--spacing-2xl);">{{ page.services.description }}</p>
-    {% endif %}
-    {% if page.services.items %}
+    <h2 class="section-title">{{ t.about.whatWeDo }}</h2>
+    <p class="section-description" style="margin-bottom: var(--spacing-2xl);">{{ t.about.servicesDesc | default('从概念设计到产品落地，提供完整的电子产品解决方案') }}</p>
     <div class="grid grid-3">
-      {% for svc in page.services.items %}
-      <div class="card">
-        <div class="card-body text-center">
-          <div style="font-size: 2rem; margin-bottom: 0.5rem;">{{ svc.icon }}</div>
-          <h3 class="card-title">{{ svc.title }}</h3>
-          <p class="card-text">{{ svc.description }}</p>
-        </div>
-      </div>
-      {% endfor %}
+      <div class="card"><div class="card-body text-center">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" style="display:inline;vertical-align:middle;"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg></div>
+        <h3 class="card-title">{{ t.about.serviceCircuitTitle | default('电路设计') }}</h3>
+        <p class="card-text">{{ t.about.serviceCircuitDesc | default('') }}</p>
+      </div></div>
+      <div class="card"><div class="card-body text-center">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" style="display:inline;vertical-align:middle;"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="14" y1="4" x2="10" y2="20"/></svg></div>
+        <h3 class="card-title">{{ t.about.serviceCodeTitle | default('编程开发') }}</h3>
+        <p class="card-text">{{ t.about.serviceCodeDesc | default('') }}</p>
+      </div></div>
+      <div class="card"><div class="card-body text-center">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" style="display:inline;vertical-align:middle;"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+        <h3 class="card-title">{{ t.about.serviceStructureTitle | default('结构设计') }}</h3>
+        <p class="card-text">{{ t.about.serviceStructureDesc | default('') }}</p>
+      </div></div>
+      <div class="card"><div class="card-body text-center">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" style="display:inline;vertical-align:middle;"><path d="M2 12h2M6 8l1.5 1.5M6 16l1.5-1.5M18 8l-1.5 1.5M18 16l-1.5-1.5M20 12h2"/><circle cx="12" cy="12" r="4"/></svg></div>
+        <h3 class="card-title">{{ t.about.serviceSensorTitle | default('传感器应用') }}</h3>
+        <p class="card-text">{{ t.about.serviceSensorDesc | default('') }}</p>
+      </div></div>
+      <div class="card"><div class="card-body text-center">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" style="display:inline;vertical-align:middle;"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div>
+        <h3 class="card-title">{{ t.about.serviceInteractiveTitle | default('互动系统') }}</h3>
+        <p class="card-text">{{ t.about.serviceInteractiveDesc | default('') }}</p>
+      </div></div>
+      <div class="card"><div class="card-body text-center">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" style="display:inline;vertical-align:middle;"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+        <h3 class="card-title">{{ t.about.serviceAudioTitle | default('音视频集成') }}</h3>
+        <p class="card-text">{{ t.about.serviceAudioDesc | default('') }}</p>
+      </div></div>
     </div>
-    {% endif %}
-    {% endif %}
 
     {# CTA #}
-    {% if page.cta_title %}
     <div class="text-center" style="margin-top: var(--spacing-3xl); padding: var(--spacing-3xl); background: var(--color-bg-secondary); border-radius: var(--radius-lg);">
-      <h2>{{ page.cta_title }}</h2>
-      <p class="section-description">{{ page.cta_desc }}</p>
-      <a href="{{ base_url }}{{ page.cta_link }}" class="btn btn-primary btn-lg">{{ page.cta_btn }}</a>
+      <h2>{{ t.about.ctaTitle | default('了解更多关于我们的产品和服务') }}</h2>
+      <p class="section-description">{{ t.about.ctaDesc }}</p>
+      <a href="{{ base_url }}/{{ lang }}/contact/" class="btn btn-primary btn-lg">{{ t.about.getInTouch }}</a>
     </div>
-    {% endif %}
   </div>
 </section>
 

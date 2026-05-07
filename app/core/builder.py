@@ -100,7 +100,14 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
             continue
         try:
             tpl = env.get_template(tpl_file)
-            rendered = tpl.render(page=pages.get(page_key, {}), **_common)
+            # 计算当前页面路径 (不含语言前缀), 首页用 "/", 其他用 "/xxx/"
+            if tpl_file == 'index.html':
+                page_current_path = '/'
+            else:
+                # out_path 如 'products/index.html' → '/products/'
+                page_dir = out_path.rsplit('/', 1)[0]
+                page_current_path = '/' + page_dir + '/'
+            rendered = tpl.render(page=pages.get(page_key, {}), current_path=page_current_path, **_common)
             out = lang_output / out_path
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_text(rendered, encoding='utf-8')
@@ -124,7 +131,9 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
             if not slug:
                 continue
             try:
-                rendered = tpl.render(**{var_name: item}, **_common)
+                # 详情页 current_path: /{dataset}/{slug}/
+                detail_current_path = '/' + dataset_key + '/' + slug + '/'
+                rendered = tpl.render(**{var_name: item}, current_path=detail_current_path, **_common)
                 out = lang_output / dataset_key / slug / 'index.html'
                 out.parent.mkdir(parents=True, exist_ok=True)
                 out.write_text(rendered, encoding='utf-8')
@@ -210,7 +219,6 @@ def build_site(site_id, base_url=''):
                 'base_url': base_url.rstrip('/'),
                 't': t_data,
                 'languages': languages,
-                'current_path': '',
                 'products_categories': products_categories,
                 'products': products_items,
                 'portfolio': data.get('portfolio', []),
@@ -228,7 +236,6 @@ def build_site(site_id, base_url=''):
             'base_url': base_url.rstrip('/'),
             't': {},
             'languages': [],
-            'current_path': '',
             'products_categories': products_categories,
             'products': products_items,
             'portfolio': data.get('portfolio', []),
@@ -310,7 +317,6 @@ def build_template_preview(template_name, base_url=''):
                 'year': year, 'lang': lang_code,
                 'base_url': base_url.rstrip('/'),
                 't': t_data, 'languages': languages,
-                'current_path': '',
                 'products_categories': products_categories,
                 'products': products_items,
                 'portfolio': data.get('portfolio', []),
@@ -322,7 +328,7 @@ def build_template_preview(template_name, base_url=''):
             'settings': settings, 'theme': theme,
             'year': year, 'lang': 'zh',
             'base_url': base_url.rstrip('/'),
-            't': {}, 'languages': [], 'current_path': '',
+            't': {}, 'languages': [],
             'products_categories': products_categories,
             'products': products_items,
             'portfolio': data.get('portfolio', []),
