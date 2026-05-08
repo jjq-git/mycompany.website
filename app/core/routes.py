@@ -6,6 +6,8 @@ from flask import Blueprint, abort, current_app, render_template, send_from_dire
 
 import re
 
+import yaml as _yaml
+
 from . import datasets
 from . import menu as menu_lib
 from .builder import build_site, build_template_preview
@@ -14,6 +16,40 @@ from .site_storage import (copy_seed_data, init_site_folder,
                             list_yaml_files, read_yaml, write_yaml)
 
 bp = Blueprint('core', __name__)
+
+
+@bp.context_processor
+def inject_context():
+    """给所有模板注入站点上下文."""
+    from flask import request
+    site_id = request.args.get('site', type=int)
+    if not site_id:
+        site = Site.query.order_by(Site.id.desc()).first()
+        site_id = site.id if site else None
+    else:
+        site = Site.query.get(site_id)
+
+    ctx = {'counts': {}, 'left_menu_items': [], 'template_meta': {}}
+
+    if site and site_id:
+        ctx['counts']['products'] = len(datasets.load(site_id, 'products') or [])
+        ctx['counts']['posts'] = len(datasets.load(site_id, 'posts') or [])
+        ctx['counts']['features'] = len(datasets.load(site_id, 'features') or [])
+
+        # 左栏动态菜单：从 settings.yaml 读取 menu 列表
+        settings = read_yaml(site_id, 'settings.yaml') or {}
+        meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+        if meta_path.exists():
+            ctx['template_meta'] = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) or {}
+
+        raw_menu = settings.get('menu') or ctx['template_meta'].get('default_menu', [])
+        datasets_meta = ctx['template_meta'].get('datasets', [])
+        normalized = menu_lib.normalize_for_render(
+            menu_lib.upgrade_old_format(raw_menu, datasets_meta)
+        )
+        ctx['left_menu_items'] = normalized
+
+    return ctx
 
 
 def _current_context():
@@ -40,10 +76,14 @@ def index():
 
 @bp.route('/overview')
 def overview():
+    from flask import request
     user, site = _current_context()
-    products = read_yaml(site.id, 'data/products.yaml') or []
+    products = datasets.load(site.id, 'products')
     pages = list_yaml_files(site.id, 'pages')
     counts = {'products': len(products), 'pages': len(pages)}
+    if request.args.get('_fragment'):
+        return render_template('dashboard/panel_overview.html',
+                               user=user, site=site, counts=counts)
     return render_template('dashboard/overview.html',
                            user=user, site=site, counts=counts, active='overview')
 
@@ -54,6 +94,8 @@ def company():
     user, site = _current_context()
     settings = read_yaml(site.id, 'settings.yaml') or {}
 
+    is_fragment = request.args.get('_fragment') is not None
+
     if request.method == 'POST':
         settings.setdefault('company', {})
         settings.setdefault('contact', {})
@@ -63,8 +105,15 @@ def company():
             settings['contact'][field] = request.form.get(f'contact.{field}', '').strip()
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
+        if is_fragment:
+            return redirect(url_for('core.company', _fragment='1'))
         return redirect(url_for('core.company'))
 
+    if is_fragment:
+        return render_template('dashboard/panel_company.html',
+                               user=user, site=site,
+                               company=settings.get('company', {}),
+                               contact=settings.get('contact', {}))
     return render_template('dashboard/company.html',
                            user=user, site=site,
                            company=settings.get('company', {}),
@@ -74,8 +123,13 @@ def company():
 
 @bp.route('/products')
 def products():
+    from flask import request
     user, site = _current_context()
-    products = read_yaml(site.id, 'data/products.yaml') or []
+    products = datasets.load(site.id, 'products')
+    if request.args.get('_fragment'):
+        return render_template('dashboard/panel_data_list.html',
+                               user=user, site=site,
+                               dataset_key='products', items=products)
     return render_template('dashboard/products.html',
                            user=user, site=site, products=products, active='products')
 
@@ -131,11 +185,15 @@ def product_edit(product_id):
 
 @bp.route('/features')
 def features():
+    from flask import request
     user, site = _current_context()
+    items = datasets.load(site.id, 'features')
+    if request.args.get('_fragment'):
+        return render_template('dashboard/panel_data_list.html',
+                               user=user, site=site,
+                               dataset_key='features', items=items)
     return render_template('dashboard/features.html',
-                           user=user, site=site,
-                           items=datasets.load(site.id, 'features'),
-                           active='features')
+                           user=user, site=site, items=items, active='features')
 
 
 @bp.route('/features/new', methods=['POST'])
@@ -176,11 +234,15 @@ def feature_edit(item_id):
 
 @bp.route('/blog')
 def blog():
+    from flask import request
     user, site = _current_context()
+    items = datasets.load(site.id, 'posts')
+    if request.args.get('_fragment'):
+        return render_template('dashboard/panel_data_list.html',
+                               user=user, site=site,
+                               dataset_key='posts', items=items)
     return render_template('dashboard/blog.html',
-                           user=user, site=site,
-                           items=datasets.load(site.id, 'posts'),
-                           active='blog')
+                           user=user, site=site, items=items, active='blog')
 
 
 @bp.route('/blog/new', methods=['POST'])
@@ -228,35 +290,52 @@ def page_home():
     user, site = _current_context()
     page = read_yaml(site.id, 'pages/home.yaml') or {}
 
+    # 检测格式: modules 数组 vs 旧固定 key
+    is_modules_format = 'modules' in page
+
     if request.method == 'POST':
-        # Hero
-        page.setdefault('hero', {})
-        for f in ('title', 'subtitle', 'badge', 'cta_text', 'cta_url', 'video_url', 'background_image'):
-            page['hero'][f] = request.form.get(f'hero.{f}', '').strip()
-        # 各区块
-        for key in ('featured_section', 'features_section', 'about_brief', 'blog_section', 'subscribe_section'):
-            page.setdefault(key, {})
-            page[key]['enabled'] = bool(request.form.get(f'{key}.enabled'))
-            for f in ('title', 'subtitle', 'body', 'cta_text', 'cta_url'):
-                v = request.form.get(f'{key}.{f}')
-                if v is not None:
-                    page[key][f] = v.strip()
-            limit = request.form.get(f'{key}.limit')
-            if limit:
-                try:
-                    page[key]['limit'] = int(limit)
-                except ValueError:
-                    pass
+        if is_modules_format or request.form.get('_format') == 'modules':
+            # modules 数组格式保存
+            page['modules'] = _parse_modules_form(request.form)
+            page.pop('hero', None)
+            for k in ('featured_section', 'features_section', 'about_brief', 'blog_section', 'subscribe_section'):
+                page.pop(k, None)
+        else:
+            # 旧固定 key 格式保存
+            page.setdefault('hero', {})
+            for f in ('title', 'subtitle', 'badge', 'cta_text', 'cta_url', 'video_url', 'background_image'):
+                page['hero'][f] = request.form.get(f'hero.{f}', '').strip()
+            for key in ('featured_section', 'features_section', 'about_brief', 'blog_section', 'subscribe_section'):
+                page.setdefault(key, {})
+                page[key]['enabled'] = bool(request.form.get(f'{key}.enabled'))
+                for f in ('title', 'subtitle', 'body', 'cta_text', 'cta_url'):
+                    v = request.form.get(f'{key}.{f}')
+                    if v is not None:
+                        page[key][f] = v.strip()
+                limit = request.form.get(f'{key}.limit')
+                if limit:
+                    try:
+                        page[key]['limit'] = int(limit)
+                    except ValueError:
+                        pass
         write_yaml(site.id, 'pages/home.yaml', page)
         flash('已保存')
         return redirect(url_for('core.page_home'))
 
-    # 兜底默认, 避免模板里访问空字段炸
-    page.setdefault('hero', {})
-    for key in ('featured_section', 'features_section', 'about_brief', 'blog_section', 'subscribe_section'):
-        page.setdefault(key, {})
+    # 准备渲染上下文
+    blocks = _get_available_blocks(site.template_name)
+    if is_modules_format:
+        page.setdefault('modules', [])
+    else:
+        page.setdefault('hero', {})
+        for key in ('featured_section', 'features_section', 'about_brief', 'blog_section', 'subscribe_section'):
+            page.setdefault(key, {})
+
     return render_template('dashboard/page_home.html',
-                           user=user, site=site, page=page, active='pages')
+                           user=user, site=site, page=page,
+                           is_modules_format=is_modules_format,
+                           blocks=blocks,
+                           active='pages_home')
 
 
 @bp.route('/pages')
@@ -276,8 +355,12 @@ def pages():
 
 @bp.route('/account')
 def account():
+    from flask import request
     user, site = _current_context()
     site_count = Site.query.filter_by(owner_id=user.id).count() if user else 0
+    if request.args.get('_fragment'):
+        return render_template('dashboard/panel_account.html',
+                               user=user, site=site, site_count=site_count)
     return render_template('dashboard/account.html',
                            user=user, site=site, site_count=site_count, active='account')
 
@@ -302,20 +385,24 @@ def menu_edit():
     from flask import flash, redirect, request, url_for
     user, site = _current_context()
     settings = read_yaml(site.id, 'settings.yaml') or {}
+    is_fragment = request.args.get('_fragment') is not None
 
     if request.method == 'POST':
         labels = request.form.getlist('label[]')
         types = request.form.getlist('type[]')
         targets_list = request.form.getlist('target_list[]')
         urls_link = request.form.getlist('url_link[]')
-        items = []
+        items = [{'label': '首页', 'type': 'home'}]
         for i, label in enumerate(labels):
             label = label.strip()
             if not label:
                 continue
             t = types[i] if i < len(types) else 'link'
+            if t == 'home':
+                items[0]['label'] = label or '首页'
+                continue
             it = {'label': label, 'type': t}
-            if t == 'list':
+            if t in ('list', 'page'):
                 target = targets_list[i].strip() if i < len(targets_list) else ''
                 if target:
                     it['target'] = target
@@ -326,15 +413,23 @@ def menu_edit():
             items.append(it)
         settings['menu'] = items
         write_yaml(site.id, 'settings.yaml', settings)
-        flash('已保存')
+        flash('已保存，首页已保持为固定入口')
+        if is_fragment:
+            return redirect(url_for('core.menu_edit', _fragment='1'))
         return redirect(url_for('core.menu_edit'))
 
     # GET: 升级旧格式
-    from pathlib import Path
-    import yaml as _yaml
     meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
     meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
-    items = menu_lib.upgrade_old_format(settings.get('menu') or [], meta.get('datasets', []))
+    raw_menu = settings.get('menu') or meta.get('default_menu', [])
+    items = menu_lib.upgrade_old_format(raw_menu, meta.get('datasets', []))
+    home_items = [it for it in items if it.get('type') == 'home']
+    other_items = [it for it in items if it.get('type') != 'home']
+    items = (home_items[:1] or [{'label': '首页', 'type': 'home'}]) + other_items
+
+    if is_fragment:
+        return render_template('dashboard/panel_menu.html',
+                               user=user, site=site, items=items)
     return render_template('dashboard/menu.html',
                            user=user, site=site, items=items, active='menu')
 
@@ -343,15 +438,20 @@ def menu_edit():
 def footer_edit():
     from flask import flash, redirect, request, url_for
     user, site = _current_context()
+    is_fragment = request.args.get('_fragment') is not None
     if request.method == 'POST':
         _save_link_list(site.id, 'footer_links')
         flash('已保存')
+        if is_fragment:
+            return redirect(url_for('core.footer_edit', _fragment='1'))
         return redirect(url_for('core.footer_edit'))
     settings = read_yaml(site.id, 'settings.yaml') or {}
+    items = settings.get('footer_links') or []
+    if is_fragment:
+        return render_template('dashboard/panel_footer.html',
+                               user=user, site=site, items=items)
     return render_template('dashboard/footer_links.html',
-                           user=user, site=site,
-                           items=settings.get('footer_links') or [],
-                           active='footer')
+                           user=user, site=site, items=items, active='footer')
 
 
 @bp.route('/settings/social', methods=['GET', 'POST'])
@@ -359,27 +459,30 @@ def social_edit():
     from flask import flash, redirect, request, url_for
     user, site = _current_context()
     settings = read_yaml(site.id, 'settings.yaml') or {}
+    is_fragment = request.args.get('_fragment') is not None
     if request.method == 'POST':
         social = settings.setdefault('social', {})
         for platform in ('github', 'twitter', 'facebook', 'linkedin', 'youtube'):
             social[platform] = request.form.get(platform, '').strip()
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
+        if is_fragment:
+            return redirect(url_for('core.social_edit', _fragment='1'))
         return redirect(url_for('core.social_edit'))
+    social = settings.get('social') or {}
+    if is_fragment:
+        return render_template('dashboard/panel_social.html',
+                               user=user, site=site, social=social)
     return render_template('dashboard/social.html',
-                           user=user, site=site,
-                           social=settings.get('social') or {},
-                           active='social')
+                           user=user, site=site, social=social, active='social')
 
 
 @bp.route('/settings/theme', methods=['GET', 'POST'])
 def theme_edit():
     from flask import flash, redirect, request, url_for
-    from pathlib import Path
-    import yaml as _yaml
     user, site = _current_context()
     settings = read_yaml(site.id, 'settings.yaml') or {}
-    # 模板默认主题, 用于占位提示
+    is_fragment = request.args.get('_fragment') is not None
     tpl_meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
     tpl_meta = _yaml.safe_load(tpl_meta_path.read_text(encoding='utf-8')) if tpl_meta_path.exists() else {}
     default_theme = tpl_meta.get('default_theme') or {}
@@ -391,16 +494,19 @@ def theme_edit():
             if v:
                 theme[key] = v
             else:
-                theme.pop(key, None)  # 留空 = 删除, 用模板默认
+                theme.pop(key, None)
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
+        if is_fragment:
+            return redirect(url_for('core.theme_edit', _fragment='1'))
         return redirect(url_for('core.theme_edit'))
 
+    theme = settings.get('theme') or {}
+    if is_fragment:
+        return render_template('dashboard/panel_theme.html',
+                               user=user, site=site, theme=theme, default_theme=default_theme)
     return render_template('dashboard/theme.html',
-                           user=user, site=site,
-                           theme=settings.get('theme') or {},
-                           default_theme=default_theme,
-                           active='theme')
+                           user=user, site=site, theme=theme, default_theme=default_theme, active='theme')
 
 
 SLUG_PATTERN = re.compile(r'^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$')
@@ -408,11 +514,14 @@ SLUG_PATTERN = re.compile(r'^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$')
 
 @bp.route('/templates')
 def templates_gallery():
+    from flask import request
     user, site = _current_context()
+    templates = Template.query.order_by(Template.name).all()
+    if request.args.get('_fragment'):
+        return render_template('dashboard/panel_templates.html',
+                               user=user, site=site, templates=templates)
     return render_template('dashboard/templates_gallery.html',
-                           user=user, site=site,
-                           templates=Template.query.order_by(Template.name).all(),
-                           active='templates')
+                           user=user, site=site, templates=templates, active='templates')
 
 
 @bp.route('/templates/<template_name>/preview/')
@@ -487,18 +596,178 @@ def build():
     _, site = _current_context()
     build_site(site.id, base_url=f'/preview/{site.id}')
     from flask import redirect, url_for
-    return redirect(url_for('core.preview', site_id=site.id, filepath='index.html'))
+    return redirect(url_for('core.preview_site', site_id=site.id))
+
+
+def _default_lang_code(site):
+    """取模板默认语言."""
+    tpl_meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    if tpl_meta_path.exists():
+        tpl_meta = _yaml.safe_load(tpl_meta_path.read_text(encoding='utf-8')) or {}
+        languages = tpl_meta.get('languages', [])
+        if languages:
+            return languages[0].get('code', 'zh-CN')
+    return 'zh-CN'
+
+
+@bp.route('/preview_site/<int:site_id>')
+def preview_site(site_id):
+    """确保已构建，重定向到默认语言首页."""
+    from flask import redirect, request, url_for
+    site = Site.query.get_or_404(site_id)
+    out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
+    lang_code = _default_lang_code(site)
+    lang_index = out / lang_code / 'index.html'
+    if request.args.get('_') or not lang_index.exists():
+        build_site(site_id, base_url=f'/preview/{site_id}')
+
+    if (out / lang_code / 'index.html').exists():
+        return redirect(url_for('core.preview', site_id=site_id, filepath=f'{lang_code}/index.html'))
+    return redirect(url_for('core.preview', site_id=site_id))
+
+
+@bp.route('/preview_or_build/<int:site_id>')
+def preview_or_build(site_id):
+    """确保已构建，直接返回默认语言的首页."""
+    site = Site.query.get_or_404(site_id)
+    out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
+    lang_code = _default_lang_code(site)
+    lang_index = out / lang_code / 'index.html'
+    if not lang_index.exists():
+        build_site(site_id, base_url=f'/preview/{site_id}')
+
+    # 查找默认语言子目录下的 index.html，跳过语言选择页
+    lang_index = out / lang_code / 'index.html'
+    if lang_index.exists():
+        return send_from_directory(out / lang_code, 'index.html')
+
+    # 回退：返回根目录的 index.html（可能是单语言站点）
+    return send_from_directory(out, 'index.html')
 
 
 @bp.route('/preview/<int:site_id>/')
 @bp.route('/preview/<int:site_id>/<path:filepath>')
 def preview(site_id, filepath='index.html'):
-    """预览 output/<site_id>/ 下的静态文件."""
+    """预览 output/<site_id>/ 下的静态文件，自动构建."""
+    site = Site.query.get_or_404(site_id)
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
+    if filepath == 'index.html':
+        lang_code = _default_lang_code(site)
+        lang_index = out / lang_code / 'index.html'
+        if not lang_index.exists():
+            try:
+                build_site(site_id, base_url=f'/preview/{site_id}')
+            except Exception:
+                pass
+        if lang_index.exists():
+            return send_from_directory(out, f'{lang_code}/index.html')
+
+    if not (out / filepath).exists():
+        try:
+            build_site(site_id, base_url=f'/preview/{site_id}')
+        except Exception:
+            pass
     if not out.exists():
-        abort(404, f'尚未构建. 先访问 /build 或运行 flask --app run build-site {site_id}')
+        out.mkdir(parents=True, exist_ok=True)
     full = out / filepath
     if full.is_dir():
         full = full / 'index.html'
         filepath = f'{filepath.rstrip("/")}/index.html'
+    if not full.exists():
+        # 尝试默认语言子目录
+        for sub in out.iterdir():
+            if sub.is_dir() and (sub / 'index.html').exists():
+                return send_from_directory(out, f'{sub.name}/index.html')
+        abort(404, '未生成页面，请检查模板数据')
     return send_from_directory(out, filepath)
+
+
+def _render(template_name, **kwargs):
+    """渲染模板，支持 ?_fragment=1 返回右侧面板片段."""
+    from flask import request
+    if request.args.get('_fragment'):
+        return render_template(template_name, **kwargs)
+    return render_template(template_name, **kwargs)
+
+
+@bp.route('/_panel/<path:page_key>')
+def page_panel(page_key):
+    """动态菜单项面板路由：根据 page_key 分发到对应数据集列表或单页编辑."""
+    user, site = _current_context()
+
+    # 尝试匹配数据集
+    data_items = datasets.load(site.id, page_key)
+    if data_items:
+        return _render('dashboard/panel_data_list.html',
+                       user=user, site=site,
+                       dataset_key=page_key, items=data_items,
+                       active=page_key)
+
+    # 尝试匹配单页
+    page = read_yaml(site.id, f'pages/{page_key}.yaml')
+    if page:
+        return _render('dashboard/panel_page_edit.html',
+                       user=user, site=site,
+                       page_key=page_key, page=page,
+                       active=page_key)
+
+    return _render('dashboard/panel_empty.html',
+                   user=user, site=site,
+                   page_key=page_key, active=page_key)
+
+
+def _get_available_blocks(template_name):
+    """获取模板的可用模块列表."""
+    from .template_loader import scan_blocks
+    try:
+        return scan_blocks(template_name)
+    except Exception:
+        return []
+
+
+def _parse_modules_form(form):
+    """从 POST 表单解析 modules 数组."""
+    def _parse_value(value):
+        value = (value or '').strip()
+        if not value:
+            return ''
+        try:
+            parsed = _yaml.safe_load(value)
+        except _yaml.YAMLError:
+            return value
+        return value if parsed is None else parsed
+
+    count = 0
+    try:
+        count = int(form.get('module_count', '0'))
+    except (ValueError, TypeError):
+        pass
+
+    modules = []
+    for i in range(count):
+        idx = f'module_{i}'
+        m_type = form.get(f'{idx}_type', '').strip()
+        if not m_type:
+            continue
+        variant = form.get(f'{idx}_variant', '').strip() or 'default'
+        order_str = form.get(f'{idx}_order', str(i + 1))
+        try:
+            order = int(order_str)
+        except (ValueError, TypeError):
+            order = i + 1
+
+        data = {}
+        for key in form:
+            prefix = f'{idx}_data_'
+            if key.startswith(prefix):
+                field = key[len(prefix):]
+                data[field] = _parse_value(form.get(key, ''))
+
+        modules.append({
+            'type': m_type,
+            'order': order,
+            'variant': variant,
+            'data': data,
+        })
+
+    return modules

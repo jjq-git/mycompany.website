@@ -7,8 +7,26 @@ from .site_storage import read_yaml, write_yaml
 
 
 def load(site_id, dataset):
-    """读取整个数据集列表."""
-    return read_yaml(site_id, f'data/{dataset}.yaml') or []
+    """读取整个数据集列表.
+
+    自动标准化格式:
+    - 如果顶层是 {items: [...], ...} dict, 提取 items 列表
+    - 给没有 id 的条目自动分配 id (种子数据兼容)
+    """
+    raw = read_yaml(site_id, f'data/{dataset}.yaml') or []
+    # 标准化: {items: [...]} 格式 → 提取 items
+    if isinstance(raw, dict) and 'items' in raw:
+        items = raw['items']
+    elif isinstance(raw, list):
+        items = raw
+    else:
+        return []
+
+    # 自动补齐 id: 种子数据没有 id, 按 index+1 分配
+    for i, it in enumerate(items):
+        if 'id' not in it:
+            it['id'] = i + 1
+    return items
 
 
 def save(site_id, dataset, items):

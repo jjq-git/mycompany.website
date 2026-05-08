@@ -1,0 +1,21 @@
+{# Hero Banner 模块 - 科技暗色风格 #}
+{% if module.data %}
+<section class="hero">
+  {% if module.data.video_url or module.data.type == 'video' %}
+  <video class="hero-bg" autoplay muted loop playsinline>
+    <source src="{{ module.data.video_url or module.data.media }}">
+  </video>
+  {% elif module.data.background_image or module.data.media %}
+  <div class="hero-bg" style="background-image: url('{{ module.data.background_image or module.data.media }}')"></div>
+  {% endif %}
+  <div class="hero-overlay"></div>
+  <div class="container hero-inner">
+    {% if module.data.badge %}<span class="badge">{{ module.data.badge }}</span>{% endif %}
+    <h1>{{ module.data.title }}</h1>
+    <p class="lead">{{ module.data.subtitle }}</p>
+    {% if module.data.cta_text %}
+    <a class="btn btn-accent" href="{{ module.data.cta_url }}">{{ module.data.cta_text }} →</a>
+    {% endif %}
+  </div>
+</section>
+{% endif %}

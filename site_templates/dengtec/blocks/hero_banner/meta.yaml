@@ -1,0 +1,49 @@
+name: Hero Banner
+category: content
+icon: hero_banner.svg
+description: 首页轮播大图模块，支持图片/视频，可配置标题、副标题、按钮
+fields:
+  - key: type
+    label: 媒体类型
+    type: select
+    options:
+      - value: image
+        label: 图片
+      - value: video
+        label: 视频
+  - key: media
+    label: 媒体地址
+    type: url
+  - key: title
+    label: 主标题
+    type: text
+  - key: subtitle
+    label: 副标题
+    type: text
+  - key: primaryBtn
+    label: 主按钮文字
+    type: text
+  - key: primaryBtnLink
+    label: 主按钮链接
+    type: url
+  - key: primaryBtnLinkTarget
+    label: 主按钮打开方式
+    type: select
+    options:
+      - value: ""
+        label: 当前页
+      - value: _blank
+        label: 新标签页
+  - key: secondaryBtn
+    label: 副按钮文字
+    type: text
+  - key: secondaryBtnLink
+    label: 副按钮链接
+    type: url
+variants:
+  - key: text_overlay
+    label: 文字叠加（全宽）
+  - key: split_left
+    label: 左文右图（50:50）
+  - key: split_right
+    label: 左图右文（50:50）

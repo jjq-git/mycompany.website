@@ -1,0 +1,42 @@
+{# 通用数据网格模块 - 默认变体: 三列网格 #}
+{% if module.data %}
+{% set dataset_key = module.data.dataset | default('portfolio') %}
+{% set items = products if dataset_key == 'products' else portfolio if dataset_key == 'portfolio' else posts if dataset_key == 'posts' else [] %}
+{% if items %}
+{% set max_items = module.data.max_items | default(6) | int %}
+{% set columns = module.data.columns | default('3') %}
+{% set show_view_all = module.data.show_view_all | default(true) %}
+<section class="section section-bg">
+  <div class="container">
+    {% if module.data.title %}
+    <div class="section-header">
+      <h2 class="section-title">{{ module.data.title }}</h2>
+    </div>
+    {% endif %}
+    <div class="grid grid-{{ columns }}">
+      {% for item in items[:max_items] %}
+      <a href="{{ base_url }}/{{ lang }}/{{ dataset_key }}/{{ item.slug }}/" class="portfolio-card">
+        <div class="portfolio-card-image"{% if item.image or item.cover %} style="background-image: url('{{ item.image | default(item.cover) }}')"{% endif %}>
+          {% if not (item.image or item.cover) %}<div class="portfolio-card-placeholder">📷</div>{% endif %}
+        </div>
+        <div class="portfolio-card-body">
+          <h3 class="portfolio-card-title">{{ item.title | default(item.name) }}</h3>
+          {% if item.date %}<div class="portfolio-card-date">{{ item.date }}</div>{% endif %}
+          {% if item.tags %}
+          <div class="portfolio-card-tags">
+            {% for tag in item.tags[:3] %}<span class="portfolio-card-tag">{{ tag }}</span>{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% if show_view_all %}
+    <div class="text-center" style="margin-top: 2rem;">
+      <a href="{{ base_url }}/{{ lang }}/{{ dataset_key }}/" class="btn btn-primary">查看全部</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+{% endif %}

@@ -1,0 +1,18 @@
+{# 社交链接面板 #}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <span class="fw-semibold">社交链接</span>
+</div>
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}
+    <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+<form method="post" action="{{ url_for('core.social_edit', _fragment='1') }}">
+  {% for platform in ('github','twitter','facebook','linkedin','youtube') %}
+  <div class="mb-2">
+    <label class="form-label small mb-1 text-muted">{{ platform | title }}</label>
+    <input class="form-control form-control-sm" name="{{ platform }}" value="{{ social.get(platform, '') }}" placeholder="https://...">
+  </div>
+  {% endfor %}
+  <button class="btn btn-primary btn-sm mt-2" type="submit">保存</button>
+</form>

@@ -1,0 +1,19 @@
+{# 功能亮点模块 - 科技暗色风格 #}
+{% if module.data and features %}
+{% set limit = module.data.limit | default(6) | int %}
+<section class="section section-alt">
+  <div class="container">
+    {% if module.data.title %}<h2>{{ module.data.title }}</h2>{% endif %}
+    {% if module.data.subtitle %}<p class="lead muted">{{ module.data.subtitle }}</p>{% endif %}
+    <div class="feature-grid">
+      {% for f in features[:limit] %}
+      <div class="feature-card">
+        <div class="feature-icon">{{ f.icon }}</div>
+        <h3>{{ f.title }}</h3>
+        <p class="muted">{{ f.desc }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}

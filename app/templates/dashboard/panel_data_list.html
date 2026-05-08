@@ -1,0 +1,61 @@
+{# 数据集列表面板 — 用于动态菜单项 (products/posts/portfolio 等) #}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <span class="fw-semibold">{{ dataset_key | title }}</span>
+  <button class="btn btn-primary btn-sm" onclick="addItem('{{ dataset_key }}')">+ 新建</button>
+</div>
+
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}
+    <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+
+{% if items %}
+<div class="table-responsive">
+  <table class="table table-sm table-hover" style="font-size:12px">
+    <thead class="table-light">
+      <tr>
+        <th>#</th>
+        <th>名称</th>
+        <th>Slug</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for it in items %}
+      <tr style="cursor:pointer" onclick="loadPanel('/_panel/edit/{{ dataset_key }}/{{ it.id }}')">
+        <td class="text-muted">{{ it.id }}</td>
+        <td><strong>{{ it.title or it.name }}</strong></td>
+        <td class="text-muted"><code style="font-size:11px">{{ it.slug }}</code></td>
+        <td>
+          <button class="btn btn-sm btn-outline-danger" style="font-size:10px"
+                  onclick="event.stopPropagation(); deleteItem('{{ dataset_key }}', {{ it.id }})">删除</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+  <p>还没有数据</p>
+  <button class="btn btn-primary btn-sm" onclick="addItem('{{ dataset_key }}')">+ 新建第一条</button>
+</div>
+{% endif %}
+
+<script>
+function addItem(dataset) {
+  fetch('/{{ dataset_key }}/new', {method:'POST'})
+    .then(r => { if (r.redirected) window.location.reload(); else location.reload(); });
+}
+function deleteItem(dataset, id) {
+  if (!confirm('确认删除？')) return;
+  fetch('/{{ dataset_key }}/' + id + '/delete', {method:'POST'})
+    .then(() => location.reload());
+}
+function loadPanel(url) {
+  fetch(url + '?_fragment=1')
+    .then(r => r.text())
+    .then(html => { document.getElementById('rightPanelBody').innerHTML = html; });
+}
+</script>

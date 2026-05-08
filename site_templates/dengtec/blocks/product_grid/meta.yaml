@@ -1,0 +1,33 @@
+name: 产品网格
+category: data
+icon: product_grid.svg
+description: 从产品数据集自动拉取产品卡片展示
+fields:
+  - key: title
+    label: 区块标题
+    type: text
+  - key: dataset
+    label: 数据来源
+    type: select
+    options:
+      - value: products
+        label: 产品
+  - key: max_items
+    label: 最大显示数量
+    type: number
+    default: 6
+  - key: columns
+    label: 每行列数
+    type: select
+    options:
+      - value: "3"
+        label: "3列"
+      - value: "4"
+        label: "4列"
+variants:
+  - key: grid_3
+    label: 三列网格
+  - key: grid_4
+    label: 四列网格
+  - key: cards
+    label: 卡片列表

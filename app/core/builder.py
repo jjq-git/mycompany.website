@@ -79,66 +79,41 @@ def _build_language_selector_page(output_root, base_url, settings, theme, year, 
 
 
 def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, pages, data, meta):
-    """为一种语言渲染所有页面."""
+    """为一种语言渲染所有页面 (菜单驱动)."""
     lang_output = output_root / lang_code
 
     _common = dict(common)
     _common['lang'] = lang_code
 
-    # 页面映射: 模板文件 -> 输出路径, 用哪份 page 数据
-    page_map = [
-        ('index.html', 'index.html', 'home'),
-        ('products.html', 'products/index.html', 'products'),
-        ('blog.html', 'blog/index.html', 'blog'),
-        ('about.html', 'about/index.html', 'about'),
-        ('contact.html', 'contact/index.html', 'contact'),
-        ('portfolio.html', 'portfolio/index.html', 'portfolio'),
-    ]
+    # 收集渲染任务 (菜单驱动)
+    menu_items = _common.get('settings', {}).get('menu', [])
+    tasks = menu_lib.collect_render_tasks(menu_items, tpl_html_dir, data)
 
-    for tpl_file, out_path, page_key in page_map:
-        if not (tpl_html_dir / tpl_file).exists():
-            continue
+    for task in tasks:
         try:
-            tpl = env.get_template(tpl_file)
-            # 计算当前页面路径 (不含语言前缀), 首页用 "/", 其他用 "/xxx/"
-            if tpl_file == 'index.html':
-                page_current_path = '/'
-            else:
-                # out_path 如 'products/index.html' → '/products/'
-                page_dir = out_path.rsplit('/', 1)[0]
-                page_current_path = '/' + page_dir + '/'
-            rendered = tpl.render(page=pages.get(page_key, {}), current_path=page_current_path, **_common)
-            out = lang_output / out_path
+            tpl = env.get_template(task['template'])
+
+            # 准备渲染上下文
+            ctx = dict(_common)
+            ctx['current_path'] = task['current_path']
+
+            if task['type'] == 'home':
+                ctx['page'] = pages.get('home', {})
+            elif task['type'] in ('list', 'page'):
+                ctx['page'] = pages.get(task['page_key'], {})
+            elif task['type'] == 'detail':
+                ctx['page'] = pages.get(task['page_key'], {})
+                ctx[task['var_name']] = task['item']
+
+            rendered = tpl.render(**ctx)
+            out = lang_output / task['output_path']
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_text(rendered, encoding='utf-8')
         except Exception as e:
-            current_app.logger.error('页面 %s (lang=%s) 渲染失败: %s', tpl_file, lang_code, e)
-
-    # 数据集列表页已经在上面的 page_map 中覆盖 (products, blog, portfolio)
-    # 详情页: 每条数据生成一个独立页面
-    detail_map = [
-        ('product_detail.html', 'products', 'product', 'slug'),
-        ('post_detail.html', 'posts', 'post', 'slug'),
-        ('portfolio_detail.html', 'portfolio', 'item', 'slug'),
-    ]
-    for tpl_file, dataset_key, var_name, slug_field in detail_map:
-        if not (tpl_html_dir / tpl_file).exists():
-            continue
-        items = _common.get(var_name + 's') or data.get(dataset_key) or []
-        tpl = env.get_template(tpl_file)
-        for item in items:
-            slug = item.get(slug_field)
-            if not slug:
-                continue
-            try:
-                # 详情页 current_path: /{dataset}/{slug}/
-                detail_current_path = '/' + dataset_key + '/' + slug + '/'
-                rendered = tpl.render(**{var_name: item}, current_path=detail_current_path, **_common)
-                out = lang_output / dataset_key / slug / 'index.html'
-                out.parent.mkdir(parents=True, exist_ok=True)
-                out.write_text(rendered, encoding='utf-8')
-            except Exception as e:
-                current_app.logger.error('详情 %s/%s (lang=%s) 渲染失败: %s', dataset_key, slug, lang_code, e)
+            current_app.logger.error(
+                '页面 %s (type=%s, lang=%s) 渲染失败: %s',
+                task.get('template'), task.get('type'), lang_code, e,
+            )
 
 
 def build_site(site_id, base_url=''):
@@ -175,9 +150,9 @@ def build_site(site_id, base_url=''):
     theme_default = meta.get('default_theme', {})
     theme = {**theme_default, **(settings.get('theme') or {})}
 
-    # Jinja
+    # Jinja: 搜索 templates/ 目录 + 父目录 (供 blocks/ include 使用)
     env = Environment(
-        loader=FileSystemLoader(str(tpl_html_dir)),
+        loader=FileSystemLoader([str(tpl_html_dir), str(tpl_root)]),
         autoescape=select_autoescape(['html']),
         trim_blocks=True, lstrip_blocks=True,
     )
@@ -289,7 +264,7 @@ def build_template_preview(template_name, base_url=''):
     theme = {**meta.get('default_theme', {}), **(settings.get('theme') or {})}
 
     env = Environment(
-        loader=FileSystemLoader(str(tpl_html_dir)),
+        loader=FileSystemLoader([str(tpl_html_dir), str(tpl_root)]),
         autoescape=select_autoescape(['html']),
         trim_blocks=True, lstrip_blocks=True,
     )

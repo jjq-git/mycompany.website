@@ -1,0 +1,31 @@
+{# 通用数据网格模块 - 科技暗色风格 #}
+{% if module.data %}
+{% set dataset_key = module.data.dataset | default('posts') %}
+{% set items = products if dataset_key == 'products' else posts %}
+{% if items %}
+{% set max_items = module.data.max_items | default(4) | int %}
+{% set show_view_all = module.data.show_view_all | default(true) %}
+<section class="section section-alt">
+  <div class="container">
+    {% if module.data.title %}
+    <h2>{{ module.data.title }}</h2>
+    {% endif %}
+    <div class="post-grid">
+      {% for item in items[:max_items] %}
+      <a class="post-card" href="{{ base_url }}/{{ dataset_key }}/{{ item.slug }}">
+        {% if item.cover %}<img src="{{ item.cover }}" alt="">{% endif %}
+        {% if item.date %}<div class="post-meta muted">{{ item.date }}</div>{% endif %}
+        <h3>{{ item.title }}</h3>
+        <p class="muted">{{ item.excerpt or item.summary }}</p>
+      </a>
+      {% endfor %}
+    </div>
+    {% if show_view_all %}
+    <div class="center" style="margin-top: 2rem;">
+      <a class="btn btn-accent" href="{{ base_url }}/{{ dataset_key }}">查看全部</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+{% endif %}

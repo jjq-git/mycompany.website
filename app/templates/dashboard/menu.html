@@ -25,33 +25,39 @@
     </thead>
     <tbody>
       {% for it in items %}
-      <tr class="menu-row" data-type="{{ it.type or 'link' }}">
+      <tr class="menu-row {% if it.type == 'home' %}menu-row-home{% endif %}" data-type="{{ it.type or 'link' }}">
         <td>
-          <button type="button" class="btn" onclick="moveRow(this, -1)" title="上移">↑</button>
-          <button type="button" class="btn" onclick="moveRow(this, 1)" title="下移">↓</button>
+          <button type="button" class="btn" onclick="moveRow(this, -1)" title="上移" {% if it.type == 'home' %}disabled{% endif %}>↑</button>
+          <button type="button" class="btn" onclick="moveRow(this, 1)" title="下移" {% if it.type == 'home' %}disabled{% endif %}>↓</button>
         </td>
-        <td><input type="text" name="label[]" value="{{ it.label or '' }}" required></td>
+        <td><input type="text" name="label[]" value="{{ it.label or '' }}" required {% if it.type == 'home' %}readonly{% endif %}></td>
         <td>
+          {% if it.type == 'home' %}
+          <input type="hidden" name="type[]" value="home">
+          <select disabled>
+            <option value="home" selected>首页</option>
+          </select>
+          {% else %}
           <select name="type[]" onchange="onTypeChange(this)">
-            <option value="home" {% if it.type == 'home' %}selected{% endif %}>首页</option>
             <option value="list" {% if it.type == 'list' %}selected{% endif %}>列表页</option>
+            <option value="page" {% if it.type == 'page' %}selected{% endif %}>单页</option>
             <option value="link" {% if it.type == 'link' or not it.type %}selected{% endif %}>外链</option>
           </select>
+          {% endif %}
         </td>
         <td>
           {# 三个目标输入框, 根据 type 显示其中一个 #}
           <span class="target-home muted">/  （首页固定）</span>
-          <select name="target_list[]" class="target-list">
-            <option value="">— 选数据集 —</option>
-            {% for ds in (template_meta.datasets if template_meta else []) %}
-            <option value="{{ ds }}" {% if it.type == 'list' and it.target == ds %}selected{% endif %}>{{ ds }}</option>
-            {% endfor %}
-          </select>
+          <input type="text" name="target_list[]" class="target-list"
+                 value="{% if it.type in ('list', 'page') %}{{ it.target or '' }}{% endif %}"
+                 placeholder="products / about">
           <input type="text" name="url_link[]" class="target-link"
                  value="{% if it.type == 'link' %}{{ it.url or '' }}{% endif %}"
                  placeholder="https:// 或 /products/host">
         </td>
-        <td><button type="button" class="btn" onclick="removeRow(this)">删除</button></td>
+        <td>
+          <button type="button" class="btn" onclick="removeRow(this)" {% if it.type == 'home' %}disabled title="首页固定，不可删除"{% endif %}>删除</button>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
@@ -75,12 +81,12 @@
   .menu-row .target-home, .menu-row .target-list, .menu-row .target-link { display: none; }
   .menu-row[data-type="home"] .target-home { display: inline; }
   .menu-row[data-type="list"] .target-list { display: inline-block; }
+  .menu-row[data-type="page"] .target-list { display: inline-block; }
   .menu-row[data-type="link"] .target-link { display: inline-block; width: 100%; }
+  .menu-row-home input[readonly] { background: #f8fafc; color: var(--muted); }
 </style>
 
 <script>
-const DATASETS = {{ (template_meta.datasets if template_meta else []) | tojson }};
-
 function onTypeChange(sel) {
   sel.closest('tr').dataset.type = sel.value;
 }
@@ -91,13 +97,13 @@ function moveRow(btn, dir) {
 }
 function removeRow(btn) {
   const row = btn.closest('tr');
+  if (row && row.classList.contains('menu-row-home')) return;
   if (document.querySelectorAll('.menu-row').length > 1 || confirm('删除最后一项？')) {
     row.remove();
   }
 }
 function addRow() {
   const tbody = document.querySelector('#menu-list tbody');
-  const opts = DATASETS.map(d => `<option value="${d}">${d}</option>`).join('');
   const tr = document.createElement('tr');
   tr.className = 'menu-row';
   tr.dataset.type = 'link';
@@ -109,17 +115,14 @@ function addRow() {
     <td><input type="text" name="label[]" required></td>
     <td>
       <select name="type[]" onchange="onTypeChange(this)">
-        <option value="home">首页</option>
         <option value="list">列表页</option>
+        <option value="page">单页</option>
         <option value="link" selected>外链</option>
       </select>
     </td>
     <td>
       <span class="target-home muted">/  （首页固定）</span>
-      <select name="target_list[]" class="target-list">
-        <option value="">— 选数据集 —</option>
-        ${opts}
-      </select>
+      <input type="text" name="target_list[]" class="target-list" placeholder="products / about">
       <input type="text" name="url_link[]" class="target-link" placeholder="https:// 或 /products/host">
     </td>
     <td><button type="button" class="btn" onclick="removeRow(this)">删除</button></td>

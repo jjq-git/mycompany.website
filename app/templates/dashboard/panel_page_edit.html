@@ -1,0 +1,35 @@
+{# 单页编辑面板 — about/contact 等 #}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <span class="fw-semibold">{{ page_key | title }}</span>
+  <button class="btn btn-sm btn-outline-secondary" onclick="refreshPreview()">刷新预览</button>
+</div>
+
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}
+    <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+
+{% if page.modules %}
+  {# 模块数组格式：复用首页模块编辑器逻辑 #}
+  <div class="small text-muted mb-2">已选模块</div>
+  {% for module in page.modules %}
+  <div class="card p-2 mb-2">
+    <span class="small fw-semibold">{{ module.type | replace('_', ' ') | title }}</span>
+    {% set mdata = module.data or {} %}
+    {% if mdata is mapping %}
+      {% for key, val in mdata.items() %}
+      <div class="small text-muted">{{ key }}: {{ val }}</div>
+      {% endfor %}
+    {% endif %}
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="text-muted small">此页面使用旧格式，暂不支持面板编辑</div>
+  {% for key, val in page.items() %}
+  <div class="mb-2">
+    <label class="form-label small mb-1 text-muted">{{ key }}</label>
+    <input class="form-control form-control-sm" value="{{ val }}" readonly>
+  </div>
+  {% endfor %}
+{% endif %}

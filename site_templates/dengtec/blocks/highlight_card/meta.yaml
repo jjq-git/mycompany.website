@@ -1,0 +1,49 @@
+name: 精选项目卡片
+category: content
+icon: highlight_card.svg
+description: 展示精选项目/案例，支持标签、描述、图片、功能点列表、双按钮
+fields:
+  - key: tag
+    label: 标签
+    type: text
+  - key: title
+    label: 标题
+    type: text
+  - key: desc
+    label: 描述
+    type: textarea
+  - key: image
+    label: 图片
+    type: image
+  - key: features
+    label: 功能点列表
+    type: list
+    item_fields:
+      - key: text
+        label: 文本
+        type: text
+  - key: primaryBtn
+    label: 主按钮文字
+    type: text
+  - key: primaryLink
+    label: 主按钮链接
+    type: url
+  - key: primaryLinkTarget
+    label: 主按钮打开方式
+    type: select
+    options:
+      - value: ""
+        label: 当前页
+      - value: _blank
+        label: 新标签页
+  - key: secondaryBtn
+    label: 副按钮文字
+    type: text
+  - key: secondaryLink
+    label: 副按钮链接
+    type: url
+variants:
+  - key: bento
+    label: Bento 网格布局
+  - key: cards
+    label: 卡片列表布局

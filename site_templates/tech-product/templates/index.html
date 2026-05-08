@@ -1,107 +1,25 @@
 {% extends "_base.html" %}
 
 {% block content %}
-{# Hero #}
-<section class="hero">
-  {% if page.hero.video_url %}
-  <video class="hero-bg" autoplay muted loop playsinline>
-    <source src="{{ page.hero.video_url }}">
-  </video>
-  {% elif page.hero.background_image %}
-  <div class="hero-bg" style="background-image: url('{{ page.hero.background_image }}')"></div>
+
+{% if page.modules %}
+{% for module in page.modules %}
+
+  {% if module.data %}
+    {% if module.type == 'hero_banner' %}
+      {% include 'blocks/hero_banner/template.html' %}
+    {% elif module.type == 'feature_grid' %}
+      {% include 'blocks/feature_grid/template.html' %}
+    {% elif module.type == 'product_grid' %}
+      {% include 'blocks/product_grid/template.html' %}
+    {% elif module.type == 'highlight_card' %}
+      {% include 'blocks/highlight_card/template.html' %}
+    {% elif module.type == 'data_grid' %}
+      {% include 'blocks/data_grid/template.html' %}
+    {% endif %}
   {% endif %}
-  <div class="hero-overlay"></div>
-  <div class="container hero-inner">
-    {% if page.hero.badge %}<span class="badge">{{ page.hero.badge }}</span>{% endif %}
-    <h1>{{ page.hero.title }}</h1>
-    <p class="lead">{{ page.hero.subtitle }}</p>
-    {% if page.hero.cta_text %}
-    <a class="btn btn-accent" href="{{ page.hero.cta_url }}">{{ page.hero.cta_text }} →</a>
-    {% endif %}
-  </div>
-</section>
 
-{# 产品矩阵 #}
-{% if page.featured_section.enabled and products %}
-<section class="section">
-  <div class="container">
-    <h2>{{ page.featured_section.title }}</h2>
-    <p class="lead muted">{{ page.featured_section.subtitle }}</p>
-    <div class="product-grid">
-      {% for p in products %}
-      <a class="product-card" href="{{ base_url }}/products/{{ p.slug }}">
-        {% if p.cover %}<img src="{{ p.cover }}" alt="{{ p.name }}">{% endif %}
-        <h3>{{ p.name }}</h3>
-        <p class="muted">{{ p.summary }}</p>
-      </a>
-      {% endfor %}
-    </div>
-  </div>
-</section>
+{% endfor %}
 {% endif %}
 
-{# 功能亮点 #}
-{% if page.features_section.enabled and features %}
-<section class="section section-alt">
-  <div class="container">
-    <h2>{{ page.features_section.title }}</h2>
-    <p class="lead muted">{{ page.features_section.subtitle }}</p>
-    <div class="feature-grid">
-      {% for f in features[:page.features_section.limit] %}
-      <div class="feature-card">
-        <div class="feature-icon">{{ f.icon }}</div>
-        <h3>{{ f.title }}</h3>
-        <p class="muted">{{ f.desc }}</p>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</section>
-{% endif %}
-
-{# 关于一句话 #}
-{% if page.about_brief.enabled %}
-<section class="section">
-  <div class="container narrow">
-    <h2>{{ page.about_brief.title }}</h2>
-    <p class="lead">{{ page.about_brief.body }}</p>
-    {% if page.about_brief.cta_text %}
-    <a class="btn" href="{{ page.about_brief.cta_url }}">{{ page.about_brief.cta_text }} →</a>
-    {% endif %}
-  </div>
-</section>
-{% endif %}
-
-{# 博客 #}
-{% if page.blog_section.enabled and posts %}
-<section class="section section-alt">
-  <div class="container">
-    <h2>{{ page.blog_section.title }}</h2>
-    <div class="post-grid">
-      {% for post in posts[:page.blog_section.limit] %}
-      <a class="post-card" href="{{ base_url }}/blog/{{ post.slug }}">
-        {% if post.cover %}<img src="{{ post.cover }}" alt="">{% endif %}
-        <div class="post-meta muted">{{ post.date }}</div>
-        <h3>{{ post.title }}</h3>
-        <p class="muted">{{ post.excerpt }}</p>
-      </a>
-      {% endfor %}
-    </div>
-  </div>
-</section>
-{% endif %}
-
-{# 订阅 #}
-{% if page.subscribe_section.enabled %}
-<section class="section subscribe">
-  <div class="container narrow center">
-    <h2>{{ page.subscribe_section.title }}</h2>
-    <p class="muted">{{ page.subscribe_section.subtitle }}</p>
-    <form class="subscribe-form" method="post" action="#">
-      <input type="email" placeholder="your@email.com" required>
-      <button class="btn btn-accent" type="submit">订阅</button>
-    </form>
-  </div>
-</section>
-{% endif %}
 {% endblock %}

@@ -1,0 +1,28 @@
+name: 产品矩阵
+category: data
+icon: product_grid.svg
+description: 展示产品卡片网格，从 products 数据集拉取
+fields:
+  - key: title
+    label: 区块标题
+    type: text
+  - key: subtitle
+    label: 区块副标题
+    type: text
+  - key: max_items
+    label: 最大显示数量
+    type: number
+    default: 6
+  - key: columns
+    label: 每行列数
+    type: select
+    options:
+      - value: "3"
+        label: "3列"
+      - value: "4"
+        label: "4列"
+variants:
+  - key: grid_3
+    label: 三列网格
+  - key: grid_4
+    label: 四列网格

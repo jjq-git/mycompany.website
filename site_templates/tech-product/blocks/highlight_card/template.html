@@ -1,0 +1,16 @@
+{# 精选卡片模块 - 科技暗色风格 #}
+{% if module.data %}
+<section class="section">
+  <div class="container narrow">
+    <div class="highlight-card">
+      {% if module.data.badge %}<span class="badge">{{ module.data.badge }}</span>{% endif %}
+      {% if module.data.image %}<img src="{{ module.data.image }}" alt="">{% endif %}
+      <h2>{{ module.data.title }}</h2>
+      <p class="lead">{{ module.data.body }}</p>
+      {% if module.data.cta_text %}
+      <a class="btn" href="{{ module.data.cta_url }}">{{ module.data.cta_text }} →</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}

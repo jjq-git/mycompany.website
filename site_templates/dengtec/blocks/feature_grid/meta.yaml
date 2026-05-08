@@ -1,0 +1,44 @@
+name: 功能特色网格
+category: content
+icon: feature_grid.svg
+description: 展示服务/功能亮点，图标+标题+描述
+fields:
+  - key: title
+    label: 区块标题
+    type: text
+  - key: subtitle
+    label: 区块副标题
+    type: text
+  - key: features
+    label: 功能列表
+    type: list
+    item_fields:
+      - key: iconKey
+        label: 图标
+        type: select
+        options:
+          - value: circuit
+            label: 电路
+          - value: code
+            label: 代码
+          - value: structure
+            label: 结构
+          - value: sensor
+            label: 传感器
+          - value: interactive
+            label: 互动
+          - value: audio
+            label: 音视频
+      - key: title
+        label: 标题
+        type: text
+      - key: description
+        label: 描述
+        type: textarea
+variants:
+  - key: grid_3
+    label: 三列网格
+  - key: grid_4
+    label: 四列网格
+  - key: grid_6
+    label: 六列网格

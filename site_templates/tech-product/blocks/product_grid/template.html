@@ -1,0 +1,19 @@
+{# 产品矩阵模块 - 科技暗色风格 #}
+{% if module.data and products %}
+{% set max_items = module.data.max_items | default(6) | int %}
+<section class="section">
+  <div class="container">
+    {% if module.data.title %}<h2>{{ module.data.title }}</h2>{% endif %}
+    {% if module.data.subtitle %}<p class="lead muted">{{ module.data.subtitle }}</p>{% endif %}
+    <div class="product-grid">
+      {% for p in products[:max_items] %}
+      <a class="product-card" href="{{ base_url }}/products/{{ p.slug }}">
+        {% if p.cover %}<img src="{{ p.cover }}" alt="{{ p.name }}">{% endif %}
+        <h3>{{ p.name }}</h3>
+        <p class="muted">{{ p.summary }}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}

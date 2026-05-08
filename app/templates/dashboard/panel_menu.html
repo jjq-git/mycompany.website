@@ -1,0 +1,72 @@
+{# 菜单配置面板 #}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <span class="fw-semibold">菜单配置</span>
+  <span class="small text-muted">左侧菜单从这里定义</span>
+</div>
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}
+    <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+<form method="post" action="{{ url_for('core.menu_edit', _fragment='1') }}">
+  <div id="menuItems">
+    {% for item in items %}
+    <div class="card p-2 mb-2 menu-item-row {% if item.type == 'home' %}menu-item-home{% endif %}">
+      <div class="d-flex gap-1 mb-1">
+        <input class="form-control form-control-sm" name="label[]" value="{{ item.label }}" placeholder="名称" style="flex:2" {% if item.type == 'home' %}readonly{% endif %}>
+        {% if item.type == 'home' %}
+        <input type="hidden" name="type[]" value="home">
+        <select class="form-select form-select-sm" style="flex:1" disabled>
+          <option value="home" selected>首页</option>
+        </select>
+        {% else %}
+        <select class="form-select form-select-sm" name="type[]" style="flex:1" onchange="toggleMenuFields(this)">
+          <option value="list" {% if item.type=='list' %}selected{% endif %}>列表</option>
+          <option value="page" {% if item.type=='page' %}selected{% endif %}>单页</option>
+          <option value="link" {% if item.type=='link' %}selected{% endif %}>链接</option>
+        </select>
+        {% endif %}
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMenuItem(this)" {% if item.type == 'home' %}disabled title="首页固定，不可删除"{% endif %}>✕</button>
+      </div>
+      <input class="form-control form-control-sm mb-1 menu-target" name="target_list[]" value="{{ item.target or '' }}" placeholder="数据集名或页面key（list/page 类型必填）"
+             {% if item.type not in ('list','page') %}style="display:none"{% endif %}>
+      <input class="form-control form-control-sm mb-1 menu-url" name="url_link[]" value="{{ item.url or '' }}" placeholder="URL（link 类型必填）"
+             {% if item.type != 'link' %}style="display:none"{% endif %}>
+    </div>
+    {% endfor %}
+  </div>
+  <button type="button" class="btn btn-sm btn-outline-secondary mb-2" onclick="addMenuItem()">+ 添加菜单</button>
+  <br><button class="btn btn-primary btn-sm" type="submit">保存菜单</button>
+</form>
+<script>
+function toggleMenuFields(sel){
+  var row = sel.closest('.menu-item-row');
+  var targetInp = row.querySelector('.menu-target');
+  var urlInp = row.querySelector('.menu-url');
+  if (sel.value === 'list' || sel.value === 'page') {
+    targetInp.style.display = ''; urlInp.style.display = 'none';
+  } else if (sel.value === 'link') {
+    targetInp.style.display = 'none'; urlInp.style.display = '';
+  } else {
+    targetInp.style.display = 'none'; urlInp.style.display = 'none';
+  }
+}
+function removeMenuItem(btn){
+  var row = btn.closest('.menu-item-row');
+  if (row && !row.classList.contains('menu-item-home')) row.remove();
+}
+function addMenuItem(){
+  var d = document.createElement('div');
+  d.className = 'card p-2 mb-2 menu-item-row';
+  d.innerHTML = '<div class="d-flex gap-1 mb-1">' +
+    '<input class="form-control form-control-sm" name="label[]" placeholder="名称" style="flex:2">' +
+    '<select class="form-select form-select-sm" name="type[]" style="flex:1" onchange="toggleMenuFields(this)">' +
+      '<option value="list">列表</option><option value="page">单页</option><option value="link">链接</option>' +
+    '</select>' +
+    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMenuItem(this)">✕</button>' +
+    '</div>' +
+    '<input class="form-control form-control-sm mb-1 menu-target" name="target_list[]" placeholder="数据集名或页面key">' +
+    '<input class="form-control form-control-sm mb-1 menu-url" name="url_link[]" placeholder="URL（link 类型必填）" style="display:none">';
+  document.getElementById('menuItems').appendChild(d);
+}
+</script>

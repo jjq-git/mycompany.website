@@ -1,0 +1,73 @@
+{# Hero Banner 模块 - 默认变体: 文字叠加(全宽) #}
+{% if module.data %}
+{% set items = module.data if module.data is iterable and module.data[0] is mapping else [module.data] %}
+<section class="hero-banner" id="heroBanner">
+  <div class="hero-banner-slides">
+    {% for item in items %}
+    <div class="hero-banner-slide{% if loop.first %} active{% endif %}" data-index="{{ loop.index0 }}">
+      <div class="hero-banner-media">
+        {% if item.type == 'video' %}
+        <video class="hero-banner-video" src="{{ item.media }}" autoplay muted loop playsinline preload="none"></video>
+        {% else %}
+        <div class="hero-banner-image" style="background-image: url('{{ item.media }}')"></div>
+        {% endif %}
+      </div>
+      <div class="hero-banner-overlay"></div>
+      <div class="hero-banner-content">
+        <h1 class="hero-banner-title">{{ item.title | default(settings.company.name) }}</h1>
+        <p class="hero-banner-subtitle">{{ item.subtitle }}</p>
+        <div class="hero-banner-actions">
+          {% if item.primaryBtn %}
+          <a href="{{ item.primaryBtnLink }}" {% if item.primaryBtnLinkTarget == '_blank' %}target="_blank"{% endif %} class="btn btn-primary btn-lg">{{ item.primaryBtn }}</a>
+          {% endif %}
+          {% if item.secondaryBtn %}
+          <a href="{{ item.secondaryBtnLink }}" class="btn btn-secondary btn-lg">{{ item.secondaryBtn }}</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% if items|length > 1 %}
+  <div class="hero-banner-dots">
+    {% for item in items %}
+    <button class="hero-banner-dot{% if loop.first %} active{% endif %}" data-slide="{{ loop.index0 }}" aria-label="Slide {{ loop.index }}"></button>
+    {% endfor %}
+  </div>
+  <button class="hero-banner-nav hero-banner-nav-prev" aria-label="Previous">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <button class="hero-banner-nav hero-banner-nav-next" aria-label="Next">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+  {% endif %}
+</section>
+
+<script>
+(function() {
+  var banner = document.getElementById('heroBanner');
+  if (!banner) return;
+  var slides = banner.querySelectorAll('.hero-banner-slide');
+  var dots = banner.querySelectorAll('.hero-banner-dot');
+  var prevBtn = banner.querySelector('.hero-banner-nav-prev');
+  var nextBtn = banner.querySelector('.hero-banner-nav-next');
+  var current = 0;
+  var total = slides.length;
+  if (total <= 1) return;
+
+  function showSlide(index) {
+    slides.forEach(function(s, i) { s.classList.toggle('active', i === index); });
+    dots.forEach(function(d, i) { d.classList.toggle('active', i === index); });
+    current = index;
+  }
+  function next() { showSlide((current + 1) % total); }
+  function prev() { showSlide((current - 1 + total) % total); }
+  if (prevBtn) prevBtn.addEventListener('click', prev);
+  if (nextBtn) nextBtn.addEventListener('click', next);
+  dots.forEach(function(dot) {
+    dot.addEventListener('click', function() { showSlide(parseInt(dot.getAttribute('data-slide'))); });
+  });
+  setInterval(next, 8000);
+})();
+</script>
+{% endif %}

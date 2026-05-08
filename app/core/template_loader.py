@@ -51,3 +51,35 @@ def scan_templates():
 
     db.session.commit()
     return found
+
+
+def scan_blocks(template_name):
+    """扫描模板的 blocks/ 目录, 返回模块列表.
+
+    返回: list of dict, 每个模块:
+        name, category, icon, description, fields, variants
+    """
+    blocks_dir = Path(current_app.config['TEMPLATES_DIR']) / template_name / 'blocks'
+    if not blocks_dir.exists():
+        return []
+
+    blocks = []
+    for block_dir in sorted(blocks_dir.iterdir()):
+        if not block_dir.is_dir() or block_dir.name.startswith('.'):
+            continue
+        meta_path = block_dir / 'meta.yaml'
+        if not meta_path.exists():
+            continue
+
+        meta = yaml.safe_load(meta_path.read_text(encoding='utf-8')) or {}
+        blocks.append({
+            'name': block_dir.name,
+            'display_name': meta.get('name', block_dir.name),
+            'category': meta.get('category', 'content'),
+            'icon': meta.get('icon', ''),
+            'description': meta.get('description', ''),
+            'fields': meta.get('fields', []),
+            'variants': meta.get('variants', []),
+        })
+
+    return blocks

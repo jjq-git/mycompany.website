@@ -5,19 +5,17 @@ cover_image: ""
 version: 0.1.0
 is_public: true
 
-# 这个模板用到的数据集 (店主后台侧栏会按这个显示对应入口)
 datasets:
   - products
   - features
   - posts
 
-# 默认菜单 (店主可以在 settings.yaml 里覆盖)
+# 默认菜单 (新格式: type + target)
 default_menu:
-  - {label: Host, url: /products/host}
-  - {label: Modules, url: /products}
-  - {label: Functions, url: /functions}
-  - {label: Community, url: /community}
-  - {label: Blog, url: /blog}
+  - {label: 首页, type: home}
+  - {label: 产品, type: list, target: products}
+  - {label: 博客, type: list, target: posts}
+  - {label: 关于, type: page, target: about}
 
 # 主题色 (店主可以在 settings.yaml.theme 里覆盖)
 default_theme:
@@ -27,3 +25,8 @@ default_theme:
   text_muted: "#8a8aa0"
   accent: "#22c55e"
   border: "#2a2a35"
+
+# 支持的语言列表
+languages:
+  - {code: zh-CN, name: 简体中文, flag: 🇨🇳}
+default_language: zh-CN

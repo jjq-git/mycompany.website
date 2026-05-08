@@ -1,0 +1,32 @@
+{# 功能特色网格 - 默认变体: 三列网格 #}
+{% if module.data and module.data.features %}
+<section class="section section-bg">
+  <div class="container">
+    {% if module.data.title %}
+    <div class="section-header">
+      <h2 class="section-title">{{ module.data.title }}</h2>
+      {% if module.data.subtitle %}<p class="section-description">{{ module.data.subtitle }}</p>{% endif %}
+    </div>
+    {% endif %}
+    <div class="services-grid">
+      {% for feature in module.data.features %}
+      <div class="service-card">
+        <div class="service-icon">
+          {% if feature.iconKey == 'circuit' %}<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg>
+          {% elif feature.iconKey == 'code' %}<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="14" y1="4" x2="10" y2="20"/></svg>
+          {% elif feature.iconKey == 'structure' %}<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          {% elif feature.iconKey == 'sensor' %}<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2M6 8l1.5 1.5M6 16l1.5-1.5M18 8l-1.5 1.5M18 16l-1.5-1.5M20 12h2"/><circle cx="12" cy="12" r="4"/></svg>
+          {% elif feature.iconKey == 'interactive' %}<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+          {% elif feature.iconKey == 'audio' %}<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          {% else %}{{ feature.iconKey }}{% endif %}
+        </div>
+        <div class="service-content">
+          <h3 class="service-title">{{ feature.title }}</h3>
+          <p class="service-description">{{ feature.description }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}

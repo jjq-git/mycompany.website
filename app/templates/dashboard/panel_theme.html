@@ -1,0 +1,20 @@
+{# 主题颜色面板 #}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <span class="fw-semibold">主题颜色</span>
+</div>
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}
+    <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+<form method="post" action="{{ url_for('core.theme_edit', _fragment='1') }}">
+  {% for key, label in [('accent','主色'),('bg','背景'),('surface','面板色'),('text','文字色'),('text_muted','次要文字'),('border','边框色')] %}
+  <div class="mb-2">
+    <label class="form-label small mb-1 text-muted">{{ label }}
+      <span class="text-muted">(默认: {{ default_theme.get(key, '') }})</span></label>
+    <input class="form-control form-control-sm" name="{{ key }}" value="{{ theme.get(key, '') }}"
+           placeholder="{{ default_theme.get(key, '') }}">
+  </div>
+  {% endfor %}
+  <button class="btn btn-primary btn-sm mt-2" type="submit">保存</button>
+</form>

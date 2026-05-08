@@ -1,42 +1,45 @@
-hero:
-  title: 你的产品名
-  subtitle: 一句话讲清楚你做什么
-  badge: 限时上线
-  cta_text: 了解更多
-  cta_url: /products
-  # 二选一: video_url 优先, 否则用 background_image
-  video_url: ""
-  background_image: ""
-
-# 突出主打产品
-featured_section:
-  title: 我们的产品
-  subtitle: 模块化设计，每一块都精心打磨
-  enabled: true
-
-# 功能亮点 (从 data/features.yaml 取前 N 个)
-features_section:
-  title: 强大功能
-  subtitle: 开箱即用的能力
-  enabled: true
-  limit: 6
-
-# 关于一句话
-about_brief:
-  title: 关于我们
-  body: 在这里写一段公司或团队的介绍。
-  cta_text: 了解更多
-  cta_url: /about
-  enabled: true
-
-# 博客最近文章
-blog_section:
-  title: 最新文章
-  enabled: true
-  limit: 3
-
-# 邮件订阅
-subscribe_section:
-  title: 保持联系
-  subtitle: 订阅以获取最新消息
-  enabled: true
+# 首页内容 - modules 数组格式
+modules:
+  - type: hero_banner
+    order: 1
+    variant: text_overlay
+    data:
+      title: 你的产品名
+      subtitle: 一句话讲清楚你做什么
+      badge: 限时上线
+      cta_text: 了解更多
+      cta_url: /products
+      background_image: ""
+      video_url: ""
+  - type: product_grid
+    order: 2
+    variant: grid_3
+    data:
+      title: 我们的产品
+      subtitle: 模块化设计，每一块都精心打磨
+      max_items: 6
+  - type: feature_grid
+    order: 3
+    variant: grid_3
+    data:
+      title: 强大功能
+      subtitle: 开箱即用的能力
+      limit: 6
+  - type: highlight_card
+    order: 4
+    variant: default
+    data:
+      title: 关于我们
+      body: 在这里写一段公司或团队的介绍。
+      cta_text: 了解更多
+      cta_url: /about
+      badge: ""
+      image: ""
+  - type: data_grid
+    order: 5
+    variant: grid_3
+    data:
+      title: 最新文章
+      dataset: posts
+      max_items: 4
+      show_view_all: true

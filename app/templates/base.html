@@ -4,78 +4,172 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ site.slug if site else '' }}{% endblock %} — mycompany.website</title>
+  <!-- Bootstrap 5.3 CDN (仅用于店主后台界面) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
-<body>
+<body class="d-flex flex-column vh-100">
 
-<header class="topbar">
-  <div class="logo">mycompany.website</div>
-
-  <button class="site-switcher" type="button" title="切换站点（M2 实现）">
-    {{ site.slug if site else '未选择站点' }}
-    <span aria-hidden="true">▾</span>
-  </button>
-
-  <a class="btn" href="{{ url_for('core.templates_gallery') }}" style="margin-left: 12px;">+ 新建站点</a>
-
-  <div class="spacer"></div>
-
-  <div class="actions">
-    <a class="btn" href="{{ url_for('core.build') }}" target="_blank">预览</a>
-    <button class="btn btn-primary" type="button">发布</button>
-    <span class="avatar" title="{{ user.email if user else '未登录' }}">
+{# ---- 顶栏 ---- #}
+<header class="bg-white border-bottom flex-shrink-0" style="height:44px">
+  <div class="d-flex align-items-center h-100 px-3 gap-3">
+    <span class="fw-bold fs-6">mycompany.website</span>
+    <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+      {{ site.slug if site else '未选择' }} <span>▾</span>
+    </button>
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('core.templates_gallery') }}">+ 新建站点</a>
+    <div class="flex-grow-1"></div>
+    <a class="btn btn-primary btn-sm" href="javascript:doPublish()">发布</a>
+    <span class="badge rounded-pill bg-primary d-flex align-items-center justify-content-center"
+          style="width:28px;height:28px;font-size:12px">
       {{ (user.email[:1].upper() if user else '?') }}
     </span>
   </div>
 </header>
 
-<aside class="sidebar">
-  <a class="nav-item {% if active == 'overview' %}active{% endif %}"
-     href="{{ url_for('core.overview') }}">概览</a>
+{# ---- 三栏工作区 ---- #}
+<div class="d-flex flex-grow-1 overflow-hidden">
+  {# 左栏：配置菜单 #}
+  <nav class="bg-white border-end flex-shrink-0 overflow-auto" style="width:220px" id="leftNav">
+    <div class="p-2 border-bottom fw-semibold small d-flex justify-content-between">
+      <span>我的网站</span>
+      <span class="text-muted fw-normal">{{ site.name or site.slug }}</span>
+    </div>
+    <div class="d-flex flex-column">
 
-  <div class="nav-section">内容</div>
-  <a class="nav-sub {% if active == 'company' %}active{% endif %}"
-     href="{{ url_for('core.company') }}">公司</a>
-  <a class="nav-sub {% if active == 'pages' %}active{% endif %}"
-     href="{{ url_for('core.pages') }}">页面</a>
-  {# 内容下方的项由模板的 datasets 决定 #}
-  {% set dataset_map = {
-    'products': ('products', '产品', url_for('core.products')),
-    'features': ('features', '功能', url_for('core.features')),
-    'posts':    ('blog',     '博客', url_for('core.blog')),
-  } %}
-  {% for ds in (template_meta.datasets if template_meta else []) %}
-    {% set entry = dataset_map.get(ds) %}
-    {% if entry %}
-    <a class="nav-sub {% if active == entry[0] %}active{% endif %}" href="{{ entry[2] }}">{{ entry[1] }}</a>
-    {% endif %}
-  {% endfor %}
+      <div class="small text-muted text-uppercase px-3 pt-2 pb-1" style="font-size:10px;letter-spacing:.05em">内容</div>
+      <a class="left-nav-item px-3 py-1 small {% if active == 'overview' %}active{% endif %}"
+         href="{{ url_for('core.overview') }}" data-panel="overview">总览</a>
+      <a class="left-nav-item px-3 py-1 small {% if active == 'pages_home' %}active{% endif %}"
+         href="{{ url_for('core.page_home') }}" data-panel="pages_home">首页</a>
 
-  <div class="nav-section">设置</div>
-  <a class="nav-sub {% if active == 'menu' %}active{% endif %}"
-     href="{{ url_for('core.menu_edit') }}">菜单</a>
-  <a class="nav-sub {% if active == 'social' %}active{% endif %}"
-     href="{{ url_for('core.social_edit') }}">社交链接</a>
-  <a class="nav-sub {% if active == 'footer' %}active{% endif %}"
-     href="{{ url_for('core.footer_edit') }}">页脚链接</a>
-  <a class="nav-sub {% if active == 'theme' %}active{% endif %}"
-     href="{{ url_for('core.theme_edit') }}">主题色</a>
+      {# 动态菜单项：来自 settings.yaml menu 配置（首页 index 已固定，跳过 home 类型） #}
+      {% for item in left_menu_items %}
+        {% if item.type != 'home' %}
+        <a class="left-nav-item px-3 py-1 small"
+           href="{{ url_for('core.page_panel', page_key=item.target or item.label) if item.type in ('list','page') else '#' }}"
+           data-panel="{{ item.type }}_{{ item.target or item.label }}">
+          {{ item.label }}
+          {% if item.type == 'list' %}
+            {% if item.target == 'products' %}<span class="badge bg-secondary ms-1">{{ counts.products }}</span>
+            {% elif item.target == 'posts' %}<span class="badge bg-secondary ms-1">{{ counts.posts }}</span>
+            {% endif %}
+          {% endif %}
+        </a>
+        {% endif %}
+      {% endfor %}
 
-  <div class="nav-section">站点</div>
-  <a class="nav-item {% if active == 'template' %}active{% endif %}" href="#">模板</a>
-  <a class="nav-item {% if active == 'domain' %}active{% endif %}" href="#">域名</a>
-  <a class="nav-item {% if active == 'account' %}active{% endif %}"
-     href="{{ url_for('core.account') }}">账户</a>
+      <div class="small text-muted text-uppercase px-3 pt-3 pb-1" style="font-size:10px;letter-spacing:.05em">设置</div>
+      <a class="left-nav-item px-3 py-1 small {% if active == 'company' %}active{% endif %}"
+         href="{{ url_for('core.company') }}" data-panel="company">公司信息</a>
+      <a class="left-nav-item px-3 py-1 small {% if active == 'menu' %}active{% endif %}"
+         href="{{ url_for('core.menu_edit') }}" data-panel="menu">菜单配置</a>
+      <a class="left-nav-item px-3 py-1 small {% if active == 'footer' %}active{% endif %}"
+         href="{{ url_for('core.footer_edit') }}" data-panel="footer">页脚链接</a>
+      <a class="left-nav-item px-3 py-1 small {% if active == 'social' %}active{% endif %}"
+         href="{{ url_for('core.social_edit') }}" data-panel="social">社交链接</a>
+      <a class="left-nav-item px-3 py-1 small {% if active == 'theme' %}active{% endif %}"
+         href="{{ url_for('core.theme_edit') }}" data-panel="theme">主题颜色</a>
+      <a class="left-nav-item px-3 py-1 small {% if active == 'account' %}active{% endif %}"
+         href="{{ url_for('core.account') }}" data-panel="account">账号管理</a>
+      <a class="left-nav-item px-3 py-1 small {% if active == 'templates' %}active{% endif %}"
+         href="{{ url_for('core.templates_gallery') }}" data-panel="templates">模板库</a>
+    </div>
+  </nav>
 
-  {% if user and user.role == 'admin' %}
-  <div class="nav-section">管理员</div>
-  <a class="nav-item" href="{{ url_for('admin.users') }}">用户管理</a>
-  {% endif %}
-</aside>
+  {# 中栏：预览 #}
+  <section class="flex-grow-1 d-flex flex-column overflow-hidden bg-light">
+    <div class="bg-white border-bottom d-flex align-items-center px-2 py-1 gap-1 flex-shrink-0">
+      <button class="btn btn-sm btn-outline-secondary active preview-device-btn" data-device="desktop"
+              onclick="switchDevice('desktop')">💻 电脑</button>
+      <button class="btn btn-sm btn-outline-secondary preview-device-btn" data-device="tablet"
+              onclick="switchDevice('tablet')">📱 平板</button>
+      <button class="btn btn-sm btn-outline-secondary preview-device-btn" data-device="mobile"
+              onclick="switchDevice('mobile')">📱 手机</button>
+      <div class="flex-grow-1"></div>
+      <button class="btn btn-sm btn-outline-secondary" onclick="refreshPreview()">刷新预览</button>
+    </div>
+    <div class="flex-grow-1 overflow-auto d-flex justify-content-center p-3" style="background:#e8eaed">
+      <iframe class="border-0 bg-white shadow rounded preview-frame desktop" id="previewFrame"
+              src="{{ url_for('core.preview_site', site_id=site.id) if site else 'about:blank' }}"
+              data-preview-url="{{ url_for('core.preview_site', site_id=site.id) if site else 'about:blank' }}">
+      </iframe>
+    </div>
+  </section>
 
-<main class="main">
-  {% block content %}{% endblock %}
-</main>
+  {# 右栏：属性面板 #}
+  <aside class="bg-white border-start flex-shrink-0 d-flex flex-column" style="width:380px; overflow:hidden" id="rightPanel">
+    <div class="d-flex align-items-center justify-content-between p-2 border-bottom flex-shrink-0">
+      <span class="fw-semibold small" id="rightPanelTitle">属性</span>
+      <button class="btn-close btn-sm" onclick="document.getElementById('rightPanel').classList.toggle('d-none')"></button>
+    </div>
+    <div class="flex-grow-1 overflow-auto p-3" id="rightPanelBody">
+      <div class="p-3 text-muted text-center" style="padding-top:4rem">
+        <p>← 在左侧选择一项开始编辑</p>
+      </div>
+    </div>
+  </aside>
+</div>
 
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"></script>
+<script>
+function switchDevice(device) {
+  document.querySelectorAll('.preview-device-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-device="${device}"]`).classList.add('active');
+  const frame = document.getElementById('previewFrame');
+  frame.classList.remove('desktop','tablet','mobile');
+  frame.classList.add(device);
+}
+
+function refreshPreview() {
+  const f = document.getElementById('previewFrame');
+  const previewUrl = f.dataset.previewUrl || f.src;
+  f.src = previewUrl + (previewUrl.includes('?') ? '&' : '?') + '_=' + Date.now();
+}
+
+function loadPanel(url) {
+  const body = document.getElementById('rightPanelBody');
+  body.innerHTML = '<div class="p-3 text-muted text-center py-5"><div class="spinner-border spinner-border-sm me-2"></div>加载中...</div>';
+  fetch(url)
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    })
+    .then(html => { body.innerHTML = html; })
+    .catch(() => { body.innerHTML = '<div class="p-3 text-danger">加载失败（请确认页面存在）</div>'; });
+}
+
+// 拦截左栏所有链接点击 → AJAX 加载右侧面板
+document.getElementById('leftNav').addEventListener('click', function(e) {
+  const link = e.target.closest('a.left-nav-item');
+  if (!link) return;
+
+  e.preventDefault();
+
+  // 标记 active
+  document.querySelectorAll('.left-nav-item').forEach(el => el.classList.remove('active'));
+  link.classList.add('active');
+
+  const href = link.getAttribute('href');
+  if (href && href !== '#') {
+    loadPanel(href + '?_fragment=1');
+  }
+});
+
+function doPublish() {
+  if (confirm('确认发布站点？')) {
+    fetch('{{ url_for("core.build") }}?_fragment=1', {method:'POST'})
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) { alert('发布完成'); refreshPreview(); }
+        else alert('发布失败');
+      });
+  }
+}
+</script>
+
+{% block scripts %}{% endblock %}
 </body>
 </html>

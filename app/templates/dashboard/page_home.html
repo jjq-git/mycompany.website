@@ -1,106 +1,176 @@
-{% extends "base.html" %}
-{% block title %}首页编辑{% endblock %}
+{# 首页模块编辑器 — 右侧面板内容 #}
+{% if is_modules_format %}
 
-{% block content %}
-<a class="muted" href="{{ url_for('core.pages') }}">← 全部页面</a>
-<h1 class="page-title" style="margin-top: 12px;">首页</h1>
-<p class="page-subtitle">编辑各区块的内容和开关</p>
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <span class="fw-semibold">首页模块</span>
+  <button class="btn btn-sm btn-outline-secondary" onclick="refreshPreview()">刷新预览</button>
+</div>
 
 {% with messages = get_flashed_messages() %}
   {% for m in messages %}
-    <div class="card" style="max-width: 720px; background: #ecfdf5; border-color: #a7f3d0; color: #065f46;">{{ m }}</div>
+    <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('core.page_home') }}">
-
-<div class="card" style="max-width: 720px;">
-  <div class="card-title">Hero（首屏）</div>
-  <div class="form-row">
-    <label>主标题</label>
-    <input type="text" name="hero.title" value="{{ page.hero.title or '' }}">
-  </div>
-  <div class="form-row">
-    <label>副标题</label>
-    <input type="text" name="hero.subtitle" value="{{ page.hero.subtitle or '' }}">
-  </div>
-  <div class="form-row">
-    <label>徽章（可选，例如 "限时上线"）</label>
-    <input type="text" name="hero.badge" value="{{ page.hero.badge or '' }}">
-  </div>
-  <div class="form-row">
-    <label>按钮文字</label>
-    <input type="text" name="hero.cta_text" value="{{ page.hero.cta_text or '' }}">
-  </div>
-  <div class="form-row">
-    <label>按钮链接</label>
-    <input type="text" name="hero.cta_url" value="{{ page.hero.cta_url or '' }}" placeholder="/products">
-  </div>
-  <div class="form-row">
-    <label>背景视频 URL（优先）</label>
-    <input type="text" name="hero.video_url" value="{{ page.hero.video_url or '' }}" placeholder="/assets/hero.mp4">
-  </div>
-  <div class="form-row">
-    <label>背景图 URL（视频留空时使用）</label>
-    <input type="text" name="hero.background_image" value="{{ page.hero.background_image or '' }}" placeholder="/assets/hero.jpg">
-  </div>
-</div>
-
-{% set sections = [
-  ('featured_section', '产品矩阵'),
-  ('features_section', '功能亮点'),
-  ('about_brief', '关于一句话'),
-  ('blog_section', '博客最新'),
-  ('subscribe_section', '邮件订阅'),
-] %}
-
-{% for key, label in sections %}
-{% set sec = page[key] or {} %}
-<div class="card" style="max-width: 720px;">
-  <div class="card-title" style="display: flex; align-items: center; justify-content: space-between;">
-    <span>{{ label }}</span>
-    <label style="font-weight: normal; font-size: 13px;">
-      <input type="checkbox" name="{{ key }}.enabled" {% if sec.enabled %}checked{% endif %}>
-      启用
-    </label>
-  </div>
-  <div class="form-row">
-    <label>标题</label>
-    <input type="text" name="{{ key }}.title" value="{{ sec.title or '' }}">
-  </div>
-  {% if 'subtitle' in sec or key in ('featured_section', 'features_section', 'subscribe_section') %}
-  <div class="form-row">
-    <label>副标题 / 一句话</label>
-    <input type="text" name="{{ key }}.subtitle" value="{{ sec.subtitle or '' }}">
-  </div>
-  {% endif %}
-  {% if key == 'about_brief' %}
-  <div class="form-row">
-    <label>正文</label>
-    <textarea name="about_brief.body">{{ sec.body or '' }}</textarea>
-  </div>
-  <div class="form-row">
-    <label>按钮文字 / 链接</label>
-    <div style="display: flex; gap: 8px;">
-      <input type="text" name="about_brief.cta_text" value="{{ sec.cta_text or '' }}" placeholder="了解更多">
-      <input type="text" name="about_brief.cta_url" value="{{ sec.cta_url or '' }}" placeholder="/about">
+{# ---- 可用模块库 ---- #}
+<div class="mb-3">
+  <div class="small text-muted mb-2">可用模块（点击添加）</div>
+  <div class="row g-2">
+    {% for blk in blocks %}
+    <div class="col-6">
+      <div class="card p-2 cursor-pointer block-card" style="cursor:pointer"
+           onclick="addModule('{{ blk.name }}', '{{ blk.variants[0].key if blk.variants else 'default' }}')">
+        <div class="d-flex align-items-center gap-2">
+          <span class="fw-semibold small">{{ blk.display_name }}</span>
+        </div>
+        <div class="text-muted" style="font-size:10px">{{ blk.description }}</div>
+      </div>
     </div>
-  </div>
-  {% endif %}
-  {% if key in ('features_section', 'blog_section') %}
-  <div class="form-row">
-    <label>显示数量</label>
-    <input type="number" name="{{ key }}.limit" value="{{ sec.limit or 6 }}" min="1" max="20" style="width: 100px;">
-  </div>
-  {% endif %}
-</div>
-{% endfor %}
-
-<div style="max-width: 720px;">
-  <div class="form-actions">
-    <button class="btn btn-primary" type="submit">保存</button>
+    {% endfor %}
   </div>
 </div>
 
+{# ---- 已选模块列表 ---- #}
+<div>
+  <div class="small text-muted mb-2">已选模块（拖拽排序 | 点击配置）</div>
+  <form method="post" action="{{ url_for('core.page_home') }}?_fragment=1" id="modulesForm">
+    <input type="hidden" name="_format" value="modules">
+    <input type="hidden" name="module_count" id="moduleCount" value="{{ page.modules | length }}">
+
+    <div id="selectedModules">
+      {% for module in page.modules %}
+      {% set i = loop.index0 %}
+      <div class="card mb-2 module-item" data-index="{{ i }}" style="cursor:move">
+        <div class="d-flex align-items-center justify-content-between p-2 module-header"
+             onclick="this.closest('.module-item').classList.toggle('expanded')">
+          <span class="small fw-semibold">{{ module.type | replace('_', ' ') | title }}</span>
+          <div class="d-flex gap-1">
+            <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:10px"
+                    onclick="event.stopPropagation(); removeModule({{ i }})">✕</button>
+          </div>
+        </div>
+        <input type="hidden" name="module_{{ i }}_type" value="{{ module.type }}">
+        <input type="hidden" name="module_{{ i }}_order" value="{{ module.order | default(i + 1) }}">
+        <input type="hidden" name="module_{{ i }}_variant" value="{{ module.variant | default('default') }}">
+
+        <div class="module-config p-2 border-top" style="display:none">
+          {% set mdata = module.data or {} %}
+          {% if mdata is mapping %}
+            {% for key, val in mdata.items() %}
+            <div class="mb-2">
+              <label class="form-label small mb-1 text-muted">{{ key }}</label>
+              {% if val is mapping or (val is iterable and val is not string) %}
+              <textarea class="form-control form-control-sm" rows="4"
+                        name="module_{{ i }}_data_{{ key }}">{{ val }}</textarea>
+              {% else %}
+              <input type="text" class="form-control form-control-sm"
+                     name="module_{{ i }}_data_{{ key }}" value="{{ val }}">
+              {% endif %}
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="mt-2 d-flex gap-2">
+      <button type="submit" class="btn btn-primary btn-sm">保存模块配置</button>
+    </div>
+  </form>
+</div>
+
+<script>
+// 展开第一个模块
+(function(){
+  var items = document.querySelectorAll('.module-item');
+  if (items.length) items[0].classList.add('expanded');
+  items.forEach(function(item){
+    var cfg = item.querySelector('.module-config');
+    if (item.classList.contains('expanded') && cfg) cfg.style.display = 'block';
+    item.querySelector('.module-header').addEventListener('click', function(){
+      if (cfg) cfg.style.display = item.classList.contains('expanded') ? 'block' : 'none';
+    });
+    if (cfg && item.classList.contains('expanded')) cfg.style.display = 'block';
+  });
+})();
+
+function addModule(type, variant) {
+  var count = document.getElementById('moduleCount');
+  var idx = parseInt(count.value);
+  count.value = idx + 1;
+
+  var container = document.getElementById('selectedModules');
+  var div = document.createElement('div');
+  div.className = 'card mb-2 module-item expanded';
+  div.innerHTML =
+    '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="cursor:pointer">' +
+      '<span class="small fw-semibold">' + type.replace(/_/g, ' ') + '</span>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:10px" onclick="event.stopPropagation(); this.closest(\'.module-item\').remove()">✕</button>' +
+    '</div>' +
+    '<input type="hidden" name="module_' + idx + '_type" value="' + type + '">' +
+    '<input type="hidden" name="module_' + idx + '_order" value="' + (idx + 1) + '">' +
+    '<input type="hidden" name="module_' + idx + '_variant" value="' + variant + '">' +
+    '<div class="module-config p-2 border-top" style="display:block">' +
+      '<div class="text-muted small">模块已添加，填写字段后保存</div>' +
+    '</div>';
+  container.appendChild(div);
+
+  // toggle config
+  div.querySelector('.module-header').addEventListener('click', function(){
+    var cfg = div.querySelector('.module-config');
+    div.classList.toggle('expanded');
+    cfg.style.display = div.classList.contains('expanded') ? 'block' : 'none';
+  });
+}
+
+function removeModule(idx) {
+  // find and remove item
+  var items = document.querySelectorAll('.module-item');
+  items.forEach(function(item, i){
+    if (i === idx) item.remove();
+  });
+  // re-index
+  reindexModules();
+}
+
+function reindexModules() {
+  var items = document.querySelectorAll('.module-item');
+  document.getElementById('moduleCount').value = items.length;
+  items.forEach(function(item, i){
+    item.querySelectorAll('input[type="hidden"]').forEach(function(inp){
+      var name = inp.getAttribute('name');
+      if (name) inp.setAttribute('name', name.replace(/module_\d+_/, 'module_' + i + '_'));
+    });
+  });
+}
+
+// form submission via AJAX
+document.getElementById('modulesForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  var formData = new FormData(this);
+  fetch(this.action, {method:'POST', body: formData})
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('rightPanelBody').innerHTML = html;
+      refreshPreview();
+    });
+});
+</script>
+
+<style>
+.block-card:hover { border-color: #0d6efd; background: #f0f7ff; }
+.module-item.expanded .module-config { display: block !important; }
+</style>
+
+{% else %}
+{# 旧格式兼容 #}
+<div class="small text-muted mb-3">此模板使用旧格式，建议升级到模块库模式</div>
+<form method="post" action="{{ url_for('core.page_home') }}?_fragment=1">
+  <div class="mb-2"><label class="form-label small">主标题</label>
+    <input class="form-control form-control-sm" name="hero.title" value="{{ page.hero.title or '' }}"></div>
+  <div class="mb-2"><label class="form-label small">副标题</label>
+    <input class="form-control form-control-sm" name="hero.subtitle" value="{{ page.hero.subtitle or '' }}"></div>
+  <button class="btn btn-primary btn-sm" type="submit">保存</button>
 </form>
-{% endblock %}
+{% endif %}
