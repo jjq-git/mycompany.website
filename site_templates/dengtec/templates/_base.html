@@ -11,6 +11,42 @@
 <body>
 <div class="site-wrapper">
 
+{% macro menu_href(item) -%}
+  {%- set href = item['url'] | default('#') -%}
+  {%- if href.startswith('http://') or href.startswith('https://') or href.startswith('#') -%}
+    {{- href -}}
+  {%- elif href == '/' -%}
+    {{- base_url }}/{{ lang }}/
+  {%- else -%}
+    {{- base_url }}/{{ lang }}{{ href }}{%- if '?' not in href and '#' not in href and not href.endswith('/') -%}/{%- endif -%}
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro render_menu_item(item, level=0) -%}
+  {%- set children = item['children'] | default([]) -%}
+  {%- set dropdown_style = item['dropdown_style'] | default('vertical') -%}
+  {%- set href = menu_href(item) -%}
+  {%- if children -%}
+    <div class="nav-dropdown{% if level > 0 %} nav-dropdown-nested{% endif %}">
+      <button class="{% if level == 0 %}nav-link{% else %}nav-dropdown-item{% endif %} nav-dropdown-toggle"
+              type="button" onclick="toggleMenuDropdown(event, this)" aria-expanded="false">
+        {{ item['label'] }} <span class="dropdown-chevron">▼</span>
+      </button>
+      <div class="nav-dropdown-menu nav-dropdown-menu--{{ dropdown_style }}">
+        {%- for child in children -%}
+          {{ render_menu_item(child, level + 1) }}
+        {%- endfor -%}
+      </div>
+    </div>
+  {%- else -%}
+    <a href="{{ href }}"
+       class="{% if level == 0 %}nav-link{% else %}nav-dropdown-item{% endif %}"
+       {% if href.startswith('http://') or href.startswith('https://') %}target="_blank" rel="noopener"{% endif %}>
+      {{ item['label'] }}
+    </a>
+  {%- endif -%}
+{%- endmacro %}
+
 <header class="site-header" id="siteHeader">
   <div class="header-main">
     <div class="container">
@@ -23,24 +59,9 @@
       </a>
 
       <nav class="header-nav" id="headerNav">
-        <a href="{{ base_url }}/{{ lang }}/" class="nav-link">{{ t.nav.home }}</a>
-
-        {# Products Dropdown #}
-        <div class="nav-dropdown" id="productsDropdown">
-          <button class="nav-link nav-dropdown-toggle" onclick="toggleProductsDropdown(event)">
-            {{ t.nav.products }}
-          </button>
-          <div class="nav-dropdown-menu" id="productsDropdownMenu">
-            <a href="{{ base_url }}/{{ lang }}/products/silent-booth/" class="nav-dropdown-item">{{ t.nav.silentBooth | default('静音仓') }}</a>
-            <a href="{{ base_url }}/{{ lang }}/products/props-display/" class="nav-dropdown-item">{{ t.nav.propsDisplay | default('产品展示') }}</a>
-            <a href="{{ base_url }}/{{ lang }}/products/dry-ice-machine/" class="nav-dropdown-item">{{ t.nav.dryIceMachine | default('干冰机') }}</a>
-          </div>
-        </div>
-
-        <a href="{{ base_url }}/{{ lang }}/portfolio/" class="nav-link">{{ t.nav.portfolio }}</a>
-        <a href="{{ base_url }}/{{ lang }}/blog/" class="nav-link">{{ t.nav.blog }}</a>
-        <a href="https://rimu.me/" target="_blank" rel="noopener" class="nav-link">{{ t.nav.rimu | default('日目') }}</a>
-        <a href="#" class="nav-link" onclick="alert('{{ t.nav.posmOnlineAlert | default('在线设计功能开发中，敬请期待！') }}'); return false;">{{ t.nav.posm | default('在线设计') }}</a>
+        {% for item in settings.menu %}
+          {{ render_menu_item(item) }}
+        {% endfor %}
       </nav>
 
       <div class="header-actions">
@@ -98,14 +119,19 @@ function toggleMobileMenu() {
   toggle.classList.toggle('active');
 }
 
-// --- Products dropdown ---
-function toggleProductsDropdown(e) {
+// --- Navigation dropdowns ---
+function toggleMenuDropdown(e, button) {
   e.stopPropagation();
-  var menu = document.getElementById('productsDropdownMenu');
-  if (!menu) return;
-  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-  var chevron = document.querySelector('.nav-dropdown-toggle .dropdown-chevron');
-  if (chevron) chevron.classList.toggle('rotate-180');
+  var dropdown = button.closest('.nav-dropdown');
+  if (!dropdown) return;
+  var isOpen = dropdown.classList.contains('open');
+  if (!dropdown.classList.contains('nav-dropdown-nested')) {
+    document.querySelectorAll('.header-nav > .nav-dropdown.open').forEach(function(openDropdown) {
+      if (openDropdown !== dropdown) openDropdown.classList.remove('open');
+    });
+  }
+  dropdown.classList.toggle('open', !isOpen);
+  button.setAttribute('aria-expanded', String(!isOpen));
 }
 
 // --- Language dropdown ---
@@ -122,7 +148,11 @@ function toggleLangDropdown(e) {
   var path = window.location.pathname;
 
   // 剥离预览前缀、语言前缀和尾部斜杠
-  var cleaned = path.replace(/\/templates\/[^/]+\/preview/, '').replace(/^\/(zh-CN|zh-TW|en)/, '').replace(/\/$/, '') || '/';
+  var cleaned = path
+    .replace(/\/templates\/[^/]+\/preview/, '')
+    .replace(/\/preview\/\d+/, '')
+    .replace(/^\/(zh-CN|zh-TW|en)/, '')
+    .replace(/\/$/, '') || '/';
 
   // 首页: cleaned 是 / 或空
   if (cleaned === '/' || cleaned === '') {
@@ -135,27 +165,21 @@ function toggleLangDropdown(e) {
   // 先清除所有
   document.querySelectorAll('.header-nav .nav-link').forEach(function(l) { l.classList.remove('active'); });
 
-  // 产品子页面
-  if (cleaned.indexOf('/products/') > -1) {
-    var dropdownToggle = document.querySelector('.nav-dropdown-toggle');
-    if (dropdownToggle) dropdownToggle.classList.add('active');
-    document.querySelectorAll('.nav-dropdown-item').forEach(function(item) {
-      var href = item.getAttribute('href') || '';
-      if (href.indexOf(cleaned.replace(/\/$/, '')) > -1) {
-        item.classList.add('active');
-      }
-    });
-    return;
-  }
-
-  // portfolio / blog
-  var pageLast = cleaned.split('/').pop();
-  document.querySelectorAll('.header-nav .nav-link:not(.nav-dropdown-toggle)').forEach(function(link) {
+  document.querySelectorAll('.header-nav a.nav-link, .header-nav a.nav-dropdown-item').forEach(function(link) {
     var href = link.getAttribute('href') || '';
-    if (href === 'https://rimu.me/' || href === '#') return;
-    var linkLast = href.replace(/\/$/, '').split('/').pop();
-    if (linkLast && pageLast === linkLast) {
+    if (href.indexOf('http') === 0 || href === '#') return;
+    var normalized = href
+      .replace(/\/templates\/[^/]+\/preview/, '')
+      .replace(/\/preview\/\d+/, '')
+      .replace(/^\/(zh-CN|zh-TW|en)/, '')
+      .replace(/\/$/, '') || '/';
+    if (normalized === cleaned || (normalized !== '/' && cleaned.indexOf(normalized + '/') === 0)) {
       link.classList.add('active');
+      var dropdown = link.closest('.nav-dropdown');
+      if (dropdown) {
+        var toggle = dropdown.querySelector(':scope > .nav-dropdown-toggle');
+        if (toggle) toggle.classList.add('active');
+      }
     }
   });
 })();
@@ -163,17 +187,13 @@ function toggleLangDropdown(e) {
 // Close dropdowns on outside click
 document.addEventListener('click', function(e) {
   var langMenu = document.getElementById('langDropdownMenu');
-  var productsMenu = document.getElementById('productsDropdownMenu');
   var langSwitcher = document.getElementById('langSwitcher');
-  var productsDropdown = document.getElementById('productsDropdown');
   if (langMenu && !langSwitcher.contains(e.target)) {
     langMenu.style.display = 'none';
   }
-  if (productsMenu && !productsDropdown.contains(e.target)) {
-    productsMenu.style.display = 'none';
-    var chevron = document.querySelector('.nav-dropdown-toggle .dropdown-chevron');
-    if (chevron) chevron.classList.remove('rotate-180');
-  }
+  document.querySelectorAll('.header-nav .nav-dropdown.open').forEach(function(dropdown) {
+    if (!dropdown.contains(e.target)) dropdown.classList.remove('open');
+  });
 });
 </script>
 

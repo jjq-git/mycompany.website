@@ -19,6 +19,9 @@
     </button>
     <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('core.templates_gallery') }}">+ 新建站点</a>
     <div class="flex-grow-1"></div>
+    {% if site %}
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('core.export_zip') }}">导出 ZIP</a>
+    {% endif %}
     <a class="btn btn-primary btn-sm" href="javascript:doPublish()">发布</a>
     <span class="badge rounded-pill bg-primary d-flex align-items-center justify-content-center"
           style="width:28px;height:28px;font-size:12px">

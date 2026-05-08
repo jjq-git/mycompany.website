@@ -64,6 +64,17 @@ def normalize_for_render(items):
     return result
 
 
+def ensure_home(items):
+    """确保首页固定为第一项. 返回新 list, 不改原数据."""
+    normalized = list(items or [])
+    home_items = [it for it in normalized if it.get('type') == 'home']
+    other_items = [it for it in normalized if it.get('type') != 'home']
+    home = dict(home_items[0]) if home_items else {'label': '首页', 'type': 'home'}
+    home['type'] = 'home'
+    home['url'] = '/'
+    return [home] + other_items
+
+
 def upgrade_old_format(items, datasets):
     """把旧菜单 [{label, url}] 升级到新格式. 返回新 list.
 

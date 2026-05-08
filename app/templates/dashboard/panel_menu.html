@@ -32,6 +32,16 @@
              {% if item.type not in ('list','page') %}style="display:none"{% endif %}>
       <input class="form-control form-control-sm mb-1 menu-url" name="url_link[]" value="{{ item.url or '' }}" placeholder="URL（link 类型必填）"
              {% if item.type != 'link' %}style="display:none"{% endif %}>
+      <input type="hidden" name="children_json[]" value="{{ (item.children or []) | tojson | e }}">
+      <select class="form-select form-select-sm mb-1" name="dropdown_style[]" {% if not item.children %}style="display:none"{% endif %}>
+        <option value="vertical" {% if item.dropdown_style|default('vertical') == 'vertical' %}selected{% endif %}>子菜单：垂直列表</option>
+        <option value="horizontal" {% if item.dropdown_style == 'horizontal' %}selected{% endif %}>子菜单：水平平铺</option>
+        <option value="grid" {% if item.dropdown_style == 'grid' %}selected{% endif %}>子菜单：网格排列</option>
+        <option value="cards" {% if item.dropdown_style == 'cards' %}selected{% endif %}>子菜单：图文卡片</option>
+      </select>
+      {% if item.children %}
+      <div class="small text-muted">含 {{ item.children|length }} 个子菜单（当前版本保留结构，编辑子项稍后开放）</div>
+      {% endif %}
     </div>
     {% endfor %}
   </div>
@@ -66,7 +76,12 @@ function addMenuItem(){
     '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMenuItem(this)">✕</button>' +
     '</div>' +
     '<input class="form-control form-control-sm mb-1 menu-target" name="target_list[]" placeholder="数据集名或页面key">' +
-    '<input class="form-control form-control-sm mb-1 menu-url" name="url_link[]" placeholder="URL（link 类型必填）" style="display:none">';
+    '<input class="form-control form-control-sm mb-1 menu-url" name="url_link[]" placeholder="URL（link 类型必填）" style="display:none">' +
+    '<input type="hidden" name="children_json[]" value="[]">' +
+    '<select class="form-select form-select-sm mb-1" name="dropdown_style[]" style="display:none">' +
+      '<option value="vertical">子菜单：垂直列表</option><option value="horizontal">子菜单：水平平铺</option>' +
+      '<option value="grid">子菜单：网格排列</option><option value="cards">子菜单：图文卡片</option>' +
+    '</select>';
   document.getElementById('menuItems').appendChild(d);
 }
 </script>

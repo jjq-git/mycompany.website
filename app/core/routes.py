@@ -44,8 +44,10 @@ def inject_context():
 
         raw_menu = settings.get('menu') or ctx['template_meta'].get('default_menu', [])
         datasets_meta = ctx['template_meta'].get('datasets', [])
-        normalized = menu_lib.normalize_for_render(
-            menu_lib.upgrade_old_format(raw_menu, datasets_meta)
+        normalized = menu_lib.ensure_home(
+            menu_lib.normalize_for_render(
+                menu_lib.upgrade_old_format(raw_menu, datasets_meta)
+            )
         )
         ctx['left_menu_items'] = normalized
 
@@ -320,6 +322,8 @@ def page_home():
                         pass
         write_yaml(site.id, 'pages/home.yaml', page)
         flash('已保存')
+        if request.args.get('_fragment'):
+            return redirect(url_for('core.page_home', _fragment='1'))
         return redirect(url_for('core.page_home'))
 
     # 准备渲染上下文
@@ -392,6 +396,8 @@ def menu_edit():
         types = request.form.getlist('type[]')
         targets_list = request.form.getlist('target_list[]')
         urls_link = request.form.getlist('url_link[]')
+        dropdown_styles = request.form.getlist('dropdown_style[]')
+        children_values = request.form.getlist('children_json[]')
         items = [{'label': '首页', 'type': 'home'}]
         for i, label in enumerate(labels):
             label = label.strip()
@@ -410,6 +416,17 @@ def menu_edit():
                 url = urls_link[i].strip() if i < len(urls_link) else ''
                 if url:
                     it['url'] = url
+            dropdown_style = dropdown_styles[i].strip() if i < len(dropdown_styles) else ''
+            if dropdown_style:
+                it['dropdown_style'] = dropdown_style
+            children_raw = children_values[i].strip() if i < len(children_values) else ''
+            if children_raw:
+                try:
+                    children = _yaml.safe_load(children_raw) or []
+                except _yaml.YAMLError:
+                    children = []
+                if isinstance(children, list):
+                    it['children'] = children
             items.append(it)
         settings['menu'] = items
         write_yaml(site.id, 'settings.yaml', settings)
@@ -422,10 +439,9 @@ def menu_edit():
     meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
     meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
     raw_menu = settings.get('menu') or meta.get('default_menu', [])
-    items = menu_lib.upgrade_old_format(raw_menu, meta.get('datasets', []))
-    home_items = [it for it in items if it.get('type') == 'home']
-    other_items = [it for it in items if it.get('type') != 'home']
-    items = (home_items[:1] or [{'label': '首页', 'type': 'home'}]) + other_items
+    items = menu_lib.ensure_home(
+        menu_lib.upgrade_old_format(raw_menu, meta.get('datasets', []))
+    )
 
     if is_fragment:
         return render_template('dashboard/panel_menu.html',
@@ -590,13 +606,51 @@ def site_new():
                            active='templates')
 
 
-@bp.route('/build')
+@bp.route('/build', methods=['GET', 'POST'])
 def build():
     """触发构建当前站点, 跳到预览首页."""
+    from flask import jsonify, request
     _, site = _current_context()
-    build_site(site.id, base_url=f'/preview/{site.id}')
+    try:
+        build_site(site.id, base_url=f'/preview/{site.id}')
+    except Exception as exc:
+        current_app.logger.exception('站点 %s 构建失败', site.id)
+        if request.method == 'POST' or request.args.get('_fragment'):
+            return jsonify({'ok': False, 'error': str(exc)}), 500
+        abort(500, f'构建失败: {exc}')
+
+    if request.method == 'POST' or request.args.get('_fragment'):
+        return jsonify({'ok': True, 'preview_url': f'/preview_site/{site.id}'})
+
     from flask import redirect, url_for
     return redirect(url_for('core.preview_site', site_id=site.id))
+
+
+@bp.route('/export.zip')
+def export_zip():
+    """导出当前站点的静态文件 ZIP."""
+    from io import BytesIO
+    from zipfile import ZIP_DEFLATED, ZipFile
+
+    from flask import send_file
+
+    _, site = _current_context()
+    output_root = build_site(site.id, base_url='')
+
+    buffer = BytesIO()
+    with ZipFile(buffer, 'w', ZIP_DEFLATED) as zf:
+        for path in output_root.rglob('*'):
+            if path.is_file():
+                zf.write(path, path.relative_to(output_root).as_posix())
+    buffer.seek(0)
+
+    filename = f'{site.slug or "site"}-static.zip'
+    return send_file(
+        buffer,
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name=filename,
+    )
 
 
 def _default_lang_code(site):

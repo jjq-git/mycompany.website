@@ -144,8 +144,10 @@ def build_site(site_id, base_url=''):
         )
     if 'menu' not in settings or not settings.get('menu'):
         settings['menu'] = meta.get('default_menu', [])
-    settings['menu'] = menu_lib.normalize_for_render(
-        menu_lib.upgrade_old_format(settings['menu'], meta.get('datasets', []))
+    settings['menu'] = menu_lib.ensure_home(
+        menu_lib.normalize_for_render(
+            menu_lib.upgrade_old_format(settings['menu'], meta.get('datasets', []))
+        )
     )
     theme_default = meta.get('default_theme', {})
     theme = {**theme_default, **(settings.get('theme') or {})}
@@ -258,8 +260,10 @@ def build_template_preview(template_name, base_url=''):
 
     if not settings.get('menu'):
         settings['menu'] = meta.get('default_menu', [])
-    settings['menu'] = menu_lib.normalize_for_render(
-        menu_lib.upgrade_old_format(settings['menu'], meta.get('datasets', []))
+    settings['menu'] = menu_lib.ensure_home(
+        menu_lib.normalize_for_render(
+            menu_lib.upgrade_old_format(settings['menu'], meta.get('datasets', []))
+        )
     )
     theme = {**meta.get('default_theme', {}), **(settings.get('theme') or {})}
 
