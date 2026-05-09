@@ -1,0 +1,42 @@
+{# 网站底部变体选择面板 #}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <span class="fw-semibold">网站底部</span>
+  <span class="small text-muted">模板: {{ site.template_name }}</span>
+</div>
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}
+    <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+
+<form method="post" action="{{ url_for('core.footer_variant_edit', _fragment='1') }}">
+  {# Footer 变体选择 #}
+  <div class="mb-3">
+    <label class="form-label small mb-1 fw-semibold">底部布局</label>
+    <div class="d-flex flex-column gap-2">
+      {% for variant in footer_variants %}
+      <label class="d-flex align-items-center p-2 border rounded variant-option"
+             style="cursor:pointer; {% if current_footer.get('variant', footer_variants[0].key) == variant.key %}border-color:#0d6efd;background:#e8f0fe;{% endif %}">
+        <input type="radio" name="footer_variant" value="{{ variant.key }}"
+               {% if current_footer.get('variant', footer_variants[0].key) == variant.key %}checked{% endif %}
+               class="me-2" onchange="this.closest('form').querySelectorAll('.variant-option').forEach(l=>{l.style.borderColor='';l.style.background=''});this.closest('.variant-option').style.borderColor='#0d6efd';this.closest('.variant-option').style.background='#e8f0fe';">
+        <div>
+          <div class="small fw-semibold">{{ variant.label }}</div>
+          <div class="text-muted" style="font-size:10px">{{ variant.description }}</div>
+        </div>
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <hr>
+
+  {# 备案号 #}
+  <div class="mb-2">
+    <label class="form-label small mb-1 text-muted">备案号</label>
+    <input class="form-control form-control-sm" name="icp"
+           value="{{ current_footer.get('icp', '') }}" placeholder="如: 苏ICP备xxx号">
+  </div>
+
+  <button class="btn btn-primary btn-sm mt-2" type="submit">保存</button>
+</form>

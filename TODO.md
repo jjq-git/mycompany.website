@@ -37,18 +37,18 @@
 
 ### Header / Footer
 
-- [ ] Header/Footer 模块库变体选择 UI
-- [ ] 语言切换按钮
+- [x] Header/Footer 模块库变体选择 UI（`/settings/header`、`/settings/footer_variant`）
+- [x] 语言切换按钮（in 网站头部面板，三种样式可选）
 
 ### 预览面板
 
 - [x] 三种设备模式切换
-- [ ] 模块按设备独立配置（responsive 字段编辑 UI）
+- [x] 模块按设备独立配置（responsive 字段编辑 UI，每个模块支持电脑/平板/手机三端独立设置 columns/max_items/隐藏）
 
 ### 后台功能
 
-- [ ] 登录系统（邮箱魔法链接）
-- [ ] 图片上传 + WebP
+- [x] 登录系统（邮箱魔法链接，MVP：开发环境页面显示链接；生产邮件发送待接入）
+- [x] 图片上传 + WebP（产品/文章封面、模块图片字段上传到 `sites/<id>/assets/uploads/` 并自动转换）
 - [ ] 字体子集化
 - [x] 整站导出 ZIP（MVP：构建 output 后打包下载）
 - [ ] 发布 CDN + SSL
@@ -68,6 +68,6 @@
 |--------|------|------|
 | P0 | 核心流程闭环 + 三栏布局 + 模块编辑器 | ✅ 已完成 |
 | P1 | tech-product 模板重构 | ⏸️ 暂缓 |
-| P2 | Header/Footer 模块库 + 设备独立配置 UI | ❌ |
-| P3 | 登录系统 + 图片上传 + 字体子集化 | ❌ |
+| P2 | Header/Footer 模块库 + 设备独立配置 UI | ✅ 已完成 |
+| P3 | 登录系统 + 图片上传 + 字体子集化 | 🚧 登录系统与图片上传已完成，字体子集化待做 |
 | P4 | 发布 CDN + SSL + 导出 ZIP | ❌ |

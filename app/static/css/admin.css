@@ -47,3 +47,40 @@
   color: #6b7280;
   padding: 3rem 1rem;
 }
+
+/* 菜单树编辑器 */
+.menu-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.menu-tree-children {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 14px;
+  border-left: 2px solid #e5e7eb;
+}
+.menu-tree-card {
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+}
+.menu-tree-row[data-depth="0"] > .menu-tree-card {
+  background: #f8fafc;
+}
+.menu-tree-row .menu-type {
+  max-width: 76px;
+}
+.menu-tree-row .menu-label {
+  min-width: 0;
+}
+.menu-tree-row .move-up,
+.menu-tree-row .move-down,
+.menu-tree-row .delete-item {
+  width: 30px;
+  flex: 0 0 30px;
+  padding-left: 0;
+  padding-right: 0;
+}

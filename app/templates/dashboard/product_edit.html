@@ -12,7 +12,7 @@
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('core.product_edit', product_id=product.id) }}">
+<form method="post" action="{{ url_for('core.product_edit', product_id=product.id) }}" enctype="multipart/form-data">
 <div class="card" style="max-width: 720px;">
   <div class="form-row">
     <label>名称</label>
@@ -29,6 +29,11 @@
   <div class="form-row">
     <label>封面图 URL</label>
     <input type="text" name="cover" value="{{ product.cover or '' }}" placeholder="/assets/host.png">
+    <div style="margin-top: 8px;">
+      <input type="file" name="cover_file" accept="image/*">
+      <div class="muted" style="font-size: 12px; margin-top: 4px;">上传后自动转换为 WebP，并覆盖上方 URL。</div>
+      {% if product.cover %}<img src="{{ product.cover }}" alt="封面预览" style="margin-top:8px;max-width:180px;border-radius:8px;">{% endif %}
+    </div>
   </div>
   <div class="form-row">
     <label>一句话简介</label>

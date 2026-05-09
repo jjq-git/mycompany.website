@@ -3,31 +3,6 @@
 {% block description %}{{ page.description | default('') }}{% endblock %}
 
 {% block content %}
-
-{% if page.modules %}
-{% for module in page.modules %}
-  {# 模块渲染: 从 blocks/<type>/ 目录加载模板片段 #}
-  {% set block_name = module.type %}
-  {% set variant = module.variant | default('default') %}
-
-  {# 尝试加载变体模板，fallback 到默认模板 #}
-  {% set variant_tmpl = 'blocks/' + block_name + '/variants/' + variant + '.html' %}
-  {% set default_tmpl = 'blocks/' + block_name + '/template.html' %}
-
-  {% if module.data %}
-    {% if module.type == 'hero_banner' %}
-      {% include 'blocks/hero_banner/template.html' %}
-    {% elif module.type == 'feature_grid' %}
-      {% include 'blocks/feature_grid/template.html' %}
-    {% elif module.type == 'highlight_card' %}
-      {% include 'blocks/highlight_card/template.html' %}
-    {% elif module.type == 'product_grid' %}
-      {% include 'blocks/product_grid/template.html' %}
-    {% elif module.type == 'data_grid' %}
-      {% include 'blocks/data_grid/template.html' %}
-    {% endif %}
-  {% endif %}
-{% endfor %}
-{% endif %}
+{% include '_modules.html' %}
 
 {% endblock %}

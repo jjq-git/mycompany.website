@@ -23,12 +23,29 @@ def _load_yaml(path):
     return yaml.safe_load(path.read_text(encoding='utf-8')) or {}
 
 
-def _gather_site_data(site_id):
+def _deep_merge(default, override):
+    """递归合并 dict，用模板 seed 作为缺省，站点数据覆盖。"""
+    if not isinstance(default, dict) or not isinstance(override, dict):
+        return override if override not in (None, {}) else default
+    result = dict(default)
+    for key, value in override.items():
+        if isinstance(result.get(key), dict) and isinstance(value, dict):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
+def _gather_site_data(site_id, template_name=None):
     """收集店主网站的全部内容."""
     sites_dir = Path(current_app.config['SITES_DIR'])
     root = sites_dir / str(site_id)
 
     settings = _load_yaml(root / 'settings.yaml')
+    if template_name:
+        seed_root = Path(current_app.config['TEMPLATES_DIR']) / template_name / 'seed_data'
+        seed_settings = _load_yaml(seed_root / 'settings.yaml')
+        settings = _deep_merge(seed_settings, settings)
     pages = {}
     for f in (root / 'pages').glob('*.yaml'):
         pages[f.stem] = _load_yaml(f)
@@ -129,7 +146,7 @@ def build_site(site_id, base_url=''):
     if not site:
         raise ValueError(f'站点不存在: {site_id}')
 
-    settings, pages, data = _gather_site_data(site_id)
+    settings, pages, data = _gather_site_data(site_id, site.template_name)
 
     # 模板默认值兜底
     tpl_root, tpl_html_dir, tpl_static_dir = _template_paths(site.template_name)

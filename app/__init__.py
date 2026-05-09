@@ -25,6 +25,7 @@ def create_app(config_override=None):
     with app.app_context():
         db.create_all()
         _migrate_users_add_columns()
+        _migrate_login_tokens_table()
 
     _register_context_processors(app)
     return app
@@ -65,3 +66,28 @@ def _migrate_users_add_columns():
         with db.engine.begin() as conn:
             for s in stmts:
                 conn.execute(text(s))
+
+
+def _migrate_login_tokens_table():
+    """MVP 临时迁移：旧数据库补 login_tokens 表（db.create_all 不会补已导入前缺失的表以外约束差异）."""
+    from sqlalchemy import inspect, text
+    inspector = inspect(db.engine)
+    if 'login_tokens' in inspector.get_table_names():
+        return
+    with db.engine.begin() as conn:
+        conn.execute(text("""
+            CREATE TABLE login_tokens (
+                id INTEGER NOT NULL,
+                user_id INTEGER,
+                email VARCHAR(255) NOT NULL,
+                token_hash VARCHAR(64) NOT NULL,
+                expires_at DATETIME NOT NULL,
+                used_at DATETIME,
+                ip_address VARCHAR(45),
+                created_at DATETIME NOT NULL,
+                PRIMARY KEY (id),
+                FOREIGN KEY(user_id) REFERENCES users (id)
+            )
+        """))
+        conn.execute(text("CREATE INDEX ix_login_tokens_email ON login_tokens (email)"))
+        conn.execute(text("CREATE UNIQUE INDEX ix_login_tokens_token_hash ON login_tokens (token_hash)"))

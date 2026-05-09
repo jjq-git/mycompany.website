@@ -33,6 +33,9 @@ DATASET_TEMPLATE_MAP = {
     'posts': 'blog.html',
 }
 
+VALID_TYPES = {'home', 'list', 'page', 'link'}
+VALID_DROPDOWN_STYLES = {'vertical', 'horizontal', 'grid', 'cards'}
+
 
 def url_of(item):
     """从菜单项计算最终 URL."""
@@ -73,6 +76,51 @@ def ensure_home(items):
     home['type'] = 'home'
     home['url'] = '/'
     return [home] + other_items
+
+
+def clean_for_storage(items):
+    """清洗后台提交的菜单树, 只保留模板渲染需要的字段."""
+    cleaned = []
+
+    def _clean(raw_items, allow_home=False):
+        result = []
+        for raw in raw_items or []:
+            if not isinstance(raw, dict):
+                continue
+            label = str(raw.get('label') or '').strip()
+            item_type = str(raw.get('type') or 'link').strip()
+            if item_type not in VALID_TYPES:
+                item_type = 'link'
+            if item_type == 'home' and not allow_home:
+                item_type = 'link'
+            if not label:
+                label = '首页' if item_type == 'home' else ''
+            if not label:
+                continue
+
+            item = {'label': label, 'type': item_type}
+            if item_type in ('list', 'page'):
+                target = str(raw.get('target') or '').strip().strip('/')
+                if target:
+                    item['target'] = target
+            elif item_type == 'link':
+                url = str(raw.get('url') or '').strip()
+                if url:
+                    item['url'] = url
+
+            dropdown_style = str(raw.get('dropdown_style') or '').strip()
+            if dropdown_style in VALID_DROPDOWN_STYLES:
+                item['dropdown_style'] = dropdown_style
+
+            children = _clean(raw.get('children') or [], allow_home=False)
+            if children:
+                item['children'] = children
+
+            result.append(item)
+        return result
+
+    cleaned = _clean(items, allow_home=True)
+    return ensure_home(cleaned)
 
 
 def upgrade_old_format(items, datasets):
@@ -206,14 +254,15 @@ def collect_render_tasks(menu_items, tpl_html_dir, data):
 
             elif t == 'page' and target:
                 page_tmpl = f'{target}.html'
-                if (tpl_html_dir / page_tmpl).exists():
-                    tasks.append({
-                        'type': 'page',
-                        'template': page_tmpl,
-                        'output_path': f'{target}/index.html',
-                        'current_path': f'/{target}/',
-                        'page_key': target,
-                    })
+                if not (tpl_html_dir / page_tmpl).exists():
+                    page_tmpl = 'index.html'
+                tasks.append({
+                    'type': 'page',
+                    'template': page_tmpl,
+                    'output_path': f'{target}/index.html',
+                    'current_path': f'/{target}/',
+                    'page_key': target,
+                })
 
             # 递归子菜单
             if item.get('children'):

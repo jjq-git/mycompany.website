@@ -1,9 +1,5 @@
-"""平台管理员后台路由. 挂在 /admin 下.
-
-M1: 没有登录, 用 _require_admin() 简单断言任意 admin 用户存在.
-M2 接登录后改成检查 session.role == 'admin'.
-"""
-from flask import Blueprint, abort, render_template
+"""平台管理员后台路由. 挂在 /admin 下."""
+from flask import Blueprint, abort, render_template, session
 
 from .models import Site, User
 
@@ -11,10 +7,13 @@ bp = Blueprint('admin', __name__)
 
 
 def _require_admin():
-    """M1 占位: 找到任意一个 admin 用户即放行. M2 改 session 检查."""
-    admin = User.query.filter_by(role='admin').first()
-    if not admin:
-        abort(403, "没有管理员账号. 用 .venv/bin/flask --app run promote-admin EMAIL 创建一个.")
+    """只允许当前登录的 admin 用户访问平台管理页."""
+    user_id = session.get('user_id')
+    if not user_id:
+        abort(401)
+    admin = User.query.get(user_id)
+    if not admin or admin.role != 'admin' or admin.status != 'active':
+        abort(403, "需要管理员权限. 用 .venv/bin/flask --app run promote-admin EMAIL 提升账号.")
     return admin
 
 

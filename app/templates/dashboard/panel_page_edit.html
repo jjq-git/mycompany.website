@@ -1,4 +1,4 @@
-{# 单页编辑面板 — about/contact 等 #}
+{# 单页模块编辑器 — 所有菜单页面共用同一个模块库（blocks/），各自保存不同的模块数据 #}
 <div class="d-flex align-items-center justify-content-between mb-3">
   <span class="fw-semibold">{{ page_key | title }}</span>
   <button class="btn btn-sm btn-outline-secondary" onclick="refreshPreview()">刷新预览</button>
@@ -10,26 +10,558 @@
   {% endfor %}
 {% endwith %}
 
-{% if page.modules %}
-  {# 模块数组格式：复用首页模块编辑器逻辑 #}
-  <div class="small text-muted mb-2">已选模块</div>
-  {% for module in page.modules %}
-  <div class="card p-2 mb-2">
-    <span class="small fw-semibold">{{ module.type | replace('_', ' ') | title }}</span>
-    {% set mdata = module.data or {} %}
-    {% if mdata is mapping %}
-      {% for key, val in mdata.items() %}
-      <div class="small text-muted">{{ key }}: {{ val }}</div>
-      {% endfor %}
-    {% endif %}
+{% if is_modules_format %}
+{# ---- 可用模块库 ---- #}
+<div class="mb-3">
+  <div class="small text-muted mb-2">可用模块（点击添加）</div>
+  <div class="row g-2">
+    {% for blk in blocks %}
+    <div class="col-6">
+      <div class="card p-2 cursor-pointer block-card" style="cursor:pointer"
+           data-block-name="{{ blk.name }}"
+           data-block-variant="{{ blk.variants[0].key if blk.variants else 'default' }}">
+        <div class="d-flex align-items-center gap-2">
+          <span class="fw-semibold small">{{ blk.display_name }}</span>
+        </div>
+        <div class="text-muted" style="font-size:10px">{{ blk.description }}</div>
+      </div>
+    </div>
+    {% endfor %}
   </div>
-  {% endfor %}
+</div>
+
+{# ---- 已选模块列表 ---- #}
+<div>
+  <div class="small text-muted mb-2">已选模块（拖拽排序 | 点击配置）</div>
+  <form method="post" action="{{ url_for('core.page_panel', page_key=page_key) }}?_fragment=1" id="modulesForm" data-page-key="{{ page_key }}" enctype="multipart/form-data">
+    <input type="hidden" name="module_count" id="moduleCount" value="{{ page.modules | length }}">
+
+    <div id="selectedModules">
+      {% for module in page.modules %}
+      {% set i = loop.index0 %}
+      <div class="card mb-2 module-item" data-index="{{ i }}" data-module-index="{{ i }}" style="cursor:move">
+        <div class="d-flex align-items-center justify-content-between p-2 module-header"
+             onclick="this.closest('.module-item').classList.toggle('expanded')">
+          <span class="small fw-semibold">{{ module.type | replace('_', ' ') | title }}</span>
+          <div class="d-flex gap-1">
+            <button type="button" class="btn btn-sm btn-outline-secondary remove-module-btn" style="font-size:10px">✕</button>
+          </div>
+        </div>
+        <input type="hidden" name="module_{{ i }}_type" value="{{ module.type }}">
+        <input type="hidden" name="module_{{ i }}_order" value="{{ module.order | default(i + 1) }}">
+        <input type="hidden" name="module_{{ i }}_variant" value="{{ module.variant | default('default') }}">
+
+        <div class="module-config p-2 border-top" style="display:none">
+          {# 设备切换标签 #}
+          <div class="d-flex gap-1 mb-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary active device-tab"
+                    data-device="desktop" onclick="switchModuleDevice(this, 'desktop')">💻 电脑</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary device-tab"
+                    data-device="tablet" onclick="switchModuleDevice(this, 'tablet')">📱 平板</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary device-tab"
+                    data-device="mobile" onclick="switchModuleDevice(this, 'mobile')">📱 手机</button>
+          </div>
+
+          {% set mdata = module.data if module.data is mapping else ({'slides': module.data} if module.type == 'hero_banner' and module.data is iterable and module.data is not string else {}) %}
+          {% set resp = module.get('responsive', {}) if module.get('responsive', {}) is mapping else {} %}
+          {% set mdata_tablet = resp.get('tablet', {}) %}
+          {% set mdata_mobile = resp.get('mobile', {}) %}
+
+          {# 电脑端配置 #}
+          <div class="device-config device-desktop">
+            <div class="small fw-semibold mb-1 text-primary">电脑端配置</div>
+            {% if module.type == 'hero_banner' %}
+            {% set slides = mdata.get('slides') if mdata.get('slides') is iterable and mdata.get('slides') is not string else [] %}
+            {% if not slides and (mdata.get('title') or mdata.get('media') or mdata.get('background_image') or mdata.get('video_url')) %}
+              {% set slides = [mdata] %}
+            {% endif %}
+            <div class="hero-slides-editor" data-module-index="{{ i }}">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="small fw-semibold text-primary">轮播媒体项</div>
+                <button type="button" class="btn btn-sm btn-outline-primary add-hero-slide-btn" data-module-index="{{ i | int }}">+ 添加媒体项</button>
+              </div>
+              <input type="hidden" name="module_{{ i }}_slide_count" class="hero-slide-count" value="{{ slides | length }}">
+              <div class="hero-slide-list">
+                {% for slide in slides %}
+                {% set s = loop.index0 %}
+                <div class="border rounded p-2 mb-2 hero-slide-item" data-slide-index="{{ s }}">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small fw-semibold">媒体 {{ s + 1 }}</span>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-hero-slide-btn" data-module-index="{{ i | int }}">删除</button>
+                  </div>
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <label class="form-label small mb-1 text-muted">媒体类型</label>
+                      <select class="form-select form-select-sm" name="module_{{ i }}_slide_{{ s }}_type">
+                        <option value="image" {% if slide.type|default('image') == 'image' %}selected{% endif %}>图片</option>
+                        <option value="video" {% if slide.type == 'video' %}selected{% endif %}>视频</option>
+                      </select>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small mb-1 text-muted">上传文件</label>
+                      <input type="file" class="form-control form-control-sm" name="module_{{ i }}_slide_{{ s }}_file" accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime">
+                    </div>
+                  </div>
+                  <div class="mb-2 mt-2">
+                    <label class="form-label small mb-1 text-muted">媒体 URL</label>
+                    <input type="text" class="form-control form-control-sm" name="module_{{ i }}_slide_{{ s }}_media" value="{{ slide.media or slide.background_image or slide.video_url or '' }}">
+                  </div>
+                  <div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_slide_{{ s }}_title" value="{{ slide.title or '' }}"></div>
+                  <div class="mb-2"><label class="form-label small mb-1 text-muted">副标题</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_slide_{{ s }}_subtitle" value="{{ slide.subtitle or '' }}"></div>
+                  <div class="row g-2">
+                    <div class="col-6"><label class="form-label small mb-1 text-muted">主按钮文字</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_slide_{{ s }}_primaryBtn" value="{{ slide.primaryBtn or slide.cta_text or '' }}"></div>
+                    <div class="col-6"><label class="form-label small mb-1 text-muted">主按钮链接</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_slide_{{ s }}_primaryBtnLink" value="{{ slide.primaryBtnLink or slide.cta_url or '' }}"></div>
+                    <div class="col-6"><label class="form-label small mb-1 text-muted">副按钮文字</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_slide_{{ s }}_secondaryBtn" value="{{ slide.secondaryBtn or '' }}"></div>
+                    <div class="col-6"><label class="form-label small mb-1 text-muted">副按钮链接</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_slide_{{ s }}_secondaryBtnLink" value="{{ slide.secondaryBtnLink or '' }}"></div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            {% if mdata is mapping %}
+              {% for key, val in mdata.items() %}
+              {% set prefix = 'module_' ~ i ~ '_data_' %}
+              <div class="mb-2">
+                <label class="form-label small mb-1 text-muted">{{ key }}</label>
+                {% if val is mapping or (val is iterable and val is not string) %}
+                <textarea class="form-control form-control-sm" rows="4"
+                          name="{{ prefix }}{{ key }}">{{ val }}</textarea>
+                {% else %}
+                <input type="text" class="form-control form-control-sm"
+                       name="{{ prefix }}{{ key }}" value="{{ val }}">
+                {% if 'image' in key|lower or 'cover' in key|lower or 'background' in key|lower or 'media' in key|lower or 'photo' in key|lower or 'logo' in key|lower %}
+                <input type="file" class="form-control form-control-sm mt-1"
+                       name="{{ prefix }}{{ key }}_file" accept="image/*">
+                <div class="form-text">上传后自动转 WebP 并覆盖该字段。</div>
+                {% endif %}
+                {% endif %}
+              </div>
+              {% endfor %}
+            {% endif %}
+            {% endif %}
+            <hr class="my-2">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每行列数</label>
+                <select class="form-select form-select-sm" name="module_{{ i }}_resp_columns">
+                  <option value="" {% if not mdata.get('columns') %}selected{% endif %}>默认</option>
+                  {% for n in [1,2,3,4] %}
+                  <option value="{{ n }}" {% if mdata.get('columns') == n %}selected{% endif %}>{{ n }} 列</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_max_items"
+                       value="{{ mdata.get('max_items', '') }}" placeholder="0=全部">
+              </div>
+            </div>
+          </div>
+
+          {# 平板端配置 #}
+          <div class="device-config device-tablet" style="display:none">
+            <div class="small fw-semibold mb-1 text-primary">平板端配置（未填则继承电脑端）</div>
+            {% if mdata is mapping %}
+              {% for key, val in mdata.items() %}
+              <div class="mb-2">
+                <label class="form-label small mb-1 text-muted">{{ key }}</label>
+                {% set tval = mdata_tablet.get(key, '') %}
+                <input type="text" class="form-control form-control-sm"
+                       name="module_{{ i }}_resp_tablet_data_{{ key }}"
+                       value="{{ tval }}" placeholder="继承: {{ val }}">
+              </div>
+              {% endfor %}
+            {% endif %}
+            <hr class="my-2">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每行列数</label>
+                <select class="form-select form-select-sm" name="module_{{ i }}_resp_tablet_columns">
+                  <option value="" {% if not mdata_tablet.get('columns') %}selected{% endif %}>继承电脑端</option>
+                  {% for n in [1,2,3] %}
+                  <option value="{{ n }}" {% if mdata_tablet.get('columns') == n %}selected{% endif %}>{{ n }} 列</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_tablet_max_items"
+                       value="{{ mdata_tablet.get('max_items', '') }}" placeholder="继承电脑端">
+              </div>
+            </div>
+            <div class="mb-2 mt-2">
+              <label class="form-check-label small">
+                <input type="checkbox" class="form-check-input"
+                       name="module_{{ i }}_resp_tablet_hidden" value="1"
+                       {% if mdata_tablet.get('hidden') %}checked{% endif %}>
+                平板端隐藏此模块
+              </label>
+            </div>
+          </div>
+
+          {# 手机端配置 #}
+          <div class="device-config device-mobile" style="display:none">
+            <div class="small fw-semibold mb-1 text-primary">手机端配置（未填则继承电脑端）</div>
+            {% if mdata is mapping %}
+              {% for key, val in mdata.items() %}
+              <div class="mb-2">
+                <label class="form-label small mb-1 text-muted">{{ key }}</label>
+                {% set mval = mdata_mobile.get(key, '') %}
+                <input type="text" class="form-control form-control-sm"
+                       name="module_{{ i }}_resp_mobile_data_{{ key }}"
+                       value="{{ mval }}" placeholder="继承: {{ val }}">
+              </div>
+              {% endfor %}
+            {% endif %}
+            <hr class="my-2">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每行列数</label>
+                <select class="form-select form-select-sm" name="module_{{ i }}_resp_mobile_columns">
+                  <option value="" {% if not mdata_mobile.get('columns') %}selected{% endif %}>继承电脑端</option>
+                  {% for n in [1, 2] %}
+                  <option value="{{ n }}" {% if mdata_mobile.get('columns') == n %}selected{% endif %}>{{ n }} 列</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_mobile_max_items"
+                       value="{{ mdata_mobile.get('max_items', '') }}" placeholder="继承电脑端">
+              </div>
+            </div>
+            <div class="mb-2 mt-2">
+              <label class="form-check-label small">
+                <input type="checkbox" class="form-check-input"
+                       name="module_{{ i }}_resp_mobile_hidden" value="1"
+                       {% if mdata_mobile.get('hidden') %}checked{% endif %}>
+                手机端隐藏此模块
+              </label>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="mt-2 d-flex gap-2">
+      <button type="submit" class="btn btn-primary btn-sm">保存模块配置</button>
+    </div>
+  </form>
+</div>
+
+<script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
+<script>
+var blockLibrary = JSON.parse(document.getElementById('blockLibraryJson').textContent || '[]');
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>'"]/g, function(ch) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch];
+  });
+}
+
+function findBlockMeta(type) {
+  return (blockLibrary || []).find(function(block) { return block.name === type; }) || {
+    name: type,
+    display_name: type.replace(/_/g, ' '),
+    fields: [],
+    variants: [{key: 'default', label: '默认'}]
+  };
+}
+
+function renderDynamicField(prefix, field, value, placeholder) {
+  var key = field.key;
+  var type = field.type || 'text';
+  var label = field.label || key;
+  var html = '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + escapeHtml(label) + '</label>';
+  if (type === 'textarea') {
+    html += '<textarea class="form-control form-control-sm" rows="4" name="' + prefix + key + '" placeholder="' + escapeHtml(placeholder || '') + '">' + escapeHtml(value || '') + '</textarea>';
+  } else if (type === 'select') {
+    html += '<select class="form-select form-select-sm" name="' + prefix + key + '">';
+    html += '<option value="">请选择</option>';
+    (field.options || []).forEach(function(opt) {
+      var optValue = typeof opt === 'object' ? opt.value : opt;
+      var optLabel = typeof opt === 'object' ? (opt.label || opt.value) : opt;
+      html += '<option value="' + escapeHtml(optValue) + '"' + (String(value || '') === String(optValue) ? ' selected' : '') + '>' + escapeHtml(optLabel) + '</option>';
+    });
+    html += '</select>';
+  } else if (type === 'number') {
+    html += '<input type="number" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '">';
+  } else {
+    html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '">';
+  }
+  if (/(image|cover|background|media|photo|logo)/i.test(key)) {
+    html += '<input type="file" class="form-control form-control-sm mt-1" name="' + prefix + key + '_file" accept="image/*">';
+    html += '<div class="form-text">可上传图片；视频请填写 URL。</div>';
+  }
+  return html + '</div>';
+}
+
+function renderVariantSelect(idx, meta, selected) {
+  var variants = meta.variants || [];
+  var html = '<div class="mb-2"><label class="form-label small mb-1 text-muted">模块样式</label>';
+  html += '<select class="form-select form-select-sm" name="module_' + idx + '_variant">';
+  if (!variants.length) {
+    html += '<option value="default">默认</option>';
+  } else {
+    variants.forEach(function(variant, index) {
+      var key = variant.key || 'default';
+      var label = variant.label || key;
+      var isSelected = (selected || variants[0].key || 'default') === key;
+      html += '<option value="' + escapeHtml(key) + '"' + (isSelected ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+    });
+  }
+  html += '</select></div>';
+  return html;
+}
+
+function renderResponsiveControls(idx, device) {
+  var fieldPrefix = device ? 'module_' + idx + '_resp_' + device : 'module_' + idx + '_resp';
+  var columns = device === 'mobile' ? [1, 2] : (device === 'tablet' ? [1, 2, 3] : [1, 2, 3, 4]);
+  var inheritText = device ? '继承电脑端' : '默认';
+  var maxText = device ? '继承电脑端' : '0=全部';
+  var html = '<hr class="my-2"><div class="row g-2">';
+  html += '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>';
+  html += '<select class="form-select form-select-sm" name="' + fieldPrefix + '_columns"><option value="" selected>' + inheritText + '</option>';
+  columns.forEach(function(n){ html += '<option value="' + n + '">' + n + ' 列</option>'; });
+  html += '</select></div>';
+  html += '<div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label>';
+  html += '<input type="number" class="form-control form-control-sm" name="' + fieldPrefix + '_max_items" placeholder="' + maxText + '"></div></div>';
+  return html;
+}
+
+function renderHiddenControl(idx, device, label) {
+  return '<div class="mb-2 mt-2"><label class="form-check-label small"><input type="checkbox" class="form-check-input" name="module_' + idx + '_resp_' + device + '_hidden" value="1"> ' + label + '隐藏此模块</label></div>';
+}
+
+function heroSlideHtml(moduleIndex, slideIndex) {
+  var p = 'module_' + moduleIndex + '_slide_' + slideIndex + '_';
+  return '<div class="border rounded p-2 mb-2 hero-slide-item" data-slide-index="' + slideIndex + '">' +
+    '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">媒体 ' + (slideIndex + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest(\'.hero-slide-item\').remove(); reindexHeroSlides(' + moduleIndex + ')">删除</button></div>' +
+    '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">媒体类型</label><select class="form-select form-select-sm" name="' + p + 'type"><option value="image">图片</option><option value="video">视频</option></select></div>' +
+    '<div class="col-6"><label class="form-label small mb-1 text-muted">上传文件</label><input type="file" class="form-control form-control-sm" name="' + p + 'file" accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime"></div></div>' +
+    '<div class="mb-2 mt-2"><label class="form-label small mb-1 text-muted">媒体 URL</label><input type="text" class="form-control form-control-sm" name="' + p + 'media"></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="' + p + 'title"></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">副标题</label><input type="text" class="form-control form-control-sm" name="' + p + 'subtitle"></div>' +
+    '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">主按钮文字</label><input type="text" class="form-control form-control-sm" name="' + p + 'primaryBtn"></div>' +
+    '<div class="col-6"><label class="form-label small mb-1 text-muted">主按钮链接</label><input type="text" class="form-control form-control-sm" name="' + p + 'primaryBtnLink"></div>' +
+    '<div class="col-6"><label class="form-label small mb-1 text-muted">副按钮文字</label><input type="text" class="form-control form-control-sm" name="' + p + 'secondaryBtn"></div>' +
+    '<div class="col-6"><label class="form-label small mb-1 text-muted">副按钮链接</label><input type="text" class="form-control form-control-sm" name="' + p + 'secondaryBtnLink"></div></div>' +
+    '</div>';
+}
+
+function addHeroSlide(moduleIndex) {
+  var editor = document.querySelector('.hero-slides-editor[data-module-index="' + moduleIndex + '"]');
+  if (!editor) return;
+  var count = editor.querySelector('.hero-slide-count');
+  var list = editor.querySelector('.hero-slide-list');
+  var next = parseInt(count.value || '0', 10);
+  list.insertAdjacentHTML('beforeend', heroSlideHtml(moduleIndex, next));
+  count.value = next + 1;
+}
+
+function reindexHeroSlides(moduleIndex) {
+  var editor = document.querySelector('.hero-slides-editor[data-module-index="' + moduleIndex + '"]');
+  if (!editor) return;
+  var items = editor.querySelectorAll('.hero-slide-item');
+  editor.querySelector('.hero-slide-count').value = items.length;
+  items.forEach(function(item, idx) {
+    item.dataset.slideIndex = idx;
+    var label = item.querySelector('.small.fw-semibold');
+    if (label) label.textContent = '媒体 ' + (idx + 1);
+    item.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el) {
+      el.name = el.name.replace(/module_\d+_slide_\d+_/, 'module_' + moduleIndex + '_slide_' + idx + '_');
+    });
+  });
+}
+
+// 展开第一个模块
+(function(){
+  var items = document.querySelectorAll('.module-item');
+  if (items.length) items[0].classList.add('expanded');
+  items.forEach(function(item){
+    var cfg = item.querySelector('.module-config');
+    if (item.classList.contains('expanded') && cfg) cfg.style.display = 'block';
+    item.querySelector('.module-header').addEventListener('click', function(){
+      if (cfg) cfg.style.display = item.classList.contains('expanded') ? 'block' : 'none';
+    });
+    if (cfg && item.classList.contains('expanded')) cfg.style.display = 'block';
+  });
+  document.querySelectorAll('.block-card[data-block-name]').forEach(function(card){
+    card.addEventListener('click', function(){
+      addModule(card.dataset.blockName, card.dataset.blockVariant || 'default');
+    });
+  });
+  document.querySelectorAll('.remove-module-btn').forEach(function(btn){
+    btn.addEventListener('click', function(event){
+      event.stopPropagation();
+      btn.closest('.module-item').remove();
+      reindexModules();
+    });
+  });
+  document.querySelectorAll('.add-hero-slide-btn').forEach(function(btn){
+    btn.addEventListener('click', function(event){
+      event.stopPropagation();
+      addHeroSlide(parseInt(btn.dataset.moduleIndex || '0', 10));
+    });
+  });
+  document.querySelectorAll('.remove-hero-slide-btn').forEach(function(btn){
+    btn.addEventListener('click', function(event){
+      event.stopPropagation();
+      var moduleIndex = parseInt(btn.dataset.moduleIndex || '0', 10);
+      btn.closest('.hero-slide-item').remove();
+      reindexHeroSlides(moduleIndex);
+    });
+  });
+})();
+
+function switchModuleDevice(btn, device) {
+  var item = btn.closest('.module-item');
+  item.querySelectorAll('.device-tab').forEach(function(t) { t.classList.remove('active'); });
+  btn.classList.add('active');
+  item.querySelectorAll('.device-config').forEach(function(c) { c.style.display = 'none'; });
+  var target = item.querySelector('.device-' + device);
+  if (target) target.style.display = '';
+}
+
+function addModule(type, variant) {
+  var meta = findBlockMeta(type);
+  var fields = meta.fields || [];
+  var displayName = meta.display_name || type.replace(/_/g, ' ');
+  var count = document.getElementById('moduleCount');
+  var idx = parseInt(count.value);
+  count.value = idx + 1;
+
+  var desktopFields = fields.map(function(field) {
+    return renderDynamicField('module_' + idx + '_data_', field, field.default || '', '');
+  }).join('');
+  var tabletFields = fields.map(function(field) {
+    return renderDynamicField('module_' + idx + '_resp_tablet_data_', field, '', '继承电脑端');
+  }).join('');
+  var mobileFields = fields.map(function(field) {
+    return renderDynamicField('module_' + idx + '_resp_mobile_data_', field, '', '继承电脑端');
+  }).join('');
+
+  var container = document.getElementById('selectedModules');
+  var heroEditor = type === 'hero_banner'
+    ? '<div class="hero-slides-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">轮播媒体项</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="addHeroSlide(' + idx + ')">+ 添加媒体项</button></div><input type="hidden" name="module_' + idx + '_slide_count" class="hero-slide-count" value="1"><div class="hero-slide-list">' + heroSlideHtml(idx, 0) + '</div></div>'
+    : '';
+  var div = document.createElement('div');
+  div.className = 'card mb-2 module-item expanded';
+  div.dataset.index = idx;
+  div.dataset.moduleIndex = idx;
+  div.innerHTML =
+    '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="cursor:pointer">' +
+      '<span class="small fw-semibold">' + escapeHtml(displayName) + '</span>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:10px" onclick="event.stopPropagation(); this.closest(\'.module-item\').remove(); reindexModules()">✕</button>' +
+    '</div>' +
+    '<input type="hidden" name="module_' + idx + '_type" value="' + type + '">' +
+    '<input type="hidden" name="module_' + idx + '_order" value="' + (idx + 1) + '">' +
+    '<div class="module-config p-2 border-top" style="display:block">' +
+      renderVariantSelect(idx, meta, variant) +
+      '<div class="d-flex gap-1 mb-2">' +
+        '<button type="button" class="btn btn-sm btn-outline-secondary active device-tab" data-device="desktop" onclick="switchModuleDevice(this,\'desktop\')">💻 电脑</button>' +
+        '<button type="button" class="btn btn-sm btn-outline-secondary device-tab" data-device="tablet" onclick="switchModuleDevice(this,\'tablet\')">📱 平板</button>' +
+        '<button type="button" class="btn btn-sm btn-outline-secondary device-tab" data-device="mobile" onclick="switchModuleDevice(this,\'mobile\')">📱 手机</button>' +
+      '</div>' +
+      '<div class="device-config device-desktop">' +
+        '<div class="small fw-semibold mb-1 text-primary">电脑端配置</div>' +
+        (type === 'hero_banner' ? heroEditor : desktopFields) + renderResponsiveControls(idx, '') +
+      '</div>' +
+      '<div class="device-config device-tablet" style="display:none">' +
+        '<div class="small fw-semibold mb-1 text-primary">平板端配置（继承电脑端）</div>' +
+        tabletFields + renderResponsiveControls(idx, 'tablet') + renderHiddenControl(idx, 'tablet', '平板端') +
+      '</div>' +
+      '<div class="device-config device-mobile" style="display:none">' +
+        '<div class="small fw-semibold mb-1 text-primary">手机端配置（继承电脑端）</div>' +
+        mobileFields + renderResponsiveControls(idx, 'mobile') + renderHiddenControl(idx, 'mobile', '手机端') +
+      '</div>' +
+    '</div>';
+  container.appendChild(div);
+
+  // toggle config
+  div.querySelector('.module-header').addEventListener('click', function(){
+    var cfg = div.querySelector('.module-config');
+    div.classList.toggle('expanded');
+    cfg.style.display = div.classList.contains('expanded') ? 'block' : 'none';
+  });
+}
+
+function removeModule(idx) {
+  var items = document.querySelectorAll('.module-item');
+  items.forEach(function(item, i){
+    if (i === idx) item.remove();
+  });
+  reindexModules();
+}
+
+function reindexModules() {
+  var items = document.querySelectorAll('.module-item');
+  document.getElementById('moduleCount').value = items.length;
+  items.forEach(function(item, i){
+    item.querySelectorAll('input[type="hidden"]').forEach(function(inp){
+      var name = inp.getAttribute('name');
+      if (name) inp.setAttribute('name', name.replace(/module_\d+_/, 'module_' + i + '_'));
+    });
+    item.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el){
+      var name = el.getAttribute('name');
+      if (name && name.startsWith('module_')) {
+        el.setAttribute('name', name.replace(/module_\d+_/, 'module_' + i + '_'));
+      }
+    });
+  });
+}
+
+// form submission via AJAX
+document.getElementById('modulesForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  var formData = new FormData(this);
+  fetch(this.action, {method:'POST', body: formData})
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('rightPanelBody').innerHTML = html;
+      refreshPreview();
+    });
+});
+</script>
+
+<style>
+.block-card:hover { border-color: #0d6efd; background: #f0f7ff; }
+.module-item.expanded .module-config { display: block !important; }
+.device-config { padding: 4px 0; }
+</style>
+
 {% else %}
-  <div class="text-muted small">此页面使用旧格式，暂不支持面板编辑</div>
+{# 非 modules 格式：旧格式只读展示 + 一键迁移按钮 #}
+<div class="mb-3">
+  <div class="small text-muted mb-2">此页面使用旧格式，点击下方按钮迁移到模块库模式</div>
+  <form method="post" action="{{ url_for('core.page_panel', page_key=page_key) }}?_fragment=1" id="migrateForm">
+    <input type="hidden" name="module_count" value="0">
+    <button type="submit" class="btn btn-outline-primary btn-sm">迁移到模块库模式</button>
+  </form>
+</div>
+
+<div class="text-muted small">
   {% for key, val in page.items() %}
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">{{ key }}</label>
     <input class="form-control form-control-sm" value="{{ val }}" readonly>
   </div>
   {% endfor %}
+</div>
+
+<script>
+document.getElementById('migrateForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  var formData = new FormData(this);
+  fetch(this.action, {method:'POST', body: formData})
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('rightPanelBody').innerHTML = html;
+      refreshPreview();
+    });
+});
+</script>
 {% endif %}

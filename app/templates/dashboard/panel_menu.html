@@ -1,87 +1,148 @@
 {# 菜单配置面板 #}
 <div class="d-flex align-items-center justify-content-between mb-3">
   <span class="fw-semibold">菜单配置</span>
-  <span class="small text-muted">左侧菜单从这里定义</span>
+  <span class="small text-muted">首页固定在第一项</span>
 </div>
 {% with messages = get_flashed_messages() %}
   {% for m in messages %}
     <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
   {% endfor %}
 {% endwith %}
-<form method="post" action="{{ url_for('core.menu_edit', _fragment='1') }}">
-  <div id="menuItems">
-    {% for item in items %}
-    <div class="card p-2 mb-2 menu-item-row {% if item.type == 'home' %}menu-item-home{% endif %}">
-      <div class="d-flex gap-1 mb-1">
-        <input class="form-control form-control-sm" name="label[]" value="{{ item.label }}" placeholder="名称" style="flex:2" {% if item.type == 'home' %}readonly{% endif %}>
-        {% if item.type == 'home' %}
-        <input type="hidden" name="type[]" value="home">
-        <select class="form-select form-select-sm" style="flex:1" disabled>
-          <option value="home" selected>首页</option>
-        </select>
-        {% else %}
-        <select class="form-select form-select-sm" name="type[]" style="flex:1" onchange="toggleMenuFields(this)">
-          <option value="list" {% if item.type=='list' %}selected{% endif %}>列表</option>
-          <option value="page" {% if item.type=='page' %}selected{% endif %}>单页</option>
-          <option value="link" {% if item.type=='link' %}selected{% endif %}>链接</option>
-        </select>
-        {% endif %}
-        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMenuItem(this)" {% if item.type == 'home' %}disabled title="首页固定，不可删除"{% endif %}>✕</button>
-      </div>
-      <input class="form-control form-control-sm mb-1 menu-target" name="target_list[]" value="{{ item.target or '' }}" placeholder="数据集名或页面key（list/page 类型必填）"
-             {% if item.type not in ('list','page') %}style="display:none"{% endif %}>
-      <input class="form-control form-control-sm mb-1 menu-url" name="url_link[]" value="{{ item.url or '' }}" placeholder="URL（link 类型必填）"
-             {% if item.type != 'link' %}style="display:none"{% endif %}>
-      <input type="hidden" name="children_json[]" value="{{ (item.children or []) | tojson | e }}">
-      <select class="form-select form-select-sm mb-1" name="dropdown_style[]" {% if not item.children %}style="display:none"{% endif %}>
-        <option value="vertical" {% if item.dropdown_style|default('vertical') == 'vertical' %}selected{% endif %}>子菜单：垂直列表</option>
-        <option value="horizontal" {% if item.dropdown_style == 'horizontal' %}selected{% endif %}>子菜单：水平平铺</option>
-        <option value="grid" {% if item.dropdown_style == 'grid' %}selected{% endif %}>子菜单：网格排列</option>
-        <option value="cards" {% if item.dropdown_style == 'cards' %}selected{% endif %}>子菜单：图文卡片</option>
-      </select>
-      {% if item.children %}
-      <div class="small text-muted">含 {{ item.children|length }} 个子菜单（当前版本保留结构，编辑子项稍后开放）</div>
-      {% endif %}
-    </div>
-    {% endfor %}
+
+<form method="post" action="{{ url_for('core.menu_edit', _fragment='1') }}" id="menuTreeForm">
+  <input type="hidden" name="menu_json" id="menuJson">
+  <div id="menuTree" class="menu-tree"></div>
+  <div class="d-flex gap-2 mt-3">
+    <button type="button" class="btn btn-outline-secondary btn-sm" id="addRootMenu">+ 添加一级菜单</button>
+    <button class="btn btn-primary btn-sm" type="submit">保存菜单</button>
   </div>
-  <button type="button" class="btn btn-sm btn-outline-secondary mb-2" onclick="addMenuItem()">+ 添加菜单</button>
-  <br><button class="btn btn-primary btn-sm" type="submit">保存菜单</button>
 </form>
+
 <script>
-function toggleMenuFields(sel){
-  var row = sel.closest('.menu-item-row');
-  var targetInp = row.querySelector('.menu-target');
-  var urlInp = row.querySelector('.menu-url');
-  if (sel.value === 'list' || sel.value === 'page') {
-    targetInp.style.display = ''; urlInp.style.display = 'none';
-  } else if (sel.value === 'link') {
-    targetInp.style.display = 'none'; urlInp.style.display = '';
-  } else {
-    targetInp.style.display = 'none'; urlInp.style.display = 'none';
+(function(){
+  const initialMenu = {{ items | tojson }};
+  const typeLabels = {home: '首页', list: '列表', page: '单页', link: '链接'};
+  const styleLabels = {vertical: '垂直列表', horizontal: '水平平铺', grid: '网格排列', cards: '图文卡片'};
+  const tree = document.getElementById('menuTree');
+  const form = document.getElementById('menuTreeForm');
+  const jsonInput = document.getElementById('menuJson');
+
+  function newItem() {
+    return {label: '新菜单', type: 'page', target: '', children: []};
   }
-}
-function removeMenuItem(btn){
-  var row = btn.closest('.menu-item-row');
-  if (row && !row.classList.contains('menu-item-home')) row.remove();
-}
-function addMenuItem(){
-  var d = document.createElement('div');
-  d.className = 'card p-2 mb-2 menu-item-row';
-  d.innerHTML = '<div class="d-flex gap-1 mb-1">' +
-    '<input class="form-control form-control-sm" name="label[]" placeholder="名称" style="flex:2">' +
-    '<select class="form-select form-select-sm" name="type[]" style="flex:1" onchange="toggleMenuFields(this)">' +
-      '<option value="list">列表</option><option value="page">单页</option><option value="link">链接</option>' +
-    '</select>' +
-    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMenuItem(this)">✕</button>' +
-    '</div>' +
-    '<input class="form-control form-control-sm mb-1 menu-target" name="target_list[]" placeholder="数据集名或页面key">' +
-    '<input class="form-control form-control-sm mb-1 menu-url" name="url_link[]" placeholder="URL（link 类型必填）" style="display:none">' +
-    '<input type="hidden" name="children_json[]" value="[]">' +
-    '<select class="form-select form-select-sm mb-1" name="dropdown_style[]" style="display:none">' +
-      '<option value="vertical">子菜单：垂直列表</option><option value="horizontal">子菜单：水平平铺</option>' +
-      '<option value="grid">子菜单：网格排列</option><option value="cards">子菜单：图文卡片</option>' +
-    '</select>';
-  document.getElementById('menuItems').appendChild(d);
-}
+
+  function escapeAttr(value) {
+    return String(value || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  function render(items, container, depth) {
+    container.innerHTML = '';
+    items.forEach(function(item) {
+      if (!Array.isArray(item.children)) item.children = [];
+      const isHome = item.type === 'home';
+      const row = document.createElement('div');
+      row.className = 'menu-tree-row';
+      row.dataset.depth = depth;
+      row._item = item;
+      row.innerHTML =
+        '<div class="menu-tree-card">' +
+          '<div class="d-flex gap-1 align-items-center">' +
+            '<input class="form-control form-control-sm menu-label" placeholder="名称" value="' + escapeAttr(item.label) + '"' + (isHome ? ' readonly' : '') + '>' +
+            '<select class="form-select form-select-sm menu-type"' + (isHome ? ' disabled' : '') + '>' +
+              Object.keys(typeLabels).filter(function(t){ return isHome || t !== 'home'; }).map(function(t){ return '<option value="' + t + '"' + (item.type === t ? ' selected' : '') + '>' + typeLabels[t] + '</option>'; }).join('') +
+            '</select>' +
+            '<button type="button" class="btn btn-sm btn-outline-secondary move-up"' + (isHome ? ' disabled' : '') + '>↑</button>' +
+            '<button type="button" class="btn btn-sm btn-outline-secondary move-down"' + (isHome ? ' disabled' : '') + '>↓</button>' +
+            '<button type="button" class="btn btn-sm btn-outline-danger delete-item"' + (isHome ? ' disabled' : '') + '>✕</button>' +
+          '</div>' +
+          '<input class="form-control form-control-sm mt-1 menu-target" placeholder="products / about" value="' + escapeAttr(item.target) + '">' +
+          '<input class="form-control form-control-sm mt-1 menu-url" placeholder="https:// 或 /products/xxx" value="' + escapeAttr(item.url) + '">' +
+          '<div class="d-flex gap-1 mt-1">' +
+            '<select class="form-select form-select-sm menu-dropdown-style">' +
+              Object.keys(styleLabels).map(function(s){ return '<option value="' + s + '"' + ((item.dropdown_style || 'vertical') === s ? ' selected' : '') + '>' + styleLabels[s] + '</option>'; }).join('') +
+            '</select>' +
+            '<button type="button" class="btn btn-sm btn-outline-secondary add-child">+ 子菜单</button>' +
+          '</div>' +
+          '<div class="menu-tree-children mt-2"></div>' +
+        '</div>';
+      container.appendChild(row);
+      updateFields(row);
+      render(item.children, row.querySelector('.menu-tree-children'), depth + 1);
+    });
+  }
+
+  function updateFields(row) {
+    const type = row.querySelector('.menu-type').value;
+    const target = row.querySelector('.menu-target');
+    const url = row.querySelector('.menu-url');
+    const style = row.querySelector('.menu-dropdown-style');
+    const item = row._item;
+    target.style.display = (type === 'list' || type === 'page') ? '' : 'none';
+    url.style.display = type === 'link' ? '' : 'none';
+    style.style.display = item.children && item.children.length ? '' : 'none';
+  }
+
+  function rowsIn(container) {
+    return Array.from(container.children).filter(function(el){ return el.classList.contains('menu-tree-row'); });
+  }
+
+  function collect(container) {
+    return rowsIn(container).map(function(row) {
+      const type = row.querySelector('.menu-type').value;
+      const item = {
+        label: row.querySelector('.menu-label').value.trim(),
+        type: type,
+        children: collect(row.querySelector('.menu-tree-children'))
+      };
+      if (type === 'list' || type === 'page') item.target = row.querySelector('.menu-target').value.trim();
+      if (type === 'link') item.url = row.querySelector('.menu-url').value.trim();
+      if (item.children.length) item.dropdown_style = row.querySelector('.menu-dropdown-style').value;
+      return item;
+    });
+  }
+
+  tree.addEventListener('input', function(e) {
+    const row = e.target.closest('.menu-tree-row');
+    if (row) updateFields(row);
+  });
+
+  tree.addEventListener('change', function(e) {
+    const row = e.target.closest('.menu-tree-row');
+    if (row) updateFields(row);
+  });
+
+  tree.addEventListener('click', function(e) {
+    const row = e.target.closest('.menu-tree-row');
+    if (!row) return;
+    const parentContainer = row.parentElement;
+    const parentRow = parentContainer.closest('.menu-tree-row');
+    const parentItems = parentRow ? parentRow._item.children : initialMenu;
+    const index = rowsIn(parentContainer).indexOf(row);
+    if (e.target.classList.contains('delete-item')) {
+      if (row._item.type !== 'home') parentItems.splice(index, 1);
+    } else if (e.target.classList.contains('add-child')) {
+      row._item.children.push(newItem());
+    } else if (e.target.classList.contains('move-up') && index > 0) {
+      const item = parentItems.splice(index, 1)[0];
+      parentItems.splice(index - 1, 0, item);
+    } else if (e.target.classList.contains('move-down') && index < parentItems.length - 1) {
+      const item = parentItems.splice(index, 1)[0];
+      parentItems.splice(index + 1, 0, item);
+    } else {
+      return;
+    }
+    render(initialMenu, tree, 0);
+  });
+
+  document.getElementById('addRootMenu').addEventListener('click', function() {
+    initialMenu.push(newItem());
+    render(initialMenu, tree, 0);
+  });
+
+  form.addEventListener('submit', function() {
+    jsonInput.value = JSON.stringify(collect(tree));
+  });
+
+  render(initialMenu, tree, 0);
+})();
 </script>

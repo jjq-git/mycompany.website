@@ -14,15 +14,25 @@
 <header class="bg-white border-bottom flex-shrink-0" style="height:44px">
   <div class="d-flex align-items-center h-100 px-3 gap-3">
     <span class="fw-bold fs-6">mycompany.website</span>
-    <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
-      {{ site.slug if site else '未选择' }} <span>▾</span>
-    </button>
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        {{ site.slug if site else '未选择' }}
+      </button>
+      <ul class="dropdown-menu">
+        {% for opt in available_sites | default([]) %}
+        <li><a class="dropdown-item {% if site and opt.id == site.id %}active{% endif %}" href="{{ request.path }}?site={{ opt.id }}">{{ opt.name or opt.slug }} <span class="text-muted small">/{{ opt.slug }}</span></a></li>
+        {% endfor %}
+      </ul>
+    </div>
     <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('core.templates_gallery') }}">+ 新建站点</a>
     <div class="flex-grow-1"></div>
     {% if site %}
     <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('core.export_zip') }}">导出 ZIP</a>
-    {% endif %}
     <a class="btn btn-primary btn-sm" href="javascript:doPublish()">发布</a>
+    {% endif %}
+    <form method="post" action="{{ url_for('core.logout') }}" style="display:inline">
+      <button class="btn btn-outline-secondary btn-sm" type="submit">退出</button>
+    </form>
     <span class="badge rounded-pill bg-primary d-flex align-items-center justify-content-center"
           style="width:28px;height:28px;font-size:12px">
       {{ (user.email[:1].upper() if user else '?') }}
@@ -44,14 +54,15 @@
       <a class="left-nav-item px-3 py-1 small {% if active == 'overview' %}active{% endif %}"
          href="{{ url_for('core.overview') }}" data-panel="overview">总览</a>
       <a class="left-nav-item px-3 py-1 small {% if active == 'pages_home' %}active{% endif %}"
-         href="{{ url_for('core.page_home') }}" data-panel="pages_home">首页</a>
+         href="{{ url_for('core.page_home') }}" data-panel="pages_home" data-preview-page="home">首页</a>
 
       {# 动态菜单项：来自 settings.yaml menu 配置（首页 index 已固定，跳过 home 类型） #}
       {% for item in left_menu_items %}
         {% if item.type != 'home' %}
         <a class="left-nav-item px-3 py-1 small"
            href="{{ url_for('core.page_panel', page_key=item.target or item.label) if item.type in ('list','page') else '#' }}"
-           data-panel="{{ item.type }}_{{ item.target or item.label }}">
+           data-panel="{{ item.type }}_{{ item.target or item.label }}"
+           {% if item.type in ('list','page') %}data-preview-page="{{ item.target or item.label }}"{% endif %}>
           {{ item.label }}
           {% if item.type == 'list' %}
             {% if item.target == 'products' %}<span class="badge bg-secondary ms-1">{{ counts.products }}</span>
@@ -65,8 +76,12 @@
       <div class="small text-muted text-uppercase px-3 pt-3 pb-1" style="font-size:10px;letter-spacing:.05em">设置</div>
       <a class="left-nav-item px-3 py-1 small {% if active == 'company' %}active{% endif %}"
          href="{{ url_for('core.company') }}" data-panel="company">公司信息</a>
+      <a class="left-nav-item px-3 py-1 small {% if active == 'header' %}active{% endif %}"
+         href="{{ url_for('core.header_edit') }}" data-panel="header">网站头部</a>
       <a class="left-nav-item px-3 py-1 small {% if active == 'menu' %}active{% endif %}"
          href="{{ url_for('core.menu_edit') }}" data-panel="menu">菜单配置</a>
+      <a class="left-nav-item px-3 py-1 small {% if active == 'footer_variant' %}active{% endif %}"
+         href="{{ url_for('core.footer_variant_edit') }}" data-panel="footer_variant">网站底部</a>
       <a class="left-nav-item px-3 py-1 small {% if active == 'footer' %}active{% endif %}"
          href="{{ url_for('core.footer_edit') }}" data-panel="footer">页脚链接</a>
       <a class="left-nav-item px-3 py-1 small {% if active == 'social' %}active{% endif %}"
@@ -107,9 +122,20 @@
       <button class="btn-close btn-sm" onclick="document.getElementById('rightPanel').classList.toggle('d-none')"></button>
     </div>
     <div class="flex-grow-1 overflow-auto p-3" id="rightPanelBody">
-      <div class="p-3 text-muted text-center" style="padding-top:4rem">
-        <p>← 在左侧选择一项开始编辑</p>
-      </div>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category if category in ['success','danger','warning','info'] else 'info' }} py-2 mb-3">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      {% block content %}
+        <div class="p-3 text-muted text-center" style="padding-top:4rem">
+          <p>← 在左侧选择一项开始编辑</p>
+        </div>
+      {% endblock %}
     </div>
   </aside>
 </div>
@@ -129,19 +155,64 @@ function switchDevice(device) {
 function refreshPreview() {
   const f = document.getElementById('previewFrame');
   const previewUrl = f.dataset.previewUrl || f.src;
-  f.src = previewUrl + (previewUrl.includes('?') ? '&' : '?') + '_=' + Date.now();
+  const buildUrl = '{{ url_for("core.build") }}?_fragment=1';
+  fetch(buildUrl, {method:'POST'})
+    .then(r => r.json())
+    .catch(() => ({ok: true}))
+    .then(() => {
+      f.src = previewUrl + (previewUrl.includes('?') ? '&' : '?') + '_=' + Date.now();
+    });
+}
+
+function currentPreviewLanguage() {
+  const frame = document.getElementById('previewFrame');
+  let path = '';
+  try { path = frame.contentWindow.location.pathname; } catch (e) { path = frame.src || ''; }
+  const match = path.match(/\/preview\/\d+\/(zh-CN|zh-TW|en)(?:\/|$)/);
+  return match ? match[1] : '';
+}
+
+function previewUrlForPage(pageKey) {
+  const siteId = '{{ site.id if site else "" }}';
+  if (!siteId) return 'about:blank';
+  const lang = currentPreviewLanguage();
+  const page = (!pageKey || pageKey === 'home') ? '' : String(pageKey).replace(/^\/+|\/+$/g, '') + '/';
+  const langPrefix = lang ? lang + '/' : '';
+  return '/preview/' + siteId + '/' + langPrefix + page + 'index.html';
+}
+
+function showPreviewPage(pageKey) {
+  const frame = document.getElementById('previewFrame');
+  const url = previewUrlForPage(pageKey);
+  frame.dataset.previewUrl = url;
+  refreshPreview();
 }
 
 function loadPanel(url) {
   const body = document.getElementById('rightPanelBody');
   body.innerHTML = '<div class="p-3 text-muted text-center py-5"><div class="spinner-border spinner-border-sm me-2"></div>加载中...</div>';
-  fetch(url)
+  return fetch(url)
     .then(r => {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.text();
     })
-    .then(html => { body.innerHTML = html; })
-    .catch(() => { body.innerHTML = '<div class="p-3 text-danger">加载失败（请确认页面存在）</div>'; });
+    .then(html => {
+      body.innerHTML = html;
+      runPanelScripts(body);
+    })
+    .catch(error => {
+      body.innerHTML = '<div class="p-3 text-danger">加载失败（请确认页面存在）</div>';
+      throw error;
+    });
+}
+
+function runPanelScripts(container) {
+  container.querySelectorAll('script').forEach(oldScript => {
+    const script = document.createElement('script');
+    Array.from(oldScript.attributes).forEach(attr => script.setAttribute(attr.name, attr.value));
+    script.textContent = oldScript.textContent;
+    oldScript.replaceWith(script);
+  });
 }
 
 // 拦截左栏所有链接点击 → AJAX 加载右侧面板
@@ -159,6 +230,9 @@ document.getElementById('leftNav').addEventListener('click', function(e) {
   if (href && href !== '#') {
     loadPanel(href + '?_fragment=1');
   }
+
+  const previewPage = link.dataset.previewPage;
+  if (previewPage) showPreviewPage(previewPage);
 });
 
 function doPublish() {
@@ -171,7 +245,116 @@ function doPublish() {
       });
   }
 }
+
+function pageKeyFromPreviewPath(pathname) {
+  let cleaned = pathname
+    .replace(/^\/preview\/\d+/, '')
+    .replace(/^\/(zh-CN|zh-TW|en)/, '')
+    .replace(/\/index\.html$/, '')
+    .replace(/\/$/, '');
+  if (!cleaned || cleaned === '/') return 'home';
+  const first = cleaned.split('/').filter(Boolean)[0];
+  return first || 'home';
+}
+
+function panelUrlForPageKey(pageKey) {
+  const siteParam = new URLSearchParams(window.location.search).get('site');
+  const joiner = siteParam ? '&site=' + encodeURIComponent(siteParam) : '';
+  return (pageKey === 'home' ? '/pages/home?_fragment=1' : '/_panel/' + encodeURIComponent(pageKey) + '?_fragment=1') + joiner;
+}
+
+function panelUrlForRegion(region) {
+  const siteParam = new URLSearchParams(window.location.search).get('site');
+  const joiner = siteParam ? '?_fragment=1&site=' + encodeURIComponent(siteParam) : '?_fragment=1';
+  if (region === 'header') return '/settings/header' + joiner;
+  if (region === 'footer') return '/settings/footer_variant' + joiner;
+  return '';
+}
+
+function selectRegionInPanel(region) {
+  const url = panelUrlForRegion(region);
+  if (!url) return;
+  loadPanel(url).then(() => {
+    const body = document.getElementById('rightPanelBody');
+    body.querySelectorAll('.builder-selected-module').forEach(el => el.classList.remove('builder-selected-module'));
+    body.insertAdjacentHTML('afterbegin', '<div class="alert alert-primary py-1 px-2 small mb-2 builder-region-note">已选中预览中的' + (region === 'header' ? '网站头部' : '网站底部') + '</div>');
+  });
+}
+
+function currentPanelPageKey() {
+  const form = document.querySelector('#rightPanelBody #modulesForm[data-page-key]');
+  return form ? form.dataset.pageKey : '';
+}
+
+function selectModuleInPanel(index, pageKey) {
+  const body = document.getElementById('rightPanelBody');
+  const targetPageKey = pageKey || currentPanelPageKey() || 'home';
+  if (currentPanelPageKey() !== targetPageKey) {
+    return loadPanel(panelUrlForPageKey(targetPageKey)).then(() => selectModuleInPanel(index, targetPageKey));
+  }
+
+  body.querySelectorAll('.module-item').forEach(item => {
+    item.classList.remove('builder-selected-module');
+    const cfg = item.querySelector('.module-config');
+    if (cfg && !item.classList.contains('expanded')) cfg.style.display = 'none';
+  });
+
+  const item = body.querySelector('.module-item[data-module-index="' + index + '"], .module-item[data-index="' + index + '"]');
+  if (!item) return;
+  item.classList.add('expanded', 'builder-selected-module');
+  const cfg = item.querySelector('.module-config');
+  if (cfg) cfg.style.display = 'block';
+  item.scrollIntoView({behavior: 'smooth', block: 'center'});
+}
+
+function installPreviewCanvasHandlers() {
+  const frame = document.getElementById('previewFrame');
+  if (!frame) return;
+  let doc;
+  try { doc = frame.contentDocument || frame.contentWindow.document; } catch (e) { return; }
+  if (!doc || doc.__builderCanvasReady) return;
+  doc.__builderCanvasReady = true;
+
+  const style = doc.createElement('style');
+  style.textContent = '.builder-module{position:relative;cursor:pointer}.builder-module:hover,.builder-region:hover{outline:2px dashed #0d6efd;outline-offset:3px}.builder-module.builder-canvas-selected,.builder-region.builder-canvas-selected{outline:3px solid #0d6efd!important;outline-offset:4px;box-shadow:0 0 0 4px rgba(13,110,253,.18)}';
+  doc.head.appendChild(style);
+
+  doc.querySelectorAll('.builder-region[data-builder-region]').forEach(regionEl => {
+    regionEl.addEventListener('click', function(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      doc.querySelectorAll('.builder-module.builder-canvas-selected,.builder-region.builder-canvas-selected').forEach(el => el.classList.remove('builder-canvas-selected'));
+      regionEl.classList.add('builder-canvas-selected');
+      selectRegionInPanel(regionEl.dataset.builderRegion);
+    }, true);
+  });
+
+  doc.querySelectorAll('.builder-module[data-builder-module-index]').forEach(moduleEl => {
+    moduleEl.addEventListener('click', function(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      doc.querySelectorAll('.builder-module.builder-canvas-selected').forEach(el => el.classList.remove('builder-canvas-selected'));
+      moduleEl.classList.add('builder-canvas-selected');
+      const pageKey = pageKeyFromPreviewPath(frame.contentWindow.location.pathname);
+      selectModuleInPanel(moduleEl.dataset.builderModuleIndex, pageKey);
+    }, true);
+  });
+}
+
+document.getElementById('previewFrame')?.addEventListener('load', installPreviewCanvasHandlers);
+window.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'builder:select-module') {
+    selectModuleInPanel(event.data.index, event.data.pageKey || 'home');
+  }
+});
 </script>
+
+<style>
+.module-item.builder-selected-module {
+  border-color: #0d6efd !important;
+  box-shadow: 0 0 0 0.2rem rgba(13,110,253,.18);
+}
+</style>
 
 {% block scripts %}{% endblock %}
 </body>

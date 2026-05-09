@@ -20,7 +20,7 @@
 </head>
 <body>
 
-<header class="site-header">
+<header class="site-header builder-region" data-builder-region="header">
   <div class="container nav">
     <a class="brand" href="{{ base_url }}/">
       {% if settings.company.logo %}<img src="{{ settings.company.logo }}" alt="">{% endif %}
@@ -38,7 +38,7 @@
   {% block content %}{% endblock %}
 </main>
 
-<footer class="site-footer">
+<footer class="site-footer builder-region" data-builder-region="footer">
   <div class="container footer-grid">
     <div class="footer-brand">
       <strong>{{ settings.company.name }}</strong>

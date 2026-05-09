@@ -1,6 +1,7 @@
 {# Hero Banner 模块 - 默认变体: 文字叠加(全宽) #}
 {% if module.data %}
-{% set items = module.data if module.data is iterable and module.data[0] is mapping else [module.data] %}
+{% set items = module.data.slides if module.data.slides is iterable and module.data.slides is not string else ([module.data] if module.data.title or module.data.media else []) %}
+{% if items %}
 <section class="hero-banner" id="heroBanner">
   <div class="hero-banner-slides">
     {% for item in items %}
@@ -70,4 +71,5 @@
   setInterval(next, 8000);
 })();
 </script>
+{% endif %}
 {% endif %}

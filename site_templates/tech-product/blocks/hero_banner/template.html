@@ -1,21 +1,60 @@
 {# Hero Banner 模块 - 科技暗色风格 #}
 {% if module.data %}
-<section class="hero">
-  {% if module.data.video_url or module.data.type == 'video' %}
-  <video class="hero-bg" autoplay muted loop playsinline>
-    <source src="{{ module.data.video_url or module.data.media }}">
-  </video>
-  {% elif module.data.background_image or module.data.media %}
-  <div class="hero-bg" style="background-image: url('{{ module.data.background_image or module.data.media }}')"></div>
-  {% endif %}
-  <div class="hero-overlay"></div>
-  <div class="container hero-inner">
-    {% if module.data.badge %}<span class="badge">{{ module.data.badge }}</span>{% endif %}
-    <h1>{{ module.data.title }}</h1>
-    <p class="lead">{{ module.data.subtitle }}</p>
-    {% if module.data.cta_text %}
-    <a class="btn btn-accent" href="{{ module.data.cta_url }}">{{ module.data.cta_text }} →</a>
-    {% endif %}
+{% set slides = module.data.slides if module.data is mapping and module.data.slides is iterable and module.data.slides is not string else (module.data if module.data is iterable and module.data is not mapping and module.data is not string else [module.data]) %}
+{% set carousel_id = 'heroCarousel' ~ (module.order | default(0)) %}
+<section class="hero hero-carousel" id="{{ carousel_id }}">
+  <div class="hero-slides">
+    {% for item in slides %}
+    <div class="hero-slide{% if loop.first %} active{% endif %}" data-slide="{{ loop.index0 }}">
+      {% if item.video_url or item.type == 'video' %}
+      <video class="hero-bg" autoplay muted loop playsinline>
+        <source src="{{ item.video_url or item.media }}">
+      </video>
+      {% elif item.background_image or item.media %}
+      <div class="hero-bg" style="background-image: url('{{ item.background_image or item.media }}')"></div>
+      {% endif %}
+      <div class="hero-overlay"></div>
+      <div class="container hero-inner">
+        {% if item.badge %}<span class="badge">{{ item.badge }}</span>{% endif %}
+        <h1>{{ item.title }}</h1>
+        <p class="lead">{{ item.subtitle }}</p>
+        {% set btn_text = item.cta_text or item.primaryBtn %}
+        {% set btn_url = item.cta_url or item.primaryBtnLink %}
+        {% if btn_text %}
+        <a class="btn btn-accent" href="{{ btn_url }}">{{ btn_text }} →</a>
+        {% endif %}
+        {% if item.secondaryBtn %}
+        <a class="btn" href="{{ item.secondaryBtnLink }}">{{ item.secondaryBtn }}</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
   </div>
+  {% if slides|length > 1 %}
+  <div class="hero-dots">
+    {% for item in slides %}<button class="hero-dot{% if loop.first %} active{% endif %}" data-slide="{{ loop.index0 }}" aria-label="Slide {{ loop.index }}"></button>{% endfor %}
+  </div>
+  <button class="hero-nav hero-prev" type="button" aria-label="Previous">‹</button>
+  <button class="hero-nav hero-next" type="button" aria-label="Next">›</button>
+  {% endif %}
 </section>
+<script>
+(function(){
+  var root = document.getElementById('{{ carousel_id }}');
+  if (!root) return;
+  var slides = root.querySelectorAll('.hero-slide');
+  var dots = root.querySelectorAll('.hero-dot');
+  var current = 0;
+  if (slides.length <= 1) return;
+  function show(i){
+    current = (i + slides.length) % slides.length;
+    slides.forEach(function(s, idx){ s.classList.toggle('active', idx === current); });
+    dots.forEach(function(d, idx){ d.classList.toggle('active', idx === current); });
+  }
+  root.querySelector('.hero-next')?.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); show(current + 1); });
+  root.querySelector('.hero-prev')?.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); show(current - 1); });
+  dots.forEach(function(dot){ dot.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); show(parseInt(dot.dataset.slide || '0', 10)); }); });
+  setInterval(function(){ show(current + 1); }, 8000);
+})();
+</script>
 {% endif %}

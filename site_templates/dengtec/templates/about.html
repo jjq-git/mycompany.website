@@ -4,6 +4,10 @@
 
 {% block content %}
 
+{% if page.modules %}
+{% include '_modules.html' %}
+{% else %}
+{# 旧格式兜底：硬编码内容 #}
 <section class="section">
   <div class="container">
     <div class="section-header">
@@ -101,5 +105,6 @@
     </div>
   </div>
 </section>
+{% endif %}
 
 {% endblock %}

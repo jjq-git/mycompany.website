@@ -1,4 +1,4 @@
-{# 首页模块编辑器 — 右侧面板内容 #}
+{# 首页模块编辑器 — 右侧面板内容（含三设备独立配置） #}
 {% if is_modules_format %}
 
 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -19,7 +19,8 @@
     {% for blk in blocks %}
     <div class="col-6">
       <div class="card p-2 cursor-pointer block-card" style="cursor:pointer"
-           onclick="addModule('{{ blk.name }}', '{{ blk.variants[0].key if blk.variants else 'default' }}')">
+           data-block-name="{{ blk.name }}"
+           data-block-variant="{{ blk.variants[0].key if blk.variants else 'default' }}">
         <div class="d-flex align-items-center gap-2">
           <span class="fw-semibold small">{{ blk.display_name }}</span>
         </div>
@@ -33,20 +34,19 @@
 {# ---- 已选模块列表 ---- #}
 <div>
   <div class="small text-muted mb-2">已选模块（拖拽排序 | 点击配置）</div>
-  <form method="post" action="{{ url_for('core.page_home') }}?_fragment=1" id="modulesForm">
+  <form method="post" action="{{ url_for('core.page_home') }}?_fragment=1" id="modulesForm" data-page-key="home" enctype="multipart/form-data">
     <input type="hidden" name="_format" value="modules">
     <input type="hidden" name="module_count" id="moduleCount" value="{{ page.modules | length }}">
 
     <div id="selectedModules">
       {% for module in page.modules %}
       {% set i = loop.index0 %}
-      <div class="card mb-2 module-item" data-index="{{ i }}" style="cursor:move">
+      <div class="card mb-2 module-item" data-index="{{ i }}" data-module-index="{{ i }}" style="cursor:move">
         <div class="d-flex align-items-center justify-content-between p-2 module-header"
              onclick="this.closest('.module-item').classList.toggle('expanded')">
           <span class="small fw-semibold">{{ module.type | replace('_', ' ') | title }}</span>
           <div class="d-flex gap-1">
-            <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:10px"
-                    onclick="event.stopPropagation(); removeModule({{ i }})">✕</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary remove-module-btn" style="font-size:10px">✕</button>
           </div>
         </div>
         <input type="hidden" name="module_{{ i }}_type" value="{{ module.type }}">
@@ -54,21 +54,152 @@
         <input type="hidden" name="module_{{ i }}_variant" value="{{ module.variant | default('default') }}">
 
         <div class="module-config p-2 border-top" style="display:none">
-          {% set mdata = module.data or {} %}
-          {% if mdata is mapping %}
-            {% for key, val in mdata.items() %}
+          {# 设备切换标签 #}
+          <div class="d-flex gap-1 mb-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary active device-tab"
+                    data-device="desktop" onclick="switchModuleDevice(this, 'desktop')">💻 电脑</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary device-tab"
+                    data-device="tablet" onclick="switchModuleDevice(this, 'tablet')">📱 平板</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary device-tab"
+                    data-device="mobile" onclick="switchModuleDevice(this, 'mobile')">📱 手机</button>
+          </div>
+
+          {% set mdata = module.data if module.data is mapping else ({'slides': module.data} if module.type == 'hero_banner' and module.data is iterable and module.data is not string else {}) %}
+          {% set resp = module.get('responsive', {}) if module.get('responsive', {}) is mapping else {} %}
+          {% set mdata_tablet = resp.get('tablet', {}) %}
+          {% set mdata_mobile = resp.get('mobile', {}) %}
+
+          {# 电脑端配置 #}
+          <div class="device-config device-desktop">
+            <div class="small fw-semibold mb-1 text-primary">电脑端配置</div>
+            {% if mdata is mapping %}
+              {% for key, val in mdata.items() %}
+              {% set prefix = 'module_' ~ i ~ '_data_' %}
+              <div class="mb-2">
+                <label class="form-label small mb-1 text-muted">{{ key }}</label>
+                {% if val is mapping or (val is iterable and val is not string) %}
+                <textarea class="form-control form-control-sm" rows="4"
+                          name="{{ prefix }}{{ key }}">{{ val }}</textarea>
+                {% else %}
+                <input type="text" class="form-control form-control-sm"
+                       name="{{ prefix }}{{ key }}" value="{{ val }}">
+                {% if 'image' in key|lower or 'cover' in key|lower or 'background' in key|lower or 'media' in key|lower or 'photo' in key|lower or 'logo' in key|lower %}
+                <input type="file" class="form-control form-control-sm mt-1"
+                       name="{{ prefix }}{{ key }}_file" accept="image/*">
+                <div class="form-text">上传后自动转 WebP 并覆盖该字段。</div>
+                {% endif %}
+                {% endif %}
+              </div>
+              {% endfor %}
+            {% endif %}
+            {% if module.type == 'hero_banner' %}
             <div class="mb-2">
-              <label class="form-label small mb-1 text-muted">{{ key }}</label>
-              {% if val is mapping or (val is iterable and val is not string) %}
-              <textarea class="form-control form-control-sm" rows="4"
-                        name="module_{{ i }}_data_{{ key }}">{{ val }}</textarea>
-              {% else %}
-              <input type="text" class="form-control form-control-sm"
-                     name="module_{{ i }}_data_{{ key }}" value="{{ val }}">
-              {% endif %}
+              <label class="form-label small mb-1 text-muted">轮播媒体（可多选图片/视频）</label>
+              <input type="file" class="form-control form-control-sm" name="module_{{ i }}_data_slides_files" multiple accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime">
+              <div class="form-text">一次选择多个图片或视频，保存后会追加到 slides 轮播列表。</div>
             </div>
-            {% endfor %}
-          {% endif %}
+            {% endif %}
+            <hr class="my-2">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每行列数</label>
+                <select class="form-select form-select-sm" name="module_{{ i }}_resp_columns">
+                  <option value="" {% if not mdata.get('columns') %}selected{% endif %}>默认</option>
+                  {% for n in [1,2,3,4] %}
+                  <option value="{{ n }}" {% if mdata.get('columns') == n %}selected{% endif %}>{{ n }} 列</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_max_items"
+                       value="{{ mdata.get('max_items', '') }}" placeholder="0=全部">
+              </div>
+            </div>
+          </div>
+
+          {# 平板端配置 #}
+          <div class="device-config device-tablet" style="display:none">
+            <div class="small fw-semibold mb-1 text-primary">平板端配置（未填则继承电脑端）</div>
+            {% if mdata is mapping %}
+              {% for key, val in mdata.items() %}
+              <div class="mb-2">
+                <label class="form-label small mb-1 text-muted">{{ key }}</label>
+                {% set tval = mdata_tablet.get(key, '') %}
+                <input type="text" class="form-control form-control-sm"
+                       name="module_{{ i }}_resp_tablet_data_{{ key }}"
+                       value="{{ tval }}" placeholder="继承: {{ val }}">
+              </div>
+              {% endfor %}
+            {% endif %}
+            <hr class="my-2">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每行列数</label>
+                <select class="form-select form-select-sm" name="module_{{ i }}_resp_tablet_columns">
+                  <option value="" {% if not mdata_tablet.get('columns') %}selected{% endif %}>继承电脑端</option>
+                  {% for n in [1,2,3] %}
+                  <option value="{{ n }}" {% if mdata_tablet.get('columns') == n %}selected{% endif %}>{{ n }} 列</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_tablet_max_items"
+                       value="{{ mdata_tablet.get('max_items', '') }}" placeholder="继承电脑端">
+              </div>
+            </div>
+            <div class="mb-2 mt-2">
+              <label class="form-check-label small">
+                <input type="checkbox" class="form-check-input"
+                       name="module_{{ i }}_resp_tablet_hidden" value="1"
+                       {% if mdata_tablet.get('hidden') %}checked{% endif %}>
+                平板端隐藏此模块
+              </label>
+            </div>
+          </div>
+
+          {# 手机端配置 #}
+          <div class="device-config device-mobile" style="display:none">
+            <div class="small fw-semibold mb-1 text-primary">手机端配置（未填则继承电脑端）</div>
+            {% if mdata is mapping %}
+              {% for key, val in mdata.items() %}
+              <div class="mb-2">
+                <label class="form-label small mb-1 text-muted">{{ key }}</label>
+                {% set mval = mdata_mobile.get(key, '') %}
+                <input type="text" class="form-control form-control-sm"
+                       name="module_{{ i }}_resp_mobile_data_{{ key }}"
+                       value="{{ mval }}" placeholder="继承: {{ val }}">
+              </div>
+              {% endfor %}
+            {% endif %}
+            <hr class="my-2">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每行列数</label>
+                <select class="form-select form-select-sm" name="module_{{ i }}_resp_mobile_columns">
+                  <option value="" {% if not mdata_mobile.get('columns') %}selected{% endif %}>继承电脑端</option>
+                  {% for n in [1, 2] %}
+                  <option value="{{ n }}" {% if mdata_mobile.get('columns') == n %}selected{% endif %}>{{ n }} 列</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_mobile_max_items"
+                       value="{{ mdata_mobile.get('max_items', '') }}" placeholder="继承电脑端">
+              </div>
+            </div>
+            <div class="mb-2 mt-2">
+              <label class="form-check-label small">
+                <input type="checkbox" class="form-check-input"
+                       name="module_{{ i }}_resp_mobile_hidden" value="1"
+                       {% if mdata_mobile.get('hidden') %}checked{% endif %}>
+                手机端隐藏此模块
+              </label>
+            </div>
+          </div>
+
         </div>
       </div>
       {% endfor %}
@@ -93,7 +224,28 @@
     });
     if (cfg && item.classList.contains('expanded')) cfg.style.display = 'block';
   });
+  document.querySelectorAll('.block-card[data-block-name]').forEach(function(card){
+    card.addEventListener('click', function(){
+      addModule(card.dataset.blockName, card.dataset.blockVariant || 'default');
+    });
+  });
+  document.querySelectorAll('.remove-module-btn').forEach(function(btn){
+    btn.addEventListener('click', function(event){
+      event.stopPropagation();
+      btn.closest('.module-item').remove();
+      reindexModules();
+    });
+  });
 })();
+
+function switchModuleDevice(btn, device) {
+  var item = btn.closest('.module-item');
+  item.querySelectorAll('.device-tab').forEach(function(t) { t.classList.remove('active'); });
+  btn.classList.add('active');
+  item.querySelectorAll('.device-config').forEach(function(c) { c.style.display = 'none'; });
+  var target = item.querySelector('.device-' + device);
+  if (target) target.style.display = '';
+}
 
 function addModule(type, variant) {
   var count = document.getElementById('moduleCount');
@@ -101,18 +253,63 @@ function addModule(type, variant) {
   count.value = idx + 1;
 
   var container = document.getElementById('selectedModules');
+  var heroUpload = type === 'hero_banner'
+    ? '<div class="mb-2"><label class="form-label small mb-1 text-muted">轮播媒体（可多选图片/视频）</label><input type="file" class="form-control form-control-sm" name="module_' + idx + '_data_slides_files" multiple accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime"><div class="form-text">一次选择多个图片或视频，保存后会追加到 slides 轮播列表。</div></div>'
+    : '';
   var div = document.createElement('div');
   div.className = 'card mb-2 module-item expanded';
   div.innerHTML =
     '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="cursor:pointer">' +
       '<span class="small fw-semibold">' + type.replace(/_/g, ' ') + '</span>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:10px" onclick="event.stopPropagation(); this.closest(\'.module-item\').remove()">✕</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:10px" onclick="event.stopPropagation(); this.closest(\'.module-item\').remove(); reindexModules()">✕</button>' +
     '</div>' +
     '<input type="hidden" name="module_' + idx + '_type" value="' + type + '">' +
     '<input type="hidden" name="module_' + idx + '_order" value="' + (idx + 1) + '">' +
     '<input type="hidden" name="module_' + idx + '_variant" value="' + variant + '">' +
     '<div class="module-config p-2 border-top" style="display:block">' +
-      '<div class="text-muted small">模块已添加，填写字段后保存</div>' +
+      '<div class="d-flex gap-1 mb-2">' +
+        '<button type="button" class="btn btn-sm btn-outline-secondary active device-tab" data-device="desktop" onclick="switchModuleDevice(this,\'desktop\')">💻 电脑</button>' +
+        '<button type="button" class="btn btn-sm btn-outline-secondary device-tab" data-device="tablet" onclick="switchModuleDevice(this,\'tablet\')">📱 平板</button>' +
+        '<button type="button" class="btn btn-sm btn-outline-secondary device-tab" data-device="mobile" onclick="switchModuleDevice(this,\'mobile\')">📱 手机</button>' +
+      '</div>' +
+      '<div class="device-config device-desktop">' +
+        '<div class="small fw-semibold mb-1 text-primary">电脑端配置</div>' +
+        heroUpload +
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>' +
+            '<select class="form-select form-select-sm" name="module_' + idx + '_resp_columns">' +
+              '<option value="" selected>默认</option>' +
+              '<option value="1">1 列</option><option value="2">2 列</option>' +
+              '<option value="3">3 列</option><option value="4">4 列</option>' +
+            '</select></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label>' +
+            '<input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_max_items" placeholder="0=全部"></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="device-config device-tablet" style="display:none">' +
+        '<div class="small fw-semibold mb-1 text-primary">平板端配置（继承电脑端）</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>' +
+            '<select class="form-select form-select-sm" name="module_' + idx + '_resp_tablet_columns">' +
+              '<option value="" selected>继承电脑端</option>' +
+              '<option value="1">1 列</option><option value="2">2 列</option><option value="3">3 列</option>' +
+            '</select></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label>' +
+            '<input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_max_items" placeholder="继承电脑端"></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="device-config device-mobile" style="display:none">' +
+        '<div class="small fw-semibold mb-1 text-primary">手机端配置（继承电脑端）</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>' +
+            '<select class="form-select form-select-sm" name="module_' + idx + '_resp_mobile_columns">' +
+              '<option value="" selected>继承电脑端</option>' +
+              '<option value="1">1 列</option><option value="2">2 列</option>' +
+            '</select></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label>' +
+            '<input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_max_items" placeholder="继承电脑端"></div>' +
+        '</div>' +
+      '</div>' +
     '</div>';
   container.appendChild(div);
 
@@ -125,12 +322,10 @@ function addModule(type, variant) {
 }
 
 function removeModule(idx) {
-  // find and remove item
   var items = document.querySelectorAll('.module-item');
   items.forEach(function(item, i){
     if (i === idx) item.remove();
   });
-  // re-index
   reindexModules();
 }
 
@@ -141,6 +336,12 @@ function reindexModules() {
     item.querySelectorAll('input[type="hidden"]').forEach(function(inp){
       var name = inp.getAttribute('name');
       if (name) inp.setAttribute('name', name.replace(/module_\d+_/, 'module_' + i + '_'));
+    });
+    item.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el){
+      var name = el.getAttribute('name');
+      if (name && name.startsWith('module_')) {
+        el.setAttribute('name', name.replace(/module_\d+_/, 'module_' + i + '_'));
+      }
     });
   });
 }
@@ -161,6 +362,7 @@ document.getElementById('modulesForm').addEventListener('submit', function(e){
 <style>
 .block-card:hover { border-color: #0d6efd; background: #f0f7ff; }
 .module-item.expanded .module-config { display: block !important; }
+.device-config { padding: 4px 0; }
 </style>
 
 {% else %}

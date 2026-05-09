@@ -47,7 +47,7 @@
   {%- endif -%}
 {%- endmacro %}
 
-<header class="site-header" id="siteHeader">
+<header class="site-header builder-region" id="siteHeader" data-builder-region="header">
   <div class="header-main">
     <div class="container">
       <a href="{{ base_url }}/{{ lang }}/" class="logo">
@@ -201,7 +201,7 @@ document.addEventListener('click', function(e) {
   {% block content %}{% endblock %}
 </main>
 
-<footer class="site-footer">
+<footer class="site-footer builder-region" data-builder-region="footer">
   <div class="container">
     <div class="footer-grid">
       <div class="footer-col">

@@ -1,5 +1,5 @@
 {# 精选项目卡片 - 默认变体: Bento 网格布局 #}
-{% if module.data and module.data['items'] %}
+{% if module.data and module.data['items'] is iterable and module.data['items'] is not string %}
 <section class="section featured-highlights">
   <div class="container">
     <div class="fh-bento-grid">

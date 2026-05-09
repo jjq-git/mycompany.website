@@ -1,8 +1,16 @@
-"""店主后台路由. M1: 默认进 site_id=1, 不带登录."""
-from datetime import datetime, timezone
+"""店主后台路由.
+
+MVP 登录：邮箱魔法链接，不存密码。开发环境默认把登录链接打印到控制台，
+并在页面提示中展示，方便本地调试；接入邮件服务后替换发送逻辑即可。
+"""
+import hashlib
+import secrets
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from flask import Blueprint, abort, current_app, render_template, send_from_directory
+from flask import (Blueprint, abort, current_app, flash, redirect, render_template,
+                   send_from_directory, session, url_for)
+from werkzeug.utils import secure_filename
 
 import re
 
@@ -11,25 +19,164 @@ import yaml as _yaml
 from . import datasets
 from . import menu as menu_lib
 from .builder import build_site, build_template_preview
-from .models import Site, Template, User
+from .db import db
+from .models import LoginToken, Site, Template, User
 from .site_storage import (copy_seed_data, init_site_folder,
                             list_yaml_files, read_yaml, write_yaml)
 
 bp = Blueprint('core', __name__)
+
+ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
+ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'ogg', 'mov'}
+
+
+AUTH_EXEMPT_ENDPOINTS = {
+    'core.login',
+    'core.magic_login',
+    'core.template_preview',
+    'core.preview_site',
+    'core.preview_or_build',
+    'core.preview',
+}
+
+
+def _hash_token(raw_token):
+    """对魔法链接 token 做 SHA-256；数据库不保存明文 token."""
+    return hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+
+
+def _normalize_email(email):
+    return (email or '').strip().lower()
+
+
+def _save_uploaded_image(site_id, file_storage, prefix='image'):
+    """保存上传图片到 sites/<id>/assets/uploads/ 并转换为 WebP，返回站点内绝对路径.
+
+    返回示例: /assets/uploads/product-cover-20260509153000.webp
+    """
+    if not file_storage or not file_storage.filename:
+        return ''
+
+    original = secure_filename(file_storage.filename)
+    suffix = original.rsplit('.', 1)[-1].lower() if '.' in original else ''
+    if suffix not in ALLOWED_IMAGE_EXTENSIONS:
+        raise ValueError('仅支持 JPG、PNG、GIF、WebP 图片')
+
+    try:
+        from PIL import Image, ImageSequence
+    except ImportError as exc:
+        raise RuntimeError('缺少 Pillow 依赖，请先安装 requirements.txt') from exc
+
+    uploads_dir = Path(current_app.config['SITES_DIR']) / str(site_id) / 'assets' / 'uploads'
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+
+    safe_prefix = secure_filename(prefix or 'image') or 'image'
+    filename = f"{safe_prefix}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(4)}.webp"
+    output_path = uploads_dir / filename
+
+    image = Image.open(file_storage.stream)
+    first_frame = next(ImageSequence.Iterator(image)).convert('RGBA')
+    background = Image.new('RGBA', first_frame.size, (255, 255, 255, 0))
+    background.alpha_composite(first_frame)
+    background.save(output_path, 'WEBP', quality=86, method=6)
+    return f'/assets/uploads/{filename}'
+
+
+def _save_uploaded_media(site_id, file_storage, prefix='media'):
+    """保存图片或视频；图片转 WebP，视频原样保存到 assets/uploads。"""
+    if not file_storage or not file_storage.filename:
+        return ''
+    original = secure_filename(file_storage.filename)
+    suffix = original.rsplit('.', 1)[-1].lower() if '.' in original else ''
+    if suffix in ALLOWED_IMAGE_EXTENSIONS:
+        return _save_uploaded_image(site_id, file_storage, prefix=prefix)
+    if suffix not in ALLOWED_VIDEO_EXTENSIONS:
+        raise ValueError('仅支持 JPG、PNG、GIF、WebP 图片或 MP4、WebM、OGG、MOV 视频')
+
+    uploads_dir = Path(current_app.config['SITES_DIR']) / str(site_id) / 'assets' / 'uploads'
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+    safe_prefix = secure_filename(prefix or 'media') or 'media'
+    filename = f"{safe_prefix}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(4)}.{suffix}"
+    output_path = uploads_dir / filename
+    file_storage.save(output_path)
+    return f'/assets/uploads/{filename}'
+
+
+def _uploaded_image_or_form(site_id, form_field, file_field=None, prefix='image'):
+    """若上传了图片则返回 WebP URL，否则返回文本框中的原 URL。"""
+    from flask import request
+    upload = request.files.get(file_field or f'{form_field}_file')
+    if upload and upload.filename:
+        return _save_uploaded_image(site_id, upload, prefix=prefix)
+    return request.form.get(form_field, '').strip()
+
+
+def _field_looks_like_image(field):
+    name = (field or '').lower()
+    return any(part in name for part in ('image', 'cover', 'background', 'media', 'photo', 'logo'))
+
+
+def _field_looks_like_uploadable_media(field):
+    """判断字段是否适合展示上传控件。
+
+    Banner 的媒体字段既可能是图片也可能是视频；后端当前只处理图片转 WebP，
+    所以前端可展示文件入口，但保存时仍以图片字段为准。
+    """
+    name = (field or '').lower()
+    return any(part in name for part in ('image', 'cover', 'background', 'media', 'photo', 'logo'))
+
+
+def _current_user():
+    """从 session 读取当前用户；无效 session 自动清理."""
+    user_id = session.get('user_id')
+    if not user_id:
+        return None
+    user = User.query.get(user_id)
+    if not user or user.status != 'active':
+        session.pop('user_id', None)
+        return None
+    return user
+
+
+@bp.before_request
+def require_login():
+    """保护后台页面：除登录和静态预览外都需要登录."""
+    from flask import request
+    if request.endpoint in AUTH_EXEMPT_ENDPOINTS:
+        return None
+    if request.endpoint and request.endpoint.startswith('static'):
+        return None
+    if not _current_user():
+        return redirect(url_for('core.login', next=request.full_path if request.query_string else request.path))
+    return None
 
 
 @bp.context_processor
 def inject_context():
     """给所有模板注入站点上下文."""
     from flask import request
+    user = _current_user()
     site_id = request.args.get('site', type=int)
     if not site_id:
-        site = Site.query.order_by(Site.id.desc()).first()
+        if user and user.role == 'admin':
+            site = Site.query.order_by(Site.id.desc()).first()
+        elif user:
+            site = Site.query.filter_by(owner_id=user.id).order_by(Site.id.desc()).first()
+        else:
+            site = None
         site_id = site.id if site else None
     else:
         site = Site.query.get(site_id)
+        if site and user and user.role != 'admin' and site.owner_id != user.id:
+            site = None
 
-    ctx = {'counts': {}, 'left_menu_items': [], 'template_meta': {}}
+    ctx = {'counts': {}, 'left_menu_items': [], 'template_meta': {}, 'available_sites': []}
+
+    if user:
+        query = Site.query
+        if user.role != 'admin':
+            query = query.filter_by(owner_id=user.id)
+        ctx['available_sites'] = query.order_by(Site.id.desc()).all()
 
     if site and site_id:
         ctx['counts']['products'] = len(datasets.load(site_id, 'products') or [])
@@ -55,20 +202,113 @@ def inject_context():
 
 
 def _current_context():
-    """M1 占位: 取当前站点 (默认最新创建的). M2 接入登录后改为 session.
-
-    支持 ?site=<id> 切换 (一次性, 不持久).
-    """
+    """取当前登录用户和站点；普通用户只能访问自己的站点，admin 可访问全部."""
     from flask import request
+    user = _current_user()
+    if not user:
+        abort(401)
     site_id = request.args.get('site', type=int)
     if site_id:
         site = Site.query.get(site_id)
     else:
-        site = Site.query.order_by(Site.id.desc()).first()
-    user = User.query.first()
+        query = Site.query
+        if user.role != 'admin':
+            query = query.filter_by(owner_id=user.id)
+        site = query.order_by(Site.id.desc()).first()
     if not site:
-        abort(404, "尚无站点, 请先 .venv/bin/flask --app run create-site EMAIL SLUG")
+        abort(404, "尚无站点，请先从模板库创建站点")
+    if user.role != 'admin' and site.owner_id != user.id:
+        abort(403, "无权访问该站点")
     return user, site
+
+
+def _create_magic_link(email, request):
+    """创建一次性魔法链接 token，返回完整登录 URL."""
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        user = User(email=email, status='active')
+        db.session.add(user)
+        db.session.flush()
+
+    raw_token = secrets.token_urlsafe(32)
+    token = LoginToken(
+        user_id=user.id,
+        email=email,
+        token_hash=_hash_token(raw_token),
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=15),
+        ip_address=request.headers.get('X-Forwarded-For', request.remote_addr or '')[:45],
+    )
+    db.session.add(token)
+    db.session.commit()
+    return url_for('core.magic_login', token=raw_token, _external=True)
+
+
+@bp.route('/login', methods=['GET', 'POST'])
+def login():
+    """邮箱魔法链接登录入口."""
+    from flask import request
+    if _current_user() and request.method == 'GET':
+        return redirect(request.args.get('next') or url_for('core.overview'))
+
+    magic_link = None
+    email = ''
+    if request.method == 'POST':
+        email = _normalize_email(request.form.get('email'))
+        if not email or '@' not in email:
+            flash('请输入有效邮箱地址', 'danger')
+        else:
+            magic_link = _create_magic_link(email, request)
+            current_app.logger.info('Magic login link for %s: %s', email, magic_link)
+            flash('登录链接已生成。开发环境中可直接点击下方链接；生产环境将通过邮件发送。', 'success')
+    return render_template('auth/login.html', email=email, magic_link=magic_link)
+
+
+@bp.route('/auth/magic/<token>')
+def magic_login(token):
+    """消费一次性 token 并写入 session."""
+    now = datetime.now(timezone.utc)
+    login_token = LoginToken.query.filter_by(token_hash=_hash_token(token)).first()
+    if not login_token or login_token.used_at:
+        flash('登录链接无效或已使用，请重新获取。', 'danger')
+        return redirect(url_for('core.login'))
+    expires_at = login_token.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < now:
+        flash('登录链接已过期，请重新获取。', 'danger')
+        return redirect(url_for('core.login'))
+
+    user = User.query.get(login_token.user_id) or User.query.filter_by(email=login_token.email).first()
+    if not user or user.status != 'active':
+        flash('账号不可用，请联系管理员。', 'danger')
+        return redirect(url_for('core.login'))
+
+    login_token.used_at = now
+    user.email_verified_at = user.email_verified_at or now
+    user.last_login_at = now
+    db.session.commit()
+
+    session.clear()
+    session['user_id'] = user.id
+    flash('已登录', 'success')
+    if Site.query.filter_by(owner_id=user.id).first() or user.role == 'admin':
+        return redirect(url_for('core.overview'))
+    return redirect(url_for('core.templates_gallery'))
+
+
+@bp.route('/logout', methods=['POST'])
+def logout():
+    session.clear()
+    flash('已退出登录', 'success')
+    return redirect(url_for('core.login'))
+
+
+@bp.route('/assets/<path:filename>')
+def site_asset(filename):
+    """后台/预览使用的站点上传资源入口。静态导出时由 output/assets 直接承载。"""
+    _, site = _current_context()
+    assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
+    return send_from_directory(assets_root, filename)
 
 
 @bp.route('/')
@@ -140,8 +380,9 @@ def products():
 def product_new():
     from flask import redirect, url_for
     _, site = _current_context()
+    n = len(datasets.load(site.id, 'products')) + 1
     new_id = datasets.add(site.id, 'products', {
-        'name': '新产品', 'slug': f'product-{datasets.load(site.id, "products")|length + 1}',
+        'name': '新产品', 'slug': f'product-{n}',
         'summary': '', 'description': '', 'cover': '', 'category': '', 'specs': {},
     })
     return redirect(url_for('core.product_edit', product_id=new_id))
@@ -167,6 +408,7 @@ def product_edit(product_id):
     if request.method == 'POST':
         fields = {f: request.form.get(f, '').strip()
                   for f in ('name', 'slug', 'category', 'summary', 'description', 'cover')}
+        fields['cover'] = _uploaded_image_or_form(site.id, 'cover', 'cover_file', 'product-cover')
         # specs: 多行 "键: 值"
         specs = {}
         for line in request.form.get('specs', '').strip().splitlines():
@@ -279,6 +521,7 @@ def post_edit(item_id):
     if request.method == 'POST':
         fields = {f: request.form.get(f, '').strip()
                   for f in ('title', 'slug', 'date', 'cover', 'excerpt', 'body')}
+        fields['cover'] = _uploaded_image_or_form(site.id, 'cover', 'cover_file', 'post-cover')
         datasets.update(site.id, 'posts', item_id, fields)
         flash('已保存')
         return redirect(url_for('core.post_edit', item_id=item_id))
@@ -335,8 +578,9 @@ def page_home():
         for key in ('featured_section', 'features_section', 'about_brief', 'blog_section', 'subscribe_section'):
             page.setdefault(key, {})
 
-    return render_template('dashboard/page_home.html',
+    return render_template('dashboard/panel_page_edit.html',
                            user=user, site=site, page=page,
+                           page_key='home',
                            is_modules_format=is_modules_format,
                            blocks=blocks,
                            active='pages_home')
@@ -384,6 +628,100 @@ def _save_link_list(site_id, settings_key):
     write_yaml(site_id, 'settings.yaml', settings)
 
 
+@bp.route('/settings/header', methods=['GET', 'POST'])
+def header_edit():
+    """网站头部变体选择 + 语言切换按钮配置."""
+    from flask import flash, redirect, request, url_for
+    user, site = _current_context()
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    is_fragment = request.args.get('_fragment') is not None
+
+    # Header 变体列表（模板 meta 中定义）
+    tpl_meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    tpl_meta = _yaml.safe_load(tpl_meta_path.read_text(encoding='utf-8')) if tpl_meta_path.exists() else {}
+    header_variants = tpl_meta.get('header_variants', [
+        {'key': 'logo_left_menu_right', 'label': 'Logo 左 + 菜单右', 'description': '经典布局，适合大多数企业网站'},
+        {'key': 'logo_center_menu_below', 'label': 'Logo 居中 + 菜单下方', 'description': '对称布局，适合品牌展示'},
+        {'key': 'minimal_hamburger', 'label': '极简（汉堡菜单）', 'description': 'Logo 左 + 汉堡菜单，移动端友好'},
+        {'key': 'top_bar_social', 'label': '顶栏 + 社交图标', 'description': '带电话 + 社交图标的双层顶栏'},
+    ])
+
+    # 语言切换按钮样式列表
+    lang_switcher_styles = [
+        {'key': 'inline_row', 'label': '水平行内（中文 | EN | JP）'},
+        {'key': 'vertical_dropdown', 'label': '垂直下拉'},
+        {'key': 'flag_icon', 'label': '旗帜 + 简称'},
+    ]
+
+    if request.method == 'POST':
+        header = settings.setdefault('header', {})
+        header['variant'] = request.form.get('header_variant', header_variants[0]['key'])
+        header['language_switcher'] = {
+            'enabled': bool(request.form.get('lang_switcher_enabled')),
+            'style': request.form.get('lang_switcher_style', 'vertical_dropdown'),
+        }
+        write_yaml(site.id, 'settings.yaml', settings)
+        flash('已保存')
+        if is_fragment:
+            return redirect(url_for('core.header_edit', _fragment='1'))
+        return redirect(url_for('core.header_edit'))
+
+    current_header = settings.get('header') or {}
+    if is_fragment:
+        return render_template('dashboard/panel_header.html',
+                               user=user, site=site,
+                               header_variants=header_variants,
+                               lang_switcher_styles=lang_switcher_styles,
+                               current_header=current_header)
+    return render_template('dashboard/header_edit.html',
+                           user=user, site=site,
+                           header_variants=header_variants,
+                           lang_switcher_styles=lang_switcher_styles,
+                           current_header=current_header,
+                           active='header')
+
+
+@bp.route('/settings/footer_variant', methods=['GET', 'POST'])
+def footer_variant_edit():
+    """网站底部变体选择."""
+    from flask import flash, redirect, request, url_for
+    user, site = _current_context()
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    is_fragment = request.args.get('_fragment') is not None
+
+    # Footer 变体列表
+    tpl_meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    tpl_meta = _yaml.safe_load(tpl_meta_path.read_text(encoding='utf-8')) if tpl_meta_path.exists() else {}
+    footer_variants = tpl_meta.get('footer_variants', [
+        {'key': 'four_columns', 'label': '四栏链接', 'description': '产品、快速链接、联系方式、关于我们四栏布局'},
+        {'key': 'three_columns_subscribe', 'label': '三栏 + 订阅', 'description': '带邮件订阅框的三栏布局'},
+        {'key': 'minimal_single_line', 'label': '极简单行', 'description': '仅显示版权信息和备案号'},
+        {'key': 'map_contact', 'label': '地图 + 联系方式', 'description': '带地图和详细联系方式的底部'},
+    ])
+
+    if request.method == 'POST':
+        footer = settings.setdefault('footer', {})
+        footer['variant'] = request.form.get('footer_variant', footer_variants[0]['key'])
+        footer['icp'] = request.form.get('icp', '').strip()
+        write_yaml(site.id, 'settings.yaml', settings)
+        flash('已保存')
+        if is_fragment:
+            return redirect(url_for('core.footer_variant_edit', _fragment='1'))
+        return redirect(url_for('core.footer_variant_edit'))
+
+    current_footer = settings.get('footer') or {}
+    if is_fragment:
+        return render_template('dashboard/panel_footer_variant.html',
+                               user=user, site=site,
+                               footer_variants=footer_variants,
+                               current_footer=current_footer)
+    return render_template('dashboard/footer_variant.html',
+                           user=user, site=site,
+                           footer_variants=footer_variants,
+                           current_footer=current_footer,
+                           active='footer_variant')
+
+
 @bp.route('/settings/menu', methods=['GET', 'POST'])
 def menu_edit():
     from flask import flash, redirect, request, url_for
@@ -392,42 +730,48 @@ def menu_edit():
     is_fragment = request.args.get('_fragment') is not None
 
     if request.method == 'POST':
-        labels = request.form.getlist('label[]')
-        types = request.form.getlist('type[]')
-        targets_list = request.form.getlist('target_list[]')
-        urls_link = request.form.getlist('url_link[]')
-        dropdown_styles = request.form.getlist('dropdown_style[]')
-        children_values = request.form.getlist('children_json[]')
-        items = [{'label': '首页', 'type': 'home'}]
-        for i, label in enumerate(labels):
-            label = label.strip()
-            if not label:
-                continue
-            t = types[i] if i < len(types) else 'link'
-            if t == 'home':
-                items[0]['label'] = label or '首页'
-                continue
-            it = {'label': label, 'type': t}
-            if t in ('list', 'page'):
-                target = targets_list[i].strip() if i < len(targets_list) else ''
-                if target:
-                    it['target'] = target
-            elif t == 'link':
-                url = urls_link[i].strip() if i < len(urls_link) else ''
-                if url:
-                    it['url'] = url
-            dropdown_style = dropdown_styles[i].strip() if i < len(dropdown_styles) else ''
-            if dropdown_style:
-                it['dropdown_style'] = dropdown_style
-            children_raw = children_values[i].strip() if i < len(children_values) else ''
-            if children_raw:
-                try:
-                    children = _yaml.safe_load(children_raw) or []
-                except _yaml.YAMLError:
-                    children = []
-                if isinstance(children, list):
-                    it['children'] = children
-            items.append(it)
+        menu_json = request.form.get('menu_json', '').strip()
+        if menu_json:
+            try:
+                raw_items = _yaml.safe_load(menu_json) or []
+            except _yaml.YAMLError:
+                raw_items = []
+            items = menu_lib.clean_for_storage(raw_items)
+        else:
+            labels = request.form.getlist('label[]')
+            types = request.form.getlist('type[]')
+            targets_list = request.form.getlist('target_list[]')
+            urls_link = request.form.getlist('url_link[]')
+            dropdown_styles = request.form.getlist('dropdown_style[]')
+            children_values = request.form.getlist('children_json[]')
+            raw_items = [{'label': '首页', 'type': 'home'}]
+            for i, label in enumerate(labels):
+                label = label.strip()
+                if not label:
+                    continue
+                t = types[i] if i < len(types) else 'link'
+                raw = {'label': label, 'type': t}
+                if t in ('list', 'page'):
+                    target = targets_list[i].strip() if i < len(targets_list) else ''
+                    if target:
+                        raw['target'] = target
+                elif t == 'link':
+                    url = urls_link[i].strip() if i < len(urls_link) else ''
+                    if url:
+                        raw['url'] = url
+                dropdown_style = dropdown_styles[i].strip() if i < len(dropdown_styles) else ''
+                if dropdown_style:
+                    raw['dropdown_style'] = dropdown_style
+                children_raw = children_values[i].strip() if i < len(children_values) else ''
+                if children_raw:
+                    try:
+                        children = _yaml.safe_load(children_raw) or []
+                    except _yaml.YAMLError:
+                        children = []
+                    if isinstance(children, list):
+                        raw['children'] = children
+                raw_items.append(raw)
+            items = menu_lib.clean_for_storage(raw_items)
         settings['menu'] = items
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存，首页已保持为固定入口')
@@ -531,7 +875,11 @@ SLUG_PATTERN = re.compile(r'^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$')
 @bp.route('/templates')
 def templates_gallery():
     from flask import request
-    user, site = _current_context()
+    user = _current_user()
+    query = Site.query
+    if user and user.role != 'admin':
+        query = query.filter_by(owner_id=user.id)
+    site = query.order_by(Site.id.desc()).first()
     templates = Template.query.order_by(Template.name).all()
     if request.args.get('_fragment'):
         return render_template('dashboard/panel_templates.html',
@@ -564,9 +912,9 @@ def site_new():
     if not template:
         return redirect(url_for('core.templates_gallery'))
 
-    user = User.query.first()
+    user = _current_user()
     if not user:
-        abort(403, '尚无用户. 先创建一个: flask --app run create-user EMAIL')
+        return redirect(url_for('core.login'))
 
     form = {'name': '', 'slug': ''}
     error = None
@@ -601,7 +949,8 @@ def site_new():
             return redirect(url_for('core.overview', site=site.id))
 
     return render_template('dashboard/site_new.html',
-                           user=user, site=Site.query.first(),
+                           user=user,
+                           site=Site.query.filter_by(owner_id=user.id).order_by(Site.id.desc()).first(),
                            template=template, form=form, error=error,
                            active='templates')
 
@@ -744,25 +1093,46 @@ def _render(template_name, **kwargs):
     return render_template(template_name, **kwargs)
 
 
-@bp.route('/_panel/<path:page_key>')
+@bp.route('/_panel/<path:page_key>', methods=['GET', 'POST'])
 def page_panel(page_key):
-    """动态菜单项面板路由：根据 page_key 分发到对应数据集列表或单页编辑."""
+    """动态菜单项面板路由：根据 page_key 分发到对应数据集列表或单页编辑.
+    
+    模块库是公用的——所有菜单页面都可以从同一个 blocks/ 中选择模块，
+    只是每个页面填不同的数据，保存在 pages/<page_key>.yaml 的 modules 数组中。
+    """
+    from flask import flash, redirect, request, url_for
     user, site = _current_context()
 
-    # 尝试匹配数据集
+    # POST：保存模块配置
+    if request.method == 'POST':
+        # 尝试匹配单页（数据集页面暂不支持模块保存，只处理单页）
+        page = read_yaml(site.id, f'pages/{page_key}.yaml') or {}
+        page['modules'] = _parse_modules_form(request.form)
+        # 清理旧格式字段（如果从旧格式迁移来）
+        for k in list(page.keys()):
+            if k not in ('modules',):
+                page.pop(k, None)
+        write_yaml(site.id, f'pages/{page_key}.yaml', page)
+        flash('已保存')
+        return redirect(url_for('core.page_panel', page_key=page_key, _fragment='1'))
+
+    # 优先匹配单页：即使与数据集同名，也允许在中间预览中配置页面模块。
+    page = read_yaml(site.id, f'pages/{page_key}.yaml')
+    if page:
+        blocks = _get_available_blocks(site.template_name)
+        is_modules_format = 'modules' in page
+        return _render('dashboard/panel_page_edit.html',
+                       user=user, site=site,
+                       page_key=page_key, page=page,
+                       blocks=blocks, is_modules_format=is_modules_format,
+                       active=page_key)
+
+    # 再匹配数据集列表。
     data_items = datasets.load(site.id, page_key)
     if data_items:
         return _render('dashboard/panel_data_list.html',
                        user=user, site=site,
                        dataset_key=page_key, items=data_items,
-                       active=page_key)
-
-    # 尝试匹配单页
-    page = read_yaml(site.id, f'pages/{page_key}.yaml')
-    if page:
-        return _render('dashboard/panel_page_edit.html',
-                       user=user, site=site,
-                       page_key=page_key, page=page,
                        active=page_key)
 
     return _render('dashboard/panel_empty.html',
@@ -780,7 +1150,7 @@ def _get_available_blocks(template_name):
 
 
 def _parse_modules_form(form):
-    """从 POST 表单解析 modules 数组."""
+    """从 POST 表单解析 modules 数组（含 responsive 字段）."""
     def _parse_value(value):
         value = (value or '').strip()
         if not value:
@@ -813,15 +1183,151 @@ def _parse_modules_form(form):
         data = {}
         for key in form:
             prefix = f'{idx}_data_'
-            if key.startswith(prefix):
+            if key.startswith(prefix) and '_resp_' not in key:
                 field = key[len(prefix):]
-                data[field] = _parse_value(form.get(key, ''))
+                if not any(k in key for k in ('_resp_tablet_', '_resp_mobile_', '_resp_columns', '_resp_max_items')):
+                    data[field] = _parse_value(form.get(key, ''))
 
-        modules.append({
+        from flask import request
+        if m_type == 'hero_banner':
+            slide_count = 0
+            try:
+                slide_count = int(form.get(f'{idx}_slide_count', '0'))
+            except (ValueError, TypeError):
+                slide_count = 0
+
+            slides = []
+            for slide_i in range(slide_count):
+                slide_prefix = f'{idx}_slide_{slide_i}_'
+                slide = {}
+                for field in (
+                    'type', 'media', 'title', 'subtitle', 'badge',
+                    'primaryBtn', 'primaryBtnLink', 'primaryBtnLinkTarget',
+                    'secondaryBtn', 'secondaryBtnLink',
+                    'cta_text', 'cta_url', 'video_url', 'background_image'
+                ):
+                    value = form.get(f'{slide_prefix}{field}', '').strip()
+                    if value:
+                        slide[field] = _parse_value(value)
+
+                upload = request.files.get(f'{slide_prefix}file')
+                if upload and upload.filename:
+                    media_url = _save_uploaded_media(
+                        _current_context()[1].id,
+                        upload,
+                        prefix=f'{m_type}-slide-{slide_i + 1}',
+                    )
+                    suffix = upload.filename.rsplit('.', 1)[-1].lower() if '.' in upload.filename else ''
+                    slide['type'] = 'video' if suffix in ALLOWED_VIDEO_EXTENSIONS else 'image'
+                    slide['media'] = media_url
+
+                if slide.get('media') or slide.get('title') or slide.get('subtitle'):
+                    slides.append(slide)
+
+            if slides:
+                data['slides'] = slides
+            else:
+                slides_value = data.get('slides')
+                if isinstance(slides_value, list):
+                    data['slides'] = slides_value
+                elif isinstance(slides_value, str) and slides_value.strip():
+                    parsed_slides = _parse_value(slides_value)
+                    if isinstance(parsed_slides, list):
+                        data['slides'] = parsed_slides
+
+            uploaded_slides = []
+            for upload in request.files.getlist(f'{idx}_data_slides_files'):
+                if upload and upload.filename:
+                    media_url = _save_uploaded_media(
+                        _current_context()[1].id,
+                        upload,
+                        prefix=f'{m_type}-slide',
+                    )
+                    suffix = upload.filename.rsplit('.', 1)[-1].lower() if '.' in upload.filename else ''
+                    uploaded_slides.append({
+                        'type': 'video' if suffix in ALLOWED_VIDEO_EXTENSIONS else 'image',
+                        'media': media_url,
+                        'title': data.get('title', ''),
+                        'subtitle': data.get('subtitle', ''),
+                        'primaryBtn': data.get('primaryBtn') or data.get('cta_text', ''),
+                        'primaryBtnLink': data.get('primaryBtnLink') or data.get('cta_url', ''),
+                        'cta_text': data.get('cta_text', ''),
+                        'cta_url': data.get('cta_url', ''),
+                        'badge': data.get('badge', ''),
+                    })
+            if uploaded_slides:
+                existing = data.get('slides') if isinstance(data.get('slides'), list) else []
+                data['slides'] = existing + uploaded_slides
+
+        for field in list(data.keys()):
+            if _field_looks_like_image(field):
+                upload = request.files.get(f'{idx}_data_{field}_file')
+                if upload and upload.filename:
+                    data[field] = _save_uploaded_image(
+                        _current_context()[1].id,
+                        upload,
+                        prefix=f'{m_type}-{field}',
+                    )
+
+        # 解析电脑端的 columns 和 max_items
+        columns_val = form.get(f'{idx}_resp_columns', '').strip()
+        if columns_val:
+            try:
+                data['columns'] = int(columns_val)
+            except ValueError:
+                pass
+        max_items_val = form.get(f'{idx}_resp_max_items', '').strip()
+        if max_items_val:
+            try:
+                data['max_items'] = int(max_items_val)
+            except ValueError:
+                pass
+
+        # 解析响应式配置
+        responsive = {}
+        for device in ('tablet', 'mobile'):
+            device_data = {}
+            # 设备独立数据字段
+            for key in form:
+                prefix = f'{idx}_resp_{device}_data_'
+                if key.startswith(prefix):
+                    field = key[len(prefix):]
+                    val = form.get(key, '').strip()
+                    if val:
+                        device_data[field] = _parse_value(val)
+
+            # 设备 columns
+            dev_columns = form.get(f'{idx}_resp_{device}_columns', '').strip()
+            if dev_columns:
+                try:
+                    device_data['columns'] = int(dev_columns)
+                except ValueError:
+                    pass
+
+            # 设备 max_items
+            dev_max = form.get(f'{idx}_resp_{device}_max_items', '').strip()
+            if dev_max:
+                try:
+                    device_data['max_items'] = int(dev_max)
+                except ValueError:
+                    pass
+
+            # 设备 hidden
+            if form.get(f'{idx}_resp_{device}_hidden'):
+                device_data['hidden'] = True
+
+            if device_data:
+                responsive[device] = device_data
+
+        module = {
             'type': m_type,
             'order': order,
             'variant': variant,
             'data': data,
-        })
+        }
+        if responsive:
+            module['responsive'] = responsive
+
+        modules.append(module)
 
     return modules
