@@ -87,11 +87,18 @@ def _save_uploaded_media(site_id, file_storage, prefix='media'):
     if not file_storage or not file_storage.filename:
         return ''
     original = secure_filename(file_storage.filename)
+    if not original:
+        return ''
     suffix = original.rsplit('.', 1)[-1].lower() if '.' in original else ''
     if suffix in ALLOWED_IMAGE_EXTENSIONS:
-        return _save_uploaded_image(site_id, file_storage, prefix=prefix)
+        try:
+            return _save_uploaded_image(site_id, file_storage, prefix=prefix)
+        except Exception as exc:
+            current_app.logger.warning('图片保存失败: %s', exc)
+            return ''
     if suffix not in ALLOWED_VIDEO_EXTENSIONS:
-        raise ValueError('仅支持 JPG、PNG、GIF、WebP 图片或 MP4、WebM、OGG、MOV 视频')
+        current_app.logger.warning('不支持的文件类型: %s', suffix)
+        return ''
 
     uploads_dir = Path(current_app.config['SITES_DIR']) / str(site_id) / 'assets' / 'uploads'
     uploads_dir.mkdir(parents=True, exist_ok=True)
@@ -907,24 +914,32 @@ def template_preview(template_name, filepath='index.html'):
 @bp.route('/sites/new', methods=['GET', 'POST'])
 def site_new():
     from flask import flash, redirect, request, url_for
+    from .models import SLUG_RESERVED
     template_name = request.args.get('template')
     template = Template.query.filter_by(name=template_name).first() if template_name else None
-    if not template:
-        return redirect(url_for('core.templates_gallery'))
+    templates = Template.query.order_by(Template.name).all()
 
     user = _current_user()
     if not user:
         return redirect(url_for('core.login'))
 
-    form = {'name': '', 'slug': ''}
+    is_fragment = request.args.get('_fragment') is not None
+
+    form = {'name': '', 'slug': '', 'template_name': template.name if template else ''}
     error = None
 
     if request.method == 'POST':
         form['name'] = request.form.get('name', '').strip()
         form['slug'] = request.form.get('slug', '').strip().lower()
+        form['template_name'] = request.form.get('template_name', '').strip()
 
-        from .models import SLUG_RESERVED
-        if not form['name']:
+        # 解析模板：未选时使用第一个可用模板
+        selected_template = Template.query.filter_by(name=form['template_name']).first()
+        if not selected_template:
+            selected_template = Template.query.order_by(Template.name).first()
+        if not selected_template:
+            error = '暂无可用模板，请联系管理员'
+        elif not form['name']:
             error = '请填写站点名'
         elif not SLUG_PATTERN.match(form['slug']):
             error = 'Slug 不合法（要求 3–30 字符，[a-z 0-9 -]，不以 - 开头/结尾）'
@@ -936,22 +951,37 @@ def site_new():
             from .db import db
             site = Site(
                 owner_id=user.id, name=form['name'], slug=form['slug'],
-                folder_path='', template_name=template.name,
-                template_version=template.current_version, cdn_provider='aliyun',
+                folder_path='', template_name=selected_template.name,
+                template_version=selected_template.current_version, cdn_provider='aliyun',
             )
             db.session.add(site)
             db.session.flush()
             site.folder_path = f'sites/{site.id}'
             db.session.commit()
             init_site_folder(site.id)
-            copy_seed_data(site.id, template.name)
+            copy_seed_data(site.id, selected_template.name)
             flash(f'已创建站点 #{site.id} ({form["slug"]})')
+            if is_fragment:
+                from flask import jsonify
+                return jsonify({'ok': True, 'redirect': url_for('core.overview', site=site.id)})
             return redirect(url_for('core.overview', site=site.id))
 
+        # POST 验证失败 -> fragment 模式返回 JSON，普通模式重渲染页面
+        if is_fragment:
+            from flask import jsonify
+            return jsonify({'ok': False, 'error': error})
+
+    current_site = Site.query.filter_by(owner_id=user.id).order_by(Site.id.desc()).first()
+    if is_fragment:
+        return render_template('dashboard/panel_site_new.html',
+                               user=user,
+                               site=current_site,
+                               template=template, templates=templates, form=form, error=error,
+                               active='templates')
     return render_template('dashboard/site_new.html',
                            user=user,
-                           site=Site.query.filter_by(owner_id=user.id).order_by(Site.id.desc()).first(),
-                           template=template, form=form, error=error,
+                           site=current_site,
+                           template=template, templates=templates, form=form, error=error,
                            active='templates')
 
 
@@ -1259,15 +1289,47 @@ def _parse_modules_form(form):
                 existing = data.get('slides') if isinstance(data.get('slides'), list) else []
                 data['slides'] = existing + uploaded_slides
 
+        if m_type == 'feature_grid':
+            feature_count = 0
+            try:
+                feature_count = int(form.get(f'{idx}_feature_count', '0'))
+            except (ValueError, TypeError):
+                feature_count = 0
+
+            features = []
+            for fi in range(feature_count):
+                prefix = f'{idx}_feature_{fi}_'
+                item = {}
+                for field in ('icon', 'title', 'desc'):
+                    value = form.get(f'{prefix}{field}', '').strip()
+                    if value:
+                        item[field] = value
+                if item.get('title') or item.get('desc') or item.get('icon'):
+                    features.append(item)
+
+            if features:
+                data['features'] = features
+            else:
+                features_value = data.get('features')
+                if isinstance(features_value, list):
+                    data['features'] = features_value
+                elif isinstance(features_value, str) and features_value.strip():
+                    parsed_features = _parse_value(features_value)
+                    if isinstance(parsed_features, list):
+                        data['features'] = parsed_features
+
         for field in list(data.keys()):
             if _field_looks_like_image(field):
                 upload = request.files.get(f'{idx}_data_{field}_file')
                 if upload and upload.filename:
-                    data[field] = _save_uploaded_image(
-                        _current_context()[1].id,
-                        upload,
-                        prefix=f'{m_type}-{field}',
-                    )
+                    try:
+                        data[field] = _save_uploaded_image(
+                            _current_context()[1].id,
+                            upload,
+                            prefix=f'{m_type}-{field}',
+                        )
+                    except Exception as exc:
+                        current_app.logger.warning('模块图片保存失败 %s: %s', field, exc)
 
         # 解析电脑端的 columns 和 max_items
         columns_val = form.get(f'{idx}_resp_columns', '').strip()

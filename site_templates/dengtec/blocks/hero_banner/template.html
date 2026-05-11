@@ -8,14 +8,14 @@
     <div class="hero-banner-slide{% if loop.first %} active{% endif %}" data-index="{{ loop.index0 }}">
       <div class="hero-banner-media">
         {% if item.type == 'video' %}
-        <video class="hero-banner-video" src="{{ item.media }}" autoplay muted loop playsinline preload="none"></video>
+        <video class="hero-banner-video" src="{{ base_url }}{{ item.media }}" autoplay muted loop playsinline preload="none"></video>
         {% else %}
-        <div class="hero-banner-image" style="background-image: url('{{ item.media }}')"></div>
+        <div class="hero-banner-image" style="background-image: url('{{ base_url }}{{ item.media }}')"></div>
         {% endif %}
       </div>
       <div class="hero-banner-overlay"></div>
       <div class="hero-banner-content">
-        <h1 class="hero-banner-title">{{ item.title | default(settings.company.name) }}</h1>
+        <h1 class="hero-banner-title">{{ item.title | default('') }}</h1>
         <p class="hero-banner-subtitle">{{ item.subtitle }}</p>
         <div class="hero-banner-actions">
           {% if item.primaryBtn %}

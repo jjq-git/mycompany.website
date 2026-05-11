@@ -16,10 +16,10 @@
     <div class="d-flex flex-column gap-2">
       {% for variant in header_variants %}
       <label class="d-flex align-items-center p-2 border rounded variant-option"
-             style="cursor:pointer; {% if current_header.get('variant', header_variants[0].key) == variant.key %}border-color:#0d6efd;background:#e8f0fe;{% endif %}">
+             style="cursor:pointer; {% if current_header.get('variant', header_variants[0].key) == variant.key %}border-color:#067a7a;background:#e8f0fe;{% endif %}">
         <input type="radio" name="header_variant" value="{{ variant.key }}"
                {% if current_header.get('variant', header_variants[0].key) == variant.key %}checked{% endif %}
-               class="me-2" onchange="this.closest('form').querySelectorAll('.variant-option').forEach(l=>{l.style.borderColor='';l.style.background=''});this.closest('.variant-option').style.borderColor='#0d6efd';this.closest('.variant-option').style.background='#e8f0fe';">
+               class="me-2" onchange="this.closest('form').querySelectorAll('.variant-option').forEach(l=>{l.style.borderColor='';l.style.background=''});this.closest('.variant-option').style.borderColor='#067a7a';this.closest('.variant-option').style.background='#e8f0fe';">
         <div>
           <div class="small fw-semibold">{{ variant.label }}</div>
           <div class="text-muted" style="font-size:10px">{{ variant.description }}</div>

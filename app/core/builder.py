@@ -217,6 +217,7 @@ def build_site(site_id, base_url=''):
                 'products': products_items,
                 'portfolio': data.get('portfolio', []),
                 'posts': data.get('posts', []),
+                'features': data.get('features', []),
             }
 
             _render_for_language(env, tpl_html_dir, output_root, lang_code, common, pages, data, meta)
@@ -234,6 +235,7 @@ def build_site(site_id, base_url=''):
             'products': products_items,
             'portfolio': data.get('portfolio', []),
             'posts': data.get('posts', []),
+            'features': data.get('features', []),
         }
         _render_for_language(env, tpl_html_dir, output_root, '', common, pages, data, meta)
 
@@ -317,6 +319,7 @@ def build_template_preview(template_name, base_url=''):
                 'products': products_items,
                 'portfolio': data.get('portfolio', []),
                 'posts': data.get('posts', []),
+                'features': data.get('features', []),
             }
             _render_for_language(env, tpl_html_dir, output_root, lang_code, common, pages, data, meta)
     else:
@@ -329,6 +332,7 @@ def build_template_preview(template_name, base_url=''):
             'products': products_items,
             'portfolio': data.get('portfolio', []),
             'posts': data.get('posts', []),
+            'features': data.get('features', []),
         }
         _render_for_language(env, tpl_html_dir, output_root, '', common, pages, data, meta)
 

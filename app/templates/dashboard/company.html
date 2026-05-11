@@ -2,58 +2,42 @@
 {% block title %}公司信息{% endblock %}
 
 {% block content %}
-<h1 class="page-title">公司信息</h1>
-<p class="page-subtitle">基础信息会显示在网站底部、关于我们等位置</p>
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <span class="fw-semibold">公司信息</span>
+</div>
 
 {% with messages = get_flashed_messages() %}
   {% for m in messages %}
-    <div class="card" style="max-width: 720px; background: #ecfdf5; border-color: #a7f3d0; color: #065f46;">{{ m }}</div>
+    <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('core.company') }}">
-
-<div class="card" style="max-width: 720px;">
-  <div class="card-title">公司</div>
-  <div class="form-row">
-    <label>公司全称</label>
-    <input type="text" name="company.name" value="{{ company.name or '' }}">
+<form method="post" action="{{ url_for('core.company') }}" style="max-width: 720px;">
+  <div class="mb-2">
+    <label class="form-label small mb-1">公司名称</label>
+    <input class="form-control form-control-sm" name="company.name" value="{{ company.get('name', '') }}">
   </div>
-  <div class="form-row">
-    <label>简称</label>
-    <input type="text" name="company.short_name" value="{{ company.short_name or '' }}">
+  <div class="mb-2">
+    <label class="form-label small mb-1">简称</label>
+    <input class="form-control form-control-sm" name="company.short_name" value="{{ company.get('short_name', '') }}">
   </div>
-  <div class="form-row">
-    <label>ICP 备案号</label>
-    <input type="text" name="company.icp" value="{{ company.icp or '' }}">
+  <div class="mb-2">
+    <label class="form-label small mb-1">备案号</label>
+    <input class="form-control form-control-sm" name="company.icp" value="{{ company.get('icp', '') }}">
   </div>
-</div>
-
-<div class="card" style="max-width: 720px;">
-  <div class="card-title">联系方式</div>
-  <div class="form-row">
-    <label>电话</label>
-    <input type="text" name="contact.phone" value="{{ contact.phone or '' }}">
+  <hr>
+  <div class="mb-2">
+    <label class="form-label small mb-1">电话</label>
+    <input class="form-control form-control-sm" name="contact.phone" value="{{ contact.get('phone', '') }}">
   </div>
-  <div class="form-row">
-    <label>邮箱</label>
-    <input type="email" name="contact.email" value="{{ contact.email or '' }}">
+  <div class="mb-2">
+    <label class="form-label small mb-1">邮箱</label>
+    <input class="form-control form-control-sm" name="contact.email" value="{{ contact.get('email', '') }}">
   </div>
-  <div class="form-row">
-    <label>地址</label>
-    <input type="text" name="contact.address" value="{{ contact.address or '' }}">
+  <div class="mb-2">
+    <label class="form-label small mb-1">地址</label>
+    <input class="form-control form-control-sm" name="contact.address" value="{{ contact.get('address', '') }}">
   </div>
-  <div class="form-row">
-    <label>微信</label>
-    <input type="text" name="contact.wechat" value="{{ contact.wechat or '' }}">
-  </div>
-</div>
-
-<div style="max-width: 720px;">
-  <div class="form-actions">
-    <button class="btn btn-primary" type="submit">保存</button>
-  </div>
-</div>
-
+  <button class="btn btn-primary btn-sm mt-2" type="submit">保存</button>
 </form>
 {% endblock %}

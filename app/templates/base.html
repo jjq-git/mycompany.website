@@ -24,9 +24,10 @@
         {% endfor %}
       </ul>
     </div>
-    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('core.templates_gallery') }}">+ 新建站点</a>
+    <a class="btn btn-outline-secondary btn-sm" href="javascript:void(0)" onclick="openTemplatesPanel()">+ 新建站点</a>
     <div class="flex-grow-1"></div>
     {% if site %}
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('core.preview_site', site_id=site.id) }}" target="_blank" title="在新窗口中打开站点预览">🔍 预览</a>
     <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('core.export_zip') }}">导出 ZIP</a>
     <a class="btn btn-primary btn-sm" href="javascript:doPublish()">发布</a>
     {% endif %}
@@ -50,6 +51,7 @@
     </div>
     <div class="d-flex flex-column">
 
+      {% if site %}
       <div class="small text-muted text-uppercase px-3 pt-2 pb-1" style="font-size:10px;letter-spacing:.05em">内容</div>
       <a class="left-nav-item px-3 py-1 small {% if active == 'overview' %}active{% endif %}"
          href="{{ url_for('core.overview') }}" data-panel="overview">总览</a>
@@ -90,6 +92,8 @@
          href="{{ url_for('core.theme_edit') }}" data-panel="theme">主题颜色</a>
       <a class="left-nav-item px-3 py-1 small {% if active == 'account' %}active{% endif %}"
          href="{{ url_for('core.account') }}" data-panel="account">账号管理</a>
+      {% endif %}
+      <div class="small text-muted text-uppercase px-3 pt-3 pb-1" style="font-size:10px;letter-spacing:.05em">站点</div>
       <a class="left-nav-item px-3 py-1 small {% if active == 'templates' %}active{% endif %}"
          href="{{ url_for('core.templates_gallery') }}" data-panel="templates">模板库</a>
     </div>
@@ -97,21 +101,40 @@
 
   {# 中栏：预览 #}
   <section class="flex-grow-1 d-flex flex-column overflow-hidden bg-light">
-    <div class="bg-white border-bottom d-flex align-items-center px-2 py-1 gap-1 flex-shrink-0">
+    <div class="bg-white border-bottom d-flex align-items-center justify-content-center px-2 py-1 gap-1 flex-shrink-0 position-relative">
       <button class="btn btn-sm btn-outline-secondary active preview-device-btn" data-device="desktop"
-              onclick="switchDevice('desktop')">💻 电脑</button>
+              onclick="switchDevice('desktop')" title="电脑">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span class="ms-1 d-none d-sm-inline">电脑</span>
+      </button>
       <button class="btn btn-sm btn-outline-secondary preview-device-btn" data-device="tablet"
-              onclick="switchDevice('tablet')">📱 平板</button>
+              onclick="switchDevice('tablet')" title="平板">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+        <span class="ms-1 d-none d-sm-inline">平板</span>
+      </button>
       <button class="btn btn-sm btn-outline-secondary preview-device-btn" data-device="mobile"
-              onclick="switchDevice('mobile')">📱 手机</button>
-      <div class="flex-grow-1"></div>
-      <button class="btn btn-sm btn-outline-secondary" onclick="refreshPreview()">刷新预览</button>
+              onclick="switchDevice('mobile')" title="手机">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+        <span class="ms-1 d-none d-sm-inline">手机</span>
+      </button>
+      <button class="btn btn-sm btn-outline-secondary position-absolute" style="right:8px;" onclick="refreshPreview()">刷新预览</button>
+      <button id="reopenPanelBtn" class="btn btn-sm btn-outline-secondary position-absolute" style="right:96px;display:none;" onclick="toggleRightPanel()" title="打开属性面板">☰ 属性</button>
     </div>
     <div class="flex-grow-1 overflow-auto d-flex justify-content-center p-3" style="background:#e8eaed">
+      {% if site %}
       <iframe class="border-0 bg-white shadow rounded preview-frame desktop" id="previewFrame"
               src="{{ url_for('core.preview_site', site_id=site.id) if site else 'about:blank' }}"
               data-preview-url="{{ url_for('core.preview_site', site_id=site.id) if site else 'about:blank' }}">
       </iframe>
+      {% else %}
+      <div class="d-flex flex-column align-items-center justify-content-center text-center w-100" style="min-height: 400px;">
+        <div class="mb-3" style="color: #94a3b8;">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h5 class="text-muted mb-2">尚未创建站点</h5>
+        <p class="text-muted small mb-3">在左侧 <strong>模板库</strong> 中选择一个模板来新建站点</p>
+      </div>
+      {% endif %}
     </div>
   </section>
 
@@ -119,7 +142,7 @@
   <aside class="bg-white border-start flex-shrink-0 d-flex flex-column" style="width:380px; overflow:hidden" id="rightPanel">
     <div class="d-flex align-items-center justify-content-between p-2 border-bottom flex-shrink-0">
       <span class="fw-semibold small" id="rightPanelTitle">属性</span>
-      <button class="btn-close btn-sm" onclick="document.getElementById('rightPanel').classList.toggle('d-none')"></button>
+      <button class="btn-close btn-sm" onclick="toggleRightPanel()" title="关闭面板"></button>
     </div>
     <div class="flex-grow-1 overflow-auto p-3" id="rightPanelBody">
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -144,6 +167,39 @@
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"></script>
 <script>
+function openTemplatesPanel() {
+  // 激活左侧模板库
+  document.querySelectorAll('.left-nav-item').forEach(el => el.classList.remove('active'));
+  var tplLink = document.querySelector('a.left-nav-item[data-panel="templates"]');
+  if (tplLink) tplLink.classList.add('active');
+
+  // 确保右侧面板可见
+  var panel = document.getElementById('rightPanel');
+  var reopenBtn = document.getElementById('reopenPanelBtn');
+  if (panel.classList.contains('d-none')) {
+    panel.classList.remove('d-none');
+    if (reopenBtn) reopenBtn.style.display = 'none';
+  }
+
+  // 加载模板库面板
+  var url = '{{ url_for("core.templates_gallery") }}?_fragment=1';
+  var siteParam = new URLSearchParams(window.location.search).get('site');
+  if (siteParam) url += '&site=' + encodeURIComponent(siteParam);
+  loadPanel(url);
+}
+
+function toggleRightPanel() {
+  const panel = document.getElementById('rightPanel');
+  const reopenBtn = document.getElementById('reopenPanelBtn');
+  if (panel.classList.contains('d-none')) {
+    panel.classList.remove('d-none');
+    if (reopenBtn) reopenBtn.style.display = 'none';
+  } else {
+    panel.classList.add('d-none');
+    if (reopenBtn) reopenBtn.style.display = '';
+  }
+}
+
 function switchDevice(device) {
   document.querySelectorAll('.preview-device-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`[data-device="${device}"]`).classList.add('active');
@@ -215,6 +271,38 @@ function runPanelScripts(container) {
   });
 }
 
+// 拦截右侧面板内所有表单提交 → AJAX 提交（避免页面跳转）
+document.getElementById('rightPanelBody').addEventListener('submit', function(e) {
+  const form = e.target.closest('form');
+  if (!form) return;
+  // 如果表单已有自定义处理器（如 site_new.html），跳过
+  if (form.dataset.ajaxHandled === '1' || e.defaultPrevented) return;
+  e.preventDefault();
+
+  const formData = new FormData(form);
+  const url = form.action || window.location.href;
+
+  // 显示加载状态
+  const body = document.getElementById('rightPanelBody');
+  body.innerHTML = '<div class="p-3 text-muted text-center py-5"><div class="spinner-border spinner-border-sm me-2"></div>保存中...</div>';
+
+  fetch(url, { method: 'POST', body: formData })
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    })
+    .then(html => {
+      body.innerHTML = html;
+      runPanelScripts(body);
+      // 保存成功后刷新预览
+      refreshPreview();
+    })
+    .catch(err => {
+      body.innerHTML = '<div class="p-3 text-danger">保存失败: ' + err.message + '</div>';
+      console.error('Form submit error:', err);
+    });
+});
+
 // 拦截左栏所有链接点击 → AJAX 加载右侧面板
 document.getElementById('leftNav').addEventListener('click', function(e) {
   const link = e.target.closest('a.left-nav-item');
@@ -228,7 +316,9 @@ document.getElementById('leftNav').addEventListener('click', function(e) {
 
   const href = link.getAttribute('href');
   if (href && href !== '#') {
-    loadPanel(href + '?_fragment=1');
+    const siteParam = new URLSearchParams(window.location.search).get('site');
+    const siteQuery = siteParam ? '&site=' + encodeURIComponent(siteParam) : '';
+    loadPanel(href + '?_fragment=1' + siteQuery);
   }
 
   const previewPage = link.dataset.previewPage;
@@ -274,11 +364,16 @@ function panelUrlForRegion(region) {
 function selectRegionInPanel(region) {
   const url = panelUrlForRegion(region);
   if (!url) return;
-  loadPanel(url).then(() => {
-    const body = document.getElementById('rightPanelBody');
-    body.querySelectorAll('.builder-selected-module').forEach(el => el.classList.remove('builder-selected-module'));
-    body.insertAdjacentHTML('afterbegin', '<div class="alert alert-primary py-1 px-2 small mb-2 builder-region-note">已选中预览中的' + (region === 'header' ? '网站头部' : '网站底部') + '</div>');
-  });
+  const p = loadPanel(url);
+  if (p && typeof p.then === 'function') {
+    p.then(() => {
+      const body = document.getElementById('rightPanelBody');
+      body.querySelectorAll('.builder-selected-module').forEach(el => el.classList.remove('builder-selected-module'));
+      body.insertAdjacentHTML('afterbegin', '<div class="alert alert-primary py-1 px-2 small mb-2 builder-region-note">已选中预览中的' + (region === 'header' ? '网站头部' : '网站底部') + '</div>');
+    }).catch(err => {
+      console.warn('[Builder] 区域面板加载失败:', region, err);
+    });
+  }
 }
 
 function currentPanelPageKey() {
@@ -316,7 +411,7 @@ function installPreviewCanvasHandlers() {
   doc.__builderCanvasReady = true;
 
   const style = doc.createElement('style');
-  style.textContent = '.builder-module{position:relative;cursor:pointer}.builder-module:hover,.builder-region:hover{outline:2px dashed #0d6efd;outline-offset:3px}.builder-module.builder-canvas-selected,.builder-region.builder-canvas-selected{outline:3px solid #0d6efd!important;outline-offset:4px;box-shadow:0 0 0 4px rgba(13,110,253,.18)}';
+  style.textContent = '.builder-module{position:relative;cursor:pointer}.builder-module:hover,.builder-region:hover{outline:2px dashed #067a7a;outline-offset:3px}.builder-module.builder-canvas-selected,.builder-region.builder-canvas-selected{outline:3px solid #067a7a!important;outline-offset:4px;box-shadow:0 0 0 4px rgba(13,110,253,.18)}';
   doc.head.appendChild(style);
 
   doc.querySelectorAll('.builder-region[data-builder-region]').forEach(regionEl => {
@@ -351,7 +446,7 @@ window.addEventListener('message', function(event) {
 
 <style>
 .module-item.builder-selected-module {
-  border-color: #0d6efd !important;
+  border-color: #067a7a !important;
   box-shadow: 0 0 0 0.2rem rgba(13,110,253,.18);
 }
 </style>

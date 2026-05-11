@@ -1,0 +1,138 @@
+{# 新建站点面板 — 不含 base layout，供右侧属性面板使用 #}
+<div>
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <a href="{{ url_for('core.templates_gallery', _fragment='1') }}" class="btn btn-sm btn-outline-secondary"
+       onclick="event.preventDefault(); loadPanel(this.href); return false;">← 返回模板库</a>
+  </div>
+
+  {% if template %}
+  <div class="card mb-3 border-primary" style="border-left: 4px solid #0d6efd;">
+    <div class="card-body p-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="rounded bg-dark d-flex align-items-center justify-content-center flex-shrink-0"
+             style="width:72px; height:48px; color:#fff; font-size:11px; font-weight:600;">
+          {{ template.industry }}
+        </div>
+        <div>
+          <h6 class="mb-1">{{ template.display_name }}</h6>
+          <p class="text-muted small mb-0">{{ template.description }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if error %}
+  <div class="alert alert-danger py-2">{{ error }}</div>
+  {% endif %}
+
+  <div id="siteNewFormWrapper">
+    {% if not template %}
+    <div class="mb-3">
+      <label class="form-label small fw-semibold" for="tplSelect">选择模板</label>
+      <select class="form-select" id="tplSelect">
+        <option value="">留空使用默认模板</option>
+        {% for tpl in templates %}
+        <option value="{{ tpl.name }}" {% if form.template_name == tpl.name %}selected{% endif %}>{{ tpl.display_name }}（{{ tpl.industry }}）</option>
+        {% endfor %}
+      </select>
+      <div class="form-text">选择站点使用的模板，创建后不可更改。</div>
+    </div>
+    {% endif %}
+
+    <div class="mb-3">
+      <label class="form-label small fw-semibold" for="siteName">站点名称</label>
+      <input type="text" class="form-control" id="siteName"
+             value="{{ form.name or '' }}"
+             placeholder="例如：RIMU 官网、Acme 企业站" autofocus>
+      <div class="form-text">给自己看的名称，可随时修改。</div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label small fw-semibold" for="siteSlug">站点 Slug</label>
+      <div class="input-group">
+        <input type="text" class="form-control" id="siteSlug"
+               value="{{ form.slug or '' }}"
+               placeholder="my-company">
+        <span class="input-group-text text-muted small">.mycompany.website</span>
+      </div>
+      <div class="form-text">3-30 字符，小写字母/数字/连字符。</div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-primary" id="createSiteBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="me-1"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        创建站点
+      </button>
+      <a href="{{ url_for('core.templates_gallery', _fragment='1') }}" class="btn btn-outline-secondary"
+         onclick="event.preventDefault(); loadPanel(this.href); return false;">取消</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var createBtn = document.getElementById('createSiteBtn');
+  if (!createBtn) return;
+
+  createBtn.addEventListener('click', function(){
+    var tplSelect = document.getElementById('tplSelect');
+    var tplName = tplSelect ? tplSelect.value.trim() : '{{ template.name if template else "" }}';
+    var nameEl = document.getElementById('siteName');
+    var slugEl = document.getElementById('siteSlug');
+    var name = nameEl ? nameEl.value.trim() : '';
+    var slug = slugEl ? slugEl.value.trim() : '';
+
+    if (!name) {
+      alert('请填写站点名称');
+      return;
+    }
+    if (!slug) {
+      alert('请填写 Slug');
+      return;
+    }
+
+    var originalText = createBtn.innerHTML;
+    createBtn.disabled = true;
+    createBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>创建中...';
+
+    var formData = new FormData();
+    formData.append('template_name', tplName);
+    formData.append('name', name);
+    formData.append('slug', slug);
+
+    fetch('{{ url_for("core.site_new", _fragment="1") }}', { method: 'POST', body: formData })
+      .then(function(r){
+        var ct = r.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          return r.json().then(function(data){
+            if (data.ok && data.redirect) {
+              window.location.href = data.redirect;
+            }
+            throw new Error(data.error || '创建失败');
+          });
+        }
+        return r.text().then(function(html){
+          document.getElementById('rightPanelBody').innerHTML = html;
+          var scripts = document.getElementById('rightPanelBody').querySelectorAll('script');
+          scripts.forEach(function(s){
+            var ns = document.createElement('script');
+            ns.textContent = s.textContent;
+            s.replaceWith(ns);
+          });
+        });
+      })
+      .catch(function(err){
+        console.error('创建站点失败:', err);
+        createBtn.disabled = false;
+        createBtn.innerHTML = originalText;
+        alert('创建失败: ' + (err.message || '未知错误'));
+      });
+  });
+
+  // Enter 键提交
+  document.getElementById('siteSlug')?.addEventListener('keydown', function(e){
+    if (e.key === 'Enter') createBtn.click();
+  });
+})();
+</script>
