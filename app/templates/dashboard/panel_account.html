@@ -4,8 +4,80 @@
   <div class="card-body">
     <h6 class="card-title">{{ user.email }}</h6>
     <p class="text-muted small mb-1">站点数量：{{ site_count }}</p>
-    <form method="post" action="{{ url_for('core.logout') }}" class="mt-3">
-      <button class="btn btn-outline-secondary btn-sm" type="submit">退出登录</button>
-    </form>
+    <p class="text-muted small">当前站点：{{ site.name }} (slug: {{ site.slug }})</p>
+    <div class="d-flex gap-2 mt-3">
+      <form method="post" action="{{ url_for('core.logout') }}">
+        <button class="btn btn-outline-secondary btn-sm" type="submit">退出登录</button>
+      </form>
+      <button class="btn btn-outline-danger btn-sm" type="button" onclick="showDeleteSiteModal()">删除站点</button>
+    </div>
   </div>
 </div>
+
+{# 删除站点确认对话框 #}
+<div class="modal fade" id="deleteSiteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">确认删除站点</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-danger fw-semibold">此操作不可撤销！</p>
+        <p>将删除站点 <strong>{{ site.name }}</strong> ({{ site.slug }}) 的全部数据：</p>
+        <ul>
+          <li>数据库记录</li>
+          <li>站点文件夹（sites/{{ site.id }}/）</li>
+          <li>生成的输出文件（output/{{ site.id }}/）</li>
+        </ul>
+        <p>请输入站点 slug <code>{{ site.slug }}</code> 确认删除：</p>
+        <input type="text" class="form-control form-control-sm" id="deleteConfirmSlug" placeholder="{{ site.slug }}">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteBtn" disabled
+                onclick="deleteSite()">确认删除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showDeleteSiteModal() {
+  var modal = new bootstrap.Modal(document.getElementById('deleteSiteModal'));
+  modal.show();
+}
+document.addEventListener('DOMContentLoaded', function() {
+  var input = document.getElementById('deleteConfirmSlug');
+  var btn = document.getElementById('confirmDeleteBtn');
+  if (input && btn) {
+    input.addEventListener('input', function() {
+      btn.disabled = (input.value.trim() !== '{{ site.slug }}');
+    });
+  }
+});
+function deleteSite() {
+  var btn = document.getElementById('confirmDeleteBtn');
+  btn.disabled = true;
+  btn.textContent = '删除中...';
+  fetch('{{ url_for("core.site_delete") }}', {
+    method: 'POST',
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.ok) {
+      window.location.href = data.redirect;
+    } else {
+      alert('删除失败：' + (data.error || '未知错误'));
+      btn.disabled = false;
+      btn.textContent = '确认删除';
+    }
+  })
+  .catch(function(err) {
+    alert('请求失败：' + err);
+    btn.disabled = false;
+    btn.textContent = '确认删除';
+  });
+}
+</script>

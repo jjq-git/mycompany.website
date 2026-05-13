@@ -22,15 +22,8 @@ DATASET_LABELS = {
 # 未在此表中的自动按规则推导: 去尾 s + _detail.html
 DATASET_DETAIL_MAP = {
     'products': ('product_detail.html', 'product', 'slug'),
-    'posts': ('post_detail.html', 'post', 'slug'),
-    'portfolio': ('portfolio_detail.html', 'item', 'slug'),
     'cases': ('case_detail.html', 'case', 'slug'),
     'features': ('feature_detail.html', 'feature', 'slug'),
-}
-
-# 数据集 → 列表模板文件名 映射（target 与模板文件名不一致时用）
-DATASET_TEMPLATE_MAP = {
-    'posts': 'blog.html',
 }
 
 VALID_TYPES = {'home', 'list', 'page', 'link'}
@@ -187,10 +180,15 @@ def derive_detail_info(target, tpl_html_dir):
         if (tpl_html_dir / detail_tmpl).exists():
             return detail_tmpl, singular, 'slug'
 
+    # 通用回退: _generic_detail.html
+    generic = '_generic_detail.html'
+    if (tpl_html_dir / generic).exists():
+        return generic, 'item', 'slug'
+
     return None, None, None
 
 
-def collect_render_tasks(menu_items, tpl_html_dir, data):
+def collect_render_tasks(menu_items, tpl_html_dir, data, pages=None):
     """从菜单树收集所有需要渲染的页面任务 (递归).
 
     返回: list of dict, 每个 dict:
@@ -222,35 +220,40 @@ def collect_render_tasks(menu_items, tpl_html_dir, data):
             target = item.get('target', '')
 
             if t == 'list' and target:
-                list_tmpl = DATASET_TEMPLATE_MAP.get(target, f'{target}.html')
-                if (tpl_html_dir / list_tmpl).exists():
-                    tasks.append({
-                        'type': 'list',
-                        'template': list_tmpl,
-                        'output_path': f'{target}/index.html',
-                        'current_path': f'/{target}/',
-                        'page_key': target,
-                        'dataset_key': target,
-                    })
-                    # 详情页
-                    dt_tmpl, var_name, slug_field = derive_detail_info(target, tpl_html_dir)
-                    if dt_tmpl and var_name:
-                        items_data = data.get(target, [])
-                        if isinstance(items_data, dict):
-                            items_data = items_data.get('items', [])
-                        for entry in items_data:
-                            slug = entry.get(slug_field)
-                            if slug:
-                                tasks.append({
-                                    'type': 'detail',
-                                    'template': dt_tmpl,
-                                    'output_path': f'{target}/{slug}/index.html',
-                                    'current_path': f'/{target}/{slug}/',
-                                    'page_key': target,
-                                    'dataset_key': target,
-                                    'var_name': var_name,
-                                    'item': entry,
-                                })
+                # 所有 list 页面统一使用模块库配置（index.html → _modules.html）
+                tasks.append({
+                    'type': 'list',
+                    'template': 'index.html',
+                    'output_path': f'{target}/index.html',
+                    'current_path': f'/{target}/',
+                    'page_key': target,
+                    'dataset_key': target,
+                })
+                # 详情页：先用预定义映射，回退通用推导
+                dt_tmpl = None
+                var_name = None
+                slug_field = 'slug'
+                dt_tmpl, var_name, slug_field = derive_detail_info(target, tpl_html_dir)
+                if not dt_tmpl and (tpl_html_dir / f'{target}_detail.html').exists():
+                    dt_tmpl = f'{target}_detail.html'
+                    var_name = 'item'
+                if dt_tmpl and var_name:
+                    items_data = data.get(target, [])
+                    if isinstance(items_data, dict):
+                        items_data = items_data.get('items', [])
+                    for entry in items_data:
+                        slug = entry.get(slug_field, entry.get('slug', ''))
+                        if slug:
+                            tasks.append({
+                                'type': 'detail',
+                                'template': dt_tmpl,
+                                'output_path': f'{target}/{slug}/index.html',
+                                'current_path': f'/{target}/{slug}/',
+                                'page_key': target,
+                                'dataset_key': target,
+                                'var_name': var_name,
+                                'item': entry,
+                            })
 
             elif t == 'page' and target:
                 page_tmpl = f'{target}.html'

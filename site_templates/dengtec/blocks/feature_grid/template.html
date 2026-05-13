@@ -4,6 +4,8 @@
 {% set md = module.data if module.data else {} %}
 {% set max_w = md.get('max_width', '') %}
 {% set block_align = md.get('block_align', '') %}
+{% set section_bg = md.get('section_bg', '') %}
+{% set inner_w = md.get('inner_width', max_w) %}
 {% set card_align = md.get('card_align', '') %}
 {% set card_show_border = md.get('card_show_border', '') %}
 {% set card_padding_top = md.get('card_padding_top', md.get('card_padding', '')) %}
@@ -15,10 +17,11 @@
 {% set card_radius_bottom_right = md.get('card_radius_bottom_right', md.get('card_radius', '')) %}
 {% set card_radius_bottom_left = md.get('card_radius_bottom_left', md.get('card_radius', '')) %}
 {% set variant = module.variant | default('grid_3') %}
-{% set col_count = {'grid_3': 3, 'grid_4': 4, 'grid_6': 6}.get(variant, 3) %}
+{% set variant_columns = {'grid_3': 3, 'grid_4': 4, 'grid_6': 6}.get(variant, 3) %}
+{% set col_count = md.get('columns') | int or variant_columns %}
 {% if display_features and display_features | length > 0 %}
-<section class="section section-bg">
-  <div class="container"{% if max_w %} style="max-width: {{ max_w }}; margin: 0 {% if block_align == 'center' %}auto{% elif block_align == 'right' %}0 0 0 auto{% elif block_align == 'left' %}auto auto 0 0{% else %}auto{% endif %}; width: {{ max_w }};"{% endif %}>
+<section class="section{% if not section_bg %} section-bg{% endif %}"{% if section_bg %} style="background: {{ section_bg }};"{% endif %}>
+  <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
     {% if md.title %}
     <div class="section-header">
       <h2 class="section-title">{{ md.title }}</h2>

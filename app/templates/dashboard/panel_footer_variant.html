@@ -9,23 +9,32 @@
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('core.footer_variant_edit', _fragment='1') }}">
+<form method="post" action="{{ url_for('core.footer_variant_edit', _fragment='1', site=site.id) }}" id="footerForm">
   {# Footer 变体选择 #}
   <div class="mb-3">
-    <label class="form-label small mb-1 fw-semibold">底部布局</label>
+    <label class="form-label small mb-1 fw-semibold">底部布局模式</label>
     <div class="d-flex flex-column gap-2">
-      {% for variant in footer_variants %}
+      {% set current_variant = current_footer.get('variant', 'columns') %}
       <label class="d-flex align-items-center p-2 border rounded variant-option"
-             style="cursor:pointer; {% if current_footer.get('variant', footer_variants[0].key) == variant.key %}border-color:#067a7a;background:#e8f0fe;{% endif %}">
-        <input type="radio" name="footer_variant" value="{{ variant.key }}"
-               {% if current_footer.get('variant', footer_variants[0].key) == variant.key %}checked{% endif %}
-               class="me-2" onchange="this.closest('form').querySelectorAll('.variant-option').forEach(l=>{l.style.borderColor='';l.style.background=''});this.closest('.variant-option').style.borderColor='#067a7a';this.closest('.variant-option').style.background='#e8f0fe';">
+             style="cursor:pointer; {% if current_variant == 'columns' %}border-color:#067a7a;background:#e8f0fe;{% endif %}">
+        <input type="radio" name="footer_variant" value="columns"
+               {% if current_variant == 'columns' %}checked{% endif %}
+               class="me-2" onchange="switchFooterLayout('columns')">
         <div>
-          <div class="small fw-semibold">{{ variant.label }}</div>
-          <div class="text-muted" style="font-size:10px">{{ variant.description }}</div>
+          <div class="small fw-semibold">栏目模式</div>
+          <div class="text-muted" style="font-size:10px">可自定义多列菜单/文本 + 版权信息</div>
         </div>
       </label>
-      {% endfor %}
+      <label class="d-flex align-items-center p-2 border rounded variant-option"
+             style="cursor:pointer; {% if current_variant == 'minimal' %}border-color:#067a7a;background:#e8f0fe;{% endif %}">
+        <input type="radio" name="footer_variant" value="minimal"
+               {% if current_variant == 'minimal' %}checked{% endif %}
+               class="me-2" onchange="switchFooterLayout('minimal')">
+        <div>
+          <div class="small fw-semibold">极简模式</div>
+          <div class="text-muted" style="font-size:10px">仅显示版权信息和备案号</div>
+        </div>
+      </label>
     </div>
   </div>
 
@@ -38,5 +47,113 @@
            value="{{ current_footer.get('icp', '') }}" placeholder="如: 苏ICP备xxx号">
   </div>
 
+  {# 底部栏目（栏目模式下显示） #}
+  <div id="footerColumnsSection" {% if current_variant == 'minimal' %}style="display:none"{% endif %}>
+    <hr>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <label class="form-label small mb-0 fw-semibold">底部栏目</label>
+      <button type="button" class="btn btn-outline-primary btn-sm" onclick="addFooterColumn()">+ 添加栏目</button>
+    </div>
+    <input type="hidden" name="footer_column_count" id="footerColumnCount" value="{{ current_footer.get('columns', []) | length }}">
+    <div id="footerColumnsList">
+      {% set footer_columns = current_footer.get('columns', []) %}
+      {% for col in footer_columns %}
+      <div class="border rounded p-2 mb-2 footer-column-item">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="small fw-semibold">栏目 {{ loop.index }}</span>
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.footer-column-item').remove();reindexFooterColumns()">✕</button>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label small mb-1 text-muted">类型</label>
+            <select class="form-select form-select-sm footer-col-type" name="footer_col_{{ loop.index0 }}_type">
+              <option value="menu" {% if col.type|default('menu') == 'menu' %}selected{% endif %}>菜单列</option>
+              <option value="text" {% if col.type == 'text' %}selected{% endif %}>文本列</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label small mb-1 text-muted">标题</label>
+            <input type="text" class="form-control form-control-sm" name="footer_col_{{ loop.index0 }}_title" value="{{ col.title | default('') }}">
+          </div>
+        </div>
+        <div class="footer-col-links">
+          {% set links = col.links | default([]) %}
+          {% set col_idx = loop.index0 %}
+          <input type="hidden" name="footer_col_{{ col_idx }}_link_count" value="{{ links | length }}">
+          {% for link in links %}
+          <div class="row g-1 mb-1 footer-link-item">
+            <div class="col-5">
+              <input type="text" class="form-control form-control-sm" name="footer_col_{{ col_idx }}_link_{{ loop.index0 }}_label" value="{{ link.label | default('') }}" placeholder="名称">
+            </div>
+            <div class="col-5">
+              <input type="text" class="form-control form-control-sm" name="footer_col_{{ col_idx }}_link_{{ loop.index0 }}_url" value="{{ link.url | default('') }}" placeholder="链接">
+            </div>
+            <div class="col-2">
+              <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="this.closest('.footer-link-item').remove()">✕</button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addFooterLink(this)">+ 添加链接</button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
   <button class="btn btn-primary btn-sm mt-2" type="submit">保存</button>
 </form>
+
+<script>
+function switchFooterLayout(mode) {
+  var section = document.getElementById('footerColumnsSection');
+  if (section) section.style.display = mode === 'columns' ? '' : 'none';
+  document.querySelectorAll('.variant-option').forEach(function(l) {
+    l.style.borderColor = ''; l.style.background = '';
+    var radio = l.querySelector('input[value="' + mode + '"]');
+    if (radio && radio.checked) {
+      l.style.borderColor = '#067a7a'; l.style.background = '#e8f0fe';
+    }
+  });
+}
+function addFooterColumn() {
+  var list = document.getElementById('footerColumnsList');
+  var count = parseInt(document.getElementById('footerColumnCount').value || '0');
+  var idx = count;
+  document.getElementById('footerColumnCount').value = idx + 1;
+  var html = '<div class="border rounded p-2 mb-2 footer-column-item">' +
+    '<div class="d-flex justify-content-between align-items-center mb-2">' +
+    '<span class="small fw-semibold">栏目 ' + (idx + 1) + '</span>' +
+    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest(\'.footer-column-item\').remove();reindexFooterColumns()">✕</button></div>' +
+    '<div class="row g-2 mb-2"><div class="col-6"><label class="form-label small mb-1 text-muted">类型</label>' +
+    '<select class="form-select form-select-sm footer-col-type" name="footer_col_' + idx + '_type"><option value="menu">菜单列</option><option value="text">文本列</option></select></div>' +
+    '<div class="col-6"><label class="form-label small mb-1 text-muted">标题</label>' +
+    '<input type="text" class="form-control form-control-sm" name="footer_col_' + idx + '_title"></div></div>' +
+    '<div class="footer-col-links"><input type="hidden" name="footer_col_' + idx + '_link_count" value="0"></div>' +
+    '<button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addFooterLink(this)">+ 添加链接</button></div>';
+  list.insertAdjacentHTML('beforeend', html);
+}
+function addFooterLink(btn) {
+  var colItem = btn.closest('.footer-column-item');
+  var namePrefix = colItem.querySelector('input[name$="_title"]')?.name || '';
+  var colIdx = namePrefix.replace(/footer_col_(\d+)_title/, '$1');
+  var linksDiv = colItem.querySelector('.footer-col-links');
+  var countInp = linksDiv.querySelector('input[name$="_link_count"]');
+  var idx = parseInt(countInp?.value || '0');
+  if (countInp) countInp.value = idx + 1;
+  var html = '<div class="row g-1 mb-1 footer-link-item">' +
+    '<div class="col-5"><input type="text" class="form-control form-control-sm" name="footer_col_' + colIdx + '_link_' + idx + '_label" placeholder="名称"></div>' +
+    '<div class="col-5"><input type="text" class="form-control form-control-sm" name="footer_col_' + colIdx + '_link_' + idx + '_url" placeholder="链接"></div>' +
+    '<div class="col-2"><button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="this.closest(\'.footer-link-item\').remove()">✕</button></div></div>';
+  linksDiv.insertAdjacentHTML('beforeend', html);
+}
+function reindexFooterColumns() {
+  var items = document.querySelectorAll('.footer-column-item');
+  document.getElementById('footerColumnCount').value = items.length;
+  items.forEach(function(item, i) {
+    item.querySelector('span.small.fw-semibold').textContent = '栏目 ' + (i + 1);
+    item.querySelectorAll('[name]').forEach(function(el) {
+      el.name = el.name.replace(/footer_col_\d+_/, 'footer_col_' + i + '_');
+    });
+  });
+}
+</script>

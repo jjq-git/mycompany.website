@@ -22,10 +22,12 @@ def load(site_id, dataset):
     else:
         return []
 
-    # 自动补齐 id: 种子数据没有 id, 按 index+1 分配
+    # 统一 id 为 int 类型，自动补齐 id: 种子数据没有 id, 按 index+1 分配
     for i, it in enumerate(items):
         if 'id' not in it:
             it['id'] = i + 1
+        else:
+            it['id'] = int(it['id'])
     return items
 
 

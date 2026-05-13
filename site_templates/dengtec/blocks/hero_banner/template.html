@@ -14,7 +14,7 @@
         {% endif %}
       </div>
       <div class="hero-banner-overlay"></div>
-      <div class="hero-banner-content">
+      <div class="hero-banner-content"{% if module.data and module.data.get('inner_width') %} style="max-width: {{ module.data.inner_width }}; margin: 0 auto;"{% endif %}>
         <h1 class="hero-banner-title">{{ item.title | default('') }}</h1>
         <p class="hero-banner-subtitle">{{ item.subtitle }}</p>
         <div class="hero-banner-actions">

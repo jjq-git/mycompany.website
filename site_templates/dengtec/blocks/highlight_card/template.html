@@ -1,33 +1,58 @@
-{# 精选项目卡片 - 默认变体: Bento 网格布局 #}
-{% if module.data and module.data['items'] is iterable and module.data['items'] is not string %}
-<section class="section featured-highlights">
-  <div class="container">
-    <div class="fh-bento-grid">
-      {% set highlight_items = module.data['items'] %}
-      {% set max_items = module.data.max_items | default(0) | int %}
-      {% for item in (highlight_items[:max_items] if max_items else highlight_items) %}
-      <div class="fh-card fh-card--hero">
-        <div class="fh-card__bg">
-          {% if item.image %}<img alt="{{ item.title }}" src="{{ item.image }}" width="400" height="300" onerror="this.style.display='none'"/>{% endif %}
-          <div class="fh-card__overlay"></div>
-        </div>
-        <div class="fh-card__body">
-          <div class="fh-card__number">0{{ loop.index }}</div>
-          <span class="fh-card__badge">{{ item.tag }}</span>
-          <h3 class="fh-card__title">{{ item.title }}</h3>
-          <p class="fh-card__desc">{{ item.desc }}</p>
-          {% if item.features %}
-          <div class="fh-card__features">
-            {% for feat in item.features %}<div class="fh-feature">✓ {{ feat.text | default(feat) }}</div>{% endfor %}
-          </div>
-          {% endif %}
-          <div class="fh-card__links">
-            {% if item.primaryLink %}<a href="{{ item.primaryLink }}" {% if item.primaryLinkTarget == '_blank' %}target="_blank"{% endif %} class="fh-card__link fh-card__link--primary">{{ item.primaryBtn }}</a>{% endif %}
-            {% if item.secondaryLink %}<a href="{{ item.secondaryLink }}" class="fh-card__link fh-card__link--ghost">{{ item.secondaryBtn }}</a>{% endif %}
-          </div>
-        </div>
+{# 图文模块 — 通用图文介绍模块，支持左右布局切换、自定义配色、外边距 #}
+{% if module.data and module.data.title %}
+{% set md = module.data if module.data else {} %}
+{% set section_bg = md.get('section_bg', '') %}
+{% set inner_w = md.get('inner_width', '') %}
+{% set border_radius = md.get('border_radius', '') %}
+{% set img_pos = md.get('image_position', 'left') %}
+{% set margin_top = md.get('margin_top', '') %}
+{% set margin_bottom = md.get('margin_bottom', '') %}
+{% set padding_top = md.get('padding_top', '') %}
+{% set padding_bottom = md.get('padding_bottom', '') %}
+{% set padding_left = md.get('padding_left', '') %}
+{% set padding_right = md.get('padding_right', '') %}
+{% set text_bg = md.get('text_bg', '') %}
+{% set text_color = md.get('text_color', '') %}
+{% set tag_bg = md.get('tag_bg', '') %}
+{% set tag_color = md.get('tag_color', '') %}
+{% set btn_bg = md.get('btn_bg', '') %}
+{% set btn_color = md.get('btn_color', '') %}
+
+{% set section_style = [] %}
+{% if section_bg %}{% set _ = section_style.append('background: ' ~ section_bg) %}{% endif %}
+{% if margin_top is not none and margin_top != '' %}{% set _ = section_style.append('margin-top: ' ~ margin_top) %}{% endif %}
+{% if margin_bottom is not none and margin_bottom != '' %}{% set _ = section_style.append('margin-bottom: ' ~ margin_bottom) %}{% endif %}
+{% if padding_top is not none and padding_top != '' %}{% set _ = section_style.append('padding-top: ' ~ padding_top) %}{% endif %}
+{% if padding_bottom is not none and padding_bottom != '' %}{% set _ = section_style.append('padding-bottom: ' ~ padding_bottom) %}{% endif %}
+{% if padding_left is not none and padding_left != '' %}{% set _ = section_style.append('padding-left: ' ~ padding_left) %}{% endif %}
+{% if padding_right is not none and padding_right != '' %}{% set _ = section_style.append('padding-right: ' ~ padding_right) %}{% endif %}
+
+<section class="section" style="{{ section_style | join('; ') }}">
+  <div class="container" style="max-width: {{ inner_w or '1200px' }}; margin: 0 auto;">
+    <div class="hl-grid {% if img_pos == 'right' %}hl-grid--reverse{% endif %}"{% if border_radius is not none and border_radius != '' %} style="border-radius: {{ border_radius }};"{% endif %}>
+      {# 图片区 #}
+      <div class="hl-image">
+        {% if md.image %}<img src="{{ md.image }}" alt="{{ md.title }}" loading="lazy">{% endif %}
       </div>
-      {% endfor %}
+      {# 文本区 #}
+      <div class="hl-text" style="{% if text_bg %}background: {{ text_bg }};{% endif %}{% if text_color %}color: {{ text_color }};{% endif %}padding: 2rem;">
+        {% if md.tag %}
+        <span class="hl-tag" style="{% if tag_bg %}background: {{ tag_bg }};{% endif %}{% if tag_color %}color: {{ tag_color }};{% endif %}">{{ md.tag }}</span>
+        {% endif %}
+        <h3 class="hl-title" style="{% if text_color %}color: {{ text_color }};{% endif %}">{{ md.title }}</h3>
+        <p class="hl-desc" style="{% if text_color %}color: {{ text_color }}; opacity: 0.8;{% endif %}">{{ md.desc }}</p>
+        {% if md.features %}
+        <ul class="hl-features" style="{% if text_color %}color: {{ text_color }};{% endif %}">
+          {% for feat in md.features %}<li>✓ {{ feat['text'] | default(feat) }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+        {% if md.primaryBtn or md.secondaryBtn %}
+        <div class="hl-actions">
+          {% if md.primaryLink and md.primaryBtn %}<a href="{{ md.primaryLink }}" {% if md.primaryLinkTarget == '_blank' %}target="_blank"{% endif %} class="hl-btn hl-btn--primary" style="{% if btn_bg %}background: {{ btn_bg }};{% endif %}{% if btn_color %}color: {{ btn_color }};{% endif %}">{{ md.primaryBtn }}</a>{% endif %}
+          {% if md.secondaryLink and md.secondaryBtn %}<a href="{{ md.secondaryLink }}" class="hl-btn hl-btn--secondary" style="{% if btn_color %}color: {{ btn_color }}; border-color: {{ btn_color }};{% endif %}">{{ md.secondaryBtn }}</a>{% endif %}
+        </div>
+        {% endif %}
+      </div>
     </div>
   </div>
 </section>

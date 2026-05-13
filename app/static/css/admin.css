@@ -84,3 +84,20 @@
   padding-left: 0;
   padding-right: 0;
 }
+
+/* ===== 面板拖拽分隔条 ===== */
+.resizer-handle {
+  width: 6px;
+  cursor: col-resize;
+  background: #e2e8f0;
+  border-left: 1px solid #cbd5e1;
+  border-right: 1px solid #cbd5e1;
+  flex-shrink: 0;
+  transition: background 0.15s;
+  user-select: none;
+}
+.resizer-handle:hover,
+.resizer-handle.dragging {
+  background: #067a7a;
+  border-color: #067a7a;
+}

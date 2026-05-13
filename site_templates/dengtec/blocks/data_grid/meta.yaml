@@ -1,37 +1,72 @@
 name: 数据网格
 category: data
 icon: data_grid.svg
-description: 通用数据列表模块，从数据集拉取条目展示为卡片
+description: 通用数据列表模块，支持产品/案例/博客三种数据集，卡片布局可选
 fields:
+  - key: section_bg
+    label: 外层背景色
+    type: text
+    default: ""
+    placeholder: 如 #f5f7fa（留空=使用默认）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
   - key: title
     label: 区块标题
     type: text
   - key: dataset
-    label: 数据来源
+    label: 数据来源（数据集名称）
+    type: text
+    default: portfolio
+    placeholder: 如 products/portfolio/posts，或自定义数据集名
+  - key: card_layout
+    label: 卡片布局
     type: select
+    default: "image_top"
     options:
-      - value: portfolio
-        label: 项目案例
-      - value: posts
-        label: 博客文章
-      - value: products
-        label: 产品
+      - value: "image_top"
+        label: 上图下文
+      - value: "image_left"
+        label: 左图右文
   - key: max_items
     label: 最大显示数量
     type: number
     default: 6
-  - key: columns
-    label: 每行列数
+  - key: items_per_page
+    label: 每页显示数量
+    type: number
+    default: 6
+  - key: pager_align
+    label: 分页按钮对齐
     type: select
+    default: "center"
     options:
-      - value: "3"
-        label: "3列"
-      - value: "4"
-        label: "4列"
+      - value: "center"
+        label: 居中
+      - value: "left"
+        label: 居左
+      - value: "right"
+        label: 居右
+  - key: show_pagination
+    label: 显示分页
+    type: select
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
   - key: show_view_all
     label: 显示"查看全部"按钮
-    type: boolean
-    default: true
+    type: select
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
 variants:
   - key: grid_3
     label: 三列网格（标准）

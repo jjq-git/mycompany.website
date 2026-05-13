@@ -1,0 +1,33 @@
+{# 标题模块 — 通用标题/文本模块，支持标签、标题、描述、样式配置 #}
+{% if module.data %}
+{% set md = module.data if module.data else {} %}
+{% if md.title or md.tag or md.desc %}
+{% set section_bg = md.get('section_bg', '') %}
+{% set inner_w = md.get('inner_width', '') %}
+{% set text_align = md.get('text_align', 'center') %}
+{% set margin_top = md.get('margin_top', '') %}
+{% set margin_bottom = md.get('margin_bottom', '') %}
+{% set title_color = md.get('title_color', '') %}
+{% set desc_color = md.get('desc_color', '') %}
+{% set tag_bg = md.get('tag_bg', '') %}
+{% set tag_color = md.get('tag_color', '') %}
+{% set title_size = md.get('title_size', '') %}
+{% set desc_size = md.get('desc_size', '') %}
+
+<section class="section" style="{% if section_bg %}background: {{ section_bg }};{% endif %}{% if margin_top is not none and margin_top != '' %}margin-top: {{ margin_top }};{% endif %}{% if margin_bottom is not none and margin_bottom != '' %}margin-bottom: {{ margin_bottom }};{% endif %}">
+  <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
+    <div class="st-block" style="text-align: {{ text_align }};">
+      {% if md.tag %}
+      <span class="st-tag" style="{% if tag_bg %}background: {{ tag_bg }};{% endif %}{% if tag_color %}color: {{ tag_color }};{% endif %}">{{ md.tag }}</span>
+      {% endif %}
+      {% if md.title %}
+      <h2 class="st-title" style="{% if title_color %}color: {{ title_color }};{% endif %}{% if title_size %}font-size: {{ title_size }};{% endif %}">{{ md.title }}</h2>
+      {% endif %}
+      {% if md.desc %}
+      <p class="st-desc" style="{% if desc_color %}color: {{ desc_color }};{% endif %}{% if desc_size %}font-size: {{ desc_size }};{% endif %}">{{ md.desc }}</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endif %}

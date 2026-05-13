@@ -104,7 +104,7 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
 
     # 收集渲染任务 (菜单驱动)
     menu_items = _common.get('settings', {}).get('menu', [])
-    tasks = menu_lib.collect_render_tasks(menu_items, tpl_html_dir, data)
+    tasks = menu_lib.collect_render_tasks(menu_items, tpl_html_dir, data, pages)
 
     for task in tasks:
         try:
@@ -116,7 +116,9 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
 
             if task['type'] == 'home':
                 ctx['page'] = pages.get('home', {})
-            elif task['type'] in ('list', 'page'):
+            elif task['type'] == 'list':
+                ctx['page'] = pages.get(task['page_key'], {})
+            elif task['type'] in ('page',):
                 ctx['page'] = pages.get(task['page_key'], {})
             elif task['type'] == 'detail':
                 ctx['page'] = pages.get(task['page_key'], {})
@@ -178,8 +180,8 @@ def build_site(site_id, base_url=''):
 
     output_root = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
     if output_root.exists():
-        shutil.rmtree(output_root)
-    output_root.mkdir(parents=True)
+        shutil.rmtree(output_root, ignore_errors=True)
+    output_root.mkdir(parents=True, exist_ok=True)
 
     # 复制 static/
     if tpl_static_dir.exists():
@@ -218,6 +220,7 @@ def build_site(site_id, base_url=''):
                 'portfolio': data.get('portfolio', []),
                 'posts': data.get('posts', []),
                 'features': data.get('features', []),
+                'all_datasets': data,
             }
 
             _render_for_language(env, tpl_html_dir, output_root, lang_code, common, pages, data, meta)

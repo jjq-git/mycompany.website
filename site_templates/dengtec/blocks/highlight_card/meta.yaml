@@ -1,10 +1,94 @@
-name: 精选项目卡片
+name: 图文模块
 category: content
 icon: highlight_card.svg
-description: 展示精选项目/案例，支持标签、描述、图片、功能点列表、双按钮
+description: 通用图文介绍模块，支持左右布局切换、标签、描述、图片、功能点列表、双按钮
 fields:
+  - key: section_bg
+    label: 外层背景色
+    type: text
+    default: ""
+    placeholder: 如 #f5f7fa（留空=使用默认）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: border_radius
+    label: 圆角
+    type: text
+    default: ""
+    placeholder: 如 12px（留空=默认）
+  - key: margin_top
+    label: 上外边距
+    type: text
+    default: ""
+    placeholder: 如 0px / 2rem（留空=默认）
+  - key: margin_bottom
+    label: 下外边距
+    type: text
+    default: ""
+    placeholder: 如 0px / 2rem（留空=默认）
+  - key: padding_top
+    label: 上内边距
+    type: text
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_bottom
+    label: 下内边距
+    type: text
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_left
+    label: 左内边距
+    type: text
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: padding_right
+    label: 右内边距
+    type: text
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: image_position
+    label: 图文左右位置
+    type: select
+    default: "left"
+    options:
+      - value: "left"
+        label: 图左文右
+      - value: "right"
+        label: 文左图右
+  - key: text_bg
+    label: 文本区背景色
+    type: text
+    default: ""
+    placeholder: 如 #ffffff（留空=透明）
+  - key: text_color
+    label: 文本区字体颜色
+    type: text
+    default: ""
+    placeholder: 如 #333333（留空=默认深色）
+  - key: tag_bg
+    label: 标签背景色
+    type: text
+    default: ""
+    placeholder: 如 #067a7a（留空=默认主色）
+  - key: tag_color
+    label: 标签字体颜色
+    type: text
+    default: ""
+    placeholder: 如 #ffffff（留空=白色）
+  - key: btn_bg
+    label: 按钮背景色
+    type: text
+    default: ""
+    placeholder: 如 #067a7a（留空=默认主色）
+  - key: btn_color
+    label: 按钮字体颜色
+    type: text
+    default: ""
+    placeholder: 如 #ffffff（留空=白色）
   - key: tag
-    label: 标签
+    label: 标签文字
     type: text
   - key: title
     label: 标题

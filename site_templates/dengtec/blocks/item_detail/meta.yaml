@@ -1,0 +1,68 @@
+name: 条目详情
+category: content
+description: 双栏布局详情展示：左侧多图切换+放大镜，右侧标题/描述/标签/规格表
+fields:
+  - key: section_bg
+    label: 外层背景色
+    type: text
+    default: ""
+    placeholder: 如 #f5f7fa（留空=使用默认）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: text_bg
+    label: 文本区背景色
+    type: text
+    default: ""
+    placeholder: 如 #ffffff（留空=透明）
+  - key: text_color
+    label: 文本区字体颜色
+    type: text
+    default: ""
+    placeholder: 如 #333333（留空=默认）
+  - key: tag_bg
+    label: 标签背景色
+    type: text
+    default: ""
+    placeholder: 如 #067a7a（留空=默认主色）
+  - key: tag_color
+    label: 标签字体颜色
+    type: text
+    default: ""
+    placeholder: 如 #ffffff（留空=白色）
+  - key: img_border_radius
+    label: 图片圆角
+    type: text
+    default: ""
+    placeholder: 如 12px（留空=默认）
+  - key: title
+    label: 标题
+    type: text
+  - key: description
+    label: 描述
+    type: textarea
+  - key: tags
+    label: 标签（逗号分隔）
+    type: text
+  - key: images
+    label: 图片列表（一行一个URL）
+    type: list
+    item_fields:
+      - key: url
+        label: 图片URL
+        type: text
+  - key: specs
+    label: 规格参数（每行格式：名称:值）
+    type: list
+    item_fields:
+      - key: name
+        label: 参数名
+        type: text
+      - key: value
+        label: 参数值
+        type: text
+variants:
+  - key: default
+    label: 默认布局

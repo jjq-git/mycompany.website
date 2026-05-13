@@ -298,7 +298,13 @@ def magic_login(token):
     session.clear()
     session['user_id'] = user.id
     flash('已登录', 'success')
-    if Site.query.filter_by(owner_id=user.id).first() or user.role == 'admin':
+    if user.role == 'admin':
+        if Site.query.first():
+            return redirect(url_for('core.overview'))
+        else:
+            flash("尚无站点，请先从模板库创建站点", "warning")
+            return redirect(url_for('core.templates_gallery'))
+    if Site.query.filter_by(owner_id=user.id).first():
         return redirect(url_for('core.overview'))
     return redirect(url_for('core.templates_gallery'))
 
@@ -316,6 +322,17 @@ def site_asset(filename):
     _, site = _current_context()
     assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
     return send_from_directory(assets_root, filename)
+
+
+@bp.errorhandler(404)
+def not_found(error):
+    """捕获 404，无站点时重定向到模板库."""
+    from flask import request
+    desc = error.description if hasattr(error, 'description') else str(error)
+    if '尚无站点' in str(desc):
+        flash("尚无站点，请先从模板库创建站点", "warning")
+        return redirect(url_for('core.templates_gallery'))
+    return f"<h1>404 Not Found</h1><p>{desc}</p>", 404
 
 
 @bp.route('/')
@@ -620,6 +637,42 @@ def account():
                            user=user, site=site, site_count=site_count, active='account')
 
 
+@bp.route('/sites/delete', methods=['POST'])
+def site_delete():
+    """删除当前站点：清除数据库记录 + 站点文件夹 + output 文件."""
+    from flask import flash, jsonify, redirect, request, url_for
+    from .db import db
+
+    import shutil as _shutil
+
+    user, site = _current_context()
+    site_id = site.id
+    site_name = site.name
+
+    # 删除站点文件夹
+    site_folder = Path(current_app.config['SITES_DIR']) / str(site_id)
+    if site_folder.exists():
+        try:
+            _shutil.rmtree(site_folder)
+        except OSError as exc:
+            current_app.logger.warning('删除站点文件夹 %s 失败: %s', site_folder, exc)
+
+    # 删除 output
+    output_dir = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
+    if output_dir.exists():
+        try:
+            _shutil.rmtree(output_dir)
+        except OSError as exc:
+            current_app.logger.warning('删除 output 目录 %s 失败: %s', output_dir, exc)
+
+    # 删除数据库记录
+    db.session.delete(site)
+    db.session.commit()
+
+    flash(f'站点 "{site_name}" 已删除', 'success')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('_fragment'):
+        return jsonify({'ok': True, 'redirect': url_for('core.overview')})
+    return redirect(url_for('core.overview'))
 def _save_link_list(site_id, settings_key):
     """收集表单 label[] 和 url[], 写回 settings.yaml[settings_key]."""
     from flask import request
@@ -708,13 +761,44 @@ def footer_variant_edit():
 
     if request.method == 'POST':
         footer = settings.setdefault('footer', {})
-        footer['variant'] = request.form.get('footer_variant', footer_variants[0]['key'])
+        footer['variant'] = request.form.get('footer_variant', 'columns')
         footer['icp'] = request.form.get('icp', '').strip()
+
+        # 解析底部栏目
+        col_count = 0
+        try:
+            col_count = int(request.form.get('footer_column_count', '0'))
+        except (ValueError, TypeError):
+            pass
+        columns = []
+        for ci in range(col_count):
+            col = {
+                'type': request.form.get(f'footer_col_{ci}_type', 'menu').strip(),
+                'title': request.form.get(f'footer_col_{ci}_title', '').strip(),
+            }
+            link_count = 0
+            try:
+                link_count = int(request.form.get(f'footer_col_{ci}_link_count', '0'))
+            except (ValueError, TypeError):
+                pass
+            links = []
+            for li in range(link_count):
+                label = request.form.get(f'footer_col_{ci}_link_{li}_label', '').strip()
+                url = request.form.get(f'footer_col_{ci}_link_{li}_url', '').strip()
+                if label or url:
+                    links.append({'label': label, 'url': url})
+            col['links'] = links
+            columns.append(col)
+        if columns:
+            footer['columns'] = columns
+        else:
+            footer.pop('columns', None)
+
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
         if is_fragment:
-            return redirect(url_for('core.footer_variant_edit', _fragment='1'))
-        return redirect(url_for('core.footer_variant_edit'))
+            return redirect(url_for('core.footer_variant_edit', _fragment='1', site=site.id))
+        return redirect(url_for('core.footer_variant_edit', site=site.id))
 
     current_footer = settings.get('footer') or {}
     if is_fragment:
@@ -1123,6 +1207,118 @@ def _render(template_name, **kwargs):
     return render_template(template_name, **kwargs)
 
 
+@bp.route('/_dataset/<dataset_key>')
+def dataset_panel(dataset_key):
+    """通用数据集管理面板"""
+    user, site = _current_context()
+    items = datasets.load(site.id, dataset_key)
+    return _render('dashboard/panel_data_list.html',
+                   user=user, site=site,
+                   dataset_key=dataset_key, items=items,
+                   edit_prefix=f'_dataset/{dataset_key}',
+                   active=dataset_key)
+
+@bp.route('/_dataset/<dataset_key>/new', methods=['POST'])
+def dataset_new(dataset_key):
+    """通用数据集新建条目"""
+    from flask import redirect, url_for
+    _, site = _current_context()
+    n = len(datasets.load(site.id, dataset_key)) + 1
+    new_id = datasets.add(site.id, dataset_key, {
+        'title': f'新条目 {n}', 'slug': f'item-{n}',
+    })
+    return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id))
+
+@bp.route('/_dataset/<dataset_key>/<int:item_id>/edit', methods=['GET', 'POST'])
+def dataset_edit(dataset_key, item_id):
+    """通用数据集编辑"""
+    from flask import flash, redirect, request, url_for
+    user, site = _current_context()
+    item = datasets.find(site.id, dataset_key, item_id)
+    if not item:
+        abort(404, f'数据不存在: {dataset_key}#{item_id}')
+
+    if request.method == 'POST':
+        fields = {}
+        for key in request.form:
+            # 跳过模块配置字段 (module_N_*)
+            if key.startswith('module_') or key == 'module_count':
+                continue
+            val = request.form.get(key, '').strip()
+            if val:
+                fields[key] = val
+        # slug 唯一性校验
+        new_slug = fields.get('slug', '').strip() or None
+        if new_slug:
+            all_items = datasets.load(site.id, dataset_key)
+            dup = next((it for it in all_items
+                        if it.get('slug') == new_slug and it.get('id') != item_id), None)
+            if dup:
+                flash(f'Slug "{new_slug}" 已被 #{dup["id"]} 使用，请换一个', 'error')
+                return redirect(url_for('core.dataset_edit', dataset_key=dataset_key,
+                                        item_id=item_id, _fragment='1', site=site.id))
+        # tags: 逗号/空格分隔的字符串 → 列表
+        if 'tags' in fields and fields['tags']:
+            raw_tags = fields['tags']
+            tags_list = [t.strip() for t in raw_tags.replace(',', ' ').split() if t.strip()]
+            fields['tags'] = tags_list
+        # 处理图片上传
+        for field_name in ('cover', 'image', 'photo', 'logo'):
+            upload = request.files.get(field_name)
+            if upload and upload.filename:
+                try:
+                    fields[field_name] = _save_uploaded_image(site.id, upload, prefix=f'{dataset_key}-{field_name}')
+                except Exception as exc:
+                    current_app.logger.warning('数据集图片上传失败 %s: %s', field_name, exc)
+        # 保存模块配置到数据项 (item) 中
+        module_count_str = request.form.get('module_count')
+        if module_count_str and module_count_str.isdigit():
+            try:
+                modules = _parse_modules_form(request.form)
+                # 保留 item_data 模块用于排序，但清除敏感数据字段
+                for m in modules:
+                    if m.get('type') == 'item_data':
+                        m['data'] = {}  # 清空数据（已在 fields 中保存）
+                fields['modules'] = modules
+            except Exception as exc:
+                current_app.logger.warning('数据集编辑保存模块配置失败: %s', exc)
+        else:
+            fields['modules'] = []
+
+        datasets.update(site.id, dataset_key, item_id, fields)
+        flash('已保存')
+        return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id))
+
+    blocks = _get_available_blocks(site.template_name)
+    # 中间预览 URL
+    slug = item.get('slug', '')
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    menu_items = settings.get('menu') or []
+    is_list_page = any(
+        mi.get('type') == 'list' and mi.get('target') == dataset_key
+        for mi in menu_items
+    )
+    return _render('dashboard/panel_data_list.html',
+                   user=user, site=site,
+                   dataset_key=dataset_key, items=[item],
+                   edit_prefix=f'_dataset/{dataset_key}',
+                   edit_item=item, edit_item_id=item_id,
+                   active=dataset_key,
+                   blocks=blocks,
+                   is_list_page=is_list_page,
+                   page_key=dataset_key,
+                   preview_slug=slug)
+
+@bp.route('/_dataset/<dataset_key>/<int:item_id>/delete', methods=['POST'])
+def dataset_delete(dataset_key, item_id):
+    """通用数据集删除"""
+    from flask import flash, redirect, url_for
+    _, site = _current_context()
+    datasets.remove(site.id, dataset_key, item_id)
+    flash('已删除')
+    return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id))
+
+
 @bp.route('/_panel/<path:page_key>', methods=['GET', 'POST'])
 def page_panel(page_key):
     """动态菜单项面板路由：根据 page_key 分发到对应数据集列表或单页编辑.
@@ -1144,7 +1340,15 @@ def page_panel(page_key):
                 page.pop(k, None)
         write_yaml(site.id, f'pages/{page_key}.yaml', page)
         flash('已保存')
-        return redirect(url_for('core.page_panel', page_key=page_key, _fragment='1'))
+        return redirect(url_for('core.page_panel', page_key=page_key, _fragment='1', site=site.id))
+
+    # 判断 page_key 是否为 list 类型菜单（用于显示"管理数据"按钮）
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    menu_items = settings.get('menu') or []
+    is_list_page = any(
+        item.get('type') == 'list' and item.get('target') == page_key
+        for item in menu_items
+    )
 
     # 优先匹配单页：即使与数据集同名，也允许在中间预览中配置页面模块。
     page = read_yaml(site.id, f'pages/{page_key}.yaml')
@@ -1155,19 +1359,19 @@ def page_panel(page_key):
                        user=user, site=site,
                        page_key=page_key, page=page,
                        blocks=blocks, is_modules_format=is_modules_format,
+                       is_list_page=is_list_page,
                        active=page_key)
 
-    # 再匹配数据集列表。
-    data_items = datasets.load(site.id, page_key)
-    if data_items:
-        return _render('dashboard/panel_data_list.html',
-                       user=user, site=site,
-                       dataset_key=page_key, items=data_items,
-                       active=page_key)
-
-    return _render('dashboard/panel_empty.html',
+    # 没有匹配任何已有内容：自动初始化 pages yaml 以便用模块库配置
+    new_page = {'modules': []}
+    write_yaml(site.id, f'pages/{page_key}.yaml', new_page)
+    blocks = _get_available_blocks(site.template_name)
+    return _render('dashboard/panel_page_edit.html',
                    user=user, site=site,
-                   page_key=page_key, active=page_key)
+                   page_key=page_key, page=new_page,
+                   blocks=blocks, is_modules_format=True,
+                   is_list_page=is_list_page,
+                   active=page_key)
 
 
 def _get_available_blocks(template_name):
@@ -1288,6 +1492,47 @@ def _parse_modules_form(form):
             if uploaded_slides:
                 existing = data.get('slides') if isinstance(data.get('slides'), list) else []
                 data['slides'] = existing + uploaded_slides
+
+        if m_type == 'item_detail':
+            images_count = 0
+            try:
+                images_count = int(form.get(f'{idx}_data_images_count', '0'))
+            except (ValueError, TypeError):
+                pass
+            images = []
+            for ii in range(images_count):
+                url = form.get(f'{idx}_data_images_{ii}_url', '').strip()
+                upload = request.files.get(f'{idx}_data_images_{ii}_url_file')
+                if upload and upload.filename:
+                    try:
+                        url = _save_uploaded_image(
+                            _current_context()[1].id, upload,
+                            prefix=f'{m_type}-img-{ii + 1}'
+                        )
+                    except Exception as exc:
+                        current_app.logger.warning('模块图片上传失败: %s', exc)
+                if url:
+                    images.append({'url': url})
+            if images:
+                data['images'] = images
+            else:
+                data.pop('images', None)
+
+            specs_count = 0
+            try:
+                specs_count = int(form.get(f'{idx}_data_specs_count', '0'))
+            except (ValueError, TypeError):
+                pass
+            specs = []
+            for si in range(specs_count):
+                name = form.get(f'{idx}_data_specs_{si}_name', '').strip()
+                value = form.get(f'{idx}_data_specs_{si}_value', '').strip()
+                if name or value:
+                    specs.append({'name': name, 'value': value})
+            if specs:
+                data['specs'] = specs
+            else:
+                data.pop('specs', None)
 
         if m_type == 'feature_grid':
             feature_count = 0

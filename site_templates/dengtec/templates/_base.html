@@ -7,6 +7,19 @@
   <meta name="description" content="{% block description %}{{ t.company }}{% endblock %}">
   <link rel="stylesheet" href="{{ base_url }}/static/css/main.css">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  {% set theme_colors = theme | default({}) %}
+  {% if theme_colors.accent or theme_colors.bg or theme_colors.surface or theme_colors.text or theme_colors.text_muted or theme_colors.border %}
+  <style>
+    :root {
+      {% if theme_colors.accent %}--color-primary: {{ theme_colors.accent }}; --color-primary-hover: color-mix(in srgb, {{ theme_colors.accent }}, #000 15%);{% endif %}
+      {% if theme_colors.bg %}--color-bg: {{ theme_colors.bg }}; --color-bg-secondary: color-mix(in srgb, {{ theme_colors.bg }}, #667 8%);{% endif %}
+      {% if theme_colors.surface %}--color-surface: {{ theme_colors.surface }};{% endif %}
+      {% if theme_colors.text %}--color-text: {{ theme_colors.text }};{% endif %}
+      {% if theme_colors.text_muted %}--color-text-secondary: {{ theme_colors.text_muted }}; --color-text-light: color-mix(in srgb, {{ theme_colors.text_muted }}, #fff 30%);{% endif %}
+      {% if theme_colors.border %}--color-border: {{ theme_colors.border }}; --color-border-dark: color-mix(in srgb, {{ theme_colors.border }}, #000 12%);{% endif %}
+    }
+  </style>
+  {% endif %}
 </head>
 <body>
 <div class="site-wrapper">
@@ -285,6 +298,35 @@ document.addEventListener('click', function(e) {
 
 <footer class="site-footer builder-region" data-builder-region="footer">
   <div class="container">
+    {% set footer_cfg = settings.footer | default({}) %}
+    {% set footer_variant = footer_cfg.get('variant', 'columns') %}
+    {% set footer_columns = footer_cfg.get('columns', []) %}
+
+    {% if footer_variant == 'columns' and footer_columns %}
+    <div class="footer-grid" style="grid-template-columns: repeat({{ footer_columns | length }}, 1fr);">
+      {% for col in footer_columns %}
+      <div class="footer-col">
+        {% if col.title %}<h4>{{ col.title }}</h4>{% endif %}
+        {% if col.type == 'menu' and col.links %}
+        <ul>
+          {% for link in col.links %}
+          <li><a href="{{ link.url }}">{{ link.label }}</a></li>
+          {% endfor %}
+        </ul>
+        {% elif col.type == 'text' %}
+        <div class="footer-col-text">
+          {% if col.links %}
+          {% for link in col.links %}
+          <p>{{ link.label }}</p>
+          {% endfor %}
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    {# 默认四栏布局（无自定义栏目时回退） #}
     <div class="footer-grid">
       <div class="footer-col">
         <h4>{{ t.footer.products | default('产品') }}</h4>
@@ -310,14 +352,16 @@ document.addEventListener('click', function(e) {
           <li><a href="{{ base_url }}/{{ lang }}/blog/">{{ t.nav.blog | default('博客') }}</a></li>
         </ul>
       </div>
+      {% if settings.contact and (settings.contact.phone or settings.contact.email or settings.contact.address) %}
       <div class="footer-col">
         <h4>{{ t.footer.contact | default('联系方式') }}</h4>
         <ul>
-          {% if settings.contact %}<li>{{ settings.contact.phone }}</li>{% endif %}
-          {% if settings.contact %}<li>{{ settings.contact.email }}</li>{% endif %}
-          {% if settings.contact %}<li>{{ settings.contact.address }}</li>{% endif %}
+          {% if settings.contact.phone %}<li>{{ settings.contact.phone }}</li>{% endif %}
+          {% if settings.contact.email %}<li>{{ settings.contact.email }}</li>{% endif %}
+          {% if settings.contact.address %}<li>{{ settings.contact.address }}</li>{% endif %}
         </ul>
       </div>
+      {% endif %}
       <div class="footer-col">
         <h4>{{ t.footer.about | default('关于我们') }}</h4>
         <ul>
@@ -326,9 +370,12 @@ document.addEventListener('click', function(e) {
         </ul>
       </div>
     </div>
+    {% endif %}
+
     <div class="footer-bottom">
       <p>© {{ year }} {{ t.company | default('DENGTEC') }}</p>
-      {% if settings.company and settings.company.icp %}<p>{{ settings.company.icp }}</p>{% endif %}
+      {% set icp_text = footer_cfg.get('icp') or (settings.company and settings.company.icp) %}
+      {% if icp_text %}<p>{{ icp_text }}</p>{% endif %}
     </div>
   </div>
 </footer>

@@ -1,0 +1,144 @@
+{# 条目详情模块 — 双栏布局，多图切换+放大镜+规格表 #}
+{% set mdata = module.data if module.data is mapping else {} %}
+
+{% set images = mdata.images or [] %}
+{% if images is string %}{% set images = [images] %}{% endif %}
+{% if images and images[0] is mapping %}
+  {% set main_image = images[0].url or '' %}
+{% else %}
+  {% set main_image = images[0] if images else '' %}
+{% endif %}
+{% set title = mdata.title or '' %}
+{% set description = mdata.description or mdata.desc or '' %}
+{% set tags = mdata.tags or [] %}
+{% if tags is string %}{% set tags = tags.split(',') %}{% endif %}
+{% set specs = mdata.specs or [] %}
+{% if specs is string %}
+  {% set specs = [] %}
+{% endif %}
+{% set section_bg = mdata.section_bg or '' %}
+{% set inner_w = mdata.inner_width or '' %}
+{% set text_bg = mdata.text_bg or '' %}
+{% set text_color = mdata.text_color or '' %}
+{% set tag_bg = mdata.tag_bg or '' %}
+{% set tag_color = mdata.tag_color or '' %}
+{% set img_border_radius = mdata.img_border_radius or 'var(--radius-md)' %}
+
+{% set block_id = 'id-' + range(1000,9999) | random | string %}
+
+<section class="section"{% if section_bg %} style="background: {{ section_bg }};"{% endif %}>
+  <div class="container"{% if inner_w %} style="max-width: {{ inner_w }}; margin: 0 auto;"{% endif %}>
+    <div class="id-grid"{% if text_bg %} style="background-color: {{ text_bg }}; padding: 2rem; border-radius: var(--radius-lg);"{% endif %}>
+      
+      {# 左侧：图片区 #}
+      <div class="id-image-zone">
+        {# 放大镜容器 #}
+        <div class="id-magnify-container" id="{{ block_id }}-magnify">
+          <img class="id-main-image" id="{{ block_id }}-main-img" 
+               src="{{ main_image }}" alt="{{ title }}"
+               style="border-radius: {{ img_border_radius }};">
+          {% if images | length > 1 %}
+          <div class="id-magnify-glass" id="{{ block_id }}-glass" style="display:none;"></div>
+          {% endif %}
+        </div>
+        
+        {# 缩略图列表 #}
+        {% if images | length > 1 %}
+        <div class="id-thumb-list">
+          {% for img in images %}
+          {% if img is mapping %}
+            {% set thumb_src = img.url or '' %}
+          {% else %}
+            {% set thumb_src = img %}
+          {% endif %}
+          <div class="id-thumb-item {% if loop.first %}active{% endif %}" 
+               data-full="{{ thumb_src }}"
+               onclick="switchItemDetailImage('{{ block_id }}', this, '{{ thumb_src }}')"
+               style="background-image: url('{{ thumb_src }}');">
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      {# 右侧：信息区 #}
+      <div class="id-info-zone"{% if text_color %} style="color: {{ text_color }};"{% endif %}>
+        {% if title %}<h1 class="id-title">{{ title }}</h1>{% endif %}
+        
+        {% if description %}
+        <p class="id-desc">{{ description }}</p>
+        {% endif %}
+
+        {% if tags %}
+        <div class="id-tags">
+          {% for tag in tags %}
+          <span class="id-tag" style="{% if tag_bg %}background-color: {{ tag_bg }};{% endif %}{% if tag_color %}color: {{ tag_color }};{% endif %}">{{ tag | trim }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {# Specs 规格表 #}
+        {% if specs %}
+        <div class="id-specs-section">
+          <h3 class="id-specs-title">规格参数</h3>
+          <table class="id-specs-table">
+            {% for spec in specs %}
+            {% if spec is mapping %}
+            <tr>
+              <td class="id-spec-name">{{ spec.name or spec.label or spec.key or '' }}</td>
+              <td class="id-spec-value">{{ spec.value or '' }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </table>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if images | length > 1 %}
+<script>
+(function() {
+  var blockId = '{{ block_id }}';
+  var mainImg = document.getElementById(blockId + '-main-img');
+  var glass = document.getElementById(blockId + '-glass');
+  var magnify = document.getElementById(blockId + '-magnify');
+  if (!mainImg || !glass || !magnify) return;
+
+  // 放大镜
+  magnify.addEventListener('mousemove', function(e) {
+    glass.style.display = 'block';
+    var rect = magnify.getBoundingClientRect();
+    var x = e.clientX - rect.left;
+    var y = e.clientY - rect.top;
+    var glassW = 180, glassH = 180;
+    var left = x - glassW / 2;
+    var top = y - glassH / 2;
+    left = Math.max(0, Math.min(left, rect.width - glassW));
+    top = Math.max(0, Math.min(top, rect.height - glassH));
+    glass.style.left = left + 'px';
+    glass.style.top = top + 'px';
+    glass.style.backgroundImage = 'url(' + mainImg.src + ')';
+    glass.style.backgroundSize = (rect.width * 2.5) + 'px ' + (rect.height * 2.5) + 'px';
+    glass.style.backgroundPosition = '-' + (left * 2.5 - glassW / 2) + 'px -' + (top * 2.5 - glassH / 2) + 'px';
+  });
+  magnify.addEventListener('mouseleave', function() {
+    glass.style.display = 'none';
+  });
+})();
+</script>
+{% endif %}
+
+<script>
+function switchItemDetailImage(blockId, thumbEl, src) {
+  var container = document.getElementById(blockId + '-magnify');
+  if (!container) return;
+  var mainImg = container.querySelector('.id-main-image');
+  if (mainImg) mainImg.src = src;
+  var thumbs = container.parentElement.querySelectorAll('.id-thumb-item');
+  thumbs.forEach(function(t) { t.classList.remove('active'); });
+  if (thumbEl) thumbEl.classList.add('active');
+}
+</script>
