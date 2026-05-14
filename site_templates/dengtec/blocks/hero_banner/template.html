@@ -1,8 +1,22 @@
 {# Hero Banner 模块 - 默认变体: 文字叠加(全宽) #}
 {% if module.data %}
-{% set items = module.data.slides if module.data.slides is iterable and module.data.slides is not string else ([module.data] if module.data.title or module.data.media else []) %}
+{% if module.data is not mapping and module.data is iterable and module.data is not string %}
+  {# 后台表单保存的列表格式: [{type: image, media: ..., title: ...}, ...] #}
+  {% set items = module.data %}
+{% else %}
+  {% set items = module.data.slides if module.data.slides is iterable and module.data.slides is not string else ([module.data] if module.data.title or module.data.media else []) %}
+{% endif %}
 {% if items %}
-<section class="hero-banner" id="heroBanner">
+{% set align = module.data.get('banner_align', '') if module.data is mapping else '' %}
+{% set hero_w = module.data.get('hero_width', '') if module.data is mapping else '' %}
+{% set hero_h = module.data.get('hero_height', '') if module.data is mapping else '' %}
+{% set style_parts = [] %}
+{% if hero_w %}{% set _ = style_parts.append('width: ' ~ hero_w ~ ';') %}{% endif %}
+{% if hero_h %}{% set _ = style_parts.append('height: ' ~ hero_h ~ ';') %}{% endif %}
+{% if align == 'center' %}{% set _ = style_parts.append('margin-left: auto; margin-right: auto;') %}{% endif %}
+{% if align == 'left' %}{% set _ = style_parts.append('margin-right: auto;') %}{% endif %}
+{% if align == 'right' %}{% set _ = style_parts.append('margin-left: auto;') %}{% endif %}
+<section class="hero-banner" id="heroBanner"{% if style_parts %} style="{{ style_parts | join(' ') }}"{% endif %}>
   <div class="hero-banner-slides">
     {% for item in items %}
     <div class="hero-banner-slide{% if loop.first %} active{% endif %}" data-index="{{ loop.index0 }}">

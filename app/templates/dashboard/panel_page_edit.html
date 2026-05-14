@@ -81,6 +81,34 @@
           <div class="device-config device-desktop">
             <div class="small fw-semibold mb-1 text-primary">电脑端配置</div>
             {% if module.type == 'hero_banner' %}
+            {# 外层样式：宽度、高度和排版 #}
+            <div class="small fw-semibold mb-1 text-muted">外层样式</div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">Banner 宽度</label>
+                <div class="input-group input-group-sm">
+                  <input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_hero_width" value="{{ mdata.get('hero_width', '') }}" placeholder="如 100%" style="width:60%">
+                  <select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_hero_width" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_hero_width\']');if(inp){var v=inp.value.replace(/px|rem|%|vh|vw$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="vw">vw</option><option value="rem">rem</option></select>
+                </div>
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">Banner 高度</label>
+                <div class="input-group input-group-sm">
+                  <input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_hero_height" value="{{ mdata.get('hero_height', '') }}" placeholder="如 77vh" style="width:60%">
+                  <select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_hero_height" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_hero_height\']');if(inp){var v=inp.value.replace(/px|rem|%|vh|vw$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="vh">vh</option><option value="rem">rem</option><option value="%">%</option></select>
+                </div>
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">Banner 排版</label>
+                <select class="form-select form-select-sm" name="module_{{ i }}_data_banner_align">
+                  <option value="" {% if not mdata.get('banner_align') %}selected{% endif %}>默认（全宽）</option>
+                  <option value="center" {% if mdata.get('banner_align') == 'center' %}selected{% endif %}>居中</option>
+                  <option value="left" {% if mdata.get('banner_align') == 'left' %}selected{% endif %}>居左</option>
+                  <option value="right" {% if mdata.get('banner_align') == 'right' %}selected{% endif %}>居右</option>
+                </select>
+              </div>
+            </div>
+            <hr class="my-2">
             {% set slides = mdata.get('slides') if mdata.get('slides') is iterable and mdata.get('slides') is not string else [] %}
             {% if not slides and (mdata.get('title') or mdata.get('media') or mdata.get('background_image') or mdata.get('video_url')) %}
               {% set slides = [mdata] %}
@@ -227,10 +255,9 @@
             <div class="mb-2">
               <label class="form-label small mb-1 text-muted">数据来源</label>
               <select class="form-select form-select-sm" name="module_{{ i }}_data_dataset">
-                {% for item in left_menu_items %}
-                {% if item.type == 'list' and item.target %}
+                <option value="">请选择</option>
+                {% for item in (all_list_datasets or []) %}
                 <option value="{{ item.target }}" {% if mdata.get('dataset') == item.target %}selected{% endif %}>{{ item.label }}（{{ item.target }}）</option>
-                {% endif %}
                 {% endfor %}
               </select>
             </div>
@@ -312,8 +339,22 @@
             <div class="small fw-semibold mb-1 text-muted">外层样式</div>
             <div class="row g-2">
               <div class="col-6"><label class="form-label small mb-1 text-muted">外层背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('section_bg', '#ffffff') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_section_bg" value="{{ mdata.get('section_bg', '') }}" placeholder="#f5f7fa" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">内层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_inner_width" value="{{ mdata.get('inner_width', '') }}" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name="module_{{ i }}_data_inner_width"]');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">图片圆角</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_img_border_radius" value="{{ mdata.get('img_border_radius', '') }}" placeholder="如 12px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name="module_{{ i }}_data_img_border_radius"]');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select></div></div>
+            </div>
+            <hr class="my-2">
+            <div class="small fw-semibold mb-1 text-muted">内层样式</div>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small mb-1 text-muted">内层背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('inner_bg', '#ffffff') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_inner_bg" value="{{ mdata.get('inner_bg', '') }}" placeholder="#ffffff" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">内层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_inner_width" value="{{ mdata.get('inner_width', '') }}" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_inner_width" style="width:40%"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">上内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_top" value="{{ mdata.get('padding_top', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_top" style="width:40%"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">右内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_right" value="{{ mdata.get('padding_right', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_right" style="width:40%"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">下内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_bottom" value="{{ mdata.get('padding_bottom', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_bottom" style="width:40%"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">左内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_left" value="{{ mdata.get('padding_left', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_left" style="width:40%"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            </div>
+            <hr class="my-2">
+            <div class="small fw-semibold mb-1 text-muted">图片样式</div>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small mb-1 text-muted">图片圆角</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_img_border_radius" value="{{ mdata.get('img_border_radius', '') }}" placeholder="如 12px" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_img_border_radius" style="width:40%"><option value="">—</option><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">图片高度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_img_height" value="{{ mdata.get('img_height', '') }}" placeholder="如 400px" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_img_height" style="width:40%"><option value="">—</option><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select></div></div>
             </div>
             <hr class="my-2">
             <div class="small fw-semibold mb-1 text-muted">配色</div>
@@ -615,9 +656,7 @@
 </div>
 
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
-{% set ds_names = [] %}
-{% for item in left_menu_items %}{% if item.type == 'list' and item.target %}{% set _ = ds_names.append({'target': item.target, 'label': item.label}) %}{% endif %}{% endfor %}
-<script type="application/json" id="datasetNamesJson">{{ ds_names | tojson }}</script>
+<script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script>
 var blockLibrary = JSON.parse(document.getElementById('blockLibraryJson').textContent || '[]');
 var datasetNames = JSON.parse(document.getElementById('datasetNamesJson').textContent || '[]');

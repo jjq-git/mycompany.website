@@ -15,6 +15,18 @@
   {% set items = products if dataset_key == 'products' else portfolio if dataset_key == 'portfolio' else posts if dataset_key == 'posts' else [] %}
 {% endif %}
 {% if items %}
+{% set filter_category = md.get('category', '') %}
+{% set filtered_items = items %}
+{% if filter_category %}
+  {% set _tmp = [] %}
+  {% for _it in items %}
+    {% if _it.category | default('') | string == filter_category | string %}
+      {% set _ = _tmp.append(_it) %}
+    {% endif %}
+  {% endfor %}
+  {% set filtered_items = _tmp %}
+{% endif %}
+{% if filtered_items %}
 {% set max_items = md.get('max_items', 6) | int %}
 {% set per_page = md.get('items_per_page', 6) | int %}
 {% set show_view_all = md.get('show_view_all', 'true') == 'true' %}
@@ -25,7 +37,7 @@
 {% set variant_columns = {'grid_3': 3, 'grid_4': 4, 'cards_row': 1}.get(variant, 3) %}
 {% set columns = md.get('columns') | int or variant_columns %}
 {% set show_pagination = md.get('show_pagination', 'true') == 'true' %}
-{% set display_items = items[:max_items] %}
+{% set display_items = filtered_items[:max_items] %}
 {% set total = display_items | length %}
 {% set is_products = dataset_key == 'products' %}
 {% set is_posts = dataset_key == 'posts' %}
@@ -84,6 +96,7 @@
     {% endif %}
   </div>
 </section>
+{% endif %}
 {% endif %}
 {% endif %}
 

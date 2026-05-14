@@ -47,11 +47,20 @@ def _gather_site_data(site_id, template_name=None):
         seed_settings = _load_yaml(seed_root / 'settings.yaml')
         settings = _deep_merge(seed_settings, settings)
     pages = {}
-    for f in (root / 'pages').glob('*.yaml'):
-        pages[f.stem] = _load_yaml(f)
+    pages_dir = root / 'pages'
+    if pages_dir.exists():
+        for f in pages_dir.rglob('*.yaml'):
+            # 相对于 pages/ 的路径作为 key，如 'about'、'products/silent-booth'
+            rel = f.relative_to(pages_dir).as_posix()
+            page_key = rel[:-5] if rel.endswith('.yaml') else rel  # 去掉 .yaml 后缀
+            pages[page_key] = _load_yaml(f)
     data = {}
-    for f in (root / 'data').glob('*.yaml'):
-        data[f.stem] = _load_yaml(f)
+    data_dir = root / 'data'
+    if data_dir.exists():
+        for f in data_dir.rglob('*.yaml'):
+            rel = f.relative_to(data_dir).as_posix()
+            dataset_key = rel[:-5] if rel.endswith('.yaml') else rel
+            data[dataset_key] = _load_yaml(f)
 
     return settings, pages, data
 
@@ -114,6 +123,7 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
             ctx = dict(_common)
             ctx['current_path'] = task['current_path']
 
+            ctx['page_key'] = task['page_key']
             if task['type'] == 'home':
                 ctx['page'] = pages.get('home', {})
             elif task['type'] == 'list':

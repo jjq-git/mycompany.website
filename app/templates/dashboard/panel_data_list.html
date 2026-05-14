@@ -284,8 +284,17 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         var specList = Array.isArray(d.specs) ? d.specs : [];
         specialEditor = '<div class="small fw-semibold mb-1 text-muted">外层样式</div><div class="row g-2">' +
           '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg || '#ffffff') + '</div>' +
+          '</div>' +
+          '<hr class="my-2"><div class="small fw-semibold mb-1 text-muted">内层样式</div><div class="row g-2">' +
+          '<div class="col-6">' + cP('module_' + idx + '_data_inner_bg', '内层背景色', d.inner_bg || '#ffffff') + '</div>' +
           '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
-          '<div class="col-6">' + uP('module_' + idx + '_data_img_border_radius', '图片圆角', ['px','rem','%'], d.img_border_radius) + '</div></div>' +
+          '<div class="col-6">' + uP('module_' + idx + '_data_padding_top', '上内边距', ['px','rem'], d.padding_top) + '</div>' +
+          '<div class="col-6">' + uP('module_' + idx + '_data_padding_right', '右内边距', ['px','rem'], d.padding_right) + '</div>' +
+          '<div class="col-6">' + uP('module_' + idx + '_data_padding_bottom', '下内边距', ['px','rem'], d.padding_bottom) + '</div>' +
+          '<div class="col-6">' + uP('module_' + idx + '_data_padding_left', '左内边距', ['px','rem'], d.padding_left) + '</div></div>' +
+          '<hr class="my-2"><div class="small fw-semibold mb-1 text-muted">图片样式</div><div class="row g-2">' +
+          '<div class="col-6">' + uP('module_' + idx + '_data_img_border_radius', '图片圆角', ['px','rem','%'], d.img_border_radius) + '</div>' +
+          '<div class="col-6">' + uP('module_' + idx + '_data_img_height', '图片高度', ['px','rem','%'], d.img_height) + '</div></div>' +
           '<hr class="my-2"><div class="small fw-semibold mb-1 text-muted">配色</div><div class="row g-2">' +
           '<div class="col-6">' + cP('module_' + idx + '_data_text_bg', '文本区背景色', d.text_bg || '#ffffff') + '</div>' +
           '<div class="col-6">' + cP('module_' + idx + '_data_text_color', '文本区字体色', d.text_color || '#333333') + '</div>' +

@@ -258,7 +258,7 @@ def collect_render_tasks(menu_items, tpl_html_dir, data, pages=None):
             elif t == 'page' and target:
                 page_tmpl = f'{target}.html'
                 if not (tpl_html_dir / page_tmpl).exists():
-                    page_tmpl = 'index.html'
+                    page_tmpl = '_page.html' if (tpl_html_dir / '_page.html').exists() else 'index.html'
                 tasks.append({
                     'type': 'page',
                     'template': page_tmpl,

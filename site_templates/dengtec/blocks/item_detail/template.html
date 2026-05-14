@@ -22,13 +22,26 @@
 {% set text_color = mdata.text_color or '' %}
 {% set tag_bg = mdata.tag_bg or '' %}
 {% set tag_color = mdata.tag_color or '' %}
+{% set inner_bg = mdata.inner_bg or '' %}
+{% set padding_top = mdata.padding_top or '' %}
+{% set padding_right = mdata.padding_right or '' %}
+{% set padding_bottom = mdata.padding_bottom or '' %}
+{% set padding_left = mdata.padding_left or '' %}
 {% set img_border_radius = mdata.img_border_radius or 'var(--radius-md)' %}
+{% set img_height = mdata.img_height or '' %}
+{% set inner_style_parts = [] %}
+{% if inner_bg %}{% set _ = inner_style_parts.append('background-color: ' ~ inner_bg ~ ';') %}{% endif %}
+{% if padding_top %}{% set _ = inner_style_parts.append('padding-top: ' ~ padding_top ~ ';') %}{% endif %}
+{% if padding_right %}{% set _ = inner_style_parts.append('padding-right: ' ~ padding_right ~ ';') %}{% endif %}
+{% if padding_bottom %}{% set _ = inner_style_parts.append('padding-bottom: ' ~ padding_bottom ~ ';') %}{% endif %}
+{% if padding_left %}{% set _ = inner_style_parts.append('padding-left: ' ~ padding_left ~ ';') %}{% endif %}
+{% set inner_style = inner_style_parts | join(' ') %}
 
 {% set block_id = 'id-' + range(1000,9999) | random | string %}
 
 <section class="section"{% if section_bg %} style="background: {{ section_bg }};"{% endif %}>
   <div class="container"{% if inner_w %} style="max-width: {{ inner_w }}; margin: 0 auto;"{% endif %}>
-    <div class="id-grid"{% if text_bg %} style="background-color: {{ text_bg }}; padding: 2rem; border-radius: var(--radius-lg);"{% endif %}>
+    <div class="id-grid"{% if inner_style %} style="{{ inner_style }}"{% endif %}>
       
       {# 左侧：图片区 #}
       <div class="id-image-zone">
@@ -36,7 +49,7 @@
         <div class="id-magnify-container" id="{{ block_id }}-magnify">
           <img class="id-main-image" id="{{ block_id }}-main-img" 
                src="{{ main_image }}" alt="{{ title }}"
-               style="border-radius: {{ img_border_radius }};">
+               style="border-radius: {{ img_border_radius }};{% if img_height %}height: {{ img_height }}; object-fit: cover;{% endif %}">
           {% if images | length > 1 %}
           <div class="id-magnify-glass" id="{{ block_id }}-glass" style="display:none;"></div>
           {% endif %}

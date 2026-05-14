@@ -205,6 +205,18 @@ def inject_context():
         )
         ctx['left_menu_items'] = normalized
 
+        # 收集所有层级中 type=list 的菜单项（供数据网格模块选择数据源）
+        def _collect_list_targets(items, result=None):
+            if result is None:
+                result = []
+            for it in (items or []):
+                if it.get('type') == 'list' and it.get('target'):
+                    result.append({'target': it['target'], 'label': it.get('label', it['target'])})
+                if it.get('children'):
+                    _collect_list_targets(it['children'], result)
+            return result
+        ctx['all_list_datasets'] = _collect_list_targets(normalized)
+
     return ctx
 
 
@@ -1207,7 +1219,7 @@ def _render(template_name, **kwargs):
     return render_template(template_name, **kwargs)
 
 
-@bp.route('/_dataset/<dataset_key>')
+@bp.route('/_dataset/<path:dataset_key>')
 def dataset_panel(dataset_key):
     """通用数据集管理面板"""
     user, site = _current_context()
@@ -1218,7 +1230,7 @@ def dataset_panel(dataset_key):
                    edit_prefix=f'_dataset/{dataset_key}',
                    active=dataset_key)
 
-@bp.route('/_dataset/<dataset_key>/new', methods=['POST'])
+@bp.route('/_dataset/<path:dataset_key>/new', methods=['POST'])
 def dataset_new(dataset_key):
     """通用数据集新建条目"""
     from flask import redirect, url_for
@@ -1229,7 +1241,7 @@ def dataset_new(dataset_key):
     })
     return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id))
 
-@bp.route('/_dataset/<dataset_key>/<int:item_id>/edit', methods=['GET', 'POST'])
+@bp.route('/_dataset/<path:dataset_key>/<int:item_id>/edit', methods=['GET', 'POST'])
 def dataset_edit(dataset_key, item_id):
     """通用数据集编辑"""
     from flask import flash, redirect, request, url_for
@@ -1309,7 +1321,7 @@ def dataset_edit(dataset_key, item_id):
                    page_key=dataset_key,
                    preview_slug=slug)
 
-@bp.route('/_dataset/<dataset_key>/<int:item_id>/delete', methods=['POST'])
+@bp.route('/_dataset/<path:dataset_key>/<int:item_id>/delete', methods=['POST'])
 def dataset_delete(dataset_key, item_id):
     """通用数据集删除"""
     from flask import flash, redirect, url_for
@@ -1342,13 +1354,20 @@ def page_panel(page_key):
         flash('已保存')
         return redirect(url_for('core.page_panel', page_key=page_key, _fragment='1', site=site.id))
 
-    # 判断 page_key 是否为 list 类型菜单（用于显示"管理数据"按钮）
+    # 判断 page_key 是否为 list 类型菜单（递归检查所有层级）
     settings = read_yaml(site.id, 'settings.yaml') or {}
     menu_items = settings.get('menu') or []
-    is_list_page = any(
-        item.get('type') == 'list' and item.get('target') == page_key
-        for item in menu_items
-    )
+
+    def _find_list_in_menu(items, target_key):
+        for item in (items or []):
+            if item.get('type') == 'list' and item.get('target') == target_key:
+                return True
+            if item.get('children'):
+                if _find_list_in_menu(item['children'], target_key):
+                    return True
+        return False
+
+    is_list_page = _find_list_in_menu(menu_items, page_key)
 
     # 优先匹配单页：即使与数据集同名，也允许在中间预览中配置页面模块。
     page = read_yaml(site.id, f'pages/{page_key}.yaml')
