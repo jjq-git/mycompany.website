@@ -5,13 +5,23 @@
 <h1 class="page-title">菜单</h1>
 <p class="page-subtitle">网站顶部导航。每项选一种类型，目标自动变成对应的页面或链接。</p>
 
+{% if languages and languages|length > 1 %}
+<div class="d-flex gap-1 mb-3">
+  {% for l in languages %}
+  <a href="{{ url_for('core.menu_edit', site=site.id, lang=l.code) }}"
+     class="badge text-decoration-none lang-tab {% if current_lang == l.code %}bg-primary text-white{% else %}bg-light text-dark border{% endif %}"
+     style="font-size:12px;padding:6px 12px;">{{ l.name }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
 {% with messages = get_flashed_messages() %}
   {% for m in messages %}
     <div class="card" style="max-width: 880px; background: #ecfdf5; border-color: #a7f3d0; color: #065f46;">{{ m }}</div>
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('core.menu_edit') }}" id="menu-form">
+<form method="post" action="{{ url_for('core.menu_edit', site=site.id, lang=current_lang) }}" id="menu-form">
 <div class="card" style="max-width: 880px;">
   <table class="table" id="menu-list" style="border: none;">
     <thead>
@@ -42,12 +52,14 @@
             <option value="list" {% if it.type == 'list' %}selected{% endif %}>列表页</option>
             <option value="page" {% if it.type == 'page' %}selected{% endif %}>单页</option>
             <option value="link" {% if it.type == 'link' or not it.type %}selected{% endif %}>外链</option>
+            <option value="group" {% if it.type == 'group' %}selected{% endif %}>容器</option>
           </select>
           {% endif %}
         </td>
         <td>
           {# 三个目标输入框, 根据 type 显示其中一个 #}
           <span class="target-home muted">/  （首页固定）</span>
+          <span class="target-group muted">仅作容器，用于组织子菜单</span>
           <input type="text" name="target_list[]" class="target-list"
                  value="{% if it.type in ('list', 'page') %}{{ it.target or '' }}{% endif %}"
                  placeholder="products / about">
@@ -88,11 +100,12 @@
     font: inherit;
     background: #fff;
   }
-  .menu-row .target-home, .menu-row .target-list, .menu-row .target-link { display: none; }
+  .menu-row .target-home, .menu-row .target-group, .menu-row .target-list, .menu-row .target-link { display: none; }
   .menu-row[data-type="home"] .target-home { display: inline; }
   .menu-row[data-type="list"] .target-list { display: inline-block; }
   .menu-row[data-type="page"] .target-list { display: inline-block; }
   .menu-row[data-type="link"] .target-link { display: inline-block; width: 100%; }
+  .menu-row[data-type="group"] .target-group { display: inline; }
   .menu-row-home input[readonly] { background: #f8fafc; color: var(--muted); }
   .menu-row .dropdown-style { margin-top: 6px; }
 </style>
@@ -129,10 +142,12 @@ function addRow() {
         <option value="list">列表页</option>
         <option value="page">单页</option>
         <option value="link" selected>外链</option>
+        <option value="group">容器</option>
       </select>
     </td>
     <td>
       <span class="target-home muted">/  （首页固定）</span>
+      <span class="target-group muted">仅作容器，用于组织子菜单</span>
       <input type="text" name="target_list[]" class="target-list" placeholder="products / about">
       <input type="text" name="url_link[]" class="target-link" placeholder="https:// 或 /products/host">
       <input type="hidden" name="children_json[]" value="[]">

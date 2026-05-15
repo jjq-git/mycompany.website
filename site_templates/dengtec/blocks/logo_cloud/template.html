@@ -1,0 +1,55 @@
+{# Logo墙 — 合作品牌/客户展示 #}
+{% set md = module.data if module.data else {} %}
+{% set logos = md.get('logos', []) %}
+{% if logos is iterable and logos is not string and logos | length > 0 %}
+{% set section_bg = md.get('section_bg', '') %}
+{% set inner_w = md.get('inner_width', '') %}
+{% set inner_bg = md.get('inner_bg', '') %}
+{% set padding_top = md.get('padding_top', '') %}
+{% set padding_right = md.get('padding_right', '') %}
+{% set padding_bottom = md.get('padding_bottom', '') %}
+{% set padding_left = md.get('padding_left', '') %}
+{% set cols = md.get('columns', '4') | int %}
+{% set grayscale = md.get('grayscale') not in (False, 'false') %}
+{% set logo_bg = md.get('logo_bg', '') %}
+{% set logo_border = md.get('logo_border', '') %}
+{% set logo_border_color = md.get('logo_border_color', '') %}
+{% set logo_radius = md.get('logo_radius', '') %}
+{% set logo_width = md.get('logo_width', '') %}
+{% set logo_height = md.get('logo_height', '') %}
+{% set inner_style_parts = [] %}
+{% if inner_bg %}{% set _ = inner_style_parts.append('background-color: ' ~ inner_bg ~ ';') %}{% endif %}
+{% if padding_top %}{% set _ = inner_style_parts.append('padding-top: ' ~ padding_top ~ ';') %}{% endif %}
+{% if padding_right %}{% set _ = inner_style_parts.append('padding-right: ' ~ padding_right ~ ';') %}{% endif %}
+{% if padding_bottom %}{% set _ = inner_style_parts.append('padding-bottom: ' ~ padding_bottom ~ ';') %}{% endif %}
+{% if padding_left %}{% set _ = inner_style_parts.append('padding-left: ' ~ padding_left ~ ';') %}{% endif %}
+{% set inner_style = inner_style_parts | join(' ') %}
+{% set card_style_parts = [] %}
+{% if logo_bg %}{% set _ = card_style_parts.append('background-color: ' ~ logo_bg ~ ';') %}{% endif %}
+{% if logo_border %}{% set _ = card_style_parts.append('border: ' ~ logo_border ~ ' solid ' ~ (logo_border_color or '#e5e7eb') ~ ';') %}{% endif %}
+{% if logo_radius %}{% set _ = card_style_parts.append('border-radius: ' ~ logo_radius ~ ';') %}{% endif %}
+{% if not logo_border and logo_border_color %}{% set _ = card_style_parts.append('border: 1px solid ' ~ logo_border_color ~ ';') %}{% endif %}
+{% if logo_width %}{% set _ = card_style_parts.append('width: ' ~ logo_width ~ ';') %}{% endif %}
+{% if logo_height %}{% set _ = card_style_parts.append('height: ' ~ logo_height ~ ';') %}{% endif %}
+{% set card_style = card_style_parts | join(' ') %}
+
+<section class="section{% if not section_bg %} section-bg{% endif %}"{% if section_bg %} style="background: {{ section_bg }};"{% endif %}>
+  <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;{% if inner_style %} {{ inner_style }}{% endif %}">
+    {% if md.title %}
+    <div class="section-header">
+      <h2 class="section-title">{{ md.title }}</h2>
+      {% if md.subtitle %}<p class="section-description">{{ md.subtitle }}</p>{% endif %}
+    </div>
+    {% endif %}
+    <div class="lc-grid" style="grid-template-columns: repeat({{ cols }}, 1fr);">
+      {% for logo in logos %}
+      {% if logo.image %}
+      {% if logo.link %}<a href="{{ logo.link }}" target="_blank" rel="noopener" class="lc-item" title="{{ logo.name }}"{% if card_style %} style="{{ card_style }}"{% endif %}>{% else %}<div class="lc-item" title="{{ logo.name }}"{% if card_style %} style="{{ card_style }}"{% endif %}>{% endif %}
+        <img src="{{ logo.image }}" alt="{{ logo.name }}" class="lc-logo{% if grayscale %} lc-logo--grayscale{% endif %}" loading="lazy"{% if grayscale %} style="filter: grayscale(100%) opacity(0.6);"{% endif %}>
+      {% if logo.link %}</a>{% else %}</div>{% endif %}
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}

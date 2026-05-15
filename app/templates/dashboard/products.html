@@ -7,7 +7,7 @@
     <h1 class="page-title">产品</h1>
     <p class="page-subtitle">共 {{ products|length }} 个</p>
   </div>
-  <form method="post" action="{{ url_for('core.product_new') }}" style="margin: 0;">
+  <form method="post" action="{{ url_for('core.product_new', site=site.id) }}" style="margin: 0;">
     <button class="btn btn-primary" type="submit">+ 新建产品</button>
   </form>
 </div>
@@ -39,7 +39,7 @@
       <td>{{ p.price if p.price is not none else '-' }}</td>
       <td class="muted">{{ p.summary or '-' }}</td>
       <td>
-        <form method="post" action="{{ url_for('core.product_delete', product_id=p.id) }}"
+        <form method="post" action="{{ url_for('core.product_delete', product_id=p.id, site=site.id) }}"
               onsubmit="return confirm('确认删除 {{ p.name }}？')" style="margin: 0;">
           <button class="btn" type="submit">删除</button>
         </form>
@@ -51,7 +51,7 @@
 {% else %}
 <div class="card empty">
   <p>还没有产品</p>
-  <form method="post" action="{{ url_for('core.product_new') }}" style="display: inline;">
+  <form method="post" action="{{ url_for('core.product_new', site=site.id) }}" style="display: inline;">
     <button class="btn btn-primary" type="submit">新建第一个产品</button>
   </form>
 </div>

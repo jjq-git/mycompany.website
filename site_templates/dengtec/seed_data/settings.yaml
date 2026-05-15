@@ -19,12 +19,36 @@ social:
 theme: {}
 # 使用 meta.yaml 中的 default_theme
 
-menu: {}
-# 使用 meta.yaml 中的 default_menu
+menu:
+- label: 首页
+  type: home
+- label: 产品
+  type: list
+  target: products
+  dropdown_style: horizontal
+  children:
+  - label: 静音仓
+    type: page
+    target: silent-booth
+  - label: 产品展示
+    type: page
+    target: props-display
+  - label: 干冰机
+    type: page
+    target: dry-ice-machine
+- label: 近期项目
+  type: list
+  target: portfolio
+- label: 关于我们
+  type: page
+  target: about
+- label: 联系
+  type: page
+  target: contact
+- label: 博客
+  type: list
+  target: posts
 
-footer_links:
-  - {label: About, url: /about}
-  - {label: Contact, url: /contact}
-  - {label: Products, url: /products}
-  - {label: Portfolio, url: /portfolio}
-  - {label: Blog, url: /blog}
+footer:
+  variant: columns
+  columns: []

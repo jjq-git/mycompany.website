@@ -7,7 +7,7 @@
     <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
   {% endfor %}
 {% endwith %}
-<form method="post" action="{{ url_for('core.social_edit', _fragment='1') }}">
+<form method="post" action="{{ url_for('core.social_edit', _fragment='1', site=site.id) }}">
   {% for platform in ('github','twitter','facebook','linkedin','youtube') %}
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">{{ platform | title }}</label>

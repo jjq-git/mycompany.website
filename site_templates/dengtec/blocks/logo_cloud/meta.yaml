@@ -1,0 +1,63 @@
+name: 合作品牌墙
+category: content
+icon: logo_cloud.svg
+description: Logo 网格展示合作品牌/客户，支持灰度滤镜、链接跳转，适合展示客户背书
+fields:
+  - key: section_bg
+    label: 外层背景色
+    type: text
+    default: ""
+    placeholder: 如 #f5f7fa（留空=使用默认）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: title
+    label: 区块标题
+    type: text
+    default: ""
+  - key: subtitle
+    label: 区块副标题
+    type: text
+    default: ""
+  - key: columns
+    label: 每行列数
+    type: select
+    default: "4"
+    options:
+      - value: "4"
+        label: 四列
+      - value: "5"
+        label: 五列
+      - value: "6"
+        label: 六列
+  - key: grayscale
+    label: 灰度滤镜
+    type: select
+    default: "true"
+    options:
+      - value: "true"
+        label: 开启（hover时恢复彩色）
+      - value: "false"
+        label: 关闭（保持原色）
+  - key: logos
+    label: Logo 列表
+    type: list
+    item_fields:
+      - key: image
+        label: Logo 图片
+        type: image
+      - key: name
+        label: 品牌名称
+        type: text
+      - key: link
+        label: 链接（可选）
+        type: url
+variants:
+  - key: grid_4
+    label: 四列网格
+  - key: grid_5
+    label: 五列网格
+  - key: grid_6
+    label: 六列网格

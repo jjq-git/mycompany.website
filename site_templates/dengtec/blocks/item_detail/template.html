@@ -93,7 +93,7 @@
         {# Specs 规格表 #}
         {% if specs %}
         <div class="id-specs-section">
-          <h3 class="id-specs-title">规格参数</h3>
+          <h3 class="id-specs-title">{{ t.project.specs | default('规格参数') }}</h3>
           <table class="id-specs-table">
             {% for spec in specs %}
             {% if spec is mapping %}

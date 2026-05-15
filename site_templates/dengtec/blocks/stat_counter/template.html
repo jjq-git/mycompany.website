@@ -1,0 +1,82 @@
+{# 数据统计 — 数字 + 标签展示 #}
+{% set md = module.data if module.data else {} %}
+{% set stats = md.get('stats', []) %}
+{% if stats is iterable and stats is not string and stats | length > 0 %}
+{% set section_bg = md.get('section_bg', '') %}
+{% set inner_w = md.get('inner_width', '') %}
+{% set cols = md.get('columns', '4') | int %}
+
+<section class="section{% if not section_bg %} section-bg{% endif %}"{% if section_bg %} style="background: {{ section_bg }};"{% endif %}>
+  <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
+    {% if md.title %}
+    <div class="section-header">
+      <h2 class="section-title">{{ md.title }}</h2>
+      {% if md.subtitle %}<p class="section-description">{{ md.subtitle }}</p>{% endif %}
+    </div>
+    {% endif %}
+    <div class="sc-grid" style="grid-template-columns: repeat({{ cols }}, 1fr);">
+      {% for stat in stats %}
+      <div class="sc-card">
+        {% if stat.icon %}
+        <div class="sc-icon">
+          {% set icon = stat.icon | default('') %}
+          {% if icon == 'users' %}
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          {% elif icon == 'briefcase' or icon == 'building' %}
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          {% elif icon == 'check' or icon == 'shield-check' %}
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          {% elif icon == 'star' or icon == 'award' %}
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          {% elif icon == 'clock' or icon == 'history' %}
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          {% else %}
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          {% endif %}
+        </div>
+        {% endif %}
+        <div class="sc-number" data-target="{{ stat.number | default(0) }}">0</div>
+        {% if stat.suffix %}<span class="sc-suffix">{{ stat.suffix }}</span>{% endif %}
+        <div class="sc-label">{{ stat.label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  var grid = document.currentScript.previousElementSibling;
+  if (!grid) return;
+  var cards = grid.querySelectorAll('.sc-number');
+  if (!cards.length) return;
+  var animated = false;
+
+  function animate(card) {
+    var target = parseInt(card.getAttribute('data-target')) || 0;
+    var duration = 1200;
+    var start = performance.now();
+    function step(now) {
+      var elapsed = now - start;
+      var progress = Math.min(elapsed / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      card.textContent = Math.floor(eased * target);
+      if (progress < 1) requestAnimationFrame(step);
+      else card.textContent = target;
+    }
+    requestAnimationFrame(step);
+  }
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting && !animated) {
+        animated = true;
+        cards.forEach(function(c) { animate(c); });
+        observer.disconnect();
+      }
+    });
+  }, { threshold: 0.3 });
+  observer.observe(grid);
+})();
+</script>
+{% endif %}

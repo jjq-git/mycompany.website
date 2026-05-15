@@ -1,0 +1,61 @@
+name: 流程步骤
+category: content
+icon: process_steps.svg
+description: 步骤/流程图展示，适合服务流程、合作方式、公司发展历程
+fields:
+  - key: section_bg
+    label: 外层背景色
+    type: text
+    default: ""
+    placeholder: 如 #f5f7fa（留空=使用默认）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: title
+    label: 区块标题
+    type: text
+    default: ""
+  - key: subtitle
+    label: 区块副标题
+    type: text
+    default: ""
+  - key: direction
+    label: 排列方向
+    type: select
+    default: "horizontal"
+    options:
+      - value: "horizontal"
+        label: 横向
+      - value: "vertical"
+        label: 纵向
+  - key: step_style
+    label: 步骤样式
+    type: select
+    default: "number"
+    options:
+      - value: "number"
+        label: 数字序号
+      - value: "icon"
+        label: 图标
+  - key: steps
+    label: 步骤列表
+    type: list
+    item_fields:
+      - key: title
+        label: 步骤标题
+        type: text
+      - key: desc
+        label: 步骤描述
+        type: textarea
+      - key: icon
+        label: 图标（仅icon样式时使用）
+        type: icon
+variants:
+  - key: horizontal
+    label: 横向排列
+  - key: vertical
+    label: 纵向排列
+  - key: numbered
+    label: 数字序号

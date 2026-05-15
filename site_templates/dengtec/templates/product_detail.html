@@ -3,12 +3,24 @@
 {% block description %}{{ product.description }}{% endblock %}
 
 {% block content %}
+{# 从菜单动态查找联系页 URL，避免硬编码 /contact/——即使用户在后台修改菜单 target 也能正确链接 #}
+{% set ns = namespace(contact_url=base_url + '/' + lang + '/contact/') %}
+{% macro _resolve_contact(items) %}
+  {% for item in items %}
+    {% if item.type == 'page' and item.target == 'contact' %}
+      {% set ns.contact_url = base_url + '/' + lang + '/' + item.target + '/' %}
+    {% elif item.children %}
+      {{ _resolve_contact(item.children) }}
+    {% endif %}
+  {% endfor %}
+{% endmacro %}
+{{ _resolve_contact(settings.menu) }}
 
 {% if product.slug == 'silent-booth' %}
 {% set ps = t.product_silent %}
 <section class="sb-hero">
   <div class="sb-hero__bg">
-    <img src="{{ product.image or 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920&h=1080&fit=crop' }}" alt="{{ ps.heroTag }}" />
+    {% if product.image %}<img src="{{ product.image }}" alt="{{ ps.heroTag }}" />{% endif %}
     <div class="sb-hero__overlay"></div>
   </div>
   <div class="container sb-hero__content">
@@ -16,7 +28,7 @@
     <h1 class="sb-hero__title">{{ ps.heroTitle }}</h1>
     <p class="sb-hero__desc">{{ ps.heroDesc }}</p>
     <div class="sb-hero__actions">
-      <a href="https://pods.dengtec.com/" target="_blank" rel="noopener" class="sb-btn sb-btn--primary sb-btn--lg">{{ t.actions.bookNow }} →</a>
+      <a href="{{ ps.bookingUrl }}" target="_blank" rel="noopener" class="sb-btn sb-btn--primary sb-btn--lg">{{ t.actions.bookNow }} →</a>
     </div>
   </div>
 </section>
@@ -46,9 +58,9 @@
       <h2 class="sb-section-title">{{ ps.productSeriesTitle }}</h2>
     </div>
     <div class="sb-products-grid">
-      <div class="sb-product-card"><div class="sb-product__image"><img src="https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=600&h=400&fit=crop" alt="{{ ps.productS1Name }}" /></div><div class="sb-product__body"><span class="sb-product__badge sb-product__badge--accent">{{ ps.productS1Badge }}</span><h3 class="sb-product__title">{{ ps.productS1Name }}</h3><p class="sb-product__desc">{{ ps.productS1Desc }}</p><ul class="sb-product__specs"><li><span>Size</span> {{ ps.productS1SpecSize }}</li><li><span>Sound</span> {{ ps.productS1SpecSound }}</li><li><span>Config</span> {{ ps.productS1SpecConfig }}</li></ul></div></div>
-      <div class="sb-product-card sb-product-card--featured"><div class="sb-product__image"><img src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=600&h=400&fit=crop" alt="{{ ps.productS2Name }}" /></div><div class="sb-product__body"><span class="sb-product__badge">{{ ps.productS2Badge }}</span><h3 class="sb-product__title">{{ ps.productS2Name }}</h3><p class="sb-product__desc">{{ ps.productS2Desc }}</p><ul class="sb-product__specs"><li><span>Size</span> {{ ps.productS2SpecSize }}</li><li><span>Sound</span> {{ ps.productS2SpecSound }}</li><li><span>Config</span> {{ ps.productS2SpecConfig }}</li></ul></div></div>
-      <div class="sb-product-card"><div class="sb-product__image"><img src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=600&h=400&fit=crop" alt="{{ ps.productS4Name }}" /></div><div class="sb-product__body"><span class="sb-product__badge sb-product__badge--green">{{ ps.productS4Badge }}</span><h3 class="sb-product__title">{{ ps.productS4Name }}</h3><p class="sb-product__desc">{{ ps.productS4Desc }}</p><ul class="sb-product__specs"><li><span>Size</span> {{ ps.productS4SpecSize }}</li><li><span>Sound</span> {{ ps.productS4SpecSound }}</li><li><span>Config</span> {{ ps.productS4SpecConfig }}</li></ul></div></div>
+      <div class="sb-product-card">{% if ps.productS1Image %}<div class="sb-product__image"><img src="{{ ps.productS1Image }}" alt="{{ ps.productS1Name }}" /></div>{% endif %}<div class="sb-product__body"><span class="sb-product__badge sb-product__badge--accent">{{ ps.productS1Badge }}</span><h3 class="sb-product__title">{{ ps.productS1Name }}</h3><p class="sb-product__desc">{{ ps.productS1Desc }}</p><ul class="sb-product__specs"><li><span>{{ t.product_silent.specLabelSize | default('尺寸') }}</span> {{ ps.productS1SpecSize }}</li><li><span>{{ t.product_silent.specLabelSound | default('降噪') }}</span> {{ ps.productS1SpecSound }}</li><li><span>{{ t.product_silent.specLabelConfig | default('配置') }}</span> {{ ps.productS1SpecConfig }}</li></ul></div></div>
+      <div class="sb-product-card sb-product-card--featured">{% if ps.productS2Image %}<div class="sb-product__image"><img src="{{ ps.productS2Image }}" alt="{{ ps.productS2Name }}" /></div>{% endif %}<div class="sb-product__body"><span class="sb-product__badge">{{ ps.productS2Badge }}</span><h3 class="sb-product__title">{{ ps.productS2Name }}</h3><p class="sb-product__desc">{{ ps.productS2Desc }}</p><ul class="sb-product__specs"><li><span>{{ t.product_silent.specLabelSize | default('尺寸') }}</span> {{ ps.productS2SpecSize }}</li><li><span>{{ t.product_silent.specLabelSound | default('降噪') }}</span> {{ ps.productS2SpecSound }}</li><li><span>{{ t.product_silent.specLabelConfig | default('配置') }}</span> {{ ps.productS2SpecConfig }}</li></ul></div></div>
+      <div class="sb-product-card">{% if ps.productS4Image %}<div class="sb-product__image"><img src="{{ ps.productS4Image }}" alt="{{ ps.productS4Name }}" /></div>{% endif %}<div class="sb-product__body"><span class="sb-product__badge sb-product__badge--green">{{ ps.productS4Badge }}</span><h3 class="sb-product__title">{{ ps.productS4Name }}</h3><p class="sb-product__desc">{{ ps.productS4Desc }}</p><ul class="sb-product__specs"><li><span>{{ t.product_silent.specLabelSize | default('尺寸') }}</span> {{ ps.productS4SpecSize }}</li><li><span>{{ t.product_silent.specLabelSound | default('降噪') }}</span> {{ ps.productS4SpecSound }}</li><li><span>{{ t.product_silent.specLabelConfig | default('配置') }}</span> {{ ps.productS4SpecConfig }}</li></ul></div></div>
     </div>
   </div>
 </section>
@@ -56,10 +68,10 @@
 <section class="sb-section sb-scenarios">
   <div class="container"><div class="sb-section-header"><span class="sb-section-label">{{ ps.scenariosLabel }}</span><h2 class="sb-section-title">{{ ps.scenariosTitle }}</h2></div>
     <div class="sb-scenarios-grid">
-      <div class="sb-scenario"><div class="sb-scenario__image"><img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop" alt="{{ ps.scenarioOpen }}" /></div><div class="sb-scenario__body"><h3>{{ ps.scenarioOpen }}</h3><p>{{ ps.scenarioOpenDesc }}</p></div></div>
-      <div class="sb-scenario"><div class="sb-scenario__image"><img src="https://images.unsplash.com/photo-1560472355-536de3962603?w=400&h=300&fit=crop" alt="{{ ps.scenarioHR }}" /></div><div class="sb-scenario__body"><h3>{{ ps.scenarioHR }}</h3><p>{{ ps.scenarioHRDesc }}</p></div></div>
-      <div class="sb-scenario"><div class="sb-scenario__image"><img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop" alt="{{ ps.scenarioVideo }}" /></div><div class="sb-scenario__body"><h3>{{ ps.scenarioVideo }}</h3><p>{{ ps.scenarioVideoDesc }}</p></div></div>
-      <div class="sb-scenario"><div class="sb-scenario__image"><img src="https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=400&h=300&fit=crop" alt="{{ ps.scenarioFocus }}" /></div><div class="sb-scenario__body"><h3>{{ ps.scenarioFocus }}</h3><p>{{ ps.scenarioFocusDesc }}</p></div></div>
+      <div class="sb-scenario">{% if ps.scenarioOpenImage %}<div class="sb-scenario__image"><img src="{{ ps.scenarioOpenImage }}" alt="{{ ps.scenarioOpen }}" /></div>{% endif %}<div class="sb-scenario__body"><h3>{{ ps.scenarioOpen }}</h3><p>{{ ps.scenarioOpenDesc }}</p></div></div>
+      <div class="sb-scenario">{% if ps.scenarioHRImage %}<div class="sb-scenario__image"><img src="{{ ps.scenarioHRImage }}" alt="{{ ps.scenarioHR }}" /></div>{% endif %}<div class="sb-scenario__body"><h3>{{ ps.scenarioHR }}</h3><p>{{ ps.scenarioHRDesc }}</p></div></div>
+      <div class="sb-scenario">{% if ps.scenarioVideoImage %}<div class="sb-scenario__image"><img src="{{ ps.scenarioVideoImage }}" alt="{{ ps.scenarioVideo }}" /></div>{% endif %}<div class="sb-scenario__body"><h3>{{ ps.scenarioVideo }}</h3><p>{{ ps.scenarioVideoDesc }}</p></div></div>
+      <div class="sb-scenario">{% if ps.scenarioFocusImage %}<div class="sb-scenario__image"><img src="{{ ps.scenarioFocusImage }}" alt="{{ ps.scenarioFocus }}" /></div>{% endif %}<div class="sb-scenario__body"><h3>{{ ps.scenarioFocus }}</h3><p>{{ ps.scenarioFocusDesc }}</p></div></div>
     </div>
   </div>
 </section>
@@ -67,14 +79,14 @@
 <section class="sb-cta"><div class="container"><div class="sb-cta-wrapper">
     <h2 class="sb-cta__title">{{ ps.ctaTitle }}</h2>
     <p class="sb-cta__desc">{{ ps.ctaDesc }}</p>
-    <div class="sb-cta__actions"><a href="{{ base_url }}/{{ lang }}/contact/" class="btn btn-primary btn-lg">{{ t.actions.contactUs }}</a></div>
+    <div class="sb-cta__actions"><a href="{{ ns.contact_url }}" class="btn btn-primary btn-lg">{{ t.actions.contactUs }}</a></div>
 </div></div></section>
 
 {% elif product.slug == 'props-display' %}
 {% set pp = t.product_props %}
 <section class="pd-hero">
   <div class="pd-hero__bg">
-    <img src="{{ product.image or 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920&h=1080&fit=crop' }}" alt="{{ pp.heroTag }}" />
+    {% if product.image %}<img src="{{ product.image }}" alt="{{ pp.heroTag }}" />{% endif %}
     <div class="pd-hero__overlay"></div>
   </div>
   <div class="container pd-hero__content">
@@ -83,7 +95,7 @@
     <p class="pd-hero__desc">{{ pp.heroDesc }}</p>
     <div class="pd-hero__actions">
       <a href="#features" class="pd-btn pd-btn--primary pd-btn--lg">{{ t.actions.viewProducts }} →</a>
-      <a href="{{ base_url }}/{{ lang }}/contact/" class="pd-btn pd-btn--outline pd-btn--lg">{{ t.actions.contactUs }}</a>
+      <a href="{{ ns.contact_url }}" class="pd-btn pd-btn--outline pd-btn--lg">{{ t.actions.contactUs }}</a>
     </div>
   </div>
 </section>
@@ -103,9 +115,9 @@
 <section class="pd-section pd-products-section"><div class="container">
   <div class="pd-section-header"><h2 class="pd-section-title">{{ pp.seriesTitle }}</h2><p class="pd-section-desc">{{ pp.seriesDesc }}</p></div>
   <div class="pd-series-container">
-    <div class="pd-series-item"><div class="pd-series-image"><img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop" alt="{{ pp.seriesHost }}" /></div><div class="pd-series-content"><h3 class="pd-series-name">{{ pp.seriesHost }}</h3><p class="pd-series-desc">{{ pp.seriesHostDesc }}</p><div class="pd-series-features"><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Multi-device Control</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Remote Monitoring</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Smart Scheduling</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>High Reliability</span></div></div></div></div>
-    <div class="pd-series-item pd-series-reverse"><div class="pd-series-image"><img src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=600&h=400&fit=crop" alt="{{ pp.seriesLED }}" /></div><div class="pd-series-content"><h3 class="pd-series-name">{{ pp.seriesLED }}</h3><p class="pd-series-desc">{{ pp.seriesLEDDesc }}</p><div class="pd-series-features"><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Full-Color RGB</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Dynamic Effects</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Energy Saving</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Long Life</span></div></div></div></div>
-    <div class="pd-series-item"><div class="pd-series-image"><img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop" alt="{{ pp.seriesAlum }}" /></div><div class="pd-series-content"><h3 class="pd-series-name">{{ pp.seriesAlum }}</h3><p class="pd-series-desc">{{ pp.seriesAlumDesc }}</p><div class="pd-series-features"><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Modular Design</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Lightweight</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Flexible</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>Quick Install</span></div></div></div></div>
+    <div class="pd-series-item">{% if pp.seriesHostImage %}<div class="pd-series-image"><img src="{{ pp.seriesHostImage }}" alt="{{ pp.seriesHost }}" /></div>{% endif %}<div class="pd-series-content"><h3 class="pd-series-name">{{ pp.seriesHost }}</h3><p class="pd-series-desc">{{ pp.seriesHostDesc }}</p><div class="pd-series-features"><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesHostFeat1 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesHostFeat2 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesHostFeat3 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesHostFeat4 }}</span></div></div></div></div>
+    <div class="pd-series-item pd-series-reverse">{% if pp.seriesLEDImage %}<div class="pd-series-image"><img src="{{ pp.seriesLEDImage }}" alt="{{ pp.seriesLED }}" /></div>{% endif %}<div class="pd-series-content"><h3 class="pd-series-name">{{ pp.seriesLED }}</h3><p class="pd-series-desc">{{ pp.seriesLEDDesc }}</p><div class="pd-series-features"><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesLEDFeat1 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesLEDFeat2 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesLEDFeat3 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesLEDFeat4 }}</span></div></div></div></div>
+    <div class="pd-series-item">{% if pp.seriesAlumImage %}<div class="pd-series-image"><img src="{{ pp.seriesAlumImage }}" alt="{{ pp.seriesAlum }}" /></div>{% endif %}<div class="pd-series-content"><h3 class="pd-series-name">{{ pp.seriesAlum }}</h3><p class="pd-series-desc">{{ pp.seriesAlumDesc }}</p><div class="pd-series-features"><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesAlumFeat1 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesAlumFeat2 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesAlumFeat3 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesAlumFeat4 }}</span></div></div></div></div>
   </div>
 </div></section>
 
@@ -114,19 +126,19 @@
     <h2 class="pd-contact-title">{{ t.sections.contactUs }}</h2>
     <p class="pd-contact-desc">{{ t.sections.contactDesc }}</p>
     <div class="pd-contact-info">
-      <div class="pd-contact-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg><span>+86 512 3665 8888</span></div>
-      <div class="pd-contact-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><span>sales@dengtec.com</span></div>
+      <div class="pd-contact-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg><span>{{ settings.contact.phone | default('') }}</span></div>
+      <div class="pd-contact-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><span>{{ settings.contact.email | default('') }}</span></div>
     </div>
-    <a href="{{ base_url }}/{{ lang }}/contact/" class="pd-btn pd-btn--primary pd-btn--lg">{{ t.actions.contactNow }}</a>
+    <a href="{{ ns.contact_url }}" class="pd-btn pd-btn--primary pd-btn--lg">{{ t.actions.contactNow }}</a>
   </div>
-  <div class="pd-contact-image"><img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop" alt="Contact" /></div>
+  {% if pp.seriesAlumImage %}<div class="pd-contact-image"><img src="{{ pp.seriesAlumImage }}" alt="{{ t.actions.contactUs }}" /></div>{% endif %}
 </div></div></section>
 
 {% elif product.slug == 'dry-ice-machine' %}
 {% set pd = t.product_dim %}
 <section class="dim-hero">
   <div class="dim-hero__bg">
-    <img src="{{ product.image or 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1920&h=1080&fit=crop' }}" alt="{{ pd.heroTitle }}" />
+    {% if product.image %}<img src="{{ product.image }}" alt="{{ pd.heroTitle }}" />{% endif %}
     <div class="dim-hero__overlay"></div>
   </div>
   <div class="container dim-hero__content">
@@ -134,7 +146,7 @@
     <h1 class="dim-hero__title">{{ pd.heroTitle }}</h1>
     <p class="dim-hero__desc">{{ pd.heroDesc }}</p>
     <div class="dim-hero__actions">
-      <a href="{{ base_url }}/{{ lang }}/contact/" class="dim-btn dim-btn--primary dim-btn--lg">{{ t.actions.contactNow }} →</a>
+      <a href="{{ ns.contact_url }}" class="dim-btn dim-btn--primary dim-btn--lg">{{ t.actions.contactNow }} →</a>
       <a href="#specifications" class="dim-btn dim-btn--outline dim-btn--lg">{{ t.actions.viewDetails }}</a>
     </div>
   </div>
@@ -155,9 +167,9 @@
   <span class="dim-section-label">{{ pd.specsTitle }}</span>
   <h2 class="dim-section-title">{{ pd.specsTitle }}</h2>
   <div class="dim-specs-grid">
-    <div class="dim-specs-category"><h3 class="dim-specs-category-title">{{ pd.specCatPerf }}</h3><div class="dim-specs-table"><div class="dim-specs-row"><span class="dim-specs-name">Output Range</span><span class="dim-specs-value">10-50kg/h</span></div><div class="dim-specs-row"><span class="dim-specs-name">Purity</span><span class="dim-specs-value">≥99.9%</span></div><div class="dim-specs-row"><span class="dim-specs-name">Particle Size</span><span class="dim-specs-value">3mm/16mm</span></div><div class="dim-specs-row"><span class="dim-specs-name">Cooling Method</span><span class="dim-specs-value">Compression</span></div></div></div>
-    <div class="dim-specs-category"><h3 class="dim-specs-category-title">{{ pd.specCatElec }}</h3><div class="dim-specs-table"><div class="dim-specs-row"><span class="dim-specs-name">Rated Power</span><span class="dim-specs-value">3.5-8.5kW</span></div><div class="dim-specs-row"><span class="dim-specs-name">Rated Voltage</span><span class="dim-specs-value">380V/50Hz</span></div><div class="dim-specs-row"><span class="dim-specs-name">Rated Current</span><span class="dim-specs-value">6.5-16A</span></div><div class="dim-specs-row"><span class="dim-specs-name">Protection Level</span><span class="dim-specs-value">IP54</span></div></div></div>
-    <div class="dim-specs-category"><h3 class="dim-specs-category-title">{{ pd.specCatPhys }}</h3><div class="dim-specs-table"><div class="dim-specs-row"><span class="dim-specs-name">Dimensions</span><span class="dim-specs-value">800×600×1200mm</span></div><div class="dim-specs-row"><span class="dim-specs-name">Weight</span><span class="dim-specs-value">150-350kg</span></div><div class="dim-specs-row"><span class="dim-specs-name">Noise Level</span><span class="dim-specs-value">≤65dB</span></div><div class="dim-specs-row"><span class="dim-specs-name">Working Temp</span><span class="dim-specs-value">-20°C ~ +40°C</span></div></div></div>
+    <div class="dim-specs-category"><h3 class="dim-specs-category-title">{{ pd.specCatPerf }}</h3><div class="dim-specs-table"><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelOutputRange | default('产量范围') }}</span><span class="dim-specs-value">10-50kg/h</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelPurity | default('纯度') }}</span><span class="dim-specs-value">≥99.9%</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelParticleSize | default('颗粒尺寸') }}</span><span class="dim-specs-value">3mm/16mm</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelCoolingMethod | default('冷却方式') }}</span><span class="dim-specs-value">Compression</span></div></div></div>
+    <div class="dim-specs-category"><h3 class="dim-specs-category-title">{{ pd.specCatElec }}</h3><div class="dim-specs-table"><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelRatedPower | default('额定功率') }}</span><span class="dim-specs-value">3.5-8.5kW</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelRatedVoltage | default('额定电压') }}</span><span class="dim-specs-value">380V/50Hz</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelRatedCurrent | default('额定电流') }}</span><span class="dim-specs-value">6.5-16A</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelProtectionLevel | default('防护等级') }}</span><span class="dim-specs-value">IP54</span></div></div></div>
+    <div class="dim-specs-category"><h3 class="dim-specs-category-title">{{ pd.specCatPhys }}</h3><div class="dim-specs-table"><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelDimensions | default('外形尺寸') }}</span><span class="dim-specs-value">800×600×1200mm</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelWeight | default('重量') }}</span><span class="dim-specs-value">150-350kg</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelNoiseLevel | default('噪音等级') }}</span><span class="dim-specs-value">≤65dB</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelWorkingTemp | default('工作温度') }}</span><span class="dim-specs-value">-20°C ~ +40°C</span></div></div></div>
   </div>
 </div></section>
 
@@ -165,10 +177,10 @@
   <span class="dim-section-label">{{ pd.appsTitle }}</span>
   <h2 class="dim-section-title">{{ pd.appsTitle }}</h2>
   <div class="dim-apps-grid">
-    <div class="dim-app-card"><div class="dim-app-image"><img src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=300&fit=crop" alt="{{ pd.appFood }}" /></div><div class="dim-app-content"><h3 class="dim-app-title">{{ pd.appFood }}</h3><p class="dim-app-desc">{{ pd.appFoodDesc }}</p></div></div>
-    <div class="dim-app-card"><div class="dim-app-image"><img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=300&fit=crop" alt="{{ pd.appStage }}" /></div><div class="dim-app-content"><h3 class="dim-app-title">{{ pd.appStage }}</h3><p class="dim-app-desc">{{ pd.appStageDesc }}</p></div></div>
-    <div class="dim-app-card"><div class="dim-app-image"><img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=300&fit=crop" alt="{{ pd.appIndustry }}" /></div><div class="dim-app-content"><h3 class="dim-app-title">{{ pd.appIndustry }}</h3><p class="dim-app-desc">{{ pd.appIndustryDesc }}</p></div></div>
-    <div class="dim-app-card"><div class="dim-app-image"><img src="https://images.unsplash.com/photo-1582719508461-905c673771fd?w=400&h=300&fit=crop" alt="{{ pd.appMedical }}" /></div><div class="dim-app-content"><h3 class="dim-app-title">{{ pd.appMedical }}</h3><p class="dim-app-desc">{{ pd.appMedicalDesc }}</p></div></div>
+    <div class="dim-app-card">{% if pd.appFoodImage %}<div class="dim-app-image"><img src="{{ pd.appFoodImage }}" alt="{{ pd.appFood }}" /></div>{% endif %}<div class="dim-app-content"><h3 class="dim-app-title">{{ pd.appFood }}</h3><p class="dim-app-desc">{{ pd.appFoodDesc }}</p></div></div>
+    <div class="dim-app-card">{% if pd.appStageImage %}<div class="dim-app-image"><img src="{{ pd.appStageImage }}" alt="{{ pd.appStage }}" /></div>{% endif %}<div class="dim-app-content"><h3 class="dim-app-title">{{ pd.appStage }}</h3><p class="dim-app-desc">{{ pd.appStageDesc }}</p></div></div>
+    <div class="dim-app-card">{% if pd.appIndustryImage %}<div class="dim-app-image"><img src="{{ pd.appIndustryImage }}" alt="{{ pd.appIndustry }}" /></div>{% endif %}<div class="dim-app-content"><h3 class="dim-app-title">{{ pd.appIndustry }}</h3><p class="dim-app-desc">{{ pd.appIndustryDesc }}</p></div></div>
+    <div class="dim-app-card">{% if pd.appMedicalImage %}<div class="dim-app-image"><img src="{{ pd.appMedicalImage }}" alt="{{ pd.appMedical }}" /></div>{% endif %}<div class="dim-app-content"><h3 class="dim-app-title">{{ pd.appMedical }}</h3><p class="dim-app-desc">{{ pd.appMedicalDesc }}</p></div></div>
   </div>
 </div></section>
 
@@ -186,11 +198,11 @@
 <section class="dim-section dim-contact"><div class="container"><div class="dim-contact-wrapper">
   <h2 class="dim-contact-title">{{ pd.ctaTitleDim }}</h2>
   <p class="dim-contact-desc">{{ pd.ctaDescDim }}</p>
-  <a href="{{ base_url }}/{{ lang }}/contact/" class="dim-btn dim-btn--primary dim-btn--lg">{{ t.actions.contactNow }} →</a>
+  <a href="{{ ns.contact_url }}" class="dim-btn dim-btn--primary dim-btn--lg">{{ t.actions.contactNow }} →</a>
 </div></div></section>
 
 {% else %}
-{# Default product detail #}
+{# 默认产品详情：完全数据驱动，无硬编码内容 #}
 <section class="section">
   <div class="container">
     <a href="{{ base_url }}/{{ lang }}/products/" class="btn btn-ghost" style="margin-bottom: var(--spacing-lg);">← {{ t.products.backToList }}</a>

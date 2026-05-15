@@ -16,24 +16,31 @@
 {% if align == 'center' %}{% set _ = style_parts.append('margin-left: auto; margin-right: auto;') %}{% endif %}
 {% if align == 'left' %}{% set _ = style_parts.append('margin-right: auto;') %}{% endif %}
 {% if align == 'right' %}{% set _ = style_parts.append('margin-left: auto;') %}{% endif %}
+{% set title_font_size = module.data.get('title_font_size', '') if module.data is mapping else '' %}
+{% set title_color = module.data.get('title_color', '') if module.data is mapping else '' %}
+{% set subtitle_font_size = module.data.get('subtitle_font_size', '') if module.data is mapping else '' %}
+{% set subtitle_color = module.data.get('subtitle_color', '') if module.data is mapping else '' %}
+{% set btn_font_size = module.data.get('btn_font_size', '') if module.data is mapping else '' %}
+{% set btn_text_color = module.data.get('btn_text_color', '') if module.data is mapping else '' %}
+{% set btn_bg = module.data.get('btn_bg', '') if module.data is mapping else '' %}
 <section class="hero-banner" id="heroBanner"{% if style_parts %} style="{{ style_parts | join(' ') }}"{% endif %}>
   <div class="hero-banner-slides">
     {% for item in items %}
     <div class="hero-banner-slide{% if loop.first %} active{% endif %}" data-index="{{ loop.index0 }}">
       <div class="hero-banner-media">
         {% if item.type == 'video' %}
-        <video class="hero-banner-video" src="{{ base_url }}{{ item.media }}" autoplay muted loop playsinline preload="none"></video>
+        <video class="hero-banner-video" src="{{ item.media if item.media.startswith('http') else base_url ~ item.media }}" autoplay muted loop playsinline preload="none"></video>
         {% else %}
-        <div class="hero-banner-image" style="background-image: url('{{ base_url }}{{ item.media }}')"></div>
+        <div class="hero-banner-image" style="background-image: url('{{ item.media if item.media.startswith('http') else base_url ~ item.media }}')"></div>
         {% endif %}
       </div>
       <div class="hero-banner-overlay"></div>
-      <div class="hero-banner-content"{% if module.data and module.data.get('inner_width') %} style="max-width: {{ module.data.inner_width }}; margin: 0 auto;"{% endif %}>
-        <h1 class="hero-banner-title">{{ item.title | default('') }}</h1>
-        <p class="hero-banner-subtitle">{{ item.subtitle }}</p>
+      <div class="hero-banner-content"{% if module.data is mapping and module.data.get('inner_width') %} style="max-width: {{ module.data.inner_width }}; margin: 0 auto;"{% endif %}>
+        <h1 class="hero-banner-title"{% if title_font_size or title_color %} style="{% if title_font_size %}font-size: {{ title_font_size }};{% endif %}{% if title_color %}color: {{ title_color }};{% endif %}"{% endif %}>{{ item.title | default('') }}</h1>
+        <p class="hero-banner-subtitle"{% if subtitle_font_size or subtitle_color %} style="{% if subtitle_font_size %}font-size: {{ subtitle_font_size }};{% endif %}{% if subtitle_color %}color: {{ subtitle_color }};{% endif %}"{% endif %}>{{ item.subtitle }}</p>
         <div class="hero-banner-actions">
           {% if item.primaryBtn %}
-          <a href="{{ item.primaryBtnLink }}" {% if item.primaryBtnLinkTarget == '_blank' %}target="_blank"{% endif %} class="btn btn-primary btn-lg">{{ item.primaryBtn }}</a>
+          <a href="{{ item.primaryBtnLink }}" {% if item.primaryBtnLinkTarget == '_blank' %}target="_blank"{% endif %} class="btn btn-primary btn-lg"{% if btn_font_size or btn_text_color or btn_bg %} style="{% if btn_font_size %}font-size: {{ btn_font_size }};{% endif %}{% if btn_text_color %}color: {{ btn_text_color }};{% endif %}{% if btn_bg %}background-color: {{ btn_bg }}; border-color: {{ btn_bg }};{% endif %}"{% endif %}>{{ item.primaryBtn }}</a>
           {% endif %}
           {% if item.secondaryBtn %}
           <a href="{{ item.secondaryBtnLink }}" class="btn btn-secondary btn-lg">{{ item.secondaryBtn }}</a>

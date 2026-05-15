@@ -65,6 +65,39 @@ def _gather_site_data(site_id, template_name=None):
     return settings, pages, data
 
 
+def _load_lang_overrides(site_id, lang_code, default_lang, default_pages, default_data):
+    """加载语言特定 pages 和 data, 回退到默认语言.
+
+    非默认语言: 先读 lang/<code>/ 下的文件, 不存在的 key 用默认语言数据.
+    默认语言: 直接用默认数据.
+    """
+    if lang_code == default_lang:
+        return default_pages, default_data
+
+    from .site_storage import read_yaml, list_yaml_files
+
+    # 加载语言特定 pages
+    lang_pages = dict(default_pages)
+    for f in list_yaml_files(site_id, 'pages', lang=lang_code):
+        # 只取语言特定目录中的文件 (list_yaml_files 返回去重列表, 需要判断来源)
+        if f'lang/{lang_code}' in f.as_posix():
+            page_key = f.stem
+            content = read_yaml(site_id, f'pages/{f.name}', lang=lang_code)
+            if content:
+                lang_pages[page_key] = content
+
+    # 加载语言特定 data
+    lang_data = dict(default_data)
+    for f in list_yaml_files(site_id, 'data', lang=lang_code):
+        if f'lang/{lang_code}' in f.as_posix():
+            dataset_key = f.stem
+            content = read_yaml(site_id, f'data/{f.name}', lang=lang_code)
+            if content:
+                lang_data[dataset_key] = content
+
+    return lang_pages, lang_data
+
+
 def _template_paths(template_name):
     base = Path(current_app.config['TEMPLATES_DIR']) / template_name
     return base, base / 'templates', base / 'static'
@@ -204,8 +237,7 @@ def build_site(site_id, base_url=''):
 
     languages = meta.get('languages', [])
     # 提取 product_categories 和 products 供导航用
-    products_categories = _extract_products_categories(data)
-    products_items = _extract_products_items(data)
+    default_lang = meta.get('default_language', languages[0]['code'] if languages else 'zh-CN')
 
     year = datetime.now().year
 
@@ -217,23 +249,40 @@ def build_site(site_id, base_url=''):
             lang_code = lang_opt['code']
             t_data = translations.get(lang_code, {})
 
+            # 加载语言特定数据，回退到默认语言
+            lang_pages, lang_data = _load_lang_overrides(site_id, lang_code, default_lang, pages, data)
+
+            # 语言特定菜单（settings 中 menu_<lang> 覆盖 menu）
+            lang_settings = dict(settings)
+            menu_override_key = f'menu_{lang_code}'
+            if menu_override_key in settings and settings[menu_override_key]:
+                lang_settings['menu'] = menu_lib.ensure_home(
+                    menu_lib.normalize_for_render(
+                        menu_lib.upgrade_old_format(settings[menu_override_key], meta.get('datasets', []))
+                    )
+                )
+
+            # 提取语言特定的产品分类和列表
+            lang_products_categories = _extract_products_categories(lang_data)
+            lang_products_items = _extract_products_items(lang_data)
+
             common = {
-                'settings': settings,
+                'settings': lang_settings,
                 'theme': theme,
                 'year': year,
                 'lang': lang_code,
                 'base_url': base_url.rstrip('/'),
                 't': t_data,
                 'languages': languages,
-                'products_categories': products_categories,
-                'products': products_items,
-                'portfolio': data.get('portfolio', []),
-                'posts': data.get('posts', []),
-                'features': data.get('features', []),
-                'all_datasets': data,
+                'products_categories': lang_products_categories,
+                'products': lang_products_items,
+                'portfolio': lang_data.get('portfolio', []),
+                'posts': lang_data.get('posts', []),
+                'features': lang_data.get('features', []),
+                'all_datasets': lang_data,
             }
 
-            _render_for_language(env, tpl_html_dir, output_root, lang_code, common, pages, data, meta)
+            _render_for_language(env, tpl_html_dir, output_root, lang_code, common, lang_pages, lang_data, meta)
     else:
         # 单语言模式 (兼容旧模板)
         common = {

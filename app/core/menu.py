@@ -26,7 +26,7 @@ DATASET_DETAIL_MAP = {
     'features': ('feature_detail.html', 'feature', 'slug'),
 }
 
-VALID_TYPES = {'home', 'list', 'page', 'link'}
+VALID_TYPES = {'home', 'list', 'page', 'link', 'group'}
 VALID_DROPDOWN_STYLES = {'vertical', 'horizontal', 'grid', 'cards'}
 
 
@@ -42,6 +42,8 @@ def url_of(item):
     if t == 'page':
         target = item.get('target', '')
         return '/' if target == 'home' else f'/{target}'
+    if t == 'group':
+        return ''  # 容器无独立页面
     # 兜底: 旧格式 (只有 url 字段)
     return item.get('url', '#')
 

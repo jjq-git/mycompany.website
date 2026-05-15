@@ -40,11 +40,18 @@
 
   <hr>
 
+  {# 版权文本 #}
+  <div class="mb-2">
+    <label class="form-label small mb-1 text-muted">版权文本</label>
+    <input class="form-control form-control-sm" name="copyright"
+           value="{{ current_footer.get('copyright', '') }}" placeholder="如: 昆山德恩基电子科技有限公司（留空=使用公司名称）">
+  </div>
+
   {# 备案号 #}
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">备案号</label>
     <input class="form-control form-control-sm" name="icp"
-           value="{{ current_footer.get('icp', '') }}" placeholder="如: 苏ICP备xxx号">
+           value="{{ current_footer.get('icp', '') }}" placeholder="如: 苏ICP备xxx号（留空=使用公司信息中的备案号）">
   </div>
 
   {# 底部栏目（栏目模式下显示） #}
@@ -57,6 +64,7 @@
     <input type="hidden" name="footer_column_count" id="footerColumnCount" value="{{ current_footer.get('columns', []) | length }}">
     <div id="footerColumnsList">
       {% set footer_columns = current_footer.get('columns', []) %}
+      {% if footer_columns %}
       {% for col in footer_columns %}
       <div class="border rounded p-2 mb-2 footer-column-item">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -97,7 +105,13 @@
         <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addFooterLink(this)">+ 添加链接</button>
       </div>
       {% endfor %}
-    </div>
+      {% else %}
+      <div class="text-center py-4 text-muted" style="border: 2px dashed #dee2e6; border-radius: 8px;">
+        <div style="font-size: 32px; margin-bottom: 8px;">📋</div>
+        <div class="small">还没有底部栏目</div>
+        <div class="small mt-1" style="font-size: 10px;">点击上方「+ 添加栏目」来创建快速链接、联系方式等</div>
+      </div>
+      {% endif %}
   </div>
 
   <button class="btn btn-primary btn-sm mt-2" type="submit">保存</button>

@@ -9,10 +9,10 @@
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('core.header_edit', _fragment='1') }}">
+<form method="post" action="{{ url_for('core.header_edit', _fragment='1', site=site.id) }}">
   {# Header 变体选择 #}
-  <div class="mb-3">
-    <label class="form-label small mb-1 fw-semibold">头部布局</label>
+  <div class="panel-section">
+    <div class="panel-section-title">头部布局</div>
     <div class="d-flex flex-column gap-2">
       {% for variant in header_variants %}
       <label class="d-flex align-items-center p-2 border rounded variant-option"
@@ -29,11 +29,9 @@
     </div>
   </div>
 
-  <hr>
-
   {# 语言切换按钮配置 #}
-  <div class="mb-3">
-    <label class="form-label small mb-1 fw-semibold">语言切换按钮</label>
+  <div class="panel-section">
+    <div class="panel-section-title">语言切换按钮</div>
     <div class="form-check form-switch mb-2">
       <input class="form-check-input" type="checkbox" name="lang_switcher_enabled" value="1"
              id="langSwitcherToggle"
@@ -52,11 +50,35 @@
     </div>
   </div>
 
+  {# 社交链接 #}
+  <div class="panel-section">
+    <div class="panel-section-title">社交链接</div>
+    {% set social = settings.get('social', {}) %}
+    <div class="form-check form-switch mb-2">
+      <input class="form-check-input" type="checkbox" name="social_enabled" value="1"
+             id="socialToggle"
+             {% if social.get('enabled', True) %}checked{% endif %}>
+      <label class="form-check-label small" for="socialToggle">显示社交链接图标</label>
+    </div>
+
+    <div id="socialOptions" {% if not social.get('enabled', True) %}style="display:none"{% endif %}>
+      {% for platform in ('github','twitter','facebook','linkedin','youtube') %}
+      <div class="mb-2">
+        <label class="form-label small mb-1 text-muted">{{ platform | title }}</label>
+        <input class="form-control form-control-sm" name="social_{{ platform }}" value="{{ social.get(platform, '') }}" placeholder="https://...">
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
   <button class="btn btn-primary btn-sm mt-2" type="submit">保存</button>
 </form>
 
 <script>
 document.getElementById('langSwitcherToggle').addEventListener('change', function(){
   document.getElementById('langSwitcherOptions').style.display = this.checked ? '' : 'none';
+});
+document.getElementById('socialToggle').addEventListener('change', function(){
+  document.getElementById('socialOptions').style.display = this.checked ? '' : 'none';
 });
 </script>

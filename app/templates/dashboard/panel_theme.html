@@ -7,22 +7,25 @@
     <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
   {% endfor %}
 {% endwith %}
-<form method="post" action="{{ url_for('core.theme_edit', _fragment='1') }}" id="themeForm">
+<form method="post" action="{{ url_for('core.theme_edit', _fragment='1', site=site.id) }}" id="themeForm">
+  <div class="panel-section">
+    <div class="panel-section-title">颜色配置</div>
   {% for key, label in [('accent','主色'),('bg','背景'),('surface','面板色'),('text','文字色'),('text_muted','次要文字'),('border','边框色')] %}
-  <div class="mb-2">
-    <label class="form-label small mb-1 text-muted">{{ label }}
-      <span class="text-muted">(默认: {{ default_theme.get(key, '') }})</span></label>
-    <div class="input-group input-group-sm">
-      <input type="color" class="form-control form-control-color theme-color-picker"
-             id="picker_{{ key }}" value="{{ theme.get(key, default_theme.get(key, '')) }}"
-             oninput="syncColorFromPicker('{{ key }}')" style="max-width:40px; padding:2px;">
-      <input class="form-control form-control-sm theme-text-input" name="{{ key }}"
-             id="text_{{ key }}" value="{{ theme.get(key, '') }}"
-             placeholder="{{ default_theme.get(key, '') }}"
-             oninput="syncColorFromText('{{ key }}')">
+    <div class="mb-2">
+      <label class="form-label small mb-1">{{ label }}
+        <span class="text-muted">(默认: {{ default_theme.get(key, '') }})</span></label>
+      <div class="input-group input-group-sm">
+        <input type="color" class="form-control form-control-color theme-color-picker"
+               id="picker_{{ key }}" value="{{ theme.get(key, default_theme.get(key, '')) }}"
+               oninput="syncColorFromPicker('{{ key }}')" style="max-width:40px; padding:2px;">
+        <input class="form-control form-control-sm theme-text-input" name="{{ key }}"
+               id="text_{{ key }}" value="{{ theme.get(key, '') }}"
+               placeholder="{{ default_theme.get(key, '') }}"
+               oninput="syncColorFromText('{{ key }}')">
+      </div>
     </div>
-  </div>
   {% endfor %}
+  </div>
   <button class="btn btn-primary btn-sm mt-2" type="submit">保存</button>
 </form>
 <script>

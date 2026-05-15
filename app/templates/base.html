@@ -9,11 +9,30 @@
 </head>
 <body class="d-flex flex-column vh-100">
 
-<header class="bg-white border-bottom flex-shrink-0" style="height:44px">
-  <div class="d-flex align-items-center h-100 px-3 gap-3">
-    <span class="fw-bold fs-6">mycompany.website</span>
+<header class="admin-header">
+  <div class="d-flex align-items-center h-100 px-3 gap-2">
+    <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="收起/展开侧栏">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
+      </svg>
+    </button>
+
+    <a href="{{ url_for('core.overview') }}" class="d-flex align-items-center gap-2 text-decoration-none">
+      {# 内联 SVG logo — 不依赖外部文件，确保始终显示 #}
+      <svg class="admin-logo" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="28" height="28" rx="6" fill="#067a7a"/>
+        <rect x="5" y="7" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95"/>
+        <rect x="16" y="7" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95"/>
+        <rect x="5" y="16" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95"/>
+        <rect x="16" y="16" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95"/>
+      </svg>
+      <span class="admin-brand">mycompany.website</span>
+    </a>
+
+    <div class="header-divider"></div>
+
     <div class="dropdown">
-      <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+      <button class="header-btn header-site-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
         {{ site.slug if site else '未选择' }}
       </button>
       <ul class="dropdown-menu">
@@ -22,76 +41,177 @@
         {% endfor %}
       </ul>
     </div>
-    <a class="btn btn-outline-secondary btn-sm" href="javascript:void(0)" onclick="openTemplatesPanel()">+ 新建站点</a>
+
+    <a class="header-btn" href="javascript:void(0)" onclick="openTemplatesPanel()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      新建站点
+    </a>
+
     <div class="flex-grow-1"></div>
+
     {% if site %}
-    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('core.preview_site', site_id=site.id) }}" target="_blank" title="在新窗口中打开站点预览">🔍 预览</a>
-    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('core.export_zip') }}">导出 ZIP</a>
-    <a class="btn btn-primary btn-sm" href="javascript:doPublish()">发布</a>
+    <a class="header-btn" href="{{ url_for('core.preview_site', site_id=site.id) }}" target="_blank" title="在新窗口中打开站点预览">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      预览
+    </a>
+    <a class="header-btn" href="{{ url_for('core.export_zip') }}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      导出
+    </a>
+    <a class="header-btn header-btn-primary" href="javascript:doPublish()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      发布
+    </a>
+
+    <div class="header-divider"></div>
     {% endif %}
+
     <form method="post" action="{{ url_for('core.logout') }}" style="display:inline">
-      <button class="btn btn-outline-secondary btn-sm" type="submit">退出</button>
+      <button class="header-btn" type="submit">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        退出
+      </button>
     </form>
-    <span class="badge rounded-pill bg-primary d-flex align-items-center justify-content-center"
-          style="width:28px;height:28px;font-size:12px">
+
+    <div class="admin-avatar" title="{{ user.email if user else '' }}">
       {{ (user.email[:1].upper() if user else '?') }}
-    </span>
+    </div>
   </div>
 </header>
 
 <div class="d-flex flex-grow-1 overflow-hidden">
-  <nav class="bg-white border-end flex-shrink-0 overflow-auto" style="width:220px" id="leftNav">
-    <div class="p-2 border-bottom fw-semibold small d-flex justify-content-between">
-      <span>我的网站</span>
-      <span class="text-muted fw-normal">{{ site.name or site.slug }}</span>
+  <nav class="flex-shrink-0 overflow-auto" id="leftNav">
+    {# 站点信息区 #}
+    <div class="left-nav-site-info px-3 py-3">
+      <div class="site-label mb-1">我的网站</div>
+      <div class="site-name">{{ site.name or site.slug if site else '未选择站点' }}</div>
     </div>
+
     <div class="d-flex flex-column">
       {% if site %}
-      <div class="small text-muted text-uppercase px-3 pt-2 pb-1" style="font-size:10px;letter-spacing:.05em">设置</div>
-      <a class="left-nav-item px-3 py-1 small {% if active == 'company' %}active{% endif %}" href="{{ url_for('core.company') }}" data-panel="company">公司信息</a>
-      <a class="left-nav-item px-3 py-1 small {% if active == 'header' %}active{% endif %}" href="{{ url_for('core.header_edit') }}" data-panel="header">网站头部</a>
-      <a class="left-nav-item px-3 py-1 small {% if active == 'menu' %}active{% endif %}" href="{{ url_for('core.menu_edit') }}" data-panel="menu">菜单配置</a>
-      <a class="left-nav-item px-3 py-1 small {% if active == 'footer_variant' %}active{% endif %}" href="{{ url_for('core.footer_variant_edit') }}" data-panel="footer_variant">网站底部</a>
-      <a class="left-nav-item px-3 py-1 small {% if active == 'footer' %}active{% endif %}" href="{{ url_for('core.footer_edit') }}" data-panel="footer">页脚链接</a>
-      <a class="left-nav-item px-3 py-1 small {% if active == 'social' %}active{% endif %}" href="{{ url_for('core.social_edit') }}" data-panel="social">社交链接</a>
-      <a class="left-nav-item px-3 py-1 small {% if active == 'theme' %}active{% endif %}" href="{{ url_for('core.theme_edit') }}" data-panel="theme">主题颜色</a>
-      <a class="left-nav-item px-3 py-1 small {% if active == 'account' %}active{% endif %}" href="{{ url_for('core.account') }}" data-panel="account">账号管理</a>
-      <div class="small text-muted text-uppercase px-3 pt-3 pb-1" style="font-size:10px;letter-spacing:.05em">内容</div>
-      <a class="left-nav-item px-3 py-1 small {% if active == 'overview' %}active{% endif %}" href="{{ url_for('core.overview') }}" data-panel="overview">总览</a>
-      <a class="left-nav-item px-3 py-1 small {% if active == 'pages_home' %}active{% endif %}" href="{{ url_for('core.page_home') }}" data-panel="pages_home" data-preview-page="home">首页</a>
+      {# ---- 设置 ---- #}
+      <div class="left-nav-section-title">设置</div>
+      <a class="left-nav-item {% if active == 'company' %}active{% endif %}" href="{{ url_for('core.company') }}" data-panel="company" title="公司信息">
+        <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        公司信息
+      </a>
+      <a class="left-nav-item {% if active == 'header' %}active{% endif %}" href="{{ url_for('core.header_edit') }}" data-panel="header" title="网站头部">
+        <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="10" y1="6" x2="10.01" y2="6"/><line x1="14" y1="6" x2="14.01" y2="6"/></svg>
+        网站头部
+      </a>
+      <a class="left-nav-item {% if active == 'menu' %}active{% endif %}" href="{{ url_for('core.menu_edit') }}" data-panel="menu" title="菜单配置">
+        <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        菜单配置
+      </a>
+      <a class="left-nav-item {% if active == 'footer_variant' %}active{% endif %}" href="{{ url_for('core.footer_variant_edit') }}" data-panel="footer_variant" title="网站底部">
+        <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="16" width="20" height="6" rx="2"/><line x1="6" y1="18" x2="6.01" y2="18"/><line x1="10" y1="18" x2="10.01" y2="18"/></svg>
+        网站底部
+      </a>
+
+      <a class="left-nav-item {% if active == 'theme' %}active{% endif %}" href="{{ url_for('core.theme_edit') }}" data-panel="theme" title="主题颜色">
+        <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/><path d="M12 2a15.3 15.3 0 0 0-4 10 15.3 15.3 0 0 0 4 10"/></svg>
+        主题颜色
+      </a>
+      <a class="left-nav-item {% if active == 'account' %}active{% endif %}" href="{{ url_for('core.account') }}" data-panel="account" title="账号管理">
+        <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        账号管理
+      </a>
+
+      {# ---- 内容 ---- #}
+      <div class="left-nav-section-title">内容</div>
+      <a class="left-nav-item {% if active == 'overview' %}active{% endif %}" href="{{ url_for('core.overview') }}" data-panel="overview" title="总览">
+        <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        总览
+      </a>
+      <a class="left-nav-item {% if active == 'pages_home' %}active{% endif %}" href="{{ url_for('core.page_home') }}" data-panel="pages_home" data-preview-page="home" title="首页">
+        <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        首页
+      </a>
+
+      {# ---- 菜单渲染 ---- #}
       {% macro render_left_menu(items, level=0) %}
         {% for item in items %}
           {% if item.type != 'home' %}
             {% set has_children = item.children | default([]) | length > 0 %}
             {% if has_children %}
               <div class="left-nav-group" data-level="{{ level }}">
-                <button class="left-nav-item left-nav-toggle px-3 py-1 small w-100 text-start border-0 bg-transparent"
-                        type="button" onclick="toggleLeftSubmenu(this)">
-                  <span class="left-nav-chevron me-1">▶</span> {{ item.label }}
-                </button>
+                <div class="left-nav-parent-row">
+                  {% if item.type in ('list','page') %}
+                  <a class="left-nav-item left-nav-parent-link flex-grow-1"
+                     href="{{ url_for('core.page_panel', page_key=item.target or item.label) }}"
+                     data-panel="{{ item.type }}_{{ item.target or item.label }}"
+                     data-preview-page="{{ item.target or item.label }}"
+                     title="{{ item.label }}">
+                     {% if item.type == 'list' %}
+                       <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                     {% else %}
+                       <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                     {% endif %}
+                     {{ item.label }}
+                     {% if item.type == 'list' %}
+                       {% if item.target == 'products' %}<span class="nav-badge">{{ counts.products }}</span>
+                       {% elif item.target == 'posts' %}<span class="nav-badge">{{ counts.posts }}</span>
+                       {% endif %}
+                     {% endif %}
+                  </a>
+                  {% elif item.type == 'link' %}
+                  <a class="left-nav-item left-nav-parent-link flex-grow-1 external-link"
+                     href="{{ item.url | default('#') }}"
+                     target="_blank" rel="noopener"
+                     title="{{ item.label }}">
+                     <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                     {{ item.label }}
+                  </a>
+                  {% else %}
+                  {# group, home 或未定义类型：纯容器，只展开不跳转 #}
+                  <span class="left-nav-item left-nav-parent-label flex-grow-1" title="{{ item.label }}">
+                     <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                     {{ item.label }}
+                  </span>
+                  {% endif %}
+                  <button class="left-nav-chevron-btn" type="button" onclick="toggleLeftSubmenu(this)" title="展开/折叠子菜单">
+                    <span class="left-nav-chevron">▶</span>
+                  </button>
+                </div>
                 <div class="left-nav-submenu" style="display:none">
                   {{ render_left_menu(item.children, level + 1) }}
                 </div>
               </div>
+            {% elif item.type == 'group' %}
+              {# 容器类型：无独立页面，仅作为分组标签显示 #}
+              <span class="left-nav-item left-nav-parent-label"
+                 style="padding-left: {{ 16 + level * 16 }}px;"
+                 title="{{ item.label }}">
+                 <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                 {{ item.label }}
+              </span>
             {% elif item.type in ('list','page') %}
-              <a class="left-nav-item px-3 py-1 small"
+              <a class="left-nav-item"
                  href="{{ url_for('core.page_panel', page_key=item.target or item.label) }}"
                  data-panel="{{ item.type }}_{{ item.target or item.label }}"
                  data-preview-page="{{ item.target or item.label }}"
-                 style="padding-left: {{ 1 + level * 0.75 }}rem;">
+                 style="padding-left: {{ 16 + level * 16 }}px;"
+                 title="{{ item.label }}">
+                 {% if item.type == 'list' %}
+                   <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                 {% else %}
+                   <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                 {% endif %}
                  {{ item.label }}
                  {% if item.type == 'list' %}
-                   {% if item.target == 'products' %}<span class="badge bg-secondary ms-1">{{ counts.products }}</span>
-                   {% elif item.target == 'posts' %}<span class="badge bg-secondary ms-1">{{ counts.posts }}</span>
+                   {% if item.target == 'products' %}<span class="nav-badge">{{ counts.products }}</span>
+                   {% elif item.target == 'posts' %}<span class="nav-badge">{{ counts.posts }}</span>
                    {% endif %}
                  {% endif %}
               </a>
             {% else %}
-              <a class="left-nav-item px-3 py-1 small text-muted"
+              <a class="left-nav-item external-link"
                  href="{{ item.url | default('#') }}"
                  target="_blank" rel="noopener"
-                 style="padding-left: {{ 1 + level * 0.75 }}rem;">
-                 {{ item.label }} ↗
+                 style="padding-left: {{ 16 + level * 16 }}px;"
+                 title="{{ item.label }}">
+                 <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                 {{ item.label }}
               </a>
             {% endif %}
           {% endif %}
@@ -99,8 +219,13 @@
       {% endmacro %}
       {{ render_left_menu(left_menu_items) }}
       {% endif %}
-      <div class="small text-muted text-uppercase px-3 pt-3 pb-1" style="font-size:10px;letter-spacing:.05em">站点</div>
-      <a class="left-nav-item px-3 py-1 small {% if active == 'templates' %}active{% endif %}" href="{{ url_for('core.templates_gallery') }}" data-panel="templates">模板库</a>
+
+      {# ---- 站点 ---- #}
+      <div class="left-nav-section-title">站点</div>
+      <a class="left-nav-item {% if active == 'templates' %}active{% endif %}" href="{{ url_for('core.templates_gallery') }}" data-panel="templates" title="模板库">
+        <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        模板库
+      </a>
     </div>
   </nav>
 
@@ -144,12 +269,17 @@
   <div class="resizer-handle" id="panelResizer" title="拖拽调整宽度"></div>
 
   {# 右栏：属性面板 #}
-  <aside class="bg-white border-start flex-shrink-0 d-flex flex-column" style="width:380px; overflow:hidden" id="rightPanel">
-    <div class="d-flex align-items-center justify-content-between p-2 border-bottom flex-shrink-0">
-      <span class="fw-semibold small" id="rightPanelTitle">属性</span>
-      <button class="btn-close btn-sm" onclick="toggleRightPanel()" title="关闭面板"></button>
+  <aside class="right-panel bg-white border-start flex-shrink-0 d-flex flex-column" style="width:380px" id="rightPanel">
+    <div class="right-panel-header d-flex align-items-center justify-content-between flex-shrink-0">
+      <div class="d-flex align-items-center gap-2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="fw-semibold small" id="rightPanelTitle">属性</span>
+      </div>
+      <button class="right-panel-close" onclick="toggleRightPanel()" title="关闭面板">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
-    <div class="flex-grow-1 overflow-auto p-3" id="rightPanelBody">
+    <div class="right-panel-body flex-grow-1 overflow-auto" id="rightPanelBody">
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for category, message in messages %}
@@ -158,7 +288,12 @@
         {% endif %}
       {% endwith %}
       {% block content %}
-        <div class="p-3 text-muted text-center" style="padding-top:4rem"><p>← 在左侧选择一项开始编辑</p></div>
+        <div class="panel-empty-state">
+          <div class="panel-empty-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a3 3 0 0 0 6 0V4"/></svg>
+          </div>
+          <p class="text-muted small">← 在左侧选择一项开始编辑</p>
+        </div>
       {% endblock %}
     </div>
   </aside>
@@ -290,6 +425,17 @@ document.getElementById('rightPanelBody').addEventListener('submit', function(e)
 });
 
 document.getElementById('leftNav').addEventListener('click', function(e) {
+  // 侧栏收缩态下点击有子菜单的父项 → 先展开侧栏，不阻止默认行为
+  var parentRow = e.target.closest('.left-nav-parent-row');
+  if (parentRow && document.getElementById('leftNav').classList.contains('left-nav-collapsed')) {
+    window._sidebarExpand && window._sidebarExpand();
+    // 展开后再自动展开该父项的子菜单
+    setTimeout(function() {
+      var chevron = parentRow.querySelector('.left-nav-chevron-btn');
+      if (chevron) toggleLeftSubmenu(chevron);
+    }, 250);
+  }
+
   var link = e.target.closest('a.left-nav-item');
   if (!link) return;
   e.preventDefault();
@@ -297,8 +443,12 @@ document.getElementById('leftNav').addEventListener('click', function(e) {
   link.classList.add('active');
   var href = link.getAttribute('href');
   if (href && href !== '#') {
-    var siteParam = new URLSearchParams(window.location.search).get('site');
-    loadPanel(href + '?_fragment=1' + (siteParam ? '&site=' + siteParam : ''));
+    var params = new URLSearchParams(window.location.search);
+    var siteParam = params.get('site');
+    var langParam = params.get('lang');
+    var qs = siteParam ? '&site=' + siteParam : '';
+    if (langParam) qs += '&lang=' + encodeURIComponent(langParam);
+    loadPanel(href + '?_fragment=1' + qs);
   }
   var previewPage = link.dataset.previewPage;
   if (previewPage) { var frame = document.getElementById('previewFrame'); frame.dataset.previewUrl = previewUrlForPage(previewPage); refreshPreview(); }
@@ -340,8 +490,11 @@ function selectModuleInPanel(index, pageKey) {
   var body = document.getElementById('rightPanelBody');
   var targetPageKey = pageKey || currentPanelPageKey() || 'home';
   if (currentPanelPageKey() !== targetPageKey) {
-    var siteParam = new URLSearchParams(window.location.search).get('site');
+    var params = new URLSearchParams(window.location.search);
+    var siteParam = params.get('site');
+    var langParam = params.get('lang');
     var joiner = siteParam ? '&site=' + siteParam : '';
+    if (langParam) joiner += '&lang=' + encodeURIComponent(langParam);
     return loadPanel('/_panel/' + targetPageKey + '?_fragment=1' + joiner)
       .then(() => selectModuleInPanel(index, targetPageKey));
   }
@@ -406,13 +559,123 @@ function toggleLeftSubmenu(button) {
 }
 
 function openDatasetPanel(datasetKey) {
-  var siteParam = new URLSearchParams(window.location.search).get('site');
+  var params = new URLSearchParams(window.location.search);
+  var siteParam = params.get('site');
+  var langParam = params.get('lang');
   var url = '/_dataset/' + encodeURIComponent(datasetKey) + '?_fragment=1';
   if (siteParam) url += '&site=' + encodeURIComponent(siteParam);
+  if (langParam) url += '&lang=' + encodeURIComponent(langParam);
   loadPanel(url);
 }
 
+// 切换面板语言并同步预览 iframe
+function switchPanelLang(url, langCode) {
+  // 在加载新面板内容前，保存当前预览页面路径
+  var f = document.getElementById('previewFrame');
+  var previewPath = '';
+  if (f) {
+    var src = f.src || '';
+    // 从 iframe src 中提取页面路径: /preview/<id>/<lang>/<page>/index.html → page/
+    var m = src.match(/\/preview\/\d+\/(?:zh-CN|zh-TW|en)?\/?(.*?)index\.html/);
+    if (m && m[1]) previewPath = m[1]; // e.g. 'about/' or ''
+  }
+
+  loadPanel(url).then(function() {
+    var frame = document.getElementById('previewFrame');
+    if (!frame) return;
+    var siteParam = new URLSearchParams(window.location.search).get('site') || '{{ site.id if site else "" }}';
+    var newUrl = '/preview/' + siteParam + '/' + langCode + '/' + (previewPath || '') + 'index.html';
+    frame.dataset.previewUrl = newUrl;
+    // 先触发构建，确保多语言菜单等内容已生成
+    var buildUrl = '/build?_fragment=1';
+    if (siteParam) buildUrl += '&site=' + encodeURIComponent(siteParam);
+    fetch(buildUrl, {method:'POST'})
+      .then(function(r){ return r.json(); }).catch(function(){ return {ok: true}; })
+      .then(function(){ frame.src = newUrl + '?_=' + Date.now(); });
+  });
+}
+
 document.getElementById('previewFrame')?.addEventListener('load', installPreviewCanvasHandlers);
+
+// ---- 侧栏收缩/展开 + hover 弹出标签 ----
+(function(){
+  var STORAGE_KEY = 'admin_sidebar_collapsed';
+  var nav = document.getElementById('leftNav');
+  var btn = document.getElementById('sidebarToggleBtn');
+  if (!nav || !btn) return;
+
+  var collapsed = localStorage.getItem(STORAGE_KEY) === '1';
+
+  // 创建浮动 tooltip，挂到 body 上避免被 overflow 裁剪
+  var tooltip = document.createElement('div');
+  tooltip.id = 'leftNavTooltip';
+  tooltip.style.cssText = 'position:fixed;pointer-events:none;z-index:10000;padding:6px 12px;background:#0f172a;color:#f1f5f9;font-size:12px;font-weight:500;line-height:1.4;border-radius:6px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:0;visibility:hidden;transition:opacity 0.12s,visibility 0.12s;';
+  document.body.appendChild(tooltip);
+
+  var tooltipTimer = null;
+
+  function showTooltip(item) {
+    if (!collapsed) return;
+    var title = item.getAttribute('title');
+    if (!title) return;
+    var rect = item.getBoundingClientRect();
+    tooltip.textContent = title;
+    tooltip.style.left = (rect.right + 10) + 'px';
+    tooltip.style.top = (rect.top + rect.height / 2) + 'px';
+    tooltip.style.transform = 'translateY(-50%)';
+    tooltip.style.opacity = '1';
+    tooltip.style.visibility = 'visible';
+  }
+
+  function hideTooltip() {
+    tooltip.style.opacity = '0';
+    tooltip.style.visibility = 'hidden';
+  }
+
+  nav.addEventListener('mouseover', function(e) {
+    if (!collapsed) return;
+    var item = e.target.closest('.left-nav-item');
+    if (!item) { hideTooltip(); return; }
+    clearTimeout(tooltipTimer);
+    tooltipTimer = setTimeout(function(){ showTooltip(item); }, 200);
+  });
+
+  nav.addEventListener('mouseout', function(e) {
+    clearTimeout(tooltipTimer);
+    var item = e.target.closest('.left-nav-item');
+    if (item && !item.contains(e.relatedTarget)) hideTooltip();
+  });
+
+  function applyState() {
+    if (collapsed) {
+      nav.classList.add('left-nav-collapsed');
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>';
+      btn.title = '展开侧栏';
+    } else {
+      nav.classList.remove('left-nav-collapsed');
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>';
+      btn.title = '收起侧栏';
+      hideTooltip();
+    }
+  }
+
+  btn.addEventListener('click', function() {
+    collapsed = !collapsed;
+    localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0');
+    applyState();
+  });
+
+  // 暴露 toggle 方法给 click 处理器使用
+  window._sidebarExpand = function() {
+    if (collapsed) {
+      collapsed = false;
+      localStorage.setItem(STORAGE_KEY, '0');
+      applyState();
+    }
+  };
+
+  applyState();
+})();
 </script>
 
 <style>

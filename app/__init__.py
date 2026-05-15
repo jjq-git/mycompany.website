@@ -39,17 +39,18 @@ def _register_context_processors(app):
     @app.context_processor
     def inject_template_meta():
         from .core.models import Site
+        from .core.translator import is_configured as translator_ready
         from flask import request
         try:
             site_id = request.args.get('site', type=int)
             site = Site.query.get(site_id) if site_id else Site.query.order_by(Site.id.desc()).first()
             if not site:
-                return {}
+                return {'translation_enabled': translator_ready()}
             meta_path = Path(app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
             meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
-            return {'template_meta': meta}
+            return {'template_meta': meta, 'translation_enabled': translator_ready()}
         except Exception:
-            return {}
+            return {'translation_enabled': False}
 
 
 def _migrate_users_add_columns():

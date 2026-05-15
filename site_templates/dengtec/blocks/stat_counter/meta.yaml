@@ -1,0 +1,57 @@
+name: 数据统计
+category: content
+icon: stat_counter.svg
+description: 数字 + 标签展示，支持图标、后缀，自动滚动计数动画，适合展示公司实力数据
+fields:
+  - key: section_bg
+    label: 外层背景色
+    type: text
+    default: ""
+    placeholder: 如 #f5f7fa（留空=使用默认）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: title
+    label: 区块标题
+    type: text
+    default: ""
+  - key: subtitle
+    label: 区块副标题
+    type: text
+    default: ""
+  - key: columns
+    label: 每行列数
+    type: select
+    default: "4"
+    options:
+      - value: "3"
+        label: 三列
+      - value: "4"
+        label: 四列
+      - value: "6"
+        label: 六列
+  - key: stats
+    label: 统计项列表
+    type: list
+    item_fields:
+      - key: number
+        label: 数字
+        type: number
+      - key: suffix
+        label: 后缀（可选）
+        type: text
+      - key: label
+        label: 标签文字
+        type: text
+      - key: icon
+        label: 图标
+        type: icon
+variants:
+  - key: grid_3
+    label: 三列网格
+  - key: grid_4
+    label: 四列网格
+  - key: grid_6
+    label: 六列网格

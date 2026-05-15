@@ -1,6 +1,6 @@
 name: 标题模块
 category: content
-description: 通用标题模块，支持标签、标题、描述、间距、外层样式、字体颜色和大小
+description: 通用标题模块，支持标签、标题、描述、按钮、间距、外层样式、字体颜色和大小
 fields:
   - key: section_bg
     label: 外层背景色
@@ -33,6 +33,16 @@ fields:
     type: text
     default: ""
     placeholder: 如 2rem（留空=默认）
+  - key: padding_top
+    label: 上内边距
+    type: text
+    default: ""
+    placeholder: 如 4rem（留空=默认）
+  - key: padding_bottom
+    label: 下内边距
+    type: text
+    default: ""
+    placeholder: 如 4rem（留空=默认）
   - key: tag
     label: 标签文字
     type: text
@@ -46,6 +56,33 @@ fields:
     label: 描述文字
     type: textarea
     default: ""
+  - key: btn_text
+    label: 按钮文字
+    type: text
+    default: ""
+  - key: btn_url
+    label: 按钮链接
+    type: url
+    default: ""
+  - key: btn_target
+    label: 按钮打开方式
+    type: select
+    default: ""
+    options:
+      - value: ""
+        label: 当前页
+      - value: _blank
+        label: 新标签页
+  - key: btn_bg
+    label: 按钮背景色
+    type: text
+    default: ""
+    placeholder: 如 #067a7a（留空=使用主色）
+  - key: btn_color
+    label: 按钮文字色
+    type: text
+    default: ""
+    placeholder: 如 #ffffff（留空=白色）
   - key: title_color
     label: 标题颜色
     type: text
@@ -76,6 +113,3 @@ fields:
     type: text
     default: ""
     placeholder: 如 1rem（留空=默认）
-variants:
-  - key: default
-    label: 标准

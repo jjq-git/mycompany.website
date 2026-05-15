@@ -12,46 +12,66 @@
   {% endfor %}
 {% endwith %}
 
-{# ---- 可用模块库 ---- #}
+{# ---- 添加模块按钮 ---- #}
 <div class="mb-3">
-  <div class="small text-muted mb-2">可用模块（点击添加）</div>
-  <div class="row g-2">
-    {% for blk in blocks %}
-    <div class="col-6">
-      <div class="card p-2 cursor-pointer block-card" style="cursor:pointer"
-           data-block-name="{{ blk.name }}"
-           data-block-variant="{{ blk.variants[0].key if blk.variants else 'default' }}">
-        <div class="d-flex align-items-center gap-2">
-          <span class="fw-semibold small">{{ blk.display_name }}</span>
+  <button class="btn btn-outline-primary btn-sm w-100" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal">
+    + 添加模块
+  </button>
+</div>
+
+{# ---- 可用模块弹框 ---- #}
+<div class="modal fade" id="blockPaletteModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">可用模块</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2">
+          {% for blk in blocks %}
+          <div class="col-6">
+            <div class="card p-2 cursor-pointer block-card" style="cursor:pointer"
+                 data-block-name="{{ blk.name }}"
+                 data-block-variant="{{ blk.variants[0].key if blk.variants else 'default' }}">
+              <div class="d-flex align-items-center gap-2">
+                <span class="fw-semibold small">{{ blk.display_name }}</span>
+              </div>
+              <div class="text-muted" style="font-size:10px">{{ blk.description }}</div>
+            </div>
+          </div>
+          {% endfor %}
         </div>
-        <div class="text-muted" style="font-size:10px">{{ blk.description }}</div>
       </div>
     </div>
-    {% endfor %}
   </div>
 </div>
 
 {# ---- 已选模块列表 ---- #}
 <div>
   <div class="small text-muted mb-2">已选模块（拖拽排序 | 点击配置）</div>
-  <form method="post" action="{{ url_for('core.page_home') }}?_fragment=1" id="modulesForm" data-page-key="home" enctype="multipart/form-data">
+  <form method="post" action="{{ url_for('core.page_home', site=site.id) }}?_fragment=1" id="modulesForm" data-page-key="home" enctype="multipart/form-data">
     <input type="hidden" name="_format" value="modules">
     <input type="hidden" name="module_count" id="moduleCount" value="{{ page.modules | length }}">
 
     <div id="selectedModules">
+      {% set display_names = {} %}
+      {% for blk in blocks %}
+        {% set _ = display_names.update({blk.name: blk.display_name}) %}
+      {% endfor %}
       {% for module in page.modules %}
       {% set i = loop.index0 %}
+      {% set mod_title = display_names.get(module.type, module.type | replace('_', ' ') | title) %}
       <div class="card mb-2 module-item" data-index="{{ i }}" data-module-index="{{ i }}" style="cursor:move">
         <div class="d-flex align-items-center justify-content-between p-2 module-header"
              onclick="this.closest('.module-item').classList.toggle('expanded')">
-          <span class="small fw-semibold">{{ module.type | replace('_', ' ') | title }}</span>
+          <span class="small fw-semibold">{{ mod_title }}</span>
           <div class="d-flex gap-1">
             <button type="button" class="btn btn-sm btn-outline-secondary remove-module-btn" style="font-size:10px">✕</button>
           </div>
         </div>
         <input type="hidden" name="module_{{ i }}_type" value="{{ module.type }}">
         <input type="hidden" name="module_{{ i }}_order" value="{{ module.order | default(i + 1) }}">
-        <input type="hidden" name="module_{{ i }}_variant" value="{{ module.variant | default('default') }}">
 
         <div class="module-config p-2 border-top" style="display:none">
           {# 设备切换标签 #}
@@ -72,7 +92,29 @@
           {# 电脑端配置 #}
           <div class="device-config device-desktop">
             <div class="small fw-semibold mb-1 text-primary">电脑端配置</div>
-            {% if mdata is mapping %}
+            {% if module.type == 'text_content' %}
+            {# 文本内容专属表单 #}
+            <div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title" value="{{ mdata.get('title', '') }}"></div>
+            <div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label><textarea class="form-control form-control-sm" rows="5" name="module_{{ i }}_data_body">{{ mdata.get('body', '') }}</textarea></div>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small mb-1 text-muted">文字排版</label><select class="form-select form-select-sm" name="module_{{ i }}_data_text_align"><option value="left" {% if mdata.get('text_align', 'left') == 'left' %}selected{% endif %}>居左</option><option value="center" {% if mdata.get('text_align') == 'center' %}selected{% endif %}>居中</option><option value="right" {% if mdata.get('text_align') == 'right' %}selected{% endif %}>居右</option></select></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">分栏</label><select class="form-select form-select-sm" name="module_{{ i }}_data_columns"><option value="1" {% if mdata.get('columns', 1)|int == 1 %}selected{% endif %}>单栏</option><option value="2" {% if mdata.get('columns')|int == 2 %}selected{% endif %}>双栏</option></select></div>
+            </div>
+            <hr class="my-2">
+            <div class="small fw-semibold mb-1 text-muted">外层样式</div>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small mb-1 text-muted">外层背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('section_bg', '#888888') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_section_bg" value="{{ mdata.get('section_bg', '') }}" placeholder="如 #f5f7fa" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">内层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_inner_width" value="{{ mdata.get('inner_width', '') }}" placeholder="如 800px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_inner_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>
+            </div>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small mb-1 text-muted">标题颜色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('title_color', '#888888') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title_color" value="{{ mdata.get('title_color', '') }}" placeholder="如 #1e293b" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">正文颜色</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_body_color" value="{{ mdata.get('body_color', '') }}" placeholder="如 #475569"></div>
+            </div>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small mb-1 text-muted">标题字号</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title_size" value="{{ mdata.get('title_size', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_title_size\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">正文字号</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_body_size" value="{{ mdata.get('body_size', '') }}" placeholder="如 1rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_body_size\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            </div>
+            {% elif mdata is mapping %}
               {% for key, val in mdata.items() %}
               {% set prefix = 'module_' ~ i ~ '_data_' %}
               <div class="mb-2">
@@ -99,6 +141,7 @@
               <div class="form-text">一次选择多个图片或视频，保存后会追加到 slides 轮播列表。</div>
             </div>
             {% endif %}
+            {% if module.type not in ('section_title', 'hero_banner', 'highlight_card', 'item_detail', 'text_content') %}
             <hr class="my-2">
             <div class="row g-2">
               <div class="col-6">
@@ -116,6 +159,7 @@
                        value="{{ mdata.get('max_items', '') }}" placeholder="0=全部">
               </div>
             </div>
+            {% endif %}
           </div>
 
           {# 平板端配置 #}
@@ -132,6 +176,7 @@
               </div>
               {% endfor %}
             {% endif %}
+            {% if module.type not in ('section_title', 'hero_banner', 'highlight_card', 'item_detail', 'text_content') %}
             <hr class="my-2">
             <div class="row g-2">
               <div class="col-6">
@@ -149,6 +194,7 @@
                        value="{{ mdata_tablet.get('max_items', '') }}" placeholder="继承电脑端">
               </div>
             </div>
+            {% endif %}
             <div class="mb-2 mt-2">
               <label class="form-check-label small">
                 <input type="checkbox" class="form-check-input"
@@ -173,6 +219,7 @@
               </div>
               {% endfor %}
             {% endif %}
+            {% if module.type not in ('section_title', 'hero_banner', 'highlight_card', 'item_detail', 'text_content') %}
             <hr class="my-2">
             <div class="row g-2">
               <div class="col-6">
@@ -190,6 +237,7 @@
                        value="{{ mdata_mobile.get('max_items', '') }}" placeholder="继承电脑端">
               </div>
             </div>
+            {% endif %}
             <div class="mb-2 mt-2">
               <label class="form-check-label small">
                 <input type="checkbox" class="form-check-input"
@@ -227,6 +275,9 @@
   document.querySelectorAll('.block-card[data-block-name]').forEach(function(card){
     card.addEventListener('click', function(){
       addModule(card.dataset.blockName, card.dataset.blockVariant || 'default');
+      // 关闭弹框
+      var modalEl = document.getElementById('blockPaletteModal');
+      if (modalEl) { var modal = bootstrap.Modal.getInstance(modalEl); if (modal) modal.hide(); }
     });
   });
   document.querySelectorAll('.remove-module-btn').forEach(function(btn){
@@ -253,9 +304,51 @@ function addModule(type, variant) {
   count.value = idx + 1;
 
   var container = document.getElementById('selectedModules');
-  var heroUpload = type === 'hero_banner'
-    ? '<div class="mb-2"><label class="form-label small mb-1 text-muted">轮播媒体（可多选图片/视频）</label><input type="file" class="form-control form-control-sm" name="module_' + idx + '_data_slides_files" multiple accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime"><div class="form-text">一次选择多个图片或视频，保存后会追加到 slides 轮播列表。</div></div>'
+  var heroEditor = type === 'hero_banner'
+    ? '<div class="mb-2"><label class="form-label small mb-1 text-muted">主标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle"></div>' +
+      '<div class="row g-2">' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">主按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryBtn"></div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">主按钮链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryBtnLink"></div>' +
+      '</div>' +
+      '<hr class="my-2">' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">轮播媒体（可多选图片/视频）</label><input type="file" class="form-control form-control-sm" name="module_' + idx + '_data_slides_files" multiple accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime"><div class="form-text">一次选择多个图片或视频，保存后会追加到 slides 轮播列表。</div></div>'
     : '';
+  var sectionEditor = type === 'section_title'
+    ? '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag" placeholder="模块上方小标签"></div>' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述文字</label><textarea class="form-control form-control-sm" rows="2" name="module_' + idx + '_data_desc"></textarea></div>' +
+      '<hr class="my-2">' +
+      '<div class="small fw-semibold mb-1 text-muted">按钮</div>' +
+      '<div class="row g-2">' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_text"></div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">按钮链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_url"></div>' +
+      '</div>'
+    : '';
+  var textEditor = type === 'text_content'
+    ? '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label><textarea class="form-control form-control-sm" rows="5" name="module_' + idx + '_data_body"></textarea></div>' +
+      '<div class="row g-2">' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">文字排版</label><select class="form-select form-select-sm" name="module_' + idx + '_data_text_align"><option value="left">居左</option><option value="center">居中</option><option value="right">居右</option></select></div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">分栏</label><select class="form-select form-select-sm" name="module_' + idx + '_data_columns"><option value="1">单栏</option><option value="2">双栏</option></select></div>' +
+      '</div>' +
+      '<hr class="my-2">' +
+      '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+      '<div class="row g-2">' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">外层背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="#888888" oninput="this.parentElement.querySelector(\'input[type=text]\').value=this.value"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_section_bg" placeholder="如 #f5f7fa" oninput="this.parentElement.querySelector(\'input[type=color]\').value=this.value"></div></div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">内层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_inner_width" placeholder="如 800px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=module_' + idx + '_data_inner_width]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+      '</div>' +
+      '<div class="row g-2">' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">标题颜色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="#888888" oninput="this.parentElement.querySelector(\'input[type=text]\').value=this.value"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title_color" placeholder="如 #1e293b" oninput="this.parentElement.querySelector(\'input[type=color]\').value=this.value"></div></div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">正文颜色</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_body_color" placeholder="如 #475569"></div>' +
+      '</div>' +
+      '<div class="row g-2">' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">标题字号</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title_size" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=module_' + idx + '_data_title_size]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">正文字号</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_body_size" placeholder="如 1rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=module_' + idx + '_data_body_size]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>' +
+      '</div>'
+    : '';
+  // 只有数据类模块才需要每行列数和显示数量控件
+  var needsResp = (type === 'data_grid' || type === 'product_grid' || type === 'feature_grid');
   var div = document.createElement('div');
   div.className = 'card mb-2 module-item expanded';
   div.innerHTML =
@@ -265,7 +358,6 @@ function addModule(type, variant) {
     '</div>' +
     '<input type="hidden" name="module_' + idx + '_type" value="' + type + '">' +
     '<input type="hidden" name="module_' + idx + '_order" value="' + (idx + 1) + '">' +
-    '<input type="hidden" name="module_' + idx + '_variant" value="' + variant + '">' +
     '<div class="module-config p-2 border-top" style="display:block">' +
       '<div class="d-flex gap-1 mb-2">' +
         '<button type="button" class="btn btn-sm btn-outline-secondary active device-tab" data-device="desktop" onclick="switchModuleDevice(this,\'desktop\')">💻 电脑</button>' +
@@ -274,8 +366,8 @@ function addModule(type, variant) {
       '</div>' +
       '<div class="device-config device-desktop">' +
         '<div class="small fw-semibold mb-1 text-primary">电脑端配置</div>' +
-        heroUpload +
-        '<div class="row g-2">' +
+        heroEditor + sectionEditor + textEditor +
+        (needsResp ? '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>' +
             '<select class="form-select form-select-sm" name="module_' + idx + '_resp_columns">' +
               '<option value="" selected>默认</option>' +
@@ -284,11 +376,11 @@ function addModule(type, variant) {
             '</select></div>' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label>' +
             '<input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_max_items" placeholder="0=全部"></div>' +
-        '</div>' +
+        '</div>' : '') +
       '</div>' +
       '<div class="device-config device-tablet" style="display:none">' +
         '<div class="small fw-semibold mb-1 text-primary">平板端配置（继承电脑端）</div>' +
-        '<div class="row g-2">' +
+        (needsResp ? '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>' +
             '<select class="form-select form-select-sm" name="module_' + idx + '_resp_tablet_columns">' +
               '<option value="" selected>继承电脑端</option>' +
@@ -296,11 +388,11 @@ function addModule(type, variant) {
             '</select></div>' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label>' +
             '<input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_max_items" placeholder="继承电脑端"></div>' +
-        '</div>' +
+        '</div>' : '') +
       '</div>' +
       '<div class="device-config device-mobile" style="display:none">' +
         '<div class="small fw-semibold mb-1 text-primary">手机端配置（继承电脑端）</div>' +
-        '<div class="row g-2">' +
+        (needsResp ? '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>' +
             '<select class="form-select form-select-sm" name="module_' + idx + '_resp_mobile_columns">' +
               '<option value="" selected>继承电脑端</option>' +
@@ -308,7 +400,7 @@ function addModule(type, variant) {
             '</select></div>' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label>' +
             '<input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_max_items" placeholder="继承电脑端"></div>' +
-        '</div>' +
+        '</div>' : '') +
       '</div>' +
     '</div>';
   container.appendChild(div);
@@ -353,7 +445,9 @@ document.getElementById('modulesForm').addEventListener('submit', function(e){
   fetch(this.action, {method:'POST', body: formData})
     .then(r => r.text())
     .then(html => {
-      document.getElementById('rightPanelBody').innerHTML = html;
+      var panel = document.getElementById('rightPanelBody');
+      panel.innerHTML = html;
+      runPanelScripts(panel);
       refreshPreview();
     });
 });
@@ -368,7 +462,7 @@ document.getElementById('modulesForm').addEventListener('submit', function(e){
 {% else %}
 {# 旧格式兼容 #}
 <div class="small text-muted mb-3">此模板使用旧格式，建议升级到模块库模式</div>
-<form method="post" action="{{ url_for('core.page_home') }}?_fragment=1">
+<form method="post" action="{{ url_for('core.page_home', site=site.id) }}?_fragment=1">
   <div class="mb-2"><label class="form-label small">主标题</label>
     <input class="form-control form-control-sm" name="hero.title" value="{{ page.hero.title or '' }}"></div>
   <div class="mb-2"><label class="form-label small">副标题</label>

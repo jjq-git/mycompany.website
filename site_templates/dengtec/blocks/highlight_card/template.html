@@ -1,10 +1,11 @@
-{# 图文模块 — 通用图文介绍模块，支持左右布局切换、自定义配色、外边距 #}
-{% if module.data and module.data.title %}
+{# 图文模块 #}
 {% set md = module.data if module.data else {} %}
+{% set has_title = md.get('title', '') | string | length > 0 %}
+
+{% if has_title %}
 {% set section_bg = md.get('section_bg', '') %}
 {% set inner_w = md.get('inner_width', '') %}
 {% set border_radius = md.get('border_radius', '') %}
-{% set img_pos = md.get('image_position', 'left') %}
 {% set margin_top = md.get('margin_top', '') %}
 {% set margin_bottom = md.get('margin_bottom', '') %}
 {% set padding_top = md.get('padding_top', '') %}
@@ -17,6 +18,7 @@
 {% set tag_color = md.get('tag_color', '') %}
 {% set btn_bg = md.get('btn_bg', '') %}
 {% set btn_color = md.get('btn_color', '') %}
+{% set img_pos = md.get('image_position', 'left') %}
 
 {% set section_style = [] %}
 {% if section_bg %}{% set _ = section_style.append('background: ' ~ section_bg) %}{% endif %}
@@ -30,15 +32,11 @@
 <section class="section" style="{{ section_style | join('; ') }}">
   <div class="container" style="max-width: {{ inner_w or '1200px' }}; margin: 0 auto;">
     <div class="hl-grid {% if img_pos == 'right' %}hl-grid--reverse{% endif %}"{% if border_radius is not none and border_radius != '' %} style="border-radius: {{ border_radius }};"{% endif %}>
-      {# 图片区 #}
       <div class="hl-image">
         {% if md.image %}<img src="{{ md.image }}" alt="{{ md.title }}" loading="lazy">{% endif %}
       </div>
-      {# 文本区 #}
       <div class="hl-text" style="{% if text_bg %}background: {{ text_bg }};{% endif %}{% if text_color %}color: {{ text_color }};{% endif %}padding: 2rem;">
-        {% if md.tag %}
-        <span class="hl-tag" style="{% if tag_bg %}background: {{ tag_bg }};{% endif %}{% if tag_color %}color: {{ tag_color }};{% endif %}">{{ md.tag }}</span>
-        {% endif %}
+        {% if md.tag %}<span class="hl-tag" style="{% if tag_bg %}background: {{ tag_bg }};{% endif %}{% if tag_color %}color: {{ tag_color }};{% endif %}">{{ md.tag }}</span>{% endif %}
         <h3 class="hl-title" style="{% if text_color %}color: {{ text_color }};{% endif %}">{{ md.title }}</h3>
         <p class="hl-desc" style="{% if text_color %}color: {{ text_color }}; opacity: 0.8;{% endif %}">{{ md.desc }}</p>
         {% if md.features %}

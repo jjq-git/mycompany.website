@@ -3,57 +3,75 @@
 
 {% block content %}
 <div>
-  <div class="d-flex align-items-center gap-2 mb-3">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <span class="fw-semibold">新建站点</span>
     <a href="{{ url_for('core.templates_gallery') }}" class="btn btn-sm btn-outline-secondary">← 返回模板库</a>
   </div>
 
-  {# 模板信息卡片 #}
-  <div class="card mb-3 border-primary" style="border-left: 4px solid #067a7a;">
-    <div class="card-body p-3">
-      <div class="d-flex align-items-center gap-3">
-        <div class="rounded bg-dark d-flex align-items-center justify-content-center flex-shrink-0"
-             style="width:72px; height:48px; color:#fff; font-size:11px; font-weight:600;">
-          {{ template.industry }}
-        </div>
-        <div>
-          <h6 class="mb-1">{{ template.display_name }}</h6>
-          <p class="text-muted small mb-0">{{ template.description }}</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
   {% if error %}
-  <div class="alert alert-danger py-2">{{ error }}</div>
+  <div class="alert alert-danger py-2 small">{{ error }}</div>
   {% endif %}
 
-  <form method="post" action="{{ url_for('core.site_new', template=template.name) }}{% if request.args.get('_fragment') %}{{ '?_fragment=1' }}{% endif %}" id="siteNewForm">
-    <div class="mb-3">
-      <label class="form-label small fw-semibold">站点名称</label>
-      <input type="text" class="form-control" name="name"
-             value="{{ form.name or '' }}" required
-             placeholder="例如：RIMU 官网、Acme 企业站">
-      <div class="form-text">给自己看的名称，可随时修改。</div>
+  {# 已选模板卡片 #}
+  {% if template %}
+  <div class="template-pick-card mb-3">
+    <div class="template-pick-thumb">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
     </div>
+    <div class="template-pick-body">
+      <div class="template-pick-name">{{ template.display_name }}</div>
+      <div class="template-pick-meta">{{ template.industry }} · v{{ template.current_version or '1.0.0' }}</div>
+      <div class="template-pick-desc">{{ template.description }}</div>
+    </div>
+  </div>
+  {% endif %}
 
-    <div class="mb-3">
-      <label class="form-label small fw-semibold">站点 Slug</label>
-      <div class="input-group">
-        <input type="text" class="form-control" name="slug"
-               value="{{ form.slug or '' }}" required
-               pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]"
-               placeholder="my-company">
-        <span class="input-group-text text-muted small">.mycompany.website</span>
+  <form method="post" action="{{ url_for('core.site_new', template=template.name if template else '') }}{% if request.args.get('_fragment') %}{{ '?_fragment=1' }}{% endif %}" id="siteNewForm">
+    <div class="panel-section">
+      <div class="panel-section-title">站点信息</div>
+
+      {% if not template %}
+      <div class="mb-3">
+        <label class="form-label small mb-1" for="templateSelect">选择模板</label>
+        <select class="form-select form-select-sm" id="templateSelect" name="template_name">
+          <option value="">留空使用默认模板</option>
+          {% for tpl in templates %}
+          <option value="{{ tpl.name }}" {% if form.template_name == tpl.name %}selected{% endif %}>{{ tpl.display_name }}（{{ tpl.industry }}）</option>
+          {% endfor %}
+        </select>
+        <div class="form-text">选择站点使用的模板，创建后不可更改。</div>
       </div>
-      <div class="form-text">3-30 字符，小写字母/数字/连字符。发布后可通过此地址访问。</div>
+      {% else %}
+      <input type="hidden" name="template_name" value="{{ template.name }}">
+      {% endif %}
+
+      <div class="mb-3">
+        <label class="form-label small mb-1">站点名称</label>
+        <input type="text" class="form-control form-control-sm" name="name"
+               value="{{ form.name or '' }}" required
+               placeholder="例如：RIMU 官网、Acme 企业站">
+        <div class="form-text">给自己看的名称，可随时修改。</div>
+      </div>
+
+      <div class="mb-0">
+        <label class="form-label small mb-1">站点 Slug</label>
+        <div class="input-group input-group-sm slug-input-group">
+          <input type="text" class="form-control" name="slug"
+                 value="{{ form.slug or '' }}" required
+                 pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]"
+                 placeholder="my-company">
+          <span class="input-group-text text-muted">.mycompany.website</span>
+        </div>
+        <div class="form-text">3-30 字符，小写字母/数字/连字符。发布后可通过此地址访问。</div>
+      </div>
     </div>
 
-    <div class="d-flex gap-2">
-      <button type="submit" class="btn btn-primary">
+    <div class="d-flex gap-2 mt-3">
+      <button type="submit" class="btn btn-primary btn-sm">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="me-1"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         创建站点
       </button>
-      <a href="{{ url_for('core.templates_gallery') }}" class="btn btn-outline-secondary">取消</a>
+      <a href="{{ url_for('core.templates_gallery') }}" class="btn btn-outline-secondary btn-sm">取消</a>
     </div>
   </form>
 </div>
@@ -75,7 +93,6 @@
     fetch(form.action, { method: 'POST', body: formData })
       .then(function(r){
         if (r.redirected) {
-          // 创建成功，跳转到 overview
           window.location.href = r.url;
           return;
         }
@@ -84,7 +101,6 @@
       .then(function(html){
         if (html) {
           document.getElementById('rightPanelBody').innerHTML = html;
-          // 重新执行脚本
           var scripts = document.getElementById('rightPanelBody').querySelectorAll('script');
           scripts.forEach(function(s){
             var ns = document.createElement('script');

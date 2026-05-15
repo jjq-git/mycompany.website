@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<a href="{{ base_url }}/{{ lang }}/{{ current_path.split('/')[1] }}/" class="btn btn-ghost" style="margin: var(--spacing-md) 0 0 var(--spacing-md);">← 返回列表</a>
+<a href="{{ base_url }}/{{ lang }}/{{ current_path.split('/')[1] }}/" class="btn btn-ghost" style="margin: var(--spacing-md) 0 0 var(--spacing-md);">← {{ t.project.backToList | default('返回列表') }}</a>
 
 {# 模块驱动的详情渲染：遍历 modules，item_data 渲染详情内容 #}
 {% set modules = item.modules or [] %}
@@ -17,11 +17,6 @@
       <section class="section builder-module" data-builder-module-index="{{ loop.index0 }}"{% if section_bg %} style="background: {{ section_bg }};"{% endif %}>
         <div class="container"{% if inner_w %} style="max-width: {{ inner_w }}; margin: 0 auto;"{% endif %}>
           <article style="margin: 0 auto;">
-            {% if item.image or item.cover or item.photo %}
-            {% set img = item.image or item.cover or item.photo %}
-            <img src="{{ img }}" alt="{{ item.title }}" style="width: 100%; border-radius: var(--radius-md); margin-bottom: var(--spacing-xl);">
-            {% endif %}
-
             {% set t_color = item.title_color or '' %}
             {% set t_size = item.title_size or '' %}
             <h1 style="{% if t_color %}color: {{ t_color }};{% endif %}{% if t_size %}font-size: {{ t_size }};{% endif %} margin-bottom: var(--spacing-sm);">{{ item.title | default(item.name) }}</h1>
@@ -69,11 +64,6 @@
   <section class="section"{% if section_bg %} style="background: {{ section_bg }};"{% endif %}>
     <div class="container"{% if inner_w %} style="max-width: {{ inner_w }}; margin: 0 auto;"{% endif %}>
       <article style="margin: 0 auto;">
-        {% if item.image or item.cover or item.photo %}
-        {% set img = item.image or item.cover or item.photo %}
-        <img src="{{ img }}" alt="{{ item.title }}" style="width: 100%; border-radius: var(--radius-md); margin-bottom: var(--spacing-xl);">
-        {% endif %}
-
         {% set t_color = item.title_color or '' %}
         {% set t_size = item.title_size or '' %}
         <h1 style="{% if t_color %}color: {{ t_color }};{% endif %}{% if t_size %}font-size: {{ t_size }};{% endif %} margin-bottom: var(--spacing-sm);">{{ item.title | default(item.name) }}</h1>

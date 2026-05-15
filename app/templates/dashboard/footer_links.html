@@ -10,7 +10,7 @@
     <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
   {% endfor %}
 {% endwith %}
-<form method="post" action="{{ url_for('core.footer_edit') }}" style="max-width: 720px;">
+<form method="post" action="{{ url_for('core.footer_edit', site=site.id) }}" style="max-width: 720px;">
   <div id="linkList">
     {% for item in items %}
     <div class="d-flex gap-1 mb-2">

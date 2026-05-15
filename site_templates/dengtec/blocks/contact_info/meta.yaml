@@ -1,0 +1,73 @@
+name: 联系方式
+category: content
+icon: contact_info.svg
+description: 自动读取站点设置的电话、邮箱、地址、营业时间，以卡片网格或列表展示
+fields:
+  - key: section_bg
+    label: 外层背景色
+    type: text
+    default: ""
+    placeholder: 如 #f5f7fa（留空=使用默认）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: title
+    label: 区块标题
+    type: text
+    default: ""
+  - key: subtitle
+    label: 区块副标题
+    type: text
+    default: ""
+  - key: show_phone
+    label: 显示电话
+    type: select
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_mobile
+    label: 显示手机
+    type: select
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_email
+    label: 显示邮箱
+    type: select
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_address
+    label: 显示地址
+    type: select
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_business_hours
+    label: 显示营业时间
+    type: select
+    default: "false"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+variants:
+  - key: cards
+    label: 卡片网格
+  - key: list
+    label: 纵向列表

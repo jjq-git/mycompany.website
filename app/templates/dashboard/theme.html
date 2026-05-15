@@ -10,7 +10,7 @@
     <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
   {% endfor %}
 {% endwith %}
-<form method="post" action="{{ url_for('core.theme_edit') }}" style="max-width: 720px;">
+<form method="post" action="{{ url_for('core.theme_edit', site=site.id) }}" style="max-width: 720px;">
   {% set fields = [
     ('accent', '主色'),
     ('bg', '背景'),

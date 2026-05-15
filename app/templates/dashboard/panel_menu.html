@@ -1,15 +1,38 @@
-{# 菜单配置面板 #}
+﻿{# 菜单配置面板 #}
+{% if languages and languages|length > 1 %}
+{# 语言切换标签 — 用 onclick 而非 <a> 链接，避免浏览器直接导航到 fragment URL #}
+<div class="d-flex gap-1 mb-2">
+  {% for l in languages %}
+  <button onclick="switchPanelLang('/settings/menu?_fragment=1&site={{ site.id }}&lang={{ l.code }}', '{{ l.code }}')"
+     class="badge border-0 lang-tab {% if current_lang == l.code %}bg-primary text-white{% else %}bg-light text-dark border{% endif %}"
+     style="font-size:12px;padding:6px 12px;cursor:pointer;">{{ l.name }}</button>
+  {% endfor %}
+</div>
+{% endif %}
 <div class="d-flex align-items-center justify-content-between mb-3">
   <span class="fw-semibold">菜单配置</span>
   <span class="small text-muted">首页固定在第一项</span>
 </div>
+{% if translation_enabled and languages and languages|length > 1 %}
+{# AI 翻译栏 #}
+<div class="d-flex align-items-center gap-1 mb-3 p-2 rounded" style="background:#f0f7ff;font-size:12px;">
+  <span class="text-muted">🌐 AI 翻译：当前菜单 →</span>
+  <select class="form-select form-select-sm" id="translateTargetLang" style="width:auto;font-size:11px;">
+    {% for l in languages if l.code != current_lang %}
+    <option value="{{ l.code }}">{{ l.name }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-sm btn-outline-info" id="aiTranslateBtn" style="font-size:11px;">开始翻译</button>
+  <span class="text-muted" style="font-size:10px;">仅翻译菜单名称，翻译后请手动保存</span>
+</div>
+{% endif %}
 {% with messages = get_flashed_messages() %}
   {% for m in messages %}
     <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('core.menu_edit', _fragment='1') }}" id="menuTreeForm">
+<form method="post" action="{{ url_for('core.menu_edit', _fragment='1', site=site.id, lang=current_lang) }}" id="menuTreeForm">
   <input type="hidden" name="menu_json" id="menuJson">
   <div id="menuTree" class="menu-tree"></div>
   <div class="d-flex gap-2 mt-3">
@@ -21,7 +44,8 @@
 <script>
 (function(){
   const initialMenu = {{ items | tojson }};
-  const typeLabels = {home: '首页', list: '列表', page: '单页', link: '链接'};
+  const typeLabels = {home: '首页', list: '列表', page: '单页', link: '链接', group: '容器'};
+  const typeIcons = {home: '⌂', list: '☰', page: '▣', link: '↗', group: '▤'};
   const styleLabels = {vertical: '垂直列表', horizontal: '水平平铺', grid: '网格排列', cards: '图文卡片'};
   const tree = document.getElementById('menuTree');
   const form = document.getElementById('menuTreeForm');
@@ -40,30 +64,52 @@
     items.forEach(function(item) {
       if (!Array.isArray(item.children)) item.children = [];
       const isHome = item.type === 'home';
+      const childCount = item.children.length;
+      const isCollapsed = item._collapsed === true;
       const row = document.createElement('div');
       row.className = 'menu-tree-row';
       row.dataset.depth = depth;
       row._item = item;
+
+      // 折叠按钮（仅在有子菜单时显示）
+      var collapseHtml = '';
+      if (childCount > 0) {
+        collapseHtml = '<button type="button" class="menu-tree-btn menu-tree-collapse-toggle toggle-collapse" title="' + (isCollapsed ? '展开' : '折叠') + '子菜单">' + (isCollapsed ? '▶' : '▼') + '</button>';
+      } else {
+        collapseHtml = '<span class="menu-tree-collapse-spacer"></span>';
+      }
+
+      // 子菜单计数徽章
+      var badgeHtml = childCount > 0 ? '<span class="menu-tree-child-count">' + childCount + '</span>' : '';
+
       row.innerHTML =
-        '<div class="menu-tree-card">' +
-          '<div class="d-flex gap-1 align-items-center">' +
-            '<input class="form-control form-control-sm menu-label" placeholder="名称" value="' + escapeAttr(item.label) + '"' + (isHome ? ' readonly' : '') + '>' +
-            '<select class="form-select form-select-sm menu-type"' + (isHome ? ' disabled' : '') + '>' +
+        '<div class="menu-tree-card' + (isCollapsed ? ' menu-tree-collapsed' : '') + '" data-type="' + item.type + '">' +
+          // 第一行：折叠按钮 + 名称 + 类型 + 子级计数 + 操作按钮
+          '<div class="menu-tree-card-row">' +
+            collapseHtml +
+            '<input class="menu-label" placeholder="菜单名称" value="' + escapeAttr(item.label) + '"' + (isHome ? ' readonly' : '') + '>' +
+            badgeHtml +
+            '<select class="menu-type"' + (isHome ? ' disabled' : '') + '>' +
               Object.keys(typeLabels).filter(function(t){ return isHome || t !== 'home'; }).map(function(t){ return '<option value="' + t + '"' + (item.type === t ? ' selected' : '') + '>' + typeLabels[t] + '</option>'; }).join('') +
             '</select>' +
-            '<button type="button" class="btn btn-sm btn-outline-secondary move-up"' + (isHome ? ' disabled' : '') + '>↑</button>' +
-            '<button type="button" class="btn btn-sm btn-outline-secondary move-down"' + (isHome ? ' disabled' : '') + '>↓</button>' +
-            '<button type="button" class="btn btn-sm btn-outline-danger delete-item"' + (isHome ? ' disabled' : '') + '>✕</button>' +
+            '<button type="button" class="menu-tree-btn move-up" title="上移"' + (isHome ? ' disabled' : '') + '>↑</button>' +
+            '<button type="button" class="menu-tree-btn move-down" title="下移"' + (isHome ? ' disabled' : '') + '>↓</button>' +
+            '<button type="button" class="menu-tree-btn menu-tree-btn-danger delete-item" title="删除"' + (isHome ? ' disabled' : '') + '>×</button>' +
           '</div>' +
-          '<input class="form-control form-control-sm mt-1 menu-target" placeholder="products / about" value="' + escapeAttr(item.target) + '">' +
-          '<input class="form-control form-control-sm mt-1 menu-url" placeholder="https:// 或 /products/xxx" value="' + escapeAttr(item.url) + '">' +
-          '<div class="d-flex gap-1 mt-1">' +
-            '<select class="form-select form-select-sm menu-dropdown-style">' +
-              Object.keys(styleLabels).map(function(s){ return '<option value="' + s + '"' + ((item.dropdown_style || 'vertical') === s ? ' selected' : '') + '>' + styleLabels[s] + '</option>'; }).join('') +
-            '</select>' +
-            '<button type="button" class="btn btn-sm btn-outline-secondary add-child">+ 子菜单</button>' +
+          // 可折叠区域：目标/URL + 下拉样式 + 添加子菜单 + 子菜单容器
+          '<div class="menu-tree-collapsible">' +
+            '<div class="menu-tree-card-row mt-1">' +
+              '<input class="menu-target" placeholder="页面路径，如 products / about" value="' + escapeAttr(item.target) + '">' +
+              '<input class="menu-url" placeholder="链接地址，如 https:// 或 /page" value="' + escapeAttr(item.url) + '">' +
+            '</div>' +
+            '<div class="menu-tree-card-row mt-1">' +
+              '<select class="menu-dropdown-style">' +
+                Object.keys(styleLabels).map(function(s){ return '<option value="' + s + '"' + ((item.dropdown_style || 'vertical') === s ? ' selected' : '') + '>' + styleLabels[s] + '</option>'; }).join('') +
+              '</select>' +
+              '<button type="button" class="menu-tree-btn menu-tree-btn-add add-child">+ 子菜单</button>' +
+            '</div>' +
+            '<div class="menu-tree-children mt-2"></div>' +
           '</div>' +
-          '<div class="menu-tree-children mt-2"></div>' +
         '</div>';
       container.appendChild(row);
       updateFields(row);
@@ -118,10 +164,15 @@
     const parentRow = parentContainer.closest('.menu-tree-row');
     const parentItems = parentRow ? parentRow._item.children : initialMenu;
     const index = rowsIn(parentContainer).indexOf(row);
-    if (e.target.classList.contains('delete-item')) {
+    if (e.target.classList.contains('toggle-collapse')) {
+      // 折叠/展开子菜单
+      row._item._collapsed = !row._item._collapsed;
+      render(initialMenu, tree, 0);
+    } else if (e.target.classList.contains('delete-item')) {
       if (row._item.type !== 'home') parentItems.splice(index, 1);
     } else if (e.target.classList.contains('add-child')) {
       row._item.children.push(newItem());
+      row._item._collapsed = false; // 添加子菜单时自动展开
     } else if (e.target.classList.contains('move-up') && index > 0) {
       const item = parentItems.splice(index, 1)[0];
       parentItems.splice(index - 1, 0, item);
@@ -146,3 +197,166 @@
   render(initialMenu, tree, 0);
 })();
 </script>
+
+{% if translation_enabled %}
+<script>
+(function(){
+  var STORAGE_KEY = 'pending_translation_menu';
+  var CURRENT_LANG = '{{ current_lang }}';
+
+  // 页面加载时检查是否有待恢复的译文
+  (function restorePending() {
+    var raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    var pending = JSON.parse(raw);
+    if (pending.targetLang !== CURRENT_LANG) return;
+    sessionStorage.removeItem(STORAGE_KEY);
+    var translations = pending.translations;
+    document.querySelectorAll('.menu-label').forEach(function(el){
+      var label = el.value.trim();
+      // 用原文作为 key 匹配译文
+      if (translations[label] !== undefined && translations[label] !== null) {
+        el.value = translations[label];
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+  })();
+
+  var btn = document.getElementById('aiTranslateBtn');
+  if (!btn) return;
+
+  btn.addEventListener('click', function(){
+    var targetLang = document.getElementById('translateTargetLang').value;
+    var langLabels = {};
+    {{ languages | tojson }}.forEach(function(l){ langLabels[l.code] = l.name; });
+
+    showTranslateConfirm(
+      'AI 翻译',
+      '<p>将当前 <strong>' + langLabels[CURRENT_LANG] + '</strong> 菜单名称翻译为 <strong>' + langLabels[targetLang] + '</strong>？</p><p class="text-muted small mb-0">仅翻译菜单标签文字，翻译后请切换到目标语言标签页手动保存。</p>',
+      function() { doTranslate(targetLang, langLabels); }
+    );
+  });
+
+  function doTranslate(targetLang, langLabels) {
+    var labels = [];
+    var originals = [];
+    document.querySelectorAll('.menu-label').forEach(function(el){
+      var val = el.value.trim();
+      if (!val) return;
+      if (/^[#\d]/.test(val) && val.length < 10) return;
+      labels.push(val);
+      originals.push(val);
+    });
+
+    if (labels.length === 0) {
+      showTranslateMsg('AI 翻译', '未找到可翻译的菜单名称');
+      return;
+    }
+
+    // 构建 texts 对象
+    var texts = {};
+    labels.forEach(function(l, i){ texts['label_' + i] = l; });
+
+    btn.disabled = true;
+    btn.textContent = '翻译中...';
+
+    fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texts: texts, source_lang: CURRENT_LANG, target_lang: targetLang })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.error) { showTranslateMsg('翻译失败', data.error); return; }
+      if (!data.translated) { showTranslateMsg('翻译失败', '翻译结果为空'); return; }
+
+      var t = data.translated;
+      var translatedMap = {};
+      labels.forEach(function(original, i){
+        var translated = t['label_' + i];
+        if (translated !== undefined && translated !== null && translated !== original) {
+          translatedMap[original] = translated;
+        }
+      });
+
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        targetLang: targetLang,
+        translations: translatedMap
+      }));
+
+      // 同时填入当前表单（方便预览）
+      document.querySelectorAll('.menu-label').forEach(function(el){
+        var original = el.value.trim();
+        if (translatedMap[original]) {
+          el.value = translatedMap[original];
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+
+      showTranslateMsg('翻译完成',
+        '<p>菜单名称已翻译，即将切换到 <strong>' + langLabels[targetLang] + '</strong> 编辑。</p>');
+      // 自动切换到目标语言标签页
+      var modalEl2 = document.getElementById('translateModal');
+      var bsModal = bootstrap.Modal.getInstance(modalEl2);
+      if (bsModal) {
+        bsModal.hide();
+        modalEl2.addEventListener('hidden.bs.modal', function h(){
+          modalEl2.removeEventListener('hidden.bs.modal', h);
+          switchPanelLang('/settings/menu?_fragment=1&site={{ site.id }}&lang=' + targetLang, targetLang);
+        });
+      } else {
+        switchPanelLang('/settings/menu?_fragment=1&site={{ site.id }}&lang=' + targetLang, targetLang);
+      }
+    })
+    .catch(function(err){
+      showTranslateMsg('翻译失败', err.message || '网络错误');
+    })
+    .finally(function(){
+      btn.disabled = false;
+      btn.textContent = '开始翻译';
+    });
+  }
+
+  function showTranslateConfirm(title, body, onConfirm) {
+    var modalEl = document.getElementById('translateModal');
+    if (!modalEl) { onConfirm(); return; }
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    document.getElementById('translateModalTitle').textContent = title;
+    document.getElementById('translateModalBody').innerHTML = body;
+    document.getElementById('translateModalConfirm').style.display = '';
+    document.getElementById('translateModalCancel').style.display = '';
+    document.getElementById('translateModalConfirm').onclick = function() { modal.hide(); onConfirm(); };
+    modal.show();
+  }
+
+  function showTranslateMsg(title, body) {
+    var modalEl = document.getElementById('translateModal');
+    if (!modalEl) { alert(body.replace(/<[^>]*>/g, '')); return; }
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    document.getElementById('translateModalTitle').textContent = title;
+    document.getElementById('translateModalBody').innerHTML = '<p>' + body + '</p>';
+    document.getElementById('translateModalConfirm').style.display = '';
+    document.getElementById('translateModalCancel').style.display = 'none';
+    document.getElementById('translateModalConfirm').onclick = function() { modal.hide(); };
+    modal.show();
+  }
+})();
+</script>
+
+{# Bootstrap 翻译提示弹框 #}
+<div class="modal fade" id="translateModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="translateModalTitle">AI 翻译</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="translateModalBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" id="translateModalCancel" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary btn-sm" id="translateModalConfirm">确认</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}

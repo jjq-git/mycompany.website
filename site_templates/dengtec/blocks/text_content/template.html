@@ -1,0 +1,36 @@
+{# 文本内容 — 标题 + 多段落正文 #}
+{% set md = module.data if module.data else {} %}
+{% if md.title or md.body %}
+{% set section_bg = md.get('section_bg', '') %}
+{% set inner_w = md.get('inner_width', '') %}
+{% set text_align = md.get('text_align', 'left') %}
+{% set margin_top = md.get('margin_top', '') %}
+{% set margin_bottom = md.get('margin_bottom', '') %}
+{% set title_color = md.get('title_color', '') %}
+{% set body_color = md.get('body_color', '') %}
+{% set title_size = md.get('title_size', '') %}
+{% set body_size = md.get('body_size', '') %}
+{% set cols = md.get('columns', '1') %}
+
+<section class="section" style="{% if section_bg %}background: {{ section_bg }};{% endif %}{% if margin_top %}margin-top: {{ margin_top }};{% endif %}{% if margin_bottom %}margin-bottom: {{ margin_bottom }};{% endif %}">
+  <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
+    <div class="tc-block" style="text-align: {{ text_align }};{% if (cols | string) == '2' %} column-count: 2; column-gap: 2rem;{% endif %}">
+      {% if md.title %}
+      <h2 class="tc-title" style="{% if title_color %}color: {{ title_color }};{% endif %}{% if title_size %}font-size: {{ title_size }};{% endif %}">{{ md.title }}</h2>
+      {% endif %}
+      {% if md.body %}
+      {% set body_str = md.body | string %}
+      <div class="tc-body" style="{% if body_color %}color: {{ body_color }};{% endif %}{% if body_size %}font-size: {{ body_size }};{% endif %}">
+        {% if '</' in body_str or '<br' in body_str %}
+        {{ body_str | safe }}
+        {% else %}
+        {% for para in body_str.split('\n\n') %}
+        <p>{{ para | replace('\n', '<br>') }}</p>
+        {% endfor %}
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}

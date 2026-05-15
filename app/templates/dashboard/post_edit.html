@@ -12,7 +12,7 @@
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('core.post_edit', item_id=item.id) }}" enctype="multipart/form-data">
+<form method="post" action="{{ url_for('core.post_edit', item_id=item.id, site=site.id) }}" enctype="multipart/form-data">
 <div class="card" style="max-width: 720px;">
   <div class="form-row">
     <label>标题</label>

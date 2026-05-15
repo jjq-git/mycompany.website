@@ -2,6 +2,14 @@
 
 本文件是 Claude 在本项目工作时的指导。所有未来的代码生成、文档修改、架构决策都应遵循下面的原则。
 
+## 交流规范
+
+- **始终用中文回答**：所有对话、解释、建议、代码审查意见均使用中文
+
+## 代码规范
+
+- **代码必须带注释**：关键逻辑、设计意图、边界条件必须用中文注释说明——不只是"做了什么"，而是"为什么这么做"
+
 ## 一、产品是什么
 
 **让小企业老板自己做出"不会坏的网站"的平台。**
@@ -93,7 +101,57 @@ refactor: 简化模板加载逻辑，去掉未使用的扩展点
 docs: 调整产品定位，明确不做整页所见即所得编辑器
 ```
 
-## 十、本项目的故事
+## 十、常用命令速查
+
+所有命令在项目根目录执行：
+
+| 命令 | 用途 |
+|---|---|
+| `python run.py` | 启动开发服务器 (http://localhost:5000) |
+| `flask --app run scan-templates` | 扫描 site_templates/ 同步模板到数据库 |
+| `flask --app run create-user <email>` | 创建用户 (开发期跳过邮件验证) |
+| `flask --app run create-site <email> <slug> --template <name>` | 创建站点 + 复制种子数据 |
+| `flask --app run build-site <site_id>` | 生成静态站点到 output/<site_id>/ |
+| `flask --app run list-users` | 列出所有用户 |
+| `flask --app run list-sites` | 列出所有站点 |
+| `flask --app run promote-admin <email>` | 将用户提升为平台管理员 |
+
+## 十一、关键文件速查
+
+| 想做什么 | 看哪个文件 |
+|---|---|
+| 改登录/注册逻辑 | [app/core/routes.py](app/core/routes.py) (auth 相关路由) |
+| 改站点模型/数据库表 | [app/core/models.py](app/core/models.py) |
+| 改静态站点生成逻辑 | [app/core/builder.py](app/core/builder.py) |
+| 改菜单系统（类型/渲染/升级） | [app/core/menu.py](app/core/menu.py) |
+| 改数据集 CRUD（产品/文章等） | [app/core/datasets.py](app/core/datasets.py) |
+| 改站点文件读写（YAML） | [app/core/site_storage.py](app/core/site_storage.py) |
+| 改模板扫描/加载逻辑 | [app/core/template_loader.py](app/core/template_loader.py) |
+| 改管理后台页面 | [app/templates/](app/templates/) |
+| 改管理后台样式 | [app/static/css/admin.css](app/static/css/admin.css) |
+| 改网站模板（前端展示） | [site_templates/<模板名>/](site_templates/) |
+| 改系统配置/环境变量 | [.env.example](.env.example) / [app/core/config.py](app/core/config.py) |
+| 了解产品愿景 | [docs/vision.md](docs/vision.md) |
+| 了解系统架构 | [docs/architecture.md](docs/architecture.md) |
+| 了解数据库设计 | [docs/database.md](docs/database.md) |
+| 了解模板/Block 系统 | [docs/templates.md](docs/templates.md) |
+
+## 十二、禁止的操作
+
+以下操作在任何情况下都**不能做**，除非用户明确书面要求：
+
+| ❌ 禁止 | 原因 |
+|---|---|
+| 删除 `sites/` 目录或其内容 | 那是用户的真实网站数据 |
+| 删除 `output/` 目录（手动 `rm -rf`） | 构建输出可能包含待发布的站点 |
+| 修改 git 历史（`rebase -i`、`reset --hard`、`push --force`） | 破坏协作基础 |
+| 删除或重建 SQLite 数据库文件 | 里面有用户账号和站点记录 |
+| 修改 `.gitignore` 中已有的忽略规则 | 可能导致敏感文件被提交 |
+| 安装未经 `requirements.txt` 声明的新依赖 | 违背"依赖能少则少"原则 |
+| 修改 `app/core/models.py` 中已上线的表结构（只增不减） | 破坏数据兼容性 |
+| 跳过 git hooks（`--no-verify`、`--no-gpg-sign`） | hooks 存在是有原因的 |
+
+## 十三、本项目的故事
 
 这个项目最初是创始人想给自己网站用的工具。设计源自 WordPress 维护痛苦的真实体验。
 

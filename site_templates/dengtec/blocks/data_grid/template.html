@@ -33,9 +33,7 @@
 {% set card_layout = md.get('card_layout', 'image_top') %}
 {% set section_bg = md.get('section_bg', '') %}
 {% set inner_w = md.get('inner_width', '') %}
-{% set variant = module.variant | default('grid_3') %}
-{% set variant_columns = {'grid_3': 3, 'grid_4': 4, 'cards_row': 1}.get(variant, 3) %}
-{% set columns = md.get('columns') | int or variant_columns %}
+{% set columns = md.get('columns') | int or 3 %}
 {% set show_pagination = md.get('show_pagination', 'true') == 'true' %}
 {% set display_items = filtered_items[:max_items] %}
 {% set total = display_items | length %}
@@ -84,14 +82,14 @@
       <button class="btn btn-outline-primary dg-load-more" data-block-id="{{ block_id }}"
               data-page="1" data-per-page="{{ per_page }}" data-total="{{ total }}"
               onclick="loadMoreDataGrid(this)">
-        加载更多 <span class="dg-remaining">({{ total - per_page }} 项)</span>
+        {{ t.actions.loadMore | default('加载更多') }} <span class="dg-remaining">({{ total - per_page }} {{ t.products.itemsUnit | default('项') }})</span>
       </button>
     </div>
     {% endif %}
 
     {% if show_view_all %}
     <div class="dg-pager dg-pager--center" style="margin-top: 1rem;">
-      <a href="{{ base_url }}/{{ lang }}/{{ dataset_key }}/" class="btn btn-primary">查看全部</a>
+      <a href="{{ base_url }}/{{ lang }}/{{ dataset_key }}/" class="btn btn-primary">{{ t.actions.viewAll | default('查看全部') }}</a>
     </div>
     {% endif %}
   </div>
@@ -119,7 +117,8 @@ function loadMoreDataGrid(btn) {
   } else {
     btn.dataset.page = page + 1;
     var span = btn.querySelector('.dg-remaining');
-    if (span) span.textContent = '(' + remaining + ' 项)';
+    var unit = '{{ t.products.itemsUnit | default('项') }}';
+    if (span) span.textContent = '(' + remaining + ' ' + unit + ')';
   }
 }
 </script>

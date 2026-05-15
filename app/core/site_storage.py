@@ -4,9 +4,13 @@
 
     sites/<site_id>/
     ├── settings.yaml         站点设置
-    ├── pages/*.yaml          页面字段值
-    ├── data/*.yaml           数据集 (产品/案例/博客)
+    ├── pages/*.yaml          页面字段值 (默认语言)
+    ├── data/*.yaml           数据集 (默认语言)
     ├── translations/*.yaml   翻译缓存 (Phase 2)
+    ├── lang/<code>/          其他语言版本
+    │   ├── pages/*.yaml
+    │   ├── data/*.yaml
+    │   └── settings.yaml     语言特有设置 (如 menu 覆盖)
     └── assets/               上传的图片/文件
 """
 import shutil
@@ -22,6 +26,11 @@ def site_root(site_id):
     return base / str(site_id)
 
 
+def lang_root(site_id, lang_code):
+    """获取站点某语言版本的根目录 (lang/<code>/)."""
+    return site_root(site_id) / 'lang' / lang_code
+
+
 def init_site_folder(site_id):
     """为新站点创建初始目录结构."""
     folder = site_root(site_id)
@@ -30,9 +39,15 @@ def init_site_folder(site_id):
     return folder
 
 
-def write_yaml(site_id, relative_path, data):
-    """写 YAML 文件到 sites/<id>/<relative_path>."""
-    path = site_root(site_id) / relative_path
+def write_yaml(site_id, relative_path, data, lang=None):
+    """写 YAML 文件到 sites/<id>/<relative_path>.
+
+    如果指定了 lang (非默认语言), 写入 lang/<lang>/<relative_path>.
+    """
+    if lang:
+        path = lang_root(site_id, lang) / relative_path
+    else:
+        path = site_root(site_id) / relative_path
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         yaml.safe_dump(data, allow_unicode=True, sort_keys=False, indent=2),
@@ -40,8 +55,19 @@ def write_yaml(site_id, relative_path, data):
     )
 
 
-def read_yaml(site_id, relative_path, default=None):
-    """读 YAML 文件. 不存在返回 default."""
+def read_yaml(site_id, relative_path, default=None, lang=None):
+    """读 YAML 文件.
+
+    如果指定了 lang: 先尝试 lang/<lang>/<relative_path>, 不存在则回退到根路径.
+    不指定 lang: 只读根路径.
+    """
+    # 先尝试语言特定版本
+    if lang:
+        lang_path = lang_root(site_id, lang) / relative_path
+        if lang_path.exists():
+            return yaml.safe_load(lang_path.read_text(encoding='utf-8'))
+
+    # 回退到根路径
     path = site_root(site_id) / relative_path
     if not path.exists():
         return default
@@ -63,9 +89,27 @@ def copy_seed_data(site_id, template_name):
     return True
 
 
-def list_yaml_files(site_id, subdir):
-    """列出某子目录下的所有 YAML 文件."""
+def list_yaml_files(site_id, subdir, lang=None):
+    """列出某子目录下的所有 YAML 文件.
+
+    如果指定了 lang, 同时列出语言特定目录和根目录的文件 (去重).
+    """
+    items = []
+    seen = set()
+
+    # 语言特定文件优先
+    if lang:
+        lang_dir = lang_root(site_id, lang) / subdir
+        if lang_dir.exists():
+            for f in sorted(lang_dir.glob('*.yaml')):
+                seen.add(f.name)
+                items.append(f)
+
+    # 根目录文件 (排除已存在的)
     path = site_root(site_id) / subdir
-    if not path.exists():
-        return []
-    return sorted(path.glob('*.yaml'))
+    if path.exists():
+        for f in sorted(path.glob('*.yaml')):
+            if f.name not in seen:
+                items.append(f)
+
+    return items

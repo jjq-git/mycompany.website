@@ -16,9 +16,11 @@
 {% set card_radius_top_right = md.get('card_radius_top_right', md.get('card_radius', '')) %}
 {% set card_radius_bottom_right = md.get('card_radius_bottom_right', md.get('card_radius', '')) %}
 {% set card_radius_bottom_left = md.get('card_radius_bottom_left', md.get('card_radius', '')) %}
-{% set variant = module.variant | default('grid_3') %}
-{% set variant_columns = {'grid_3': 3, 'grid_4': 4, 'grid_6': 6}.get(variant, 3) %}
-{% set col_count = md.get('columns') | int or variant_columns %}
+{% set col_count = md.get('columns') | int or 3 %}
+{% set max_items = md.get('max_items', 0) | int %}
+{% if max_items > 0 and display_features | length > max_items %}
+  {% set display_features = display_features[:max_items] %}
+{% endif %}
 {% if display_features and display_features | length > 0 %}
 <section class="section{% if not section_bg %} section-bg{% endif %}"{% if section_bg %} style="background: {{ section_bg }};"{% endif %}>
   <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">

@@ -1,4 +1,4 @@
-{# 公司信息面板 — 设置菜单右侧编辑 #}
+{# 公司信息面板 #}
 <div class="d-flex align-items-center justify-content-between mb-3">
   <span class="fw-semibold">公司信息</span>
 </div>
@@ -9,31 +9,38 @@
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('core.company', _fragment='1') }}">
-  <div class="mb-2">
-    <label class="form-label small mb-1">公司名称</label>
-    <input class="form-control form-control-sm" name="company.name" value="{{ company.get('name', '') }}">
+<form method="post" action="{{ url_for('core.company', _fragment='1', site=site.id) }}">
+  <div class="panel-section">
+    <div class="panel-section-title">基本信息</div>
+    <div class="mb-2">
+      <label class="form-label small mb-1">公司名称</label>
+      <input class="form-control form-control-sm" name="company.name" value="{{ company.get('name', '') }}">
+    </div>
+    <div class="mb-2">
+      <label class="form-label small mb-1">简称</label>
+      <input class="form-control form-control-sm" name="company.short_name" value="{{ company.get('short_name', '') }}">
+    </div>
+    <div class="mb-0">
+      <label class="form-label small mb-1">备案号</label>
+      <input class="form-control form-control-sm" name="company.icp" value="{{ company.get('icp', '') }}" placeholder="如：苏ICP备XXXXXXXX号">
+    </div>
   </div>
-  <div class="mb-2">
-    <label class="form-label small mb-1">简称</label>
-    <input class="form-control form-control-sm" name="company.short_name" value="{{ company.get('short_name', '') }}">
+
+  <div class="panel-section">
+    <div class="panel-section-title">联系方式</div>
+    <div class="mb-2">
+      <label class="form-label small mb-1">电话</label>
+      <input class="form-control form-control-sm" name="contact.phone" value="{{ contact.get('phone', '') }}">
+    </div>
+    <div class="mb-2">
+      <label class="form-label small mb-1">邮箱</label>
+      <input class="form-control form-control-sm" name="contact.email" value="{{ contact.get('email', '') }}">
+    </div>
+    <div class="mb-0">
+      <label class="form-label small mb-1">地址</label>
+      <input class="form-control form-control-sm" name="contact.address" value="{{ contact.get('address', '') }}">
+    </div>
   </div>
-  <div class="mb-2">
-    <label class="form-label small mb-1">备案号</label>
-    <input class="form-control form-control-sm" name="company.icp" value="{{ company.get('icp', '') }}">
-  </div>
-  <hr>
-  <div class="mb-2">
-    <label class="form-label small mb-1">电话</label>
-    <input class="form-control form-control-sm" name="contact.phone" value="{{ contact.get('phone', '') }}">
-  </div>
-  <div class="mb-2">
-    <label class="form-label small mb-1">邮箱</label>
-    <input class="form-control form-control-sm" name="contact.email" value="{{ contact.get('email', '') }}">
-  </div>
-  <div class="mb-2">
-    <label class="form-label small mb-1">地址</label>
-    <input class="form-control form-control-sm" name="contact.address" value="{{ contact.get('address', '') }}">
-  </div>
+
   <button class="btn btn-primary btn-sm mt-2" type="submit">保存</button>
 </form>

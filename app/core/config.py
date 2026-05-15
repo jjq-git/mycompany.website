@@ -32,6 +32,11 @@ def load_config(override=None):
 
         # 平台
         'PLATFORM_DOMAIN': os.environ.get('PLATFORM_DOMAIN', 'mycompany.website'),
+
+        # AI 翻译 (DeepSeek / OpenAI 兼容)
+        'TRANSLATION_API_KEY': os.environ.get('TRANSLATION_API_KEY', ''),
+        'TRANSLATION_API_BASE': os.environ.get('TRANSLATION_API_BASE', 'https://api.deepseek.com/v1'),
+        'TRANSLATION_MODEL': os.environ.get('TRANSLATION_MODEL', 'deepseek-chat'),
     }
 
     if override:

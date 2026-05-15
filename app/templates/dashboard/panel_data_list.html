@@ -1,7 +1,18 @@
 {# 数据集列表面板 — 通用 CRUD + 模块选择器编辑 + 详情预览 #}
 {% set is_edit = edit_item_id is defined %}
 
-<div class="d-flex align-items-center justify-content-between mb-3">
+{% if languages and languages|length > 1 %}
+{# 语言切换标签 — 切换当前编辑的语言版本 #}
+<div class="d-flex align-items-center gap-1 mb-2">
+  <span class="text-muted" style="font-size:11px;">编辑语言:</span>
+  {% for l in languages %}
+  <button onclick="switchPanelLang('/_dataset/{{ dataset_key }}{% if is_edit %}/{{ edit_item_id }}/edit{% endif %}?_fragment=1&site={{ site.id }}&lang={{ l.code }}', '{{ l.code }}')"
+     class="badge border-0 lang-tab {% if current_lang == l.code %}bg-primary text-white{% else %}bg-light text-dark border{% endif %}"
+     style="font-size:12px;padding:6px 12px;cursor:pointer;">{{ l.name }}</button>
+  {% endfor %}
+</div>
+{% endif %}
+<div class="d-flex align-items-center justify-content-between mb-2">
   <span class="fw-semibold">{{ dataset_key | title }}{% if is_edit %} · 编辑 #{{ edit_item_id }}{% endif %}</span>
   <div class="d-flex gap-1">
     <button class="btn btn-outline-secondary btn-sm" onclick="backToPageEditor()">← 返回</button>
@@ -13,6 +24,19 @@
     {% endif %}
   </div>
 </div>
+{% if translation_enabled and is_edit and languages and languages|length > 1 %}
+{# AI 翻译栏 — 独立一行，与语言标签区分 #}
+<div class="d-flex align-items-center gap-1 mb-3 p-2 rounded" style="background:#f0f7ff;font-size:12px;">
+  <span class="text-muted">🌐 AI 翻译：当前内容 →</span>
+  <select class="form-select form-select-sm" id="translateTargetLang" style="width:auto;font-size:11px;">
+    {% for l in languages if l.code != current_lang %}
+    <option value="{{ l.code }}">{{ l.name }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-sm btn-outline-info" id="aiTranslateBtn" style="font-size:11px;">开始翻译</button>
+  <span class="text-muted" style="font-size:10px;">翻译后请手动检查并保存</span>
+</div>
+{% endif %}
 
 {% with messages = get_flashed_messages() %}
   {% for m in messages %}
@@ -23,36 +47,52 @@
 {% if is_edit and edit_item and blocks is defined %}
 {# ========== 编辑模式：模块选择器 ========== #}
 
-{# ---- 可用模块库 ---- #}
+{# ---- 添加模块按钮 ---- #}
 <div class="mb-3">
-  <div class="small text-muted mb-2">可用模块（点击添加）</div>
-  <div class="row g-2">
-    <div class="col-6">
-      <div class="card p-2 cursor-pointer block-card-item_data" style="cursor:pointer; border-color: var(--color-primary, #067a7a);"
-           data-block-name="item_data" data-block-variant="default">
-        <div class="d-flex align-items-center gap-2">
-          <span class="fw-semibold small text-primary">📋 详情数据</span>
+  <button class="btn btn-outline-primary btn-sm w-100" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteDsModal">
+    + 添加模块
+  </button>
+</div>
+
+{# ---- 可用模块弹框 ---- #}
+<div class="modal fade" id="blockPaletteDsModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">可用模块</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2">
+          <div class="col-6">
+            <div class="card p-2 cursor-pointer block-card-item_data" style="cursor:pointer; border-color: var(--color-primary, #067a7a);"
+                 data-block-name="item_data" data-block-variant="default">
+              <div class="d-flex align-items-center gap-2">
+                <span class="fw-semibold small text-primary">📋 详情数据</span>
+              </div>
+              <div class="text-muted" style="font-size:10px">编辑当前条目的所有字段（内容、样式）</div>
+            </div>
+          </div>
+          {% for blk in blocks %}
+          <div class="col-6">
+            <div class="card p-2 cursor-pointer block-card-generic" style="cursor:pointer"
+                 data-block-name="{{ blk.name }}"
+                 data-block-variant="{{ blk.variants[0].key if blk.variants else 'default' }}">
+              <div class="d-flex align-items-center gap-2">
+                <span class="fw-semibold small">{{ blk.display_name }}</span>
+              </div>
+              <div class="text-muted" style="font-size:10px">{{ blk.description }}</div>
+            </div>
+          </div>
+          {% endfor %}
         </div>
-        <div class="text-muted" style="font-size:10px">编辑当前条目的所有字段（内容、样式）</div>
       </div>
     </div>
-    {% for blk in blocks %}
-    <div class="col-6">
-      <div class="card p-2 cursor-pointer block-card-generic" style="cursor:pointer"
-           data-block-name="{{ blk.name }}"
-           data-block-variant="{{ blk.variants[0].key if blk.variants else 'default' }}">
-        <div class="d-flex align-items-center gap-2">
-          <span class="fw-semibold small">{{ blk.display_name }}</span>
-        </div>
-        <div class="text-muted" style="font-size:10px">{{ blk.description }}</div>
-      </div>
-    </div>
-    {% endfor %}
   </div>
 </div>
 
 {# ---- 已选模块列表 ---- #}
-<form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1" id="datasetEditForm" data-page-key="{{ dataset_key }}" enctype="multipart/form-data">
+<form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" data-page-key="{{ dataset_key }}" enctype="multipart/form-data">
   <div>
     <div class="small text-muted mb-2">已选模块（拖拽排序 | 点击展开配置）</div>
     <div id="selectedModulesDs">
@@ -158,14 +198,6 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     return html + '</div>';
   }
 
-  function renderVariantSelect(idx, meta, selected) {
-    var variants = meta.variants || [];
-    var html = '<div class="mb-2"><label class="form-label small mb-1 text-muted">模块样式</label><select class="form-select form-select-sm" name="module_' + idx + '_variant">';
-    if (!variants.length) html += '<option value="default">默认</option>';
-    else { variants.forEach(function(v) { var key = v.key || 'default', label = v.label || key; html += '<option value="' + escapeHtml(key) + '"' + ((selected || variants[0].key || 'default') === key ? ' selected' : '') + '>' + escapeHtml(label) + '</option>'; }); }
-    return html + '</select></div>';
-  }
-
   var cP = function(name, ph, dv) { return '<label class="form-label small mb-1 text-muted">' + ph + '</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="' + (dv || '#888888') + '" oninput="this.parentElement.querySelector(\'input[type=text]\').value=this.value"><input type="text" class="form-control form-control-sm" name="' + name + '" value="' + (dv || '') + '" placeholder="' + ph + '" oninput="this.parentElement.querySelector(\'input[type=color]\').value=this.value"></div>'; };
   var uP = function(name, ph, units, dv) { var o = units.map(function(u){return '<option value="'+u+'">'+u+'</option>';}).join(''); return '<label class="form-label small mb-1 text-muted">' + ph + '</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="' + name + '" value="' + (dv || '') + '" placeholder="' + ph + '" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name="' + name + '"]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option>' + o + '</select></div>'; };
 
@@ -182,9 +214,10 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var desktopFields = fields.map(function(f) { return renderDynamicField('module_' + idx + '_data_', f, mdata[f.key] || f.default || '', ''); }).join('');
     var tabletFields = fields.map(function(f) { return renderDynamicField('module_' + idx + '_resp_tablet_data_', f, '', '继承电脑端'); }).join('');
     var mobileFields = fields.map(function(f) { return renderDynamicField('module_' + idx + '_resp_mobile_data_', f, '', '继承电脑端'); }).join('');
-    var variantHtml = renderVariantSelect(idx, meta, variant);
 
     var isDataModule = type === 'item_data';
+    // 只有数据类模块才需要每行列数和显示数量控件
+    var needsResp = (type === 'data_grid' || type === 'product_grid' || type === 'feature_grid');
     var borderStyle = isDataModule ? 'border-color: var(--color-primary, #067a7a);' : '';
     var headerBg = isDataModule ? 'background:rgba(6,122,122,0.05);' : '';
     var titleColor = isDataModule ? 'text-primary' : '';
@@ -359,8 +392,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
       '<button type="button" class="btn btn-sm btn-outline-danger" style="font-size:10px" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();reindexModulesDs();">✕</button></div>' +
       '<div class="module-config p-2" style="display:block;">' +
       '<input type="hidden" name="module_' + idx + '_type" value="' + escapeHtml(type) + '">' +
-      '<input type="hidden" name="module_' + idx + '_order" value="' + (idx + 1) + '">' +
-      variantHtml;
+      '<input type="hidden" name="module_' + idx + '_order" value="' + (idx + 1) + '">';
 
     if (!isDataModule) {
       html += '<div class="d-flex gap-1 mb-2">' +
@@ -370,18 +402,18 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         '<div class="device-config device-desktop">' +
           '<div class="small fw-semibold mb-1 text-primary">电脑端配置</div>' +
           (specialEditor || desktopFields) +
-          '<hr class="my-2"><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_columns" placeholder="默认" min="1" max="6"></div><div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_max_items" placeholder="0=全部"></div></div>' +
+          (needsResp ? '<hr class="my-2"><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_columns" placeholder="默认" min="1" max="6"></div><div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_max_items" placeholder="0=全部"></div></div>' : '') +
         '</div>' +
         '<div class="device-config device-tablet" style="display:none">' +
           '<div class="small fw-semibold mb-1 text-primary">平板端配置（继承电脑端）</div>' +
           tabletFields +
-          '<hr class="my-2"><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_columns" placeholder="继承电脑端" min="1" max="6"></div><div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_max_items" placeholder="继承电脑端"></div></div>' +
+          (needsResp ? '<hr class="my-2"><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_columns" placeholder="继承电脑端" min="1" max="6"></div><div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_max_items" placeholder="继承电脑端"></div></div>' : '') +
           '<div class="mb-2 mt-2"><label class="form-check-label small"><input type="checkbox" class="form-check-input" name="module_' + idx + '_resp_tablet_hidden" value="1"> 平板端隐藏此模块</label></div>' +
         '</div>' +
         '<div class="device-config device-mobile" style="display:none">' +
           '<div class="small fw-semibold mb-1 text-primary">手机端配置（继承电脑端）</div>' +
           mobileFields +
-          '<hr class="my-2"><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_columns" placeholder="继承电脑端" min="1" max="6"></div><div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_max_items" placeholder="继承电脑端"></div></div>' +
+          (needsResp ? '<hr class="my-2"><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_columns" placeholder="继承电脑端" min="1" max="6"></div><div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_max_items" placeholder="继承电脑端"></div></div>' : '') +
           '<div class="mb-2 mt-2"><label class="form-check-label small"><input type="checkbox" class="form-check-input" name="module_' + idx + '_resp_mobile_hidden" value="1"> 手机端隐藏此模块</label></div>' +
         '</div>';
     }
@@ -450,6 +482,11 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     if (target) target.style.display = '';
   };
 
+  function closeDsBlockPalette() {
+    var modalEl = document.getElementById('blockPaletteDsModal');
+    if (modalEl) { var modal = bootstrap.Modal.getInstance(modalEl); if (modal) modal.hide(); }
+  }
+
   window.reindexModulesDs = function() {
     var items = document.querySelectorAll('#selectedModulesDs .module-item');
     items.forEach(function(item, i) {
@@ -470,10 +507,10 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 
   // ---- 事件绑定 ----
   document.querySelectorAll('.block-card-item_data').forEach(function(card) {
-    card.addEventListener('click', function() { window.addModuleDs(card.dataset.blockName, card.dataset.blockVariant); });
+    card.addEventListener('click', function() { window.addModuleDs(card.dataset.blockName, card.dataset.blockVariant); closeDsBlockPalette(); });
   });
   document.querySelectorAll('.block-card-generic').forEach(function(card) {
-    card.addEventListener('click', function() { window.addModuleDs(card.dataset.blockName, card.dataset.blockVariant); });
+    card.addEventListener('click', function() { window.addModuleDs(card.dataset.blockName, card.dataset.blockVariant); closeDsBlockPalette(); });
   });
 
   // 拖拽排序
@@ -528,7 +565,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   if (EDIT_SLUG) {
     var frame = document.getElementById('previewFrame');
     if (frame) {
-      frame.dataset.previewUrl = '/preview/' + SITE_ID + '/zh-CN/' + DATASET_KEY + '/' + EDIT_SLUG + '/';
+      frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/' + DATASET_KEY + '/' + EDIT_SLUG + '/';
       try { refreshPreview(); } catch(e) {}
     }
   }
@@ -537,7 +574,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 
 {% elif is_edit and edit_item %}
 {# ========== 编辑模式：简单表单（无 blocks） ========== #}
-<form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1" id="datasetEditForm" enctype="multipart/form-data">
+<form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" enctype="multipart/form-data">
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label>
     <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="如 my-post">
@@ -600,23 +637,212 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 (function() {
   var DATASET_KEY = '{{ dataset_key }}';
   var SITE_ID = '{{ site.id }}';
-  function getSiteQuery() {
-    var siteParam = new URLSearchParams(window.location.search).get('site') || SITE_ID;
-    return siteParam ? '&site=' + encodeURIComponent(siteParam) : '';
+  var CURRENT_LANG = '{{ current_lang }}';
+  function getQuery() {
+    var params = new URLSearchParams(window.location.search);
+    var siteParam = params.get('site') || SITE_ID;
+    var qs = '&site=' + encodeURIComponent(siteParam);
+    if (CURRENT_LANG) qs += '&lang=' + encodeURIComponent(CURRENT_LANG);
+    return qs;
   }
-  window.backToPageEditor = function() { loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()); };
-  window.loadDatasetList = function() { loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()); };
-  window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getSiteQuery()); };
+  function getFetchQuery() {
+    var qs = '?site=' + encodeURIComponent(SITE_ID);
+    if (CURRENT_LANG) qs += '&lang=' + encodeURIComponent(CURRENT_LANG);
+    return qs;
+  }
+  window.backToPageEditor = function() { loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getQuery()); };
+  window.loadDatasetList = function() { loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getQuery()); };
+  window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getQuery()); };
   window.addDataItem = function() {
-    fetch('/_dataset/' + DATASET_KEY + '/new?site=' + SITE_ID, {method: 'POST'})
-      .then(function() { loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()); })
+    fetch('/_dataset/' + DATASET_KEY + '/new' + getFetchQuery(), {method: 'POST'})
+      .then(function() { loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getQuery()); })
       .catch(function() { location.reload(); });
   };
   window.deleteDataItem = function(id) {
     if (!confirm('确认删除？')) return;
-    fetch('/_dataset/' + DATASET_KEY + '/' + id + '/delete?site=' + SITE_ID, {method: 'POST'})
-      .then(function() { loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()); })
+    fetch('/_dataset/' + DATASET_KEY + '/' + id + '/delete' + getFetchQuery(), {method: 'POST'})
+      .then(function() { loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getQuery()); })
       .catch(function() { location.reload(); });
   };
 })();
 </script>
+
+{% if translation_enabled and is_edit %}
+<script>
+(function(){
+  var STORAGE_KEY = 'pending_translation_{{ dataset_key }}';
+  var CURRENT_LANG = '{{ current_lang }}';
+
+  // 页面加载时检查是否有待恢复的译文
+  (function restorePending() {
+    var raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    var pending = JSON.parse(raw);
+    if (pending.targetLang !== CURRENT_LANG) return;
+    sessionStorage.removeItem(STORAGE_KEY);
+    var translations = pending.translations;
+    var selector = [
+      'input[type="text"]:not([readonly]):not([name*="color"]):not([name*="url"]):not([name*="image"])',
+      'textarea:not([readonly])',
+      '[contenteditable="true"]'
+    ].join(', ');
+    document.querySelectorAll(selector).forEach(function(el){
+      var key = el.name || el.id;
+      if (translations[key] !== undefined && translations[key] !== null) {
+        if (el.contentEditable === 'true') {
+          el.textContent = translations[key];
+        } else {
+          el.value = translations[key];
+        }
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+  })();
+
+  // 翻译按钮
+  var btn = document.getElementById('aiTranslateBtn');
+  if (!btn) return;
+
+  btn.addEventListener('click', function(){
+    var targetLang = document.getElementById('translateTargetLang').value;
+    var langLabels = {};
+    {{ languages | tojson }}.forEach(function(l){ langLabels[l.code] = l.name; });
+
+    showTranslateConfirm(
+      'AI 翻译',
+      '<p>将当前 <strong>' + CURRENT_LANG + '</strong> 内容翻译为 <strong>' + langLabels[targetLang] + '</strong>？</p><p class="text-muted small mb-0">翻译完成后请切换到目标语言标签页手动保存。</p>',
+      function() { doTranslate(targetLang, langLabels); }
+    );
+  });
+
+  function doTranslate(targetLang, langLabels) {
+    var texts = {};
+    var inputKeys = [];
+    var selector = [
+      'input[type="text"]:not([readonly]):not([name*="color"]):not([name*="url"]):not([name*="image"])',
+      'textarea:not([readonly])',
+      '[contenteditable="true"]'
+    ].join(', ');
+
+    document.querySelectorAll(selector).forEach(function(el){
+      var val = (el.value || el.textContent || '').trim();
+      if (!val) return;
+      if (/^[#\d]/.test(val) && val.length < 10) return;
+      if (/^https?:\/\//.test(val)) return;
+      var key = el.name || el.id || ('field_' + inputKeys.length);
+      texts[key] = val;
+      inputKeys.push(key);
+    });
+
+    if (Object.keys(texts).length === 0) {
+      showTranslateMsg('AI 翻译', '未找到可翻译的文本字段');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '翻译中...';
+
+    fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texts: texts, source_lang: CURRENT_LANG, target_lang: targetLang })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.error) { showTranslateMsg('翻译失败', data.error); return; }
+      if (!data.translated) { showTranslateMsg('翻译失败', '翻译结果为空'); return; }
+
+      var t = data.translated;
+      var translatedMap = {};
+      Object.keys(texts).forEach(function(key, i){
+        if (t[key] !== undefined && t[key] !== null) {
+          translatedMap[inputKeys[i]] = t[key];
+        }
+      });
+
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        targetLang: targetLang,
+        translations: translatedMap
+      }));
+
+      // 同时填入当前表单（方便预览）
+      Object.keys(translatedMap).forEach(function(key){
+        var el = document.querySelector('[name="' + key + '"], #' + key);
+        if (el) {
+          if (el.contentEditable === 'true') {
+            el.textContent = translatedMap[key];
+          } else {
+            el.value = translatedMap[key];
+          }
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+
+      showTranslateMsg('翻译完成',
+        '<p>译文已翻译，即将切换到 <strong>' + langLabels[targetLang] + '</strong> 编辑。</p>');
+      // 自动切换到目标语言标签页
+      var modalEl2 = document.getElementById('translateModal');
+      var bsModal = bootstrap.Modal.getInstance(modalEl2);
+      if (bsModal) {
+        bsModal.hide();
+        modalEl2.addEventListener('hidden.bs.modal', function h(){
+          modalEl2.removeEventListener('hidden.bs.modal', h);
+          switchPanelLang('/_dataset/{{ dataset_key }}{% if is_edit %}/{{ edit_item_id }}/edit{% endif %}?_fragment=1&site={{ site.id }}&lang=' + targetLang, targetLang);
+        });
+      } else {
+        switchPanelLang('/_dataset/{{ dataset_key }}{% if is_edit %}/{{ edit_item_id }}/edit{% endif %}?_fragment=1&site={{ site.id }}&lang=' + targetLang, targetLang);
+      }
+    })
+    .catch(function(err){
+      showTranslateMsg('翻译失败', err.message || '网络错误');
+    })
+    .finally(function(){
+      btn.disabled = false;
+      btn.textContent = '开始翻译';
+    });
+  }
+
+  // Bootstrap 弹框辅助
+  function showTranslateConfirm(title, body, onConfirm) {
+    var modalEl = document.getElementById('translateModal');
+    if (!modalEl) { onConfirm(); return; }
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    document.getElementById('translateModalTitle').textContent = title;
+    document.getElementById('translateModalBody').innerHTML = body;
+    document.getElementById('translateModalConfirm').style.display = '';
+    document.getElementById('translateModalCancel').style.display = '';
+    document.getElementById('translateModalConfirm').onclick = function() { modal.hide(); onConfirm(); };
+    modal.show();
+  }
+
+  function showTranslateMsg(title, body) {
+    var modalEl = document.getElementById('translateModal');
+    if (!modalEl) { alert(body.replace(/<[^>]*>/g, '')); return; }
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    document.getElementById('translateModalTitle').textContent = title;
+    document.getElementById('translateModalBody').innerHTML = '<p>' + body + '</p>';
+    document.getElementById('translateModalConfirm').style.display = '';
+    document.getElementById('translateModalCancel').style.display = 'none';
+    document.getElementById('translateModalConfirm').onclick = function() { modal.hide(); };
+    modal.show();
+  }
+})();
+</script>
+
+{# Bootstrap 翻译提示弹框 #}
+<div class="modal fade" id="translateModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="translateModalTitle">AI 翻译</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="translateModalBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" id="translateModalCancel" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary btn-sm" id="translateModalConfirm">确认</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}

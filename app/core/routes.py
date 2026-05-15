@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from flask import (Blueprint, abort, current_app, flash, redirect, render_template,
-                   send_from_directory, session, url_for)
+                   request, send_from_directory, session, url_for)
 from werkzeug.utils import secure_filename
 
 import re
@@ -18,6 +18,7 @@ import yaml as _yaml
 
 from . import datasets
 from . import menu as menu_lib
+from .translator import is_configured as translation_configured, translate_json
 from .builder import build_site, build_template_preview
 from .db import db
 from .models import LoginToken, Site, Template, User
@@ -384,8 +385,8 @@ def company():
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
         if is_fragment:
-            return redirect(url_for('core.company', _fragment='1'))
-        return redirect(url_for('core.company'))
+            return redirect(url_for('core.company', _fragment='1', site=site.id))
+        return redirect(url_for('core.company', site=site.id))
 
     if is_fragment:
         return render_template('dashboard/panel_company.html',
@@ -421,7 +422,7 @@ def product_new():
         'name': '新产品', 'slug': f'product-{n}',
         'summary': '', 'description': '', 'cover': '', 'category': '', 'specs': {},
     })
-    return redirect(url_for('core.product_edit', product_id=new_id))
+    return redirect(url_for('core.product_edit', product_id=new_id, site=site.id))
 
 
 @bp.route('/products/<int:product_id>/delete', methods=['POST'])
@@ -430,7 +431,7 @@ def product_delete(product_id):
     _, site = _current_context()
     datasets.remove(site.id, 'products', product_id)
     flash('已删除')
-    return redirect(url_for('core.products'))
+    return redirect(url_for('core.products', site=site.id))
 
 
 @bp.route('/products/<int:product_id>/edit', methods=['GET', 'POST'])
@@ -455,7 +456,7 @@ def product_edit(product_id):
         fields['specs'] = specs
         datasets.update(site.id, 'products', product_id, fields)
         flash('已保存')
-        return redirect(url_for('core.product_edit', product_id=product_id))
+        return redirect(url_for('core.product_edit', product_id=product_id, site=site.id))
 
     return render_template('dashboard/product_edit.html',
                            user=user, site=site, product=product, active='products')
@@ -482,7 +483,7 @@ def feature_new():
     _, site = _current_context()
     new_id = datasets.add(site.id, 'features',
                           {'icon': '', 'title': '新功能', 'desc': ''})
-    return redirect(url_for('core.feature_edit', item_id=new_id))
+    return redirect(url_for('core.feature_edit', item_id=new_id, site=site.id))
 
 
 @bp.route('/features/<int:item_id>/delete', methods=['POST'])
@@ -491,7 +492,7 @@ def feature_delete(item_id):
     _, site = _current_context()
     datasets.remove(site.id, 'features', item_id)
     flash('已删除')
-    return redirect(url_for('core.features'))
+    return redirect(url_for('core.features', site=site.id))
 
 
 @bp.route('/features/<int:item_id>/edit', methods=['GET', 'POST'])
@@ -505,7 +506,7 @@ def feature_edit(item_id):
         fields = {f: request.form.get(f, '').strip() for f in ('icon', 'title', 'desc')}
         datasets.update(site.id, 'features', item_id, fields)
         flash('已保存')
-        return redirect(url_for('core.feature_edit', item_id=item_id))
+        return redirect(url_for('core.feature_edit', item_id=item_id, site=site.id))
     return render_template('dashboard/feature_edit.html',
                            user=user, site=site, item=item, active='features')
 
@@ -535,7 +536,7 @@ def post_new():
         'slug': f'post-{n}', 'title': '新文章', 'date': str(_date.today()),
         'cover': '', 'excerpt': '', 'body': '',
     })
-    return redirect(url_for('core.post_edit', item_id=new_id))
+    return redirect(url_for('core.post_edit', item_id=new_id, site=site.id))
 
 
 @bp.route('/blog/<int:item_id>/delete', methods=['POST'])
@@ -544,7 +545,7 @@ def post_delete(item_id):
     _, site = _current_context()
     datasets.remove(site.id, 'posts', item_id)
     flash('已删除')
-    return redirect(url_for('core.blog'))
+    return redirect(url_for('core.blog', site=site.id))
 
 
 @bp.route('/blog/<int:item_id>/edit', methods=['GET', 'POST'])
@@ -560,7 +561,7 @@ def post_edit(item_id):
         fields['cover'] = _uploaded_image_or_form(site.id, 'cover', 'cover_file', 'post-cover')
         datasets.update(site.id, 'posts', item_id, fields)
         flash('已保存')
-        return redirect(url_for('core.post_edit', item_id=item_id))
+        return redirect(url_for('core.post_edit', item_id=item_id, site=site.id))
     return render_template('dashboard/post_edit.html',
                            user=user, site=site, item=item, active='blog')
 
@@ -577,7 +578,8 @@ def page_home():
     if request.method == 'POST':
         if is_modules_format or request.form.get('_format') == 'modules':
             # modules 数组格式保存
-            page['modules'] = _parse_modules_form(request.form)
+            existing_modules = page.get('modules', [])
+            page['modules'] = _parse_modules_form(request.form, existing_modules)
             page.pop('hero', None)
             for k in ('featured_section', 'features_section', 'about_brief', 'blog_section', 'subscribe_section'):
                 page.pop(k, None)
@@ -602,10 +604,11 @@ def page_home():
         write_yaml(site.id, 'pages/home.yaml', page)
         flash('已保存')
         if request.args.get('_fragment'):
-            return redirect(url_for('core.page_home', _fragment='1'))
-        return redirect(url_for('core.page_home'))
+            return redirect(url_for('core.page_home', _fragment='1', site=site.id))
+        return redirect(url_for('core.page_home', site=site.id))
 
     # 准备渲染上下文
+    lang, languages, default_lang = _get_panel_lang(site)
     blocks = _get_available_blocks(site.template_name)
     if is_modules_format:
         page.setdefault('modules', [])
@@ -619,7 +622,10 @@ def page_home():
                            page_key='home',
                            is_modules_format=is_modules_format,
                            blocks=blocks,
-                           active='pages_home')
+                           active='pages_home',
+                           current_lang=lang,
+                           languages=languages,
+                           default_lang=default_lang)
 
 
 @bp.route('/pages')
@@ -732,11 +738,16 @@ def header_edit():
             'enabled': bool(request.form.get('lang_switcher_enabled')),
             'style': request.form.get('lang_switcher_style', 'vertical_dropdown'),
         }
+        # 社交链接（整合到头部面板）
+        social = settings.setdefault('social', {})
+        social['enabled'] = bool(request.form.get('social_enabled'))
+        for platform in ('github', 'twitter', 'facebook', 'linkedin', 'youtube'):
+            social[platform] = request.form.get(f'social_{platform}', '').strip()
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
         if is_fragment:
-            return redirect(url_for('core.header_edit', _fragment='1'))
-        return redirect(url_for('core.header_edit'))
+            return redirect(url_for('core.header_edit', _fragment='1', site=site.id))
+        return redirect(url_for('core.header_edit', site=site.id))
 
     current_header = settings.get('header') or {}
     if is_fragment:
@@ -744,7 +755,8 @@ def header_edit():
                                user=user, site=site,
                                header_variants=header_variants,
                                lang_switcher_styles=lang_switcher_styles,
-                               current_header=current_header)
+                               current_header=current_header,
+                               settings=settings)
     return render_template('dashboard/header_edit.html',
                            user=user, site=site,
                            header_variants=header_variants,
@@ -774,6 +786,7 @@ def footer_variant_edit():
     if request.method == 'POST':
         footer = settings.setdefault('footer', {})
         footer['variant'] = request.form.get('footer_variant', 'columns')
+        footer['copyright'] = request.form.get('copyright', '').strip()
         footer['icp'] = request.form.get('icp', '').strip()
 
         # 解析底部栏目
@@ -813,6 +826,7 @@ def footer_variant_edit():
         return redirect(url_for('core.footer_variant_edit', site=site.id))
 
     current_footer = settings.get('footer') or {}
+
     if is_fragment:
         return render_template('dashboard/panel_footer_variant.html',
                                user=user, site=site,
@@ -831,6 +845,10 @@ def menu_edit():
     user, site = _current_context()
     settings = read_yaml(site.id, 'settings.yaml') or {}
     is_fragment = request.args.get('_fragment') is not None
+
+    # 语言特定菜单: 默认语言用 menu 键，其他用 menu_<lang>
+    lang, languages, default_lang = _get_panel_lang(site)
+    menu_key = 'menu' if lang == default_lang else f'menu_{lang}'
 
     if request.method == 'POST':
         menu_json = request.form.get('menu_json', '').strip()
@@ -875,46 +893,54 @@ def menu_edit():
                         raw['children'] = children
                 raw_items.append(raw)
             items = menu_lib.clean_for_storage(raw_items)
-        settings['menu'] = items
+        settings[menu_key] = items
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存，首页已保持为固定入口')
         if is_fragment:
-            return redirect(url_for('core.menu_edit', _fragment='1'))
-        return redirect(url_for('core.menu_edit'))
+            return redirect(url_for('core.menu_edit', _fragment='1', site=site.id, lang=lang))
+        return redirect(url_for('core.menu_edit', site=site.id, lang=lang))
 
     # GET: 升级旧格式
     meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
     meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
-    raw_menu = settings.get('menu') or meta.get('default_menu', [])
+    # 语言特定菜单优先，回退到默认菜单
+    raw_menu = settings.get(menu_key) or settings.get('menu') or meta.get('default_menu', [])
     items = menu_lib.ensure_home(
         menu_lib.upgrade_old_format(raw_menu, meta.get('datasets', []))
     )
 
     if is_fragment:
         return render_template('dashboard/panel_menu.html',
-                               user=user, site=site, items=items)
+                               user=user, site=site, items=items,
+                               current_lang=lang, languages=languages, default_lang=default_lang)
     return render_template('dashboard/menu.html',
-                           user=user, site=site, items=items, active='menu')
+                           user=user, site=site, items=items, active='menu',
+                           current_lang=lang, languages=languages, default_lang=default_lang)
 
 
 @bp.route('/settings/footer', methods=['GET', 'POST'])
 def footer_edit():
+    """旧页脚链接页面 —— 已迁移至 footer_variant_edit，自动转换旧数据格式"""
     from flask import flash, redirect, request, url_for
     user, site = _current_context()
-    is_fragment = request.args.get('_fragment') is not None
-    if request.method == 'POST':
-        _save_link_list(site.id, 'footer_links')
-        flash('已保存')
-        if is_fragment:
-            return redirect(url_for('core.footer_edit', _fragment='1'))
-        return redirect(url_for('core.footer_edit'))
     settings = read_yaml(site.id, 'settings.yaml') or {}
-    items = settings.get('footer_links') or []
-    if is_fragment:
-        return render_template('dashboard/panel_footer.html',
-                               user=user, site=site, items=items)
-    return render_template('dashboard/footer_links.html',
-                           user=user, site=site, items=items, active='footer')
+
+    # 迁移旧的 footer_links 数据到新 footer.columns 格式
+    old_links = settings.pop('footer_links', None)
+    if old_links:
+        footer = settings.setdefault('footer', {})
+        existing_cols = footer.get('columns', [])
+        if not existing_cols:
+            footer['variant'] = 'columns'
+            footer['columns'] = [{
+                'type': 'menu',
+                'title': '快速链接',
+                'links': old_links
+            }]
+            write_yaml(site.id, 'settings.yaml', settings)
+            flash('页脚链接数据已自动迁移到新版格式')
+
+    return redirect(url_for('core.footer_variant_edit', site=site.id))
 
 
 @bp.route('/settings/social', methods=['GET', 'POST'])
@@ -930,8 +956,8 @@ def social_edit():
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
         if is_fragment:
-            return redirect(url_for('core.social_edit', _fragment='1'))
-        return redirect(url_for('core.social_edit'))
+            return redirect(url_for('core.social_edit', _fragment='1', site=site.id))
+        return redirect(url_for('core.social_edit', site=site.id))
     social = settings.get('social') or {}
     if is_fragment:
         return render_template('dashboard/panel_social.html',
@@ -961,8 +987,8 @@ def theme_edit():
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
         if is_fragment:
-            return redirect(url_for('core.theme_edit', _fragment='1'))
-        return redirect(url_for('core.theme_edit'))
+            return redirect(url_for('core.theme_edit', _fragment='1', site=site.id))
+        return redirect(url_for('core.theme_edit', site=site.id))
 
     theme = settings.get('theme') or {}
     if is_fragment:
@@ -1191,17 +1217,18 @@ def preview(site_id, filepath='index.html'):
         if lang_index.exists():
             return send_from_directory(out, f'{lang_code}/index.html')
 
-    if not (out / filepath).exists():
+    # 先解析出最终目标文件，再判断是否需要重建
+    full = out / filepath
+    if full.is_dir():
+        full = full / 'index.html'
+        filepath = f'{filepath.rstrip("/")}/index.html'
+    if not full.exists():
         try:
             build_site(site_id, base_url=f'/preview/{site_id}')
         except Exception:
             pass
     if not out.exists():
         out.mkdir(parents=True, exist_ok=True)
-    full = out / filepath
-    if full.is_dir():
-        full = full / 'index.html'
-        filepath = f'{filepath.rstrip("/")}/index.html'
     if not full.exists():
         # 尝试默认语言子目录
         for sub in out.iterdir():
@@ -1209,6 +1236,24 @@ def preview(site_id, filepath='index.html'):
                 return send_from_directory(out, f'{sub.name}/index.html')
         abort(404, '未生成页面，请检查模板数据')
     return send_from_directory(out, filepath)
+
+
+def _get_panel_lang(site):
+    """从请求参数获取面板当前编辑语言, 默认返回模板的默认语言."""
+    from flask import request
+    meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    languages = []
+    default_lang = 'zh-CN'
+    if meta_path.exists():
+        meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) or {}
+        languages = meta.get('languages', [])
+        default_lang = meta.get('default_language', languages[0]['code'] if languages else 'zh-CN')
+
+    lang = request.args.get('lang', '').strip()
+    valid_codes = {l['code'] for l in languages}
+    if lang and lang in valid_codes:
+        return lang, languages, default_lang
+    return default_lang, languages, default_lang
 
 
 def _render(template_name, **kwargs):
@@ -1219,34 +1264,67 @@ def _render(template_name, **kwargs):
     return render_template(template_name, **kwargs)
 
 
+@bp.route('/api/translate', methods=['POST'])
+def api_translate():
+    """AI 翻译端点 — 接受 JSON 文本字典，返回翻译后的字典."""
+    data = request.get_json(silent=True) or {}
+    texts = data.get('texts', {})
+    source_lang = data.get('source_lang', 'zh-CN')
+    target_lang = data.get('target_lang', 'en')
+
+    if not texts or not isinstance(texts, dict):
+        return {'error': '请提供 texts 字典'}, 400
+    if len(texts) > 50:
+        return {'error': '单次最多翻译 50 个字段'}, 400
+
+    try:
+        translated = translate_json(texts, source_lang, target_lang)
+        return {'ok': True, 'translated': translated}
+    except ValueError as e:
+        return {'error': str(e)}, 400
+    except RuntimeError as e:
+        return {'error': str(e)}, 502
+    except Exception as e:
+        current_app.logger.error('翻译失败: %s', e)
+        return {'error': '翻译失败，请稍后重试'}, 500
+
+
 @bp.route('/_dataset/<path:dataset_key>')
 def dataset_panel(dataset_key):
-    """通用数据集管理面板"""
+    """通用数据集管理面板 — 支持 ?lang= 参数编辑不同语言版本."""
     user, site = _current_context()
-    items = datasets.load(site.id, dataset_key)
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    items = datasets.load(site.id, dataset_key, lang=storage_lang)
     return _render('dashboard/panel_data_list.html',
                    user=user, site=site,
                    dataset_key=dataset_key, items=items,
                    edit_prefix=f'_dataset/{dataset_key}',
+                   current_lang=lang, languages=languages, default_lang=default_lang,
                    active=dataset_key)
 
 @bp.route('/_dataset/<path:dataset_key>/new', methods=['POST'])
 def dataset_new(dataset_key):
-    """通用数据集新建条目"""
+    """通用数据集新建条目 — 支持 ?lang= 参数保存到对应语言."""
     from flask import redirect, url_for
     _, site = _current_context()
-    n = len(datasets.load(site.id, dataset_key)) + 1
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    n = len(datasets.load(site.id, dataset_key, lang=storage_lang)) + 1
     new_id = datasets.add(site.id, dataset_key, {
         'title': f'新条目 {n}', 'slug': f'item-{n}',
-    })
-    return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id))
+    }, lang=storage_lang)
+    return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
 
 @bp.route('/_dataset/<path:dataset_key>/<int:item_id>/edit', methods=['GET', 'POST'])
 def dataset_edit(dataset_key, item_id):
-    """通用数据集编辑"""
+    """通用数据集编辑 — 支持 ?lang= 参数编辑不同语言版本."""
     from flask import flash, redirect, request, url_for
     user, site = _current_context()
-    item = datasets.find(site.id, dataset_key, item_id)
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+
+    item = datasets.find(site.id, dataset_key, item_id, lang=storage_lang)
     if not item:
         abort(404, f'数据不存在: {dataset_key}#{item_id}')
 
@@ -1262,13 +1340,13 @@ def dataset_edit(dataset_key, item_id):
         # slug 唯一性校验
         new_slug = fields.get('slug', '').strip() or None
         if new_slug:
-            all_items = datasets.load(site.id, dataset_key)
+            all_items = datasets.load(site.id, dataset_key, lang=storage_lang)
             dup = next((it for it in all_items
                         if it.get('slug') == new_slug and it.get('id') != item_id), None)
             if dup:
                 flash(f'Slug "{new_slug}" 已被 #{dup["id"]} 使用，请换一个', 'error')
                 return redirect(url_for('core.dataset_edit', dataset_key=dataset_key,
-                                        item_id=item_id, _fragment='1', site=site.id))
+                                        item_id=item_id, _fragment='1', site=site.id, lang=lang))
         # tags: 逗号/空格分隔的字符串 → 列表
         if 'tags' in fields and fields['tags']:
             raw_tags = fields['tags']
@@ -1286,7 +1364,8 @@ def dataset_edit(dataset_key, item_id):
         module_count_str = request.form.get('module_count')
         if module_count_str and module_count_str.isdigit():
             try:
-                modules = _parse_modules_form(request.form)
+                existing_modules = item.get('modules', [])
+                modules = _parse_modules_form(request.form, existing_modules)
                 # 保留 item_data 模块用于排序，但清除敏感数据字段
                 for m in modules:
                     if m.get('type') == 'item_data':
@@ -1297,9 +1376,9 @@ def dataset_edit(dataset_key, item_id):
         else:
             fields['modules'] = []
 
-        datasets.update(site.id, dataset_key, item_id, fields)
+        datasets.update(site.id, dataset_key, item_id, fields, lang=storage_lang)
         flash('已保存')
-        return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id))
+        return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
 
     blocks = _get_available_blocks(site.template_name)
     # 中间预览 URL
@@ -1315,6 +1394,7 @@ def dataset_edit(dataset_key, item_id):
                    dataset_key=dataset_key, items=[item],
                    edit_prefix=f'_dataset/{dataset_key}',
                    edit_item=item, edit_item_id=item_id,
+                   current_lang=lang, languages=languages, default_lang=default_lang,
                    active=dataset_key,
                    blocks=blocks,
                    is_list_page=is_list_page,
@@ -1323,40 +1403,52 @@ def dataset_edit(dataset_key, item_id):
 
 @bp.route('/_dataset/<path:dataset_key>/<int:item_id>/delete', methods=['POST'])
 def dataset_delete(dataset_key, item_id):
-    """通用数据集删除"""
+    """通用数据集删除 — 支持 ?lang= 参数删除指定语言版本."""
     from flask import flash, redirect, url_for
     _, site = _current_context()
-    datasets.remove(site.id, dataset_key, item_id)
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    datasets.remove(site.id, dataset_key, item_id, lang=storage_lang)
     flash('已删除')
-    return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id))
+    return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
 
 
 @bp.route('/_panel/<path:page_key>', methods=['GET', 'POST'])
 def page_panel(page_key):
     """动态菜单项面板路由：根据 page_key 分发到对应数据集列表或单页编辑.
-    
+
     模块库是公用的——所有菜单页面都可以从同一个 blocks/ 中选择模块，
     只是每个页面填不同的数据，保存在 pages/<page_key>.yaml 的 modules 数组中。
+
+    支持语言参数 ?lang=en 来编辑特定语言版本的页面内容。
     """
     from flask import flash, redirect, request, url_for
     user, site = _current_context()
 
+    lang, languages, default_lang = _get_panel_lang(site)
+    # 非默认语言时使用 lang 参数进行读写；默认语言读写根目录
+    storage_lang = lang if lang != default_lang else None
+
     # POST：保存模块配置
     if request.method == 'POST':
-        # 尝试匹配单页（数据集页面暂不支持模块保存，只处理单页）
-        page = read_yaml(site.id, f'pages/{page_key}.yaml') or {}
-        page['modules'] = _parse_modules_form(request.form)
-        # 清理旧格式字段（如果从旧格式迁移来）
+        page = read_yaml(site.id, f'pages/{page_key}.yaml', lang=storage_lang) or {}
+        existing_modules = page.get('modules', [])
+        page['modules'] = _parse_modules_form(request.form, existing_modules)
         for k in list(page.keys()):
             if k not in ('modules',):
                 page.pop(k, None)
-        write_yaml(site.id, f'pages/{page_key}.yaml', page)
+        write_yaml(site.id, f'pages/{page_key}.yaml', page, lang=storage_lang)
         flash('已保存')
-        return redirect(url_for('core.page_panel', page_key=page_key, _fragment='1', site=site.id))
+        return redirect(url_for('core.page_panel', page_key=page_key, _fragment='1', site=site.id, lang=lang))
 
-    # 判断 page_key 是否为 list 类型菜单（递归检查所有层级）
+    # 判断 page_key 是否为 list 类型菜单
     settings = read_yaml(site.id, 'settings.yaml') or {}
     menu_items = settings.get('menu') or []
+    if not menu_items:
+        meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+        if meta_path.exists():
+            template_meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) or {}
+            menu_items = template_meta.get('default_menu', [])
 
     def _find_list_in_menu(items, target_key):
         for item in (items or []):
@@ -1369,8 +1461,7 @@ def page_panel(page_key):
 
     is_list_page = _find_list_in_menu(menu_items, page_key)
 
-    # 优先匹配单页：即使与数据集同名，也允许在中间预览中配置页面模块。
-    page = read_yaml(site.id, f'pages/{page_key}.yaml')
+    page = read_yaml(site.id, f'pages/{page_key}.yaml', lang=storage_lang)
     if page:
         blocks = _get_available_blocks(site.template_name)
         is_modules_format = 'modules' in page
@@ -1379,17 +1470,19 @@ def page_panel(page_key):
                        page_key=page_key, page=page,
                        blocks=blocks, is_modules_format=is_modules_format,
                        is_list_page=is_list_page,
+                       current_lang=lang, languages=languages, default_lang=default_lang,
                        active=page_key)
 
-    # 没有匹配任何已有内容：自动初始化 pages yaml 以便用模块库配置
+    # 没有匹配任何已有内容：自动初始化
     new_page = {'modules': []}
-    write_yaml(site.id, f'pages/{page_key}.yaml', new_page)
+    write_yaml(site.id, f'pages/{page_key}.yaml', new_page, lang=storage_lang)
     blocks = _get_available_blocks(site.template_name)
     return _render('dashboard/panel_page_edit.html',
                    user=user, site=site,
                    page_key=page_key, page=new_page,
                    blocks=blocks, is_modules_format=True,
                    is_list_page=is_list_page,
+                   current_lang=lang, languages=languages, default_lang=default_lang,
                    active=page_key)
 
 
@@ -1402,8 +1495,28 @@ def _get_available_blocks(template_name):
         return []
 
 
-def _parse_modules_form(form):
-    """从 POST 表单解析 modules 数组（含 responsive 字段）."""
+def _parse_modules_form(form, existing_modules=None):
+    """从 POST 表单解析 modules 数组（含 responsive 字段）.
+
+    如果提供 existing_modules，表单未涉及的字段（如 items、features 等嵌套数组）
+    会从已有数据中保留，防止编辑器保存时丢失表单不表达的数据。
+    """
+    # 构建已有模块查找索引：(type, order) → existing_data
+    # 注意：旧格式数据中 hero_banner 的 data 可能是直接列表（slides），
+    # 需要包装为 dict 才能安全使用 .items()
+    existing_by_key = {}
+    if existing_modules:
+        for em in existing_modules:
+            if isinstance(em, dict) and em.get('type'):
+                key = (em.get('type', ''), em.get('order', 0))
+                raw_data = em.get('data', {})
+                if isinstance(raw_data, dict):
+                    existing_by_key[key] = raw_data
+                elif isinstance(raw_data, list):
+                    existing_by_key[key] = {'slides': raw_data}
+                else:
+                    existing_by_key[key] = {}
+
     def _parse_value(value):
         value = (value or '').strip()
         if not value:
@@ -1433,12 +1546,18 @@ def _parse_modules_form(form):
         except (ValueError, TypeError):
             order = i + 1
 
+        # 第一步：从表单构建 data，同时记录表单涉及的字段集合
         data = {}
+        form_fields_for_module = set()  # 记录表单实际涉及的字段名（不含子字段后缀）
         for key in form:
             prefix = f'{idx}_data_'
             if key.startswith(prefix) and '_resp_' not in key:
                 field = key[len(prefix):]
                 if not any(k in key for k in ('_resp_tablet_', '_resp_mobile_', '_resp_columns', '_resp_max_items')):
+                    # 去掉子字段后缀（如 images_0_url → images）
+                    base_field = field.split('_')[0] if '_' in field else field
+                    form_fields_for_module.add(base_field)
+                    form_fields_for_module.add(field)
                     data[field] = _parse_value(form.get(key, ''))
 
         from flask import request
@@ -1582,6 +1701,76 @@ def _parse_modules_form(form):
                     if isinstance(parsed_features, list):
                         data['features'] = parsed_features
 
+        # 解析 stat_counter 的统计项列表
+        if m_type == 'stat_counter':
+            stat_count = 0
+            try:
+                stat_count = int(form.get(f'{idx}_stat_count', '0'))
+            except (ValueError, TypeError):
+                stat_count = 0
+            stats = []
+            for si in range(stat_count):
+                prefix = f'{idx}_stat_{si}_'
+                item = {}
+                for field in ('icon', 'number', 'suffix', 'label'):
+                    value = form.get(f'{prefix}{field}', '').strip()
+                    if value:
+                        item[field] = value
+                if item.get('label') or item.get('number'):
+                    stats.append(item)
+            if stats:
+                data['stats'] = stats
+
+        # 解析 logo_cloud 的 Logo 列表
+        if m_type == 'logo_cloud':
+            logo_count = 0
+            try:
+                logo_count = int(form.get(f'{idx}_logo_count', '0'))
+            except (ValueError, TypeError):
+                logo_count = 0
+            logos = []
+            for li in range(logo_count):
+                prefix = f'{idx}_logo_{li}_'
+                item = {}
+                for field in ('image', 'name', 'link'):
+                    value = form.get(f'{prefix}{field}', '').strip()
+                    if value:
+                        item[field] = value
+                upload = request.files.get(f'{prefix}image_file')
+                if upload and upload.filename:
+                    try:
+                        item['image'] = _save_uploaded_image(
+                            _current_context()[1].id,
+                            upload,
+                            prefix=f'logo-{li + 1}',
+                        )
+                    except Exception as exc:
+                        current_app.logger.warning('Logo 图片上传失败: %s', exc)
+                if item.get('image') or item.get('name'):
+                    logos.append(item)
+            if logos:
+                data['logos'] = logos
+
+        # 解析 process_steps 的步骤列表
+        if m_type == 'process_steps':
+            step_count = 0
+            try:
+                step_count = int(form.get(f'{idx}_step_count', '0'))
+            except (ValueError, TypeError):
+                step_count = 0
+            steps = []
+            for si in range(step_count):
+                prefix = f'{idx}_step_{si}_'
+                item = {}
+                for field in ('title', 'desc', 'icon'):
+                    value = form.get(f'{prefix}{field}', '').strip()
+                    if value:
+                        item[field] = value
+                if item.get('title') or item.get('desc'):
+                    steps.append(item)
+            if steps:
+                data['steps'] = steps
+
         for field in list(data.keys()):
             if _field_looks_like_image(field):
                 upload = request.files.get(f'{idx}_data_{field}_file')
@@ -1644,6 +1833,13 @@ def _parse_modules_form(form):
 
             if device_data:
                 responsive[device] = device_data
+
+        # 第二步：从已有数据中保留表单未涉及的字段（防止嵌套数组丢失）
+        existing_key = (m_type, order)
+        if existing_key in existing_by_key and isinstance(existing_by_key[existing_key], dict):
+            for ek, ev in existing_by_key[existing_key].items():
+                if ek not in form_fields_for_module and ek not in data:
+                    data[ek] = ev
 
         module = {
             'type': m_type,
