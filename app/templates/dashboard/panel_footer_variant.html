@@ -10,6 +10,7 @@
 {% endwith %}
 
 <form method="post" action="{{ url_for('core.footer_variant_edit', _fragment='1', site=site.id) }}" id="footerForm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {# Footer 变体选择 #}
   <div class="mb-3">
     <label class="form-label small mb-1 fw-semibold">底部布局模式</label>

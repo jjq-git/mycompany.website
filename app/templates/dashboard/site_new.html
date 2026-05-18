@@ -27,6 +27,7 @@
   {% endif %}
 
   <form method="post" action="{{ url_for('core.site_new', template=template.name if template else '') }}{% if request.args.get('_fragment') %}{{ '?_fragment=1' }}{% endif %}" id="siteNewForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="panel-section">
       <div class="panel-section-title">站点信息</div>
 

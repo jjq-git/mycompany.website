@@ -10,6 +10,7 @@
 {% endwith %}
 
 <form method="post" action="{{ url_for('core.header_edit', _fragment='1', site=site.id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {# Header 变体选择 #}
   <div class="panel-section">
     <div class="panel-section-title">头部布局</div>

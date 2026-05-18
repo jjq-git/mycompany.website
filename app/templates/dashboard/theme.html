@@ -11,6 +11,7 @@
   {% endfor %}
 {% endwith %}
 <form method="post" action="{{ url_for('core.theme_edit', site=site.id) }}" style="max-width: 720px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {% set fields = [
     ('accent', '主色'),
     ('bg', '背景'),

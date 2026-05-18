@@ -51,6 +51,7 @@
 <div>
   <div class="small text-muted mb-2">已选模块（拖拽排序 | 点击配置）</div>
   <form method="post" action="{{ url_for('core.page_home', site=site.id) }}?_fragment=1" id="modulesForm" data-page-key="home" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="_format" value="modules">
     <input type="hidden" name="module_count" id="moduleCount" value="{{ page.modules | length }}">
 
@@ -463,6 +464,7 @@ document.getElementById('modulesForm').addEventListener('submit', function(e){
 {# 旧格式兼容 #}
 <div class="small text-muted mb-3">此模板使用旧格式，建议升级到模块库模式</div>
 <form method="post" action="{{ url_for('core.page_home', site=site.id) }}?_fragment=1">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="mb-2"><label class="form-label small">主标题</label>
     <input class="form-control form-control-sm" name="hero.title" value="{{ page.hero.title or '' }}"></div>
   <div class="mb-2"><label class="form-label small">副标题</label>

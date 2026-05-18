@@ -26,6 +26,7 @@
     <section class="card shadow-sm border-0">
       <div class="card-body p-4">
         <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <label class="form-label" for="email">邮箱地址</label>
           <input class="form-control form-control-lg" id="email" name="email" type="email"
                  value="{{ email or '' }}" placeholder="you@example.com" required autofocus>

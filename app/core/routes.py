@@ -41,6 +41,19 @@ AUTH_EXEMPT_ENDPOINTS = {
 }
 
 
+def _safe_send_from_directory(base_dir, relative_path):
+    """加固版 send_from_directory: 解析 symlink 后强制校验目标仍在 base_dir 内,
+    阻断符号链接逃逸 + 兜底防御 (Flask safe_join 自身也已经防 ../, 这里多一层保险).
+    """
+    base_real = Path(base_dir).resolve()
+    full_real = (base_real / relative_path).resolve()
+    try:
+        full_real.relative_to(base_real)
+    except ValueError:
+        abort(403, '非法路径')
+    return send_from_directory(base_real, relative_path)
+
+
 def _hash_token(raw_token):
     """对魔法链接 token 做 SHA-256；数据库不保存明文 token."""
     return hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
@@ -48,6 +61,24 @@ def _hash_token(raw_token):
 
 def _normalize_email(email):
     return (email or '').strip().lower()
+
+
+# 图片单边像素上限, 防御解码炸弹 (1KB PNG 解开成 1GB 那种)
+MAX_IMAGE_PIXELS = 16_000_000  # 约 4000x4000
+MAX_IMAGE_BYTES = 12 * 1024 * 1024  # 单图最大 12MB
+
+
+def _check_upload_size(file_storage, max_bytes, label='文件'):
+    """通过 stream.seek 获取真实字节数, 超限直接报错."""
+    stream = file_storage.stream
+    try:
+        stream.seek(0, 2)
+        size = stream.tell()
+    finally:
+        stream.seek(0)
+    if size > max_bytes:
+        raise ValueError(f'{label}过大: {size // 1024}KB > {max_bytes // 1024}KB 上限')
+    return size
 
 
 def _save_uploaded_image(site_id, file_storage, prefix='image'):
@@ -63,6 +94,8 @@ def _save_uploaded_image(site_id, file_storage, prefix='image'):
     if suffix not in ALLOWED_IMAGE_EXTENSIONS:
         raise ValueError('仅支持 JPG、PNG、GIF、WebP 图片')
 
+    _check_upload_size(file_storage, MAX_IMAGE_BYTES, label='图片')
+
     try:
         from PIL import Image, ImageSequence
     except ImportError as exc:
@@ -76,6 +109,10 @@ def _save_uploaded_image(site_id, file_storage, prefix='image'):
     output_path = uploads_dir / filename
 
     image = Image.open(file_storage.stream)
+    # 分辨率上限校验, Pillow 默认对超大图触发 DecompressionBombWarning, 这里直接拒绝
+    w, h = image.size
+    if w * h > MAX_IMAGE_PIXELS:
+        raise ValueError(f'图片分辨率过大: {w}x{h} 超过 {MAX_IMAGE_PIXELS} 像素上限')
     first_frame = next(ImageSequence.Iterator(image)).convert('RGBA')
     background = Image.new('RGBA', first_frame.size, (255, 255, 255, 0))
     background.alpha_composite(first_frame)
@@ -99,6 +136,13 @@ def _save_uploaded_media(site_id, file_storage, prefix='media'):
             return ''
     if suffix not in ALLOWED_VIDEO_EXTENSIONS:
         current_app.logger.warning('不支持的文件类型: %s', suffix)
+        return ''
+
+    # 视频体积上限 12MB; 更大体积请走 CDN 直传
+    try:
+        _check_upload_size(file_storage, MAX_IMAGE_BYTES, label='视频')
+    except ValueError as exc:
+        current_app.logger.warning('视频上传被拒: %s', exc)
         return ''
 
     uploads_dir = Path(current_app.config['SITES_DIR']) / str(site_id) / 'assets' / 'uploads'
@@ -198,6 +242,8 @@ def inject_context():
             ctx['template_meta'] = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) or {}
 
         raw_menu = settings.get('menu') or ctx['template_meta'].get('default_menu', [])
+        # 强制裁剪深度, 防御恶意 yaml 通过深嵌套触发递归栈溢出
+        raw_menu = menu_lib.cap_menu_depth(raw_menu)
         datasets_meta = ctx['template_meta'].get('datasets', [])
         normalized = menu_lib.ensure_home(
             menu_lib.normalize_for_render(
@@ -242,6 +288,27 @@ def _current_context():
     return user, site
 
 
+def _safe_next_url(candidate):
+    """只允许跳回本站相对路径; 外站 URL / 协议跳转 / 协议相对 URL 全部拒绝.
+
+    防止 ?next=https://evil.com 形式的 open redirect 钓鱼.
+    """
+    from urllib.parse import urlparse
+    if not candidate:
+        return None
+    candidate = candidate.strip()
+    # 拒绝绝对 URL (含 scheme 或 netloc), 拒绝协议相对 URL "//evil.com/x"
+    if candidate.startswith('//'):
+        return None
+    parsed = urlparse(candidate)
+    if parsed.scheme or parsed.netloc:
+        return None
+    # 必须以 / 开头, 防 "javascript:..." 等其它伪协议
+    if not candidate.startswith('/'):
+        return None
+    return candidate
+
+
 def _create_magic_link(email, request):
     """创建一次性魔法链接 token，返回完整登录 URL."""
     user = User.query.filter_by(email=email).first()
@@ -268,7 +335,7 @@ def login():
     """邮箱魔法链接登录入口."""
     from flask import request
     if _current_user() and request.method == 'GET':
-        return redirect(request.args.get('next') or url_for('core.overview'))
+        return redirect(_safe_next_url(request.args.get('next')) or url_for('core.overview'))
 
     magic_link = None
     email = ''
@@ -334,7 +401,7 @@ def site_asset(filename):
     """后台/预览使用的站点上传资源入口。静态导出时由 output/assets 直接承载。"""
     _, site = _current_context()
     assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
-    return send_from_directory(assets_root, filename)
+    return _safe_send_from_directory(assets_root, filename)
 
 
 @bp.errorhandler(404)
@@ -420,7 +487,8 @@ def product_new():
     n = len(datasets.load(site.id, 'products')) + 1
     new_id = datasets.add(site.id, 'products', {
         'name': '新产品', 'slug': f'product-{n}',
-        'summary': '', 'description': '', 'cover': '', 'category': '', 'specs': {},
+        'summary': '', 'description': '', 'cover': '', 'category': '',
+        'price': '', 'specs': {},
     })
     return redirect(url_for('core.product_edit', product_id=new_id, site=site.id))
 
@@ -1030,7 +1098,7 @@ def template_preview(template_name, filepath='index.html'):
     if full.is_dir():
         full = full / 'index.html'
         filepath = f'{filepath.rstrip("/")}/index.html'
-    return send_from_directory(out, filepath)
+    return _safe_send_from_directory(out, filepath)
 
 
 @bp.route('/sites/new', methods=['GET', 'POST'])
@@ -1194,10 +1262,10 @@ def preview_or_build(site_id):
     # 查找默认语言子目录下的 index.html，跳过语言选择页
     lang_index = out / lang_code / 'index.html'
     if lang_index.exists():
-        return send_from_directory(out / lang_code, 'index.html')
+        return _safe_send_from_directory(out / lang_code, 'index.html')
 
     # 回退：返回根目录的 index.html（可能是单语言站点）
-    return send_from_directory(out, 'index.html')
+    return _safe_send_from_directory(out, 'index.html')
 
 
 @bp.route('/preview/<int:site_id>/')
@@ -1215,7 +1283,7 @@ def preview(site_id, filepath='index.html'):
             except Exception:
                 pass
         if lang_index.exists():
-            return send_from_directory(out, f'{lang_code}/index.html')
+            return _safe_send_from_directory(out, f'{lang_code}/index.html')
 
     # 先解析出最终目标文件，再判断是否需要重建
     full = out / filepath
@@ -1233,9 +1301,9 @@ def preview(site_id, filepath='index.html'):
         # 尝试默认语言子目录
         for sub in out.iterdir():
             if sub.is_dir() and (sub / 'index.html').exists():
-                return send_from_directory(out, f'{sub.name}/index.html')
+                return _safe_send_from_directory(out, f'{sub.name}/index.html')
         abort(404, '未生成页面，请检查模板数据')
-    return send_from_directory(out, filepath)
+    return _safe_send_from_directory(out, filepath)
 
 
 def _get_panel_lang(site):

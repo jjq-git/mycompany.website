@@ -144,8 +144,8 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
     _common = dict(common)
     _common['lang'] = lang_code
 
-    # 收集渲染任务 (菜单驱动)
-    menu_items = _common.get('settings', {}).get('menu', [])
+    # 收集渲染任务 (菜单驱动). cap_menu_depth 防御深嵌套递归栈溢出.
+    menu_items = menu_lib.cap_menu_depth(_common.get('settings', {}).get('menu', []))
     tasks = menu_lib.collect_render_tasks(menu_items, tpl_html_dir, data, pages)
 
     for task in tasks:

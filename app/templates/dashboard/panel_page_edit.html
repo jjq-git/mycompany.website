@@ -79,6 +79,7 @@
 <div>
   <div class="small text-muted mb-2">已选模块（拖拽排序 | 点击配置）</div>
   <form method="post" action="{{ url_for('core.page_panel', page_key=page_key, site=site.id, _fragment='1', lang=current_lang) }}" id="modulesForm" data-page-key="{{ page_key }}" enctype="multipart/form-data" onsubmit="submitModuleFormAjax(this, event)">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="module_count" id="moduleCount" value="{{ page.modules | length }}">
 
     {% set display_names = {} %}
@@ -2172,6 +2173,7 @@ document.addEventListener('paste', function(e) {
 <div class="mb-3">
   <div class="small text-muted mb-2">此页面使用旧格式，点击下方按钮迁移到模块库模式</div>
   <form method="post" action="{{ url_for('core.page_panel', page_key=page_key, site=site.id, lang=current_lang) }}?_fragment=1" id="migrateForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="module_count" value="0">
     <button type="submit" class="btn btn-outline-primary btn-sm">迁移到模块库模式</button>
   </form>

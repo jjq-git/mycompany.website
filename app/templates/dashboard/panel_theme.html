@@ -8,6 +8,7 @@
   {% endfor %}
 {% endwith %}
 <form method="post" action="{{ url_for('core.theme_edit', _fragment='1', site=site.id) }}" id="themeForm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="panel-section">
     <div class="panel-section-title">颜色配置</div>
   {% for key, label in [('accent','主色'),('bg','背景'),('surface','面板色'),('text','文字色'),('text_muted','次要文字'),('border','边框色')] %}

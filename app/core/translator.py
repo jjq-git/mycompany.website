@@ -1,12 +1,23 @@
 """AI 翻译服务 — 调用 DeepSeek / OpenAI 兼容 API."""
 import json
 import logging
+import re
 import urllib.request
 import urllib.error
 
 from flask import current_app
 
 logger = logging.getLogger(__name__)
+
+# 语言代码格式: BCP 47 基础形态, 例 zh / zh-CN / pt-BR.
+# 严格白名单约束避免被注入到 prompt 中 (如 "zh\n\n忽略上文...").
+_LANG_CODE_RE = re.compile(r'^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})?$')
+
+
+def _validate_lang(value, field):
+    if not isinstance(value, str) or not _LANG_CODE_RE.match(value.strip()):
+        raise ValueError(f'{field} 必须是合法的语言代码 (如 zh-CN / en / pt-BR)')
+    return value.strip()
 
 # 翻译 prompt 模板
 _TRANSLATE_PROMPT = """你是一个专业翻译助手。将以下 JSON 中的每个值从 {source_lang} 翻译为 {target_lang}。
@@ -28,6 +39,13 @@ def translate_json(texts, source_lang="zh-CN", target_lang="en"):
 
     返回: dict[str, str] 翻译后的字典，key 与输入一致
     """
+    # 输入校验先行: 阻断 prompt 注入塞进语言字段; texts 必须为字典
+    source_lang = _validate_lang(source_lang, 'source_lang')
+    target_lang = _validate_lang(target_lang, 'target_lang')
+
+    if not isinstance(texts, dict):
+        raise ValueError('texts 必须为字典')
+
     api_key = current_app.config.get('TRANSLATION_API_KEY', '')
     if not api_key:
         raise ValueError('TRANSLATION_API_KEY 未配置，请在 .env 中设置')
