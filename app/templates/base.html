@@ -298,6 +298,7 @@
         </div>
       {% endblock %}
     </div>
+    <div class="right-panel-footer flex-shrink-0" id="rightPanelFooter" style="display:none;"></div>
   </aside>
 </div>
 
@@ -418,9 +419,27 @@ function refreshPreview() {
 
 function loadPanel(url) {
   var body = document.getElementById('rightPanelBody');
+  var footer = document.getElementById('rightPanelFooter');
   body.innerHTML = '<div class="p-3 text-muted text-center py-5"><div class="spinner-border spinner-border-sm me-2"></div>加载中...</div>';
+  if (footer) footer.style.display = 'none';
   return fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
-    .then(html => { body.innerHTML = html; runPanelScripts(body); })
+    .then(html => {
+      body.innerHTML = html;
+      runPanelScripts(body);
+      // 将保存按钮移到面板底部悬浮栏
+      var saveBar = body.querySelector('.panel-save-bar');
+      if (saveBar && footer) {
+        var form = saveBar.closest('form');
+        var btn = saveBar.querySelector('button[type="submit"]');
+        if (btn && form) {
+          if (!form.id) form.id = '_panelForm_' + Date.now();
+          btn.setAttribute('form', form.id);
+        }
+        footer.innerHTML = '';
+        footer.appendChild(saveBar);
+        footer.style.display = '';
+      }
+    })
     .catch(error => { body.innerHTML = '<div class="p-3 text-danger">加载失败</div>'; throw error; });
 }
 
@@ -439,10 +458,28 @@ document.getElementById('rightPanelBody').addEventListener('submit', function(e)
   if (form.dataset.ajaxHandled === '1' || e.defaultPrevented) return;
   e.preventDefault();
   var body = document.getElementById('rightPanelBody');
+  var footer = document.getElementById('rightPanelFooter');
   body.innerHTML = '<div class="p-3 text-muted text-center py-5"><div class="spinner-border spinner-border-sm me-2"></div>保存中...</div>';
+  if (footer) footer.style.display = 'none';
   fetch(form.action || window.location.href, {method: 'POST', body: new FormData(form)})
     .then(r => r.text())
-    .then(html => { body.innerHTML = html; runPanelScripts(body); refreshPreview(); })
+    .then(html => {
+      body.innerHTML = html;
+      runPanelScripts(body);
+      var saveBar = body.querySelector('.panel-save-bar');
+      if (saveBar && footer) {
+        var newForm = saveBar.closest('form');
+        var newBtn = saveBar.querySelector('button[type="submit"]');
+        if (newBtn && newForm) {
+          if (!newForm.id) newForm.id = '_panelForm_' + Date.now();
+          newBtn.setAttribute('form', newForm.id);
+        }
+        footer.innerHTML = '';
+        footer.appendChild(saveBar);
+        footer.style.display = '';
+      }
+      refreshPreview();
+    })
     .catch(err => { body.innerHTML = '<div class="p-3 text-danger">保存失败</div>'; });
 });
 

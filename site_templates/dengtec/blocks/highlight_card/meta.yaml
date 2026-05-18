@@ -5,103 +5,89 @@ description: 通用图文介绍模块，支持左右布局切换、标签、描�
 fields:
   - key: section_bg
     label: 外层背景色
-    type: text
+    type: color
+    group: 外层样式
     default: ""
     placeholder: 如 #f5f7fa（留空=使用默认）
   - key: inner_width
     label: 内层内容区宽度
     type: text
+    group: 外层样式
     default: ""
     placeholder: 如 1200px（留空=全宽）
   - key: border_radius
     label: 圆角
     type: text
+    group: 外层样式
     default: ""
     placeholder: 如 12px（留空=默认）
   - key: margin_top
     label: 上外边距
     type: text
+    group: 外层外边距
     default: ""
     placeholder: 如 0px / 2rem（留空=默认）
   - key: margin_bottom
     label: 下外边距
     type: text
+    group: 外层外边距
     default: ""
     placeholder: 如 0px / 2rem（留空=默认）
   - key: padding_top
     label: 上内边距
     type: text
+    group: 内层边距
     default: ""
     placeholder: 如 2rem（留空=默认）
   - key: padding_bottom
     label: 下内边距
     type: text
+    group: 内层边距
     default: ""
     placeholder: 如 2rem（留空=默认）
   - key: padding_left
     label: 左内边距
     type: text
+    group: 内层边距
     default: ""
     placeholder: 如 1rem（留空=默认）
   - key: padding_right
     label: 右内边距
     type: text
+    group: 内层边距
     default: ""
     placeholder: 如 1rem（留空=默认）
   - key: image_position
     label: 图文左右位置
     type: select
+    group: 图文布局
     default: "left"
     options:
       - value: "left"
         label: 图左文右
       - value: "right"
         label: 文左图右
-  - key: text_bg
-    label: 文本区背景色
-    type: text
-    default: ""
-    placeholder: 如 #ffffff（留空=透明）
-  - key: text_color
-    label: 文本区字体颜色
-    type: text
-    default: ""
-    placeholder: 如 #333333（留空=默认深色）
-  - key: tag_bg
-    label: 标签背景色
-    type: text
-    default: ""
-    placeholder: 如 #067a7a（留空=默认主色）
-  - key: tag_color
-    label: 标签字体颜色
-    type: text
-    default: ""
-    placeholder: 如 #ffffff（留空=白色）
-  - key: btn_bg
-    label: 按钮背景色
-    type: text
-    default: ""
-    placeholder: 如 #067a7a（留空=默认主色）
-  - key: btn_color
-    label: 按钮字体颜色
-    type: text
-    default: ""
-    placeholder: 如 #ffffff（留空=白色）
   - key: tag
     label: 标签文字
     type: text
+    group: 内容
   - key: title
     label: 标题
     type: text
+    group: 内容
   - key: desc
     label: 描述
     type: textarea
+    group: 内容
   - key: image
     label: 图片
     type: image
+    group: 内容
   - key: features
     label: 功能点列表
     type: list
+    group: 特性列表
+    item_label: 特性
     item_fields:
       - key: text
         label: 文本
@@ -109,12 +95,15 @@ fields:
   - key: primaryBtn
     label: 主按钮文字
     type: text
+    group: 按钮
   - key: primaryLink
     label: 主按钮链接
     type: url
+    group: 按钮
   - key: primaryLinkTarget
     label: 主按钮打开方式
     type: select
+    group: 按钮
     options:
       - value: ""
         label: 当前页
@@ -123,6 +112,44 @@ fields:
   - key: secondaryBtn
     label: 副按钮文字
     type: text
+    group: 按钮
   - key: secondaryLink
     label: 副按钮链接
     type: url
+    group: 按钮
+  - key: text_bg
+    label: 文本区背景色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #ffffff（留空=透明）
+  - key: text_color
+    label: 文本区字体颜色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #333333（留空=默认深色）
+  - key: tag_bg
+    label: 标签背景色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #067a7a（留空=默认主色）
+  - key: tag_color
+    label: 标签字体颜色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #ffffff（留空=白色）
+  - key: btn_bg
+    label: 按钮背景色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #067a7a（留空=默认主色）
+  - key: btn_color
+    label: 按钮字体颜色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #ffffff（留空=白色）

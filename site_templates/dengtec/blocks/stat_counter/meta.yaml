@@ -5,25 +5,30 @@ description: 数字 + 标签展示，支持图标、后缀，自动滚动计数�
 fields:
   - key: section_bg
     label: 外层背景色
-    type: text
+    type: color
+    group: 外层样式
     default: ""
     placeholder: 如 #f5f7fa（留空=使用默认）
   - key: inner_width
     label: 内层内容区宽度
     type: text
+    group: 外层样式
     default: ""
     placeholder: 如 1200px（留空=全宽）
   - key: title
     label: 区块标题
     type: text
+    group: 内容
     default: ""
   - key: subtitle
     label: 区块副标题
     type: text
+    group: 内容
     default: ""
   - key: columns
     label: 每行列数
     type: select
+    group: 内容
     default: "4"
     options:
       - value: "3"
@@ -35,6 +40,8 @@ fields:
   - key: stats
     label: 统计项列表
     type: list
+    group: 统计项
+    item_label: 统计项
     item_fields:
       - key: number
         label: 数字

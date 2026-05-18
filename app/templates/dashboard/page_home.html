@@ -89,6 +89,9 @@
           {% set resp = module.get('responsive', {}) if module.get('responsive', {}) is mapping else {} %}
           {% set mdata_tablet = resp.get('tablet', {}) %}
           {% set mdata_mobile = resp.get('mobile', {}) %}
+          {% set count_field = 'items_per_page' if module.type == 'data_grid' else 'max_items' %}
+          {% set count_label = '每页显示数量' if module.type == 'data_grid' else '显示数量' %}
+          {% set count_placeholder = '默认' if module.type == 'data_grid' else '0=全部' %}
 
           {# 电脑端配置 #}
           <div class="device-config device-desktop">
@@ -155,9 +158,9 @@
                 </select>
               </div>
               <div class="col-6">
-                <label class="form-label small mb-1 text-muted">显示数量</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_max_items"
-                       value="{{ mdata.get('max_items', '') }}" placeholder="0=全部">
+                <label class="form-label small mb-1 text-muted">{{ count_label }}</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_{{ count_field }}"
+                       value="{{ mdata.get(count_field, '') }}" placeholder="{{ count_placeholder }}">
               </div>
             </div>
             {% endif %}
@@ -190,9 +193,9 @@
                 </select>
               </div>
               <div class="col-6">
-                <label class="form-label small mb-1 text-muted">显示数量</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_tablet_max_items"
-                       value="{{ mdata_tablet.get('max_items', '') }}" placeholder="继承电脑端">
+                <label class="form-label small mb-1 text-muted">{{ count_label }}</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_tablet_{{ count_field }}"
+                       value="{{ mdata_tablet.get(count_field, '') }}" placeholder="继承电脑端">
               </div>
             </div>
             {% endif %}
@@ -233,9 +236,9 @@
                 </select>
               </div>
               <div class="col-6">
-                <label class="form-label small mb-1 text-muted">显示数量</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_mobile_max_items"
-                       value="{{ mdata_mobile.get('max_items', '') }}" placeholder="继承电脑端">
+                <label class="form-label small mb-1 text-muted">{{ count_label }}</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_mobile_{{ count_field }}"
+                       value="{{ mdata_mobile.get(count_field, '') }}" placeholder="继承电脑端">
               </div>
             </div>
             {% endif %}
@@ -350,6 +353,10 @@ function addModule(type, variant) {
     : '';
   // 只有数据类模块才需要每行列数和显示数量控件
   var needsResp = (type === 'data_grid' || type === 'product_grid' || type === 'feature_grid');
+  // data_grid 使用 items_per_page，其他模块使用 max_items
+  var respCountField = (type === 'data_grid') ? 'items_per_page' : 'max_items';
+  var respCountLabel = (type === 'data_grid') ? '每页显示数量' : '显示数量';
+  var respCountPlaceholder = (type === 'data_grid') ? '默认' : '0=全部';
   var div = document.createElement('div');
   div.className = 'card mb-2 module-item expanded';
   div.innerHTML =
@@ -375,8 +382,8 @@ function addModule(type, variant) {
               '<option value="1">1 列</option><option value="2">2 列</option>' +
               '<option value="3">3 列</option><option value="4">4 列</option>' +
             '</select></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label>' +
-            '<input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_max_items" placeholder="0=全部"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">' + respCountLabel + '</label>' +
+            '<input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_' + respCountField + '" placeholder="' + respCountPlaceholder + '"></div>' +
         '</div>' : '') +
       '</div>' +
       '<div class="device-config device-tablet" style="display:none">' +
@@ -387,8 +394,8 @@ function addModule(type, variant) {
               '<option value="" selected>继承电脑端</option>' +
               '<option value="1">1 列</option><option value="2">2 列</option><option value="3">3 列</option>' +
             '</select></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label>' +
-            '<input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_max_items" placeholder="继承电脑端"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">' + respCountLabel + '</label>' +
+            '<input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_' + respCountField + '" placeholder="继承电脑端"></div>' +
         '</div>' : '') +
       '</div>' +
       '<div class="device-config device-mobile" style="display:none">' +
@@ -399,8 +406,8 @@ function addModule(type, variant) {
               '<option value="" selected>继承电脑端</option>' +
               '<option value="1">1 列</option><option value="2">2 列</option>' +
             '</select></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label>' +
-            '<input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_max_items" placeholder="继承电脑端"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">' + respCountLabel + '</label>' +
+            '<input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_' + respCountField + '" placeholder="继承电脑端"></div>' +
         '</div>' : '') +
       '</div>' +
     '</div>';

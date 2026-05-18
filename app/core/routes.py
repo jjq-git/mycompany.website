@@ -1641,7 +1641,7 @@ def _parse_modules_form(form, existing_modules=None):
             prefix = f'{idx}_data_'
             if key.startswith(prefix) and '_resp_' not in key:
                 field = key[len(prefix):]
-                if not any(k in key for k in ('_resp_tablet_', '_resp_mobile_', '_resp_columns', '_resp_max_items')):
+                if not any(k in key for k in ('_resp_tablet_', '_resp_mobile_', '_resp_columns', '_resp_max_items', '_resp_items_per_page')):
                     # 去掉子字段后缀（如 images_0_url → images）
                     base_field = field.split('_')[0] if '_' in field else field
                     form_fields_for_module.add(base_field)
@@ -1872,7 +1872,7 @@ def _parse_modules_form(form, existing_modules=None):
                     except Exception as exc:
                         current_app.logger.warning('模块图片保存失败 %s: %s', field, exc)
 
-        # 解析电脑端的 columns 和 max_items
+        # 解析电脑端的 columns、max_items、items_per_page
         columns_val = form.get(f'{idx}_resp_columns', '').strip()
         if columns_val:
             try:
@@ -1883,6 +1883,12 @@ def _parse_modules_form(form, existing_modules=None):
         if max_items_val:
             try:
                 data['max_items'] = int(max_items_val)
+            except ValueError:
+                pass
+        items_per_page_val = form.get(f'{idx}_resp_items_per_page', '').strip()
+        if items_per_page_val:
+            try:
+                data['items_per_page'] = int(items_per_page_val)
             except ValueError:
                 pass
 
@@ -1912,6 +1918,14 @@ def _parse_modules_form(form, existing_modules=None):
             if dev_max:
                 try:
                     device_data['max_items'] = int(dev_max)
+                except ValueError:
+                    pass
+
+            # 设备 items_per_page
+            dev_ipp = form.get(f'{idx}_resp_{device}_items_per_page', '').strip()
+            if dev_ipp:
+                try:
+                    device_data['items_per_page'] = int(dev_ipp)
                 except ValueError:
                     pass
 

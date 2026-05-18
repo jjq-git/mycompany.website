@@ -319,6 +319,8 @@
               <div class="col-6"><label class="form-label small mb-1 text-muted">按钮文字色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('btn_color', '#ffffff') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_btn_color" value="{{ mdata.get('btn_color', '') }}" placeholder="#ffffff" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
             </div>
             {% elif module.type == 'data_grid' %}
+            {# ---- 数据配置 ---- #}
+            <div class="small fw-semibold mb-1 text-muted">数据</div>
             <div class="mb-2">
               <label class="form-label small mb-1 text-muted">数据来源</label>
               <select class="form-select form-select-sm" name="module_{{ i }}_data_dataset">
@@ -328,33 +330,16 @@
                 {% endfor %}
               </select>
             </div>
-            <div class="row g-2">
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">最大显示数量</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_data_max_items" value="{{ mdata.get('max_items', '6') }}">
-              </div>
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">卡片布局</label>
-                <select class="form-select form-select-sm" name="module_{{ i }}_data_card_layout">
-                  <option value="image_top" {% if mdata.get('card_layout', 'image_top') == 'image_top' %}selected{% endif %}>上图下文</option>
-                  <option value="image_left" {% if mdata.get('card_layout') == 'image_left' %}selected{% endif %}>左图右文</option>
-                </select>
-              </div>
+            <div class="mb-2">
+              <label class="form-label small mb-1 text-muted">卡片布局</label>
+              <select class="form-select form-select-sm" name="module_{{ i }}_data_card_layout">
+                <option value="image_top" {% if mdata.get('card_layout', 'image_top') == 'image_top' %}selected{% endif %}>上图下文</option>
+                <option value="image_left" {% if mdata.get('card_layout') == 'image_left' %}selected{% endif %}>左图右文</option>
+              </select>
             </div>
-            <div class="row g-2">
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">每页显示数量</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_data_items_per_page" value="{{ mdata.get('items_per_page', '6') }}">
-              </div>
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">分页按钮对齐</label>
-                <select class="form-select form-select-sm" name="module_{{ i }}_data_pager_align">
-                  <option value="center" {% if mdata.get('pager_align', 'center') == 'center' %}selected{% endif %}>居中</option>
-                  <option value="left" {% if mdata.get('pager_align') == 'left' %}selected{% endif %}>居左</option>
-                  <option value="right" {% if mdata.get('pager_align') == 'right' %}selected{% endif %}>居右</option>
-                </select>
-              </div>
-            </div>
+            {# ---- 分页配置 ---- #}
+            <hr class="my-2">
+            <div class="small fw-semibold mb-1 text-muted">分页</div>
             <div class="row g-2">
               <div class="col-6">
                 <label class="form-label small mb-1 text-muted">显示分页</label>
@@ -373,13 +358,19 @@
             </div>
             <div class="row g-2">
               <div class="col-6">
-                <label class="form-label small mb-1 text-muted">显示"查看全部"</label>
-                <select class="form-select form-select-sm" name="module_{{ i }}_data_show_view_all">
-                  <option value="true" {% if mdata.get('show_view_all', true) not in (false, 'false', 'False', '') %}selected{% endif %}>显示</option>
-                  <option value="false" {% if mdata.get('show_view_all') in (false, 'false', 'False') %}selected{% endif %}>隐藏</option>
+                <label class="form-label small mb-1 text-muted">每页显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_data_items_per_page" value="{{ mdata.get('items_per_page', '6') }}">
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">分页对齐</label>
+                <select class="form-select form-select-sm" name="module_{{ i }}_data_pager_align">
+                  <option value="center" {% if mdata.get('pager_align', 'center') == 'center' %}selected{% endif %}>居中</option>
+                  <option value="left" {% if mdata.get('pager_align') == 'left' %}selected{% endif %}>居左</option>
+                  <option value="right" {% if mdata.get('pager_align') == 'right' %}selected{% endif %}>居右</option>
                 </select>
               </div>
             </div>
+            {# ---- 样式配置 ---- #}
             <hr class="my-2">
             <div class="small fw-semibold mb-1 text-muted">外层样式</div>
             <div class="row g-2">
@@ -394,6 +385,7 @@
               <div class="col-6"><label class="form-label small mb-1 text-muted">左</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_left" value="{{ mdata.get('margin_left', '') }}" placeholder="如 40px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_left\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
             </div>
             <hr class="my-2">
+            <div class="small fw-semibold mb-1 text-muted">内容</div>
             <div class="mb-2">
               <label class="form-label small mb-1 text-muted">区块标题</label>
               <input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title" value="{{ mdata.get('title', '') }}">
@@ -622,19 +614,49 @@
               <div class="col-6"><label class="form-label small mb-1 text-muted">左下</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_card_radius_bottom_left" value="{{ mdata.get('card_radius_bottom_left', mdata.get('card_radius', '')) }}" placeholder="如 12px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_card_radius_bottom_left\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select></div></div>
             </div>
             {% elif module.type == 'text_content' %}
+            {# ===== 内容 ===== #}
             <div class="small fw-semibold mb-1 text-muted">内容</div>
             <div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title" value="{{ mdata.get('title', '') }}"></div>
             <div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label><div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap"><button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand('bold',false,null);event.preventDefault()" title="加粗" style="font-size:12px;line-height:1"><b>B</b></button><button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand('italic',false,null);event.preventDefault()" title="斜体" style="font-size:12px;line-height:1"><i>I</i></button><button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand('underline',false,null);event.preventDefault()" title="下划线" style="font-size:12px;line-height:1"><u>U</u></button><span style="border-left:1px solid #dee2e6;margin:0 3px"></span><button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand('formatBlock',false,'h2');event.preventDefault()" title="大标题" style="font-size:12px;line-height:1">H2</button><button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand('formatBlock',false,'h3');event.preventDefault()" title="小标题" style="font-size:12px;line-height:1">H3</button><button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand('formatBlock',false,'p');event.preventDefault()" title="正文段落" style="font-size:12px;line-height:1">P</button><span style="border-left:1px solid #dee2e6;margin:0 3px"></span><button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="var u=prompt('链接地址');if(u){document.execCommand('createLink',false,u)};event.preventDefault()" title="插入链接" style="font-size:12px;line-height:1">🔗</button></div><div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">{{ mdata.get('body', '') | safe }}</div><textarea class="form-control form-control-sm d-none" name="module_{{ i }}_data_body">{{ mdata.get('body', '') }}</textarea></div>
+
+            {# ===== 文字排版 ===== #}
+            <hr class="my-2">
+            <div class="small fw-semibold mb-1 text-muted">文字排版</div>
             <div class="row g-2">
-              <div class="col-6"><label class="form-label small mb-1 text-muted">文字排版</label><select class="form-select form-select-sm" name="module_{{ i }}_data_text_align"><option value="left" {% if mdata.get('text_align', 'left') == 'left' %}selected{% endif %}>居左</option><option value="center" {% if mdata.get('text_align') == 'center' %}selected{% endif %}>居中</option><option value="right" {% if mdata.get('text_align') == 'right' %}selected{% endif %}>居右</option></select></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">对齐方式</label><select class="form-select form-select-sm" name="module_{{ i }}_data_text_align"><option value="left" {% if mdata.get('text_align', 'left') == 'left' %}selected{% endif %}>居左</option><option value="center" {% if mdata.get('text_align') == 'center' %}selected{% endif %}>居中</option><option value="right" {% if mdata.get('text_align') == 'right' %}selected{% endif %}>居右</option></select></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">分栏</label><select class="form-select form-select-sm" name="module_{{ i }}_data_columns"><option value="1" {% if (mdata.get('columns', '1') | string) == '1' %}selected{% endif %}>单栏</option><option value="2" {% if (mdata.get('columns') | string) == '2' %}selected{% endif %}>双栏</option></select></div>
             </div>
+
+            {# ===== 外层样式 ===== #}
             <hr class="my-2">
             <div class="small fw-semibold mb-1 text-muted">外层样式</div>
             <div class="row g-2">
               <div class="col-6"><label class="form-label small mb-1 text-muted">外层背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('section_bg', '#888888') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_section_bg" value="{{ mdata.get('section_bg', '') }}" placeholder="如 #f5f7fa" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">内层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_inner_width" value="{{ mdata.get('inner_width', '') }}" placeholder="如 800px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_inner_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>
             </div>
+
+            {# ===== 外层外边距 ===== #}
+            <div class="small fw-semibold mb-1 text-muted mt-2">外层外边距</div>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small mb-1 text-muted">上</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_top" value="{{ mdata.get('margin_top', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_top\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">右</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_right" value="{{ mdata.get('margin_right', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_right\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">下</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_bottom" value="{{ mdata.get('margin_bottom', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_bottom\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">左</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_left" value="{{ mdata.get('margin_left', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_left\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            </div>
+
+            {# ===== 内层边距 ===== #}
+            <hr class="my-2">
+            <div class="small fw-semibold mb-1 text-muted">内层边距</div>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small mb-1 text-muted">上</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_top" value="{{ mdata.get('padding_top', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_top\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">右</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_right" value="{{ mdata.get('padding_right', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_right\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">下</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_bottom" value="{{ mdata.get('padding_bottom', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_bottom\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">左</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_left" value="{{ mdata.get('padding_left', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_left\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            </div>
+
+            {# ===== 文字样式 ===== #}
+            <hr class="my-2">
+            <div class="small fw-semibold mb-1 text-muted">文字样式</div>
             <div class="row g-2">
               <div class="col-6"><label class="form-label small mb-1 text-muted">标题颜色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('title_color', '#888888') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title_color" value="{{ mdata.get('title_color', '') }}" placeholder="如 #1e293b" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">正文颜色</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_body_color" value="{{ mdata.get('body_color', '') }}" placeholder="如 #475569" style="width:60%"></div></div>
@@ -852,9 +874,9 @@
                        value="{{ mdata.get('columns', '') }}" placeholder="默认" min="1" max="6">
               </div>
               <div class="col-6">
-                <label class="form-label small mb-1 text-muted">显示数量</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_max_items"
-                       value="{{ mdata.get('max_items', '') }}" placeholder="0=全部">
+                <label class="form-label small mb-1 text-muted">每页显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_items_per_page"
+                       value="{{ mdata.get('items_per_page', '') }}" placeholder="默认">
               </div>
             </div>
             {% endif %}
@@ -882,9 +904,9 @@
                        value="{{ mdata_tablet.get('columns', '') }}" placeholder="继承电脑端" min="1" max="6">
               </div>
               <div class="col-6">
-                <label class="form-label small mb-1 text-muted">显示数量</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_tablet_max_items"
-                       value="{{ mdata_tablet.get('max_items', '') }}" placeholder="继承电脑端">
+                <label class="form-label small mb-1 text-muted">每页显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_tablet_items_per_page"
+                       value="{{ mdata_tablet.get('items_per_page', '') }}" placeholder="继承电脑端">
               </div>
             </div>
             <div class="mb-2 mt-2">
@@ -919,9 +941,9 @@
                        value="{{ mdata_mobile.get('columns', '') }}" placeholder="继承电脑端" min="1" max="6">
               </div>
               <div class="col-6">
-                <label class="form-label small mb-1 text-muted">显示数量</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_mobile_max_items"
-                       value="{{ mdata_mobile.get('max_items', '') }}" placeholder="继承电脑端">
+                <label class="form-label small mb-1 text-muted">每页显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_mobile_items_per_page"
+                       value="{{ mdata_mobile.get('items_per_page', '') }}" placeholder="继承电脑端">
               </div>
             </div>
             <div class="mb-2 mt-2">
@@ -939,8 +961,8 @@
       {% endfor %}
     </div>
 
-    <div class="mt-2 d-flex gap-2">
-      <button type="submit" class="btn btn-primary btn-sm">保存模块配置</button>
+    <div class="panel-save-bar">
+      <button type="submit" class="btn btn-primary btn-sm w-100">保存模块配置</button>
     </div>
   </form>
 </div>
@@ -1012,15 +1034,18 @@ function renderDynamicField(prefix, field, value, placeholder) {
   }
   return html + '</div>';
 }
-function renderResponsiveControls(idx, device) {
+function renderResponsiveControls(idx, device, type) {
   var fieldPrefix = device ? 'module_' + idx + '_resp_' + device : 'module_' + idx + '_resp';
   var inheritText = device ? '继承电脑端' : '默认';
-  var maxText = device ? '继承电脑端' : '0=全部';
+  // data_grid 使用 items_per_page，其他模块使用 max_items
+  var countField = (type === 'data_grid') ? 'items_per_page' : 'max_items';
+  var countLabel = (type === 'data_grid') ? '每页显示数量' : '显示数量';
+  var countPlaceholder = (type === 'data_grid') ? (device ? '继承电脑端' : '默认') : (device ? '继承电脑端' : '0=全部');
   var html = '<hr class="my-2"><div class="row g-2">';
   html += '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>';
   html += '<input type="number" class="form-control form-control-sm" name="' + fieldPrefix + '_columns" placeholder="' + inheritText + '" min="1" max="6"></div>';
-  html += '<div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label>';
-  html += '<input type="number" class="form-control form-control-sm" name="' + fieldPrefix + '_max_items" placeholder="' + maxText + '"></div></div>';
+  html += '<div class="col-6"><label class="form-label small mb-1 text-muted">' + countLabel + '</label>';
+  html += '<input type="number" class="form-control form-control-sm" name="' + fieldPrefix + '_' + countField + '" placeholder="' + countPlaceholder + '"></div></div>';
   return html;
 }
 
@@ -1436,20 +1461,15 @@ function addModule(type, variant) {
       dsOptionsHtml += '<option value="' + escapeHtml(ds.target) + '">' + escapeHtml(ds.label) + '（' + escapeHtml(ds.target) + '）</option>';
     });
     specialEditor =
+    '<div class="small fw-semibold mb-1 text-muted">数据</div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">数据来源</label>' +
       '<select class="form-select form-select-sm" name="module_' + idx + '_data_dataset">' +
       (dsOptionsHtml || '<option value="">暂无数据源</option>') +
       '</select></div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">最大显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_data_max_items" value="6"></div>' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">卡片布局</label>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">卡片布局</label>' +
         '<select class="form-select form-select-sm" name="module_' + idx + '_data_card_layout"><option value="image_top">上图下文</option><option value="image_left">左图右文</option></select></div>' +
-    '</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">每页显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_data_items_per_page" value="6"></div>' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">分页按钮对齐</label>' +
-        '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align"><option value="center">居中</option><option value="left">居左</option><option value="right">居右</option></select></div>' +
-    '</div>' +
+    '<hr class="my-2">' +
+    '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
     '<div class="row g-2">' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">显示分页</label>' +
         '<select class="form-select form-select-sm" name="module_' + idx + '_data_show_pagination"><option value="true" selected>显示</option><option value="false">隐藏</option></select></div>' +
@@ -1457,8 +1477,9 @@ function addModule(type, variant) {
         '<select class="form-select form-select-sm" name="module_' + idx + '_data_pagination_style"><option value="load_more" selected>加载更多</option><option value="page_numbers">页码导航</option></select></div>' +
     '</div>' +
     '<div class="row g-2">' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">显示"查看全部"</label>' +
-        '<select class="form-select form-select-sm" name="module_' + idx + '_data_show_view_all"><option value="true" selected>显示</option><option value="false">隐藏</option></select></div>' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">每页显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_data_items_per_page" value="6"></div>' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">分页对齐</label>' +
+        '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align"><option value="center">居中</option><option value="left">居左</option><option value="right">居右</option></select></div>' +
     '</div>' +
     '<hr class="my-2">' +
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
@@ -1474,6 +1495,7 @@ function addModule(type, variant) {
       '<div class="col-6">' + uP('module_' + idx + '_data_margin_left', '左', ['px','rem']) + '</div>' +
     '</div>' +
     '<hr class="my-2">' +
+    '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>';
   } else if (type === 'product_grid') {
     specialEditor =
@@ -1581,16 +1603,45 @@ function addModule(type, variant) {
     '</div>' +
     '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML"></div>' +
     '<textarea class="form-control form-control-sm d-none" name="module_' + idx + '_data_body"></textarea></div>' +
+
+    // ===== 文字排版 =====
+    '<hr class="my-2">' +
+    '<div class="small fw-semibold mb-1 text-muted">文字排版</div>' +
     '<div class="row g-2">' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">文字排版</label><select class="form-select form-select-sm" name="module_' + idx + '_data_text_align"><option value="left">居左</option><option value="center">居中</option><option value="right">居右</option></select></div>' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">对齐方式</label><select class="form-select form-select-sm" name="module_' + idx + '_data_text_align"><option value="left">居左</option><option value="center">居中</option><option value="right">居右</option></select></div>' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">分栏</label><select class="form-select form-select-sm" name="module_' + idx + '_data_columns"><option value="1">单栏</option><option value="2">双栏</option></select></div>' +
     '</div>' +
+
+    // ===== 外层样式 =====
     '<hr class="my-2">' +
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色', '#ffffff') + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
     '</div>' +
+
+    // ===== 外层外边距 =====
+    '<div class="small fw-semibold mb-1 text-muted mt-2">外层外边距</div>' +
+    '<div class="row g-2">' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_margin_top', '上', ['px','rem']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_margin_right', '右', ['px','rem']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_margin_bottom', '下', ['px','rem']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_margin_left', '左', ['px','rem']) + '</div>' +
+    '</div>' +
+
+    // ===== 内层边距 =====
+    '<hr class="my-2">' +
+    '<div class="small fw-semibold mb-1 text-muted">内层边距</div>' +
+    '<div class="row g-2">' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_padding_top', '上', ['px','rem']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_padding_right', '右', ['px','rem']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_padding_bottom', '下', ['px','rem']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_padding_left', '左', ['px','rem']) + '</div>' +
+    '</div>' +
+
+    // ===== 文字样式 =====
+    '<hr class="my-2">' +
+    '<div class="small fw-semibold mb-1 text-muted">文字样式</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + cP('module_' + idx + '_data_title_color', '标题颜色', '#1e293b') + '</div>' +
       '<div class="col-6">' + cP('module_' + idx + '_data_body_color', '正文颜色', '#475569') + '</div>' +
@@ -1599,6 +1650,7 @@ function addModule(type, variant) {
       '<div class="col-6">' + uP('module_' + idx + '_data_title_size', '标题字号', ['px','rem']) + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_body_size', '正文字号', ['px','rem']) + '</div>' +
     '</div>';
+
   } else if (type === 'item_detail') {
     specialEditor =
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
@@ -1767,15 +1819,15 @@ function addModule(type, variant) {
       '</div>' +
       '<div class="device-config device-desktop">' +
         '<div class="small fw-semibold mb-1 text-primary">电脑端配置</div>' +
-        (specialEditor || desktopFields) + (needsResp ? renderResponsiveControls(idx, '') : '') +
+        (specialEditor || desktopFields) + (needsResp ? renderResponsiveControls(idx, '', type) : '') +
       '</div>' +
       '<div class="device-config device-tablet" style="display:none">' +
         '<div class="small fw-semibold mb-1 text-primary">平板端配置（继承电脑端）</div>' +
-        tabletFields + (needsResp ? renderResponsiveControls(idx, 'tablet') : '') + renderHiddenControl(idx, 'tablet', '平板端') +
+        tabletFields + (needsResp ? renderResponsiveControls(idx, 'tablet', type) : '') + renderHiddenControl(idx, 'tablet', '平板端') +
       '</div>' +
       '<div class="device-config device-mobile" style="display:none">' +
         '<div class="small fw-semibold mb-1 text-primary">手机端配置（继承电脑端）</div>' +
-        mobileFields + (needsResp ? renderResponsiveControls(idx, 'mobile') : '') + renderHiddenControl(idx, 'mobile', '手机端') +
+        mobileFields + (needsResp ? renderResponsiveControls(idx, 'mobile', type) : '') + renderHiddenControl(idx, 'mobile', '手机端') +
       '</div>' +
     '</div>';
   container.appendChild(div);
@@ -1922,14 +1974,29 @@ function submitModuleFormAjax(form, event) {
   event.preventDefault();
   event.stopPropagation();
   var formData = new FormData(form);
-  var btn = form.querySelector('button[type="submit"]');
+  // 按钮可能已被移到 footer，从全局查找
+  var btn = form.querySelector('button[type="submit"]') || document.querySelector('button[form="' + form.id + '"][type="submit"]');
   if (btn) { btn.disabled = true; btn.textContent = '保存中...'; }
   fetch(form.action, {method:'POST', body: formData})
     .then(function(r) { return r.text(); })
     .then(function(html) {
       var panel = document.getElementById('rightPanelBody');
+      var footer = document.getElementById('rightPanelFooter');
       panel.innerHTML = html;
       runPanelScripts(panel);
+      // 移动保存按钮到 footer
+      var saveBar = panel.querySelector('.panel-save-bar');
+      if (saveBar && footer) {
+        var newForm = saveBar.closest('form');
+        var newBtn = saveBar.querySelector('button[type="submit"]');
+        if (newBtn && newForm) {
+          if (!newForm.id) newForm.id = '_panelForm_' + Date.now();
+          newBtn.setAttribute('form', newForm.id);
+        }
+        footer.innerHTML = '';
+        footer.appendChild(saveBar);
+        footer.style.display = '';
+      }
       refreshPreview();
     })
     .catch(function(err) {

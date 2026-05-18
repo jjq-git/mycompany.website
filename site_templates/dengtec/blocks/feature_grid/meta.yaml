@@ -5,18 +5,22 @@ fields:
   - key: title
     label: 区块标题
     type: text
+    group: 内容
     default: ""
   - key: subtitle
     label: 区块副标题
     type: text
+    group: 内容
   - key: max_width
     label: 整体最大宽度
     type: text
+    group: 布局
     default: ""
     placeholder: 如 1200px（留空=全宽）
   - key: block_align
     label: 整体对齐
     type: select
+    group: 布局
     default: ""
     options:
       - value: ""
@@ -30,6 +34,7 @@ fields:
   - key: card_align
     label: 卡片组对齐
     type: select
+    group: 布局
     default: ""
     options:
       - value: ""
@@ -42,17 +47,44 @@ fields:
         label: 居右
   - key: section_bg
     label: 外层背景色
-    type: text
+    type: color
+    group: 外层样式
     default: ""
     placeholder: 如 #f5f7fa（留空=使用默认）
   - key: inner_width
     label: 内层内容区宽度
     type: text
+    group: 外层样式
     default: ""
     placeholder: 如 1200px（留空=全宽）
+  - key: margin_top
+    label: 外层上外边距
+    type: text
+    group: 外层外边距
+    default: ""
+    placeholder: 如 40px
+  - key: margin_right
+    label: 外层右外边距
+    type: text
+    group: 外层外边距
+    default: ""
+    placeholder: 如 40px
+  - key: margin_bottom
+    label: 外层下外边距
+    type: text
+    group: 外层外边距
+    default: ""
+    placeholder: 如 40px
+  - key: margin_left
+    label: 外层左外边距
+    type: text
+    group: 外层外边距
+    default: ""
+    placeholder: 如 40px
   - key: card_show_border
     label: 显示卡片边框
     type: select
+    group: 卡片样式
     default: ""
     options:
       - value: ""
@@ -62,66 +94,56 @@ fields:
   - key: card_padding_top
     label: 卡片上内边距
     type: text
+    group: 卡片内边距
     default: ""
     placeholder: 如 24px
   - key: card_padding_right
     label: 卡片右内边距
     type: text
+    group: 卡片内边距
     default: ""
     placeholder: 如 24px
   - key: card_padding_bottom
     label: 卡片下内边距
     type: text
+    group: 卡片内边距
     default: ""
     placeholder: 如 24px
   - key: card_padding_left
     label: 卡片左内边距
     type: text
+    group: 卡片内边距
     default: ""
     placeholder: 如 24px
   - key: card_radius_top_left
     label: 卡片左上圆角
     type: text
+    group: 卡片圆角
     default: ""
     placeholder: 如 12px
   - key: card_radius_top_right
     label: 卡片右上圆角
     type: text
+    group: 卡片圆角
     default: ""
     placeholder: 如 12px
   - key: card_radius_bottom_right
     label: 卡片右下圆角
     type: text
+    group: 卡片圆角
     default: ""
     placeholder: 如 12px
   - key: card_radius_bottom_left
     label: 卡片左下圆角
     type: text
+    group: 卡片圆角
     default: ""
     placeholder: 如 12px
-  - key: margin_top
-    label: 外层上外边距
-    type: text
-    default: ""
-    placeholder: 如 40px
-  - key: margin_right
-    label: 外层右外边距
-    type: text
-    default: ""
-    placeholder: 如 40px
-  - key: margin_bottom
-    label: 外层下外边距
-    type: text
-    default: ""
-    placeholder: 如 40px
-  - key: margin_left
-    label: 外层左外边距
-    type: text
-    default: ""
-    placeholder: 如 40px
   - key: features
     label: 功能卡片列表
     type: list
+    group: 功能卡片
+    item_label: 功能卡片
     item_fields:
       - key: icon
         label: 图标

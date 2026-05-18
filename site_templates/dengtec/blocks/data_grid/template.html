@@ -27,16 +27,14 @@
   {% set filtered_items = _tmp %}
 {% endif %}
 {% if filtered_items %}
-{% set max_items = md.get('max_items', 6) | int %}
 {% set per_page = md.get('items_per_page', 6) | int %}
-{% set show_view_all = md.get('show_view_all', true) not in (false, 'false', 'False', '') %}
 {% set card_layout = md.get('card_layout', 'image_top') %}
 {% set section_bg = md.get('section_bg', '') %}
 {% set inner_w = md.get('inner_width', '') %}
 {% set columns = md.get('columns') | int or 3 %}
 {% set show_pagination = md.get('show_pagination', true) not in (false, 'false', 'False', '') %}
 {% set pagination_style = md.get('pagination_style', 'load_more') %}
-{% set display_items = filtered_items[:max_items] %}
+{% set display_items = filtered_items %}
 {% set total = display_items | length %}
 {% set is_products = dataset_key == 'products' %}
 {% set is_posts = dataset_key == 'posts' %}
@@ -103,11 +101,6 @@
     </div>
     {% endif %}
 
-    {% if show_view_all %}
-    <div class="dg-pager dg-pager--center" style="margin-top: 1rem;">
-      <a href="{{ base_url }}/{{ lang }}{{ current_path }}" class="btn btn-primary">{{ t.actions.viewAll | default('查看全部') }}</a>
-    </div>
-    {% endif %}
   </div>
 </section>
 {% endif %}

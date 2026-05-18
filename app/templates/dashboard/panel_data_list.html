@@ -101,7 +101,9 @@
 
     <input type="hidden" name="module_count" id="moduleCountDs" value="0">
   </div>
-  <button type="submit" class="btn btn-primary btn-sm mt-2">保存</button>
+  <div class="panel-save-bar">
+    <button type="submit" class="btn btn-primary btn-sm w-100">保存</button>
+  </div>
 </form>
 
 {# JS: 模块选择器交互 #}
@@ -229,6 +231,11 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var isDataModule = type === 'item_data';
     // 只有数据类模块才需要每行列数和显示数量控件
     var needsResp = (type === 'data_grid' || type === 'product_grid' || type === 'feature_grid');
+    // data_grid 使用 items_per_page，其他模块使用 max_items
+    var respCountField = (type === 'data_grid') ? 'items_per_page' : 'max_items';
+    var respCountLabel = (type === 'data_grid') ? '每页显示数量' : '显示数量';
+    var respCountPlaceholder = (type === 'data_grid') ? '默认' : '0=全部';
+    var respCountPlaceholderInherit = (type === 'data_grid') ? '继承电脑端' : '继承电脑端';
     var borderStyle = isDataModule ? 'border-color: var(--color-primary, #067a7a);' : '';
     var headerBg = isDataModule ? 'background:rgba(6,122,122,0.05);' : '';
     var titleColor = isDataModule ? 'text-primary' : '';
@@ -306,18 +313,20 @@ window._dsEditItemJson = {{ edit_item | tojson }};
           '<div class="col-6">' + cP('module_' + idx + '_data_tag_bg', '标签背景色', d.tag_bg || '#067a7a') + '</div>' +
           '<div class="col-6">' + cP('module_' + idx + '_data_tag_color', '标签字体色', d.tag_color || '#ffffff') + '</div></div>';
       } else if (type === 'data_grid') {
-        specialEditor = '<div class="mb-2"><label class="form-label small mb-1 text-muted">数据来源</label><select class="form-select form-select-sm" name="module_' + idx + '_data_dataset"><option value="">暂无数据源</option></select></div>' +
-          '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">最大显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_data_max_items" value="' + (d.max_items || '6') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">卡片布局</label><select class="form-select form-select-sm" name="module_' + idx + '_data_card_layout"><option value="image_top"' + (d.card_layout === 'image_top' ? ' selected' : '') + '>上图下文</option><option value="image_left"' + (d.card_layout === 'image_left' ? ' selected' : '') + '>左图右文</option></select></div></div>' +
-          '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">每页显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_data_items_per_page" value="' + (d.items_per_page || '6') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">分页按钮对齐</label><select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align"><option value="center"' + (d.pager_align === 'center' ? ' selected' : '') + '>居中</option><option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option><option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option></select></div></div>' +
+        specialEditor = '<div class="small fw-semibold mb-1 text-muted">数据</div>' +
+          '<div class="mb-2"><label class="form-label small mb-1 text-muted">数据来源</label><select class="form-select form-select-sm" name="module_' + idx + '_data_dataset"><option value="">暂无数据源</option></select></div>' +
+          '<div class="mb-2"><label class="form-label small mb-1 text-muted">卡片布局</label><select class="form-select form-select-sm" name="module_' + idx + '_data_card_layout"><option value="image_top"' + (d.card_layout === 'image_top' ? ' selected' : '') + '>上图下文</option><option value="image_left"' + (d.card_layout === 'image_left' ? ' selected' : '') + '>左图右文</option></select></div>' +
+          '<hr class="my-2">' +
+          '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
           '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">显示分页</label><select class="form-select form-select-sm" name="module_' + idx + '_data_show_pagination"><option value="true"' + (d.show_pagination !== 'false' ? ' selected' : '') + '>显示</option><option value="false"' + (d.show_pagination === 'false' ? ' selected' : '') + '>隐藏</option></select></div>' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">分页样式</label><select class="form-select form-select-sm" name="module_' + idx + '_data_pagination_style"><option value="load_more"' + (d.pagination_style !== 'page_numbers' ? ' selected' : '') + '>加载更多</option><option value="page_numbers"' + (d.pagination_style === 'page_numbers' ? ' selected' : '') + '>页码导航</option></select></div></div>' +
-          '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">显示查看全部</label><select class="form-select form-select-sm" name="module_' + idx + '_data_show_view_all"><option value="true"' + (d.show_view_all !== 'false' ? ' selected' : '') + '>显示</option><option value="false"' + (d.show_view_all === 'false' ? ' selected' : '') + '>隐藏</option></select></div></div>' +
-          '<hr class="my-2"><div class="small fw-semibold mb-1 text-muted">外层样式</div><div class="row g-2">' +
+          '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">每页显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_data_items_per_page" value="' + (d.items_per_page || '6') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">分页对齐</label><select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align"><option value="center"' + (d.pager_align === 'center' ? ' selected' : '') + '>居中</option><option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option><option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option></select></div></div>' +
+          '<hr class="my-2">' +
+          '<div class="small fw-semibold mb-1 text-muted">外层样式</div><div class="row g-2">' +
           '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg || '#ffffff') + '</div>' +
           '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div></div>' +
-          '<hr class="my-2"><div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + escapeHtml(d.title || '') + '"></div>';
+          '<hr class="my-2"><div class="small fw-semibold mb-1 text-muted">内容</div><div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + escapeHtml(d.title || '') + '"></div>';
       } else if (type === 'product_grid') {
         specialEditor = '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">最大显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_data_max_items" value="' + (d.max_items || '6') + '"></div></div>' +
           '<hr class="my-2"><div class="small fw-semibold mb-1 text-muted">外层样式</div><div class="row g-2">' +
@@ -414,18 +423,18 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         '<div class="device-config device-desktop">' +
           '<div class="small fw-semibold mb-1 text-primary">电脑端配置</div>' +
           (specialEditor || desktopFields) +
-          (needsResp ? '<hr class="my-2"><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_columns" placeholder="默认" min="1" max="6"></div><div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_max_items" placeholder="0=全部"></div></div>' : '') +
+          (needsResp ? '<hr class="my-2"><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_columns" placeholder="默认" min="1" max="6"></div><div class="col-6"><label class="form-label small mb-1 text-muted">' + respCountLabel + '</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_' + respCountField + '" placeholder="' + respCountPlaceholder + '"></div></div>' : '') +
         '</div>' +
         '<div class="device-config device-tablet" style="display:none">' +
           '<div class="small fw-semibold mb-1 text-primary">平板端配置（继承电脑端）</div>' +
           tabletFields +
-          (needsResp ? '<hr class="my-2"><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_columns" placeholder="继承电脑端" min="1" max="6"></div><div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_max_items" placeholder="继承电脑端"></div></div>' : '') +
+          (needsResp ? '<hr class="my-2"><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_columns" placeholder="继承电脑端" min="1" max="6"></div><div class="col-6"><label class="form-label small mb-1 text-muted">' + respCountLabel + '</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_' + respCountField + '" placeholder="继承电脑端"></div></div>' : '') +
           '<div class="mb-2 mt-2"><label class="form-check-label small"><input type="checkbox" class="form-check-input" name="module_' + idx + '_resp_tablet_hidden" value="1"> 平板端隐藏此模块</label></div>' +
         '</div>' +
         '<div class="device-config device-mobile" style="display:none">' +
           '<div class="small fw-semibold mb-1 text-primary">手机端配置（继承电脑端）</div>' +
           mobileFields +
-          (needsResp ? '<hr class="my-2"><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_columns" placeholder="继承电脑端" min="1" max="6"></div><div class="col-6"><label class="form-label small mb-1 text-muted">显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_max_items" placeholder="继承电脑端"></div></div>' : '') +
+          (needsResp ? '<hr class="my-2"><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_columns" placeholder="继承电脑端" min="1" max="6"></div><div class="col-6"><label class="form-label small mb-1 text-muted">' + respCountLabel + '</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_' + respCountField + '" placeholder="继承电脑端"></div></div>' : '') +
           '<div class="mb-2 mt-2"><label class="form-check-label small"><input type="checkbox" class="form-check-input" name="module_' + idx + '_resp_mobile_hidden" value="1"> 手机端隐藏此模块</label></div>' +
         '</div>';
     }
@@ -616,7 +625,9 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     {% else %}<input type="text" class="form-control form-control-sm" name="{{ key }}" value="{{ val }}">{% endif %}
   </div>
   {% endfor %}
-  <button type="submit" class="btn btn-primary btn-sm mt-2">保存</button>
+  <div class="panel-save-bar">
+    <button type="submit" class="btn btn-primary btn-sm w-100">保存</button>
+  </div>
 </form>
 {% elif items %}
 <div class="table-responsive">

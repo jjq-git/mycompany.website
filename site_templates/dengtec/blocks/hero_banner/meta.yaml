@@ -6,16 +6,19 @@ fields:
   - key: hero_width
     label: Banner 整体宽度
     type: text
+    group: 外层样式
     default: ""
     placeholder: 如 100%（留空=全宽）
   - key: hero_height
     label: Banner 整体高度
     type: text
+    group: 外层样式
     default: ""
     placeholder: 如 500px 或 77vh（留空=默认 77vh）
   - key: banner_align
     label: Banner 排版
     type: select
+    group: 外层样式
     options:
       - value: ""
         label: 默认（全宽）
@@ -28,42 +31,83 @@ fields:
   - key: inner_width
     label: 内层内容区宽度
     type: text
+    group: 外层样式
     default: ""
     placeholder: 如 1200px（留空=全宽）
-  - key: type
-    label: 媒体类型
-    type: select
-    options:
-      - value: image
-        label: 图片
-      - value: video
-        label: 视频
-  - key: media
-    label: 媒体地址
-    type: url
-  - key: title
-    label: 主标题
+  - key: title_font_size
+    label: 标题字号
     type: text
-  - key: subtitle
-    label: 副标题
+    group: 配色
+    default: ""
+    placeholder: 如 3.5rem（留空=默认）
+  - key: title_color
+    label: 标题颜色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #ffffff（留空=白色）
+  - key: subtitle_font_size
+    label: 副标题字号
     type: text
-  - key: primaryBtn
-    label: 主按钮文字
+    group: 配色
+    default: ""
+    placeholder: 如 1.25rem（留空=默认）
+  - key: subtitle_color
+    label: 副标题颜色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #ffffff（留空=白色）
+  - key: btn_font_size
+    label: 按钮字号
     type: text
-  - key: primaryBtnLink
-    label: 主按钮链接
-    type: url
-  - key: primaryBtnLinkTarget
-    label: 主按钮打开方式
-    type: select
-    options:
-      - value: ""
-        label: 当前页
-      - value: _blank
-        label: 新标签页
-  - key: secondaryBtn
-    label: 副按钮文字
-    type: text
-  - key: secondaryBtnLink
-    label: 副按钮链接
-    type: url
+    group: 配色
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: btn_text_color
+    label: 按钮文字色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #ffffff（留空=白色）
+  - key: btn_bg
+    label: 按钮背景色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #067a7a（留空=使用主色）
+  - key: slides
+    label: 轮播媒体项
+    type: list
+    group: 轮播媒体项
+    item_label: 媒体项
+    item_fields:
+      - key: type
+        label: 媒体类型
+        type: select
+        options:
+          - value: image
+            label: 图片
+          - value: video
+            label: 视频
+      - key: media
+        label: 媒体地址
+        type: url
+      - key: title
+        label: 主标题
+        type: text
+      - key: subtitle
+        label: 副标题
+        type: text
+      - key: primaryBtn
+        label: 主按钮文字
+        type: text
+      - key: primaryBtnLink
+        label: 主按钮链接
+        type: url
+      - key: secondaryBtn
+        label: 副按钮文字
+        type: text
+      - key: secondaryBtnLink
+        label: 副按钮链接
+        type: url
