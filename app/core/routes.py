@@ -1381,7 +1381,7 @@ def dataset_edit(dataset_key, item_id):
         return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
 
     blocks = _get_available_blocks(site.template_name)
-    # 中间预览 URL
+    # 中间预览 URL：计算数据集在菜单中的完整层级路径
     slug = item.get('slug', '')
     settings = read_yaml(site.id, 'settings.yaml') or {}
     menu_items = settings.get('menu') or []
@@ -1389,6 +1389,12 @@ def dataset_edit(dataset_key, item_id):
         mi.get('type') == 'list' and mi.get('target') == dataset_key
         for mi in menu_items
     )
+    # 计算数据集的完整菜单路径（含父级前缀），用于预览 URL
+    from app.core.menu import find_menu_path
+    meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
+    raw_menu = menu_lib.upgrade_old_format(menu_items, meta.get('datasets', []))
+    preview_path = find_menu_path(raw_menu, dataset_key)
     return _render('dashboard/panel_data_list.html',
                    user=user, site=site,
                    dataset_key=dataset_key, items=[item],
@@ -1399,7 +1405,8 @@ def dataset_edit(dataset_key, item_id):
                    blocks=blocks,
                    is_list_page=is_list_page,
                    page_key=dataset_key,
-                   preview_slug=slug)
+                   preview_slug=slug,
+                   preview_path=preview_path)
 
 @bp.route('/_dataset/<path:dataset_key>/<int:item_id>/delete', methods=['POST'])
 def dataset_delete(dataset_key, item_id):

@@ -123,7 +123,7 @@
     const url = row.querySelector('.menu-url');
     const style = row.querySelector('.menu-dropdown-style');
     const item = row._item;
-    target.style.display = (type === 'list' || type === 'page') ? '' : 'none';
+    target.style.display = (type === 'home') ? 'none' : '';
     url.style.display = type === 'link' ? '' : 'none';
     style.style.display = item.children && item.children.length ? '' : 'none';
   }

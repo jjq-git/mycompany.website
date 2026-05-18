@@ -30,32 +30,55 @@ VALID_TYPES = {'home', 'list', 'page', 'link', 'group'}
 VALID_DROPDOWN_STYLES = {'vertical', 'horizontal', 'grid', 'cards'}
 
 
-def url_of(item):
-    """从菜单项计算最终 URL."""
+def url_of(item, parent_path=''):
+    """从菜单项计算最终 URL.
+
+    parent_path: 父级路径前缀, 用于生成层级 URL.
+                 group 类型自身无页面, 但其 target 会参与子级路径构建.
+    """
     t = item.get('type')
     if t == 'home':
         return '/'
     if t == 'list':
-        return f'/{item.get("target", "")}'
+        target = item.get('target', '')
+        if not target:
+            return '/'
+        path = f'{parent_path}/{target}' if parent_path else target
+        return f'/{path}'
     if t == 'link':
         return item.get('url', '#')
     if t == 'page':
         target = item.get('target', '')
-        return '/' if target == 'home' else f'/{target}'
+        if target == 'home' or not target:
+            return '/'
+        path = f'{parent_path}/{target}' if parent_path else target
+        return f'/{path}'
     if t == 'group':
         return ''  # 容器无独立页面
     # 兜底: 旧格式 (只有 url 字段)
     return item.get('url', '#')
 
 
-def normalize_for_render(items):
-    """给每个菜单项加上 url 字段, 递归处理 children. 返回新 list, 不改原数据."""
+def normalize_for_render(items, parent_path=''):
+    """给每个菜单项加上 url 字段, 递归处理 children. 返回新 list, 不改原数据.
+
+    parent_path: 父级路径前缀.
+                 group 类型自身无页面, 但其 target 会参与子级路径构建.
+    """
     result = []
     for it in items or []:
         new = dict(it)
-        new['url'] = url_of(it)
+        new['url'] = url_of(it, parent_path)
+
+        # 计算子菜单的父路径: group/page/list 贡献其 target
+        child_parent = parent_path
+        t = it.get('type')
+        target = it.get('target', '')
+        if t in ('page', 'list', 'group') and target:
+            child_parent = f'{parent_path}/{target}' if parent_path else target
+
         if it.get('children'):
-            new['children'] = normalize_for_render(it['children'])
+            new['children'] = normalize_for_render(it['children'], child_parent)
         else:
             new['children'] = []
         result.append(new)
@@ -94,7 +117,7 @@ def clean_for_storage(items):
                 continue
 
             item = {'label': label, 'type': item_type}
-            if item_type in ('list', 'page'):
+            if item_type in ('list', 'page', 'group'):
                 target = str(raw.get('target') or '').strip().strip('/')
                 if target:
                     item['target'] = target
@@ -116,6 +139,28 @@ def clean_for_storage(items):
 
     cleaned = _clean(items, allow_home=True)
     return ensure_home(cleaned)
+
+
+def find_menu_path(menu_items, target):
+    """在菜单树中递归查找 target 的完整层级路径.
+
+    返回路径如 'parent/target'，找不到返回 target 本身。
+    """
+    def _walk(items, parent_path=''):
+        for item in items or []:
+            t = item.get('type')
+            item_target = item.get('target', '')
+            if t in ('page', 'list') and item_target == target:
+                return f'{parent_path}/{item_target}' if parent_path else item_target
+            if item.get('children'):
+                child_parent = parent_path
+                if t in ('page', 'list', 'group') and item_target:
+                    child_parent = f'{parent_path}/{item_target}' if parent_path else item_target
+                result = _walk(item['children'], child_parent)
+                if result:
+                    return result
+        return None
+    return _walk(menu_items) or target
 
 
 def upgrade_old_format(items, datasets):
@@ -216,18 +261,32 @@ def collect_render_tasks(menu_items, tpl_html_dir, data, pages=None):
         'page_key': 'home',
     })
 
-    def _walk(items):
+    def _walk(items, parent_path=''):
         for item in items or []:
             t = item.get('type')
             target = item.get('target', '')
+
+            # 计算当前项的 URL 路径 (含父级层级)
+            # group/page/list 贡献其 target 到 item_path
+            if parent_path and target:
+                item_path = f'{parent_path}/{target}'
+            elif target:
+                item_path = target
+            else:
+                item_path = parent_path
+
+            # 计算子菜单的父路径: page/list/group 传递其 target
+            child_parent = parent_path
+            if t in ('page', 'list', 'group') and target:
+                child_parent = item_path
 
             if t == 'list' and target:
                 # 所有 list 页面统一使用模块库配置（index.html → _modules.html）
                 tasks.append({
                     'type': 'list',
                     'template': 'index.html',
-                    'output_path': f'{target}/index.html',
-                    'current_path': f'/{target}/',
+                    'output_path': f'{item_path}/index.html',
+                    'current_path': f'/{item_path}/',
                     'page_key': target,
                     'dataset_key': target,
                 })
@@ -249,8 +308,8 @@ def collect_render_tasks(menu_items, tpl_html_dir, data, pages=None):
                             tasks.append({
                                 'type': 'detail',
                                 'template': dt_tmpl,
-                                'output_path': f'{target}/{slug}/index.html',
-                                'current_path': f'/{target}/{slug}/',
+                                'output_path': f'{item_path}/{slug}/index.html',
+                                'current_path': f'/{item_path}/{slug}/',
                                 'page_key': target,
                                 'dataset_key': target,
                                 'var_name': var_name,
@@ -264,14 +323,14 @@ def collect_render_tasks(menu_items, tpl_html_dir, data, pages=None):
                 tasks.append({
                     'type': 'page',
                     'template': page_tmpl,
-                    'output_path': f'{target}/index.html',
-                    'current_path': f'/{target}/',
+                    'output_path': f'{item_path}/index.html',
+                    'current_path': f'/{item_path}/',
                     'page_key': target,
                 })
 
             # 递归子菜单
             if item.get('children'):
-                _walk(item['children'])
+                _walk(item['children'], child_parent)
 
     _walk(menu_items)
     return tasks

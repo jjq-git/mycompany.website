@@ -4,7 +4,12 @@
 
 {% block content %}
 
-<a href="{{ base_url }}/{{ lang }}/{{ current_path.split('/')[1] }}/" class="btn btn-ghost" style="margin: var(--spacing-md) 0 0 var(--spacing-md);">← {{ t.project.backToList | default('返回列表') }}</a>
+{# 返回列表: 去掉路径末尾的 item slug，回到父级列表页 #}
+{% set _path_parts = current_path.strip('/').split('/') %}
+{% set _list_path = _path_parts[:-1] | join('/') %}
+<div class="container">
+  <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="btn btn-ghost" style="margin: var(--spacing-md) 0;">← {{ t.project.backToList | default('返回列表') }}</a>
+</div>
 
 {# 模块驱动的详情渲染：遍历 modules，item_data 渲染详情内容 #}
 {% set modules = item.modules or [] %}

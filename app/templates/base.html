@@ -140,7 +140,7 @@
                   <a class="left-nav-item left-nav-parent-link flex-grow-1"
                      href="{{ url_for('core.page_panel', page_key=item.target or item.label) }}"
                      data-panel="{{ item.type }}_{{ item.target or item.label }}"
-                     data-preview-page="{{ item.target or item.label }}"
+                     data-preview-page="{{ item.url }}"
                      title="{{ item.label }}">
                      {% if item.type == 'list' %}
                        <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -189,7 +189,7 @@
               <a class="left-nav-item"
                  href="{{ url_for('core.page_panel', page_key=item.target or item.label) }}"
                  data-panel="{{ item.type }}_{{ item.target or item.label }}"
-                 data-preview-page="{{ item.target or item.label }}"
+                 data-preview-page="{{ item.url }}"
                  style="padding-left: {{ 16 + level * 16 }}px;"
                  title="{{ item.label }}">
                  {% if item.type == 'list' %}
@@ -483,7 +483,7 @@ function doPublish() {
 function pageKeyFromPreviewPath(pathname) {
   var cleaned = pathname.replace(/^\/preview\/\d+/, '').replace(/^\/(zh-CN|zh-TW|en)/, '').replace(/\/index\.html$/, '').replace(/\/$/, '');
   if (!cleaned || cleaned === '/') return 'home';
-  return cleaned.split('/').filter(Boolean)[0] || 'home';
+  return cleaned.split('/').filter(Boolean).pop() || 'home';
 }
 
 function selectModuleInPanel(index, pageKey) {

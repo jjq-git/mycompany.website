@@ -22,7 +22,8 @@
   {% set display_features = display_features[:max_items] %}
 {% endif %}
 {% if display_features and display_features | length > 0 %}
-<section class="section{% if not section_bg %} section-bg{% endif %}"{% if section_bg %} style="background: {{ section_bg }};"{% endif %}>
+{% set mg_top = md.get('margin_top', '') %}{% set mg_right = md.get('margin_right', '') %}{% set mg_bottom = md.get('margin_bottom', '') %}{% set mg_left = md.get('margin_left', '') %}{% set has_margin = mg_top or mg_right or mg_bottom or mg_left %}
+<section class="section{% if not section_bg %} section-bg{% endif %}"{% if section_bg or has_margin %} style="{% if section_bg %}background: {{ section_bg }};{% endif %}{% if mg_top %}margin-top: {{ mg_top }};{% endif %}{% if mg_right %}margin-right: {{ mg_right }};{% endif %}{% if mg_bottom %}margin-bottom: {{ mg_bottom }};{% endif %}{% if mg_left %}margin-left: {{ mg_left }};{% endif %}"{% endif %}>
   <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
     {% if md.title %}
     <div class="section-header">
