@@ -8,6 +8,7 @@
   {% endfor %}
 {% endwith %}
 <form method="post" action="{{ url_for('core.social_edit', _fragment='1', site=site.id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {% for platform in ('github','twitter','facebook','linkedin','youtube') %}
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">{{ platform | title }}</label>

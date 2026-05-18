@@ -8,6 +8,7 @@
     <p class="page-subtitle">共 {{ products|length }} 个</p>
   </div>
   <form method="post" action="{{ url_for('core.product_new', site=site.id) }}" style="margin: 0;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button class="btn btn-primary" type="submit">+ 新建产品</button>
   </form>
 </div>
@@ -41,6 +42,7 @@
       <td>
         <form method="post" action="{{ url_for('core.product_delete', product_id=p.id, site=site.id) }}"
               onsubmit="return confirm('确认删除 {{ p.name }}？')" style="margin: 0;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="btn" type="submit">删除</button>
         </form>
       </td>
@@ -52,6 +54,7 @@
 <div class="card empty">
   <p>还没有产品</p>
   <form method="post" action="{{ url_for('core.product_new', site=site.id) }}" style="display: inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button class="btn btn-primary" type="submit">新建第一个产品</button>
   </form>
 </div>

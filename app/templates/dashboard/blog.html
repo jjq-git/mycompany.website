@@ -8,6 +8,7 @@
     <p class="page-subtitle">共 {{ items|length }} 篇</p>
   </div>
   <form method="post" action="{{ url_for('core.post_new', site=site.id) }}" style="margin: 0;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button class="btn btn-primary" type="submit">+ 新建文章</button>
   </form>
 </div>
@@ -39,6 +40,7 @@
       <td>
         <form method="post" action="{{ url_for('core.post_delete', item_id=it.id, site=site.id) }}"
               onsubmit="return confirm('确认删除 {{ it.title }}？')" style="margin: 0;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="btn" type="submit">删除</button>
         </form>
       </td>
@@ -50,6 +52,7 @@
 <div class="card empty">
   <p>还没有文章</p>
   <form method="post" action="{{ url_for('core.post_new', site=site.id) }}" style="display: inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button class="btn btn-primary" type="submit">写第一篇</button>
   </form>
 </div>

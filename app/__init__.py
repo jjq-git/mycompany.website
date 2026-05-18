@@ -1,15 +1,24 @@
 """Flask 应用工厂."""
 from flask import Flask
+from flask_wtf.csrf import CSRFProtect
 
 from .core.config import load_config
 from .core.db import db
+
+csrf = CSRFProtect()
 
 
 def create_app(config_override=None):
     app = Flask(__name__)
     app.config.update(load_config(config_override))
 
+    # 上传体积上限：所有 multipart 请求总大小不能超过 MAX_CONTENT_LENGTH，
+    # 防止巨型文件 / 图片炸弹耗尽磁盘和内存。Flask 默认 None=无上限, 这里必须显式赋值.
+    if app.config.get('MAX_CONTENT_LENGTH') is None:
+        app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
+
     db.init_app(app)
+    csrf.init_app(app)
 
     # 注册路由
     from .core.routes import bp as core_bp

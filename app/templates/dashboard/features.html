@@ -8,6 +8,7 @@
     <p class="page-subtitle">显示在首页"功能亮点"区块。共 {{ items|length }} 个。</p>
   </div>
   <form method="post" action="{{ url_for('core.feature_new', site=site.id) }}" style="margin: 0;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button class="btn btn-primary" type="submit">+ 新建功能</button>
   </form>
 </div>
@@ -39,6 +40,7 @@
       <td>
         <form method="post" action="{{ url_for('core.feature_delete', item_id=it.id, site=site.id) }}"
               onsubmit="return confirm('确认删除 {{ it.title }}？')" style="margin: 0;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="btn" type="submit">删除</button>
         </form>
       </td>
@@ -50,6 +52,7 @@
 <div class="card empty">
   <p>还没有功能</p>
   <form method="post" action="{{ url_for('core.feature_new', site=site.id) }}" style="display: inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button class="btn btn-primary" type="submit">新建第一个</button>
   </form>
 </div>

@@ -93,6 +93,7 @@
 
 {# ---- 已选模块列表 ---- #}
 <form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" data-page-key="{{ dataset_key }}" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div>
     <div class="small text-muted mb-2">已选模块（拖拽排序 | 点击展开配置）</div>
     <div id="selectedModulesDs">
@@ -575,6 +576,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 {% elif is_edit and edit_item %}
 {# ========== 编辑模式：简单表单（无 blocks） ========== #}
 <form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label>
     <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="如 my-post">

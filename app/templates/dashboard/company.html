@@ -13,6 +13,7 @@
 {% endwith %}
 
 <form method="post" action="{{ url_for('core.company', site=site.id) }}" style="max-width: 720px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="mb-2">
     <label class="form-label small mb-1">公司名称</label>
     <input class="form-control form-control-sm" name="company.name" value="{{ company.get('name', '') }}">

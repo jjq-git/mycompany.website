@@ -10,6 +10,7 @@
 {% endwith %}
 
 <form method="post" action="{{ url_for('core.company', _fragment='1', site=site.id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="panel-section">
     <div class="panel-section-title">基本信息</div>
     <div class="mb-2">

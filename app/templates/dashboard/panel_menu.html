@@ -33,6 +33,7 @@
 {% endwith %}
 
 <form method="post" action="{{ url_for('core.menu_edit', _fragment='1', site=site.id, lang=current_lang) }}" id="menuTreeForm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="menu_json" id="menuJson">
   <div id="menuTree" class="menu-tree"></div>
   <div class="d-flex gap-2 mt-3">
