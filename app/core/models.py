@@ -33,7 +33,7 @@ class LoginToken(db.Model):
     __tablename__ = 'login_tokens'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
     email = db.Column(db.String(255), nullable=False, index=True)
     token_hash = db.Column(db.String(64), nullable=False, unique=True, index=True)  # SHA-256
     expires_at = db.Column(db.DateTime(timezone=True), nullable=False)
@@ -63,7 +63,7 @@ class Site(db.Model):
     __tablename__ = 'sites'
 
     id = db.Column(db.Integer, primary_key=True)
-    owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     name = db.Column(db.String(200), nullable=False)
     slug = db.Column(db.String(30), unique=True, nullable=False, index=True)  # [a-z0-9-]{3,30}
     folder_path = db.Column(db.String(500), nullable=False)  # sites/<id>/
@@ -82,7 +82,7 @@ class Site(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
 
-    owner = db.relationship('User', backref='sites')
+    owner = db.relationship('User', backref=db.backref('sites', cascade='all, delete-orphan', passive_deletes=True))
     template = db.relationship('Template')
 
 

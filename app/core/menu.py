@@ -29,6 +29,28 @@ DATASET_DETAIL_MAP = {
 VALID_TYPES = {'home', 'list', 'page', 'link', 'group'}
 VALID_DROPDOWN_STYLES = {'vertical', 'horizontal', 'grid', 'cards'}
 
+# 菜单嵌套深度上限. 超出部分的 children 会被裁掉.
+# 防御恶意 settings.yaml 通过深嵌套触发 Python 递归栈溢出 / 渲染期 OOM.
+MAX_MENU_DEPTH = 8
+
+
+def cap_menu_depth(items, depth=0, max_depth=MAX_MENU_DEPTH):
+    """递归裁剪菜单深度: 超过 max_depth 的子树直接 children=[].
+    返回新列表, 不修改原数据."""
+    if not isinstance(items, list):
+        return []
+    out = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        new_it = dict(it)
+        if depth + 1 >= max_depth:
+            new_it['children'] = []
+        else:
+            new_it['children'] = cap_menu_depth(it.get('children') or [], depth + 1, max_depth)
+        out.append(new_it)
+    return out
+
 
 def url_of(item, parent_path=''):
     """从菜单项计算最终 URL.
