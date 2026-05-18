@@ -1,0 +1,85 @@
+
+<div class="fw-semibold mb-3">账号管理</div>
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="card-title">644182999@qq.com</h6>
+    <p class="text-muted small mb-1">站点数量：2</p>
+    <p class="text-muted small">当前站点：web01 (slug: company01)</p>
+    <div class="d-flex gap-2 mt-3">
+      <form method="post" action="/logout">
+        <input type="hidden" name="csrf_token" value="IjMwN2I5NmRmMzk2NzRlNjNkMTEwNmNkMzJkYjVmOWE0OTBhNjI0MTQi.agrTrw.y8clB4ASzWf4ISCt9lnOSFqVeRM">
+        <button class="btn btn-outline-secondary btn-sm" type="submit">退出登录</button>
+      </form>
+      <button class="btn btn-outline-danger btn-sm" type="button" onclick="showDeleteSiteModal()">删除站点</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" id="deleteSiteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">确认删除站点</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-danger fw-semibold">此操作不可撤销！</p>
+        <p>将删除站点 <strong>web01</strong> (company01) 的全部数据：</p>
+        <ul>
+          <li>数据库记录</li>
+          <li>站点文件夹（sites/1/）</li>
+          <li>生成的输出文件（output/1/）</li>
+        </ul>
+        <p>请输入站点 slug <code>company01</code> 确认删除：</p>
+        <input type="text" class="form-control form-control-sm" id="deleteConfirmSlug" placeholder="company01"
+               oninput="var btn=document.getElementById('confirmDeleteBtn'); var v=this.value.trim(); if(v===''){btn.disabled=true;btn.title='请先输入 slug'}else if(v==='company01'){btn.disabled=false;btn.title=''}else{btn.disabled=true;btn.title='Slug 不匹配'}">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteBtn"
+                onclick="deleteSite()">确认删除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showDeleteSiteModal() {
+  var modalEl = document.getElementById('deleteSiteModal');
+  var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  modal.show();
+}
+function deleteSite() {
+  var input = document.getElementById('deleteConfirmSlug');
+  var btn = document.getElementById('confirmDeleteBtn');
+  if (input.value.trim() !== 'company01') {
+    alert('Slug 不匹配，请重新输入');
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '删除中...';
+  var formData = new FormData();
+  formData.append('csrf_token', 'IjMwN2I5NmRmMzk2NzRlNjNkMTEwNmNkMzJkYjVmOWE0OTBhNjI0MTQi.agrTrw.y8clB4ASzWf4ISCt9lnOSFqVeRM');
+  fetch('/sites/delete', {
+    method: 'POST',
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    body: formData
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.ok) {
+      window.location.href = data.redirect;
+    } else {
+      alert('删除失败：' + (data.error || '未知错误'));
+      btn.disabled = false;
+      btn.textContent = '确认删除';
+    }
+  })
+  .catch(function(err) {
+    alert('请求失败：' + err);
+    btn.disabled = false;
+    btn.textContent = '确认删除';
+  });
+}
+</script>

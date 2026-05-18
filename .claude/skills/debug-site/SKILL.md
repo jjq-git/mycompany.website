@@ -1,0 +1,199 @@
+---
+description: "诊断站点构建/渲染问题的系统性排查流程"
+---
+
+当用户报告站点不工作(构建失败、页面空白、数据不显示、500/404 错误)时触发.
+站点的数据链路长:YAML → Jinja2 → 静态 HTML,问题可能出在任一环节.
+本技能提供按链路逐级排查的系统性方法.
+
+核心数据流(详见 docs/architecture.md):
+1. 模板选择 → 2. 菜单定义 → 3. 页面数据 → 4. 数据集 → 5. Jinja2 渲染 → 6. 静态输出
+
+## 第一步:确认基础状态
+
+先快速确认基本状态,缩小问题范围:
+
+1. 数据库记录是否正常
+   ```
+   flask --app run list-sites
+   flask --app run scan-templates  # 确认模板同步
+   ```
+
+2. 站点文件夹是否存在
+   检查 `sites/<site_id>/` 目录:
+   - `settings.yaml` 是否存在且可解析
+   - `pages/` 目录是否有 .yaml 文件
+   - `data/` 目录是否有数据集 .yaml 文件
+
+3. 站点状态
+   数据库 `sites.status` 字段:draft / published / suspended
+   如果 `soft_deleted_at` 不为 null,站点已被软删除
+
+4. 模板版本是否匹配
+   数据库 `sites.template_version` vs 模板 `meta.yaml` 的 `version`
+   不一致会在构建日志中 warning,但不会阻止构建
+
+## 第二步:按症状分类诊断
+
+**症状 A:构建命令直接报错**
+
+先单独运行构建命令看完整错误信息:
+```
+flask --app run build-site <site_id>
+```
+常见构建错误:
+
+| 错误信息 | 原因 | 修复 |
+|----------|------|------|
+| `站点不存在: X` | site_id 不存在于数据库 | `list-sites` 确认正确 id |
+| `Jinja2 TemplateNotFound` | 模板文件缺失 | 检查 `site_templates/<name>/templates/` 是否有对应文件 |
+| `YAML 解析错误` | YAML 文件格式损坏 | 检查对应 yaml 文件语法(缩进、特殊字符) |
+| `KeyError: 'xxx'` | 模板引用了不存在的数据字段 | 检查种子数据是否包含该字段 |
+| `OSError` / 文件权限 | output/ 目录权限问题 | 检查 output/ 目录是否可写 |
+
+**症状 B:构建成功但页面空白**
+
+1. 检查 output/<site_id>/ 目录是否有 HTML 文件
+2. 检查 pages/home.yaml 是否存在且有内容
+3. 检查 menu 中是否包含首页项(type=home)
+4. 对于多语言站点,检查是否访问了正确的语言子目录(如 /zh-CN/index.html)
+
+**症状 C:特定页面的数据不显示**
+
+数据链路:`sites/<id>/data/<name>.yaml` → datasets.load() → Jinja2 模板
+
+按链路排查:
+1. YAML 文件是否存在:`sites/<id>/data/<name>.yaml`
+2. YAML 内容格式是否正确:
+   - 格式一:`[{id: 1, title: xxx}, ...]`(列表)
+   - 格式二:`{items: [{id: 1, title: xxx}, ...]}`(含 items 键的 dict)
+   两种格式 `datasets.load()` 都支持
+3. 模板是否使用正确的变量名渲染数据
+4. 菜单项 type 是否正确(list 类型的 target 要匹配数据集 key)
+
+**症状 D:模板样式/布局不对**
+
+1. 确认 static/ 目录已复制到 output/
+2. 检查 main.css 是否被正确加载(浏览器 DevTools Network 面板)
+3. 检查主题色变量是否正确注入(查看 output HTML 中 `:root` 的 CSS 变量)
+4. 确认没有旧版本缓存(强制刷新浏览器 Ctrl+Shift+R)
+
+**症状 E:后台预览能看但构建后不一样**
+
+1. 后台预览用的是 `build_site(site_id, base_url='/preview/<id>')`
+2. 导出构建用的是 `build_site(site_id, base_url='')`
+3. base_url 不同会导致静态资源路径不同
+4. 检查模板中 `{{ base_url }}` 的使用是否正确(不以 `/` 结尾时注意)
+
+**症状 F:多语言站点某语言页面为空**
+
+1. 检查 `meta.yaml` 中 `languages` 列表是否包含该语言
+2. 检查 `sites/<id>/lang/<code>/pages/` 下是否有对应语言的 YAML
+3. 检查语言切换菜单是否正确配置
+4. 没有语言特定数据时会回退到默认语言,不应该完全为空
+
+## 第三步:深度诊断工具
+
+如果上述步骤不能定位问题,使用以下手段:
+
+**1. 检查 YAML 文件完整性**
+```python
+# 在 flask shell 中运行
+import yaml
+from pathlib import Path
+
+site_id = 1
+site_dir = Path('sites') / str(site_id)
+
+# 检查 settings.yaml
+settings = yaml.safe_load((site_dir / 'settings.yaml').read_text(encoding='utf-8'))
+print('Menu items:', len(settings.get('menu', [])))
+print('Company:', settings.get('company', {}))
+
+# 检查所有 pages
+for f in (site_dir / 'pages').glob('*.yaml'):
+    print(f.name, '→', yaml.safe_load(f.read_text(encoding='utf-8')))
+
+# 检查所有 datasets
+for f in (site_dir / 'data').glob('*.yaml'):
+    raw = yaml.safe_load(f.read_text(encoding='utf-8'))
+    count = len(raw) if isinstance(raw, list) else len(raw.get('items', []))
+    print(f'{f.stem}: {count} 条')
+```
+
+**2. 检查模板渲染上下文**
+在 `app/core/builder.py` 的 `_render_for_language()` 函数中,
+`common` dict 包含了所有传给模板的变量:
+- settings, theme, year, lang, base_url
+- t (翻译), languages
+- products_categories, products, portfolio, posts, features
+- all_datasets
+
+如果某个变量缺失,检查 `_gather_site_data()` 是否正确加载了对应的 YAML.
+
+**3. 检查 Jinja2 模板**
+- 模板文件位置:`site_templates/<name>/templates/`
+- 模板中 `{{ variable }}` 引用的变量必须在渲染上下文中存在
+- 条件渲染 `{% if %}` 可能导致整个区块消失
+- Block 模板位置:`site_templates/<name>/blocks/<name>/template.html`
+
+**4. 查看 Flask 日志**
+启动服务器后,构建错误会打印在控制台.
+注意 `current_app.logger.error()` 和 `current_app.logger.warning()` 的输出.
+
+## 第四步:常见修复操作
+
+**重新构建(清除缓存)**
+`build_site()` 会先 `shutil.rmtree(output_root)`,所以重跑就是清除缓存.
+```
+flask --app run build-site <site_id>
+```
+
+**修复 YAML 数据**
+- 确保 YAML 文件是 UTF-8 编码
+- 缩进必须用空格(不能用 Tab)
+- 冒号后用空格:`key: value`(不是 `key:value`)
+- 特殊字符需要引号包裹
+
+**修复菜单**
+如果导航不显示或链接不对:
+1. 进入后台 → 菜单设置
+2. 检查每个菜单项的 type、target、url
+3. 确保首页 (type=home) 存在且为第一项
+4. type=list 的 target 必须匹配 data/ 下的文件名(如 products)
+
+**修复模板版本不一致**
+```
+# 在 flask shell 中更新站点记录的模板版本
+from app.core.models import Site
+from app.core.db import db
+site = Site.query.get(site_id)
+# 读取模板当前版本
+import yaml
+meta = yaml.safe_load(open(f'site_templates/{site.template_name}/meta.yaml'))
+site.template_version = meta.get('version')
+db.session.commit()
+```
+
+## 关联文件和技能
+
+诊断时可能涉及的源文件:
+| 文件 | 作用 |
+|------|------|
+| `app/core/builder.py` | 构建逻辑:收集数据、渲染、输出 |
+| `app/core/site_storage.py` | YAML 文件读写 |
+| `app/core/datasets.py` | 数据集 CRUD |
+| `app/core/menu.py` | 菜单升级/规范化/渲染任务收集 |
+| `app/core/template_loader.py` | 模板/Block 扫描 |
+| `app/core/models.py` | 数据库模型 |
+| `site_templates/<name>/meta.yaml` | 模板元信息 |
+| `site_templates/<name>/templates/` | Jinja2 模板文件 |
+| `sites/<id>/settings.yaml` | 站点设置 |
+| `sites/<id>/pages/*.yaml` | 页面数据 |
+| `sites/<id>/data/*.yaml` | 数据集 |
+
+相关技能:
+- `build-site`:正常构建流程
+- `scan-templates`:同步模板到数据库
+- `db-manage`:检查数据库状态
+- `dev-server`:启动服务器查看后台

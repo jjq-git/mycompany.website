@@ -102,7 +102,7 @@
         var ct = r.headers.get('content-type') || '';
         if (ct.includes('application/json')) {
           return r.json().then(function(data){
-            if (data.ok && data.redirect) { window.location.href = data.redirect; }
+            if (data.ok && data.redirect) { window.location.href = data.redirect; return; }
             throw new Error(data.error || '创建失败');
           });
         }

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>删除站点测试</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+</head>
+<body class="p-4">
+<h5>删除站点测试 (slug: company01)</h5>
+
+<button class="btn btn-outline-danger btn-sm" type="button" onclick="showDeleteSiteModal()">删除站点</button>
+
+<div class="modal fade" id="deleteSiteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">确认删除站点</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>请输入站点 slug <code>company01</code> 确认删除：</p>
+        <input type="text" class="form-control form-control-sm" id="deleteConfirmSlug"
+               placeholder="company01"
+               oninput="document.getElementById('confirmDeleteBtn').disabled = (this.value.trim() !== 'company01')">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteBtn" disabled
+                onclick="alert('删除成功(模拟)')">确认删除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"></script>
+<script>
+function showDeleteSiteModal() {
+  var modalEl = document.getElementById('deleteSiteModal');
+  var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  modal.show();
+}
+</script>
+</body>
+</html>

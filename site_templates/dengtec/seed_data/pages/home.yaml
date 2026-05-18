@@ -4,26 +4,49 @@ modules:
     order: 1
     variant: text_overlay
     data:
-      - type: image
-        media: ''
-        title: ''
-        subtitle: ''
-        primaryBtn: ''
-        primaryBtnLink: ''
-        secondaryBtn: ''
-        secondaryBtnLink: ''
+      slides:
+        - type: image
+          media: ""
+          title: 专业展示道具定制开发
+          subtitle: 为博物馆、商场、展览馆提供智能展示解决方案
+          primaryBtn: 了解产品
+          primaryBtnLink: /products/
+          secondaryBtn: 联系我们
+          secondaryBtnLink: /contact/
+
   - type: feature_grid
     order: 2
     variant: grid_3
     data:
       title: 我们的服务
       subtitle: 专注于展示道具行业的电子产品定制开发
+      features:
+        - icon: circuit
+          title: 定制开发
+          desc: 根据客户需求进行硬件与软件的定制开发，从方案设计到量产交付一站式服务
+        - icon: shield
+          title: 品质保障
+          desc: 严选元器件，每台设备出厂前经过 72 小时老化测试，提供两年质保
+        - icon: sensor
+          title: 智能控制
+          desc: 支持手机APP、PC端远程控制，定时开关、数据监控、故障报警一应俱全
+
   - type: highlight_card
     order: 3
     variant: bento
     data:
-      max_items: 3
-      items: []
+      tag: 明星产品
+      title: 静音仓 V2 — 让展示回归安静
+      desc: 专为博物馆、美术馆等高要求场景设计。多层隔音结构配合智能新风系统，在隔绝外界噪音的同时保持舒适的观展环境。支持定制外观与尺寸。
+      image: ""
+      image_position: left
+      features:
+        - text: 隔音等级 ≥ 35dB，满足博物馆一级展厅标准
+        - text: 智能恒温恒湿，自动调节仓内环境参数
+        - text: 支持远程监控与故障预警，降低运维成本
+      primaryBtn: 了解更多
+      primaryLink: /products/silent-booth/
+
   - type: data_grid
     order: 4
     variant: grid_3
@@ -33,12 +56,13 @@ modules:
       max_items: 6
       columns: "3"
       show_view_all: true
+
   - type: data_grid
     order: 5
     variant: grid_3
     data:
-      title: 最新博客
+      title: 最新动态
       dataset: posts
-      max_items: 4
+      max_items: 3
       columns: "3"
       show_view_all: true

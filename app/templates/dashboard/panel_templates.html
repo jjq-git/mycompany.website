@@ -21,7 +21,7 @@
       <p class="text-muted mb-2" style="font-size:10px; line-height: 1.4;">{{ tpl.description }}</p>
       <div class="d-flex gap-1">
         <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('core.template_preview', template_name=tpl.name) }}" target="_blank" style="font-size:11px">预览</a>
-        <button class="btn btn-sm btn-primary" disabled style="font-size:11px">用这个</button>
+        <button class="btn btn-sm btn-primary use-this-btn" data-href="{{ url_for('core.site_new', template=tpl.name, _fragment='1') }}" style="font-size:11px">用这个</button>
       </div>
     </div>
   </div>
@@ -30,7 +30,7 @@
 
 <script>
 (function(){
-  document.querySelectorAll('.use-template-btn').forEach(function(btn){
+  document.querySelectorAll('.use-template-btn, .use-this-btn').forEach(function(btn){
     btn.addEventListener('click', function(){
       loadPanel(this.dataset.href);
     });
