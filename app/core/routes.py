@@ -1296,11 +1296,20 @@ def dataset_panel(dataset_key):
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
     items = datasets.load(site.id, dataset_key, lang=storage_lang)
+    # 计算数据集的菜单层级路径，用于中间预览 URL
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    menu_items = settings.get('menu') or []
+    from app.core.menu import find_menu_path
+    meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
+    raw_menu = menu_lib.upgrade_old_format(menu_items, meta.get('datasets', []))
+    preview_path = find_menu_path(raw_menu, dataset_key)
     return _render('dashboard/panel_data_list.html',
                    user=user, site=site,
                    dataset_key=dataset_key, items=items,
                    edit_prefix=f'_dataset/{dataset_key}',
                    current_lang=lang, languages=languages, default_lang=default_lang,
+                   preview_path=preview_path,
                    active=dataset_key)
 
 @bp.route('/_dataset/<path:dataset_key>/new', methods=['POST'])
@@ -1528,6 +1537,10 @@ def _parse_modules_form(form, existing_modules=None):
         value = (value or '').strip()
         if not value:
             return ''
+        # 保留布尔字符串原样，避免 yaml.safe_load 把 'true'/'false' 转成 Python bool
+        # 否则模板中 == 'true' 的字符串比较会失败，导致分页等开关不生效
+        if value.lower() in ('true', 'false', 'yes', 'no', 'on', 'off'):
+            return value
         try:
             parsed = _yaml.safe_load(value)
         except _yaml.YAMLError:

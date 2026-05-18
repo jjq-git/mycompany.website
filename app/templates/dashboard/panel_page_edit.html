@@ -21,15 +21,15 @@
 </div>
 {% if translation_enabled and languages and languages|length > 1 %}
 {# AI 翻译栏 — 独立一行，与语言标签区分 #}
-<div class="d-flex align-items-center gap-1 mb-3 p-2 rounded" style="background:#f0f7ff;font-size:12px;">
-  <span class="text-muted">🌐 AI 翻译：当前内容 →</span>
-  <select class="form-select form-select-sm" id="translateTargetLang" style="width:auto;font-size:11px;">
+<div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
+  <span class="text-muted text-nowrap">🌐 AI 翻译：当前内容 →</span>
+  <select class="form-select form-select-sm text-nowrap" id="translateTargetLang" style="min-width:70px;font-size:11px;">
     {% for l in languages if l.code != current_lang %}
     <option value="{{ l.code }}">{{ l.name }}</option>
     {% endfor %}
   </select>
-  <button class="btn btn-sm btn-outline-info" id="aiTranslateBtn" style="font-size:11px;">开始翻译</button>
-  <span class="text-muted" style="font-size:10px;">翻译后请手动检查并保存</span>
+  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:11px;">开始翻译</button>
+  <span class="text-muted text-nowrap" style="font-size:10px;">翻译后请手动检查并保存</span>
 </div>
 {% endif %}
 
@@ -358,15 +358,24 @@
               <div class="col-6">
                 <label class="form-label small mb-1 text-muted">显示分页</label>
                 <select class="form-select form-select-sm" name="module_{{ i }}_data_show_pagination">
-                  <option value="true" {% if mdata.get('show_pagination', 'true') == 'true' %}selected{% endif %}>显示</option>
-                  <option value="false" {% if mdata.get('show_pagination') == 'false' %}selected{% endif %}>隐藏</option>
+                  <option value="true" {% if mdata.get('show_pagination', true) not in (false, 'false', 'False', '') %}selected{% endif %}>显示</option>
+                  <option value="false" {% if mdata.get('show_pagination') in (false, 'false', 'False') %}selected{% endif %}>隐藏</option>
                 </select>
               </div>
               <div class="col-6">
+                <label class="form-label small mb-1 text-muted">分页样式</label>
+                <select class="form-select form-select-sm" name="module_{{ i }}_data_pagination_style">
+                  <option value="load_more" {% if mdata.get('pagination_style', 'load_more') not in ('page_numbers',) %}selected{% endif %}>加载更多</option>
+                  <option value="page_numbers" {% if mdata.get('pagination_style') == 'page_numbers' %}selected{% endif %}>页码导航</option>
+                </select>
+              </div>
+            </div>
+            <div class="row g-2">
+              <div class="col-6">
                 <label class="form-label small mb-1 text-muted">显示"查看全部"</label>
                 <select class="form-select form-select-sm" name="module_{{ i }}_data_show_view_all">
-                  <option value="true" {% if mdata.get('show_view_all', 'true') == 'true' %}selected{% endif %}>显示</option>
-                  <option value="false" {% if mdata.get('show_view_all') == 'false' %}selected{% endif %}>隐藏</option>
+                  <option value="true" {% if mdata.get('show_view_all', true) not in (false, 'false', 'False', '') %}selected{% endif %}>显示</option>
+                  <option value="false" {% if mdata.get('show_view_all') in (false, 'false', 'False') %}selected{% endif %}>隐藏</option>
                 </select>
               </div>
             </div>
@@ -1443,6 +1452,10 @@ function addModule(type, variant) {
     '<div class="row g-2">' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">显示分页</label>' +
         '<select class="form-select form-select-sm" name="module_' + idx + '_data_show_pagination"><option value="true" selected>显示</option><option value="false">隐藏</option></select></div>' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">分页样式</label>' +
+        '<select class="form-select form-select-sm" name="module_' + idx + '_data_pagination_style"><option value="load_more" selected>加载更多</option><option value="page_numbers">页码导航</option></select></div>' +
+    '</div>' +
+    '<div class="row g-2">' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">显示"查看全部"</label>' +
         '<select class="form-select form-select-sm" name="module_' + idx + '_data_show_view_all"><option value="true" selected>显示</option><option value="false">隐藏</option></select></div>' +
     '</div>' +

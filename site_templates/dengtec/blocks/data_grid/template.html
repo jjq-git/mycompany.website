@@ -29,12 +29,13 @@
 {% if filtered_items %}
 {% set max_items = md.get('max_items', 6) | int %}
 {% set per_page = md.get('items_per_page', 6) | int %}
-{% set show_view_all = md.get('show_view_all', 'true') == 'true' %}
+{% set show_view_all = md.get('show_view_all', true) not in (false, 'false', 'False', '') %}
 {% set card_layout = md.get('card_layout', 'image_top') %}
 {% set section_bg = md.get('section_bg', '') %}
 {% set inner_w = md.get('inner_width', '') %}
 {% set columns = md.get('columns') | int or 3 %}
-{% set show_pagination = md.get('show_pagination', 'true') == 'true' %}
+{% set show_pagination = md.get('show_pagination', true) not in (false, 'false', 'False', '') %}
+{% set pagination_style = md.get('pagination_style', 'load_more') %}
 {% set display_items = filtered_items[:max_items] %}
 {% set total = display_items | length %}
 {% set is_products = dataset_key == 'products' %}
@@ -79,12 +80,26 @@
     </div>
 
     {% if show_pagination and total > per_page %}
+    {% set total_pages = (total / per_page) | round(0, 'ceil') | int %}
     <div id="{{ block_id }}-pager" class="dg-pager dg-pager--{{ md.get('pager_align', 'center') }}" style="margin-top: 1.5rem;">
+      {% if pagination_style == 'page_numbers' %}
+      {# 页码导航：显示页码按钮 #}
+      <div class="dg-page-numbers">
+        {% for p in range(1, total_pages + 1) %}
+        <button class="dg-page-btn {% if p == 1 %}active{% endif %}"
+                data-block-id="{{ block_id }}"
+                data-page="{{ p }}" data-per-page="{{ per_page }}"
+                onclick="goToDataGridPage(this, {{ p }})">{{ p }}</button>
+        {% endfor %}
+      </div>
+      {% else %}
+      {# 默认：加载更多按钮 #}
       <button class="btn btn-outline-primary dg-load-more" data-block-id="{{ block_id }}"
               data-page="1" data-per-page="{{ per_page }}" data-total="{{ total }}"
               onclick="loadMoreDataGrid(this)">
         {{ t.actions.loadMore | default('加载更多') }} <span class="dg-remaining">({{ total - per_page }} {{ t.products.itemsUnit | default('项') }})</span>
       </button>
+      {% endif %}
     </div>
     {% endif %}
 
@@ -120,6 +135,31 @@ function loadMoreDataGrid(btn) {
     var span = btn.querySelector('.dg-remaining');
     var unit = '{{ t.products.itemsUnit | default('项') }}';
     if (span) span.textContent = '(' + remaining + ' ' + unit + ')';
+  }
+}
+
+// 页码导航：跳转到指定页
+function goToDataGridPage(btn, targetPage) {
+  var blockId = btn.dataset.blockId;
+  var perPage = parseInt(btn.dataset.perPage, 10) || 6;
+  var list = document.getElementById(blockId + '-list');
+  if (!list) return;
+  var cards = list.querySelectorAll('.dg-card');
+  var startIdx = (targetPage - 1) * perPage;
+  var endIdx = startIdx + perPage;
+  cards.forEach(function(card, i) {
+    if (i >= startIdx && i < endIdx) {
+      card.classList.remove('dg-card--hidden');
+    } else {
+      card.classList.add('dg-card--hidden');
+    }
+  });
+  // 更新激活按钮样式
+  var pager = document.getElementById(blockId + '-pager');
+  if (pager) {
+    pager.querySelectorAll('.dg-page-btn').forEach(function(b, i) {
+      b.classList.toggle('active', i + 1 === targetPage);
+    });
   }
 }
 </script>

@@ -28,7 +28,7 @@
 {# AI 翻译栏 — 独立一行，与语言标签区分 #}
 <div class="d-flex align-items-center gap-1 mb-3 p-2 rounded" style="background:#f0f7ff;font-size:12px;">
   <span class="text-muted">🌐 AI 翻译：当前内容 →</span>
-  <select class="form-select form-select-sm" id="translateTargetLang" style="width:auto;font-size:11px;">
+  <select class="form-select form-select-sm" id="translateTargetLang" style="width:85px;font-size:11px;">
     {% for l in languages if l.code != current_lang %}
     <option value="{{ l.code }}">{{ l.name }}</option>
     {% endfor %}
@@ -145,8 +145,18 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     return siteParam ? '&site=' + encodeURIComponent(siteParam) : '';
   }
 
-  window.backToPageEditor = function() { loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()); };
-  window.loadDatasetList = function() { loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()); };
+  window.backToPageEditor = function() {
+    loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()).then(function() {
+      var frame = document.getElementById('previewFrame');
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
+    });
+  };
+  window.loadDatasetList = function() {
+    loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()).then(function() {
+      var frame = document.getElementById('previewFrame');
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
+    });
+  };
   window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getSiteQuery()); };
   window.addDataItem = function() {
     fetch('/_dataset/' + DATASET_KEY + '/new?site=' + SITE_ID, {method: 'POST'})
@@ -301,7 +311,8 @@ window._dsEditItemJson = {{ edit_item | tojson }};
           '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">每页显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_data_items_per_page" value="' + (d.items_per_page || '6') + '"></div>' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">分页按钮对齐</label><select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align"><option value="center"' + (d.pager_align === 'center' ? ' selected' : '') + '>居中</option><option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option><option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option></select></div></div>' +
           '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">显示分页</label><select class="form-select form-select-sm" name="module_' + idx + '_data_show_pagination"><option value="true"' + (d.show_pagination !== 'false' ? ' selected' : '') + '>显示</option><option value="false"' + (d.show_pagination === 'false' ? ' selected' : '') + '>隐藏</option></select></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">显示查看全部</label><select class="form-select form-select-sm" name="module_' + idx + '_data_show_view_all"><option value="true"' + (d.show_view_all !== 'false' ? ' selected' : '') + '>显示</option><option value="false"' + (d.show_view_all === 'false' ? ' selected' : '') + '>隐藏</option></select></div></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">分页样式</label><select class="form-select form-select-sm" name="module_' + idx + '_data_pagination_style"><option value="load_more"' + (d.pagination_style !== 'page_numbers' ? ' selected' : '') + '>加载更多</option><option value="page_numbers"' + (d.pagination_style === 'page_numbers' ? ' selected' : '') + '>页码导航</option></select></div></div>' +
+          '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">显示查看全部</label><select class="form-select form-select-sm" name="module_' + idx + '_data_show_view_all"><option value="true"' + (d.show_view_all !== 'false' ? ' selected' : '') + '>显示</option><option value="false"' + (d.show_view_all === 'false' ? ' selected' : '') + '>隐藏</option></select></div></div>' +
           '<hr class="my-2"><div class="small fw-semibold mb-1 text-muted">外层样式</div><div class="row g-2">' +
           '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg || '#ffffff') + '</div>' +
           '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div></div>' +
@@ -650,8 +661,18 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     if (CURRENT_LANG) qs += '&lang=' + encodeURIComponent(CURRENT_LANG);
     return qs;
   }
-  window.backToPageEditor = function() { loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getQuery()); };
-  window.loadDatasetList = function() { loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getQuery()); };
+  window.backToPageEditor = function() {
+    loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getQuery()).then(function() {
+      var frame = document.getElementById('previewFrame');
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
+    });
+  };
+  window.loadDatasetList = function() {
+    loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getQuery()).then(function() {
+      var frame = document.getElementById('previewFrame');
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
+    });
+  };
   window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getQuery()); };
   window.addDataItem = function() {
     fetch('/_dataset/' + DATASET_KEY + '/new' + getFetchQuery(), {method: 'POST'})

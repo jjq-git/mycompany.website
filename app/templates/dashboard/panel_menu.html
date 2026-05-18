@@ -17,7 +17,7 @@
 {# AI 翻译栏 #}
 <div class="d-flex align-items-center gap-1 mb-3 p-2 rounded" style="background:#f0f7ff;font-size:12px;">
   <span class="text-muted">🌐 AI 翻译：当前菜单 →</span>
-  <select class="form-select form-select-sm" id="translateTargetLang" style="width:auto;font-size:11px;">
+  <select class="form-select form-select-sm" id="translateTargetLang" style="width:85px;font-size:11px;">
     {% for l in languages if l.code != current_lang %}
     <option value="{{ l.code }}">{{ l.name }}</option>
     {% endfor %}
@@ -140,7 +140,7 @@
         type: type,
         children: collect(row.querySelector('.menu-tree-children'))
       };
-      if (type === 'list' || type === 'page') item.target = row.querySelector('.menu-target').value.trim();
+      if (type === 'list' || type === 'page' || type === 'group') item.target = row.querySelector('.menu-target').value.trim();
       if (type === 'link') item.url = row.querySelector('.menu-url').value.trim();
       if (item.children.length) item.dropdown_style = row.querySelector('.menu-dropdown-style').value;
       return item;

@@ -302,6 +302,8 @@
 {# 拖拽遮罩 — iframe 失焦时用 #}
 <div id="dragOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:transparent;cursor:col-resize;"></div>
 
+{# 所有 list 类型菜单项的 target，供 pageKeyFromPreviewPath 区分详情页 slug #}
+<script>window._datasetKeys = [{% for ds in all_list_datasets %}'{{ ds.target }}'{% if not loop.last %},{% endif %}{% endfor %}];</script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"></script>
 <script>
@@ -483,7 +485,17 @@ function doPublish() {
 function pageKeyFromPreviewPath(pathname) {
   var cleaned = pathname.replace(/^\/preview\/\d+/, '').replace(/^\/(zh-CN|zh-TW|en)/, '').replace(/\/index\.html$/, '').replace(/\/$/, '');
   if (!cleaned || cleaned === '/') return 'home';
-  return cleaned.split('/').filter(Boolean).pop() || 'home';
+  var parts = cleaned.split('/').filter(Boolean);
+  var last = parts[parts.length - 1];
+  // 详情页特征: 最后一段是数据条目 slug (不在数据集 key 列表中),
+  // 且倒数第二段是已知的数据集 key → 返回倒数第二段作为 page_key
+  if (window._datasetKeys && window._datasetKeys.length && parts.length >= 2) {
+    if (window._datasetKeys.indexOf(last) === -1) {
+      var secondLast = parts[parts.length - 2];
+      if (window._datasetKeys.indexOf(secondLast) !== -1) return secondLast;
+    }
+  }
+  return last || 'home';
 }
 
 function selectModuleInPanel(index, pageKey) {
