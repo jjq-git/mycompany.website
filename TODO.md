@@ -4,7 +4,7 @@
 
 - [x] 后端核心：Flask + Jinja2 + SQLAlchemy（MVP 可跑）
 - [x] 前端框架：Bootstrap 5.3 CDN 引入，配合自定义 admin.css
-- [x] 模板系统：dengtec、tech-product 两个模板
+- [x] 模板系统：dengtec 模板
 - [x] 后台三栏布局：左配置菜单 | 中预览 (iframe) | 右属性面板
 - [x] 三设备预览切换：电脑/平板/手机
 - [x] 数据集 id 自动补齐：兼容旧种子数据
@@ -23,7 +23,6 @@
 
 - [x] **dengtec 模板重构** — `blocks/` 5 个模块，pages/home.yaml modules 数组格式
 - [x] **模块库扫描** — `template_loader.py:scan_blocks()`
-- [ ] **tech-product 模板重构** — 暂缓
 
 ### Builder（静态生成器）
 
@@ -82,7 +81,6 @@
 | 优先级 | 任务 | 状态 |
 |--------|------|------|
 | P0 | 核心流程闭环 + 三栏布局 + 模块编辑器 | ✅ 已完成 |
-| P1 | tech-product 模板重构 | ⏸️ 暂缓 |
 | P2 | Header/Footer 模块库 + 设备独立配置 UI | ✅ 已完成 |
 | P3 | 登录系统 + 图片上传 + 字体子集化 | 🚧 登录系统与图片上传已完成，字体子集化待做 |
 | P4 | 发布 CDN + SSL + 导出 ZIP | ❌ |

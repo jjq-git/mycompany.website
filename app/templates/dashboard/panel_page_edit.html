@@ -873,11 +873,13 @@
                 <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_columns"
                        value="{{ mdata.get('columns', '') }}" placeholder="默认" min="1" max="6">
               </div>
+              {% if module.type != 'data_grid' %}
               <div class="col-6">
                 <label class="form-label small mb-1 text-muted">每页显示数量</label>
                 <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_items_per_page"
                        value="{{ mdata.get('items_per_page', '') }}" placeholder="默认">
               </div>
+              {% endif %}
             </div>
             {% endif %}
           </div>
@@ -903,11 +905,13 @@
                 <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_tablet_columns"
                        value="{{ mdata_tablet.get('columns', '') }}" placeholder="继承电脑端" min="1" max="6">
               </div>
+              {% if module.type != 'data_grid' %}
               <div class="col-6">
                 <label class="form-label small mb-1 text-muted">每页显示数量</label>
                 <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_tablet_items_per_page"
                        value="{{ mdata_tablet.get('items_per_page', '') }}" placeholder="继承电脑端">
               </div>
+              {% endif %}
             </div>
             <div class="mb-2 mt-2">
               <label class="form-check-label small">
@@ -940,11 +944,13 @@
                 <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_mobile_columns"
                        value="{{ mdata_mobile.get('columns', '') }}" placeholder="继承电脑端" min="1" max="6">
               </div>
+              {% if module.type != 'data_grid' %}
               <div class="col-6">
                 <label class="form-label small mb-1 text-muted">每页显示数量</label>
                 <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_mobile_items_per_page"
                        value="{{ mdata_mobile.get('items_per_page', '') }}" placeholder="继承电脑端">
               </div>
+              {% endif %}
             </div>
             <div class="mb-2 mt-2">
               <label class="form-check-label small">
@@ -1044,8 +1050,12 @@ function renderResponsiveControls(idx, device, type) {
   var html = '<hr class="my-2"><div class="row g-2">';
   html += '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>';
   html += '<input type="number" class="form-control form-control-sm" name="' + fieldPrefix + '_columns" placeholder="' + inheritText + '" min="1" max="6"></div>';
-  html += '<div class="col-6"><label class="form-label small mb-1 text-muted">' + countLabel + '</label>';
-  html += '<input type="number" class="form-control form-control-sm" name="' + fieldPrefix + '_' + countField + '" placeholder="' + countPlaceholder + '"></div></div>';
+  // data_grid 在数据配置区已有"每页显示数量"，响应式区不重复
+  if (type !== 'data_grid') {
+    html += '<div class="col-6"><label class="form-label small mb-1 text-muted">' + countLabel + '</label>';
+    html += '<input type="number" class="form-control form-control-sm" name="' + fieldPrefix + '_' + countField + '" placeholder="' + countPlaceholder + '"></div>';
+  }
+  html += '</div>';
   return html;
 }
 

@@ -13,7 +13,7 @@ description: "脚手架:在 site_templates/ 下创建新的网站模板"
 1. **行业适配**:这个模板为哪个行业设计?(tech/manufacturing/restaurant/service/retail)
 2. **设计风格**:简洁商务 / 大胆创意 / 温暖亲近
 3. **是否需要多语言**:MVP 阶段默认不做,Phase 2 再加
-4. **参考哪个现有模板**:`dengtec` 或 `tech-product` 作为起点
+4. **参考哪个现有模板**:`dengtec` 作为起点
 
 模板设计的核心原则(来自 CLAUDE.md):
 - 模板代码由开发者 + AI 编写,git 管理,不是可视化编辑器拖出来的
@@ -197,7 +197,6 @@ CSS 设计约定(参考 `site_templates/dengtec/static/css/main.css`):
 | 模板 | 目录名 | 行业 | 特点 |
 |------|--------|------|------|
 | 瞪特科技 | dengtec | tech/制造业 | 模块化设计,支持多语言,完整 Block 集 |
-| 科技产品 | tech-product | tech | 简洁设计,含数据网格和数据列表 |
 
 推荐以 `dengtec` 为参考模板,它是最完整的实现.
 

@@ -1,9 +1,0 @@
-{% if page.modules %}
-  {% for module in page.modules | sort(attribute='order') %}
-    {% if module.data is mapping or (module.type == 'hero_banner' and module.data is iterable and module.data is not string) %}
-      <div class="builder-module" data-builder-module-index="{{ loop.index0 }}" data-builder-module-type="{{ module.type }}">
-        {% include ['blocks/' ~ module.type ~ '/variants/' ~ (module.variant | default('default')) ~ '.html', 'blocks/' ~ module.type ~ '/template.html'] ignore missing %}
-      </div>
-    {% endif %}
-  {% endfor %}
-{% endif %}

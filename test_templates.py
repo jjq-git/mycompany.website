@@ -3,7 +3,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 print("开始检查模板...")
-for template in ['tech-product', 'dengtec']:
+for template in ['dengtec']:
     root = Path('site_templates') / template
     if not root.exists():
         print(f"⚠️ 跳过: {root} 不存在")

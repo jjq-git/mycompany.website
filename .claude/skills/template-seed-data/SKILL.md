@@ -47,7 +47,6 @@ cat site_templates/<name>/seed_data/data/products.yaml
 
 参考现有实现:
 - `site_templates/dengtec/seed_data/` — 完整示例
-- `site_templates/tech-product/seed_data/` — 另一套示例
 
 ## 修改 settings.yaml
 

@@ -1,4 +1,5 @@
 """Flask 应用工厂."""
+import os
 from flask import Flask
 from flask_wtf.csrf import CSRFProtect
 
@@ -11,6 +12,11 @@ csrf = CSRFProtect()
 def create_app(config_override=None):
     app = Flask(__name__)
     app.config.update(load_config(config_override))
+    # 调试模式下确保模板改动即时生效，无需重启服务器
+    # Flask 默认不设置 TEMPLATES_AUTO_RELOAD, 只在 app.run(debug=True) 时才启用
+    # 这里根据环境变量提前启用, 避免开发时每次改模板都要重启
+    if os.environ.get('FLASK_DEBUG', '').strip() in ('1', 'true', 'True'):
+        app.config['TEMPLATES_AUTO_RELOAD'] = True
 
     # 上传体积上限：所有 multipart 请求总大小不能超过 MAX_CONTENT_LENGTH，
     # 防止巨型文件 / 图片炸弹耗尽磁盘和内存。Flask 默认 None=无上限, 这里必须显式赋值.

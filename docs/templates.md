@@ -232,7 +232,7 @@ schema.yaml          ◀──────  不能改
 | 改动类型 | 怎么处理 |
 | --- | --- |
 | 修 bug / 加可选字段 | 直接改模板 → 所有站点自动获益（`meta.yaml.version` 也升一下，便于对账） |
-| 破坏性改动 | **复制模板目录**：`tech-product/` → `tech-product@0.1.0/`，新版继续占用 `tech-product/`。原本指向 `tech-product` 的老站，把 `Site.template_name` 改成 `tech-product@0.1.0` 即可冻结 |
+| 破坏性改动 | **复制模板目录**：`dengtec/` → `dengtec@0.1.0/`，新版继续占用 `dengtec/`。原本指向 `dengtec` 的老站，把 `Site.template_name` 改成 `dengtec@0.1.0` 即可冻结 |
 
 ### 现阶段（MVP）
 

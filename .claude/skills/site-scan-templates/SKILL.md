@@ -25,9 +25,8 @@ flask --app run scan-templates
 
 输出示例:
 ```
-同步了 2 个模板:
+同步了 1 个模板:
   - dengtec (瞪特科技官网) [tech]
-  - tech-product (科技产品官网) [tech]
 ```
 
 扫描逻辑(`template_loader.py:20-53`):
