@@ -1,4 +1,5 @@
 ---
+name: site-scan-templates
 description: "扫描 site_templates/ 目录同步模板到数据库"
 ---
 

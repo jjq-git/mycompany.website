@@ -1,4 +1,5 @@
 ---
+name: quality-docs-update
 description: "更新或新增项目文档(docs/ 目录下的设计文档)"
 ---
 

@@ -1,4 +1,5 @@
 ---
+name: dev-db-manage
 description: "数据库管理(备份/查看/修复/重置开发库)"
 ---
 

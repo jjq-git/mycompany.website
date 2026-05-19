@@ -1,4 +1,5 @@
 ---
+name: quality-debug-site
 description: "诊断站点构建/渲染问题的系统性排查流程"
 ---
 

@@ -264,6 +264,7 @@ def inject_context():
             return result
         ctx['all_list_datasets'] = _collect_list_targets(normalized)
 
+    ctx['platform_domain'] = current_app.config.get('PLATFORM_DOMAIN', 'mycompany.website')
     return ctx
 
 
@@ -420,18 +421,30 @@ def index():
     return overview()
 
 
-@bp.route('/overview')
+@bp.route('/overview', methods=['GET', 'POST'])
 def overview():
     from flask import request
     user, site = _current_context()
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+
+    if request.method == 'POST':
+        # 保存全局宽度设置
+        global_width = request.form.get('global_width', '').strip()
+        settings.setdefault('layout', {})['global_width'] = global_width
+        write_yaml(site.id, 'settings.yaml', settings)
+        flash('已保存')
+
     products = datasets.load(site.id, 'products')
     pages = list_yaml_files(site.id, 'pages')
     counts = {'products': len(products), 'pages': len(pages)}
+    global_width = settings.get('layout', {}).get('global_width', '')
     if request.args.get('_fragment'):
         return render_template('dashboard/panel_overview.html',
-                               user=user, site=site, counts=counts)
+                               user=user, site=site, counts=counts,
+                               global_width=global_width)
     return render_template('dashboard/overview.html',
-                           user=user, site=site, counts=counts, active='overview')
+                           user=user, site=site, counts=counts,
+                           global_width=global_width, active='overview')
 
 
 @bp.route('/company', methods=['GET', 'POST'])
@@ -792,6 +805,15 @@ def header_edit():
         {'key': 'top_bar_social', 'label': '顶栏 + 社交图标', 'description': '带电话 + 社交图标的双层顶栏'},
     ])
 
+    # 模板定义的全部语言
+    template_languages = tpl_meta.get('languages', [
+        {'code': 'zh-CN', 'name': '简体中文', 'flag': '🇨🇳'},
+        {'code': 'zh-TW', 'name': '繁體中文', 'flag': '🇹🇼'},
+        {'code': 'en', 'name': 'English', 'flag': '🇺🇸'},
+    ])
+    # 当前启用的语言列表（从 DB 读取，兜底为全部语言）
+    enabled_languages = site.enabled_languages or [l['code'] for l in template_languages]
+
     # 语言切换按钮样式列表
     lang_switcher_styles = [
         {'key': 'inline_row', 'label': '水平行内（中文 | EN | JP）'},
@@ -802,10 +824,30 @@ def header_edit():
     if request.method == 'POST':
         header = settings.setdefault('header', {})
         header['variant'] = request.form.get('header_variant', header_variants[0]['key'])
+        # 头部样式字段
+        header['inner_width'] = request.form.get('header_inner_width', '').strip()
+        header['padding_top'] = request.form.get('header_padding_top', '').strip()
+        header['padding_right'] = request.form.get('header_padding_right', '').strip()
+        header['padding_bottom'] = request.form.get('header_padding_bottom', '').strip()
+        header['padding_left'] = request.form.get('header_padding_left', '').strip()
         header['language_switcher'] = {
             'enabled': bool(request.form.get('lang_switcher_enabled')),
             'style': request.form.get('lang_switcher_style', 'vertical_dropdown'),
         }
+        # 保存启用的语言版本（多选）
+        selected_langs = request.form.getlist('enabled_lang')
+        all_codes = [l['code'] for l in template_languages]
+        if selected_langs:
+            # 只保留模板中存在的语言代码
+            header['enabled_languages'] = [c for c in selected_langs if c in all_codes]
+        else:
+            # 至少保留默认语言
+            default_lang = tpl_meta.get('default_language', all_codes[0] if all_codes else 'zh-CN')
+            header['enabled_languages'] = [default_lang]
+        # 同步到 Site 模型
+        site.enabled_languages = header['enabled_languages']
+        from .db import db
+        db.session.commit()
         # 社交链接（整合到头部面板）
         social = settings.setdefault('social', {})
         social['enabled'] = bool(request.form.get('social_enabled'))
@@ -818,16 +860,22 @@ def header_edit():
         return redirect(url_for('core.header_edit', site=site.id))
 
     current_header = settings.get('header') or {}
+    # 优先使用 header 中保存的 enabled_languages，否则用 Site 模型中的
+    enabled_languages = current_header.get('enabled_languages', site.enabled_languages or [l['code'] for l in template_languages])
     if is_fragment:
         return render_template('dashboard/panel_header.html',
                                user=user, site=site,
                                header_variants=header_variants,
+                               template_languages=template_languages,
+                               enabled_languages=enabled_languages,
                                lang_switcher_styles=lang_switcher_styles,
                                current_header=current_header,
                                settings=settings)
     return render_template('dashboard/header_edit.html',
                            user=user, site=site,
                            header_variants=header_variants,
+                           template_languages=template_languages,
+                           enabled_languages=enabled_languages,
                            lang_switcher_styles=lang_switcher_styles,
                            current_header=current_header,
                            active='header')
@@ -1046,7 +1094,7 @@ def theme_edit():
 
     if request.method == 'POST':
         theme = settings.setdefault('theme', {})
-        for key in ('accent', 'bg', 'surface', 'text', 'text_muted', 'border'):
+        for key in ('color-primary', 'color-bg', 'color-surface', 'color-text', 'color-text-secondary', 'color-border'):
             v = request.form.get(key, '').strip()
             if v:
                 theme[key] = v
@@ -1223,12 +1271,18 @@ def export_zip():
 
 
 def _default_lang_code(site):
-    """取模板默认语言."""
+    """取站点默认语言，优先使用已启用的第一个语言."""
     tpl_meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
     if tpl_meta_path.exists():
         tpl_meta = _yaml.safe_load(tpl_meta_path.read_text(encoding='utf-8')) or {}
         languages = tpl_meta.get('languages', [])
         if languages:
+            # 按站点启用的语言过滤
+            enabled_codes = site.enabled_languages or [l['code'] for l in languages]
+            enabled = [l for l in languages if l['code'] in enabled_codes]
+            # 兜底：如果过滤后为空，使用全部语言
+            if enabled:
+                return enabled[0].get('code', 'zh-CN')
             return languages[0].get('code', 'zh-CN')
     return 'zh-CN'
 
@@ -1307,15 +1361,25 @@ def preview(site_id, filepath='index.html'):
 
 
 def _get_panel_lang(site):
-    """从请求参数获取面板当前编辑语言, 默认返回模板的默认语言."""
+    """从请求参数获取面板当前编辑语言, 默认返回模板的默认语言.
+
+    只返回站点已启用的语言列表，未启用的不显示在面板语言标签中.
+    """
     from flask import request
     meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
-    languages = []
+    all_languages = []
     default_lang = 'zh-CN'
     if meta_path.exists():
         meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) or {}
-        languages = meta.get('languages', [])
-        default_lang = meta.get('default_language', languages[0]['code'] if languages else 'zh-CN')
+        all_languages = meta.get('languages', [])
+        default_lang = meta.get('default_language', all_languages[0]['code'] if all_languages else 'zh-CN')
+
+    # 按站点启用的语言过滤（从 DB enabled_languages 读取，兜底显示全部）
+    enabled_codes = site.enabled_languages or [l['code'] for l in all_languages]
+    languages = [l for l in all_languages if l['code'] in enabled_codes]
+    # 兜底：如果过滤后为空（旧站点 enabled_languages 可能与模板不一致），使用全部语言
+    if not languages:
+        languages = all_languages
 
     lang = request.args.get('lang', '').strip()
     valid_codes = {l['code'] for l in languages}

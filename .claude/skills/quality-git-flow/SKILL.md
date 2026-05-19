@@ -1,4 +1,5 @@
 ---
+name: quality-git-flow
 description: "Git 操作规范(提交/分支/PR/打 tag)"
 ---
 

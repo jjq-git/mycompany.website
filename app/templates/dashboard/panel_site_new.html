@@ -55,7 +55,7 @@
           <input type="text" class="form-control" id="siteSlug"
                  value="{{ form.slug or '' }}"
                  placeholder="my-company">
-          <span class="input-group-text text-muted">.mycompany.website</span>
+          <span class="input-group-text text-muted">.{{ platform_domain }}</span>
         </div>
         <div class="form-text">3-30 字符，小写字母/数字/连字符。发布后可通过此地址访问。</div>
       </div>

@@ -1,4 +1,5 @@
 ---
+name: template-new-template
 description: "脚手架:在 site_templates/ 下创建新的网站模板"
 ---
 

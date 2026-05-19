@@ -1,4 +1,5 @@
 ---
+name: dev-dev-server
 description: "启动 Flask 开发服务器"
 ---
 

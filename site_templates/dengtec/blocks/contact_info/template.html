@@ -3,6 +3,7 @@
 {% set contact = settings.contact | default({}) %}
 {% if contact.phone or contact.email or contact.address %}
 {% set section_bg = md.get('section_bg', '') %}
+{% set outer_w = md.get('outer_width', '') or settings.get('layout', {}).get('global_width', '') %}
 {% set inner_w = md.get('inner_width', '') %}
 {% set show_phone = md.get('show_phone', 'true') == 'true' %}
 {% set show_mobile = md.get('show_mobile', 'true') == 'true' %}
@@ -10,7 +11,7 @@
 {% set show_address = md.get('show_address', 'true') == 'true' %}
 {% set show_hours = md.get('show_business_hours', 'false') == 'true' %}
 
-<section class="section{% if not section_bg %} section-bg{% endif %}"{% if section_bg %} style="background: {{ section_bg }};"{% endif %}>
+<section class="section{% if not section_bg %} section-bg{% endif %}"{% if section_bg or outer_w %} style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}"{% endif %}>
   <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
     {% if md.title %}
     <div class="section-header">

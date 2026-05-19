@@ -75,17 +75,7 @@
         <input type="hidden" name="module_{{ i }}_order" value="{{ module.order | default(i + 1) }}">
 
         <div class="module-config p-2 border-top" style="display:none">
-          {# 设备切换标签 #}
-          <div class="d-flex gap-1 mb-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary active device-tab"
-                    data-device="desktop" onclick="switchModuleDevice(this, 'desktop')">💻 电脑</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary device-tab"
-                    data-device="tablet" onclick="switchModuleDevice(this, 'tablet')">📱 平板</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary device-tab"
-                    data-device="mobile" onclick="switchModuleDevice(this, 'mobile')">📱 手机</button>
-          </div>
-
-          {% set mdata = module.data if module.data is mapping else ({'slides': module.data} if module.type == 'hero_banner' and module.data is iterable and module.data is not string else {}) %}
+{% set mdata = module.data if module.data is mapping else ({'slides': module.data} if module.type == 'hero_banner' and module.data is iterable and module.data is not string else {}) %}
           {% set resp = module.get('responsive', {}) if module.get('responsive', {}) is mapping else {} %}
           {% set mdata_tablet = resp.get('tablet', {}) %}
           {% set mdata_mobile = resp.get('mobile', {}) %}
@@ -93,10 +83,8 @@
           {% set count_label = '每页显示数量' if module.type == 'data_grid' else '显示数量' %}
           {% set count_placeholder = '默认' if module.type == 'data_grid' else '0=全部' %}
 
-          {# 电脑端配置 #}
           <div class="device-config device-desktop">
-            <div class="small fw-semibold mb-1 text-primary">电脑端配置</div>
-            {% if module.type == 'text_content' %}
+{% if module.type == 'text_content' %}
             {# 文本内容专属表单 #}
             <div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title" value="{{ mdata.get('title', '') }}"></div>
             <div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label><textarea class="form-control form-control-sm" rows="5" name="module_{{ i }}_data_body">{{ mdata.get('body', '') }}</textarea></div>
@@ -119,13 +107,23 @@
               <div class="col-6"><label class="form-label small mb-1 text-muted">正文字号</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_body_size" value="{{ mdata.get('body_size', '') }}" placeholder="如 1rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_body_size\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
             </div>
             {% elif mdata is mapping %}
-              {% for key, val in mdata.items() %}
               {% set prefix = 'module_' ~ i ~ '_data_' %}
+              {% for key, val in mdata.items() %}
+              {% set is_color = 'color' in key|lower or key|lower.endswith('_bg') %}
               <div class="mb-2">
-                <label class="form-label small mb-1 text-muted">{{ key }}</label>
+                <label class="form-label small mb-1 text-muted">{{ key | replace('_', ' ') | title }}</label>
                 {% if val is mapping or (val is iterable and val is not string) %}
                 <textarea class="form-control form-control-sm" rows="4"
                           name="{{ prefix }}{{ key }}">{{ val }}</textarea>
+                {% elif is_color %}
+                <div class="input-group input-group-sm">
+                  <input type="color" class="form-control form-control-color"
+                         value="{{ val if val and val.startswith('#') else '#888888' }}"
+                         oninput="this.parentElement.querySelector('input[type=text]').value=this.value" style="max-width:40px; padding:2px;">
+                  <input type="text" class="form-control form-control-sm"
+                         name="{{ prefix }}{{ key }}" value="{{ val }}" placeholder="选择颜色"
+                         oninput="if(/^#[0-9a-fA-F]{3,8}$/.test(this.value.trim()))this.parentElement.querySelector('input[type=color]').value=this.value.trim()">
+                </div>
                 {% else %}
                 <input type="text" class="form-control form-control-sm"
                        name="{{ prefix }}{{ key }}" value="{{ val }}">
@@ -166,10 +164,8 @@
             {% endif %}
           </div>
 
-          {# 平板端配置 #}
           <div class="device-config device-tablet" style="display:none">
-            <div class="small fw-semibold mb-1 text-primary">平板端配置（未填则继承电脑端）</div>
-            {% if mdata is mapping %}
+{% if mdata is mapping %}
               {% for key, val in mdata.items() %}
               <div class="mb-2">
                 <label class="form-label small mb-1 text-muted">{{ key }}</label>
@@ -209,10 +205,8 @@
             </div>
           </div>
 
-          {# 手机端配置 #}
           <div class="device-config device-mobile" style="display:none">
-            <div class="small fw-semibold mb-1 text-primary">手机端配置（未填则继承电脑端）</div>
-            {% if mdata is mapping %}
+{% if mdata is mapping %}
               {% for key, val in mdata.items() %}
               <div class="mb-2">
                 <label class="form-label small mb-1 text-muted">{{ key }}</label>
@@ -293,14 +287,6 @@
   });
 })();
 
-function switchModuleDevice(btn, device) {
-  var item = btn.closest('.module-item');
-  item.querySelectorAll('.device-tab').forEach(function(t) { t.classList.remove('active'); });
-  btn.classList.add('active');
-  item.querySelectorAll('.device-config').forEach(function(c) { c.style.display = 'none'; });
-  var target = item.querySelector('.device-' + device);
-  if (target) target.style.display = '';
-}
 
 function addModule(type, variant) {
   var count = document.getElementById('moduleCount');
@@ -322,6 +308,12 @@ function addModule(type, variant) {
     ? '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag" placeholder="模块上方小标签"></div>' +
       '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
       '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述文字</label><textarea class="form-control form-control-sm" rows="2" name="module_' + idx + '_data_desc"></textarea></div>' +
+      '<hr class="my-2">' +
+      '<div class="small fw-semibold mb-1 text-muted">颜色</div>' +
+      '<div class="row g-2">' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">外层背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="#888888" oninput="this.parentElement.querySelector(\'input[type=text]\').value=this.value" style="max-width:40px;padding:2px;"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_section_bg" placeholder="选择颜色" oninput="if(/^#[0-9a-fA-F]{3,8}$/.test(this.value.trim()))this.parentElement.querySelector(\'input[type=color]\').value=this.value.trim()"></div></div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">标题颜色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="#888888" oninput="this.parentElement.querySelector(\'input[type=text]\').value=this.value" style="max-width:40px;padding:2px;"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title_color" placeholder="选择颜色" oninput="if(/^#[0-9a-fA-F]{3,8}$/.test(this.value.trim()))this.parentElement.querySelector(\'input[type=color]\').value=this.value.trim()"></div></div>' +
+      '</div>' +
       '<hr class="my-2">' +
       '<div class="small fw-semibold mb-1 text-muted">按钮</div>' +
       '<div class="row g-2">' +
@@ -367,14 +359,8 @@ function addModule(type, variant) {
     '<input type="hidden" name="module_' + idx + '_type" value="' + type + '">' +
     '<input type="hidden" name="module_' + idx + '_order" value="' + (idx + 1) + '">' +
     '<div class="module-config p-2 border-top" style="display:block">' +
-      '<div class="d-flex gap-1 mb-2">' +
-        '<button type="button" class="btn btn-sm btn-outline-secondary active device-tab" data-device="desktop" onclick="switchModuleDevice(this,\'desktop\')">💻 电脑</button>' +
-        '<button type="button" class="btn btn-sm btn-outline-secondary device-tab" data-device="tablet" onclick="switchModuleDevice(this,\'tablet\')">📱 平板</button>' +
-        '<button type="button" class="btn btn-sm btn-outline-secondary device-tab" data-device="mobile" onclick="switchModuleDevice(this,\'mobile\')">📱 手机</button>' +
-      '</div>' +
       '<div class="device-config device-desktop">' +
-        '<div class="small fw-semibold mb-1 text-primary">电脑端配置</div>' +
-        heroEditor + sectionEditor + textEditor +
+          heroEditor + sectionEditor + textEditor +
         (needsResp ? '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>' +
             '<select class="form-select form-select-sm" name="module_' + idx + '_resp_columns">' +
@@ -387,8 +373,7 @@ function addModule(type, variant) {
         '</div>' : '') +
       '</div>' +
       '<div class="device-config device-tablet" style="display:none">' +
-        '<div class="small fw-semibold mb-1 text-primary">平板端配置（继承电脑端）</div>' +
-        (needsResp ? '<div class="row g-2">' +
+          (needsResp ? '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>' +
             '<select class="form-select form-select-sm" name="module_' + idx + '_resp_tablet_columns">' +
               '<option value="" selected>继承电脑端</option>' +
@@ -399,8 +384,7 @@ function addModule(type, variant) {
         '</div>' : '') +
       '</div>' +
       '<div class="device-config device-mobile" style="display:none">' +
-        '<div class="small fw-semibold mb-1 text-primary">手机端配置（继承电脑端）</div>' +
-        (needsResp ? '<div class="row g-2">' +
+          (needsResp ? '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>' +
             '<select class="form-select form-select-sm" name="module_' + idx + '_resp_mobile_columns">' +
               '<option value="" selected>继承电脑端</option>' +
@@ -412,6 +396,7 @@ function addModule(type, variant) {
       '</div>' +
     '</div>';
   container.appendChild(div);
+  initColorPickers(div);
 
   // toggle config
   div.querySelector('.module-header').addEventListener('click', function(){

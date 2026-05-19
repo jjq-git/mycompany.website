@@ -1,4 +1,5 @@
 ---
+name: site-build-site
 description: "生成静态站点到 output/ 目录"
 ---
 

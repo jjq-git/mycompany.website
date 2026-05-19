@@ -1,4 +1,5 @@
 ---
+name: site-create-site
 description: "为用户创建站点,选择模板并初始化种子数据"
 ---
 

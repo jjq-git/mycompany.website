@@ -4,18 +4,23 @@
   {# 后台表单保存的列表格式: [{type: image, media: ..., title: ...}, ...] #}
   {% set items = module.data %}
 {% else %}
-  {% set items = module.data.slides if module.data.slides is iterable and module.data.slides is not string else ([module.data] if module.data.title or module.data.media else []) %}
+  {# 用 .get() 安全访问 dict 键，避免 Jinja2 对不存在的键抛 AttributeError #}
+  {% set _has_title = module.data.get('title') if module.data is mapping else (module.data.title | default('')) %}
+  {% set _has_media = module.data.get('media') if module.data is mapping else (module.data.media | default('')) %}
+  {% set items = module.data.slides if module.data.get('slides') and module.data.slides is iterable and module.data.slides is not string else ([module.data] if _has_title or _has_media else []) %}
 {% endif %}
 {% if items %}
 {% set align = module.data.get('banner_align', '') if module.data is mapping else '' %}
 {% set hero_w = module.data.get('hero_width', '') if module.data is mapping else '' %}
 {% set hero_h = module.data.get('hero_height', '') if module.data is mapping else '' %}
 {% set style_parts = [] %}
-{% if hero_w %}{% set _ = style_parts.append('width: ' ~ hero_w ~ ';') %}{% endif %}
 {% if hero_h %}{% set _ = style_parts.append('height: ' ~ hero_h ~ ';') %}{% endif %}
 {% if align == 'center' %}{% set _ = style_parts.append('margin-left: auto; margin-right: auto;') %}{% endif %}
 {% if align == 'left' %}{% set _ = style_parts.append('margin-right: auto;') %}{% endif %}
 {% if align == 'right' %}{% set _ = style_parts.append('margin-left: auto;') %}{% endif %}
+{% set outer_w = (module.data.get('outer_width', '') if module.data is mapping else '') or settings.get('layout', {}).get('global_width', '') %}
+{% if outer_w %}{% set _ = style_parts.append('max-width: ' ~ outer_w ~ '; margin-left: auto; margin-right: auto;') %}{% endif %}
+{% if hero_w %}{% set _ = style_parts.append('max-width: ' ~ hero_w ~ ';') %}{% endif %}
 {% set title_font_size = module.data.get('title_font_size', '') if module.data is mapping else '' %}
 {% set title_color = module.data.get('title_color', '') if module.data is mapping else '' %}
 {% set subtitle_font_size = module.data.get('subtitle_font_size', '') if module.data is mapping else '' %}
@@ -28,10 +33,11 @@
     {% for item in items %}
     <div class="hero-banner-slide{% if loop.first %} active{% endif %}" data-index="{{ loop.index0 }}">
       <div class="hero-banner-media">
+        {% set _media_src = item.get('media', '') if item is mapping else (item.media | default('')) %}
         {% if item.type == 'video' %}
-        <video class="hero-banner-video" src="{{ item.media if item.media.startswith('http') else base_url ~ item.media }}" autoplay muted loop playsinline preload="none"></video>
+        <video class="hero-banner-video" src="{{ _media_src if _media_src.startswith('http') else base_url ~ _media_src }}" autoplay muted loop playsinline preload="none"></video>
         {% else %}
-        <div class="hero-banner-image" style="background-image: url('{{ item.media if item.media.startswith('http') else base_url ~ item.media }}')"></div>
+        <div class="hero-banner-image" style="background-image: url('{{ _media_src if _media_src.startswith('http') else base_url ~ _media_src }}')"></div>
         {% endif %}
       </div>
       <div class="hero-banner-overlay"></div>

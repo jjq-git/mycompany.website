@@ -1,4 +1,5 @@
 ---
+name: template-font-subset
 description: "字体子集化(扫描字符 → 提取字体 → 输出子集化文件)"
 ---
 

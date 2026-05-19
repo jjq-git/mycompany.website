@@ -1,4 +1,5 @@
 ---
+name: site-create-user
 description: "创建用户账号(邮箱魔法链接登录)"
 ---
 

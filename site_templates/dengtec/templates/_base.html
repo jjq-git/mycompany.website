@@ -8,15 +8,12 @@
   <link rel="stylesheet" href="{{ base_url }}/static/css/main.css">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   {% set theme_colors = theme | default({}) %}
-  {% if theme_colors.accent or theme_colors.bg or theme_colors.surface or theme_colors.text or theme_colors.text_muted or theme_colors.border %}
+  {% if theme_colors %}
   <style>
     :root {
-      {% if theme_colors.accent %}--color-primary: {{ theme_colors.accent }}; --color-primary-hover: color-mix(in srgb, {{ theme_colors.accent }}, #000 15%);{% endif %}
-      {% if theme_colors.bg %}--color-bg: {{ theme_colors.bg }}; --color-bg-secondary: color-mix(in srgb, {{ theme_colors.bg }}, #667 8%);{% endif %}
-      {% if theme_colors.surface %}--color-surface: {{ theme_colors.surface }};{% endif %}
-      {% if theme_colors.text %}--color-text: {{ theme_colors.text }};{% endif %}
-      {% if theme_colors.text_muted %}--color-text-secondary: {{ theme_colors.text_muted }}; --color-text-light: color-mix(in srgb, {{ theme_colors.text_muted }}, #fff 30%);{% endif %}
-      {% if theme_colors.border %}--color-border: {{ theme_colors.border }}; --color-border-dark: color-mix(in srgb, {{ theme_colors.border }}, #000 12%);{% endif %}
+      {% for key, val in theme_colors.items() %}
+      {% if val and val is string and val|length %}--{{ key }}: {{ val | safe }};{% endif %}
+      {% endfor %}
     }
   </style>
   {% endif %}
@@ -74,6 +71,24 @@
 {% set header_variant = header_config.get('variant', 'logo_left_menu_right') %}
 {% set lang_switcher_enabled = header_config.get('language_switcher', {}).get('enabled', True) %}
 {% set lang_switcher_style = header_config.get('language_switcher', {}).get('style', 'vertical_dropdown') %}
+
+{# 头部自定义样式：内层宽度 + 内层内边距 #}
+{% set h_inner_w = header_config.get('inner_width', '') %}
+{% set h_pad_top = header_config.get('padding_top', '') %}
+{% set h_pad_right = header_config.get('padding_right', '') %}
+{% set h_pad_bottom = header_config.get('padding_bottom', '') %}
+{% set h_pad_left = header_config.get('padding_left', '') %}
+{% if h_inner_w or h_pad_top or h_pad_right or h_pad_bottom or h_pad_left %}
+<style>
+  .site-header .header-main .container {
+    {% if h_inner_w %}max-width: {{ h_inner_w }}; margin-left: auto; margin-right: auto;{% endif %}
+    {% if h_pad_top %}padding-top: {{ h_pad_top }};{% endif %}
+    {% if h_pad_right %}padding-right: {{ h_pad_right }};{% endif %}
+    {% if h_pad_bottom %}padding-bottom: {{ h_pad_bottom }};{% endif %}
+    {% if h_pad_left %}padding-left: {{ h_pad_left }};{% endif %}
+  }
+</style>
+{% endif %}
 
 {# ===== HEADER VARIANT: logo_left_menu_right (default / classic) ===== #}
 {% if header_variant == 'logo_left_menu_right' %}

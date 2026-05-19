@@ -1,6 +1,6 @@
 name: 标题模块
 category: content
-description: 通用标题模块，支持标签、标题、描述、按钮、间距、外层样式、字体颜色和大小
+description: 通用标题模块，支持标签、标题、描述、按钮、外层/内层样式、字体颜色和大小
 fields:
   - key: section_bg
     label: 外层背景色
@@ -8,34 +8,40 @@ fields:
     group: 外层样式
     default: ""
     placeholder: 如 #f5f7fa（留空=透明）
-  - key: inner_width
-    label: 内层内容区宽度
+  - key: outer_width
+    label: 外层宽度
     type: text
     group: 外层样式
     default: ""
-    placeholder: 如 1200px（留空=全宽）
-  - key: text_align
-    label: 文字排版
-    type: select
-    group: 外层样式
-    default: "center"
-    options:
-      - value: "center"
-        label: 居中
-      - value: "left"
-        label: 居左
-      - value: "right"
-        label: 居右
-  - key: margin_top
-    label: 上间距
+    placeholder: 如 1200px（留空使用全局宽度）
+  - key: inner_width
+    label: 内层宽度
     type: text
-    group: 间距
+    group: 内层样式
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: margin_top
+    label: 上外边距
+    type: text
+    group: 外层外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: margin_right
+    label: 右外边距
+    type: text
+    group: 外层外边距
     default: ""
     placeholder: 如 2rem（留空=默认）
   - key: margin_bottom
-    label: 下间距
+    label: 下外边距
     type: text
-    group: 间距
+    group: 外层外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: margin_left
+    label: 左外边距
+    type: text
+    group: 外层外边距
     default: ""
     placeholder: 如 2rem（留空=默认）
   - key: padding_top
@@ -44,6 +50,12 @@ fields:
     group: 内层边距
     default: ""
     placeholder: 如 4rem（留空=默认）
+  - key: padding_right
+    label: 右内边距
+    type: text
+    group: 内层边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
   - key: padding_bottom
     label: 下内边距
     type: text
@@ -56,12 +68,18 @@ fields:
     group: 内层边距
     default: ""
     placeholder: 如 2rem（留空=默认）
-  - key: padding_right
-    label: 右内边距
-    type: text
-    group: 内层边距
-    default: ""
-    placeholder: 如 2rem（留空=默认）
+  - key: text_align
+    label: 文字排版
+    type: select
+    group: 文字排版
+    default: "center"
+    options:
+      - value: "center"
+        label: 居中
+      - value: "left"
+        label: 居左
+      - value: "right"
+        label: 居右
   - key: tag
     label: 标签文字
     type: text

@@ -4,6 +4,7 @@
 
 {% if has_title %}
 {% set section_bg = md.get('section_bg', '') %}
+{% set outer_w = md.get('outer_width', '') or settings.get('layout', {}).get('global_width', '') %}
 {% set inner_w = md.get('inner_width', '') %}
 {% set border_radius = md.get('border_radius', '') %}
 {% set margin_top = md.get('margin_top', '') %}
@@ -29,8 +30,10 @@
 {% if padding_left is not none and padding_left != '' %}{% set _ = section_style.append('padding-left: ' ~ padding_left) %}{% endif %}
 {% if padding_right is not none and padding_right != '' %}{% set _ = section_style.append('padding-right: ' ~ padding_right) %}{% endif %}
 
+{% if outer_w is not none and outer_w != '' %}{% set _ = section_style.append('max-width: ' ~ outer_w ~ '; margin-left: auto; margin-right: auto') %}{% endif %}
+
 <section class="section" style="{{ section_style | join('; ') }}">
-  <div class="container" style="max-width: {{ inner_w or '1200px' }}; margin: 0 auto;">
+  <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
     <div class="hl-grid {% if img_pos == 'right' %}hl-grid--reverse{% endif %}"{% if border_radius is not none and border_radius != '' %} style="border-radius: {{ border_radius }};"{% endif %}>
       <div class="hl-image">
         {% if md.image %}<img src="{{ md.image }}" alt="{{ md.title }}" loading="lazy">{% endif %}

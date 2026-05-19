@@ -1,4 +1,5 @@
 ---
+name: template-image-optimize
 description: "图片优化(批量转换 WebP / 调整尺寸 / 压缩)"
 ---
 

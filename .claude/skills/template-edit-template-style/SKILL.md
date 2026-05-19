@@ -1,4 +1,5 @@
 ---
+name: template-edit-template-style
 description: "修改网站模板前端样式(访客看到的网站外观)"
 ---
 

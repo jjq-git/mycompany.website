@@ -1,4 +1,5 @@
 ---
+name: admin-edit-admin-style
 description: "修改店主后台样式(admin.css 布局/配色/组件)"
 ---
 

@@ -3,6 +3,7 @@
 {% set logos = md.get('logos', []) %}
 {% if logos is iterable and logos is not string and logos | length > 0 %}
 {% set section_bg = md.get('section_bg', '') %}
+{% set outer_w = md.get('outer_width', '') or settings.get('layout', {}).get('global_width', '') %}
 {% set inner_w = md.get('inner_width', '') %}
 {% set inner_bg = md.get('inner_bg', '') %}
 {% set padding_top = md.get('padding_top', '') %}
@@ -33,7 +34,7 @@
 {% if logo_height %}{% set _ = card_style_parts.append('height: ' ~ logo_height ~ ';') %}{% endif %}
 {% set card_style = card_style_parts | join(' ') %}
 
-<section class="section{% if not section_bg %} section-bg{% endif %}"{% if section_bg %} style="background: {{ section_bg }};"{% endif %}>
+<section class="section{% if not section_bg %} section-bg{% endif %}"{% if section_bg or outer_w %} style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}"{% endif %}>
   <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;{% if inner_style %} {{ inner_style }}{% endif %}">
     {% if md.title %}
     <div class="section-header">

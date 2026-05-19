@@ -6,8 +6,9 @@
 {% set columns = module.data.columns | default('3') %}
 {% set md = module.data if module.data else {} %}
 {% set section_bg = md.get('section_bg', '') %}
+{% set outer_w = md.get('outer_width', '') or settings.get('layout', {}).get('global_width', '') %}
 {% set inner_w = md.get('inner_width', '') %}
-<section class="section"{% if section_bg %} style="background: {{ section_bg }};"{% else %} class="section section-bg"{% endif %}>
+<section class="section"{% if section_bg or outer_w %} style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}"{% else %} class="section section-bg"{% endif %}>
   <div class="container"{%- if inner_w %} style="max-width: {{ inner_w }}; margin: 0 auto;"{% endif %}>
     {% if module.data.title %}
     <div class="section-header">

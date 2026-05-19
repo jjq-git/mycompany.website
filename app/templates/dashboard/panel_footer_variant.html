@@ -11,30 +11,28 @@
 
 <form method="post" action="{{ url_for('core.footer_variant_edit', _fragment='1', site=site.id) }}" id="footerForm">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  {# Footer 变体选择 #}
-  <div class="mb-3">
-    <label class="form-label small mb-1 fw-semibold">底部布局模式</label>
-    <div class="d-flex flex-column gap-2">
-      {% set current_variant = current_footer.get('variant', 'columns') %}
-      <label class="d-flex align-items-center p-2 border rounded variant-option"
-             style="cursor:pointer; {% if current_variant == 'columns' %}border-color:#067a7a;background:#e8f0fe;{% endif %}">
+  {# Footer 变体选择 - 卡片式，与头部布局风格一致 #}
+  {% set current_variant = current_footer.get('variant', 'columns') %}
+  <div class="panel-section">
+    <div class="panel-section-title">底部布局</div>
+    <div class="variant-card-grid">
+      <label class="variant-card {% if current_variant == 'columns' %}selected{% endif %}" data-variant="columns">
         <input type="radio" name="footer_variant" value="columns"
                {% if current_variant == 'columns' %}checked{% endif %}
-               class="me-2" onchange="switchFooterLayout('columns')">
-        <div>
-          <div class="small fw-semibold">栏目模式</div>
-          <div class="text-muted" style="font-size:10px">可自定义多列菜单/文本 + 版权信息</div>
+               class="variant-card-radio">
+        <div class="variant-card-icon">
+          <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="2" y="4" width="10" height="10" rx="1" fill="currentColor" opacity="0.5"/><rect x="14" y="4" width="10" height="10" rx="1" fill="currentColor" opacity="0.5"/><rect x="26" y="4" width="10" height="10" rx="1" fill="currentColor" opacity="0.5"/><rect x="38" y="4" width="8" height="10" rx="1" fill="currentColor" opacity="0.5"/><rect x="6" y="19" width="36" height="2" rx="1" fill="currentColor" opacity="0.2"/><rect x="14" y="24" width="20" height="2" rx="1" fill="currentColor" opacity="0.15"/><rect x="10" y="28" width="28" height="2" rx="1" fill="currentColor" opacity="0.1"/></svg>
         </div>
+        <div class="variant-card-label">栏目模式</div>
       </label>
-      <label class="d-flex align-items-center p-2 border rounded variant-option"
-             style="cursor:pointer; {% if current_variant == 'minimal' %}border-color:#067a7a;background:#e8f0fe;{% endif %}">
+      <label class="variant-card {% if current_variant == 'minimal' %}selected{% endif %}" data-variant="minimal">
         <input type="radio" name="footer_variant" value="minimal"
                {% if current_variant == 'minimal' %}checked{% endif %}
-               class="me-2" onchange="switchFooterLayout('minimal')">
-        <div>
-          <div class="small fw-semibold">极简模式</div>
-          <div class="text-muted" style="font-size:10px">仅显示版权信息和备案号</div>
+               class="variant-card-radio">
+        <div class="variant-card-icon">
+          <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="10" y="13" width="28" height="2" rx="1" fill="currentColor" opacity="0.3"/><rect x="14" y="18" width="20" height="2" rx="1" fill="currentColor" opacity="0.2"/></svg>
         </div>
+        <div class="variant-card-label">极简模式</div>
       </label>
     </div>
   </div>
@@ -121,17 +119,17 @@
 </form>
 
 <script>
-function switchFooterLayout(mode) {
-  var section = document.getElementById('footerColumnsSection');
-  if (section) section.style.display = mode === 'columns' ? '' : 'none';
-  document.querySelectorAll('.variant-option').forEach(function(l) {
-    l.style.borderColor = ''; l.style.background = '';
-    var radio = l.querySelector('input[value="' + mode + '"]');
-    if (radio && radio.checked) {
-      l.style.borderColor = '#067a7a'; l.style.background = '#e8f0fe';
-    }
+// 底部布局卡片点击切换——与头部布局卡片风格一致
+document.querySelectorAll('.variant-card').forEach(function(card) {
+  card.addEventListener('click', function() {
+    document.querySelectorAll('.variant-card').forEach(function(c) { c.classList.remove('selected'); });
+    this.classList.add('selected');
+    this.querySelector('.variant-card-radio').checked = true;
+    var mode = this.querySelector('.variant-card-radio').value;
+    var section = document.getElementById('footerColumnsSection');
+    if (section) section.style.display = mode === 'columns' ? '' : 'none';
   });
-}
+});
 function addFooterColumn() {
   var list = document.getElementById('footerColumnsList');
   var count = parseInt(document.getElementById('footerColumnCount').value || '0');

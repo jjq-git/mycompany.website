@@ -1,4 +1,5 @@
 ---
+name: site-publish-flow
 description: "完整发布流程(构建→检查→上传 CDN→验证)"
 ---
 

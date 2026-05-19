@@ -1,4 +1,5 @@
 ---
+name: dev-config-manage
 description: "管理系统配置(.env 环境变量 / config.py 设置 / 基础设施切换)"
 ---
 

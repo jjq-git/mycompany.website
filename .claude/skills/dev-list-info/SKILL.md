@@ -1,4 +1,5 @@
 ---
+name: dev-list-info
 description: "查看系统信息(所有用户/站点/模板/发布状态一览)"
 ---
 

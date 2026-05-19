@@ -47,13 +47,22 @@ def _gather_site_data(site_id, template_name=None):
         seed_settings = _load_yaml(seed_root / 'settings.yaml')
         settings = _deep_merge(seed_settings, settings)
     pages = {}
+    # 加载种子页面数据作为缺省值
+    if template_name:
+        seed_pages_dir = Path(current_app.config['TEMPLATES_DIR']) / template_name / 'seed_data' / 'pages'
+        if seed_pages_dir.exists():
+            for f in seed_pages_dir.rglob('*.yaml'):
+                rel = f.relative_to(seed_pages_dir).as_posix()
+                page_key = rel[:-5] if rel.endswith('.yaml') else rel
+                pages[page_key] = _load_yaml(f)
+    # 站点页面数据覆盖种子数据
     pages_dir = root / 'pages'
     if pages_dir.exists():
         for f in pages_dir.rglob('*.yaml'):
             # 相对于 pages/ 的路径作为 key，如 'about'、'products/silent-booth'
             rel = f.relative_to(pages_dir).as_posix()
             page_key = rel[:-5] if rel.endswith('.yaml') else rel  # 去掉 .yaml 后缀
-            pages[page_key] = _load_yaml(f)
+            pages[page_key] = _deep_merge(pages.get(page_key, {}), _load_yaml(f))
     data = {}
     data_dir = root / 'data'
     if data_dir.exists():
@@ -112,9 +121,13 @@ def _load_translations(tpl_root):
     return {}
 
 
-def _build_language_selector_page(output_root, base_url, settings, theme, year, meta, translations):
-    """在根路径生成语言选择首页."""
-    languages = meta.get('languages', [])
+def _build_language_selector_page(output_root, base_url, settings, theme, year, meta, translations, languages=None):
+    """在根路径生成语言选择首页.
+
+    languages: 已过滤的启用语言列表，若不传则从 meta 读取全部.
+    """
+    if languages is None:
+        languages = meta.get('languages', [])
     if not languages:
         return
 
@@ -236,6 +249,12 @@ def build_site(site_id, base_url=''):
         shutil.copytree(site_assets, output_root / 'assets', dirs_exist_ok=True)
 
     languages = meta.get('languages', [])
+    # 按站点启用的语言过滤（从 DB enabled_languages 读取，兜底显示全部）
+    enabled_codes = site.enabled_languages or [l['code'] for l in languages]
+    languages = [l for l in languages if l['code'] in enabled_codes]
+    # 兜底：如果过滤后为空（旧站点 enabled_languages 可能与模板不一致），使用全部语言
+    if not languages:
+        languages = meta.get('languages', [])
     # 提取 product_categories 和 products 供导航用
     default_lang = meta.get('default_language', languages[0]['code'] if languages else 'zh-CN')
 
@@ -243,7 +262,7 @@ def build_site(site_id, base_url=''):
 
     if languages:
         # 多语言模式
-        _build_language_selector_page(output_root, base_url, settings, theme, year, meta, translations)
+        _build_language_selector_page(output_root, base_url, settings, theme, year, meta, translations, languages)
 
         for lang_opt in languages:
             lang_code = lang_opt['code']

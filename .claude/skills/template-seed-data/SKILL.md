@@ -1,4 +1,5 @@
 ---
+name: template-seed-data
 description: "管理模板的种子数据(添加/修改/查看 site_templates/<name>/seed_data/)"
 ---
 

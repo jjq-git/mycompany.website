@@ -61,7 +61,7 @@
                  value="{{ form.slug or '' }}" required
                  pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]"
                  placeholder="my-company">
-          <span class="input-group-text text-muted">.mycompany.website</span>
+          <span class="input-group-text text-muted">.{{ platform_domain }}</span>
         </div>
         <div class="form-text">3-30 字符，小写字母/数字/连字符。发布后可通过此地址访问。</div>
       </div>

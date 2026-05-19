@@ -1,4 +1,5 @@
 ---
+name: dev-cleanup
 description: "安全清理(删除测试用户/站点/构建输出)"
 ---
 

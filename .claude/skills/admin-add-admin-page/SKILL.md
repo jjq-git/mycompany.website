@@ -1,4 +1,5 @@
 ---
+name: admin-add-admin-page
 description: "新增后台管理页面(模板 + Panel 片段 + 路由 + 导航)"
 ---
 

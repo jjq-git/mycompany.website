@@ -1,4 +1,5 @@
 ---
+name: quality-review-code
 description: "代码审查——对照 CLAUDE.md 核心信念和"不做的事"检查变更"
 ---
 

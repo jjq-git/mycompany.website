@@ -11,38 +11,112 @@
 
 <form method="post" action="{{ url_for('core.header_edit', _fragment='1', site=site.id) }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  {# Header 变体选择 #}
+  {# Header 变体选择 - 卡片式，分 tab（内容/样式） #}
+  {% set selected_variant = current_header.get('variant', header_variants[0].key) %}
   <div class="panel-section">
     <div class="panel-section-title">头部布局</div>
-    <div class="d-flex flex-column gap-2">
-      {% for variant in header_variants %}
-      <label class="d-flex align-items-center p-2 border rounded variant-option"
-             style="cursor:pointer; {% if current_header.get('variant', header_variants[0].key) == variant.key %}border-color:#067a7a;background:#e8f0fe;{% endif %}">
-        <input type="radio" name="header_variant" value="{{ variant.key }}"
-               {% if current_header.get('variant', header_variants[0].key) == variant.key %}checked{% endif %}
-               class="me-2" onchange="this.closest('form').querySelectorAll('.variant-option').forEach(l=>{l.style.borderColor='';l.style.background=''});this.closest('.variant-option').style.borderColor='#067a7a';this.closest('.variant-option').style.background='#e8f0fe';">
-        <div>
-          <div class="small fw-semibold">{{ variant.label }}</div>
-          <div class="text-muted" style="font-size:10px">{{ variant.description }}</div>
+    {# Tab 切换按钮 — 与模块编辑器的 tab 风格一致 #}
+    <div class="d-flex mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="switchHeaderTab(this, 'content')">内容</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="switchHeaderTab(this, 'style')">样式</button>
+    </div>
+    {# 内容 Tab：变体选择 #}
+    <div class="content-style-panel panel-content">
+      <div class="variant-card-grid">
+        {% for variant in header_variants %}
+        <label class="variant-card {% if selected_variant == variant.key %}selected{% endif %}" data-variant="{{ variant.key }}">
+          <input type="radio" name="header_variant" value="{{ variant.key }}"
+                 {% if selected_variant == variant.key %}checked{% endif %}
+                 class="variant-card-radio">
+          <div class="variant-card-icon">
+            {% if variant.key == 'logo_left_menu_right' %}
+            <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="2" y="8" width="10" height="16" rx="2" fill="currentColor" opacity="0.7"/><rect x="16" y="12" width="6" height="8" rx="1" fill="currentColor" opacity="0.35"/><rect x="25" y="12" width="6" height="8" rx="1" fill="currentColor" opacity="0.35"/><rect x="34" y="12" width="6" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+            {% elif variant.key == 'logo_center_menu_below' %}
+            <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="19" y="4" width="10" height="10" rx="2" fill="currentColor" opacity="0.7"/><rect x="10" y="18" width="6" height="6" rx="1" fill="currentColor" opacity="0.35"/><rect x="21" y="18" width="6" height="6" rx="1" fill="currentColor" opacity="0.35"/><rect x="32" y="18" width="6" height="6" rx="1" fill="currentColor" opacity="0.35"/></svg>
+            {% elif variant.key == 'minimal_hamburger' %}
+            <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="2" y="10" width="8" height="12" rx="2" fill="currentColor" opacity="0.7"/><rect x="34" y="11" width="12" height="3" rx="1.5" fill="currentColor" opacity="0.5"/><rect x="36" y="16" width="10" height="3" rx="1.5" fill="currentColor" opacity="0.5"/><rect x="38" y="21" width="8" height="3" rx="1.5" fill="currentColor" opacity="0.5"/></svg>
+            {% elif variant.key == 'top_bar_social' %}
+            <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="0" y="2" width="48" height="7" rx="1" fill="currentColor" opacity="0.25"/><circle cx="38" cy="5.5" r="1.5" fill="currentColor" opacity="0.4"/><circle cx="42" cy="5.5" r="1.5" fill="currentColor" opacity="0.4"/><rect x="2" y="15" width="8" height="10" rx="2" fill="currentColor" opacity="0.7"/><rect x="16" y="18" width="6" height="5" rx="1" fill="currentColor" opacity="0.35"/><rect x="25" y="18" width="6" height="5" rx="1" fill="currentColor" opacity="0.35"/></svg>
+            {% endif %}
+          </div>
+          <div class="variant-card-label">{{ variant.label }}</div>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    {# 样式 Tab：内层宽度 + 内层内边距 #}
+    <div class="content-style-panel panel-style" style="display:none">
+      <div class="row g-2">
+        <div class="col-12">
+          <label class="form-label small mb-1 text-muted">内层宽度 <span class="text-muted" style="font-weight:normal;">（头部内容区最大宽度，留空=使用全局宽度 1440px）</span></label>
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control form-control-sm" name="header_inner_width" value="{{ current_header.get('inner_width', '') }}" placeholder="如 1200px" style="width:60%">
+            <select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'header_inner_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select>
+          </div>
         </div>
-      </label>
-      {% endfor %}
+      </div>
+      <div class="small fw-semibold mb-1 text-muted mt-2">内层内边距</div>
+      <div class="row g-2">
+        <div class="col-6">
+          <label class="form-label small mb-1 text-muted">上</label>
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control form-control-sm" name="header_padding_top" value="{{ current_header.get('padding_top', '') }}" placeholder="如 1rem" style="width:60%">
+            <select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'header_padding_top\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select>
+          </div>
+        </div>
+        <div class="col-6">
+          <label class="form-label small mb-1 text-muted">右</label>
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control form-control-sm" name="header_padding_right" value="{{ current_header.get('padding_right', '') }}" placeholder="如 1rem" style="width:60%">
+            <select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'header_padding_right\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select>
+          </div>
+        </div>
+        <div class="col-6">
+          <label class="form-label small mb-1 text-muted">下</label>
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control form-control-sm" name="header_padding_bottom" value="{{ current_header.get('padding_bottom', '') }}" placeholder="如 1rem" style="width:60%">
+            <select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'header_padding_bottom\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select>
+          </div>
+        </div>
+        <div class="col-6">
+          <label class="form-label small mb-1 text-muted">左</label>
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control form-control-sm" name="header_padding_left" value="{{ current_header.get('padding_left', '') }}" placeholder="如 1rem" style="width:60%">
+            <select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'header_padding_left\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  {# 语言切换按钮配置 #}
+  {# 语言设置 #}
   <div class="panel-section">
-    <div class="panel-section-title">语言切换按钮</div>
-    <div class="form-check form-switch mb-2">
+    <div class="panel-section-title">语言设置</div>
+    <p class="text-muted mb-3" style="font-size:12px;line-height:1.5;">开启后可在前台切换语言版本，同时需勾选至少两项语言。</p>
+
+    {# 语言切换按钮开关 #}
+    {% set sw_enabled = current_header.get('language_switcher', {}).get('enabled', True) %}
+    <div class="form-check form-switch mb-3">
       <input class="form-check-input" type="checkbox" name="lang_switcher_enabled" value="1"
-             id="langSwitcherToggle"
-             {% if current_header.get('language_switcher', {}).get('enabled', True) %}checked{% endif %}>
-      <label class="form-check-label small" for="langSwitcherToggle">显示语言切换按钮</label>
+             id="langSwitcherToggle" {% if sw_enabled %}checked{% endif %}>
+      <label class="form-check-label small fw-semibold" for="langSwitcherToggle">在前台显示语言切换按钮</label>
     </div>
 
-    <div id="langSwitcherOptions" {% if not current_header.get('language_switcher', {}).get('enabled', True) %}style="display:none"{% endif %}>
-      <label class="form-label small mb-1 text-muted">按钮样式</label>
-      <select class="form-select form-select-sm mb-2" name="lang_switcher_style">
+    {# 语言版本 + 样式（切换按钮开启时显示） #}
+    <div id="langSwitcherPanel" class="rounded p-3" style="background:#f8fafb;border:1px solid #e5e7eb;{% if not sw_enabled %}display:none;{% endif %}">
+      <div class="small fw-semibold mb-2">网站语言版本</div>
+      <div class="d-flex gap-3 mb-3" id="langVersionCheckboxes">
+        {% for lang_opt in template_languages %}
+        <label class="d-flex align-items-center gap-2 lang-version-option" style="cursor:pointer;">
+          <input class="form-check-input mt-0" type="checkbox" name="enabled_lang" value="{{ lang_opt.code }}"
+                 {% if lang_opt.code in enabled_languages %}checked{% endif %}>
+          <span class="small">{{ lang_opt.name }}</span>
+        </label>
+        {% endfor %}
+      </div>
+
+      <div class="small fw-semibold mb-2">按钮样式</div>
+      <select class="form-select form-select-sm" name="lang_switcher_style">
         {% set current_style = current_header.get('language_switcher', {}).get('style', 'vertical_dropdown') %}
         {% for s in lang_switcher_styles %}
         <option value="{{ s.key }}" {% if current_style == s.key %}selected{% endif %}>{{ s.label }}</option>
@@ -78,9 +152,30 @@
 </form>
 
 <script>
-document.getElementById('langSwitcherToggle').addEventListener('change', function(){
-  document.getElementById('langSwitcherOptions').style.display = this.checked ? '' : 'none';
+// 头部布局 Tab 切换（风格与模块编辑器的 switchContentStyleTab 一致）
+function switchHeaderTab(btn, tabName) {
+  var section = btn.closest('.panel-section');
+  section.querySelectorAll('.content-style-tab').forEach(function(t) { t.classList.remove('active'); });
+  btn.classList.add('active');
+  section.querySelectorAll('.content-style-panel').forEach(function(c) { c.style.display = 'none'; });
+  var target = section.querySelector('.panel-' + tabName);
+  if (target) target.style.display = '';
+}
+
+// 头部布局卡片点击切换
+document.querySelectorAll('.variant-card').forEach(function(card) {
+  card.addEventListener('click', function() {
+    document.querySelectorAll('.variant-card').forEach(function(c) { c.classList.remove('selected'); });
+    this.classList.add('selected');
+    this.querySelector('.variant-card-radio').checked = true;
+  });
 });
+
+// 切换按钮控制下方语言版本 + 样式面板的显示
+document.getElementById('langSwitcherToggle').addEventListener('change', function(){
+  document.getElementById('langSwitcherPanel').style.display = this.checked ? '' : 'none';
+});
+
 document.getElementById('socialToggle').addEventListener('change', function(){
   document.getElementById('socialOptions').style.display = this.checked ? '' : 'none';
 });

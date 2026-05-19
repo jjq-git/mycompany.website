@@ -17,6 +17,7 @@
   {% set specs = [] %}
 {% endif %}
 {% set section_bg = mdata.section_bg or '' %}
+{% set outer_w = mdata.outer_width or settings.get('layout', {}).get('global_width', '') or '' %}
 {% set inner_w = mdata.inner_width or '' %}
 {% set text_bg = mdata.text_bg or '' %}
 {% set text_color = mdata.text_color or '' %}
@@ -39,7 +40,7 @@
 
 {% set block_id = 'id-' + range(1000,9999) | random | string %}
 
-<section class="section"{% if section_bg %} style="background: {{ section_bg }};"{% endif %}>
+<section class="section"{% if section_bg or outer_w %} style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}"{% endif %}>
   <div class="container"{% if inner_w %} style="max-width: {{ inner_w }}; margin: 0 auto;"{% endif %}>
     <div class="id-grid"{% if inner_style %} style="{{ inner_style }}"{% endif %}>
       

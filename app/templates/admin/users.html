@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>用户管理 — mycompany.website 管理后台</title>
+  <title>用户管理 — {{ platform_domain }} 管理后台</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
   <style>
     .topbar.admin { background: #1a1a2e; color: #fff; }
@@ -22,7 +22,7 @@
 <body>
 
 <header class="topbar admin">
-  <div class="logo">mycompany.website · 管理后台</div>
+  <div class="logo">{{ platform_domain }} · 管理后台</div>
   <div class="spacer"></div>
   <span style="opacity: 0.7; margin-right: 12px;">{{ user.email }}</span>
   <a class="btn" href="{{ url_for('core.overview') }}">回到店主后台</a>

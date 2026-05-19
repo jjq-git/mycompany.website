@@ -18,8 +18,9 @@
     {% if module.type == 'item_data' %}
       {# 渲染详情内容（替代硬编码的 <section>） #}
       {% set section_bg = item.section_bg or '' %}
+      {% set outer_w = item.outer_width or settings.get('layout', {}).get('global_width', '') or '' %}
       {% set inner_w = item.inner_width or '' %}
-      <section class="section builder-module" data-builder-module-index="{{ loop.index0 }}"{% if section_bg %} style="background: {{ section_bg }};"{% endif %}>
+      <section class="section builder-module" data-builder-module-index="{{ loop.index0 }}" style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}">
         <div class="container"{% if inner_w %} style="max-width: {{ inner_w }}; margin: 0 auto;"{% endif %}>
           <article style="margin: 0 auto;">
             {% set t_color = item.title_color or '' %}
@@ -65,8 +66,9 @@
 {% else %}
   {# 无 modules 数组：使用旧格式直接渲染详情内容 #}
   {% set section_bg = item.section_bg or '' %}
+  {% set outer_w = item.outer_width or settings.get('layout', {}).get('global_width', '') or '' %}
   {% set inner_w = item.inner_width or '' %}
-  <section class="section"{% if section_bg %} style="background: {{ section_bg }};"{% endif %}>
+  <section class="section" style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}">
     <div class="container"{% if inner_w %} style="max-width: {{ inner_w }}; margin: 0 auto;"{% endif %}>
       <article style="margin: 0 auto;">
         {% set t_color = item.title_color or '' %}
