@@ -1,4 +1,5 @@
 ﻿{# 单页模块编辑器 — 所有菜单页面共用同一个模块库（blocks/），各自保存不同的模块数据 #}
+{% from 'dashboard/_block_icons.html' import block_icon %}
 {% if languages and languages|length > 1 %}
 {# 语言切换标签 — 切换当前编辑的语言版本 #}
 <div class="d-flex align-items-center gap-1 mb-2">
@@ -56,16 +57,21 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div class="row g-2">
+        <div class="row g-3">
           {% for blk in blocks if blk.name != 'product_grid' %}
           <div class="col-6">
-            <div class="card p-2 cursor-pointer block-card" style="cursor:pointer"
+            <div class="block-palette-card card p-3"
                  data-block-name="{{ blk.name }}"
                  data-block-variant="{{ blk.variants[0].key if blk.variants else 'default' }}">
-              <div class="d-flex align-items-center gap-2">
-                <span class="fw-semibold small">{{ blk.display_name }}</span>
+              <div class="d-flex align-items-start gap-3">
+                <div class="block-palette-icon flex-shrink-0">
+                  {{ block_icon(blk.name) }}
+                </div>
+                <div class="min-w-0">
+                  <div class="fw-semibold small mb-1">{{ blk.display_name }}</div>
+                  <div class="text-muted" style="font-size:11px;line-height:1.4">{{ blk.description }}</div>
+                </div>
               </div>
-              <div class="text-muted" style="font-size:10px">{{ blk.description }}</div>
             </div>
           </div>
           {% endfor %}
@@ -1415,7 +1421,7 @@ function reindexStepItems(moduleIndex) {
     });
     if (cfg && item.classList.contains('expanded')) cfg.style.display = 'block';
   });
-  document.querySelectorAll('.block-card[data-block-name]').forEach(function(card){
+  document.querySelectorAll('.block-palette-card[data-block-name]').forEach(function(card){
     card.addEventListener('click', function(){
       addModule(card.dataset.blockName, card.dataset.blockVariant || 'default');
       // 关闭弹框
@@ -2321,7 +2327,10 @@ document.addEventListener('paste', function(e) {
 {% endif %}
 
 <style>
-.block-card:hover { border-color: #067a7a; background: #f0f7ff; }
+{# 可用模块面板卡片 #}
+.block-palette-card { cursor: pointer; border: 1px solid #dee2e6; border-radius: 8px; transition: all 0.15s ease; }
+.block-palette-card:hover { border-color: #067a7a; background: #f0f7ff; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(6,122,122,0.1); }
+.block-palette-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 8px; background: rgba(6,122,122,0.06); color: #067a7a; }
 .module-item.expanded .module-config { display: block !important; }
 .device-config { padding: 4px 0; }
 .feature-item-header .small::before { content: '▼'; margin-right: 4px; font-size: 10px; }

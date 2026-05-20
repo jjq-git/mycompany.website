@@ -422,6 +422,54 @@ dot.addEventListener('click', function() {
 - `data-per-page` 和 `data-total` 只读,由 Jinja2 在服务端算好后写入 HTML,JS 只读取
 - HTML 中用 `kebab-case`(`data-block-id`),JS 访问时自动转 `camelCase`(`dataset.blockId`)
 
+**data-* 能替代内联 style 吗？**
+
+`data-*` 可以通过 CSS 属性选择器影响样式，但有明确的边界。
+
+**能替代的情况 —— 值是有限的、可穷举的：**
+
+```css
+/* 示例 B 中 columns 只有 1-4 几种可能,用属性选择器穷举 */
+.dg-list[data-columns="1"] { grid-template-columns: repeat(1, 1fr); }
+.dg-list[data-columns="2"] { grid-template-columns: repeat(2, 1fr); }
+.dg-list[data-columns="3"] { grid-template-columns: repeat(3, 1fr); }
+.dg-list[data-columns="4"] { grid-template-columns: repeat(4, 1fr); }
+
+/* card_layout 也是有限值 */
+.dg-list[data-card-layout="image_left"] { /* 横向布局样式 */ }
+.dg-list[data-card-layout="image_top"]  { /* 默认纵向布局 */ }
+```
+
+```html
+<!-- 原来: -->
+<div id="dg-4-list" class="dg-list" style="grid-template-columns: repeat(3, 1fr);">
+<!-- 改为: -->
+<div id="dg-4-list" class="dg-list" data-columns="3">
+```
+
+**不能替代的情况 —— 值是任意的、店主可以自由输入：**
+
+| 字段 | 典型值 | 为什么不能穷举 |
+|------|--------|---------------|
+| `outer_width` | `1200px` `80vw` `90%` `60rem` | 单位任意，值任意 |
+| `section_bg` | `#f5f7fa` `rgba(0,0,0,0.5)` `transparent` | 1670 万色 |
+| `margin_top` | `0px` `2rem` `10vh` | 同上 |
+
+这些只能用内联 `style` 或 CSS 自定义属性 (`var()`) 传值，无法用属性选择器覆盖。
+
+**示例 B 中各字段的分类：**
+
+| 字段 | 值域 | 能/不能 | 当前写法 |
+|------|------|---------|----------|
+| `columns` (1-4) | 有限 | 能 | `style="grid-template-columns: repeat({{ columns }}, 1fr)"` |
+| `card_layout` (image_top / image_left) | 有限 | 能 | class `dg-list--horizontal` |
+| `pager_align` (center / left / right) | 有限 | 能 | class `dg-pager--{{ pager_align }}` |
+| `outer_width` | 任意 | **不能** | 内联 style |
+| `section_bg` | 任意 | **不能** | 内联 style |
+| `margin_*` | 任意 | **不能** | 内联 style |
+
+**结论：** columns 用 `data-columns` + 属性选择器是可行的，但它和直接拼 `style="grid-template-columns: repeat({{ columns }}, 1fr)"` 相比没有实质优势 —— 少写一行内联 style，多写 4 条 CSS 规则。在当前项目"Block 专属 CSS 尽量轻量"的约定下，直接拼 style 是更简单的选择。有限值字段用 CSS class（如 `dg-list--horizontal`、`dg-pager--center`），任意值字段走内联 style，这是一致的做法。
+
 ### 9. 完整示例 — data_grid (Jinja2 源码)
 
 以下为 `data_grid` Block 的完整 Jinja2 模板,对应第 8 节示例 B 的渲染输出:
