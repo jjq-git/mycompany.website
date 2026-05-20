@@ -21,7 +21,7 @@ def create_app(config_override=None):
     # 上传体积上限：所有 multipart 请求总大小不能超过 MAX_CONTENT_LENGTH，
     # 防止巨型文件 / 图片炸弹耗尽磁盘和内存。Flask 默认 None=无上限, 这里必须显式赋值.
     if app.config.get('MAX_CONTENT_LENGTH') is None:
-        app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
+        app.config['MAX_CONTENT_LENGTH'] = 24 * 1024 * 1024  # 24MB（视频 multipart 编码膨胀约30%，需要留余量）
 
     db.init_app(app)
     csrf.init_app(app)

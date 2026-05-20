@@ -7,6 +7,50 @@
   <title>{% block title %}{{ site.slug if site else '' }}{% endblock %} — {{ platform_domain }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260519">
+  <style>
+    :root {
+      --bs-primary: {{ admin_primary }};
+      --bs-primary-rgb: {{ admin_primary_rgb }};
+      --bs-primary-bg: {{ admin_primary }};
+      --bs-primary-bg-subtle: {{ admin_primary_light }};
+      --bs-primary-text-emphasis: {{ admin_primary_active }};
+      --bs-primary-border-subtle: {{ admin_primary_light }};
+      --bs-link-color: {{ admin_primary }};
+      --bs-link-color-rgb: {{ admin_primary_rgb }};
+      --bs-link-hover-color: {{ admin_primary_hover }};
+      --bs-link-hover-color-rgb: {{ admin_primary_rgb }};
+    }
+    .btn-primary {
+      --bs-btn-bg: {{ admin_primary }};
+      --bs-btn-border-color: {{ admin_primary }};
+      --bs-btn-hover-bg: {{ admin_primary_hover }};
+      --bs-btn-hover-border-color: {{ admin_primary_hover }};
+      --bs-btn-active-bg: {{ admin_primary_active }};
+      --bs-btn-active-border-color: {{ admin_primary_active }};
+      --bs-btn-disabled-bg: {{ admin_primary }};
+      --bs-btn-disabled-border-color: {{ admin_primary }};
+    }
+    .btn-outline-primary {
+      --bs-btn-color: {{ admin_primary }};
+      --bs-btn-border-color: {{ admin_primary }};
+      --bs-btn-hover-bg: {{ admin_primary }};
+      --bs-btn-hover-border-color: {{ admin_primary }};
+      --bs-btn-active-bg: {{ admin_primary_hover }};
+      --bs-btn-active-border-color: {{ admin_primary_hover }};
+      --bs-btn-disabled-color: {{ admin_primary }};
+      --bs-btn-disabled-border-color: {{ admin_primary }};
+    }
+    .bg-primary {
+      --bs-bg-opacity: 1;
+      background-color: rgba(var(--bs-primary-rgb), var(--bs-bg-opacity)) !important;
+    }
+    .text-primary { color: {{ admin_primary }} !important; }
+    .border-primary { border-color: {{ admin_primary }} !important; }
+    .text-bg-primary {
+      color: #fff !important;
+      background-color: {{ admin_primary }} !important;
+    }
+  </style>
 </head>
 <body class="d-flex flex-column vh-100">
 

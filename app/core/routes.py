@@ -27,6 +27,30 @@ from .site_storage import (copy_seed_data, init_site_folder,
 
 bp = Blueprint('core', __name__)
 
+def _hex_to_rgb(hex_color):
+    """将 #rrggbb 转为 (r, g, b) 整数元组."""
+    h = hex_color.lstrip('#')
+    return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+
+
+def _darken(hex_color, factor=0.1):
+    """将 hex 颜色变暗 factor (0-1)."""
+    r, g, b = _hex_to_rgb(hex_color)
+    return '#{:02x}{:02x}{:02x}'.format(
+        max(0, int(r * (1 - factor))),
+        max(0, int(g * (1 - factor))),
+        max(0, int(b * (1 - factor))),
+    )
+
+
+def _lighten(hex_color, factor=0.1):
+    """将 hex 颜色变亮 factor (0-1)."""
+    r, g, b = _hex_to_rgb(hex_color)
+    return '#{:02x}{:02x}{:02x}'.format(
+        min(255, int(r + (255 - r) * factor)),
+        min(255, int(g + (255 - g) * factor)),
+        min(255, int(b + (255 - b) * factor)),
+    )
 ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'ogg', 'mov'}
 
@@ -265,6 +289,26 @@ def inject_context():
         ctx['all_list_datasets'] = _collect_list_targets(normalized)
 
     ctx['platform_domain'] = current_app.config.get('PLATFORM_DOMAIN', 'mycompany.website')
+
+    # 主题主色（用于覆盖 Bootstrap 默认蓝色 #0d6efd）
+    if site and site_id:
+        theme_color = (
+            settings.get('theme', {}).get('color-primary')
+            or ctx['template_meta'].get('default_theme', {}).get('color-primary')
+            or '#067a7a'
+        ).strip().strip('"').strip("'")
+        ctx['admin_primary'] = theme_color
+        ctx['admin_primary_rgb'] = ', '.join(str(v) for v in _hex_to_rgb(theme_color))
+        ctx['admin_primary_hover'] = _darken(theme_color, 0.12)
+        ctx['admin_primary_active'] = _darken(theme_color, 0.20)
+        ctx['admin_primary_light'] = _lighten(theme_color, 0.85)
+    else:
+        ctx['admin_primary'] = '#067a7a'
+        ctx['admin_primary_rgb'] = '6, 122, 122'
+        ctx['admin_primary_hover'] = '#056666'
+        ctx['admin_primary_active'] = '#045555'
+        ctx['admin_primary_light'] = '#e6f2f2'
+
     return ctx
 
 

@@ -675,6 +675,34 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 })();
 </script>
 
+{# 兜底：确保关键函数在任何渲染路径下都可用 #}
+<script>
+(function() {
+  var dsKey = '{{ dataset_key }}';
+  var siteId = '{{ site.id }}';
+  var langCode = '{{ current_lang }}';
+
+  if (typeof window.addDataItem !== 'function') {
+    window.addDataItem = function() {
+      var qs = '?site=' + encodeURIComponent(siteId);
+      if (langCode) qs += '&lang=' + encodeURIComponent(langCode);
+      fetch('/_dataset/' + dsKey + '/new' + qs, {method: 'POST'})
+        .then(function() { location.reload(); })
+        .catch(function() { location.reload(); });
+    };
+  }
+  if (typeof window.backToPageEditor !== 'function') {
+    window.backToPageEditor = function() { location.reload(); };
+  }
+  if (typeof window.openEditItem !== 'function') {
+    window.openEditItem = function(id) { location.reload(); };
+  }
+  if (typeof window.deleteDataItem !== 'function') {
+    window.deleteDataItem = function(id) { location.reload(); };
+  }
+})();
+</script>
+
 {% if translation_enabled and is_edit %}
 <script>
 (function(){

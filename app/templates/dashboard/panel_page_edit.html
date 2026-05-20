@@ -98,7 +98,7 @@
       {% set mod_title = display_names.get(module.type, module.type | replace('_', ' ') | title) %}
       <div class="card mb-2 module-item" data-index="{{ i }}" data-module-index="{{ i }}">
         <div class="d-flex align-items-center justify-content-between p-2 module-header"
-             onclick="this.closest('.module-item').classList.toggle('expanded')">
+             onclick="toggleModuleAccordion(this.closest('.module-item'))">
           <span class="small fw-semibold">{{ mod_title }}</span>
           <div class="d-flex gap-1">
             <button type="button" class="btn btn-sm btn-outline-secondary module-sort-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)">↑</button>
@@ -152,14 +152,17 @@
                       </select>
                     </div>
                     <div class="col-6">
-                      <label class="form-label small mb-1 text-muted">上传文件</label>
-                      <input type="file" class="form-control form-control-sm" name="module_{{ i }}_slide_{{ s }}_file" accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime">
+                      <label class="form-label small mb-1 text-muted">上传图片/视频</label>
+                      <label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor='#94a3b8';this.style.background='#f1f5f9'" onmouseleave="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片/视频<input type="file" name="module_{{ i }}_slide_{{ s }}_file" accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime" onchange="handleModuleImageUpload(this)" style="display:none"></label>
+                      <div class="form-text mt-1">支持 JPG/PNG/GIF/WebP/MP4/WebM/OGG/MOV，最大 12MB</div>
                     </div>
                   </div>
                   <div class="mb-2 mt-2">
                     <label class="form-label small mb-1 text-muted">媒体 URL</label>
-                    <input type="text" class="form-control form-control-sm" name="module_{{ i }}_slide_{{ s }}_media" value="{{ slide.media or slide.background_image or slide.video_url or '' }}">
+                    <input type="text" class="form-control form-control-sm" name="module_{{ i }}_slide_{{ s }}_media" value="{{ slide.media or slide.background_image or slide.video_url or '' }}" oninput="updateImagePreview(this)">
                   </div>
+                  {% set media_url = slide.media or slide.background_image or slide.video_url or '' %}
+                  <div class="mt-2 module-image-preview"{% if not media_url %} style="display:none"{% endif %}><div style="position:relative;display:inline-block"><img src="{% if media_url %}{{ media_url }}{% endif %}" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display='none'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除文件">&times;</button></div></div>
                   <div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_slide_{{ s }}_title" value="{{ slide.title or '' }}"></div>
                   <div class="mb-2"><label class="form-label small mb-1 text-muted">副标题</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_slide_{{ s }}_subtitle" value="{{ slide.subtitle or '' }}"></div>
                   <div class="row g-2">
@@ -231,7 +234,7 @@
             <div class="mb-2"><label class="form-label small mb-1 text-muted">标签文字</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_tag" value="{{ mdata.get('tag', '') }}"></div>
             <div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title" value="{{ mdata.get('title', '') }}"></div>
             <div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label><textarea class="form-control form-control-sm" rows="3" name="module_{{ i }}_data_desc">{{ mdata.get('desc', '') }}</textarea></div>
-            <div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_image" value="{{ mdata.get('image', '') }}" placeholder="图片 URL"><input type="file" class="form-control form-control-sm mt-1" name="module_{{ i }}_data_image_file" accept="image/*"><div class="form-text">上传后自动转 WebP 并覆盖该字段</div></div>
+            <div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label><input type="hidden" name="module_{{ i }}_data_image" value="{{ mdata.get('image', '') }}"><label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor='#94a3b8';this.style.background='#f1f5f9'" onmouseleave="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="module_{{ i }}_data_image_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>{% if mdata.get('image') %}<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all">{{ mdata.get('image') }}</div>{% else %}<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div>{% endif %}<div class="mt-2 module-image-preview"{% if not mdata.get('image') %} style="display:none"{% endif %}><div style="position:relative;display:inline-block"><img src="{% if mdata.get('image') %}{{ mdata.get('image') }}{% endif %}" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display='none'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div></div>
             <div class="row g-2">
               <div class="col-6">
                 <label class="form-label small mb-1 text-muted">主按钮文字</label>
@@ -502,10 +505,13 @@
                     <button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest('.id-image-item').remove();reindexIdImages({{ i | int }})">删除</button>
                   </div>
                   <div class="mb-2">
-                    <label class="form-label small mb-1 text-muted">图片 URL</label>
-                    <input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_images_{{ ii }}_url" value="{{ img.url or img or '' }}">
-                    <input type="file" class="form-control form-control-sm mt-1" name="module_{{ i }}_data_images_{{ ii }}_url_file" accept="image/*">
-                    <div class="form-text">上传后自动转 WebP 并覆盖 URL</div>
+                    <label class="form-label small mb-1 text-muted">图片</label>
+                    <input type="hidden" name="module_{{ i }}_data_images_{{ ii }}_url" value="{{ img.url or img or '' }}">
+                    <label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor='#94a3b8';this.style.background='#f1f5f9'" onmouseleave="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="module_{{ i }}_data_images_{{ ii }}_url_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label>
+                    <div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>
+                    {% set img_url = img.url or img or '' %}
+                    {% if img_url %}<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all">{{ img_url }}</div>{% else %}<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div>{% endif %}
+                    <div class="mt-2 module-image-preview"{% if not img_url %} style="display:none"{% endif %}><div style="position:relative;display:inline-block"><img src="{% if img_url %}{{ img_url }}{% endif %}" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display='none'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div>
                   </div>
                 </div>
                 {% endfor %}
@@ -803,7 +809,7 @@
                 <div class="border rounded p-2 mb-2 list-item collapsed" data-item-index="{{ loop.index0 }}">
                   <div class="d-flex justify-content-between align-items-center mb-2 list-item-header" style="cursor:pointer; user-select:none;" onclick="this.closest('.list-item').classList.toggle('collapsed')"><span class="small fw-semibold">Logo {{ loop.index }}</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest('.list-item').remove();reindexLogoItems({{ i | int }})">删除</button></div>
                   <div class="list-item-body">
-                    <div class="mb-2"><label class="form-label small mb-1 text-muted">Logo 图片 URL</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_logo_{{ loop.index0 }}_image" value="{{ logo.get('image', '') }}" placeholder="图片 URL"><input type="file" class="form-control form-control-sm mt-1" name="module_{{ i }}_logo_{{ loop.index0 }}_image_file" accept="image/*"></div>
+                    <div class="mb-2"><label class="form-label small mb-1 text-muted">Logo 图片</label><input type="hidden" name="module_{{ i }}_logo_{{ loop.index0 }}_image" value="{{ logo.get('image', '') }}"><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor='#94a3b8';this.style.background='#f1f5f9'" onmouseleave="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="module_{{ i }}_logo_{{ loop.index0 }}_image_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>{% set logo_url = logo.get('image', '') %}{% if logo_url %}<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all">{{ logo_url }}</div>{% else %}<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div>{% endif %}<div class="mt-2 module-image-preview"{% if not logo_url %} style="display:none"{% endif %}><div style="position:relative;display:inline-block"><img src="{% if logo_url %}{{ logo_url }}{% endif %}" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display='none'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div></div>
                     <div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">品牌名称</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_logo_{{ loop.index0 }}_name" value="{{ logo.get('name', '') }}"></div>
                     <div class="col-6"><label class="form-label small mb-1 text-muted">链接</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_logo_{{ loop.index0 }}_link" value="{{ logo.get('link', '') }}"></div></div>
                   </div>
@@ -973,7 +979,7 @@
                 {% if 'image' in key|lower or 'cover' in key|lower or 'background' in key|lower or 'media' in key|lower or 'photo' in key|lower or 'logo' in key|lower %}
                 <input type="file" class="form-control form-control-sm mt-1"
                        name="{{ prefix }}{{ key }}_file" accept="image/*">
-                <div class="form-text">上传后自动转 WebP 并覆盖该字段。</div>
+                <div class="form-text">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>
                 {% endif %}
               </div>
               {% endif %}
@@ -1146,8 +1152,8 @@ function renderDynamicField(prefix, field, value, placeholder) {
     html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '">';
   }
   if (/(image|cover|background|media|photo|logo)/i.test(key)) {
-    html += '<input type="file" class="form-control form-control-sm mt-1" name="' + prefix + key + '_file" accept="image/*">';
-    html += '<div class="form-text">可上传图片；视频请填写 URL。</div>';
+    html += '<label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="' + prefix + key + '_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label>';
+    html += '<div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>';
   }
   return html + '</div>';
 }
@@ -1182,8 +1188,8 @@ function heroSlideHtml(moduleIndex, slideIndex) {
     '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); this.closest(\'.hero-slide-item\').remove(); reindexHeroSlides(' + moduleIndex + ')">删除</button></div>' +
     '<div class="hero-slide-body">' +
     '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">媒体类型</label><select class="form-select form-select-sm" name="' + p + 'type"><option value="image">图片</option><option value="video">视频</option></select></div>' +
-    '<div class="col-6"><label class="form-label small mb-1 text-muted">上传文件</label><input type="file" class="form-control form-control-sm" name="' + p + 'file" accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime"></div></div>' +
-    '<div class="mb-2 mt-2"><label class="form-label small mb-1 text-muted">媒体 URL</label><input type="text" class="form-control form-control-sm" name="' + p + 'media"></div>' +
+    '<div class="col-6"><label class="form-label small mb-1 text-muted">上传图片/视频</label><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片/视频<input type="file" name="' + p + 'file" accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP/MP4/WebM/OGG/MOV，最大 12MB</div></div></div>' +
+    '<div class="mb-2 mt-2"><label class="form-label small mb-1 text-muted">媒体 URL</label><input type="text" class="form-control form-control-sm" name="' + p + 'media" oninput="updateImagePreview(this)"></div><div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除文件">&times;</button></div></div></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="' + p + 'title"></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">副标题</label><input type="text" class="form-control form-control-sm" name="' + p + 'subtitle"></div>' +
     '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">主按钮文字</label><input type="text" class="form-control form-control-sm" name="' + p + 'primaryBtn"></div>' +
@@ -1336,7 +1342,7 @@ function logoItemHtml(moduleIndex, logoIndex) {
     '<span class="small fw-semibold">Logo ' + (logoIndex + 1) + '</span>' +
     '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.list-item\').remove();reindexLogoItems(' + moduleIndex + ')">删除</button>' +
     '</div><div class="list-item-body">' +
-    '<div class="mb-2"><label class="form-label small mb-1 text-muted">Logo 图片 URL</label><input type="text" class="form-control form-control-sm" name="' + p + 'image" placeholder="图片 URL"><input type="file" class="form-control form-control-sm mt-1" name="' + p + 'image_file" accept="image/*"></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">Logo 图片</label><input type="hidden" name="' + p + 'image" value=""><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="' + p + 'image_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div><div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div><div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div></div>' +
     '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">品牌名称</label><input type="text" class="form-control form-control-sm" name="' + p + 'name"></div>' +
     '<div class="col-6"><label class="form-label small mb-1 text-muted">链接（可选）</label><input type="text" class="form-control form-control-sm" name="' + p + 'link" placeholder="https://"></div></div>' +
     '</div></div>';
@@ -1412,15 +1418,8 @@ function reindexStepItems(moduleIndex) {
 // 展开第一个模块
 (function(){
   var items = document.querySelectorAll('.module-item');
-  if (items.length) items[0].classList.add('expanded');
-  items.forEach(function(item){
-    var cfg = item.querySelector('.module-config');
-    if (item.classList.contains('expanded') && cfg) cfg.style.display = 'block';
-    item.querySelector('.module-header').addEventListener('click', function(){
-      if (cfg) cfg.style.display = item.classList.contains('expanded') ? 'block' : 'none';
-    });
-    if (cfg && item.classList.contains('expanded')) cfg.style.display = 'block';
-  });
+  if (items.length) { items[0].classList.add('expanded'); items[0].querySelector('.module-config').style.display = 'block'; }
+  // 点击事件由模板中 .module-header 的 onclick 统一处理，此处不再重复绑定
   document.querySelectorAll('.block-palette-card[data-block-name]').forEach(function(card){
     card.addEventListener('click', function(){
       addModule(card.dataset.blockName, card.dataset.blockVariant || 'default');
@@ -1720,7 +1719,7 @@ function addModule(type, variant) {
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag"></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label><textarea class="form-control form-control-sm" rows="3" name="module_' + idx + '_data_desc"></textarea></div>' +
-    '<div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_image" placeholder="图片 URL"><input type="file" class="form-control form-control-sm mt-1" name="module_' + idx + '_data_image_file" accept="image/*"><div class="form-text">上传后自动转 WebP 并覆盖该字段</div></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label><input type="hidden" name="module_' + idx + '_data_image" value=""><label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="module_' + idx + '_data_image_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div><div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div><div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div></div>' +
     '<div class="row g-2">' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">主按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryBtn"></div>' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">主按钮链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryLink"></div>' +
@@ -1967,12 +1966,27 @@ function addModule(type, variant) {
   container.appendChild(div);
   initColorPickers(div);
 
-  // toggle config
+  // 手风琴展开/收缩
   div.querySelector('.module-header').addEventListener('click', function(){
-    var cfg = div.querySelector('.module-config');
-    div.classList.toggle('expanded');
-    cfg.style.display = div.classList.contains('expanded') ? 'block' : 'none';
+    toggleModuleAccordion(div);
   });
+}
+
+// 手风琴：展开一个模块时收缩其他模块
+function toggleModuleAccordion(moduleItem) {
+  var cfg = moduleItem.querySelector('.module-config');
+  var wasExpanded = moduleItem.classList.contains('expanded');
+  // 先收缩所有模块
+  document.querySelectorAll('.module-item').forEach(function(item){
+    item.classList.remove('expanded');
+    var itemCfg = item.querySelector('.module-config');
+    if (itemCfg) itemCfg.style.display = 'none';
+  });
+  // 如果之前未展开，则展开当前模块；如果之前已展开则保持收缩（切换效果）
+  if (!wasExpanded) {
+    moduleItem.classList.add('expanded');
+    if (cfg) cfg.style.display = 'block';
+  }
 }
 
 function removeModule(idx) {
@@ -2025,7 +2039,74 @@ function moveModule(btn, dir) {
 
 function idImageHtml(modIdx) {
   var next = parseInt(document.querySelector('#selectedModules .id-images-editor[data-module-index="'+modIdx+'"] .id-image-count').value || '0', 10);
-  return '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="'+next+'"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 '+(next+1)+'</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();reindexIdImages('+modIdx+')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片 URL</label><input type="text" class="form-control form-control-sm" name="module_'+modIdx+'_data_images_'+next+'_url"><input type="file" class="form-control form-control-sm mt-1" name="module_'+modIdx+'_data_images_'+next+'_url_file" accept="image/*"><div class="form-text">上传后自动转 WebP 并覆盖 URL</div></div></div>';
+  return '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="'+next+'"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 '+(next+1)+'</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();reindexIdImages('+modIdx+')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label><input type="hidden" name="module_'+modIdx+'_data_images_'+next+'_url" value=""><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="module_'+modIdx+'_data_images_'+next+'_url_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div><div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div><div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div></div></div>';
+}
+
+// 图片预览：选择文件后在当前字段中显示本地预览
+function handleModuleImageUpload(fileInput) {
+  var file = fileInput.files[0];
+  var container = fileInput.closest('.hero-slide-body') || fileInput.closest('.mb-2');
+  var preview = container ? container.querySelector('.module-image-preview') : null;
+  var img = preview ? preview.querySelector('img') : null;
+  var urlText = container ? container.querySelector('.module-image-url-text') : null;
+  if (!file || !preview || !img) return;
+  if (file.type.startsWith('image/')) {
+    img.src = URL.createObjectURL(file);
+    preview.style.display = '';
+  }
+  if (urlText) { urlText.textContent = file.name; urlText.style.display = ''; }
+  img.onerror = function() { preview.style.display = 'none'; };
+}
+
+// 图片预览：点击放大
+function enlargeImage(img) {
+  var src = img.src;
+  if (!src) return;
+  var overlay = document.getElementById('imgLightbox');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'imgLightbox';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:pointer';
+    overlay.onclick = function() { overlay.style.display = 'none'; };
+    var lbImg = document.createElement('img');
+    lbImg.style.cssText = 'max-width:90vw;max-height:90vh;border-radius:6px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
+    overlay.appendChild(lbImg);
+    document.body.appendChild(overlay);
+  }
+  overlay.querySelector('img').src = src;
+  overlay.style.display = 'flex';
+}
+
+// 图片预览：删除按钮清除图片
+function clearModuleImage(btn) {
+  var container = btn.closest('.hero-slide-body') || btn.closest('.mb-2');
+  if (!container) return;
+  var urlInput = container.querySelector('input[type="hidden"]') || container.querySelector('input[type="text"]');
+  var fileInput = container.querySelector('input[type="file"]');
+  var urlText = container.querySelector('.module-image-url-text');
+  var preview = container.querySelector('.module-image-preview');
+  var img = preview ? preview.querySelector('img') : null;
+  if (urlInput) urlInput.value = '';
+  if (fileInput) fileInput.value = '';
+  if (urlText) { urlText.textContent = ''; urlText.style.display = 'none'; }
+  if (img) img.src = '';
+  if (preview) preview.style.display = 'none';
+}
+
+// 图片预览：URL 输入框变化时更新预览
+function updateImagePreview(urlInput) {
+  var container = urlInput.closest('.hero-slide-body') || urlInput.closest('.mb-2');
+  var preview = container ? container.querySelector('.module-image-preview') : null;
+  var img = preview ? preview.querySelector('img') : null;
+  if (!preview || !img) return;
+  var url = urlInput.value.trim();
+  if (url) {
+    img.src = url;
+    preview.style.display = '';
+  } else {
+    preview.style.display = 'none';
+    img.src = '';
+  }
 }
 
 function addIdImage(modIdx) {
