@@ -48,9 +48,10 @@
     <div class="content-style-panel panel-style" style="display:none">
       <div class="row g-2">
         <div class="col-12">
-          <label class="form-label small mb-1 text-muted">内层宽度 <span class="text-muted" style="font-weight:normal;">（头部内容区最大宽度，留空=使用全局宽度 1440px）</span></label>
+          {% set gw = settings.get('layout', {}).get('global_width', '90%') %}
+          <label class="form-label small mb-1 text-muted">内层宽度 <span class="text-muted" style="font-weight:normal;">（头部内容区最大宽度，留空=使用全局宽度 {{ gw }}）</span></label>
           <div class="input-group input-group-sm">
-            <input type="text" class="form-control form-control-sm" name="header_inner_width" value="{{ current_header.get('inner_width', '') }}" placeholder="如 1200px" style="width:60%">
+            <input type="text" class="form-control form-control-sm" name="header_inner_width" value="{{ current_header.get('inner_width', '') }}" placeholder="留空则使用全局宽度 {{ gw }}" style="width:60%">
             <select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'header_inner_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select>
           </div>
         </div>

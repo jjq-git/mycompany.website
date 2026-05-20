@@ -73,7 +73,7 @@
 {% set lang_switcher_style = header_config.get('language_switcher', {}).get('style', 'vertical_dropdown') %}
 
 {# 头部自定义样式：内层宽度 + 内层内边距 #}
-{% set h_inner_w = header_config.get('inner_width', '') %}
+{% set h_inner_w = header_config.get('inner_width', '') or settings.get('layout', {}).get('global_width', '90%') %}
 {% set h_pad_top = header_config.get('padding_top', '') %}
 {% set h_pad_right = header_config.get('padding_right', '') %}
 {% set h_pad_bottom = header_config.get('padding_bottom', '') %}

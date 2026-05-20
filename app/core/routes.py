@@ -437,7 +437,7 @@ def overview():
     products = datasets.load(site.id, 'products')
     pages = list_yaml_files(site.id, 'pages')
     counts = {'products': len(products), 'pages': len(pages)}
-    global_width = settings.get('layout', {}).get('global_width', '')
+    global_width = settings.get('layout', {}).get('global_width', '90%')
     if request.args.get('_fragment'):
         return render_template('dashboard/panel_overview.html',
                                user=user, site=site, counts=counts,
@@ -1100,6 +1100,9 @@ def theme_edit():
                 theme[key] = v
             else:
                 theme.pop(key, None)
+        # 清理旧版短 key（迁移前遗留数据）
+        for old_key in ('accent', 'bg', 'surface', 'text', 'text_muted', 'border'):
+            theme.pop(old_key, None)
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
         if is_fragment:

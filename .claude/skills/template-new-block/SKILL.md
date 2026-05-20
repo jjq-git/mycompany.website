@@ -336,39 +336,254 @@ dot.addEventListener('click', function() {
 - `getAttribute()` 永远返回字符串,数字需要 `parseInt()` 转换
 - `dataset` 在 IE10+ 支持,本项目目标浏览器都兼容
 
-### 8. 完整示例
+### 8. 浏览器渲染后的 Block HTML（真实输出）
 
-以 `text_content` Block 为例(实际代码):
+以下是 `http://192.168.1.31:5000/preview/7/zh-CN/` 页面上抓取的真实渲染结果，
+展示 Jinja2 模板经过后端渲染后在浏览器中的最终形态。
+
+**每个 Block 的外层包装（builder 框架自动添加）：**
+
+```html
+<div class="builder-module"
+     data-builder-module-index="3"
+     data-builder-module-type="data_grid">
+  <!--   ───────────┬──────────       ────┬────
+    模块在页面中的序号(从 0 开始)       Block 目录名(与 blocks/ 下一致)
+    用于拖拽排序、删除、定位           用于后台识别模块类型          -->
+  ...block 内部 HTML...
+</div>
+```
+
+> `data-builder-module-index` 和 `data-builder-module-type` 由 builder 框架自动注入，
+> Block 模板不需要处理这两个属性。
+
+**示例 B: data_grid — data-block-id / data-page / data-per-page / data-total 分页**
+
+```html
+<div class="builder-module" data-builder-module-index="3" data-builder-module-type="data_grid">
+
+<section class="section section-bg" style="max-width: 90%; margin-left: auto; margin-right: auto;">
+  <div class="container" style="max-width: none; margin: 0 auto;">
+    <div class="section-header">
+      <h2 class="section-title">近期项目</h2>
+    </div>
+
+    <!-- 列表容器: id 用于 JS 定位,data-* 未直接标在此处 -->
+    <div id="dg-4-list" class="dg-list " style="grid-template-columns: repeat(3, 1fr);">
+    <!--  ───┬───                                          ───┬───
+      block_id = 'dg-' ~ module.order                       module.order 在页面上解析为 4
+      JS 中 document.getElementById(blockId + '-list') 定位到此元素               -->
+
+      <!-- 每张卡片都是 <a> 链接,可点击进入详情页 -->
+      <a href="/preview/7/zh-CN/museum-2024/" class="dg-card ">
+        <div class="dg-card-image"><div class="dg-card-placeholder">📷</div></div>
+        <div class="dg-card-body">
+          <h3 class="dg-card-title">苏州博物馆静音展示项目</h3>
+          <div class="dg-card-date">2024-08</div>
+          <p class="dg-card-desc">为苏州博物馆定制 12 套静音仓展示系统，覆盖书画、瓷器、青铜三个展厅</p>
+          <div class="dg-card-tags">
+            <span class="dg-card-tag">博物馆</span>
+            <span class="dg-card-tag">静音仓</span>
+            <span class="dg-card-tag">定制</span>
+          </div>
+        </div>
+      </a>
+      <!-- ...更多卡片(共 6 张)... -->
+    </div>
+
+    <!-- 分页时会有按钮,示例页数据少未渲染,此处展示 Jinja2 源码对应的 HTML 形态: -->
+    <!--
+    <div class="dg-pager dg-pager--center" style="margin-top: 1.5rem;">
+      <button class="btn btn-outline-primary dg-load-more"
+              data-block-id="dg-4"       ← module.order=4,JS 拼接 id="dg-4-list" 定位列表
+              data-page="1"              ← 当前已加载到第几页,初始为 1
+              data-per-page="6"          ← 每页显示条数,来自 md.get('items_per_page', 6)
+              data-total="6"             ← 数据总条数,来自 filtered_items | length
+              onclick="loadMoreDataGrid(this)">
+        加载更多 <span class="dg-remaining">(0 项)</span>
+      </button>
+    </div>
+    -->
+  </div>
+</section>
+</div>
+```
+
+**data 属性详解：**
+
+| 属性 | 来源（Jinja2） | 示例值 | JS 读取 | 写入 |
+|------|---------------|--------|---------|------|
+| `data-block-id` | `{{ block_id }}` | `"dg-4"` | `btn.dataset.blockId` | 只读 |
+| `data-page` | `"1"` | `"1"` | `parseInt(btn.dataset.page, 10)` | `btn.dataset.page = page + 1` |
+| `data-per-page` | `{{ per_page }}` | `"6"` | `parseInt(btn.dataset.perPage, 10)` | 只读 |
+| `data-total` | `{{ total }}` | `"6"` | `parseInt(btn.dataset.total, 10)` | 只读 |
+
+**关键机制说明：**
+
+- `data-block-id` 是数据网格的"身份证号"——同一页面可能有两个 data_grid 模块(如示例页就有"近期项目"和"最新动态"),分别用 `dg-4` 和 `dg-5` 区分,各自独立分页
+- `data-page` 是唯一会被 JS **写回**的属性(`btn.dataset.page = page + 1`),HTML 上会动态变化:`data-page="1"` → `data-page="2"`
+- `data-per-page` 和 `data-total` 只读,由 Jinja2 在服务端算好后写入 HTML,JS 只读取
+- HTML 中用 `kebab-case`(`data-block-id`),JS 访问时自动转 `camelCase`(`dataset.blockId`)
+
+### 9. 完整示例 — data_grid (Jinja2 源码)
+
+以下为 `data_grid` Block 的完整 Jinja2 模板,对应第 8 节示例 B 的渲染输出:
 
 ```jinja2
-{# 文本内容 — 标题 + 多段落正文 #}
+{# === 1. 数据准备 === #}
+{# 数据网格 — 通用数据列表模块 #}
+{% if module.data %}
 {% set md = module.data if module.data else {} %}
-{% if md.title or md.body %}
+{% set dataset_key = md.get('dataset', 'portfolio') %}
+
+{# 从 all_datasets 或全局变量中取数据集 #}
+{% if all_datasets is defined and dataset_key in all_datasets %}
+  {% set ds_data = all_datasets[dataset_key] %}
+  {% if ds_data is mapping and 'items' in ds_data %}
+    {% set items = ds_data['items'] %}
+  {% elif ds_data is iterable and ds_data is not string %}
+    {% set items = ds_data %}
+  {% else %}
+    {% set items = [] %}
+  {% endif %}
+{% else %}
+  {% set items = products if dataset_key == 'products' else portfolio if dataset_key == 'portfolio' else posts if dataset_key == 'posts' else [] %}
+{% endif %}
+
+{% if items %}
+{# === 2. 分类过滤 === #}
+{% set filter_category = md.get('category', '') %}
+{% set filtered_items = items %}
+{% if filter_category %}
+  {% set _tmp = [] %}
+  {% for _it in items %}
+    {% if _it.category | default('') | string == filter_category | string %}
+      {% set _ = _tmp.append(_it) %}
+    {% endif %}
+  {% endfor %}
+  {% set filtered_items = _tmp %}
+{% endif %}
+
+{% if filtered_items %}
+{# === 3. 配置提取 === #}
+{% set per_page = md.get('items_per_page', 6) | int %}
+{% set card_layout = md.get('card_layout', 'image_top') %}
 {% set section_bg = md.get('section_bg', '') %}
 {% set outer_w = md.get('outer_width', '') or settings.get('layout', {}).get('global_width', '') %}
 {% set inner_w = md.get('inner_width', '') %}
-{% set text_align = md.get('text_align', 'left') %}
-{% set title_color = md.get('title_color', '') %}
-{% set title_size = md.get('title_size', '') %}
+{% set columns = md.get('columns') | int or 3 %}
+{% set show_pagination = md.get('show_pagination', true) not in (false, 'false', 'False', '') %}
+{% set pagination_style = md.get('pagination_style', 'load_more') %}
+{% set display_items = filtered_items %}
+{% set total = display_items | length %}
+{% set is_products = dataset_key == 'products' %}
+{% set is_posts = dataset_key == 'posts' %}
+{% set is_portfolio = dataset_key == 'portfolio' %}
+{% set block_id = 'dg-' ~ module.order | default(0) %}
+{#                ───┬───     ──────┬──────
+        data 属性来源:       module.order 由后端自动分配,
+        'dg-' 前缀确保      表示模块在页面中的序号,
+        页面内唯一           两个 data_grid 同页时分别得 dg-4 和 dg-5  #}
 
-<section class="section" style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}">
-  <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
-    <div class="tc-block" style="text-align: {{ text_align }};">
-      {% if md.title %}
-      <h2 class="tc-title" style="{% if title_color %}color: {{ title_color }};{% endif %}{% if title_size %}font-size: {{ title_size }};{% endif %}">{{ md.title }}</h2>
-      {% endif %}
-      {% if md.body %}
-      <div class="tc-body">
-        {% for para in md.body | string | replace('\n\n', '\n') %}
-        <p>{{ para | replace('\n', '<br>') }}</p>
+{# === 4. 外层 Section === #}
+{% set mg_top = md.get('margin_top', '') %}{% set mg_right = md.get('margin_right', '') %}{% set mg_bottom = md.get('margin_bottom', '') %}{% set mg_left = md.get('margin_left', '') %}{% set has_margin = mg_top or mg_right or mg_bottom or mg_left %}
+<section class="section{% if not section_bg %} section-bg{% endif %}"
+         {% if section_bg or has_margin or outer_w %} style="
+           {% if outer_w %}max-width: {{ outer_w }}; {% endif %}
+           {% if section_bg %}background: {{ section_bg }};{% endif %}
+           {% if mg_top %}margin-top: {{ mg_top }};{% endif %}
+           {% if mg_right %}margin-right: {{ mg_right }};{% endif %}
+           {% if mg_bottom %}margin-bottom: {{ mg_bottom }};{% endif %}
+           {% if mg_left %}margin-left: {{ mg_left }};{% endif %}
+         "{% endif %}>
+  <div class="container" style="max-width: {{ inner_w or 'none' }}; ">
+
+    {# === 5. 标题 === #}
+    {% if md.title %}
+    <div class="section-header">
+      <h2 class="section-title">{{ md.title }}</h2>
+    </div>
+    {% endif %}
+
+    {# === 6. 卡片列表 === #}
+    <div id="{{ block_id }}-list" class="dg-list {% if card_layout == 'image_left' %}dg-list--horizontal{% endif %}"
+         style="grid-template-columns: repeat({{ columns }}, 1fr);">
+      {% for item in display_items %}
+      <a href="{{ base_url }}/{{ lang }}{{ current_path }}{{ item.slug }}/"
+         class="dg-card {% if loop.index0 >= per_page %}dg-card--hidden{% endif %}{% if card_layout == 'image_left' %} dg-card--horizontal{% endif %}">
+        {# 初始超过 per_page 的卡片加 hidden class,JS 分页时逐批显示 #}
+        <div class="dg-card-image"{% if item.cover or item.image %} style="background-image: url('{{ item.cover | default(item.image) }}')"{% endif %}>
+          {% if not (item.cover or item.image) %}<div class="dg-card-placeholder">{{ '📦' if is_products else '📷' }}</div>{% endif %}
+          {% if is_products and item.category %}<span class="dg-card-category">{{ item.category }}</span>{% endif %}
+        </div>
+        <div class="dg-card-body">
+          <h3 class="dg-card-title">{{ item.title | default(item.name) }}</h3>
+          {% if item.date %}<div class="dg-card-date">{{ item.date }}</div>{% endif %}
+          {% if is_products and (item.summary or item.description) %}<p class="dg-card-desc">{{ item.summary | default(item.description | truncate(80)) }}</p>{% endif %}
+          {% if is_posts and item.excerpt %}<p class="dg-card-desc">{{ item.excerpt | truncate(60) }}</p>{% endif %}
+          {% if not is_products and not is_posts %}{% set desc = item.description or item.summary or item.excerpt or '' %}{% if desc %}<p class="dg-card-desc">{{ desc | truncate(80) }}</p>{% endif %}{% endif %}
+          {% if item.tags %}
+          <div class="dg-card-tags">
+            {% for tag in (item.tags if item.tags is iterable and item.tags is not string else item.tags.split(','))[:5] %}
+            <span class="dg-card-tag">{{ tag | trim }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+
+    {# === 7. 分页区域 === #}
+    {% if show_pagination and total > per_page %}
+    {% set total_pages = (total / per_page) | round(0, 'ceil') | int %}
+    <div id="{{ block_id }}-pager" class="dg-pager dg-pager--{{ md.get('pager_align', 'center') }}" style="margin-top: 1.5rem;">
+      {% if pagination_style == 'page_numbers' %}
+      {# 页码导航模式 #}
+      <div class="dg-page-numbers">
+        {% for p in range(1, total_pages + 1) %}
+        <button class="dg-page-btn {% if p == 1 %}active{% endif %}"
+                data-block-id="{{ block_id }}"   {# ← 值为 "dg-4" #}
+                data-page="{{ p }}"              {# ← 值为 "1"/"2"/"3" #}
+                data-per-page="{{ per_page }}"   {# ← 值为 "6" #}
+                onclick="goToDataGridPage(this, {{ p }})">{{ p }}</button>
         {% endfor %}
       </div>
+      {% else %}
+      {# 加载更多模式 #}
+      <button class="btn btn-outline-primary dg-load-more"
+              data-block-id="{{ block_id }}"     {# ← 值为 "dg-4" #}
+              data-page="1"                      {# ← 初始第 1 页,JS 会写回 page+1 #}
+              data-per-page="{{ per_page }}"     {# ← 值为 "6" #}
+              data-total="{{ total }}"           {# ← 值为 "6"(filtered_items | length) #}
+              onclick="loadMoreDataGrid(this)">
+        {{ t.actions.loadMore | default('加载更多') }}
+        <span class="dg-remaining">({{ total - per_page }} {{ t.products.itemsUnit | default('项') }})</span>
+      </button>
       {% endif %}
     </div>
+    {% endif %}
+
   </div>
 </section>
 {% endif %}
+{% endif %}
+{% endif %}
+
 ```
+
+**这个示例覆盖了前面所有约定:**
+
+| 章节 | 约定 | 在 data_grid 中的体现 |
+|------|------|----------------------|
+| 1. 数据取用 | `md = module.data if module.data else {}` | 第 3 行 |
+| 2. 条件渲染 | 先判空再输出 | `{% if module.data %}` → `{% if items %}` → `{% if filtered_items %}` 三层守卫 |
+| 3. Section 结构 | `section-bg` class 回退 + `outer_w`/`inner_w` | 第 4 部分 |
+| 4. CSS 类名 | Block 专属前缀 | `.dg-list` `.dg-card` `.dg-pager` |
+| 5. 内联样式 | 直接拼 style 属性 | grid-template-columns, max-width |
+| 6. JS 约束 | IIFE / 全局函数 | `loadMoreDataGrid()` `goToDataGridPage()` 放 window |
+| 7. data-* | 分页配置通过 dataset 传递 | `data-block-id` `data-page` `data-per-page` `data-total` |
+| 8. 渲染输出 | 对应浏览器 HTML | 见上一节示例 B |
 
 ## 注册到模板
 

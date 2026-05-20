@@ -19,7 +19,7 @@
         <input type="color" class="form-control form-control-color theme-color-picker"
                id="picker_{{ key }}" value="{{ theme.get(key, default_theme.get(key, '')) }}"
                oninput="syncColorFromPicker('{{ key }}')" style="max-width:40px; padding:2px;">
-        <input class="form-control form-control-sm theme-text-input" name="{{ key }}"
+        <input type="text" class="form-control form-control-sm theme-text-input" name="{{ key }}"
                id="text_{{ key }}" value="{{ theme.get(key, '') }}"
                placeholder="选择颜色"
                oninput="syncColorFromText('{{ key }}')">
@@ -45,4 +45,29 @@ function syncColorFromText(key) {
     if (/^#[0-9a-fA-F]{3,8}$/.test(v)) picker.value = v;
   }
 }
+document.getElementById('themeForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var formData = new FormData(this);
+  fetch(this.action, {method: 'POST', body: formData})
+    .then(function(r) { return r.text(); })
+    .then(function(html) {
+      var panel = document.getElementById('rightPanelBody');
+      var footer = document.getElementById('rightPanelFooter');
+      if (panel) { panel.innerHTML = html; runPanelScripts(panel); }
+      // 将保存按钮移到面板底部悬浮栏，同时清理旧的 footer 避免重复按钮
+      var saveBar = panel.querySelector('.panel-save-bar');
+      if (saveBar && footer) {
+        var form = saveBar.closest('form');
+        var btn = saveBar.querySelector('button[type="submit"]');
+        if (btn && form) {
+          if (!form.id) form.id = '_panelForm_' + Date.now();
+          btn.setAttribute('form', form.id);
+        }
+        footer.innerHTML = '';
+        footer.appendChild(saveBar);
+        footer.style.display = '';
+      }
+      refreshPreview();
+    });
+});
 </script>

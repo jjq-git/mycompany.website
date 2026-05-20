@@ -167,12 +167,25 @@
           <div class="device-config device-tablet" style="display:none">
 {% if mdata is mapping %}
               {% for key, val in mdata.items() %}
+              {% set tval = mdata_tablet.get(key, '') %}
+              {% set is_color = 'color' in key|lower or key|lower.endswith('_bg') %}
               <div class="mb-2">
-                <label class="form-label small mb-1 text-muted">{{ key }}</label>
-                {% set tval = mdata_tablet.get(key, '') %}
+                <label class="form-label small mb-1 text-muted">{{ key | replace('_', ' ') | title }}</label>
+                {% if is_color %}
+                <div class="input-group input-group-sm">
+                  <input type="color" class="form-control form-control-color"
+                         value="{{ tval if tval and tval.startswith('#') else '#888888' }}"
+                         oninput="this.parentElement.querySelector('input[type=text]').value=this.value" style="max-width:40px; padding:2px;">
+                  <input type="text" class="form-control form-control-sm"
+                         name="module_{{ i }}_resp_tablet_data_{{ key }}"
+                         value="{{ tval }}" placeholder="继承: {{ val }}"
+                         oninput="if(/^#[0-9a-fA-F]{3,8}$/.test(this.value.trim()))this.parentElement.querySelector('input[type=color]').value=this.value.trim()">
+                </div>
+                {% else %}
                 <input type="text" class="form-control form-control-sm"
                        name="module_{{ i }}_resp_tablet_data_{{ key }}"
                        value="{{ tval }}" placeholder="继承: {{ val }}">
+                {% endif %}
               </div>
               {% endfor %}
             {% endif %}
@@ -208,12 +221,25 @@
           <div class="device-config device-mobile" style="display:none">
 {% if mdata is mapping %}
               {% for key, val in mdata.items() %}
+              {% set mval = mdata_mobile.get(key, '') %}
+              {% set is_color = 'color' in key|lower or key|lower.endswith('_bg') %}
               <div class="mb-2">
-                <label class="form-label small mb-1 text-muted">{{ key }}</label>
-                {% set mval = mdata_mobile.get(key, '') %}
+                <label class="form-label small mb-1 text-muted">{{ key | replace('_', ' ') | title }}</label>
+                {% if is_color %}
+                <div class="input-group input-group-sm">
+                  <input type="color" class="form-control form-control-color"
+                         value="{{ mval if mval and mval.startswith('#') else '#888888' }}"
+                         oninput="this.parentElement.querySelector('input[type=text]').value=this.value" style="max-width:40px; padding:2px;">
+                  <input type="text" class="form-control form-control-sm"
+                         name="module_{{ i }}_resp_mobile_data_{{ key }}"
+                         value="{{ mval }}" placeholder="继承: {{ val }}"
+                         oninput="if(/^#[0-9a-fA-F]{3,8}$/.test(this.value.trim()))this.parentElement.querySelector('input[type=color]').value=this.value.trim()">
+                </div>
+                {% else %}
                 <input type="text" class="form-control form-control-sm"
                        name="module_{{ i }}_resp_mobile_data_{{ key }}"
                        value="{{ mval }}" placeholder="继承: {{ val }}">
+                {% endif %}
               </div>
               {% endfor %}
             {% endif %}
