@@ -336,10 +336,7 @@ dot.addEventListener('click', function() {
 - `getAttribute()` 永远返回字符串,数字需要 `parseInt()` 转换
 - `dataset` 在 IE10+ 支持,本项目目标浏览器都兼容
 
-### 8. 浏览器渲染后的 Block HTML（真实输出）
-
-以下是 `http://192.168.1.31:5000/preview/7/zh-CN/` 页面上抓取的真实渲染结果，
-展示 Jinja2 模板经过后端渲染后在浏览器中的最终形态。
+### 8. Block HTML（真实输出）
 
 **每个 Block 的外层包装（builder 框架自动添加）：**
 
