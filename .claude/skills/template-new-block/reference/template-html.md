@@ -1879,7 +1879,7 @@ function goToDataGridPage(btn, targetPage) {
 
 ---
 
-## 待开发 Block 清单（20 个）
+## 待开发 Block （ 19 个）
 
 > 状态: 待开发 | 更新时间: 2026-05-21
 
@@ -1916,7 +1916,6 @@ function goToDataGridPage(btn, targetPage) {
 | 17 | `comparison_table` | 对比表格 | 对比项列表（产品名/图/链接）、行定义（参数名+各产品值）、高亮列 |
 | 18 | `countdown_timer` | 倒计时 | 截止时间、数字样式、过期后行为（隐藏/显示文字） |
 | 19 | `image_comparison` | 前后对比 | 前图、后图、滑块方向（左右/上下） |
-| 20 | `search_bar` | 搜索框 | 占位文字、搜索范围（全站/指定数据集）、按钮样式 |
 
 ### 不单独做 Block 的
 
