@@ -2,12 +2,9 @@
 {% set inline_features = module.data.get('features', []) if module.data and module.data.get('features') is iterable and module.data.get('features') is not string else [] %}
 {% set display_features = inline_features if inline_features else (features if features else []) %}
 {% set md = module.data if module.data else {} %}
-{% set max_w = md.get('max_width', '') %}
-{% set block_align = md.get('block_align', '') %}
 {% set section_bg = md.get('section_bg', '') %}
 {% set outer_w = md.get('outer_width', '') or settings.get('layout', {}).get('global_width', '') %}
-{% set inner_w = md.get('inner_width', max_w) %}
-{% set card_align = md.get('card_align', '') %}
+{% set inner_w = md.get('inner_width', '') %}
 {% set card_show_border = md.get('card_show_border', '') %}
 {% set card_padding_top = md.get('card_padding_top', md.get('card_padding', '')) %}
 {% set card_padding_right = md.get('card_padding_right', md.get('card_padding', '')) %}
@@ -38,7 +35,6 @@
     {% if has_features %}
     <div class="services-grid" style="
       grid-template-columns: repeat({{ col_count }}, auto);
-      justify-content: {% if card_align == 'center' %}center{% elif card_align == 'left' %}start{% elif card_align == 'right' %}end{% else %}stretch{% endif %};
       gap: 24px;
     ">
       {% for feature in display_features %}

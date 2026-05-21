@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>昆山德恩基电子科技有限公司</title>
+  <meta name="description" content="">
+  <link rel="stylesheet" href="/preview/7/static/css/main.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <style>
+    :root {
+--color-primary: #067a7a;--color-primary-hover: #056060;--color-primary-light: #0d9488;--color-secondary: #f97316;--color-text: #1a1a1a;--color-text-inverse: #ffffff;--color-bg: #ffffff;--color-bg-secondary: #f5f7fa;--color-surface: #ffffff;--color-border: #e5e7eb;--color-muted: #6b7280;--shadow-sm: 0 1px 2px rgba(0,0,0,0.05);--shadow-md: 0 4px 12px rgba(0,0,0,0.1);--shadow-lg: 0 10px 40px rgba(0,0,0,0.15);--radius-sm: 6px;--radius-md: 12px;--radius-lg: 16px;--font-sans: 'Inter', 'Noto Sans SC', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;    }
+  </style>
+</head>
+<body>
+<div class="site-wrapper">
+
+
+
+
+<style>
+  .site-header .header-main .container {
+padding-right: 20px;padding-left: 20px;  }
+</style>
+
+<header class="site-header builder-region header-variant--logo-left-menu-right" id="siteHeader" data-builder-region="header">
+  <div class="header-main">
+    <div class="container">
+      <a href="/preview/7/zh-CN/" class="logo">
+        <div class="logo-text-group">
+          <span class="logo-text">昆山德恩基电子科技有限公司</span>
+          <span class="logo-text-cn">德恩基电子科技</span>
+        </div>
+      </a>
+
+      <nav class="header-nav" id="headerNav">
+          <a href="/preview/7/zh-CN/"
+       class="nav-link"
+>
+      首页
+    </a>
+          <div class="nav-dropdown">
+      <div class="nav-dropdown-parent"><a href="/preview/7/zh-CN/products/"
+             class="nav-link nav-dropdown-link"
+>
+            产品
+          </a><button class="nav-dropdown-arrow" type="button" onclick="toggleMenuDropdown(event, this)" aria-label="展开子菜单" aria-expanded="false">
+          <span class="dropdown-chevron">▼</span>
+        </button>
+      </div>
+      <div class="nav-dropdown-menu nav-dropdown-menu--horizontal"><a href="/preview/7/zh-CN/products/silent-booth/"
+       class="nav-dropdown-item"
+>
+      静音仓
+    </a><a href="/preview/7/zh-CN/products/props-display/"
+       class="nav-dropdown-item"
+>
+      产品展示
+    </a><a href="/preview/7/zh-CN/products/dry-ice-machine/"
+       class="nav-dropdown-item"
+>
+      干冰机
+    </a></div>
+    </div>
+          <a href="/preview/7/zh-CN/portfolio/"
+       class="nav-link"
+>
+      近期项目
+    </a>
+          <a href="/preview/7/zh-CN/about/"
+       class="nav-link"
+>
+      关于我们
+    </a>
+          <a href="/preview/7/zh-CN/contact/"
+       class="nav-link"
+>
+      联系
+    </a>
+          <a href="/preview/7/zh-CN/posts/"
+       class="nav-link"
+>
+      博客
+    </a>
+      </nav>
+
+      <div class="header-actions">
+
+    <div class="language-switcher-dropdown" id="langSwitcher">
+      <button class="dropdown-toggle" onclick="toggleLangDropdown(event)" aria-haspopup="true" aria-expanded="false">
+        <span class="current-language">
+          <span class="lang-name" id="currentLangName">
+简体中文          </span>
+          <span class="dropdown-arrow">▼</span>
+        </span>
+      </button>
+      <div class="dropdown-menu" id="langDropdownMenu" style="display:none;">
+        <ul class="language-list">
+          <li class="language-item active">
+            <a href="/preview/7/zh-CN/" class="lang-name" style="color:inherit;text-decoration:none;">简体中文</a>
+<span class="checkmark">✓</span>          </li>
+        </ul>
+      </div>
+    </div>
+      </div>
+
+      <button class="menu-toggle" id="menuToggle" aria-label="菜单" onclick="toggleMobileMenu()">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+
+<script>
+// --- Header scroll shadow ---
+(function() {
+  var header = document.getElementById('siteHeader');
+  if (!header) return;
+  window.addEventListener('scroll', function() {
+    header.classList.toggle('scrolled', window.scrollY > 50);
+  });
+})();
+
+// --- Mobile menu toggle ---
+function toggleMobileMenu() {
+  var nav = document.getElementById('headerNav');
+  var toggle = document.getElementById('menuToggle');
+  if (!nav || !toggle) return;
+  nav.classList.toggle('mobile-open');
+  toggle.classList.toggle('active');
+}
+
+// --- Navigation dropdowns ---
+function toggleMenuDropdown(e, button) {
+  e.stopPropagation();
+  var dropdown = button.closest('.nav-dropdown');
+  if (!dropdown) return;
+  var isOpen = dropdown.classList.contains('open');
+  if (!dropdown.classList.contains('nav-dropdown-nested')) {
+    document.querySelectorAll('.header-nav > .nav-dropdown.open').forEach(function(openDropdown) {
+      if (openDropdown !== dropdown) openDropdown.classList.remove('open');
+    });
+  }
+  dropdown.classList.toggle('open', !isOpen);
+  button.setAttribute('aria-expanded', String(!isOpen));
+}
+
+// --- Language dropdown ---
+function toggleLangDropdown(e) {
+  e.stopPropagation();
+  var menu = document.getElementById('langDropdownMenu');
+  if (!menu) return;
+  var isOpen = menu.style.display === 'block';
+  menu.style.display = isOpen ? 'none' : 'block';
+}
+
+// --- Nav active state ---
+(function() {
+  var path = window.location.pathname;
+
+  // 剥离预览前缀、语言前缀和尾部斜杠
+  var cleaned = path
+    .replace(/\/templates\/[^/]+\/preview/, '')
+    .replace(/\/preview\/\d+/, '')
+    .replace(/^\/(zh-CN|zh-TW|en)/, '')
+    .replace(/\/$/, '') || '/';
+
+  // 首页: cleaned 是 / 或空
+  if (cleaned === '/' || cleaned === '') {
+    document.querySelectorAll('.header-nav .nav-link').forEach(function(l) { l.classList.remove('active'); });
+    var homeLink = document.querySelector('.header-nav .nav-link:first-child');
+    if (homeLink) homeLink.classList.add('active');
+    return;
+  }
+
+  // 先清除所有
+  document.querySelectorAll('.header-nav .nav-link').forEach(function(l) { l.classList.remove('active'); });
+
+  document.querySelectorAll('.header-nav a.nav-link, .header-nav a.nav-dropdown-item').forEach(function(link) {
+    var href = link.getAttribute('href') || '';
+    if (href.indexOf('http') === 0 || href === '#') return;
+    var normalized = href
+      .replace(/\/templates\/[^/]+\/preview/, '')
+      .replace(/\/preview\/\d+/, '')
+      .replace(/^\/(zh-CN|zh-TW|en)/, '')
+      .replace(/\/$/, '') || '/';
+    if (normalized === cleaned || (normalized !== '/' && cleaned.indexOf(normalized + '/') === 0)) {
+      link.classList.add('active');
+      var dropdown = link.closest('.nav-dropdown');
+      if (dropdown) {
+        var parentLink = dropdown.querySelector(':scope > .nav-dropdown-parent > .nav-dropdown-link');
+        if (parentLink) parentLink.classList.add('active');
+        var arrow = dropdown.querySelector(':scope > .nav-dropdown-parent > .nav-dropdown-arrow');
+        if (arrow) arrow.classList.add('active');
+      }
+    }
+  });
+})();
+
+// Close dropdowns on outside click
+document.addEventListener('click', function(e) {
+  var langMenu = document.getElementById('langDropdownMenu');
+  var langSwitcher = document.getElementById('langSwitcher');
+  if (langMenu && !langSwitcher.contains(e.target)) {
+    langMenu.style.display = 'none';
+  }
+  document.querySelectorAll('.header-nav .nav-dropdown.open').forEach(function(dropdown) {
+    if (!dropdown.contains(e.target)) dropdown.classList.remove('open');
+  });
+});
+</script>
+
+<main class="main-content">
+      <div class="builder-module" data-builder-module-index="0" data-builder-module-type="hero_banner">
+<section class="hero-banner" id="heroBanner" style="max-width: 90%; margin-left: auto; margin-right: auto;">
+  <div class="hero-banner-slides">
+    <div class="hero-banner-slide active" data-index="0">
+      <div class="hero-banner-media">
+        <div class="hero-banner-image" style="background-image: url('/preview/7')"></div>
+      </div>
+      <div class="hero-banner-overlay"></div>
+      <div class="hero-banner-content">
+        <h1 class="hero-banner-title">专业展示道具定制开发</h1>
+        <p class="hero-banner-subtitle">为博物馆、商场、展览馆提供智能展示解决方案</p>
+        <div class="hero-banner-actions">
+          <a href="/products/"  class="btn btn-primary btn-lg">了解产品</a>
+          <a href="/contact/" class="btn btn-secondary btn-lg">联系我们</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function() {
+  var banner = document.getElementById('heroBanner');
+  if (!banner) return;
+  var slides = banner.querySelectorAll('.hero-banner-slide');
+  var dots = banner.querySelectorAll('.hero-banner-dot');
+  var prevBtn = banner.querySelector('.hero-banner-nav-prev');
+  var nextBtn = banner.querySelector('.hero-banner-nav-next');
+  var current = 0;
+  var total = slides.length;
+  if (total <= 1) return;
+
+  function showSlide(index) {
+    slides.forEach(function(s, i) { s.classList.toggle('active', i === index); });
+    dots.forEach(function(d, i) { d.classList.toggle('active', i === index); });
+    current = index;
+  }
+  function next() { showSlide((current + 1) % total); }
+  function prev() { showSlide((current - 1 + total) % total); }
+  if (prevBtn) prevBtn.addEventListener('click', prev);
+  if (nextBtn) nextBtn.addEventListener('click', next);
+  dots.forEach(function(dot) {
+    dot.addEventListener('click', function() { showSlide(parseInt(dot.getAttribute('data-slide'))); });
+  });
+  setInterval(next, 8000);
+})();
+</script>
+      </div>
+      <div class="builder-module" data-builder-module-index="1" data-builder-module-type="feature_grid">
+<section class="section section-bg" style="max-width: 90%; margin-left: auto; margin-right: auto;">
+  <div class="container" style="max-width: none; margin: 0 auto;">
+    <div class="services-grid" style="
+      grid-template-columns: repeat(3, auto);
+      justify-content: stretch;
+      gap: 24px;
+    ">
+      <div class="service-card" style="
+        
+      ">
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg>
+        </div>
+        <div class="service-content">
+          <h3 class="service-title">定制开发</h3>
+<p class="service-description">根据客户需求进行硬件与软件的定制开发，从方案设计到量产交付一站式服务</p>        </div>
+      </div>
+      <div class="service-card" style="
+        
+      ">
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="service-content">
+          <h3 class="service-title">品质保障</h3>
+<p class="service-description">严选元器件，每台设备出厂前经过 72 小时老化测试，提供两年质保</p>        </div>
+      </div>
+      <div class="service-card" style="
+        
+      ">
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2M6 8l1.5 1.5M6 16l1.5-1.5M18 8l-1.5 1.5M18 16l-1.5-1.5M20 12h2"/><circle cx="12" cy="12" r="4"/></svg>
+        </div>
+        <div class="service-content">
+          <h3 class="service-title">智能控制</h3>
+<p class="service-description">支持手机APP、PC端远程控制，定时开关、数据监控、故障报警一应俱全</p>        </div>
+      </div>
+    </div>
+  </div>
+</section>
+      </div>
+      <div class="builder-module" data-builder-module-index="2" data-builder-module-type="highlight_card">
+
+
+
+
+<section class="section" style="max-width: 90%; margin-left: auto; margin-right: auto">
+  <div class="container" style="max-width: none; margin: 0 auto;">
+    <div class="hl-grid ">
+      <div class="hl-image">
+      </div>
+      <div class="hl-text" style="padding: 2rem;">
+<span class="hl-tag" style="">明星产品</span>        <h3 class="hl-title" style="">静音仓 V2 — 让展示回归安静</h3>
+        <p class="hl-desc" style="">专为博物馆、美术馆等高要求场景设计。多层隔音结构配合智能新风系统，在隔绝外界噪音的同时保持舒适的观展环境。支持定制外观与尺寸。</p>
+        <ul class="hl-features" style="">
+<li>✓ 隔音等级 ≥ 35dB，满足博物馆一级展厅标准</li><li>✓ 智能恒温恒湿，自动调节仓内环境参数</li><li>✓ 支持远程监控与故障预警，降低运维成本</li>        </ul>
+        <div class="hl-actions">
+<a href="/products/silent-booth/"  class="hl-btn hl-btn--primary" style="">了解更多</a>        </div>
+      </div>
+    </div>
+  </div>
+</section>
+      </div>
+      <div class="builder-module" data-builder-module-index="3" data-builder-module-type="data_grid">
+
+<section class="section section-bg" style="max-width: 90%; margin-left: auto; margin-right: auto;">
+  <div class="container" style="max-width: none; margin: 0 auto;">
+    <div class="section-header">
+      <h2 class="section-title">近期项目</h2>
+    </div>
+
+    <div id="dg-4-list" class="dg-list "
+         style="grid-template-columns: repeat(3, 1fr);">
+      <a href="/preview/7/zh-CN/museum-2024/"
+         class="dg-card ">
+        <div class="dg-card-image">
+<div class="dg-card-placeholder">📷</div>        </div>
+        <div class="dg-card-body">
+          <h3 class="dg-card-title">苏州博物馆静音展示项目</h3>
+<div class="dg-card-date">2024-08</div><p class="dg-card-desc">为苏州博物馆定制 12 套静音仓展示系统，覆盖书画、瓷器、青铜三个展厅</p>          <div class="dg-card-tags">
+            <span class="dg-card-tag">博物馆</span>
+            <span class="dg-card-tag">静音仓</span>
+            <span class="dg-card-tag">定制</span>
+          </div>
+        </div>
+      </a>
+      <a href="/preview/7/zh-CN/mall-led-2024/"
+         class="dg-card ">
+        <div class="dg-card-image">
+<div class="dg-card-placeholder">📷</div>        </div>
+        <div class="dg-card-body">
+          <h3 class="dg-card-title">万象城LED创意展台</h3>
+<div class="dg-card-date">2024-06</div><p class="dg-card-desc">为某高端商场打造柔性LED异形展台，总面积超过 80 平方米</p>          <div class="dg-card-tags">
+            <span class="dg-card-tag">商业展示</span>
+            <span class="dg-card-tag">LED屏幕</span>
+            <span class="dg-card-tag">异形拼接</span>
+          </div>
+        </div>
+      </a>
+      <a href="/preview/7/zh-CN/theater-dryice/"
+         class="dg-card ">
+        <div class="dg-card-image">
+<div class="dg-card-placeholder">📷</div>        </div>
+        <div class="dg-card-body">
+          <h3 class="dg-card-title">大剧院舞台特效系统</h3>
+<div class="dg-card-date">2024-03</div><p class="dg-card-desc">为省级大剧院提供全套舞台干冰机与烟雾特效系统，支持多场景切换</p>          <div class="dg-card-tags">
+            <span class="dg-card-tag">舞台特效</span>
+            <span class="dg-card-tag">剧院</span>
+            <span class="dg-card-tag">干冰机</span>
+          </div>
+        </div>
+      </a>
+      <a href="/preview/7/zh-CN/expo-booth-2023/"
+         class="dg-card ">
+        <div class="dg-card-image">
+<div class="dg-card-placeholder">📷</div>        </div>
+        <div class="dg-card-body">
+          <h3 class="dg-card-title">进博会企业展台设计搭建</h3>
+<div class="dg-card-date">2023-11</div><p class="dg-card-desc">为中国国际进口博览会某参展企业设计搭建 200 平方米互动展示空间</p>          <div class="dg-card-tags">
+            <span class="dg-card-tag">展会</span>
+            <span class="dg-card-tag">互动展台</span>
+            <span class="dg-card-tag">多媒体</span>
+          </div>
+        </div>
+      </a>
+      <a href="/preview/7/zh-CN/retail-display/"
+         class="dg-card ">
+        <div class="dg-card-image">
+<div class="dg-card-placeholder">📷</div>        </div>
+        <div class="dg-card-body">
+          <h3 class="dg-card-title">连锁门店展示柜统一升级</h3>
+<div class="dg-card-date">2023-07</div><p class="dg-card-desc">为某连锁品牌全国 50 家门店统一升级智能展示柜，实现远程统一管理</p>          <div class="dg-card-tags">
+            <span class="dg-card-tag">连锁门店</span>
+            <span class="dg-card-tag">展示柜</span>
+            <span class="dg-card-tag">智能管理</span>
+          </div>
+        </div>
+      </a>
+      <a href="/preview/7/zh-CN/school-lab/"
+         class="dg-card ">
+        <div class="dg-card-image">
+<div class="dg-card-placeholder">📷</div>        </div>
+        <div class="dg-card-body">
+          <h3 class="dg-card-title">高校实验室互动终端部署</h3>
+<div class="dg-card-date">2023-04</div><p class="dg-card-desc">为某 211 高校实验室部署 30 台互动信息终端，集成实验预约与设备管理</p>          <div class="dg-card-tags">
+            <span class="dg-card-tag">教育</span>
+            <span class="dg-card-tag">互动终端</span>
+            <span class="dg-card-tag">实验室</span>
+          </div>
+        </div>
+      </a>
+    </div>
+
+
+  </div>
+</section>
+
+<script>
+function loadMoreDataGrid(btn) {
+  var blockId = btn.dataset.blockId;
+  var page = parseInt(btn.dataset.page, 10) || 1;
+  var perPage = parseInt(btn.dataset.perPage, 10) || 6;
+  var total = parseInt(btn.dataset.total, 10) || 0;
+  var list = document.getElementById(blockId + '-list');
+  if (!list) return;
+  var hiddenCards = list.querySelectorAll('.dg-card--hidden');
+  var nextCount = Math.min(perPage, hiddenCards.length);
+  for (var i = 0; i < nextCount; i++) {
+    hiddenCards[i].classList.remove('dg-card--hidden');
+  }
+  var remaining = hiddenCards.length - nextCount;
+  if (remaining <= 0) {
+    btn.style.display = 'none';
+  } else {
+    btn.dataset.page = page + 1;
+    var span = btn.querySelector('.dg-remaining');
+    var unit = '项';
+    if (span) span.textContent = '(' + remaining + ' ' + unit + ')';
+  }
+}
+
+// 页码导航：跳转到指定页
+function goToDataGridPage(btn, targetPage) {
+  var blockId = btn.dataset.blockId;
+  var perPage = parseInt(btn.dataset.perPage, 10) || 6;
+  var list = document.getElementById(blockId + '-list');
+  if (!list) return;
+  var cards = list.querySelectorAll('.dg-card');
+  var startIdx = (targetPage - 1) * perPage;
+  var endIdx = startIdx + perPage;
+  cards.forEach(function(card, i) {
+    if (i >= startIdx && i < endIdx) {
+      card.classList.remove('dg-card--hidden');
+    } else {
+      card.classList.add('dg-card--hidden');
+    }
+  });
+  // 更新激活按钮样式
+  var pager = document.getElementById(blockId + '-pager');
+  if (pager) {
+    pager.querySelectorAll('.dg-page-btn').forEach(function(b, i) {
+      b.classList.toggle('active', i + 1 === targetPage);
+    });
+  }
+}
+</script>      </div>
+      <div class="builder-module" data-builder-module-index="4" data-builder-module-type="data_grid">
+
+<section class="section section-bg" style="max-width: 90%; margin-left: auto; margin-right: auto;">
+  <div class="container" style="max-width: none; margin: 0 auto;">
+    <div class="section-header">
+      <h2 class="section-title">最新动态</h2>
+    </div>
+
+    <div id="dg-5-list" class="dg-list "
+         style="grid-template-columns: repeat(3, 1fr);">
+      <a href="/preview/7/zh-CN/display-tech-trends-2025/"
+         class="dg-card ">
+        <div class="dg-card-image">
+<div class="dg-card-placeholder">📷</div>        </div>
+        <div class="dg-card-body">
+          <h3 class="dg-card-title">2025 年展示道具行业五大技术趋势</h3>
+<div class="dg-card-date">2025-03-15</div><p class="dg-card-desc">从智能感应到绿色环保，展示道具行业正迎来技术革新浪潮</p>          <div class="dg-card-tags">
+            <span class="dg-card-tag">行业趋势</span>
+            <span class="dg-card-tag">展示道具</span>
+            <span class="dg-card-tag">技术创新</span>
+          </div>
+        </div>
+      </a>
+      <a href="/preview/7/zh-CN/choose-display-cabinet/"
+         class="dg-card ">
+        <div class="dg-card-image">
+<div class="dg-card-placeholder">📷</div>        </div>
+        <div class="dg-card-body">
+          <h3 class="dg-card-title">如何选择合适的智能展示柜？四个关键指标</h3>
+<div class="dg-card-date">2025-01-20</div><p class="dg-card-desc">选购展示柜时关注温控、灯光、交互、远程管理四个维度</p>          <div class="dg-card-tags">
+            <span class="dg-card-tag">选购指南</span>
+            <span class="dg-card-tag">展示柜</span>
+            <span class="dg-card-tag">智能设备</span>
+          </div>
+        </div>
+      </a>
+      <a href="/preview/7/zh-CN/stage-fog-guide/"
+         class="dg-card ">
+        <div class="dg-card-image">
+<div class="dg-card-placeholder">📷</div>        </div>
+        <div class="dg-card-body">
+          <h3 class="dg-card-title">舞台烟雾特效设备选购与使用指南</h3>
+<div class="dg-card-date">2024-11-08</div><p class="dg-card-desc">从干冰机到烟机，不同类型舞台特效设备的对比与使用注意事项</p>          <div class="dg-card-tags">
+            <span class="dg-card-tag">舞台特效</span>
+            <span class="dg-card-tag">设备指南</span>
+            <span class="dg-card-tag">演出</span>
+          </div>
+        </div>
+      </a>
+      <a href="/preview/7/zh-CN/exhibition-design-case/"
+         class="dg-card ">
+        <div class="dg-card-image">
+<div class="dg-card-placeholder">📷</div>        </div>
+        <div class="dg-card-body">
+          <h3 class="dg-card-title">展台设计案例分享：从 30㎡ 到 300㎡ 的差异化思路</h3>
+<div class="dg-card-date">2024-09-05</div><p class="dg-card-desc">不同面积的展台需要完全不同的设计策略，几个真实案例复盘</p>          <div class="dg-card-tags">
+            <span class="dg-card-tag">展台设计</span>
+            <span class="dg-card-tag">案例分享</span>
+            <span class="dg-card-tag">展览</span>
+          </div>
+        </div>
+      </a>
+    </div>
+
+
+  </div>
+</section>
+
+<script>
+function loadMoreDataGrid(btn) {
+  var blockId = btn.dataset.blockId;
+  var page = parseInt(btn.dataset.page, 10) || 1;
+  var perPage = parseInt(btn.dataset.perPage, 10) || 6;
+  var total = parseInt(btn.dataset.total, 10) || 0;
+  var list = document.getElementById(blockId + '-list');
+  if (!list) return;
+  var hiddenCards = list.querySelectorAll('.dg-card--hidden');
+  var nextCount = Math.min(perPage, hiddenCards.length);
+  for (var i = 0; i < nextCount; i++) {
+    hiddenCards[i].classList.remove('dg-card--hidden');
+  }
+  var remaining = hiddenCards.length - nextCount;
+  if (remaining <= 0) {
+    btn.style.display = 'none';
+  } else {
+    btn.dataset.page = page + 1;
+    var span = btn.querySelector('.dg-remaining');
+    var unit = '项';
+    if (span) span.textContent = '(' + remaining + ' ' + unit + ')';
+  }
+}
+
+// 页码导航：跳转到指定页
+function goToDataGridPage(btn, targetPage) {
+  var blockId = btn.dataset.blockId;
+  var perPage = parseInt(btn.dataset.perPage, 10) || 6;
+  var list = document.getElementById(blockId + '-list');
+  if (!list) return;
+  var cards = list.querySelectorAll('.dg-card');
+  var startIdx = (targetPage - 1) * perPage;
+  var endIdx = startIdx + perPage;
+  cards.forEach(function(card, i) {
+    if (i >= startIdx && i < endIdx) {
+      card.classList.remove('dg-card--hidden');
+    } else {
+      card.classList.add('dg-card--hidden');
+    }
+  });
+  // 更新激活按钮样式
+  var pager = document.getElementById(blockId + '-pager');
+  if (pager) {
+    pager.querySelectorAll('.dg-page-btn').forEach(function(b, i) {
+      b.classList.toggle('active', i + 1 === targetPage);
+    });
+  }
+}
+</script>      </div>
+      <div class="builder-module" data-builder-module-index="5" data-builder-module-type="section_title">
+
+<section class="section" style="max-width: 90%; margin-left: auto; margin-right: auto;background: #ffffff;">
+  <div class="container" style="max-width: none; margin: 0 auto;">
+    <div class="st-block" style="text-align: center;">
+      <span class="st-tag" style="background: #067a7a;color: #ffffff;">11</span>
+      <h2 class="st-title" style="color: #1e293b;">22</h2>
+      <p class="st-desc" style="color: #64748b;">33</p>
+    </div>
+  </div>
+</section>
+      </div>
+
+</main>
+
+<footer class="site-footer builder-region" data-builder-region="footer">
+  <div class="container">
+
+
+    <div class="footer-bottom">
+      <p>© 2026 昆山德恩基电子科技有限公司</p>
+<p>苏ICP备14020096号-1</p>    </div>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,26 +1,22 @@
-{# Hero Banner 模块 - 默认变体: 文字叠加(全宽) #}
+{# Hero Banner 模块 - 全屏轮播 #}
 {% if module.data %}
 {% if module.data is not mapping and module.data is iterable and module.data is not string %}
-  {# 后台表单保存的列表格式: [{type: image, media: ..., title: ...}, ...] #}
   {% set items = module.data %}
 {% else %}
-  {# 用 .get() 安全访问 dict 键，避免 Jinja2 对不存在的键抛 AttributeError #}
   {% set _has_title = module.data.get('title') if module.data is mapping else (module.data.title | default('')) %}
   {% set _has_media = module.data.get('media') if module.data is mapping else (module.data.media | default('')) %}
   {% set items = module.data.slides if module.data.get('slides') and module.data.slides is iterable and module.data.slides is not string else ([module.data] if _has_title or _has_media else []) %}
 {% endif %}
 {% if items %}
-{% set align = module.data.get('banner_align', '') if module.data is mapping else '' %}
-{% set hero_w = module.data.get('hero_width', '') if module.data is mapping else '' %}
+
+{# === 配置提取 === #}
+{% set section_bg = module.data.get('section_bg', '') if module.data is mapping else '' %}
 {% set hero_h = module.data.get('hero_height', '') if module.data is mapping else '' %}
-{% set style_parts = [] %}
-{% if hero_h %}{% set _ = style_parts.append('height: ' ~ hero_h ~ ';') %}{% endif %}
-{% if align == 'center' %}{% set _ = style_parts.append('margin-left: auto; margin-right: auto;') %}{% endif %}
-{% if align == 'left' %}{% set _ = style_parts.append('margin-right: auto;') %}{% endif %}
-{% if align == 'right' %}{% set _ = style_parts.append('margin-left: auto;') %}{% endif %}
-{% set outer_w = (module.data.get('outer_width', '') if module.data is mapping else '') or settings.get('layout', {}).get('global_width', '') %}
-{% if outer_w %}{% set _ = style_parts.append('max-width: ' ~ outer_w ~ '; margin-left: auto; margin-right: auto;') %}{% endif %}
-{% if hero_w %}{% set _ = style_parts.append('max-width: ' ~ hero_w ~ ';') %}{% endif %}
+{% set hero_w = module.data.get('hero_width', '') if module.data is mapping else '' %}
+{% set align = module.data.get('banner_align', '') if module.data is mapping else '' %}
+{% set content_w = module.data.get('content_width', '') if module.data is mapping else '' %}
+{% set outer_w = (module.data.get('outer_width', '') if module.data is mapping else '') or settings.get('layout', {}).get('global_width', '') or hero_w %}
+{% set inner_w = module.data.get('inner_width', '') if module.data is mapping else '' %}
 {% set title_font_size = module.data.get('title_font_size', '') if module.data is mapping else '' %}
 {% set title_color = module.data.get('title_color', '') if module.data is mapping else '' %}
 {% set subtitle_font_size = module.data.get('subtitle_font_size', '') if module.data is mapping else '' %}
@@ -28,34 +24,44 @@
 {% set btn_font_size = module.data.get('btn_font_size', '') if module.data is mapping else '' %}
 {% set btn_text_color = module.data.get('btn_text_color', '') if module.data is mapping else '' %}
 {% set btn_bg = module.data.get('btn_bg', '') if module.data is mapping else '' %}
-<section class="hero-banner" id="heroBanner"{% if style_parts %} style="{{ style_parts | join(' ') }}"{% endif %}>
-  <div class="hero-banner-slides">
-    {% for item in items %}
-    <div class="hero-banner-slide{% if loop.first %} active{% endif %}" data-index="{{ loop.index0 }}">
-      <div class="hero-banner-media">
-        {% set _media_src = item.get('media', '') if item is mapping else (item.media | default('')) %}
-        {% if item.type == 'video' %}
-        <video class="hero-banner-video" src="{{ _media_src if _media_src.startswith('http') else base_url ~ _media_src }}" autoplay muted loop playsinline preload="none"></video>
-        {% else %}
-        <div class="hero-banner-image" style="background-image: url('{{ _media_src if _media_src.startswith('http') else base_url ~ _media_src }}')"></div>
-        {% endif %}
-      </div>
-      <div class="hero-banner-overlay"></div>
-      <div class="hero-banner-content"{% if module.data is mapping and module.data.get('inner_width') %} style="max-width: {{ module.data.inner_width }}; margin: 0 auto;"{% endif %}>
-        <h1 class="hero-banner-title"{% if title_font_size or title_color %} style="{% if title_font_size %}font-size: {{ title_font_size }};{% endif %}{% if title_color %}color: {{ title_color }};{% endif %}"{% endif %}>{{ item.title | default('') }}</h1>
-        <p class="hero-banner-subtitle"{% if subtitle_font_size or subtitle_color %} style="{% if subtitle_font_size %}font-size: {{ subtitle_font_size }};{% endif %}{% if subtitle_color %}color: {{ subtitle_color }};{% endif %}"{% endif %}>{{ item.subtitle }}</p>
-        <div class="hero-banner-actions">
-          {% if item.primaryBtn %}
-          <a href="{{ item.primaryBtnLink }}" {% if item.primaryBtnLinkTarget == '_blank' %}target="_blank"{% endif %} class="btn btn-primary btn-lg"{% if btn_font_size or btn_text_color or btn_bg %} style="{% if btn_font_size %}font-size: {{ btn_font_size }};{% endif %}{% if btn_text_color %}color: {{ btn_text_color }};{% endif %}{% if btn_bg %}background-color: {{ btn_bg }}; border-color: {{ btn_bg }};{% endif %}"{% endif %}>{{ item.primaryBtn }}</a>
-          {% endif %}
-          {% if item.secondaryBtn %}
-          <a href="{{ item.secondaryBtnLink }}" class="btn btn-secondary btn-lg">{{ item.secondaryBtn }}</a>
+
+{# === Section 样式拼接 === #}
+{% set style_parts = [] %}
+{% if hero_h %}{% set _ = style_parts.append('height: ' ~ hero_h ~ ';') %}{% endif %}
+{% if section_bg %}{% set _ = style_parts.append('background: ' ~ section_bg ~ ';') %}{% endif %}
+{% if outer_w %}{% set _ = style_parts.append('max-width: ' ~ outer_w ~ '; margin-left: auto; margin-right: auto;') %}{% elif align == 'center' %}{% set _ = style_parts.append('margin-left: auto; margin-right: auto;') %}{% elif align == 'left' %}{% set _ = style_parts.append('margin-right: auto;') %}{% elif align == 'right' %}{% set _ = style_parts.append('margin-left: auto;') %}{% endif %}
+
+<section class="section{% if not section_bg %} section-bg{% endif %} hero-banner" id="heroBanner"{% if style_parts %} style="{{ style_parts | join(' ') }}"{% endif %}>
+  <div class="container" style="height: 100%;{% if content_w %} max-width: {{ content_w }};{% endif %}">
+    <div class="hero-banner-slides">
+      {% for item in items %}
+      <div class="hero-banner-slide{% if loop.first %} active{% endif %}" data-index="{{ loop.index0 }}">
+        <div class="hero-banner-media">
+          {% set _media_src = item.get('media', '') if item is mapping else (item.media | default('')) %}
+          {% if item.type == 'video' %}
+          <video class="hero-banner-video" src="{{ _media_src if _media_src.startswith('http') else base_url ~ _media_src }}" autoplay muted loop playsinline preload="none"></video>
+          {% else %}
+          <div class="hero-banner-image" style="background-image: url('{{ _media_src if _media_src.startswith('http') else base_url ~ _media_src }}')"></div>
           {% endif %}
         </div>
+        <div class="hero-banner-overlay"></div>
+        <div class="hero-banner-content"{% if inner_w %} style="max-width: {{ inner_w }};"{% endif %}>
+          {% if item.title %}<h1 class="hero-banner-title"{% if title_font_size or title_color %} style="{% if title_font_size %}font-size: {{ title_font_size }};{% endif %}{% if title_color %}color: {{ title_color }};{% endif %}"{% endif %}>{{ item.title }}</h1>{% endif %}
+          {% if item.subtitle %}<p class="hero-banner-subtitle"{% if subtitle_font_size or subtitle_color %} style="{% if subtitle_font_size %}font-size: {{ subtitle_font_size }};{% endif %}{% if subtitle_color %}color: {{ subtitle_color }};{% endif %}"{% endif %}>{{ item.subtitle }}</p>{% endif %}
+          <div class="hero-banner-actions">
+            {% if item.primaryBtn %}
+            <a href="{{ item.primaryBtnLink }}" {% if item.primaryBtnLinkTarget == '_blank' %}target="_blank"{% endif %} class="btn btn-primary btn-lg"{% if btn_font_size or btn_text_color or btn_bg %} style="{% if btn_font_size %}font-size: {{ btn_font_size }};{% endif %}{% if btn_text_color %}color: {{ btn_text_color }};{% endif %}{% if btn_bg %}background-color: {{ btn_bg }}; border-color: {{ btn_bg }};{% endif %}"{% endif %}>{{ item.primaryBtn }}</a>
+            {% endif %}
+            {% if item.secondaryBtn %}
+            <a href="{{ item.secondaryBtnLink }}" class="btn btn-secondary btn-lg">{{ item.secondaryBtn }}</a>
+            {% endif %}
+          </div>
+        </div>
       </div>
+      {% endfor %}
     </div>
-    {% endfor %}
   </div>
+
   {% if items|length > 1 %}
   <div class="hero-banner-dots">
     {% for item in items %}

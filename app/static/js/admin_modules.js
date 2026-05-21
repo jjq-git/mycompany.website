@@ -1,0 +1,746 @@
+/* admin_modules.js — 共享模块表单渲染
+ *
+ * 页面编辑器 (panel_page_edit.html) 和数据集编辑面板 (panel_data_list.html)
+ * 共用此文件。每个模板在使用前定义好:
+ *   window._moduleCtx.blockLibrary — 模块库列表
+ *   window._moduleCtx.datasetNames — 数据集选项 (可选)
+ *   window._moduleCtx.editItem   — 当前编辑条目 (item_data 模式, 可选)
+ *   window._moduleCtx.isDatasetMode — 是否为数据集编辑模式
+ *
+ * 然后调用 window._buildModuleHTML(type, idx, mdata) 生成模块 HTML。
+ * 返回值: { html, borderStyle, headerBg }
+ *   - html: 模块内部 HTML (不含 .module-item 外框)
+ *   - borderStyle / headerBg: 外框和内标题栏样式
+ */
+
+;(function() {
+  'use strict';
+
+  /* ====== 工具函数 ====== */
+
+  function esc(s) {
+    return String(s || '').replace(/[&<>'"]/g, function(c) {
+      return { '&': '&', '<': '<', '>': '>', "'": '&#39;', '"': '"' }[c];
+    });
+  }
+
+  function cn(name, ph, dv) {
+    var hasVal = dv && String(dv).trim();
+    var color = hasVal ? dv : '#888888';
+    return '<label class="form-label small mb-1 text-muted">' + ph + '</label>' +
+      '<div class="input-group input-group-sm">' +
+      '<input type="color" class="form-control form-control-color" value="' + esc(color) + '" oninput="this.parentElement.querySelector(\'input[type=text]\').value=this.value">' +
+      '<input type="text" class="form-control form-control-sm" name="' + name + '" value="' + esc(hasVal ? dv : '') + '" placeholder="' + esc(ph) + '" oninput="this.parentElement.querySelector(\'input[type=color]\').value=this.value">' +
+      '</div>';
+  }
+
+  function un(name, ph, units, dv) {
+    var opts = (units || []).map(function(u) { return '<option value="' + u + '">' + u + '</option>'; }).join('');
+    return '<label class="form-label small mb-1 text-muted">' + ph + '</label>' +
+      '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm" name="' + name + '" value="' + esc(dv || '') + '" placeholder="' + esc(ph) + '" style="width:60%">' +
+      '<select class="form-select form-select-sm unit-picker" style="width:40%" onchange="var i=this.parentElement.querySelector(\'[name=&quot;' + name + '&quot;]\');if(i){var v=i.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)i.value=v+u;}">' +
+      '<option value="">—</option>' + opts + '</select></div>';
+  }
+
+  function sel(name, ph, options, dv) {
+    var h = '<label class="form-label small mb-1 text-muted">' + ph + '</label><select class="form-select form-select-sm" name="' + name + '">';
+    options.forEach(function(o) {
+      h += '<option value="' + esc(o.value) + '"' + (String(dv || '') === String(o.value) ? ' selected' : '') + '>' + esc(o.label) + '</option>';
+    });
+    return h + '</select>';
+  }
+
+  function renderField(prefix, field, value, placeholder) {
+    var key = field.key, type = (field.type || 'text').toLowerCase(), html = '';
+    html += '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + esc(field.label || key) + '</label>';
+    if (type === 'textarea') {
+      html += '<textarea class="form-control form-control-sm" rows="4" name="' + prefix + key + '" placeholder="' + esc(placeholder || '') + '">' + esc(value || '') + '</textarea>';
+    } else if (type === 'select') {
+      html += '<select class="form-select form-select-sm" name="' + prefix + key + '"><option value="">请选择</option>';
+      (field.options || []).forEach(function(opt) {
+        var ov = typeof opt === 'object' ? opt.value : opt;
+        var ol = typeof opt === 'object' ? (opt.label || opt.value) : opt;
+        html += '<option value="' + esc(ov) + '"' + (String(value || '') === String(ov) ? ' selected' : '') + '>' + esc(ol) + '</option>';
+      });
+      html += '</select>';
+    } else if (type === 'number') {
+      html += '<input type="number" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '">';
+    } else {
+      html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '">';
+    }
+    if (/(image|cover|background|media|photo|logo)/i.test(key)) {
+      html += '<input type="file" class="form-control form-control-sm mt-1" name="' + prefix + key + '_file" accept="image/*">';
+      html += '<div class="form-text">可上传图片；视频请填写 URL。</div>';
+    }
+    return html + '</div>';
+  }
+
+  /* ====== 对外暴露 ====== */
+  window._cn = cn;
+  window._un = un;
+  window._esc = esc;
+  window._renderField = renderField;
+
+  /* ====== findBlockMeta ====== */
+
+  function findBlockMeta(type) {
+    var lib = (window._moduleCtx && window._moduleCtx.blockLibrary) || [];
+    return lib.find(function(b) { return b.name === type; }) || {
+      name: type, display_name: type.replace(/_/g, ' '), fields: [], variants: [{key:'default',label:'默认'}]
+    };
+  }
+
+  /* ====== 主函数: buildModuleHTML ======
+   * type:   模块类型名
+   * idx:    模块序号 (0-based)
+   * mdata:  已保存的模块数据 (新模块传 {})
+   * 返回:   { html, borderStyle, headerBg }
+   */
+
+  function buildModuleHTML(type, idx, mdata) {
+    mdata = mdata || {};
+    var meta = findBlockMeta(type);
+    var fields = meta.fields || [];
+    var displayName = meta.display_name || type.replace(/_/g, ' ');
+    var isDataModule = (type === 'item_data');
+    var needsResp = (type === 'data_grid' || type === 'product_grid' || type === 'feature_grid');
+    var d = mdata;
+    var isDsMode = !!(window._moduleCtx && window._moduleCtx.isDatasetMode);
+
+    // 动态字段 (根据 meta.yaml fields 生成)
+    var desktopFields = fields.map(function(f) { return renderField('module_' + idx + '_data_', f, d[f.key] || f.default || '', ''); }).join('');
+    var tabletFields  = fields.map(function(f) { return renderField('module_' + idx + '_resp_tablet_data_', f, '', '继承电脑端'); }).join('');
+    var mobileFields  = fields.map(function(f) { return renderField('module_' + idx + '_resp_mobile_data_', f, '', '继承电脑端'); }).join('');
+
+    // 数据集来源选项
+    var datasetNames = (window._moduleCtx && window._moduleCtx.datasetNames) || [];
+
+    var specialEditor = '';
+    var styleEditor = '';
+    var borderStyle = isDataModule ? 'border-color: var(--color-primary, #067a7a);' : '';
+    var headerBg = isDataModule ? 'background:rgba(6,122,122,0.05);' : '';
+    var titleColor = isDataModule ? 'text-primary' : '';
+
+    /* ====== item_data (详情数据) 特殊处理 ====== */
+    if (isDataModule) {
+      var item = (window._moduleCtx && window._moduleCtx.editItem) || mdata || {};
+      var tagsVal = (item.tags && Array.isArray(item.tags)) ? item.tags.join(', ') : (item.tags || '');
+      specialEditor =
+        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('section_bg', '外层背景色', item.section_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + un('inner_width', '内层宽度', ['px','%','rem'], item.inner_width) + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">内容字段</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm font-monospace" name="slug" value="' + esc(item.slug || '') + '" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="如 my-post"><div class="form-text">英文+数字+连字符，唯一标识</div></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">日期</label><input type="date" class="form-control form-control-sm" name="date" value="' + esc(item.date || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="title" value="' + esc(item.title || '') + '"></div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('title_color', '标题颜色', item.title_color || '#1e293b') + '</div>' +
+          '<div class="col-6">' + un('title_size', '标题字号', ['px','rem'], item.title_size) + '</div>' +
+        '</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">简述</label><textarea class="form-control form-control-sm" name="description" rows="2">' + esc(item.description || item.excerpt || item.summary || '') + '</textarea></div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('desc_color', '简述颜色', item.desc_color || '#64748b') + '</div>' +
+          '<div class="col-6">' + un('desc_size', '简述字号', ['px','rem'], item.desc_size) + '</div>' +
+        '</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">预览图</label><input type="text" class="form-control form-control-sm" name="image" value="' + esc(item.image || item.cover || item.photo || '') + '" placeholder="图片 URL 或上传"><input type="file" class="form-control form-control-sm mt-1" name="image" accept="image/*"><div class="form-text">可粘贴 URL 或上传图片（自动转 WebP）</div></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签</label><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="多个用逗号或空格分隔"><div class="form-text">如：LED, 展示道具, 近期项目</div></div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('tag_color', '标签颜色', item.tag_color || '#64748b') + '</div>' +
+          '<div class="col-6">' + un('tag_size', '标签字号', ['px','rem'], item.tag_size) + '</div>' +
+          '<div class="col-6">' + cn('tag_bg', '标签背景色', item.tag_bg || '#f5f7fa') + '</div>' +
+          '<div class="col-6">' + un('tag_radius', '标签圆角', ['px','rem','%'], item.tag_radius) + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">详细介绍</label><textarea class="form-control form-control-sm" name="body" rows="10" style="min-height:200px;font-family:monospace;white-space:pre-wrap;" placeholder="支持 Markdown 格式">' + esc(item.body || item.content || '') + '</textarea></div>';
+      // 动态剩余字段
+      var skipKeys = ['id','slug','date','title','description','excerpt','summary','cover','image','photo','logo','tags','body','content','modules','section_bg','inner_width','title_color','title_size','desc_color','desc_size','tag_color','tag_size','tag_bg','tag_radius'];
+      Object.keys(item).forEach(function(k) {
+        if (skipKeys.indexOf(k) >= 0 || /^module_/.test(k)) return;
+        var v = item[k];
+        specialEditor += '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + esc(k) + '</label>';
+        if (k === 'cover' || k === 'photo' || k === 'logo') {
+          specialEditor += '<input type="text" class="form-control form-control-sm" name="' + esc(k) + '" value="' + esc(v || '') + '"><input type="file" class="form-control form-control-sm mt-1" name="' + esc(k) + '" accept="image/*">';
+        } else if (typeof v === 'string' && v.length > 80) {
+          specialEditor += '<textarea class="form-control form-control-sm" name="' + esc(k) + '" rows="3">' + esc(v) + '</textarea>';
+        } else {
+          specialEditor += '<input type="text" class="form-control form-control-sm" name="' + esc(k) + '" value="' + esc(v || '') + '">';
+        }
+        specialEditor += '</div>';
+      });
+    }
+
+    /* ====== hero_banner ====== */
+    if (type === 'hero_banner') {
+      specialEditor =
+        '<hr class="my-2">' +
+        '<div class="hero-slides-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">轮播媒体项</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addHeroSlide(' + idx + ')">+ 添加媒体项</button></div><input type="hidden" name="module_' + idx + '_slide_count" class="hero-slide-count" value="' + (d.slide_count || '1') + '"><div class="hero-slide-list">' + (window._heroSlideHtml ? window._heroSlideHtml(idx, 0, d) : '') + '</div></div>';
+      styleEditor =
+        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+        '<div class="row g-2 mb-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_hero_width', 'Banner 宽度', ['px','%','vw','rem'], d.hero_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_hero_height', 'Banner 高度', ['px','vh','rem','%'], d.hero_height) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_content_width', '内容区宽度', ['px','%','vw','rem'], d.content_width) + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_banner_align', 'Banner 排版', [{value:'',label:'默认（全宽）'},{value:'center',label:'居中'},{value:'left',label:'居左'},{value:'right',label:'居右'}], d.banner_align) + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">配色</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_title_font_size', '标题字体大小', ['px','rem'], d.title_font_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color || '#ffffff') + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_subtitle_font_size', '副标题字体大小', ['px','rem'], d.subtitle_font_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_subtitle_color', '副标题颜色', d.subtitle_color || '#cccccc') + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_btn_font_size', '按钮字体大小', ['px','rem'], d.btn_font_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_btn_text_color', '按钮文字颜色', d.btn_text_color || '#ffffff') + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_btn_bg', '按钮背景色', d.btn_bg || '#067a7a') + '</div>' +
+        '</div>';
+
+    /* ====== section_title ====== */
+    } else if (type === 'section_title') {
+      specialEditor =
+        '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag" value="' + esc(d.tag || '') + '" placeholder="模块上方小标签"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述文字</label><textarea class="form-control form-control-sm" rows="3" name="module_' + idx + '_data_desc">' + esc(d.desc || '') + '</textarea></div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">按钮</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_text" value="' + esc(d.btn_text || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">按钮链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_url" value="' + esc(d.btn_url || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">打开方式</label><select class="form-select form-select-sm" name="module_' + idx + '_data_btn_target"><option value=""' + (d.btn_target !== '_blank' ? ' selected' : '') + '>当前窗口</option><option value="_blank"' + (d.btn_target === '_blank' ? ' selected' : '') + '>新窗口</option></select></div>' +
+        '</div>';
+      styleEditor =
+        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_top', '上外边距', ['px','rem'], d.margin_top) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_right', '右外边距', ['px','rem'], d.margin_right) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_bottom', '下外边距', ['px','rem'], d.margin_bottom) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_left', '左外边距', ['px','rem'], d.margin_left) + '</div>' +
+        '</div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">内层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_top', '上内边距', ['px','rem'], d.padding_top) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_right', '右内边距', ['px','rem'], d.padding_right) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_bottom', '下内边距', ['px','rem'], d.padding_bottom) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_left', '左内边距', ['px','rem'], d.padding_left) + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">文字排版</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_text_align', '对齐方式', [{value:'center',label:'居中'},{value:'left',label:'居左'},{value:'right',label:'居右'}], d.text_align || 'center') + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">字体样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color || '#1e293b') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_title_size', '标题字号', ['px','rem'], d.title_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_desc_color', '描述颜色', d.desc_color || '#64748b') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_desc_size', '描述字号', ['px','rem'], d.desc_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_tag_bg', '标签背景色', d.tag_bg || '#067a7a') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_tag_color', '标签字体色', d.tag_color || '#ffffff') + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">按钮颜色</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_btn_bg', '按钮背景色', d.btn_bg || '#067a7a') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_btn_color', '按钮文字色', d.btn_color || '#ffffff') + '</div>' +
+        '</div>';
+
+    /* ====== data_grid ====== */
+    } else if (type === 'data_grid') {
+      var dsOptionsHtml = '';
+      datasetNames.forEach(function(ds) {
+        dsOptionsHtml += '<option value="' + esc(ds.target) + '"' + (d.dataset === ds.target ? ' selected' : '') + '>' + esc(ds.label) + '（' + esc(ds.target) + '）</option>';
+      });
+      specialEditor =
+        '<div class="small fw-semibold mb-1 text-muted">数据</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">数据来源</label>' +
+          '<select class="form-select form-select-sm" name="module_' + idx + '_data_dataset">' +
+          (dsOptionsHtml || '<option value="">暂无数据源</option>') +
+          '</select></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">卡片布局</label>' +
+          '<select class="form-select form-select-sm" name="module_' + idx + '_data_card_layout"><option value="image_top"' + (d.card_layout !== 'image_left' ? ' selected' : '') + '>上图下文</option><option value="image_left"' + (d.card_layout === 'image_left' ? ' selected' : '') + '>左图右文</option></select></div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">显示分页</label>' +
+            '<select class="form-select form-select-sm" name="module_' + idx + '_data_show_pagination"><option value="true"' + (d.show_pagination !== 'false' ? ' selected' : '') + '>显示</option><option value="false"' + (d.show_pagination === 'false' ? ' selected' : '') + '>隐藏</option></select></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">分页样式</label>' +
+            '<select class="form-select form-select-sm" name="module_' + idx + '_data_pagination_style"><option value="load_more"' + (d.pagination_style !== 'page_numbers' ? ' selected' : '') + '>加载更多</option><option value="page_numbers"' + (d.pagination_style === 'page_numbers' ? ' selected' : '') + '>页码导航</option></select></div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">每页显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_data_items_per_page" value="' + esc(d.items_per_page || '6') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">分页对齐</label>' +
+            '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align"><option value="center"' + (d.pager_align === 'center' || !d.pager_align ? ' selected' : '') + '>居中</option><option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option><option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option></select></div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>';
+      styleEditor =
+        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_top', '上外边距', ['px','rem'], d.margin_top) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_right', '右外边距', ['px','rem'], d.margin_right) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_bottom', '下外边距', ['px','rem'], d.margin_bottom) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_left', '左外边距', ['px','rem'], d.margin_left) + '</div>' +
+        '</div>';
+
+    /* ====== product_grid ====== */
+    } else if (type === 'product_grid') {
+      specialEditor =
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">最大显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_data_max_items" value="' + esc(d.max_items || '6') + '"></div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>';
+      styleEditor =
+        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
+        '</div>';
+
+    /* ====== feature_grid ====== */
+    } else if (type === 'feature_grid') {
+      var featCount = d.feature_count || '1';
+      specialEditor =
+        '<div class="feature-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">功能卡片</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addFeatureItem(' + idx + ')">+ 添加功能卡片</button></div><input type="hidden" name="module_' + idx + '_feature_count" class="feature-item-count" value="' + featCount + '"><div class="feature-item-list">' + (window._featureItemHtml ? window._featureItemHtml(idx, 0, d) : '') + '</div></div>';
+      styleEditor =
+        '<div class="small fw-semibold mb-1 text-muted mt-2">外层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_top', '上外边距', ['px','rem'], d.margin_top) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_right', '右外边距', ['px','rem'], d.margin_right) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_bottom', '下外边距', ['px','rem'], d.margin_bottom) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_left', '左外边距', ['px','rem'], d.margin_left) + '</div>' +
+        '</div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">内层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
+        '</div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">卡片样式</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">显示边框</label><select class="form-select form-select-sm" name="module_' + idx + '_data_card_show_border"><option value=""' + (d.card_show_border !== '0' ? ' selected' : '') + '>默认（显示）</option><option value="0"' + (d.card_show_border === '0' ? ' selected' : '') + '>隐藏边框</option></select></div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片内边距</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_padding_top', '上', ['px','rem'], d.card_padding_top) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_padding_right', '右', ['px','rem'], d.card_padding_right) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_padding_bottom', '下', ['px','rem'], d.card_padding_bottom) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_padding_left', '左', ['px','rem'], d.card_padding_left) + '</div>' +
+        '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片圆角</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_radius_top_left', '左上', ['px','rem','%'], d.card_radius_top_left) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_radius_top_right', '右上', ['px','rem','%'], d.card_radius_top_right) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_radius_bottom_right', '右下', ['px','rem','%'], d.card_radius_bottom_right) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_radius_bottom_left', '左下', ['px','rem','%'], d.card_radius_bottom_left) + '</div>' +
+        '</div>';
+
+    /* ====== highlight_card ====== */
+    } else if (type === 'highlight_card') {
+      specialEditor =
+        '<hr class="my-2">' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag" value="' + esc(d.tag || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label><textarea class="form-control form-control-sm" rows="3" name="module_' + idx + '_data_desc">' + esc(d.desc || '') + '</textarea></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_image" value="' + esc(d.image || '') + '" placeholder="图片 URL"><input type="file" class="form-control form-control-sm mt-1" name="module_' + idx + '_data_image_file" accept="image/*"><div class="form-text">上传后自动转 WebP 并覆盖该字段</div></div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">主按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryBtn" value="' + esc(d.primaryBtn || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">主按钮链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryLink" value="' + esc(d.primaryLink || '') + '"></div>' +
+        '</div>';
+      styleEditor =
+        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_top', '上外边距', ['px','rem'], d.margin_top) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_bottom', '下外边距', ['px','rem'], d.margin_bottom) + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_border_radius', '圆角', ['px','rem','%'], d.border_radius) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_top', '上内边距', ['px','rem'], d.padding_top) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_bottom', '下内边距', ['px','rem'], d.padding_bottom) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_left', '左内边距', ['px','rem'], d.padding_left) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_right', '右内边距', ['px','rem'], d.padding_right) + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">图文布局</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_image_position', '图文左右位置', [{value:'left',label:'图左文右'},{value:'right',label:'文左图右'}], d.image_position || 'left') + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">配色</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_text_bg', '文本区背景色', d.text_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_text_color', '文本区字体色', d.text_color || '#333333') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_tag_bg', '标签背景色', d.tag_bg || '#067a7a') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_tag_color', '标签字体色', d.tag_color || '#ffffff') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_btn_bg', '按钮背景色', d.btn_bg || '#067a7a') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_btn_color', '按钮字体色', d.btn_color || '#ffffff') + '</div>' +
+        '</div>';
+
+    /* ====== text_content ====== */
+    } else if (type === 'text_content') {
+      specialEditor =
+        '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label>' +
+        '<div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'bold\',false,null);event.preventDefault()" title="加粗" style="font-size:12px;line-height:1"><b>B</b></button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'italic\',false,null);event.preventDefault()" title="斜体" style="font-size:12px;line-height:1"><i>I</i></button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'underline\',false,null);event.preventDefault()" title="下划线" style="font-size:12px;line-height:1"><u>U</u></button>' +
+          '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'h2\');event.preventDefault()" title="大标题" style="font-size:12px;line-height:1">H2</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'h3\');event.preventDefault()" title="小标题" style="font-size:12px;line-height:1">H3</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'p\');event.preventDefault()" title="正文段落" style="font-size:12px;line-height:1">P</button>' +
+          '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="var u=prompt(\'链接地址\');if(u){document.execCommand(\'createLink\',false,u)};event.preventDefault()" title="插入链接" style="font-size:12px;line-height:1">🔗</button>' +
+        '</div>' +
+        '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (d.body || '') + '</div>' +
+        '<textarea class="form-control form-control-sm d-none" name="module_' + idx + '_data_body">' + esc(d.body || '') + '</textarea></div>';
+      styleEditor =
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">文字排版</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_text_align', '对齐方式', [{value:'left',label:'居左'},{value:'center',label:'居中'},{value:'right',label:'居右'}], d.text_align || 'left') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_columns', '分栏', [{value:'1',label:'单栏'},{value:'2',label:'双栏'}], d.columns || '1') + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_top', '上外边距', ['px','rem'], d.margin_top) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_right', '右外边距', ['px','rem'], d.margin_right) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_bottom', '下外边距', ['px','rem'], d.margin_bottom) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_margin_left', '左外边距', ['px','rem'], d.margin_left) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_top', '上内边距', ['px','rem'], d.padding_top) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_right', '右内边距', ['px','rem'], d.padding_right) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_bottom', '下内边距', ['px','rem'], d.padding_bottom) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_left', '左内边距', ['px','rem'], d.padding_left) + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">文字样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color || '#1e293b') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_body_color', '正文颜色', d.body_color || '#475569') + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_title_size', '标题字号', ['px','rem'], d.title_size) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_body_size', '正文字号', ['px','rem'], d.body_size) + '</div>' +
+        '</div>';
+
+    /* ====== item_detail ====== */
+    } else if (type === 'item_detail') {
+      var imgList = Array.isArray(d.images) ? d.images : [];
+      var specList = Array.isArray(d.specs) ? d.specs : [];
+      specialEditor =
+        '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label><textarea class="form-control form-control-sm" rows="3" name="module_' + idx + '_data_desc">' + esc(d.desc || d.description || '') + '</textarea></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签（逗号分隔）</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tags" value="' + esc(Array.isArray(d.tags) ? d.tags.join(', ') : (d.tags || '')) + '"></div>' +
+        '<hr class="my-2">' +
+        '<div class="id-images-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">图片列表</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addIdImage(' + idx + ')">+ 添加图片</button></div><input type="hidden" name="module_' + idx + '_data_images_count" class="id-image-count" value="' + imgList.length + '"><div class="id-image-list">' +
+        imgList.map(function(img, ii) {
+          var url = (typeof img === 'object' ? (img.url || '') : (img || ''));
+          return '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="' + ii + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 ' + (ii + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();window._reindexIdImages(' + idx + ')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片 URL</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_images_' + ii + '_url" value="' + esc(url) + '"><input type="file" class="form-control form-control-sm mt-1" name="module_' + idx + '_data_images_' + ii + '_url_file" accept="image/*"><div class="form-text">上传后自动转 WebP 并覆盖 URL</div></div></div>';
+        }).join('') +
+        '</div></div><hr class="my-2">' +
+        '<div class="id-specs-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">规格参数</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addIdSpec(' + idx + ')">+ 添加规格</button></div><input type="hidden" name="module_' + idx + '_data_specs_count" class="id-spec-count" value="' + specList.length + '"><div class="id-spec-list">' +
+        specList.map(function(spec, si) {
+          var name = (typeof spec === 'object' ? (spec.name || spec.label || spec.key || '') : '');
+          var value = (typeof spec === 'object' ? (spec.value || '') : '');
+          return '<div class="border rounded p-2 mb-2 id-spec-item" data-spec-index="' + si + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">规格 ' + (si + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-spec-item\').remove();window._reindexIdSpecs(' + idx + ')">删除</button></div><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">参数名</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_specs_' + si + '_name" value="' + esc(name) + '"></div><div class="col-6"><label class="form-label small mb-1 text-muted">参数值</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_specs_' + si + '_value" value="' + esc(value) + '"></div></div></div>';
+        }).join('') +
+        '</div></div>';
+      styleEditor =
+        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg || '#ffffff') + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_inner_bg', '内层背景色', d.inner_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_top', '上内边距', ['px','rem'], d.padding_top) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_right', '右内边距', ['px','rem'], d.padding_right) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_bottom', '下内边距', ['px','rem'], d.padding_bottom) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_left', '左内边距', ['px','rem'], d.padding_left) + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">图片样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_img_border_radius', '图片圆角', ['px','rem','%'], d.img_border_radius) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_img_height', '图片高度', ['px','rem','%'], d.img_height) + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">配色</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_text_bg', '文本区背景色', d.text_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_text_color', '文本区字体色', d.text_color || '#333333') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_tag_bg', '标签背景色', d.tag_bg || '#067a7a') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_tag_color', '标签字体色', d.tag_color || '#ffffff') + '</div>' +
+        '</div>';
+
+    /* ====== stat_counter ====== */
+    } else if (type === 'stat_counter') {
+      specialEditor =
+        '<div class="stat-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">统计项</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addStatItem(' + idx + ')">+ 添加统计项</button></div><input type="hidden" name="module_' + idx + '_stat_count" class="stat-item-count" value="' + (d.stat_count || '1') + '"><div class="stat-item-list">' + (window._statItemHtml ? window._statItemHtml(idx, 0, d) : '') + '</div></div>' +
+        '<hr class="my-2">' +
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+        '</div>';
+      styleEditor =
+        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg || '#f5f7fa') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_columns', '每行列数', [{value:'4',label:'四列'},{value:'3',label:'三列'},{value:'6',label:'六列'}], d.columns || '4') + '</div>' +
+        '</div>';
+
+    /* ====== logo_cloud ====== */
+    } else if (type === 'logo_cloud') {
+      specialEditor =
+        '<div class="logo-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">Logo 列表</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addLogoItem(' + idx + ')">+ 添加 Logo</button></div><input type="hidden" name="module_' + idx + '_logo_count" class="logo-item-count" value="' + (d.logo_count || '1') + '"><div class="logo-item-list">' + (window._logoItemHtml ? window._logoItemHtml(idx, 0, d) : '') + '</div></div>' +
+        '<hr class="my-2">' +
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_columns', '每行列数', [{value:'4',label:'四列'},{value:'5',label:'五列'},{value:'6',label:'六列'}], d.columns || '4') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_grayscale', '灰度滤镜', [{value:'true',label:'开启（hover时恢复彩色）'},{value:'false',label:'关闭（保持原色）'}], d.grayscale || 'true') + '</div>' +
+        '</div>';
+      styleEditor =
+        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg || '#f5f7fa') + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_inner_bg', '内层背景色', d.inner_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_top', '上内边距', ['px','rem','%'], d.padding_top) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_right', '右内边距', ['px','rem','%'], d.padding_right) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_bottom', '下内边距', ['px','rem','%'], d.padding_bottom) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_left', '左内边距', ['px','rem','%'], d.padding_left) + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">Logo 卡片样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_logo_bg', '卡片背景色', d.logo_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_logo_border', '边框大小', ['px','rem'], d.logo_border) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_logo_border_color', '边框颜色', d.logo_border_color || '#e5e7eb') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_logo_radius', '圆角', ['px','rem','%'], d.logo_radius) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_logo_width', '卡片宽度', ['px','rem','%'], d.logo_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_logo_height', '卡片高度', ['px','rem','%'], d.logo_height) + '</div>' +
+        '</div>';
+
+    /* ====== process_steps ====== */
+    } else if (type === 'process_steps') {
+      specialEditor =
+        '<div class="step-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">步骤列表</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addStepItem(' + idx + ')">+ 添加步骤</button></div><input type="hidden" name="module_' + idx + '_step_count" class="step-item-count" value="' + (d.step_count || '1') + '"><div class="step-item-list">' + (window._stepItemHtml ? window._stepItemHtml(idx, 0, d) : '') + '</div></div>' +
+        '<hr class="my-2">' +
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_direction', '排列方向', [{value:'horizontal',label:'横向'},{value:'vertical',label:'纵向'}], d.direction || 'horizontal') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_step_style', '步骤样式', [{value:'number',label:'数字序号'},{value:'icon',label:'图标'}], d.step_style || 'number') + '</div>' +
+        '</div>';
+      styleEditor =
+        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg || '#f5f7fa') + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_inner_bg', '内层背景色', d.inner_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_top', '上内边距', ['px','rem'], d.padding_top) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_right', '右内边距', ['px','rem'], d.padding_right) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_bottom', '下内边距', ['px','rem'], d.padding_bottom) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_padding_left', '左内边距', ['px','rem'], d.padding_left) + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">配色</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_title_font_size', '标题字体大小', ['px','rem'], d.title_font_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color || '#1a1a1a') + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_desc_font_size', '描述字体大小', ['px','rem'], d.desc_font_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_desc_color', '描述颜色', d.desc_color || '#666666') + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_icon_color', '图标颜色', d.icon_color || '#067a7a') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_number_bg', '序号背景色', d.number_bg || '#067a7a') + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_number_font_size', '序号字体大小', ['px','rem'], d.number_font_size) + '</div>' +
+        '</div>';
+    }
+
+    /* ====== responsive 控件 ====== */
+    var respCountField = (type === 'data_grid') ? 'items_per_page' : 'max_items';
+    var respCountLabel = (type === 'data_grid') ? '每页显示数量' : '显示数量';
+    var respCountPlaceholder = (type === 'data_grid') ? '默认' : '0=全部';
+
+    /* ====== 构建 HTML (结构与 Jinja 模板对齐) ====== */
+    var html =
+      '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="' + headerBg + 'cursor:pointer">' +
+        '<span class="small fw-semibold ' + titleColor + '">' + esc(displayName) + '</span>' +
+        '<div class="d-flex gap-1">' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary module-sort-btn" title="上移" onclick="event.stopPropagation();window._moveModule(this, -1)">↑</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary module-sort-btn" title="下移" onclick="event.stopPropagation();window._moveModule(this, 1)">↓</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-' + (isDataModule ? 'danger' : 'secondary') + '" style="font-size:10px" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();window._reindexModules()">✕</button>' +
+        '</div>' +
+      '</div>' +
+      '<input type="hidden" name="module_' + idx + '_type" value="' + esc(type) + '">' +
+      '<input type="hidden" name="module_' + idx + '_order" value="' + (idx + 1) + '">' +
+      '<div class="module-config p-2 border-top" style="display:block">';
+
+    if (!isDataModule) {
+      // 电脑端：tab 按钮 + 两个面板（结构与 Jinja 模板一致）
+      html += '<div class="device-config device-desktop">' +
+        '<div class="d-flex mb-2">' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="window._switchContentStyleTab(this, \'content\')">内容</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="window._switchContentStyleTab(this, \'style\')">样式</button>' +
+        '</div>' +
+        '<div class="content-style-panel panel-content">' +
+          (specialEditor || desktopFields) +
+          (needsResp ?
+            '<hr class="my-2"><div class="row g-2">' +
+              '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_columns" value="' + esc(d.columns || '') + '" placeholder="默认" min="1" max="6"></div>' +
+              (type !== 'data_grid' ? '<div class="col-6"><label class="form-label small mb-1 text-muted">' + respCountLabel + '</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_' + respCountField + '" value="' + esc(d[respCountField] || '') + '" placeholder="' + respCountPlaceholder + '"></div>' : '') +
+            '</div>' : '') +
+        '</div>' +
+        '<div class="content-style-panel panel-style" style="display:none">' +
+          (styleEditor || '') +
+        '</div>' +
+      '</div>';
+    }
+
+    if (isDataModule) {
+      html += '<div class="device-config device-desktop">' + specialEditor + '</div>';
+    }
+
+    // 平板端 / 手机端（结构与 Jinja 模板一致，与 .device-desktop 同级）
+    if (!isDataModule) {
+      html +=
+        '<div class="device-config device-tablet" style="display:none">' +
+          tabletFields +
+          (needsResp ?
+            '<hr class="my-2"><div class="row g-2">' +
+              '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_columns" placeholder="继承电脑端" min="1" max="6"></div>' +
+              (type !== 'data_grid' ? '<div class="col-6"><label class="form-label small mb-1 text-muted">' + respCountLabel + '</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_' + respCountField + '" placeholder="继承电脑端"></div>' : '') +
+            '</div>' : '') +
+          '<div class="mb-2 mt-2"><label class="form-check-label small"><input type="checkbox" class="form-check-input" name="module_' + idx + '_resp_tablet_hidden" value="1"> 平板端隐藏此模块</label></div>' +
+        '</div>' +
+        '<div class="device-config device-mobile" style="display:none">' +
+          mobileFields +
+          (needsResp ?
+            '<hr class="my-2"><div class="row g-2">' +
+              '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_columns" placeholder="继承电脑端" min="1" max="6"></div>' +
+              (type !== 'data_grid' ? '<div class="col-6"><label class="form-label small mb-1 text-muted">' + respCountLabel + '</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_' + respCountField + '" placeholder="继承电脑端"></div>' : '') +
+            '</div>' : '') +
+          '<div class="mb-2 mt-2"><label class="form-check-label small"><input type="checkbox" class="form-check-input" name="module_' + idx + '_resp_mobile_hidden" value="1"> 手机端隐藏此模块</label></div>' +
+        '</div>';
+    }
+
+    if (isDataModule) {
+      html +=
+        '<div class="device-config device-tablet" style="display:none">' +
+          tabletFields +
+        '</div>' +
+        '<div class="device-config device-mobile" style="display:none">' +
+          mobileFields +
+        '</div>';
+    }
+
+    html += '</div>';
+
+    return { html: html, borderStyle: borderStyle, headerBg: headerBg };
+  }
+
+  /* ====== 手风琴展开/收缩 (供模板 addEventListener 调用) ======
+   * 除了依赖 CSS !important 规则驱动 .module-config 显隐外，
+   * 额外显式操作 .content-style-panel 的 display，确保即便
+   * DOM 结构异常，面板也能正确切换。 */
+  function toggleModuleAccordion(moduleItem) {
+    var wasExpanded = moduleItem.classList.contains('expanded');
+    // 收缩同容器内所有模块：移除 expanded + 显式隐藏面板
+    var container = moduleItem.parentElement;
+    if (container) {
+      container.querySelectorAll('.module-item').forEach(function(item) {
+        item.classList.remove('expanded');
+        item.querySelectorAll('.content-style-panel').forEach(function(p) {
+          p.style.display = 'none';
+        });
+      });
+    }
+    // 如果之前未展开，则展开当前模块：恢复 active tab 对应的面板
+    if (!wasExpanded) {
+      moduleItem.classList.add('expanded');
+      var activeTab = moduleItem.querySelector('.content-style-tab.active');
+      var tabName = activeTab ? activeTab.dataset.tab : 'content';
+      var target = moduleItem.querySelector('.panel-' + tabName);
+      if (target) target.style.display = '';
+    }
+  }
+
+  /* ====== 对外暴露 ====== */
+  window._buildModuleHTML = buildModuleHTML;
+  window._toggleModuleAccordion = toggleModuleAccordion;
+
+})();

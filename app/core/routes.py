@@ -1656,6 +1656,26 @@ def page_panel(page_key):
 
     is_list_page = _find_list_in_menu(menu_items, page_key)
 
+    # 收集数据集列表，供数据网格模块选择数据源，也供模板 datasetNamesJson 序列化
+    from app.core.menu import upgrade_old_format, normalize_for_render, ensure_home
+    meta_path2 = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    meta2 = _yaml.safe_load(meta_path2.read_text(encoding='utf-8')) if meta_path2.exists() else {}
+    datasets_meta = meta2.get('datasets', [])
+    raw_menu = upgrade_old_format(menu_items, datasets_meta)
+    normalized_menu = ensure_home(normalize_for_render(raw_menu))
+
+    def _collect_targets(items, result=None):
+        if result is None:
+            result = []
+        for it in (items or []):
+            if it.get('type') == 'list' and it.get('target'):
+                result.append({'target': it['target'], 'label': it.get('label', it['target'])})
+            if it.get('children'):
+                _collect_targets(it['children'], result)
+        return result
+
+    all_list_datasets = _collect_targets(normalized_menu)
+
     page = read_yaml(site.id, f'pages/{page_key}.yaml', lang=storage_lang)
     if page:
         blocks = _get_available_blocks(site.template_name)
@@ -1665,6 +1685,7 @@ def page_panel(page_key):
                        page_key=page_key, page=page,
                        blocks=blocks, is_modules_format=is_modules_format,
                        is_list_page=is_list_page,
+                       all_list_datasets=all_list_datasets,
                        current_lang=lang, languages=languages, default_lang=default_lang,
                        active=page_key)
 
@@ -1677,6 +1698,7 @@ def page_panel(page_key):
                    page_key=page_key, page=new_page,
                    blocks=blocks, is_modules_format=True,
                    is_list_page=is_list_page,
+                   all_list_datasets=all_list_datasets,
                    current_lang=lang, languages=languages, default_lang=default_lang,
                    active=page_key)
 
