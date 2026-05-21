@@ -21,21 +21,20 @@
     <button class="btn btn-primary btn-sm" onclick="addDataItem()">+ 新建</button>
     {% else %}
     <button class="btn btn-outline-secondary btn-sm" onclick="loadDatasetList()">← 返回列表</button>
-    <button class="btn btn-outline-primary btn-sm" onclick="refreshPreview()">刷新预览</button>
     {% endif %}
   </div>
 </div>
 {% if translation_enabled and is_edit and languages and languages|length > 1 %}
 {# AI 翻译栏 — 独立一行，与语言标签区分 #}
-<div class="d-flex align-items-center gap-1 mb-3 p-2 rounded" style="background:#f0f7ff;font-size:12px;">
-  <span class="text-muted">🌐 AI 翻译：当前内容 →</span>
-  <select class="form-select form-select-sm" id="translateTargetLang" style="width:85px;font-size:11px;">
+<div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
+  <span class="text-muted text-nowrap">🌐 AI 翻译：当前内容 →</span>
+  <select class="form-select form-select-sm text-nowrap" id="translateTargetLang" style="min-width:70px;font-size:11px;">
     {% for l in languages if l.code != current_lang %}
     <option value="{{ l.code }}">{{ l.name }}</option>
     {% endfor %}
   </select>
-  <button class="btn btn-sm btn-outline-info" id="aiTranslateBtn" style="font-size:11px;">开始翻译</button>
-  <span class="text-muted" style="font-size:10px;">翻译后请手动检查并保存</span>
+  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:11px;">开始翻译</button>
+  <span class="text-muted text-nowrap" style="font-size:10px;">翻译后请手动检查并保存</span>
 </div>
 {% endif %}
 

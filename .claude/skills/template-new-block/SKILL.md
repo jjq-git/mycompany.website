@@ -1,10 +1,12 @@
 ---
 name: template-new-block
-description: "脚手架:在指定模板中创建新的 Block 组件"
+description: "Block 组件的创建与修改（新增模块类型/修改字段/调整样式表单）"
 ---
 
-当用户说"新建 Block"、"加个模块"、"创建组件"时触发.
-在现有模板的 blocks/ 下创建一个新的可复用模块(meta.yaml + template.html).
+当用户说"新建 Block"、"加个模块"、"创建组件"、"修改模块字段"、"调整模块样式"时触发.
+在现有模板的 blocks/ 下创建或修改可复用模块(meta.yaml + template.html).
+
+**修改现有模块时，必须同步更新三处：Jinja 模板 + addModule() + admin_modules.js，详见 [三处同步规则](reference/three-place-sync.md)。**
 
 Block 是网站页面的组成单元——首页横幅、产品网格、功能介绍、客户评价等都是 Block.
 店主在后台给页面拖拽和配置 Block(在 _panel 页面编辑器中选择、排序、填写).
@@ -119,6 +121,22 @@ variants:                      # 可选:预设样式变体
 - 浏览器真实渲染输出（示例 B）
 - data_grid 完整 Jinja2 源码
 
+## 三处同步（硬约束 ⚠️）
+
+**新增或修改模块的样式编辑表单时，必须同步更新以下三处：**
+
+| # | 文件 | 位置 | 用途 |
+|---|------|------|------|
+| 1 | `app/templates/dashboard/panel_page_edit.html` | Jinja2 模板（~112-1017行） | 已保存模块的服务端渲染 |
+| 2 | `app/templates/dashboard/panel_page_edit.html` | `addModule()` 函数 | 新增模块的客户端生成 |
+| 3 | `app/static/js/admin_modules.js` | `buildModuleHTML()` 函数 | 数据集编辑器的模块表单 |
+
+**漏掉任何一处，用户就会看到不一致的界面。**
+
+三处代码风格不同（Jinja2 vs JS `cP()`/`uP()` vs JS `_cn()`/`_un()`），但生成的 HTML 结构、字段顺序、分组标签、单位数组必须完全一致。
+
+详细的字段放置规则、单位约定、各模块对照表见 **[reference/three-place-sync.md](reference/three-place-sync.md)**。
+
 ## 注册到模板
 
 Block 创建后不需要手动"注册"——`scan_blocks()` 会自动扫描 blocks/ 目录.
@@ -129,6 +147,7 @@ Block 创建后立即可在后台页面编辑器中使用.
 2. 进入后台 → 选择站点 → 页面管理 → 编辑某个页面
 3. 在模块选择器中应该能看到新 Block
 4. 添加 Block → 填写字段 → 保存 → 预览
+5. **打开已保存的模块 → 对比表单和新建时是否一致**
 
 ## 常见 Block 类型参考
 

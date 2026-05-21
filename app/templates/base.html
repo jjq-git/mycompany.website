@@ -762,6 +762,11 @@ function selectModuleInPanel(index, pageKey) {
   item.classList.add('expanded', 'builder-selected-module');
   var cfg = item.querySelector('.module-config');
   if (cfg) cfg.style.display = 'block';
+  // 恢复 active tab 对应的内容面板（toggleModuleAccordion 折叠时会把所有 panel 设 display:none）
+  var activeTab = item.querySelector('.content-style-tab.active');
+  var tabName = activeTab ? activeTab.dataset.tab : 'content';
+  var panel = item.querySelector('.panel-' + tabName);
+  if (panel) panel.style.display = '';
   item.scrollIntoView({behavior: 'smooth', block: 'center'});
 }
 

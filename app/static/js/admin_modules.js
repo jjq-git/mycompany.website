@@ -82,6 +82,24 @@
   window._esc = esc;
   window._renderField = renderField;
 
+  // 模块图标映射 — 与 _block_icons.html 中 block_icon 宏保持一致
+  function getBlockIconHTML(type) {
+    var icons = {
+      'hero_banner': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>',
+      'section_title': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16"/><path d="M4 10h12"/><path d="M4 15h8"/><path d="M4 20h4"/></svg>',
+      'text_content': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
+      'highlight_card': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="8" height="16" rx="1"/><path d="M10 9h12v-2a1 1 0 0 0-1-1H10z"/><path d="M10 14h9"/><path d="M10 18h6"/></svg>',
+      'feature_grid': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
+      'data_grid': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>',
+      'stat_counter': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>',
+      'contact_info': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h4"/><circle cx="8.5" cy="8.5" r="0.5" fill="currentColor"/><circle cx="8.5" cy="12.5" r="0.5" fill="currentColor"/></svg>',
+      'process_steps': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><path d="M8 12h1"/><path d="M15 12h1"/></svg>',
+      'logo_cloud': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>',
+      'item_detail': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><path d="M13 15h4"/><path d="M13 19h6"/></svg>'
+    };
+    return icons[type] || '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>';
+  }
+
   /* ====== findBlockMeta ====== */
 
   function findBlockMeta(type) {
@@ -104,7 +122,7 @@
     var fields = meta.fields || [];
     var displayName = meta.display_name || type.replace(/_/g, ' ');
     var isDataModule = (type === 'item_data');
-    var needsResp = (type === 'data_grid' || type === 'product_grid' || type === 'feature_grid');
+    var needsResp = (type !== 'section_title' && type !== 'hero_banner' && type !== 'highlight_card' && type !== 'item_detail' && type !== 'text_content');
     var d = mdata;
     var isDsMode = !!(window._moduleCtx && window._moduleCtx.isDatasetMode);
 
@@ -118,42 +136,48 @@
 
     var specialEditor = '';
     var styleEditor = '';
-    var borderStyle = isDataModule ? 'border-color: var(--color-primary, #067a7a);' : '';
-    var headerBg = isDataModule ? 'background:rgba(6,122,122,0.05);' : '';
-    var titleColor = isDataModule ? 'text-primary' : '';
+    var borderStyle = '';
+    var headerBg = '';
+    var titleColor = '';
 
     /* ====== item_data (详情数据) 特殊处理 ====== */
     if (isDataModule) {
       var item = (window._moduleCtx && window._moduleCtx.editItem) || mdata || {};
       var tagsVal = (item.tags && Array.isArray(item.tags)) ? item.tags.join(', ') : (item.tags || '');
-      specialEditor =
+      styleEditor =
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('section_bg', '外层背景色', item.section_bg || '#ffffff') + '</div>' +
           '<div class="col-6">' + un('inner_width', '内层宽度', ['px','%','rem'], item.inner_width) + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">内容字段</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm font-monospace" name="slug" value="' + esc(item.slug || '') + '" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="如 my-post"><div class="form-text">英文+数字+连字符，唯一标识</div></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">日期</label><input type="date" class="form-control form-control-sm" name="date" value="' + esc(item.date || '') + '"></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="title" value="' + esc(item.title || '') + '"></div>' +
+        '<div class="small fw-semibold mb-1 text-muted">标题样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('title_color', '标题颜色', item.title_color || '#1e293b') + '</div>' +
           '<div class="col-6">' + un('title_size', '标题字号', ['px','rem'], item.title_size) + '</div>' +
         '</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">简述</label><textarea class="form-control form-control-sm" name="description" rows="2">' + esc(item.description || item.excerpt || item.summary || '') + '</textarea></div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">简述样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('desc_color', '简述颜色', item.desc_color || '#64748b') + '</div>' +
           '<div class="col-6">' + un('desc_size', '简述字号', ['px','rem'], item.desc_size) + '</div>' +
         '</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">预览图</label><input type="text" class="form-control form-control-sm" name="image" value="' + esc(item.image || item.cover || item.photo || '') + '" placeholder="图片 URL 或上传"><input type="file" class="form-control form-control-sm mt-1" name="image" accept="image/*"><div class="form-text">可粘贴 URL 或上传图片（自动转 WebP）</div></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签</label><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="多个用逗号或空格分隔"><div class="form-text">如：LED, 展示道具, 近期项目</div></div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">标签样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('tag_color', '标签颜色', item.tag_color || '#64748b') + '</div>' +
           '<div class="col-6">' + un('tag_size', '标签字号', ['px','rem'], item.tag_size) + '</div>' +
           '<div class="col-6">' + cn('tag_bg', '标签背景色', item.tag_bg || '#f5f7fa') + '</div>' +
           '<div class="col-6">' + un('tag_radius', '标签圆角', ['px','rem','%'], item.tag_radius) + '</div>' +
-        '</div>' +
+        '</div>';
+      specialEditor =
+        '<div class="small fw-semibold mb-1 text-muted">内容字段</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm font-monospace" name="slug" value="' + esc(item.slug || '') + '" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="如 my-post"><div class="form-text">英文+数字+连字符，唯一标识</div></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">日期</label><input type="date" class="form-control form-control-sm" name="date" value="' + esc(item.date || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="title" value="' + esc(item.title || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">简述</label><textarea class="form-control form-control-sm" name="description" rows="2">' + esc(item.description || item.excerpt || item.summary || '') + '</textarea></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">预览图</label><input type="text" class="form-control form-control-sm" name="image" value="' + esc(item.image || item.cover || item.photo || '') + '" placeholder="图片 URL 或上传"><input type="file" class="form-control form-control-sm mt-1" name="image" accept="image/*"><div class="form-text">可粘贴 URL 或上传图片（自动转 WebP）</div></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签</label><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="多个用逗号或空格分隔"><div class="form-text">如：LED, 展示道具, 近期项目</div></div>' +
         '<hr class="my-2">' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">详细介绍</label><textarea class="form-control form-control-sm" name="body" rows="10" style="min-height:200px;font-family:monospace;white-space:pre-wrap;" placeholder="支持 Markdown 格式">' + esc(item.body || item.content || '') + '</textarea></div>';
       // 动态剩余字段
@@ -632,18 +656,18 @@
     }
 
     /* ====== responsive 控件 ====== */
-    var respCountField = (type === 'data_grid') ? 'items_per_page' : 'max_items';
-    var respCountLabel = (type === 'data_grid') ? '每页显示数量' : '显示数量';
+    var respCountField = 'items_per_page';
+    var respCountLabel = '每页显示数量';
     var respCountPlaceholder = (type === 'data_grid') ? '默认' : '0=全部';
 
     /* ====== 构建 HTML (结构与 Jinja 模板对齐) ====== */
     var html =
       '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="' + headerBg + 'cursor:pointer">' +
-        '<span class="small fw-semibold ' + titleColor + '">' + esc(displayName) + '</span>' +
-        '<div class="d-flex gap-1">' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary module-sort-btn" title="上移" onclick="event.stopPropagation();window._moveModule(this, -1)">↑</button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary module-sort-btn" title="下移" onclick="event.stopPropagation();window._moveModule(this, 1)">↓</button>' +
-          '<button type="button" class="btn btn-sm btn-outline-' + (isDataModule ? 'danger' : 'secondary') + '" style="font-size:10px" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();window._reindexModules()">✕</button>' +
+        '<span class="small fw-semibold d-flex align-items-center gap-1 ' + titleColor + '">' + getBlockIconHTML(type) + ' ' + esc(displayName) + '</span>' +
+        '<div class="d-flex gap-1 flex-shrink-0 flex-nowrap">' +
+          '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();window._moveModule(this, -1)">↑</button>' +
+          '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();window._moveModule(this, 1)">↓</button>' +
+          '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();window._reindexModules()">✕</button>' +
         '</div>' +
       '</div>' +
       '<input type="hidden" name="module_' + idx + '_type" value="' + esc(type) + '">' +
@@ -672,7 +696,14 @@
     }
 
     if (isDataModule) {
-      html += '<div class="device-config device-desktop">' + specialEditor + '</div>';
+      html += '<div class="device-config device-desktop">' +
+        '<div class="d-flex mb-2">' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="window._switchContentStyleTab(this, \'content\')">内容</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="window._switchContentStyleTab(this, \'style\')">样式</button>' +
+        '</div>' +
+        '<div class="content-style-panel panel-content">' + specialEditor + '</div>' +
+        '<div class="content-style-panel panel-style" style="display:none">' + styleEditor + '</div>' +
+      '</div>';
     }
 
     // 平板端 / 手机端（结构与 Jinja 模板一致，与 .device-desktop 同级）

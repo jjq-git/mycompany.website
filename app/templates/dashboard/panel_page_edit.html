@@ -15,9 +15,8 @@
   <span class="fw-semibold">{{ page_key | title }}</span>
   <div class="d-flex gap-1">
     {% if is_list_page %}
-    <button class="btn btn-sm btn-outline-primary" onclick="openDatasetPanel('{{ page_key }}')" title="管理 {{ page_key }} 数据">📋 数据</button>
+    <button class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" onclick="openDatasetPanel('{{ page_key }}')" title="管理 {{ page_key }} 数据"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg> 数据</button>
     {% endif %}
-    <button class="btn btn-sm btn-outline-secondary" onclick="refreshPreview()">刷新预览</button>
   </div>
 </div>
 {% if translation_enabled and languages and languages|length > 1 %}
@@ -99,11 +98,11 @@
       <div class="card mb-2 module-item" data-index="{{ i }}" data-module-index="{{ i }}">
         <div class="d-flex align-items-center justify-content-between p-2 module-header"
              onclick="toggleModuleAccordion(this.closest('.module-item'))">
-          <span class="small fw-semibold">{{ mod_title }}</span>
+          <span class="small fw-semibold d-flex align-items-center gap-1">{{ block_icon(module.type) }} {{ mod_title }}</span>
           <div class="d-flex gap-1">
-            <button type="button" class="btn btn-sm btn-outline-secondary module-sort-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)">↑</button>
-	            <button type="button" class="btn btn-sm btn-outline-secondary module-sort-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)">↓</button>
-	            <button type="button" class="btn btn-sm btn-outline-secondary remove-module-btn" style="font-size:10px">✕</button>
+            <button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)">↑</button>
+	            <button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)">↓</button>
+	            <button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest('.module-item').remove();reindexModules()">✕</button>
           </div>
         </div>
         <input type="hidden" name="module_{{ i }}_type" value="{{ module.type }}">
@@ -448,6 +447,14 @@
               <label class="form-label small mb-1 text-muted">区块标题</label>
               <input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title" value="{{ mdata.get('title', '') }}">
             </div>
+            <hr class="my-2">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每行列数</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_columns"
+                       value="{{ mdata.get('columns', '') }}" placeholder="默认" min="1" max="6">
+              </div>
+            </div>
             </div>
             <div class="content-style-panel panel-style" style="display:none">
 <div class="small fw-semibold mb-1 text-muted">外层样式</div>
@@ -485,6 +492,19 @@
             <div class="mb-2">
               <label class="form-label small mb-1 text-muted">区块标题</label>
               <input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title" value="{{ mdata.get('title', '') }}">
+            </div>
+            <hr class="my-2">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每行列数</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_columns"
+                       value="{{ mdata.get('columns', '') }}" placeholder="默认" min="1" max="6">
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每页显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_items_per_page"
+                       value="{{ mdata.get('items_per_page', '') }}" placeholder="默认">
+              </div>
             </div>
             </div>
             <div class="content-style-panel panel-style" style="display:none">
@@ -665,6 +685,19 @@
                 {% endfor %}
               </div>
             </div>
+            <hr class="my-2">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每行列数</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_columns"
+                       value="{{ mdata.get('columns', '') }}" placeholder="默认" min="1" max="6">
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每页显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_items_per_page"
+                       value="{{ mdata.get('items_per_page', '') }}" placeholder="默认">
+              </div>
+            </div>
             </div>
             <div class="content-style-panel panel-style" style="display:none">
             <div class="small fw-semibold mb-1 text-muted mt-2">外层样式</div>
@@ -794,6 +827,19 @@
               <div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title" value="{{ mdata.get('title', '') }}"></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_subtitle" value="{{ mdata.get('subtitle', '') }}"></div>
             </div>
+            <hr class="my-2">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每行列数</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_columns"
+                       value="{{ mdata.get('columns', '') }}" placeholder="默认" min="1" max="6">
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每页显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_items_per_page"
+                       value="{{ mdata.get('items_per_page', '') }}" placeholder="默认">
+              </div>
+            </div>
             </div>
             <div class="content-style-panel panel-style" style="display:none">
             {# ===== 布局 ===== #}
@@ -835,6 +881,19 @@
             <div class="row g-2">
               <div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><select class="form-select form-select-sm" name="module_{{ i }}_data_columns"><option value="4" {% if (mdata.get('columns', 4)|int) == 4 %}selected{% endif %}>四列</option><option value="5" {% if (mdata.get('columns')|int) == 5 %}selected{% endif %}>五列</option><option value="6" {% if (mdata.get('columns')|int) == 6 %}selected{% endif %}>六列</option></select></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">灰度滤镜</label><select class="form-select form-select-sm" name="module_{{ i }}_data_grayscale"><option value="true" {% if mdata.get('grayscale', True) not in (False, 'false') %}selected{% endif %}>开启（hover时恢复彩色）</option><option value="false" {% if mdata.get('grayscale') in (False, 'false') %}selected{% endif %}>关闭（保持原色）</option></select></div>
+            </div>
+            <hr class="my-2">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每行列数</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_columns"
+                       value="{{ mdata.get('columns', '') }}" placeholder="默认" min="1" max="6">
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每页显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_items_per_page"
+                       value="{{ mdata.get('items_per_page', '') }}" placeholder="默认">
+              </div>
             </div>
             </div>
             <div class="content-style-panel panel-style" style="display:none">
@@ -905,6 +964,19 @@
             <div class="row g-2">
               <div class="col-6"><label class="form-label small mb-1 text-muted">排列方向</label><select class="form-select form-select-sm" name="module_{{ i }}_data_direction"><option value="horizontal" {% if mdata.get('direction', 'horizontal') == 'horizontal' %}selected{% endif %}>横向</option><option value="vertical" {% if mdata.get('direction') == 'vertical' %}selected{% endif %}>纵向</option></select></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">步骤样式</label><select class="form-select form-select-sm" name="module_{{ i }}_data_step_style"><option value="number" {% if mdata.get('step_style', 'number') == 'number' %}selected{% endif %}>数字序号</option><option value="icon" {% if mdata.get('step_style') == 'icon' %}selected{% endif %}>图标</option></select></div>
+            </div>
+            <hr class="my-2">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每行列数</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_columns"
+                       value="{{ mdata.get('columns', '') }}" placeholder="默认" min="1" max="6">
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每页显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_items_per_page"
+                       value="{{ mdata.get('items_per_page', '') }}" placeholder="默认">
+              </div>
             </div>
             </div>
             <div class="content-style-panel panel-style" style="display:none">
@@ -978,6 +1050,19 @@
               </div>
               {% endfor %}
             </div>
+            <hr class="my-2">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每行列数</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_columns"
+                       value="{{ mdata.get('columns', '') }}" placeholder="默认" min="1" max="6">
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">每页显示数量</label>
+                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_items_per_page"
+                       value="{{ mdata.get('items_per_page', '') }}" placeholder="默认">
+              </div>
+            </div>
             </div>
             <div class="content-style-panel panel-style" style="display:none">
             {# ===== 外层样式 ===== #}
@@ -1014,23 +1099,6 @@
               {% endif %}
               {% endfor %}
             {% endif %}
-            {% endif %}
-            {% if module.type not in ('section_title', 'hero_banner', 'highlight_card', 'item_detail', 'text_content') %}
-            <hr class="my-2">
-            <div class="row g-2">
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">每行列数</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_columns"
-                       value="{{ mdata.get('columns', '') }}" placeholder="默认" min="1" max="6">
-              </div>
-              {% if module.type != 'data_grid' %}
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">每页显示数量</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_items_per_page"
-                       value="{{ mdata.get('items_per_page', '') }}" placeholder="默认">
-              </div>
-              {% endif %}
-            </div>
             {% endif %}
           </div>
 
@@ -1141,6 +1209,24 @@ function findBlockMeta(type) {
   };
 }
 
+// 模块图标映射 — 与 _block_icons.html 中 block_icon 宏保持一致
+function getBlockIconHTML(type) {
+  var icons = {
+    'hero_banner': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>',
+    'section_title': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16"/><path d="M4 10h12"/><path d="M4 15h8"/><path d="M4 20h4"/></svg>',
+    'text_content': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
+    'highlight_card': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="8" height="16" rx="1"/><path d="M10 9h12v-2a1 1 0 0 0-1-1H10z"/><path d="M10 14h9"/><path d="M10 18h6"/></svg>',
+    'feature_grid': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
+    'data_grid': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>',
+    'stat_counter': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>',
+    'contact_info': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h4"/><circle cx="8.5" cy="8.5" r="0.5" fill="currentColor"/><circle cx="8.5" cy="12.5" r="0.5" fill="currentColor"/></svg>',
+    'process_steps': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><path d="M8 12h1"/><path d="M15 12h1"/></svg>',
+    'logo_cloud': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>',
+    'item_detail': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><path d="M13 15h4"/><path d="M13 19h6"/></svg>'
+  };
+  return icons[type] || '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>';
+}
+
 function renderDynamicField(prefix, field, value, placeholder) {
   var key = field.key;
   var type = field.type || 'text';
@@ -1190,9 +1276,8 @@ function renderDynamicField(prefix, field, value, placeholder) {
 function renderResponsiveControls(idx, device, type) {
   var fieldPrefix = device ? 'module_' + idx + '_resp_' + device : 'module_' + idx + '_resp';
   var inheritText = device ? '继承电脑端' : '默认';
-  // data_grid 使用 items_per_page，其他模块使用 max_items
-  var countField = (type === 'data_grid') ? 'items_per_page' : 'max_items';
-  var countLabel = (type === 'data_grid') ? '每页显示数量' : '显示数量';
+  var countField = 'items_per_page';
+  var countLabel = '每页显示数量';
   var countPlaceholder = (type === 'data_grid') ? (device ? '继承电脑端' : '默认') : (device ? '继承电脑端' : '0=全部');
   var html = '<hr class="my-2"><div class="row g-2">';
   html += '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>';
@@ -1536,6 +1621,18 @@ function addModule(type, variant) {
 
   var cP = function(name, ph, dv) { return '<label class="form-label small mb-1 text-muted">' + ph + '</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="' + (dv || '#888888') + '" oninput="this.parentElement.querySelector(\'input[type=text]\').value=this.value"><input type="text" class="form-control form-control-sm" name="' + name + '" value="' + (dv || '') + '" placeholder="' + ph + '" oninput="this.parentElement.querySelector(\'input[type=color]\').value=this.value"></div>'; };
   var uP = function(name, ph, units, dv) { var o = units.map(function(u){return '<option value="'+u+'">'+u+'</option>';}).join(''); return '<label class="form-label small mb-1 text-muted">' + ph + '</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="' + name + '" value="' + (dv || '') + '" placeholder="' + ph + '" style="width:60%"><select class="form-select form-select-sm unit-picker" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name="' + name + '"]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option>' + o + '</select></div>'; };
+  var vT = function(name, label, dv) {
+    var eyeOpen = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    var eyeClosed = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72 1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+    var visible = dv === 'true';
+    return '<div class="visibility-item">' +
+      '<button type="button" class="eye-toggle-btn" data-target="' + name + '" data-visible="' + dv + '" onclick="toggleVisibilityEye(this)" title="' + (visible ? '点击隐藏' : '点击显示') + '">' +
+      (visible ? eyeOpen : eyeClosed) +
+      '</button>' +
+      '<span class="vis-label">' + label + '</span>' +
+      '<input type="hidden" name="' + name + '" value="' + dv + '">' +
+      '</div>';
+  };
 
   var container = document.getElementById('selectedModules');
   var specialEditor = '';
@@ -1574,7 +1671,7 @@ function addModule(type, variant) {
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色', '#ffffff') + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem','vw']) + '</div>' +
     '</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + uP('module_' + idx + '_data_margin_top', '上', ['px','rem']) + '</div>' +
@@ -1658,13 +1755,19 @@ function addModule(type, variant) {
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色', '#ffffff') + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem']) + '</div>' + '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem','vw']) + '</div>' +
     '</div>' +
+    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + uP('module_' + idx + '_data_margin_top', '上', ['px','rem']) + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_margin_right', '右', ['px','rem']) + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_margin_bottom', '下', ['px','rem']) + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_margin_left', '左', ['px','rem']) + '</div>' +
+    '</div>' +
+    '<hr class="my-2">' +
+    '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
+    '<div class="row g-2">' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
     '</div>';
   } else if (type === 'product_grid') {
     specialEditor =
@@ -1677,7 +1780,12 @@ function addModule(type, variant) {
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色', '#ffffff') + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem']) + '</div>' + '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem','vw']) + '</div>' +
+    '</div>' +
+    '<hr class="my-2">' +
+    '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
+    '<div class="row g-2">' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
     '</div>';
   } else if (type === 'feature_grid') {
     specialEditor = '<div class="feature-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">功能卡片</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="addFeatureItem(' + idx + ')">+ 添加功能卡片</button></div><input type="hidden" name="module_' + idx + '_feature_count" class="feature-item-count" value="1"><div class="feature-item-list">' + featureItemHtml(idx, 0) + '</div></div>';
@@ -1685,7 +1793,7 @@ function addModule(type, variant) {
     '<div class="small fw-semibold mb-1 text-muted mt-2">外层样式</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色', '#ffffff') + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem','vw']) + '</div>' +
     '</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + uP('module_' + idx + '_data_margin_top', '上', ['px','rem']) + '</div>' +
@@ -1821,7 +1929,7 @@ function addModule(type, variant) {
     '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + cP('module_' + idx + '_data_inner_bg', '内层背景色', '#ffffff') + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem']) + '</div>' + '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem','vw']) + '</div>' + '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_padding_top', '上内边距', ['px','rem']) + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_padding_right', '右内边距', ['px','rem']) + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_padding_bottom', '下内边距', ['px','rem']) + '</div>' +
@@ -1889,7 +1997,7 @@ function addModule(type, variant) {
     '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + cP('module_' + idx + '_data_inner_bg', '内层背景色', '#ffffff') + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem']) + '</div>' + '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem','vw']) + '</div>' + '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
     '</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + uP('module_' + idx + '_data_padding_top', '上内边距', ['px','rem','%']) + '</div>' +
@@ -1913,6 +2021,32 @@ function addModule(type, variant) {
       '<div class="col-6">' + uP('module_' + idx + '_data_logo_width', '卡片宽度', ['px','rem','%']) + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_logo_height', '卡片高度', ['px','rem','%']) + '</div>' +
     '</div>';
+  } else if (type === 'contact_info') {
+    specialEditor =
+    '<div class="row g-2">' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle"></div>' +
+    '</div>' +
+    '<hr class="my-2">' +
+    '<div class="small fw-semibold mb-2 text-muted">显示控制（数据来自网站设置中的联系方式）</div>' +
+    '<div class="d-flex flex-wrap gap-2">' +
+      vT('module_' + idx + '_data_show_phone', '电话', 'true') +
+      vT('module_' + idx + '_data_show_mobile', '手机', 'true') +
+      vT('module_' + idx + '_data_show_email', '邮箱', 'true') +
+      vT('module_' + idx + '_data_show_address', '地址', 'true') +
+      vT('module_' + idx + '_data_show_business_hours', '营业时间', 'false') +
+    '</div>';
+    styleEditor =
+    '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+    '<div class="row g-2">' +
+      '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色') + '</div>' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空使用全局宽度）</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+    '</div>' +
+    '<hr class="my-2">' +
+    '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
+    '<div class="row g-2">' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
+    '</div>';
   } else if (type === 'process_steps') {
     specialEditor =
     '<div class="step-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">步骤列表</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="addStepItem(' + idx + ')">+ 添加步骤</button></div><input type="hidden" name="module_' + idx + '_step_count" class="step-item-count" value="1"><div class="step-item-list">' + stepItemHtml(idx, 0) + '</div></div>' +
@@ -1929,12 +2063,13 @@ function addModule(type, variant) {
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色', '#f5f7fa') + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem']) + '</div>' +
     '</div>' +
     '<hr class="my-2">' +
     '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + cP('module_' + idx + '_data_inner_bg', '内层背景色', '#ffffff') + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem']) + '</div>' + '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
     '</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + uP('module_' + idx + '_data_padding_top', '上内边距', ['px','rem']) + '</div>' +
@@ -1960,18 +2095,18 @@ function addModule(type, variant) {
       '<div class="col-6">' + uP('module_' + idx + '_data_number_font_size', '序号字体大小', ['px','rem']) + '</div>' +
     '</div>';
   }
-  var needsResp = (type === 'data_grid' || type === 'product_grid' || type === 'feature_grid');
+  var needsResp = (type !== 'section_title' && type !== 'hero_banner' && type !== 'highlight_card' && type !== 'item_detail' && type !== 'text_content');
   var div = document.createElement('div');
   div.className = 'card mb-2 module-item expanded';
   div.dataset.index = idx;
   div.dataset.moduleIndex = idx;
   div.innerHTML =
     '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="cursor:pointer">' +
-      '<span class="small fw-semibold">' + escapeHtml(displayName) + '</span>' +
+      '<span class="small fw-semibold d-flex align-items-center gap-1">' + getBlockIconHTML(type) + ' ' + escapeHtml(displayName) + '</span>' +
       '<div class="d-flex gap-1">' +
-	        '<button type="button" class="btn btn-sm btn-outline-secondary module-sort-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)">↑</button>' +
-	        '<button type="button" class="btn btn-sm btn-outline-secondary module-sort-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)">↓</button>' +
-	        '<button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:10px" onclick="event.stopPropagation(); this.closest(\'.module-item\').remove(); reindexModules()">✕</button>' +
+	        '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)">↑</button>' +
+	        '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)">↓</button>' +
+	        '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();reindexModules()">✕</button>' +
 	      '</div>' +
     '</div>' +
     '<input type="hidden" name="module_' + idx + '_type" value="' + type + '">' +
