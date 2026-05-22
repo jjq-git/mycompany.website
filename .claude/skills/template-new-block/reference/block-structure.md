@@ -22,28 +22,7 @@
 ```
 ### builder-module
 
-```mermaid
----
-config:
-  theme: default
----
-block-beta
-    columns 1
-    A["<b>builder-module</b>（框架外挂）<br/>data-builder-module-index / type"]
-    block
-        columns 1
-        B["<b>section.section</b>（一、外层）"]
-        block
-            columns 1
-            C["<b>div.container</b>（二、内层）"]
-            block
-                columns 1
-                D["<b>div.section-header</b>（三、标题区）<br/>┗ h2.section-title / p.section-description"]
-                E["<b>div.xx-grid</b>（四、内容区）<br/>┗ div.xx-card ..."]
-            end
-        end
-    end
-```
+![block-structure](block-structure.svg)
 
 **Block 模板不需要写 `builder-module`**——它由框架在运行时自动外挂。
 

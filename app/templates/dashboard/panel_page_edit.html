@@ -1204,6 +1204,22 @@
               <div class="col-6"><label class="form-label small mb-1 text-muted">提交按钮文字</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_submit_text" value="{{ mdata.get('submit_text', '') }}" placeholder="发送留言"></div>
             </div>
             <hr class="my-2">
+            <div class="small fw-semibold mb-2 text-muted">表单显隐</div>
+            <div class="d-flex flex-wrap gap-2">
+              {% set cf_show_form = mdata.get('show_form', 'true') %}
+              <div class="visibility-item">
+                <button type="button" class="eye-toggle-btn" data-target="module_{{ i }}_data_show_form" data-visible="{{ 'true' if cf_show_form == 'true' else 'false' }}" onclick="toggleVisibilityEye(this)" title="{{ '点击隐藏' if cf_show_form == 'true' else '点击显示' }}">
+                  {% if cf_show_form == 'true' %}
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  {% else %}
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72 1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  {% endif %}
+                </button>
+                <span class="vis-label">显示表单</span>
+                <input type="hidden" name="module_{{ i }}_data_show_form" value="{{ cf_show_form }}">
+              </div>
+            </div>
+            <hr class="my-2">
             <div class="small fw-semibold mb-2 text-muted">地图（高德/Google 嵌入）</div>
             <div class="d-flex flex-wrap gap-2">
               {% set cf_map_show = mdata.get('show_map', 'false') %}
@@ -1224,7 +1240,7 @@
             </div>
             <div class="row g-2">
               <div class="col-6"><label class="form-label small mb-1 text-muted">排版方式</label><select class="form-select form-select-sm" name="module_{{ i }}_data_layout"><option value="form_left" {% if mdata.get('layout', 'form_left') == 'form_left' %}selected{% endif %}>表单左 地图右</option><option value="form_right" {% if mdata.get('layout', 'form_left') == 'form_right' %}selected{% endif %}>地图左 表单右</option></select></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">地图占比</label><select class="form-select form-select-sm" name="module_{{ i }}_data_map_width_ratio">{% for r in ['30','35','40','45','50'] %}<option value="{{ r }}" {% if mdata.get('map_width_ratio', '40') == r %}selected{% endif %}>{{ r }}%</option>{% endfor %}</select></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">地图占比</label><select class="form-select form-select-sm" name="module_{{ i }}_data_map_width_ratio">{% for r in ['30','35','40','45','50','60','70'] %}<option value="{{ r }}" {% if mdata.get('map_width_ratio', '40') == r %}selected{% endif %}>{{ r }}%</option>{% endfor %}</select></div>
             </div>
             </div>
             <div class="content-style-panel panel-style" style="display:none">
@@ -2399,7 +2415,7 @@ function addModule(type, variant) {
     '</div>' +
     '<div class="row g-2">' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">排版方式</label><select class="form-select form-select-sm" name="module_' + idx + '_data_layout"><option value="form_left">表单左 地图右</option><option value="form_right">地图左 表单右</option></select></div>' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">地图占比</label><select class="form-select form-select-sm" name="module_' + idx + '_data_map_width_ratio"><option value="30">30%</option><option value="35">35%</option><option value="40" selected>40%</option><option value="45">45%</option><option value="50">50%</option></select></div>' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">地图占比</label><select class="form-select form-select-sm" name="module_' + idx + '_data_map_width_ratio"><option value="30">30%</option><option value="35">35%</option><option value="40" selected>40%</option><option value="45">45%</option><option value="50">50%</option><option value="60">60%</option><option value="70">70%</option></select></div>' +
     '</div>';
     styleEditor =
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +

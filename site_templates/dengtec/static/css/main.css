@@ -5609,6 +5609,28 @@ a.ci-value:hover {
   color: var(--color-text, #1e293b);
 }
 
+/* 表单内层容器（承载背景色 + 内边距） */
+.cf-form-inner {
+  border-radius: var(--radius-md, 8px);
+}
+
+/* 标签在左：字段改为横向排列 */
+.cf-field--row {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cf-field--row .cf-label {
+  flex: 0 0 auto;
+  min-width: 3.5em;
+  white-space: nowrap;
+}
+
+.cf-field--row .cf-input {
+  flex: 1;
+}
+
 .cf-input {
   display: block;
   width: 100%;
