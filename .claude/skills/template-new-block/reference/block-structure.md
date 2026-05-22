@@ -23,23 +23,18 @@
 ### builder-module
 
 ```mermaid
-flowchart TB
-    BM["<b>builder-module</b><br/>框架外挂<br/>data-builder-module-index='0'<br/>data-builder-module-type='highlight_card'"]
-    SEC["<b>section.section</b><br/>一、外层<br/>max-width / background / margin / padding"]
-    CONT["<b>div.container</b><br/>二、内层<br/>max-width"]
-    HEADER["<b>div.section-header</b><br/>三、标题区"]
-    TITLE["h2.section-title<br/>主标题"]
-    SUBTITLE["p.section-description<br/>副标题"]
-    CONTENT["<b>div.xx-grid / xx-list</b><br/>四、自定义内容区<br/>视 Block 类型而定"]
-    CARD["div.xx-card ..."]
-
-    BM --> SEC
-    SEC --> CONT
-    CONT --> HEADER
-    CONT --> CONTENT
-    HEADER --> TITLE
-    HEADER --> SUBTITLE
-    CONTENT --> CARD
+---
+config:
+  theme: default
+---
+treemap-beta
+"builder-module"
+    "section.section（一、外层）": 100
+    "div.container（二、内层）": 80
+    "div.section-header（三、标题区）": 60
+    "h2.section-title": 30
+    "p.section-description": 20
+    "div.xx-grid（四、内容区）": 120
 ```
 
 **Block 模板不需要写 `builder-module`**——它由框架在运行时自动外挂。
