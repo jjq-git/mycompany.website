@@ -95,7 +95,7 @@
   <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
     {% if md.title %}
     <div class="section-header">
-      <h2 class="section-title"{% if title_size %} style="font-size: {{ title_size }}"{% endif %}{% if text_color %} style="{% if title_size %}font-size: {{ title_size }}; {% endif %}color: {{ text_color }}"{% endif %}>{{ md.title }}</h2>
+      <h2 class="section-title"{% if title_size or text_color %} style="{% if title_size %}font-size: {{ title_size }};{% endif %}{% if text_color %}color: {{ text_color }}{% endif %}"{% endif %}>{{ md.title }}</h2>
       {% if md.subtitle %}<p class="section-description">{{ md.subtitle }}</p>{% endif %}
     </div>
     {% endif %}
