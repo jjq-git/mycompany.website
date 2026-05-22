@@ -20,7 +20,7 @@
   </section>
 </div>
 ```
-### builder-module
+## builder-module
 
 ```mermaid
 ---
