@@ -1287,6 +1287,48 @@
               <div class="col-6"><label class="form-label small mb-1 text-muted">按钮背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('btn_bg', '#888888') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_btn_bg" value="{{ mdata.get('btn_bg', '') }}" placeholder="如 #067a7a" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">按钮文字色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('btn_color', '#888888') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_btn_color" value="{{ mdata.get('btn_color', '') }}" placeholder="如 #ffffff" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
             </div>
+            {# ===== 表单样式 ===== #}
+            <hr class="my-2">
+            <div class="small fw-semibold mb-1 text-muted">表单样式</div>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small mb-1 text-muted">标题字号</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title_size" value="{{ mdata.get('title_size', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_title_size\']');if(inp){var v=inp.value.replace(/px|rem|em$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option><option value="em">em</option></select></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">输入框高度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_input_height" value="{{ mdata.get('input_height', '') }}" placeholder="如 48px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_input_height\']');if(inp){var v=inp.value.replace(/px|rem$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            </div>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small mb-1 text-muted">字段间距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_field_gap" value="{{ mdata.get('field_gap', '') }}" placeholder="如 1.25rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_field_gap\']');if(inp){var v=inp.value.replace(/px|rem$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">标签排版</label><select class="form-select form-select-sm" name="module_{{ i }}_data_label_style"><option value="top" {% if mdata.get('label_style', 'top') == 'top' %}selected{% endif %}>标签在上</option><option value="left" {% if mdata.get('label_style', 'top') == 'left' %}selected{% endif %}>标签在左</option><option value="hidden" {% if mdata.get('label_style', 'top') == 'hidden' %}selected{% endif %}>隐藏标签</option></select></div>
+            </div>
+            {# ===== 表单外边距 ===== #}
+            <div class="small text-muted mt-2 mb-1" style="font-size:11px">表单外边距</div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_form_margin_top" value="{{ mdata.get('form_margin_top', '') }}" placeholder="↑ 上">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_form_margin_right" value="{{ mdata.get('form_margin_right', '') }}" placeholder="→ 右">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_form_margin_bottom" value="{{ mdata.get('form_margin_bottom', '') }}" placeholder="↓ 下">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_form_margin_left" value="{{ mdata.get('form_margin_left', '') }}" placeholder="← 左">
+              <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
+            </div>
+            {# ===== 地图样式 ===== #}
+            <hr class="my-2">
+            <div class="small fw-semibold mb-1 text-muted">地图样式</div>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small mb-1 text-muted">地图高度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_map_height" value="{{ mdata.get('map_height', '') }}" placeholder="如 500px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_map_height\']');if(inp){var v=inp.value.replace(/px|rem|vh$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option><option value="vh">vh</option></select></div></div>
+            </div>
+            <div class="small text-muted mt-2 mb-1" style="font-size:11px">地图外边距</div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_map_margin_top" value="{{ mdata.get('map_margin_top', '') }}" placeholder="↑ 上">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_map_margin_right" value="{{ mdata.get('map_margin_right', '') }}" placeholder="→ 右">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_map_margin_bottom" value="{{ mdata.get('map_margin_bottom', '') }}" placeholder="↓ 下">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_map_margin_left" value="{{ mdata.get('map_margin_left', '') }}" placeholder="← 左">
+              <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
+            </div>
+            <div class="small text-muted mt-2 mb-1" style="font-size:11px">地图内边距</div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_map_padding_top" value="{{ mdata.get('map_padding_top', '') }}" placeholder="↑ 上">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_map_padding_right" value="{{ mdata.get('map_padding_right', '') }}" placeholder="→ 右">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_map_padding_bottom" value="{{ mdata.get('map_padding_bottom', '') }}" placeholder="↓ 下">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_map_padding_left" value="{{ mdata.get('map_padding_left', '') }}" placeholder="← 左">
+              <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
+            </div>
             </div>
             {% else %}
             {% if mdata is mapping %}
@@ -2406,6 +2448,11 @@ function addModule(type, variant) {
       '<div class="col-6"><label class="form-label small mb-1 text-muted">提交按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_submit_text" placeholder="发送留言"></div>' +
     '</div>' +
     '<hr class="my-2">' +
+    '<div class="small fw-semibold mb-2 text-muted">表单显隐</div>' +
+    '<div class="d-flex flex-wrap gap-2">' +
+      vT('module_' + idx + '_data_show_form', '显示表单', 'true') +
+    '</div>' +
+    '<hr class="my-2">' +
     '<div class="small fw-semibold mb-2 text-muted">地图（高德/Google 嵌入）</div>' +
     '<div class="d-flex flex-wrap gap-2">' +
       vT('module_' + idx + '_data_show_map', '显示地图', 'false') +
@@ -2463,6 +2510,54 @@ function addModule(type, variant) {
     '<div class="row g-2">' +
       '<div class="col-6">' + cP('module_' + idx + '_data_btn_bg', '按钮背景色') + '</div>' +
       '<div class="col-6">' + cP('module_' + idx + '_data_btn_color', '按钮文字色') + '</div>' +
+    '</div>' +
+    '<hr class="my-2">' +
+    '<div class="small fw-semibold mb-1 text-muted">表单样式</div>' +
+    '<div class="row g-2">' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_title_size', '标题字号', ['px','rem','em']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_input_height', '输入框高度', ['px','rem']) + '</div>' +
+    '</div>' +
+    '<div class="row g-2">' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_field_gap', '字段间距', ['px','rem']) + '</div>' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">标签排版</label><select class="form-select form-select-sm" name="module_' + idx + '_data_label_style"><option value="top">标签在上</option><option value="left">标签在左</option><option value="hidden">隐藏标签</option></select></div>' +
+    '</div>' +
+    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">表单外边距</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_right" placeholder="→ 右">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_bottom" placeholder="↓ 下">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_left" placeholder="← 左">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
+    '</div>' +
+    '<hr class="my-2">' +
+    '<div class="small fw-semibold mb-1 text-muted">地图样式</div>' +
+    '<div class="row g-2">' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_map_height', '地图高度', ['px','rem','vh']) + '</div>' +
+    '</div>' +
+    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">地图外边距</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_right" placeholder="→ 右">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_bottom" placeholder="↓ 下">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_left" placeholder="← 左">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
+    '</div>' +
+    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">地图内边距</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_right" placeholder="→ 右">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_bottom" placeholder="↓ 下">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_left" placeholder="← 左">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
     '</div>';
   } else if (type === 'process_steps') {
     specialEditor =

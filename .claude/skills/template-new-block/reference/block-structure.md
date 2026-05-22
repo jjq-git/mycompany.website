@@ -22,7 +22,18 @@
 ```
 ### builder-module
 
-![block-structure](block-structure.svg)
+```mermaid
+---
+config:
+  theme: default
+---
+treemap-beta
+"builder-module（框架外挂）"
+    "section.section（一、外层）"
+        "div.container（二、内层）"
+            "div.section-header（三、标题区）": 50
+            "div.xx-grid（四、内容区）": 50
+```
 
 **Block 模板不需要写 `builder-module`**——它由框架在运行时自动外挂。
 
