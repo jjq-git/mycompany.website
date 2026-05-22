@@ -14,7 +14,6 @@
 {% set card_radius_top_right = md.get('card_radius_top_right', md.get('card_radius', '')) %}
 {% set card_radius_bottom_right = md.get('card_radius_bottom_right', md.get('card_radius', '')) %}
 {% set card_radius_bottom_left = md.get('card_radius_bottom_left', md.get('card_radius', '')) %}
-{% set col_count = md.get('columns') | int or 3 %}
 {% set max_items = md.get('max_items', 0) | int %}
 {% if max_items > 0 and display_features | length > max_items %}
   {% set display_features = display_features[:max_items] %}
@@ -34,10 +33,7 @@
     </div>
     {% endif %}
     {% if has_features %}
-    <div class="services-grid" style="
-      grid-template-columns: repeat({{ col_count }}, auto);
-      gap: 24px;
-    ">
+    <div class="services-grid">
       {% for feature in display_features %}
       <div class="service-card" style="
         {% if card_show_border == '0' or card_show_border == 0 %}border: none;{% endif %}

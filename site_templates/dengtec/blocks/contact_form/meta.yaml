@@ -1,0 +1,225 @@
+name: 联系表单
+category: content
+icon: contact_form.svg
+description: 在线留言表单，访客填写后提交到指定地址（如 Formspree 等表单服务）
+fields:
+  - key: title
+    label: 区块标题
+    type: text
+    group: 内容
+    default: ""
+  - key: subtitle
+    label: 区块副标题
+    type: text
+    group: 内容
+    default: ""
+  - key: form_action
+    label: 表单提交地址
+    type: url
+    group: 内容
+    default: ""
+    placeholder: 如 https://formspree.io/f/your-form-id
+  - key: show_name
+    label: 显示姓名
+    type: select
+    group: 表单字段
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_email
+    label: 显示邮箱
+    type: select
+    group: 表单字段
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_phone
+    label: 显示电话
+    type: select
+    group: 表单字段
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_company
+    label: 显示公司
+    type: select
+    group: 表单字段
+    default: "false"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_message
+    label: 显示留言
+    type: select
+    group: 表单字段
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: submit_text
+    label: 提交按钮文字
+    type: text
+    group: 按钮
+    default: "发送留言"
+  - key: show_map
+    label: 显示地图
+    type: select
+    group: 地图
+    default: "false"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: map_src
+    label: 地图嵌入地址
+    type: url
+    group: 地图
+    default: ""
+    placeholder: 从高德/Google 地图获取的嵌入链接（iframe src）
+  - key: layout
+    label: 排版方式
+    type: select
+    group: 地图
+    default: "form_left"
+    options:
+      - value: "form_left"
+        label: 表单左 地图右
+      - value: "form_right"
+        label: 地图左 表单右
+  - key: map_width_ratio
+    label: 地图占比
+    type: select
+    group: 地图
+    default: "40"
+    options:
+      - value: "30"
+        label: 30%
+      - value: "35"
+        label: 35%
+      - value: "40"
+        label: 40%
+      - value: "45"
+        label: 45%
+      - value: "50"
+        label: 50%
+  - key: section_bg
+    label: 外层背景色
+    type: color
+    group: 外层样式
+    default: ""
+    placeholder: 如 #f5f7fa（留空=透明）
+  - key: outer_width
+    label: 外层宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空使用全局宽度）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 800px（留空=全宽）
+  - key: margin_top
+    label: 上外边距
+    type: text
+    group: 外层外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: margin_right
+    label: 右外边距
+    type: text
+    group: 外层外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: margin_bottom
+    label: 下外边距
+    type: text
+    group: 外层外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: margin_left
+    label: 左外边距
+    type: text
+    group: 外层外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_top
+    label: 上内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_right
+    label: 右内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_bottom
+    label: 下内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_left
+    label: 左内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: form_bg
+    label: 表单背景色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #ffffff（留空=透明）
+  - key: input_bg
+    label: 输入框背景色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #ffffff（留空=默认）
+  - key: input_border
+    label: 输入框边框色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #e5e7eb（留空=默认）
+  - key: text_color
+    label: 文字颜色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #1e293b（留空=默认）
+  - key: btn_bg
+    label: 按钮背景色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #067a7a（留空=主色）
+  - key: btn_color
+    label: 按钮文字色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #ffffff（留空=白色）
+variants:
+  - key: default
+    label: 标准表单
+  - key: compact
+    label: 紧凑表单
