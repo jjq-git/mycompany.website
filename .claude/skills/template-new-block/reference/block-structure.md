@@ -27,14 +27,22 @@
 config:
   theme: default
 ---
-treemap-beta
-"builder-module"
-    "section.section（一、外层）": 100
-    "div.container（二、内层）": 80
-    "div.section-header（三、标题区）": 60
-    "h2.section-title": 30
-    "p.section-description": 20
-    "div.xx-grid（四、内容区）": 120
+block-beta
+    columns 1
+    A["<b>builder-module</b><br/>框架外挂<br/>data-builder-module-index<br/>data-builder-module-type"]
+    block
+        columns 1
+        B["<b>section.section</b>（一、外层）<br/>max-width / background / margin / padding"]
+        block
+            columns 1
+            C["<b>div.container</b>（二、内层）<br/>max-width"]
+            block:inner
+                columns 2
+                D["<b>div.section-header</b>（三、标题区）<br/>h2.section-title<br/>p.section-description"]
+                E["<b>div.xx-grid</b>（四、内容区）<br/>div.xx-card ..."]
+            end
+        end
+    end
 ```
 
 **Block 模板不需要写 `builder-module`**——它由框架在运行时自动外挂。
