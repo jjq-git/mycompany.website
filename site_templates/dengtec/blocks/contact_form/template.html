@@ -145,7 +145,7 @@
         </form>
         {% endif %}
       </div>
-      <div class="cf-map-col"{% if map_col_styles %} style="{{ map_col_styles | join('; ') }}"{% endif %}>
+      <div class="cf-map-col" style="flex: 0 0 {{ map_ratio }}%{% if map_col_styles %}; {{ map_col_styles | join('; ') }}{% endif %}">
         <iframe class="cf-map-iframe"
                 src="{{ map_src }}"
                 allowfullscreen="" loading="lazy"
