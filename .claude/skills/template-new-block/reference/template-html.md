@@ -29,8 +29,7 @@
 ## Section 结构(固定模式)
 
 ```jinja2
-{# section_bg 为空时加 section-bg class 兜底 #}
-<section class="section{% if not section_bg %} section-bg{% endif %}"
+<section class="section"
          {% if section_bg or outer_w %} style="
            {% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}
            {% if section_bg %}background: {{ section_bg }};{% endif %}
@@ -195,7 +194,7 @@ function loadMoreDataGrid(btn) {
 #### hero_banner
 
 ```html
-<section class="section section-bg hero-banner" id="heroBanner"
+<section class="section hero-banner" id="heroBanner"
          style="max-width: 90%; margin-left: auto; margin-right: auto;">
   <div class="container" style="height: 100%;">
     <div class="hero-banner-slides">
@@ -274,7 +273,7 @@ function loadMoreDataGrid(btn) {
 #### feature_grid
 
 ```html
-<section class="section section-bg"
+<section class="section"
          style="max-width: 90%; margin-left: auto; margin-right: auto;">
   <div class="container" style="max-width: none; margin: 0 auto;">
     <div class="section-header">
@@ -500,7 +499,7 @@ function loadMoreDataGrid(btn) {
 #### process_steps
 
 ```html
-<section class="section section-bg">
+<section class="section">
   <div class="container" style="max-width: 1200px; margin: 0 auto;">
     <div class="section-header">
       <h2 class="section-title">合作流程</h2>
@@ -581,7 +580,7 @@ function loadMoreDataGrid(btn) {
 #### contact_info
 
 ```html
-<section class="section section-bg"
+<section class="section"
          style="max-width: 90%; margin-left: auto; margin-right: auto;">
   <div class="container" style="max-width: none; margin: 0 auto;">
     <div class="section-header">
@@ -648,7 +647,7 @@ function loadMoreDataGrid(btn) {
 #### data_grid
 
 ```html
-<section class="section section-bg"
+<section class="section"
          style="max-width: 90%; margin-left: auto; margin-right: auto;">
   <div class="container" style="max-width: none; margin: 0 auto;">
     <div class="section-header">
@@ -750,7 +749,7 @@ function loadMoreDataGrid(btn) {
 #### product_grid
 
 ```html
-<section class="section section-bg">
+<section class="section">
   <div class="container" style="max-width: 1200px; margin: 0 auto;">
     <div class="section-header">
       <h2 class="section-title">产品中心</h2>
@@ -893,7 +892,7 @@ function loadMoreDataGrid(btn) {
 #### stat_counter
 
 ```html
-<section class="section section-bg"
+<section class="section"
          style="max-width: 90%; margin-left: auto; margin-right: auto;">
   <div class="container" style="max-width: none; margin: 0 auto;">
     <div class="section-header">
@@ -958,7 +957,7 @@ function loadMoreDataGrid(btn) {
 #### logo_cloud
 
 ```html
-<section class="section section-bg">
+<section class="section">
   <div class="container" style="max-width: 1200px; margin: 0 auto;">
     <div class="section-header">
       <h2 class="section-title">合作伙伴</h2>
@@ -1747,7 +1746,7 @@ CSS: 每项有 `border: 1px solid var(--color-border); border-radius: 8px; backg
 
 {# === 4. 外层 Section === #}
 {% set mg_top = md.get('margin_top', '') %}{% set mg_right = md.get('margin_right', '') %}{% set mg_bottom = md.get('margin_bottom', '') %}{% set mg_left = md.get('margin_left', '') %}{% set has_margin = mg_top or mg_right or mg_bottom or mg_left %}
-<section class="section{% if not section_bg %} section-bg{% endif %}"
+<section class="section"
          {% if section_bg or has_margin or outer_w %} style="
            {% if outer_w %}max-width: {{ outer_w }}; {% endif %}
            {% if section_bg %}background: {{ section_bg }};{% endif %}

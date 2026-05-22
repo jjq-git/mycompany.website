@@ -44,14 +44,14 @@
 
 | 承载的样式字段 | 说明 |
 |---------------|------|
-| `section_bg` | 外层背景色，如 `#f5f7fa`。为空时自动追加 `.section-bg` class 兜底 |
+| `section_bg` | 外层背景色，如 `#f5f7fa`。为空时不输出 inline style，CSS 默认背景兜底 |
 | `outer_width` | 外层最大宽度，如 `1200px`。居中策略：`margin-left: auto; margin-right: auto` |
 | `margin_top / margin_right / margin_bottom / margin_left` | 外层外边距，控制模块与上下模块的间距 |
 
 **规则：**
 - 所有 Block 模板都以 `<section class="section">` 开头、`</section>` 结尾
 - `outer_width` 是"限定模块整体宽度"，不是"限定内容宽度"——它管的是这堵墙能铺多宽
-- `section_bg` 为空时依赖 `.section-bg` class（CSS 中有全局默认背景），不为空时走 inline style 覆盖
+- `section_bg` 为空时不输出 inline style，浏览器自然走 `.section` CSS 默认背景；不为空时走 inline style 覆盖
 
 ### ② 内层 `<div class="container">` —— 模块内容区
 

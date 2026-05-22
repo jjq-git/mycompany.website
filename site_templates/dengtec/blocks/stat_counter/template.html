@@ -5,9 +5,10 @@
 {% set section_bg = md.get('section_bg', '') %}
 {% set outer_w = md.get('outer_width', '') or settings.get('layout', {}).get('global_width', '') %}
 {% set inner_w = md.get('inner_width', '') %}
+{% set pd_top = md.get('padding_top', '') %}{% set pd_right = md.get('padding_right', '') %}{% set pd_bottom = md.get('padding_bottom', '') %}{% set pd_left = md.get('padding_left', '') %}{% set has_padding = pd_top or pd_right or pd_bottom or pd_left %}
 {% set cols = md.get('columns', '4') | int %}
 
-<section class="section{% if not section_bg %} section-bg{% endif %}"{% if section_bg or outer_w %} style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}"{% endif %}>
+<section class="section"{% if section_bg or outer_w or has_padding %} style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}{% if pd_top %}padding-top: {{ pd_top }};{% endif %}{% if pd_right %}padding-right: {{ pd_right }};{% endif %}{% if pd_bottom %}padding-bottom: {{ pd_bottom }};{% endif %}{% if pd_left %}padding-left: {{ pd_left }};{% endif %}"{% endif %}>
   <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
     {% if md.title %}
     <div class="section-header">

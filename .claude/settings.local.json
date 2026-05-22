@@ -66,7 +66,9 @@
       "PowerShell(Stop-Process -Id 22384, 22340, 19556, 3044 -Force -ErrorAction SilentlyContinue)",
       "Bash(python -c \"import subprocess, os; [os.system\\(f'taskkill /F /PID {p} 2>nul'\\) for p in ['22340','19556','22384','3044']]\")",
       "PowerShell($pids = @\\(22340, 19556, 22384, 3044\\); foreach \\($pid in $pids\\) { try { Stop-Process -Id $pid -Force -ErrorAction Stop; Write-Host \"Killed $pid\" } catch { Write-Host \"Failed $pid : $_\" } })",
-      "PowerShell(foreach \\($p in @\\(22340, 19556, 22384, 3044\\)\\) { try { Stop-Process -Id $p -Force -ErrorAction Stop; Write-Host \"Killed $p\" } catch { Write-Host \"Failed: $_\" } })"
+      "PowerShell(foreach \\($p in @\\(22340, 19556, 22384, 3044\\)\\) { try { Stop-Process -Id $p -Force -ErrorAction Stop; Write-Host \"Killed $p\" } catch { Write-Host \"Failed: $_\" } })",
+      "PowerShell(python f:\\\\dengtec\\\\mycompany.website\\\\_fix_hero.py)",
+      "Bash(python _fix_padding.py)"
     ]
   }
 }

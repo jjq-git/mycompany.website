@@ -15,7 +15,7 @@
 {% set hero_w = module.data.get('hero_width', '') if module.data is mapping else '' %}
 {% set align = module.data.get('banner_align', '') if module.data is mapping else '' %}
 {% set content_w = module.data.get('content_width', '') if module.data is mapping else '' %}
-{% set outer_w = (module.data.get('outer_width', '') if module.data is mapping else '') or settings.get('layout', {}).get('global_width', '') or hero_w %}
+{% set outer_w = hero_w or (module.data.get('outer_width', '') if module.data is mapping else '') or settings.get('layout', {}).get('global_width', '') %}
 {% set inner_w = module.data.get('inner_width', '') if module.data is mapping else '' %}
 {% set title_font_size = module.data.get('title_font_size', '') if module.data is mapping else '' %}
 {% set title_color = module.data.get('title_color', '') if module.data is mapping else '' %}
@@ -24,15 +24,45 @@
 {% set btn_font_size = module.data.get('btn_font_size', '') if module.data is mapping else '' %}
 {% set btn_text_color = module.data.get('btn_text_color', '') if module.data is mapping else '' %}
 {% set btn_bg = module.data.get('btn_bg', '') if module.data is mapping else '' %}
+{# === 内容区排版 === #}
+{% set content_style_parts = [] %}
+{% if align == 'left' %}
+  {% set _ = content_style_parts.append('left: 5%; transform: translateY(-50%); text-align: left;') %}
+{% elif align == 'right' %}
+  {% set _ = content_style_parts.append('left: auto; right: 5%; transform: translateY(-50%); text-align: right;') %}
+{% elif align == 'center' %}
+  {% set _ = content_style_parts.append('left: 50%; transform: translate(-50%, -50%); text-align: center;') %}
+{% endif %}
+{% if content_w or inner_w %}{% set _ = content_style_parts.append('max-width: ' ~ (content_w or inner_w) ~ ';') %}{% endif %}
+
+{# === 副标题与按钮区对齐样式（覆盖 CSS 中的居中规则） === #}
+{% set subtitle_style_parts = [] %}
+{% if subtitle_font_size %}{% set _ = subtitle_style_parts.append('font-size: ' ~ subtitle_font_size ~ ';') %}{% endif %}
+{% if subtitle_color %}{% set _ = subtitle_style_parts.append('color: ' ~ subtitle_color ~ ';') %}{% endif %}
+{% if align == 'left' %}{% set _ = subtitle_style_parts.append('margin-left: 0; margin-right: auto;') %}{% endif %}
+{% if align == 'right' %}{% set _ = subtitle_style_parts.append('margin-left: auto; margin-right: 0;') %}{% endif %}
+
+{% set actions_style_parts = [] %}
+{% if align == 'left' %}{% set _ = actions_style_parts.append('justify-content: flex-start;') %}{% endif %}
+{% if align == 'right' %}{% set _ = actions_style_parts.append('justify-content: flex-end;') %}{% endif %}
+
+{% set pd_top = module.data.get('padding_top', '') if module.data is mapping else '' %}
+{% set pd_right = module.data.get('padding_right', '') if module.data is mapping else '' %}
+{% set pd_bottom = module.data.get('padding_bottom', '') if module.data is mapping else '' %}
+{% set pd_left = module.data.get('padding_left', '') if module.data is mapping else '' %}
 
 {# === Section 样式拼接 === #}
 {% set style_parts = [] %}
 {% if hero_h %}{% set _ = style_parts.append('height: ' ~ hero_h ~ ';') %}{% endif %}
 {% if section_bg %}{% set _ = style_parts.append('background: ' ~ section_bg ~ ';') %}{% endif %}
-{% if outer_w %}{% set _ = style_parts.append('max-width: ' ~ outer_w ~ '; margin-left: auto; margin-right: auto;') %}{% elif align == 'center' %}{% set _ = style_parts.append('margin-left: auto; margin-right: auto;') %}{% elif align == 'left' %}{% set _ = style_parts.append('margin-right: auto;') %}{% elif align == 'right' %}{% set _ = style_parts.append('margin-left: auto;') %}{% endif %}
+{% if outer_w %}{% set _ = style_parts.append('max-width: ' ~ outer_w ~ '; margin-left: auto; margin-right: auto;') %}{% endif %}
+{% if pd_top %}{% set _ = style_parts.append('padding-top: ' ~ pd_top ~ ';') %}{% endif %}
+{% if pd_right %}{% set _ = style_parts.append('padding-right: ' ~ pd_right ~ ';') %}{% endif %}
+{% if pd_bottom %}{% set _ = style_parts.append('padding-bottom: ' ~ pd_bottom ~ ';') %}{% endif %}
+{% if pd_left %}{% set _ = style_parts.append('padding-left: ' ~ pd_left ~ ';') %}{% endif %}
 
 <section class="section hero-banner" id="heroBanner"{% if style_parts %} style="{{ style_parts | join(' ') }}"{% endif %}>
-  <div class="container" style="height: 100%;{% if content_w %} max-width: {{ content_w }};{% endif %}">
+  <div class="container" style="height: 100%; max-width: none;">
     <div class="hero-banner-slides">
       {% for item in items %}
       <div class="hero-banner-slide{% if loop.first %} active{% endif %}" data-index="{{ loop.index0 }}">
@@ -45,10 +75,10 @@
           {% endif %}
         </div>
         <div class="hero-banner-overlay"></div>
-        <div class="hero-banner-content"{% if inner_w %} style="max-width: {{ inner_w }};"{% endif %}>
+        <div class="hero-banner-content"{% if content_style_parts %} style="{{ content_style_parts | join(' ') }}"{% endif %}>
           {% if item.title %}<h1 class="hero-banner-title"{% if title_font_size or title_color %} style="{% if title_font_size %}font-size: {{ title_font_size }};{% endif %}{% if title_color %}color: {{ title_color }};{% endif %}"{% endif %}>{{ item.title }}</h1>{% endif %}
-          {% if item.subtitle %}<p class="hero-banner-subtitle"{% if subtitle_font_size or subtitle_color %} style="{% if subtitle_font_size %}font-size: {{ subtitle_font_size }};{% endif %}{% if subtitle_color %}color: {{ subtitle_color }};{% endif %}"{% endif %}>{{ item.subtitle }}</p>{% endif %}
-          <div class="hero-banner-actions">
+          {% if item.subtitle %}<p class="hero-banner-subtitle"{% if subtitle_style_parts %} style="{{ subtitle_style_parts | join(' ') }}"{% endif %}>{{ item.subtitle }}</p>{% endif %}
+          <div class="hero-banner-actions"{% if actions_style_parts %} style="{{ actions_style_parts | join(' ') }}"{% endif %}>
             {% if item.primaryBtn %}
             <a href="{{ item.primaryBtnLink }}" {% if item.primaryBtnLinkTarget == '_blank' %}target="_blank"{% endif %} class="btn btn-primary btn-lg"{% if btn_font_size or btn_text_color or btn_bg %} style="{% if btn_font_size %}font-size: {{ btn_font_size }};{% endif %}{% if btn_text_color %}color: {{ btn_text_color }};{% endif %}{% if btn_bg %}background-color: {{ btn_bg }}; border-color: {{ btn_bg }};{% endif %}"{% endif %}>{{ item.primaryBtn }}</a>
             {% endif %}

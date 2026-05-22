@@ -210,6 +210,17 @@
           '<div class="col-6">' + un('module_' + idx + '_data_content_width', '内容区宽度', ['px','%','vw','rem'], d.content_width) + '</div>' +
           '<div class="col-6">' + sel('module_' + idx + '_data_banner_align', 'Banner 排版', [{value:'',label:'默认（全宽）'},{value:'center',label:'居中'},{value:'left',label:'居左'},{value:'right',label:'居右'}], d.banner_align) + '</div>' +
         '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
+        '<div class="input-group input-group-sm">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↑ 上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="→ 右">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↓ 下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="← 左">' +
+          '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+            '<option value="px">px</option>' +
+            '<option value="rem">rem</option>' +
+          '</select>' +
+        '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">配色</div>' +
         '<div class="row g-2">' +
