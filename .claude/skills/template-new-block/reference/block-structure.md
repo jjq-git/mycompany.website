@@ -44,6 +44,25 @@ treemap-beta
 | `data-builder-module-index` | `loop.index0`（模块在页面中的序号） | 后台 JS 通过它定位模块 DOM，实现选中高亮/拖拽排序 |
 | `data-builder-module-type` | `module.type`（如 `highlight_card`） | 后台 JS 识别模块类型，打开对应的编辑表单 |
 
+**`data-builder-module-type` 全部可选值：**
+
+| 类型名 | 中文名 | 说明 |
+|--------|--------|------|
+| `hero_banner` | 轮播大图 | 全宽 Banner，支持多张轮播，含标题/副标题/按钮 |
+| `section_title` | 区块标题 | 标签 + 主标题 + 描述文字 + 可选按钮 |
+| `text_content` | 文本内容 | 富文本编辑器，支持 H2/H3/加粗/斜体/链接，可选双栏 |
+| `highlight_card` | 高亮卡片 | 图文并排的卡片（图左文右或文左图右） |
+| `feature_grid` | 功能卡片网格 | 多个功能卡片的网格布局，可控制边框/圆角/内边距 |
+| `data_grid` | 数据网格 | 关联数据集（products/portfolio/posts）的卡片列表，支持分页 |
+| `product_grid` | 产品网格 | 产品数据集的网格展示（简化版 data_grid） |
+| `stat_counter` | 统计计数器 | 数字统计展示（如"500+ 客户"），支持多列 |
+| `contact_info` | 联系方式 | 地址/电话/邮箱/工作时间等联系信息 |
+| `contact_form` | 联系表单 | 用户留言表单（前端展示） |
+| `process_steps` | 流程步骤 | 横向或纵向的步骤展示（数字序号或图标） |
+| `logo_cloud` | Logo 云 | 合作品牌 Logo 墙，支持灰度滤镜 |
+| `item_detail` | 详情展示 | 产品/案例详情页（多图轮播 + 规格参数表） |
+| `item_data` | 数据集条目编辑 | **特殊类型**，仅用于数据集编辑面板，不用于页面模块 |
+
 **后台交互（仅预览态）：**
 - `.builder-module` 设置 `position: relative; cursor: pointer`，hover 时显示虚线边框
 - 点击模块后加 `.builder-canvas-selected` class，显示实线高亮边框
@@ -90,7 +109,7 @@ treemap-beta
 
 **作用：** 统一的区块标题区域，包含主标题和副标题。（不是所有 Block 都使用标题，视 Block 需求而定）
 
-> ⚠️ 现有 12 个 Block 中，`section-header` / `section-title` / `section-description` 三层**均未使用 inline style**，样式完全走 CSS 文件。以下字段定义为可选扩展点——当你需要让店主在后台调整标题区样式时，按需添加到 meta.yaml 中。
+以下字段定义为可选扩展点——当你需要让店主在后台调整标题区样式时，按需添加到 meta.yaml 中。
 
 | key | label | type | group | default | placeholder | CSS 属性 | 说明 |
 |-----|-------|------|-------|---------|-------------|----------|------|

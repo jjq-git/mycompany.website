@@ -103,7 +103,7 @@
     {% if has_map %}
     {# === 双栏：表单 + 地图 === #}
     <div class="cf-layout{% if layout == 'form_right' %} cf-layout--reverse{% endif %}">
-      <div class="cf-form-col" style="flex: 0 0 {{ form_ratio }}%">
+      <div class="cf-form-col" style="flex: 0 0 calc({{ form_ratio }}% - 1rem)">
         {% if has_form %}
         <form class="cf-form{% if label_left %} cf-form--label-left{% endif %}" action="{{ form_action or '#' }}" method="POST"{% if form_self_styles %} style="{{ form_self_styles | join('; ') }}"{% endif %}>
           {% if form_box_styles %}<div class="cf-form-inner" style="{{ form_box_styles | join('; ') }}">{% endif %}
@@ -145,7 +145,7 @@
         </form>
         {% endif %}
       </div>
-      <div class="cf-map-col" style="flex: 0 0 {{ map_ratio }}%{% if map_col_styles %}; {{ map_col_styles | join('; ') }}{% endif %}">
+      <div class="cf-map-col" style="flex: 0 0 calc({{ map_ratio }}% - 1rem){% if map_col_styles %}; {{ map_col_styles | join('; ') }}{% endif %}">
         <iframe class="cf-map-iframe"
                 src="{{ map_src }}"
                 allowfullscreen="" loading="lazy"
