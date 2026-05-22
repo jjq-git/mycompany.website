@@ -5,7 +5,7 @@
 ## 一、highlight_card HTML 骨架
 
 ```html
-<!-- ===== 四、自定义内容区 .hl-grid ===== -->
+<!-- ===== 自定义内容区 .hl-grid ===== -->
 <div class="hl-grid" style="">
     <!-- 图片侧 -->
     <div class="hl-image">
