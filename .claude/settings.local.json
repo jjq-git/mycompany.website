@@ -43,7 +43,30 @@
       "Bash(python \"f:/dengtec/mycompany.website/fix_restore.py\")",
       "Bash(python \"f:/dengtec/mycompany.website/fix_refresh.py\")",
       "Bash(python \"f:/dengtec/mycompany.website/fix_refresh2.py\")",
-      "PowerShell(try { $response = Invoke-WebRequest -Uri \"http://127.0.0.1:5000/\" -UseBasicParsing -TimeoutSec 5; $response.StatusCode } catch { $_.Exception.Message })"
+      "PowerShell(try { $response = Invoke-WebRequest -Uri \"http://127.0.0.1:5000/\" -UseBasicParsing -TimeoutSec 5; $response.StatusCode } catch { $_.Exception.Message })",
+      "Bash(python f:\\\\dengtec\\\\mycompany.website\\\\_fix_margin.py)",
+      "Bash(python \"f:\\\\dengtec\\\\mycompany.website\\\\_fix_margin.py\")",
+      "Bash(python -c \"with open\\(r'f:\\\\dengtec\\\\mycompany.website\\\\app\\\\templates\\\\dashboard\\\\panel_page_edit.html','r',encoding='utf-8'\\) as f: c=f.read\\(\\); import re; matches = [\\(m.start\\(\\), c[m.start\\(\\):m.start\\(\\)+80]\\) for m in re.finditer\\(r'placeholder=.[↑→↓←]', c\\)]; print\\(f'Found {len\\(matches\\)} arrow placeholders'\\); [print\\(f'  pos {p}: ...{t}...'\\) for p,t in matches[:8]]\")",
+      "Bash(python \"f:\\\\dengtec\\\\mycompany.website\\\\_fix_all_margin.py\")",
+      "Bash(python _fix_all_margin.py)",
+      "Bash(python -c ' *)",
+      "PowerShell(python _fix_all_padding.py)",
+      "PowerShell(try { $resp = Invoke-WebRequest -Uri \"http://localhost:5000\" -UseBasicParsing -TimeoutSec 5; Write-Host \"Status: $\\($resp.StatusCode\\)\"; Write-Host \"Content-Length: $\\($resp.Content.Length\\)\" } catch { Write-Host \"Error: $_\" })",
+      "PowerShell($resp = Invoke-WebRequest -Uri \"http://localhost:5000\" -UseBasicParsing -TimeoutSec 5; $resp.Content)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }; Write-Host \"Done\")",
+      "Bash(netstat -ano)",
+      "Bash(findstr :5000)",
+      "Bash(python f:\\\\dengtec\\\\mycompany.website\\\\_update_doc.py)",
+      "Bash(python f:/dengtec/mycompany.website/_update_doc.py)",
+      "Bash(del f:/dengtec/mycompany.website/_update_doc.py)",
+      "Bash(taskkill /F /PID 22384)",
+      "Bash(taskkill /F /PID 22340)",
+      "Bash(taskkill /F /PID 19556)",
+      "Bash(taskkill /F /PID 3044)",
+      "PowerShell(Stop-Process -Id 22384, 22340, 19556, 3044 -Force -ErrorAction SilentlyContinue)",
+      "Bash(python -c \"import subprocess, os; [os.system\\(f'taskkill /F /PID {p} 2>nul'\\) for p in ['22340','19556','22384','3044']]\")",
+      "PowerShell($pids = @\\(22340, 19556, 22384, 3044\\); foreach \\($pid in $pids\\) { try { Stop-Process -Id $pid -Force -ErrorAction Stop; Write-Host \"Killed $pid\" } catch { Write-Host \"Failed $pid : $_\" } })",
+      "PowerShell(foreach \\($p in @\\(22340, 19556, 22384, 3044\\)\\) { try { Stop-Process -Id $p -Force -ErrorAction Stop; Write-Host \"Killed $p\" } catch { Write-Host \"Failed: $_\" } })"
     ]
   }
 }

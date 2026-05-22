@@ -258,8 +258,12 @@
             <div class="row g-2">
               <div class="col-6"><label class="form-label small mb-1 text-muted">外层背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('section_bg', '#ffffff') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_section_bg" value="{{ mdata.get('section_bg', '') }}" placeholder="#f5f7fa" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_outer_width" value="{{ mdata.get('outer_width', '') }}" placeholder="留空使用全局宽度" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_outer_width" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_outer_width\']');if(inp){var v=inp.value.replace(/px|%|rem|vw$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option><option value="vw">vw</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">上外边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_top" value="{{ mdata.get('margin_top', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_margin_top" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_top\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">下外边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_bottom" value="{{ mdata.get('margin_bottom', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_margin_bottom" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_bottom\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            </div>
+            <div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_top" value="{{ mdata.get('margin_top', '') }}" placeholder="↑ 上">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_bottom" value="{{ mdata.get('margin_bottom', '') }}" placeholder="↓ 下">
+              <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
             </div>
             {# ===== 内层样式 ===== #}
             <hr class="my-2">
@@ -267,10 +271,14 @@
             <div class="row g-2">
               <div class="col-6"><label class="form-label small mb-1 text-muted">内层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_inner_width" value="{{ mdata.get('inner_width', '') }}" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_inner_width" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_inner_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">圆角</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_border_radius" value="{{ mdata.get('border_radius', '') }}" placeholder="如 12px" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_border_radius" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_border_radius\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">上内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_top" value="{{ mdata.get('padding_top', '') }}" placeholder="默认0" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_top" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_top\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">下内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_bottom" value="{{ mdata.get('padding_bottom', '') }}" placeholder="默认0" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_bottom" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_bottom\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">左内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_left" value="{{ mdata.get('padding_left', '') }}" placeholder="默认0" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_left" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_left\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">右内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_right" value="{{ mdata.get('padding_right', '') }}" placeholder="默认0" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_right" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_right\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            </div>
+            <div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_top" value="{{ mdata.get('padding_top', '') }}" placeholder="↑ 上">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_right" value="{{ mdata.get('padding_right', '') }}" placeholder="→ 右">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_bottom" value="{{ mdata.get('padding_bottom', '') }}" placeholder="↓ 下">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_left" value="{{ mdata.get('padding_left', '') }}" placeholder="← 左">
+              <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
             </div>
             <hr class="my-2">
             <div class="small fw-semibold mb-1 text-muted">图文布局</div>
@@ -331,21 +339,27 @@
               <div class="col-6"><label class="form-label small mb-1 text-muted">外层背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('section_bg', '#ffffff') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_section_bg" value="{{ mdata.get('section_bg', '') }}" placeholder="#f5f7fa" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空使用全局宽度）</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_outer_width" value="{{ mdata.get('outer_width', '') }}" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_outer_width\']');if(inp){var v=inp.value.replace(/px|%|rem|vw$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option><option value="vw">vw</option></select></div></div>
             </div>
-            <div class="row g-2">
-              <div class="col-6"><label class="form-label small mb-1 text-muted">上</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_top" value="{{ mdata.get('margin_top', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_top\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">右</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_right" value="{{ mdata.get('margin_right', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_right\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">下</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_bottom" value="{{ mdata.get('margin_bottom', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_bottom\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">左</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_left" value="{{ mdata.get('margin_left', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_left\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            <div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_top" value="{{ mdata.get('margin_top', '') }}" placeholder="↑ 上">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_right" value="{{ mdata.get('margin_right', '') }}" placeholder="→ 右">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_bottom" value="{{ mdata.get('margin_bottom', '') }}" placeholder="↓ 下">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_left" value="{{ mdata.get('margin_left', '') }}" placeholder="← 左">
+              <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
             </div>
 
 {# ===== 内层样式 ===== #}
             <div class="small fw-semibold mb-1 text-muted mt-2">内层样式</div>
             <div class="row g-2">
               <div class="col-6"><label class="form-label small mb-1 text-muted">内层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_inner_width" value="{{ mdata.get('inner_width', '') }}" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_inner_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">上内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_top" value="{{ mdata.get('padding_top', '') }}" placeholder="如 4rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_top\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">右内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_right" value="{{ mdata.get('padding_right', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_right\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">下内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_bottom" value="{{ mdata.get('padding_bottom', '') }}" placeholder="如 4rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_bottom\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">左内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_left" value="{{ mdata.get('padding_left', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_left\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            </div>
+            <div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_top" value="{{ mdata.get('padding_top', '') }}" placeholder="↑ 上">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_right" value="{{ mdata.get('padding_right', '') }}" placeholder="→ 右">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_bottom" value="{{ mdata.get('padding_bottom', '') }}" placeholder="↓ 下">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_left" value="{{ mdata.get('padding_left', '') }}" placeholder="← 左">
+              <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
             </div>
 
 {# ===== 文字排版 ===== #}
@@ -463,11 +477,12 @@
               <div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_outer_width" value="{{ mdata.get('outer_width', '') }}" placeholder="留空使用全局宽度" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_outer_width\']');if(inp){var v=inp.value.replace(/px|%|rem|vw$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option><option value="vw">vw</option></select></div></div>
             </div>
             <div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>
-            <div class="row g-2">
-              <div class="col-6"><label class="form-label small mb-1 text-muted">上</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_top" value="{{ mdata.get('margin_top', '') }}" placeholder="如 40px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_top\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">右</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_right" value="{{ mdata.get('margin_right', '') }}" placeholder="如 40px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_right\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">下</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_bottom" value="{{ mdata.get('margin_bottom', '') }}" placeholder="如 40px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_bottom\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">左</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_left" value="{{ mdata.get('margin_left', '') }}" placeholder="如 40px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_left\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_top" value="{{ mdata.get('margin_top', '') }}" placeholder="↑ 上">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_right" value="{{ mdata.get('margin_right', '') }}" placeholder="→ 右">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_bottom" value="{{ mdata.get('margin_bottom', '') }}" placeholder="↓ 下">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_left" value="{{ mdata.get('margin_left', '') }}" placeholder="← 左">
+              <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
             </div>
             {# ===== 内层样式 ===== #}
             <hr class="my-2">
@@ -598,10 +613,14 @@
               <div class="col-6"><label class="form-label small mb-1 text-muted">内层背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('inner_bg', '#ffffff') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_inner_bg" value="{{ mdata.get('inner_bg', '') }}" placeholder="#ffffff" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_outer_width" value="{{ mdata.get('outer_width', '') }}" placeholder="留空使用全局宽度" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_outer_width" style="width:40%"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option><option value="vw">vw</option></select></div></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">内层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_inner_width" value="{{ mdata.get('inner_width', '') }}" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_inner_width" style="width:40%"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">上内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_top" value="{{ mdata.get('padding_top', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_top" style="width:40%"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">右内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_right" value="{{ mdata.get('padding_right', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_right" style="width:40%"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">下内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_bottom" value="{{ mdata.get('padding_bottom', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_bottom" style="width:40%"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">左内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_left" value="{{ mdata.get('padding_left', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_left" style="width:40%"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            </div>
+            <div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_top" value="{{ mdata.get('padding_top', '') }}" placeholder="↑ 上">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_right" value="{{ mdata.get('padding_right', '') }}" placeholder="→ 右">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_bottom" value="{{ mdata.get('padding_bottom', '') }}" placeholder="↓ 下">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_left" value="{{ mdata.get('padding_left', '') }}" placeholder="← 左">
+              <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
             </div>
             <hr class="my-2">
             <div class="small fw-semibold mb-1 text-muted">图片样式</div>
@@ -705,11 +724,13 @@
               <div class="col-6"><label class="form-label small mb-1 text-muted">外层背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('section_bg', '#ffffff') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_section_bg" value="{{ mdata.get('section_bg', '') }}" placeholder="#f5f7fa" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_outer_width" value="{{ mdata.get('outer_width', '') }}" placeholder="留空使用全局宽度" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_outer_width\']');if(inp){var v=inp.value.replace(/px|%|rem|vw$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option><option value="vw">vw</option></select></div></div>
             </div>
-            <div class="row g-2">
-              <div class="col-6"><label class="form-label small mb-1 text-muted">上</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_top" value="{{ mdata.get('margin_top', '') }}" placeholder="如 40px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_top']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">右</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_right" value="{{ mdata.get('margin_right', '') }}" placeholder="如 40px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_right']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">下</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_bottom" value="{{ mdata.get('margin_bottom', '') }}" placeholder="如 40px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_bottom']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">左</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_left" value="{{ mdata.get('margin_left', '') }}" placeholder="如 40px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_left']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            <div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_top" value="{{ mdata.get('margin_top', '') }}" placeholder="↑ 上">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_right" value="{{ mdata.get('margin_right', '') }}" placeholder="→ 右">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_bottom" value="{{ mdata.get('margin_bottom', '') }}" placeholder="↓ 下">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_left" value="{{ mdata.get('margin_left', '') }}" placeholder="← 左">
+              <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
             </div>
             <div class="small fw-semibold mb-1 text-muted mt-2">内层样式</div>
             <div class="row g-2">
@@ -724,11 +745,12 @@
               </select>
             </div>
             <div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片内边距</div>
-            <div class="row g-2">
-              <div class="col-6"><label class="form-label small mb-1 text-muted">上</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_card_padding_top" value="{{ mdata.get('card_padding_top', mdata.get('card_padding', '')) }}" placeholder="如 24px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_card_padding_top\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">右</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_card_padding_right" value="{{ mdata.get('card_padding_right', mdata.get('card_padding', '')) }}" placeholder="如 24px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_card_padding_right\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">下</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_card_padding_bottom" value="{{ mdata.get('card_padding_bottom', mdata.get('card_padding', '')) }}" placeholder="如 24px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_card_padding_bottom\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">左</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_card_padding_left" value="{{ mdata.get('card_padding_left', mdata.get('card_padding', '')) }}" placeholder="如 24px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_card_padding_left\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_card_padding_top" value="{{ mdata.get('card_padding_top', mdata.get('card_padding', '')) }}" placeholder="↑ 上">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_card_padding_right" value="{{ mdata.get('card_padding_right', mdata.get('card_padding', '')) }}" placeholder="→ 右">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_card_padding_bottom" value="{{ mdata.get('card_padding_bottom', mdata.get('card_padding', '')) }}" placeholder="↓ 下">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_card_padding_left" value="{{ mdata.get('card_padding_left', mdata.get('card_padding', '')) }}" placeholder="← 左">
+              <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
             </div>
             <div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片圆角</div>
             <div class="row g-2">
@@ -775,11 +797,12 @@
               <div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空使用全局宽度）</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_outer_width" value="{{ mdata.get('outer_width', '') }}" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_outer_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>
             </div>
             <div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>
-            <div class="row g-2">
-              <div class="col-6"><label class="form-label small mb-1 text-muted">上</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_top" value="{{ mdata.get('margin_top', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_top\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">右</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_right" value="{{ mdata.get('margin_right', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_right\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">下</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_bottom" value="{{ mdata.get('margin_bottom', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_bottom\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">左</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_margin_left" value="{{ mdata.get('margin_left', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_margin_left\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_top" value="{{ mdata.get('margin_top', '') }}" placeholder="↑ 上">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_right" value="{{ mdata.get('margin_right', '') }}" placeholder="→ 右">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_bottom" value="{{ mdata.get('margin_bottom', '') }}" placeholder="↓ 下">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_margin_left" value="{{ mdata.get('margin_left', '') }}" placeholder="← 左">
+              <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
             </div>
 
             {# ===== 内层样式 ===== #}
@@ -789,11 +812,12 @@
               <div class="col-6"><label class="form-label small mb-1 text-muted">内层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_inner_width" value="{{ mdata.get('inner_width', '') }}" placeholder="如 800px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_inner_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>
             </div>
             <div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>
-            <div class="row g-2">
-              <div class="col-6"><label class="form-label small mb-1 text-muted">上</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_top" value="{{ mdata.get('padding_top', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_top\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">右</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_right" value="{{ mdata.get('padding_right', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_right\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">下</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_bottom" value="{{ mdata.get('padding_bottom', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_bottom\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">左</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_left" value="{{ mdata.get('padding_left', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_left\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_top" value="{{ mdata.get('padding_top', '') }}" placeholder="↑ 上">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_right" value="{{ mdata.get('padding_right', '') }}" placeholder="→ 右">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_bottom" value="{{ mdata.get('padding_bottom', '') }}" placeholder="↓ 下">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_left" value="{{ mdata.get('padding_left', '') }}" placeholder="← 左">
+              <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
             </div>
             </div>
             {% elif module.type == 'stat_counter' %}
@@ -908,13 +932,13 @@
               <div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_outer_width" value="{{ mdata.get('outer_width', '') }}" placeholder="留空使用全局宽度" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_outer_width" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_outer_width\']');if(inp){var v=inp.value.replace(/px|%|rem|vw$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option><option value="vw">vw</option></select></div></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">内层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_inner_width" value="{{ mdata.get('inner_width', '') }}" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_inner_width" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_inner_width\']');if(inp){var v=inp.value.replace(/px|rem|%|vh|vw$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>
             </div>
-            <div class="row g-2">
-              <div class="col-6"><label class="form-label small mb-1 text-muted">上内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_top" value="{{ mdata.get('padding_top', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_top" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_top\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">右内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_right" value="{{ mdata.get('padding_right', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_right" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_right\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select></div></div>
-            </div>
-            <div class="row g-2">
-              <div class="col-6"><label class="form-label small mb-1 text-muted">下内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_bottom" value="{{ mdata.get('padding_bottom', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_bottom" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_bottom\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">左内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_left" value="{{ mdata.get('padding_left', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_left" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_left\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select></div></div>
+            <div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_top" value="{{ mdata.get('padding_top', '') }}" placeholder="↑ 上">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_right" value="{{ mdata.get('padding_right', '') }}" placeholder="→ 右">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_bottom" value="{{ mdata.get('padding_bottom', '') }}" placeholder="↓ 下">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_left" value="{{ mdata.get('padding_left', '') }}" placeholder="← 左">
+              <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select>
             </div>
             <hr class="my-2">
             <div class="small fw-semibold mb-1 text-muted">Logo 卡片样式</div>
@@ -991,11 +1015,13 @@
               <div class="col-6"><label class="form-label small mb-1 text-muted">内层背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('inner_bg', '#ffffff') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_inner_bg" value="{{ mdata.get('inner_bg', '') }}" placeholder="#ffffff" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">内层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_inner_width" value="{{ mdata.get('inner_width', '') }}" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_inner_width" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_inner_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>
             </div>
-            <div class="row g-2">
-              <div class="col-6"><label class="form-label small mb-1 text-muted">上内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_top" value="{{ mdata.get('padding_top', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_top" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_top\']');if(inp){var v=inp.value.replace(/px|rem$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">右内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_right" value="{{ mdata.get('padding_right', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_right" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_right\']');if(inp){var v=inp.value.replace(/px|rem$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">下内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_bottom" value="{{ mdata.get('padding_bottom', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_bottom" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_bottom\']');if(inp){var v=inp.value.replace(/px|rem$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">左内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_padding_left" value="{{ mdata.get('padding_left', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_padding_left" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_padding_left\']');if(inp){var v=inp.value.replace(/px|rem$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            <div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_top" value="{{ mdata.get('padding_top', '') }}" placeholder="↑ 上">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_right" value="{{ mdata.get('padding_right', '') }}" placeholder="→ 右">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_bottom" value="{{ mdata.get('padding_bottom', '') }}" placeholder="↓ 下">
+              <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_left" value="{{ mdata.get('padding_left', '') }}" placeholder="← 左">
+              <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
             </div>
             <hr class="my-2">
             <div class="small fw-semibold mb-1 text-muted">配色</div>
@@ -1673,20 +1699,32 @@ function addModule(type, variant) {
       '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色', '#ffffff') + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem','vw']) + '</div>' +
     '</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_top', '上', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_right', '右', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_bottom', '下', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_left', '左', ['px','rem']) + '</div>' +
+    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" placeholder="→ 右">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" placeholder="↓ 下">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" placeholder="← 左">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
     '</div>' +
 
     '<div class="small fw-semibold mb-1 text-muted mt-2">内层样式</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_top', '上内边距', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_right', '右内边距', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_bottom', '下内边距', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_left', '左内边距', ['px','rem']) + '</div>' +
+    '</div>' +
+    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
     '</div>' +
     '<hr class="my-2">' +
     '<div class="small fw-semibold mb-1 text-muted">文字排版</div>' +
@@ -1758,11 +1796,15 @@ function addModule(type, variant) {
       '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem','vw']) + '</div>' +
     '</div>' +
     '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_top', '上', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_right', '右', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_bottom', '下', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_left', '左', ['px','rem']) + '</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" placeholder="→ 右">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" placeholder="↓ 下">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" placeholder="← 左">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
     '</div>' +
     '<hr class="my-2">' +
     '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
@@ -1795,11 +1837,16 @@ function addModule(type, variant) {
       '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色', '#ffffff') + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem','vw']) + '</div>' +
     '</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_top', '上', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_right', '右', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_bottom', '下', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_left', '左', ['px','rem']) + '</div>' +
+    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" placeholder="→ 右">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" placeholder="↓ 下">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" placeholder="← 左">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
     '</div>' +
     '<div class="small fw-semibold mb-1 text-muted mt-2">内层样式</div>' +
     '<div class="row g-2">' +
@@ -1808,11 +1855,15 @@ function addModule(type, variant) {
     '<div class="small fw-semibold mb-1 text-muted mt-2">卡片样式</div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">显示边框</label><select class="form-select form-select-sm" name="module_' + idx + '_data_card_show_border"><option value="">默认（显示）</option><option value="0">隐藏边框</option></select></div>' +
     '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片内边距</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_card_padding_top', '上', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_card_padding_right', '右', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_card_padding_bottom', '下', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_card_padding_left', '左', ['px','rem']) + '</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_right" placeholder="→ 右">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_bottom" placeholder="↓ 下">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_left" placeholder="← 左">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
     '</div>' +
     '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片圆角</div>' +
     '<div class="row g-2">' +
@@ -1827,19 +1878,33 @@ function addModule(type, variant) {
 	    '<div class="row g-2">' +
 	      '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色', '#ffffff') + '</div>' +
 	      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem']) + '</div>' +
-	      '<div class="col-6">' + uP('module_' + idx + '_data_margin_top', '上外边距', ['px','rem']) + '</div>' +
-	      '<div class="col-6">' + uP('module_' + idx + '_data_margin_bottom', '下外边距', ['px','rem']) + '</div>' +
-	    '</div>' +
+		    '</div>' +
+    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" placeholder="↓ 下">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
+    '</div>' +
 	    '<hr class="my-2">' +
 	    '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
 	    '<div class="row g-2">' +
 	      '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
 	      '<div class="col-6">' + uP('module_' + idx + '_data_border_radius', '圆角', ['px','rem','%']) + '</div>' +
-	      '<div class="col-6">' + uP('module_' + idx + '_data_padding_top', '上内边距', ['px','rem']) + '</div>' +
-	      '<div class="col-6">' + uP('module_' + idx + '_data_padding_bottom', '下内边距', ['px','rem']) + '</div>' +
-	      '<div class="col-6">' + uP('module_' + idx + '_data_padding_left', '左内边距', ['px','rem']) + '</div>' +
-	      '<div class="col-6">' + uP('module_' + idx + '_data_padding_right', '右内边距', ['px','rem']) + '</div>' +
-	    '</div>' +
+    '</div>' +
+    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
+    '</div>' +
     '<hr class="my-2">' +
     '<div class="small fw-semibold mb-1 text-muted">图文布局</div>' +
     '<div class="row g-2">' +
@@ -1896,17 +1961,27 @@ function addModule(type, variant) {
       '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色', '#ffffff') + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem']) + '</div>' + '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
     '</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_top', '上', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_right', '右', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_bottom', '下', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_margin_left', '左', ['px','rem']) + '</div>' +
+    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" placeholder="→ 右">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" placeholder="↓ 下">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" placeholder="← 左">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
     '</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_top', '上', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_right', '右', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_bottom', '下', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_left', '左', ['px','rem']) + '</div>' +
+    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
     '</div>' +
     '<hr class="my-2">' +
     '<div class="small fw-semibold mb-1 text-muted">文字样式</div>' +
@@ -1930,10 +2005,17 @@ function addModule(type, variant) {
     '<div class="row g-2">' +
       '<div class="col-6">' + cP('module_' + idx + '_data_inner_bg', '内层背景色', '#ffffff') + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem','vw']) + '</div>' + '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_top', '上内边距', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_right', '右内边距', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_bottom', '下内边距', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_left', '左内边距', ['px','rem']) + '</div>' +
+    '</div>' +
+    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
     '</div>' +
     '<hr class="my-2">' +
     '<div class="small fw-semibold mb-1 text-muted">图片样式</div>' +
@@ -1999,13 +2081,17 @@ function addModule(type, variant) {
       '<div class="col-6">' + cP('module_' + idx + '_data_inner_bg', '内层背景色', '#ffffff') + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem','vw']) + '</div>' + '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
     '</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_top', '上内边距', ['px','rem','%']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_right', '右内边距', ['px','rem','%']) + '</div>' +
-    '</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_bottom', '下内边距', ['px','rem','%']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_left', '左内边距', ['px','rem','%']) + '</div>' +
+    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+        '<option value="%">%</option>' +
+      '</select>' +
     '</div>' +
     '<hr class="my-2">' +
     '<div class="small fw-semibold mb-1 text-muted">Logo 卡片样式</div>' +
@@ -2071,11 +2157,16 @@ function addModule(type, variant) {
       '<div class="col-6">' + cP('module_' + idx + '_data_inner_bg', '内层背景色', '#ffffff') + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
     '</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_top', '上内边距', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_right', '右内边距', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_bottom', '下内边距', ['px','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_padding_left', '左内边距', ['px','rem']) + '</div>' +
+    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
     '</div>' +
     '<hr class="my-2">' +
     '<div class="small fw-semibold mb-1 text-muted">配色</div>' +

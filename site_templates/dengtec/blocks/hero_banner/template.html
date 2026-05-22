@@ -31,7 +31,7 @@
 {% if section_bg %}{% set _ = style_parts.append('background: ' ~ section_bg ~ ';') %}{% endif %}
 {% if outer_w %}{% set _ = style_parts.append('max-width: ' ~ outer_w ~ '; margin-left: auto; margin-right: auto;') %}{% elif align == 'center' %}{% set _ = style_parts.append('margin-left: auto; margin-right: auto;') %}{% elif align == 'left' %}{% set _ = style_parts.append('margin-right: auto;') %}{% elif align == 'right' %}{% set _ = style_parts.append('margin-left: auto;') %}{% endif %}
 
-<section class="section{% if not section_bg %} section-bg{% endif %} hero-banner" id="heroBanner"{% if style_parts %} style="{{ style_parts | join(' ') }}"{% endif %}>
+<section class="section hero-banner" id="heroBanner"{% if style_parts %} style="{{ style_parts | join(' ') }}"{% endif %}>
   <div class="container" style="height: 100%;{% if content_w %} max-width: {{ content_w }};{% endif %}">
     <div class="hero-banner-slides">
       {% for item in items %}
