@@ -31,7 +31,7 @@
 
 | meta.yaml 字段 | CSS 属性 | 说明 |
 |---------------|----------|------|
-| `outer_width` | `max-width` | 外层最大宽度。留空使用全局宽度 |
+| `outer_width` | `max-width` | 外层最大宽度。留空使用全局宽度，可设置100%左右铺满 |
 | `margin_top` / `margin_right` / `margin_bottom` / `margin_left` | `margin` | 外层外边距（四边独立） |
 | `padding_top` / `padding_right` / `padding_bottom` / `padding_left` | `padding` | 外层内边距（四边独立） |
 | `section_bg` | `background` | 外层背景色 |
@@ -42,7 +42,7 @@
 
 | meta.yaml 字段 | CSS 属性 | 说明 |
 |---------------|----------|------|
-| `inner_width` | `max-width` | 内层最大宽度。与外层 `outer_width` 独立：外层可铺满全屏，内层仅 800px 居中 |
+| `inner_width` | `max-width` | 内层最大宽度。与外层 `outer_width` 独立：外层可铺满全屏，内层比如 800px 居中 |
 | `inner_bg` | `background-color` | 内层背景色（process_steps / logo_cloud 使用） |
 | `inner_margin_top` / `_right` / `_bottom` / `_left` | `margin` | 内层外边距（四边独立） |
 | `inner_padding_top` / `_right` / `_bottom` / `_left` | `padding` | 内层内边距（四边独立） |
