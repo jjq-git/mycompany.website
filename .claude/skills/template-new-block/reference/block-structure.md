@@ -70,9 +70,9 @@ treemap-beta
 
 **Block 模板只需关心内层结构**——`<section class="section">` 及以下的内容。外层 wrapper 永远由框架处理。
 
-### 一 外层 .section
+## 一 外层 .section
 
-**作用：** 模块的最外层包装器，负责模块与模块之间的**间距**和**背景**。
+模块的最外层包装器, 
 
 | key | label | type | group | default | placeholder | CSS 属性 | 说明 |
 |-----|-------|------|-------|---------|-------------|----------|------|
