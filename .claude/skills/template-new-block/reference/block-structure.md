@@ -24,6 +24,23 @@
   </section>
 </div>
 ```
+### builder-module
+
+**Block 模板不需要写 `builder-module`**——它由框架在运行时自动外挂。每个模块外包一层 `<div class="builder-module" data-builder-module-index="..." data-builder-module-type="...">`
+
+**两个 data 属性的用途：**
+
+| 属性 | 值来源 | 用途 |
+|------|--------|------|
+| `data-builder-module-index` | `loop.index0`（模块在页面中的序号） | 后台 JS 通过它定位模块 DOM，实现选中高亮/拖拽排序 |
+| `data-builder-module-type` | `module.type`（如 `highlight_card`） | 后台 JS 识别模块类型，打开对应的编辑表单 |
+
+**后台交互（仅预览态）：**
+- `.builder-module` 设置 `position: relative; cursor: pointer`，hover 时显示虚线边框
+- 点击模块后加 `.builder-canvas-selected` class，显示实线高亮边框
+- 所有样式和事件处理由 `app/templates/base.html` 内联 `<style>` + JS 注入
+
+**Block 模板只需关心内层结构**——`<section class="section">` 及以下的内容。外层 wrapper 永远由框架处理。
 
 ### ① 外层 .section
 
