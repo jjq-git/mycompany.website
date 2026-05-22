@@ -27,12 +27,22 @@
 config:
   theme: neutral
 ---
-treemap-beta
-"builder-module（框架外挂）"
-    "section.section（一、外层）"
-        "div.container（二、内层）"
-            "div.section-header（三、标题区）": 15
-            "div.xx-grid（四、内容区）": 85
+flowchart TB
+    subgraph bm["🔲 builder-module（框架外挂）"]
+        direction TB
+        subgraph sec["🔵 section.section（一、外层）"]
+            direction TB
+            subgraph con["🟢 div.container（二、内层）"]
+                direction TB
+                subgraph sh["🟡 div.section-header（三、标题区）"]
+                    title["h2.section-title / p.section-description"]
+                end
+                subgraph grid["🔴 div.xx-grid（四、内容区）"]
+                    cards["div.xx-card / div.xx-card / …"]
+                end
+            end
+        end
+    end
 ```
 
 **Block 模板不需要写 `builder-module`**——它由框架在运行时自动外挂。
