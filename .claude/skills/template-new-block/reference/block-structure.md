@@ -29,17 +29,17 @@ config:
 ---
 block-beta
     columns 1
-    A["<b>builder-module</b><br/>框架外挂<br/>data-builder-module-index<br/>data-builder-module-type"]
+    A["<b>builder-module</b>（框架外挂）<br/>data-builder-module-index / type"]
     block
         columns 1
-        B["<b>section.section</b>（一、外层）<br/>max-width / background / margin / padding"]
+        B["<b>section.section</b>（一、外层）"]
         block
             columns 1
-            C["<b>div.container</b>（二、内层）<br/>max-width"]
-            block:inner
-                columns 2
-                D["<b>div.section-header</b>（三、标题区）<br/>h2.section-title<br/>p.section-description"]
-                E["<b>div.xx-grid</b>（四、内容区）<br/>div.xx-card ..."]
+            C["<b>div.container</b>（二、内层）"]
+            block
+                columns 1
+                D["<b>div.section-header</b>（三、标题区）<br/>┗ h2.section-title / p.section-description"]
+                E["<b>div.xx-grid</b>（四、内容区）<br/>┗ div.xx-card ..."]
             end
         end
     end
