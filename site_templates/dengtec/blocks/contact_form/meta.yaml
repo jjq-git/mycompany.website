@@ -69,11 +69,219 @@ fields:
         label: 显示
       - value: "false"
         label: 隐藏
+  - key: show_form
+    label: 显示表单
+    type: select
+    group: 表单显隐
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: title_size
+    label: 标签字号
+    type: text
+    group: 表单样式
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: input_height
+    label: 输入框高度
+    type: text
+    group: 表单样式
+    default: ""
+    placeholder: 如 48px（留空=默认）
+  - key: field_gap
+    label: 字段间距
+    type: text
+    group: 表单样式
+    default: ""
+    placeholder: 如 1.25rem（留空=默认）
+  - key: label_style
+    label: 标签排版
+    type: select
+    group: 表单样式
+    default: "top"
+    options:
+      - value: "top"
+        label: 标签在上
+      - value: "left"
+        label: 标签在左
+      - value: "hidden"
+        label: 隐藏标签
+  - key: form_bg
+    label: 表单背景色
+    type: color
+    group: 表单样式
+    default: ""
+    placeholder: 如 #ffffff（留空=透明）
+  - key: input_bg
+    label: 输入框背景色
+    type: color
+    group: 表单样式
+    default: ""
+    placeholder: 如 #ffffff（留空=默认）
+  - key: input_border
+    label: 输入框边框色
+    type: color
+    group: 表单样式
+    default: ""
+    placeholder: 如 #e5e7eb（留空=默认）
+  - key: text_color
+    label: 文字颜色
+    type: color
+    group: 表单样式
+    default: ""
+    placeholder: 如 #1e293b（留空=默认）
+  - key: input_radius
+    label: 输入框圆角
+    type: text
+    group: 表单样式
+    default: ""
+    placeholder: 如 8px（留空=默认）
+  - key: form_radius
+    label: 表单圆角
+    type: text
+    group: 表单样式
+    default: ""
+    placeholder: 如 12px（留空=默认）
+  - key: form_padding_top
+    label: 表单上内边距
+    type: text
+    group: 表单样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: form_padding_right
+    label: 表单右内边距
+    type: text
+    group: 表单样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: form_padding_bottom
+    label: 表单下内边距
+    type: text
+    group: 表单样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: form_padding_left
+    label: 表单左内边距
+    type: text
+    group: 表单样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: form_margin_top
+    label: 表单上外边距
+    type: text
+    group: 表单外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: form_margin_right
+    label: 表单右外边距
+    type: text
+    group: 表单外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: form_margin_bottom
+    label: 表单下外边距
+    type: text
+    group: 表单外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: form_margin_left
+    label: 表单左外边距
+    type: text
+    group: 表单外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
   - key: submit_text
-    label: 提交按钮文字
+    label: 按钮文字
     type: text
     group: 按钮
     default: "发送留言"
+  - key: btn_bg
+    label: 按钮背景色
+    type: color
+    group: 按钮
+    default: ""
+    placeholder: 如 #067a7a（留空=主色）
+  - key: btn_color
+    label: 按钮文字色
+    type: color
+    group: 按钮
+    default: ""
+    placeholder: 如 #ffffff（留空=白色）
+  - key: btn_size
+    label: 按钮文字大小
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: btn_radius
+    label: 按钮圆角
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 8px（留空=默认）
+  - key: btn_align
+    label: 按钮位置
+    type: select
+    group: 按钮
+    default: "left"
+    options:
+      - value: "left"
+        label: 靠左
+      - value: "center"
+        label: 居中
+      - value: "right"
+        label: 靠右
+  - key: btn_padding_top
+    label: 按钮上内边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 0.75rem（留空=默认）
+  - key: btn_padding_right
+    label: 按钮右内边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: btn_padding_bottom
+    label: 按钮下内边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 0.75rem（留空=默认）
+  - key: btn_padding_left
+    label: 按钮左内边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: btn_margin_top
+    label: 按钮上外边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: btn_margin_right
+    label: 按钮右外边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 0（留空=默认）
+  - key: btn_margin_bottom
+    label: 按钮下外边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 0（留空=默认）
+  - key: btn_margin_left
+    label: 按钮左外边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 0（留空=默认）
   - key: show_map
     label: 显示地图
     type: select
@@ -120,76 +328,18 @@ fields:
         label: 60%
       - value: "70"
         label: 70%
-  - key: show_form
-    label: 显示表单
-    type: select
-    group: 表单显隐
-    default: "true"
-    options:
-      - value: "true"
-        label: 显示
-      - value: "false"
-        label: 隐藏
-  - key: title_size
-    label: 标题字号
-    type: text
-    group: 表单样式
-    default: ""
-    placeholder: 如 2rem（留空=默认）
-  - key: input_height
-    label: 输入框高度
-    type: text
-    group: 表单样式
-    default: ""
-    placeholder: 如 48px（留空=默认）
-  - key: field_gap
-    label: 字段间距
-    type: text
-    group: 表单样式
-    default: ""
-    placeholder: 如 1.25rem（留空=默认）
-  - key: label_style
-    label: 标签排版
-    type: select
-    group: 表单样式
-    default: "top"
-    options:
-      - value: "top"
-        label: 标签在上
-      - value: "left"
-        label: 标签在左
-      - value: "hidden"
-        label: 隐藏标签
-  - key: form_margin_top
-    label: 表单上外边距
-    type: text
-    group: 表单外边距
-    default: ""
-    placeholder: 如 2rem（留空=默认）
-  - key: form_margin_right
-    label: 表单右外边距
-    type: text
-    group: 表单外边距
-    default: ""
-    placeholder: 如 2rem（留空=默认）
-  - key: form_margin_bottom
-    label: 表单下外边距
-    type: text
-    group: 表单外边距
-    default: ""
-    placeholder: 如 2rem（留空=默认）
-  - key: form_margin_left
-    label: 表单左外边距
-    type: text
-    group: 表单外边距
-    default: ""
-    placeholder: 如 2rem（留空=默认）
   - key: map_height
     label: 地图高度
     type: text
     group: 地图样式
     default: ""
     placeholder: 如 500px（留空=自适应撑满）
+  - key: map_radius
+    label: 地图圆角
+    type: text
+    group: 地图样式
+    default: ""
+    placeholder: 如 12px（留空=0）
   - key: map_margin_top
     label: 地图上外边距
     type: text
@@ -304,42 +454,6 @@ fields:
     group: 内层样式
     default: ""
     placeholder: 如 2rem（留空=默认）
-  - key: form_bg
-    label: 表单背景色
-    type: color
-    group: 配色
-    default: ""
-    placeholder: 如 #ffffff（留空=透明）
-  - key: input_bg
-    label: 输入框背景色
-    type: color
-    group: 配色
-    default: ""
-    placeholder: 如 #ffffff（留空=默认）
-  - key: input_border
-    label: 输入框边框色
-    type: color
-    group: 配色
-    default: ""
-    placeholder: 如 #e5e7eb（留空=默认）
-  - key: text_color
-    label: 文字颜色
-    type: color
-    group: 配色
-    default: ""
-    placeholder: 如 #1e293b（留空=默认）
-  - key: btn_bg
-    label: 按钮背景色
-    type: color
-    group: 配色
-    default: ""
-    placeholder: 如 #067a7a（留空=主色）
-  - key: btn_color
-    label: 按钮文字色
-    type: color
-    group: 配色
-    default: ""
-    placeholder: 如 #ffffff（留空=白色）
 variants:
   - key: default
     label: 标准表单

@@ -133,6 +133,8 @@ variants:                      # 可选:预设样式变体
 
 **漏掉任何一处，用户就会看到不一致的界面。**
 
+**新增字段必须按语义归类，插入到相关字段旁边，不能追加到末尾**（详见 [字段排序规则](reference/three-place-sync.md#字段排序规则硬约束)）。
+
 三处代码风格不同（Jinja2 vs JS `cP()`/`uP()` vs JS `_cn()`/`_un()`），但生成的 HTML 结构、字段顺序、分组标签、单位数组必须完全一致。
 
 详细的字段放置规则、单位约定、各模块对照表见 **[reference/three-place-sync.md](reference/three-place-sync.md)**。

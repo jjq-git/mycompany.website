@@ -21,18 +21,29 @@
 </div>
 ```
 ### builder-module
-
+<!-- flowchart  -->
 ```mermaid
----
-config:
-  theme: neutral
----
-treemap-beta
-"builder-module（框架外挂）"
-    "section.section（一、外层）"
-        "div.container（二、内层）"
-            "div.section-header（三、标题区）": 50
-            "div.xx-grid（四、内容区）": 50
+flowchart TB
+    subgraph bm["builder-module（框架外挂）"]
+        direction TB
+        subgraph sec["section.section（一、外层）"]
+            direction TB
+            subgraph con["div.container（二、内层）"]
+                direction TB
+                sh["三、标题区"]
+                grid["四、内容区"]
+                sh ~~~ grid
+            end
+        end
+    end
+
+    %% 色块样式（黑白灰，外层深内层浅）
+    style bm fill:#374151,stroke:#1f2937,color:#f3f4f6
+    style sec fill:#4b5563,stroke:#374151,color:#f3f4f6
+    style con fill:#6b7280,stroke:#4b5563,color:#fff
+    style sh fill:#9ca3af,stroke:#6b7280,color:#1f2937
+    style grid fill:#d1d5db,stroke:#9ca3af,color:#1f2937
+    linkStyle 0 stroke:none
 ```
 
 **Block 模板不需要写 `builder-module`**——它由框架在运行时自动外挂。
@@ -72,12 +83,15 @@ treemap-beta
 
 ### 一 外层 .section
 
-**作用：** 模块的最外层包装器，负责模块与模块之间的**间距**和**背景**。
+**作用：** 模块的最外层包装器。
+
+**内联style中定义的css属性：** max-width、background、background-image、margin-top、margin-right、margin-bottom、margin-left、padding-top、padding-right、padding-bottom、padding-left
 
 | key | label | type | group | default | placeholder | CSS 属性 | 说明 |
 |-----|-------|------|-------|---------|-------------|----------|------|
 | `outer_width` | 外层宽度 | text | 外层样式 | `""` | 如 1200px（留空使用全局宽度） | `max-width` | 外层最大宽度。留空使用全局宽度，可设置100%左右铺满 |
 | `section_bg` | 外层背景色 | color | 外层样式 | `""` | 如 #f5f7fa（留空=使用默认） | `background` | 外层背景色 |
+| `section_bg_image` | 外层背景图 | image | 外层样式 | `""` | 选填（留空=不使用） | `background-image` | 外层背景图，覆盖在背景色之上 |
 | `margin_top` | 外层上外边距 | text | 外层样式 | `""` | 如 40px | `margin-top` | 外层外边距（四边独立，按需选用） |
 | `margin_right` | 外层右外边距 | text | 外层样式 | `""` | 如 40px | `margin-right` | 同上 |
 | `margin_bottom` | 外层下外边距 | text | 外层样式 | `""` | 如 40px | `margin-bottom` | 同上 |
@@ -89,7 +103,9 @@ treemap-beta
 
 ### 二 内层 .container
 
-**作用：** 在模块内部限定**内容的展示宽度**，与外层解耦。
+**作用：** 在模块内部限定内容的展示。
+
+**内联style中定义的css属性：** max-width、background-color、margin-top、margin-right、margin-bottom、margin-left、padding-top、padding-right、padding-bottom、padding-left
 
 | key | label | type | group | default | placeholder | CSS 属性 | 说明 |
 |-----|-------|------|-------|---------|-------------|----------|------|
@@ -109,6 +125,8 @@ treemap-beta
 
 **作用：** 统一的区块标题区域，包含主标题和副标题。（不是所有 Block 都使用标题，视 Block 需求而定）
 
+**内联style中定义的css属性：** text-align、margin-top、margin-bottom、padding-top、padding-bottom
+
 以下字段定义为可选扩展点——当你需要让店主在后台调整标题区样式时，按需添加到 meta.yaml 中。
 
 | key | label | type | group | default | placeholder | CSS 属性 | 说明 |
@@ -123,6 +141,8 @@ treemap-beta
 
 **作用：** Block 主标题（控制标题区显隐：不录入主标题则整个标题区不显示）
 
+**内联style中定义的css属性：** font-size、color
+
 | key | label | type | group | default | placeholder | CSS 属性 | 说明 |
 |-----|-------|------|-------|---------|-------------|----------|------|
 | `title_size` | 标题字号 | text | 标题样式 | `""` | 如 2rem（留空=CSS 默认） | `font-size` | 标题字号，也可命名为 `title_font_size` |
@@ -131,6 +151,8 @@ treemap-beta
 ### 三-b 副标题 .section-description
 
 **作用：** Block 副标题（永远放在主标题下方）
+
+**内联style中定义的css属性：** font-size、color
 
 | key | label | type | group | default | placeholder | CSS 属性 | 说明 |
 |-----|-------|------|-------|---------|-------------|----------|------|

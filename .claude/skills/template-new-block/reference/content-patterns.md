@@ -4,29 +4,48 @@
 
 ## 一、highlight_card HTML 骨架
 
-```html
-<!-- ===== 自定义内容区 .hl-grid ===== -->
-<div class="hl-grid" style="">
-    <!-- 图片侧 -->
-    <div class="hl-image">
-        <img src="..." alt="..." loading="lazy" style="">
+<div style="display:flex;gap:20px;padding:20px;background:#6b7280;border-radius:6px;font-family:sans-serif;max-width:700px;">
+  <!-- 图片侧 -->
+  <div style="flex:1;background:#9ca3af;border-radius:4px;display:flex;align-items:center;justify-content:center;min-height:200px;color:#fff;font-size:13px;">图片区</div>
+  <!-- 文字侧 -->
+  <div style="flex:1;display:flex;flex-direction:column;gap:8px;color:#1f2937;">
+    <span style="background:#374151;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;display:inline-block;width:fit-content;">标签</span>
+    <div style="font-size:18px;font-weight:bold;color:#111827;">标题文字</div>
+    <div style="font-size:13px;color:#4b5563;">描述文字，简要说明内容</div>
+    <ul style="margin:0;padding-left:16px;font-size:12px;color:#374151;">
+      <li>功能点一</li>
+      <li>功能点二</li>
+    </ul>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <span style="background:#374151;color:#fff;padding:6px 16px;border-radius:4px;font-size:12px;">主按钮</span>
+      <span style="border:1px solid #9ca3af;color:#374151;padding:6px 16px;border-radius:4px;font-size:12px;">副按钮</span>
     </div>
-
-    <!-- 文字侧：标签 + 标题 + 描述 + 功能列表 + 按钮 -->
-    <div class="hl-text" style="">
-        <span class="hl-tag" style="">...</span>
-        <h3 class="hl-title" style="">...</h3>
-        <p class="hl-desc" style="">...</p>
-        <ul class="hl-features" style="">
-            <li style="">...</li>
-        </ul>
-        <div class="hl-actions" style="">
-            <a href="..." class="hl-btn hl-btn--primary" style="">主按钮</a>
-            <a href="..." class="hl-btn hl-btn--secondary" style="">副按钮</a>
-        </div>
-    </div>
+  </div>
 </div>
-```
+
+**↑ 色块线框图：快速理解结构。↓ 实际渲染版：还原项目 CSS 的真实效果。**
+
+<div style="display:grid;grid-template-columns:1fr 1fr;align-items:stretch;gap:0;border-radius:12px;overflow:hidden;font-family:sans-serif;">
+  <!-- 图片侧 -->
+  <div style="background:#e2e8f0;min-height:360px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+    <div style="width:100%;height:100%;background:linear-gradient(135deg,#cbd5e1 0%,#94a3b8 100%);display:flex;align-items:center;justify-content:center;color:#64748b;font-size:14px;">产品图片</div>
+  </div>
+  <!-- 文字侧 -->
+  <div style="display:flex;flex-direction:column;justify-content:center;gap:1rem;padding:2rem;color:#1e293b;">
+    <span style="display:inline-block;padding:0.25rem 0.75rem;font-size:0.75rem;font-weight:600;text-transform:uppercase;background:#067a7a;color:#fff;border-radius:4px;width:fit-content;">核心优势</span>
+    <h3 style="font-size:1.5rem;font-weight:700;line-height:1.3;color:#1e293b;margin:0;">一体化生产管理系统</h3>
+    <p style="font-size:0.95rem;line-height:1.65;color:#64748b;margin:0;">帮助制造企业在数字化转型中实现高效协同，从订单到交付全流程可视化管控，降本增效一步到位。</p>
+    <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0.5rem;">
+      <li style="font-size:0.9rem;line-height:1.5;color:#334155;">✓ 实时订单追踪与智能排产</li>
+      <li style="font-size:0.9rem;line-height:1.5;color:#334155;">✓ 多工厂数据互通，统一管控</li>
+      <li style="font-size:0.9rem;line-height:1.5;color:#334155;">✓ 移动端随时查看生产进度</li>
+    </ul>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.5rem;">
+      <a style="display:inline-flex;align-items:center;padding:0.625rem 1.5rem;font-size:0.875rem;font-weight:600;border-radius:8px;background:#067a7a;color:#fff;border:none;text-decoration:none;">预约演示</a>
+      <a style="display:inline-flex;align-items:center;padding:0.625rem 1.5rem;font-size:0.875rem;font-weight:600;border-radius:8px;background:transparent;border:1.5px solid #067a7a;color:#067a7a;text-decoration:none;">了解更多</a>
+    </div>
+  </div>
+</div>
 
 **highlight_card 不使用 `.section-header`**。标题区的概念由 `.hl-title` + `.hl-desc` 在内容区内部实现，见下方字段。
 

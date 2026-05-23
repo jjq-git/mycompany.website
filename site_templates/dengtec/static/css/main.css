@@ -5609,8 +5609,11 @@ a.ci-value:hover {
   color: var(--color-text, #1e293b);
 }
 
-/* 表单内层容器（承载背景色 + 内边距） */
+/* 表单内层容器（承载背景色 + 内边距，继承 form 的 flex 布局让 gap 穿透） */
 .cf-form-inner {
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
   border-radius: var(--radius-md, 8px);
 }
 
@@ -5635,7 +5638,7 @@ a.ci-value:hover {
   display: block;
   width: 100%;
   padding: 0.7rem 0.85rem;
-  font-size: var(--font-size-md, 1rem);
+  font-size: var(--font-size-xs, 1rem);
   font-family: inherit;
   color: var(--color-text, #1e293b);
   background: var(--color-bg, #fff);
