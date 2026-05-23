@@ -131,7 +131,7 @@
     </div>
     {% endif %}
 
-    {% if has_map %}
+    {% if has_map and has_form %}
     {# === 双栏：表单 + 地图 === #}
     <div class="cf-layout{% if layout == 'form_right' %} cf-layout--reverse{% endif %}">
       <div class="cf-form-col" style="flex: 0 0 calc({{ form_ratio }}% - 1rem)">
@@ -183,6 +183,15 @@
                 referrerpolicy="no-referrer-when-downgrade"
                 {% if map_iframe_styles %} style="{{ map_iframe_styles | join('; ') }}"{% endif %}></iframe>
       </div>
+    </div>
+    {% elif has_map %}
+    {# === 单栏：仅地图 === #}
+    <div class="cf-map-only"{% if map_col_styles %} style="{{ map_col_styles | join('; ') }}"{% endif %}>
+      <iframe class="cf-map-iframe"
+              src="{{ map_src }}"
+              allowfullscreen="" loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              {% if map_iframe_styles %} style="{{ map_iframe_styles | join('; ') }}"{% endif %}></iframe>
     </div>
     {% else %}
     {# === 单栏：仅表单 === #}

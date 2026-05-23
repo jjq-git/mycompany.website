@@ -783,7 +783,7 @@ function installPreviewCanvasHandlers() {
   if (!doc || doc.__builderCanvasReady) return;
   doc.__builderCanvasReady = true;
   var style = doc.createElement('style');
-  style.textContent = '.builder-module{position:relative;cursor:pointer}.builder-module:hover,.builder-region:hover{outline:2px dashed #067a7a;outline-offset:3px}.builder-module.builder-canvas-selected,.builder-region.builder-canvas-selected{outline:3px solid #067a7a!important;outline-offset:4px;box-shadow:0 0 0 4px rgba(13,110,253,.18)}';
+  style.textContent = '.builder-module{position:relative;cursor:pointer}.builder-region{cursor:pointer}.builder-module:hover::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 2px #067a7a,inset 0 0 15px #067a7a70;}.builder-region:hover{box-shadow:inset 0 0 0 2px #067a7a,inset 0 0 15px #067a7a70;}.builder-module.builder-canvas-selected::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 2px #067a7a,inset 0 0 15px #067a7a70;}.builder-region.builder-canvas-selected{box-shadow:inset 0 0 0 2px #067a7a,inset 0 0 15px #067a7a70;}';
   doc.head.appendChild(style);
   doc.querySelectorAll('.builder-region[data-builder-region]').forEach(regionEl => {
     regionEl.addEventListener('click', function(event) {
@@ -799,7 +799,7 @@ function installPreviewCanvasHandlers() {
   doc.querySelectorAll('.builder-module[data-builder-module-index]').forEach(moduleEl => {
     moduleEl.addEventListener('click', function(event) {
       event.preventDefault(); event.stopPropagation();
-      doc.querySelectorAll('.builder-module.builder-canvas-selected').forEach(el => el.classList.remove('builder-canvas-selected'));
+      doc.querySelectorAll('.builder-module.builder-canvas-selected,.builder-region.builder-canvas-selected').forEach(el => el.classList.remove('builder-canvas-selected'));
       moduleEl.classList.add('builder-canvas-selected');
       selectModuleInPanel(moduleEl.dataset.builderModuleIndex, pageKeyFromPreviewPath(frame.contentWindow.location.pathname));
     }, true);

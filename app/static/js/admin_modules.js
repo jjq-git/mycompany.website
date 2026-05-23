@@ -51,6 +51,20 @@
     return h + '</select>';
   }
 
+  // 眼睛切换按钮（显隐控制），与 panel_page_edit.html 中 toggleVisibilityEye 配合
+  var EYE_OPEN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var EYE_OFF = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72 1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+  function visToggle(name, label, dv) {
+    var visible = dv === 'true';
+    return '<div class="visibility-item">' +
+      '<button type="button" class="eye-toggle-btn" data-target="' + name + '" data-visible="' + dv + '" onclick="toggleVisibilityEye(this)" title="' + (visible ? '点击隐藏' : '点击显示') + '">' +
+      (visible ? EYE_OPEN : EYE_OFF) +
+      '</button>' +
+      '<span class="vis-label">' + label + '</span>' +
+      '<input type="hidden" name="' + name + '" value="' + dv + '">' +
+      '</div>';
+  }
+
   function renderField(prefix, field, value, placeholder) {
     var key = field.key, type = (field.type || 'text').toLowerCase(), html = '';
     html += '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + esc(field.label || key) + '</label>';
@@ -706,11 +720,11 @@
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-2 text-muted">显示控制（数据来自网站设置中的联系方式）</div>' +
         '<div class="d-flex flex-wrap gap-2">' +
-          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_phone" value="' + (d.show_phone || 'true') + '"><span class="vis-label">电话</span></div>' +
-          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_mobile" value="' + (d.show_mobile || 'true') + '"><span class="vis-label">手机</span></div>' +
-          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_email" value="' + (d.show_email || 'true') + '"><span class="vis-label">邮箱</span></div>' +
-          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_address" value="' + (d.show_address || 'true') + '"><span class="vis-label">地址</span></div>' +
-          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_business_hours" value="' + (d.show_business_hours || 'false') + '"><span class="vis-label">营业时间</span></div>' +
+          visToggle('module_' + idx + '_data_show_phone', '电话', (d.show_phone || 'true')) +
+          visToggle('module_' + idx + '_data_show_mobile', '手机', (d.show_mobile || 'true')) +
+          visToggle('module_' + idx + '_data_show_email', '邮箱', (d.show_email || 'true')) +
+          visToggle('module_' + idx + '_data_show_address', '地址', (d.show_address || 'true')) +
+          visToggle('module_' + idx + '_data_show_business_hours', '营业时间', (d.show_business_hours || 'false')) +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="row g-2">' +
@@ -750,11 +764,11 @@
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-2 text-muted">表单字段</div>' +
         '<div class="d-flex flex-wrap gap-2">' +
-          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_name" value="' + (d.show_name || 'true') + '"><span class="vis-label">姓名</span></div>' +
-          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_email" value="' + (d.show_email || 'true') + '"><span class="vis-label">邮箱</span></div>' +
-          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_phone" value="' + (d.show_phone || 'true') + '"><span class="vis-label">电话</span></div>' +
-          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_company" value="' + (d.show_company || 'false') + '"><span class="vis-label">公司</span></div>' +
-          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_message" value="' + (d.show_message || 'true') + '"><span class="vis-label">留言</span></div>' +
+          visToggle('module_' + idx + '_data_show_name', '姓名', (d.show_name || 'true')) +
+          visToggle('module_' + idx + '_data_show_email', '邮箱', (d.show_email || 'true')) +
+          visToggle('module_' + idx + '_data_show_phone', '电话', (d.show_phone || 'true')) +
+          visToggle('module_' + idx + '_data_show_company', '公司', (d.show_company || 'false')) +
+          visToggle('module_' + idx + '_data_show_message', '留言', (d.show_message || 'true')) +
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">提交按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_submit_text" value="' + esc(d.submit_text || '') + '" placeholder="发送留言"></div>' +
@@ -762,14 +776,14 @@
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-2 text-muted">地图（高德/Google 嵌入）</div>' +
         '<div class="d-flex flex-wrap gap-2">' +
-          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_map" value="' + (d.show_map || 'false') + '"><span class="vis-label">显示地图</span></div>' +
+          visToggle('module_' + idx + '_data_show_map', '显示地图', (d.show_map || 'false')) +
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-12"><label class="form-label small mb-1 text-muted">地图嵌入地址</label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_map_src" value="' + esc(d.map_src || '') + '" placeholder="从高德/Google 地图获取的嵌入链接（iframe src）"></div>' +
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + sel('module_' + idx + '_data_layout', '排版方式', [{value:'form_left',label:'表单左 地图右'},{value:'form_right',label:'地图左 表单右'}], d.layout || 'form_left') + '</div>' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_map_width_ratio', '地图占比', [{value:'30',label:'30%'},{value:'35',label:'35%'},{value:'40',label:'40%'},{value:'45',label:'45%'},{value:'50',label:'50%'},{value:'60',label:'60%'},{value:'70',label:'70%'}], d.map_width_ratio || '40') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_map_width_ratio', '地图占比', [{value:'30',label:'30%'},{value:'35',label:'35%'},{value:'40',label:'40%'},{value:'45',label:'45%'},{value:'50',label:'50%'},{value:'60',label:'60%'},{value:'70',label:'70%'},{value:'100',label:'100%'}], d.map_width_ratio || '40') + '</div>' +
         '</div>';
       styleEditor =
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
@@ -883,7 +897,7 @@
         '</div>' +
         '<div class="small fw-semibold mb-1 mt-2 text-muted">表单显隐</div>' +
         '<div class="d-flex flex-wrap gap-2">' +
-          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_form" value="' + (d.show_form || 'true') + '"><span class="vis-label">显示表单</span></div>' +
+          visToggle('module_' + idx + '_data_show_form', '显示表单', (d.show_form || 'true')) +
         '</div>';
     }
 

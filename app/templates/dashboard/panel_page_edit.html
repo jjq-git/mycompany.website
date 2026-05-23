@@ -1244,7 +1244,7 @@
             </div>
             <div class="row g-2">
               <div class="col-6"><label class="form-label small mb-1 text-muted">排版方式</label><select class="form-select form-select-sm" name="module_{{ i }}_data_layout"><option value="form_left" {% if mdata.get('layout', 'form_left') == 'form_left' %}selected{% endif %}>表单左 地图右</option><option value="form_right" {% if mdata.get('layout', 'form_left') == 'form_right' %}selected{% endif %}>地图左 表单右</option></select></div>
-              <div class="col-6"><label class="form-label small mb-1 text-muted">地图占比</label><select class="form-select form-select-sm" name="module_{{ i }}_data_map_width_ratio">{% for r in ['30','35','40','45','50','60','70'] %}<option value="{{ r }}" {% if mdata.get('map_width_ratio', '40')|string == r %}selected{% endif %}>{{ r }}%</option>{% endfor %}</select></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">地图占比</label><select class="form-select form-select-sm" name="module_{{ i }}_data_map_width_ratio">{% for r in ['30','35','40','45','50','60','70','100'] %}<option value="{{ r }}" {% if mdata.get('map_width_ratio', '40')|string == r %}selected{% endif %}>{{ r }}%</option>{% endfor %}</select></div>
             </div>
             </div>
             <div class="content-style-panel panel-style" style="display:none">
@@ -2504,7 +2504,7 @@ function addModule(type, variant) {
     '</div>' +
     '<div class="row g-2">' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">排版方式</label><select class="form-select form-select-sm" name="module_' + idx + '_data_layout"><option value="form_left">表单左 地图右</option><option value="form_right">地图左 表单右</option></select></div>' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">地图占比</label><select class="form-select form-select-sm" name="module_' + idx + '_data_map_width_ratio"><option value="30">30%</option><option value="35">35%</option><option value="40" selected>40%</option><option value="45">45%</option><option value="50">50%</option><option value="60">60%</option><option value="70">70%</option></select></div>' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">地图占比</label><select class="form-select form-select-sm" name="module_' + idx + '_data_map_width_ratio"><option value="30">30%</option><option value="35">35%</option><option value="40" selected>40%</option><option value="45">45%</option><option value="50">50%</option><option value="60">60%</option><option value="70">70%</option><option value="100">100%</option></select></div>' +
     '</div>';
     styleEditor =
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
