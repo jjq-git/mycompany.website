@@ -20,7 +20,7 @@
   </section>
 </div>
 ```
-### builder-module
+## builder-module
 <!-- flowchart  -->
 ```mermaid
 flowchart TB
@@ -81,11 +81,11 @@ flowchart TB
 
 **Block 模板只需关心内层结构**——`<section class="section">` 及以下的内容。外层 wrapper 永远由框架处理。
 
-### 一 外层 .section
+## 一 外层 .section
 
 **作用：** 模块的最外层包装器。
 
-**内联style中定义的css属性：** max-width、background、background-image、margin-top、margin-right、margin-bottom、margin-left、padding-top、padding-right、padding-bottom、padding-left
+**内联style中自定义的css属性：** max-width、background、background-image、margin-top、margin-right、margin-bottom、margin-left、padding-top、padding-right、padding-bottom、padding-left
 
 | key | label | type | group | default | placeholder | CSS 属性 | 说明 |
 |-----|-------|------|-------|---------|-------------|----------|------|
@@ -101,11 +101,11 @@ flowchart TB
 | `padding_bottom` | 下内边距 | text | 外层样式 | `"1rem"` | 如 2rem（留空=默认） | `padding-bottom` | 同上 |
 | `padding_left` | 左内边距 | text | 外层样式 | `""` | 如 2rem（留空=默认） | `padding-left` | 同上 |
 
-### 二 内层 .container
+## 二 内层 .container
 
 **作用：** 在模块内部限定内容的展示。
 
-**内联style中定义的css属性：** max-width、background-color、margin-top、margin-right、margin-bottom、margin-left、padding-top、padding-right、padding-bottom、padding-left
+**内联style中自定义的css属性：** max-width、background-color、margin-top、margin-right、margin-bottom、margin-left、padding-top、padding-right、padding-bottom、padding-left
 
 | key | label | type | group | default | placeholder | CSS 属性 | 说明 |
 |-----|-------|------|-------|---------|-------------|----------|------|
@@ -121,11 +121,11 @@ flowchart TB
 | `inner_padding_left` | 内层左内边距 | text | 内层样式 | `""` | 如 2rem（留空=默认） | `padding-left` | 同上 |
 
 
-### 三 标题区 .section-header
+## 三 标题区 .section-header
 
 **作用：** 统一的区块标题区域，包含主标题和副标题。（不是所有 Block 都使用标题，视 Block 需求而定）
 
-**内联style中定义的css属性：** text-align、margin-top、margin-bottom、padding-top、padding-bottom
+**内联style中自定义的css属性：** text-align、margin-top、margin-bottom、padding-top、padding-bottom
 
 以下字段定义为可选扩展点——当你需要让店主在后台调整标题区样式时，按需添加到 meta.yaml 中。
 
@@ -141,7 +141,7 @@ flowchart TB
 
 **作用：** Block 主标题（控制标题区显隐：不录入主标题则整个标题区不显示）
 
-**内联style中定义的css属性：** font-size、color
+**内联style中自定义的css属性：** font-size、color
 
 | key | label | type | group | default | placeholder | CSS 属性 | 说明 |
 |-----|-------|------|-------|---------|-------------|----------|------|
@@ -152,7 +152,7 @@ flowchart TB
 
 **作用：** Block 副标题（永远放在主标题下方）
 
-**内联style中定义的css属性：** font-size、color
+**内联style中自定义的css属性：** font-size、color
 
 | key | label | type | group | default | placeholder | CSS 属性 | 说明 |
 |-----|-------|------|-------|---------|-------------|----------|------|
@@ -160,7 +160,7 @@ flowchart TB
 | `desc_color` | 副标题颜色 | color | 标题样式 | `""` | 如 #64748b（留空=CSS 默认） | `color` | 副标题颜色，也可命名为 `subtitle_color` |
 
 
-### 四 自定义内容区
+## 四 自定义内容区
 
 **作用：** 每个 Block 的核心展示区域，结构完全由 Block 类型决定。
 

@@ -313,19 +313,31 @@ def inject_context():
 
 
 def _current_context():
-    """取当前登录用户和站点；普通用户只能访问自己的站点，admin 可访问全部."""
+    """取当前登录用户和站点；普通用户只能访问自己的站点，admin 可访问全部.
+
+    URL 中带 ?site=N 时存入 session，后续资源请求（如 /assets/uploads/...）
+    不带 ?site= 也能从 session 中取到正确的站点.
+    """
     from flask import request
     user = _current_user()
     if not user:
         abort(401)
     site_id = request.args.get('site', type=int)
     if site_id:
+        session['current_site_id'] = site_id  # 记住当前浏览的站点
         site = Site.query.get(site_id)
     else:
-        query = Site.query
-        if user.role != 'admin':
-            query = query.filter_by(owner_id=user.id)
-        site = query.order_by(Site.id.desc()).first()
+        # 从 session 中取缓存的站点 ID，确保资源请求也能找到正确的站点
+        site_id = session.get('current_site_id')
+        if site_id is not None:
+            site = Site.query.get(int(site_id))
+        else:
+            site = None
+        if not site:
+            query = Site.query
+            if user.role != 'admin':
+                query = query.filter_by(owner_id=user.id)
+            site = query.order_by(Site.id.desc()).first()
     if not site:
         abort(404, "尚无站点，请先从模板库创建站点")
     if user.role != 'admin' and site.owner_id != user.id:

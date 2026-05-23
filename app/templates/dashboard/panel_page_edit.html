@@ -858,6 +858,7 @@
               <button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="switchContentStyleTab(this, 'style')">样式</button>
             </div>
             <div class="content-style-panel panel-content">
+{% set stats = mdata.get("stats", []) if mdata.get("stats") is iterable and mdata.get("stats") is not string else [] %}
 <div class="stat-items-editor" data-module-index="{{ i | int }}">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="small fw-semibold text-primary">统计项</div>
@@ -928,6 +929,7 @@
               <button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="switchContentStyleTab(this, 'style')">样式</button>
             </div>
             <div class="content-style-panel panel-content">
+{% set logos = mdata.get('logos', []) if mdata.get('logos') is iterable and mdata.get('logos') is not string else [] %}
 <div class="logo-items-editor" data-module-index="{{ i | int }}">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="small fw-semibold text-primary">Logo 列表</div>
@@ -1011,6 +1013,7 @@
               <button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="switchContentStyleTab(this, 'style')">样式</button>
             </div>
             <div class="content-style-panel panel-content">
+{% set steps = mdata.get("steps", []) if mdata.get("steps") is iterable and mdata.get("steps") is not string else [] %}
 <div class="step-items-editor" data-module-index="{{ i | int }}">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="small fw-semibold text-primary">步骤列表</div>

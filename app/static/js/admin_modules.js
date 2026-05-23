@@ -696,6 +696,195 @@
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_number_font_size', '序号字体大小', ['px','rem'], d.number_font_size) + '</div>' +
         '</div>';
+    /* ====== contact_info ====== */
+    } else if (type === 'contact_info') {
+      specialEditor =
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-2 text-muted">显示控制（数据来自网站设置中的联系方式）</div>' +
+        '<div class="d-flex flex-wrap gap-2">' +
+          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_phone" value="' + (d.show_phone || 'true') + '"><span class="vis-label">电话</span></div>' +
+          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_mobile" value="' + (d.show_mobile || 'true') + '"><span class="vis-label">手机</span></div>' +
+          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_email" value="' + (d.show_email || 'true') + '"><span class="vis-label">邮箱</span></div>' +
+          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_address" value="' + (d.show_address || 'true') + '"><span class="vis-label">地址</span></div>' +
+          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_business_hours" value="' + (d.show_business_hours || 'false') + '"><span class="vis-label">营业时间</span></div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_columns" value="' + esc(d.columns || '') + '" placeholder="默认" min="1" max="6"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">每页显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_items_per_page" value="' + esc(d.items_per_page || '') + '" placeholder="默认"></div>' +
+        '</div>';
+      styleEditor =
+        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg) + '</div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空使用全局宽度）</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
+        '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
+        '<div class="input-group input-group-sm">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↑ 上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="→ 右">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↓ 下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="← 左">' +
+          '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
+        '</div>';
+
+    /* ====== contact_form ====== */
+    } else if (type === 'contact_form') {
+      specialEditor =
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-12"><label class="form-label small mb-1 text-muted">表单提交地址</label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_form_action" value="' + esc(d.form_action || '') + '" placeholder="如 https://formspree.io/f/your-form-id"></div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-2 text-muted">表单字段</div>' +
+        '<div class="d-flex flex-wrap gap-2">' +
+          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_name" value="' + (d.show_name || 'true') + '"><span class="vis-label">姓名</span></div>' +
+          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_email" value="' + (d.show_email || 'true') + '"><span class="vis-label">邮箱</span></div>' +
+          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_phone" value="' + (d.show_phone || 'true') + '"><span class="vis-label">电话</span></div>' +
+          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_company" value="' + (d.show_company || 'false') + '"><span class="vis-label">公司</span></div>' +
+          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_message" value="' + (d.show_message || 'true') + '"><span class="vis-label">留言</span></div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">提交按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_submit_text" value="' + esc(d.submit_text || '') + '" placeholder="发送留言"></div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-2 text-muted">地图（高德/Google 嵌入）</div>' +
+        '<div class="d-flex flex-wrap gap-2">' +
+          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_map" value="' + (d.show_map || 'false') + '"><span class="vis-label">显示地图</span></div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-12"><label class="form-label small mb-1 text-muted">地图嵌入地址</label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_map_src" value="' + esc(d.map_src || '') + '" placeholder="从高德/Google 地图获取的嵌入链接（iframe src）"></div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_layout', '排版方式', [{value:'form_left',label:'表单左 地图右'},{value:'form_right',label:'地图左 表单右'}], d.layout || 'form_left') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_map_width_ratio', '地图占比', [{value:'30',label:'30%'},{value:'35',label:'35%'},{value:'40',label:'40%'},{value:'45',label:'45%'},{value:'50',label:'50%'},{value:'60',label:'60%'},{value:'70',label:'70%'}], d.map_width_ratio || '40') + '</div>' +
+        '</div>';
+      styleEditor =
+        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg) + '</div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
+        '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
+        '<div class="input-group input-group-sm">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↑ 上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="→ 右">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↓ 下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="← 左">' +
+          '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">表单样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_form_bg', '表单背景色', d.form_bg) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_input_bg', '输入框背景色', d.input_bg) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_input_border', '输入框边框色', d.input_border) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_text_color', '文字颜色', d.text_color) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_input_radius', '输入框圆角', ['px','rem','%'], d.input_radius) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_form_radius', '表单圆角', ['px','rem','%'], d.form_radius) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_title_size', '标题字号', ['px','rem','em'], d.title_size) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_input_height', '输入框高度', ['px','rem'], d.input_height) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_field_gap', '字段间距', ['px','rem'], d.field_gap) + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_label_style', '标签排版', [{value:'top',label:'标签在上'},{value:'left',label:'标签在左'},{value:'hidden',label:'隐藏标签'}], d.label_style || 'top') + '</div>' +
+        '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">表单内边距</div>' +
+        '<div class="input-group input-group-sm">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_top" value="' + esc(d.form_padding_top) + '" placeholder="↑ 上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_right" value="' + esc(d.form_padding_right) + '" placeholder="→ 右">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_bottom" value="' + esc(d.form_padding_bottom) + '" placeholder="↓ 下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_left" value="' + esc(d.form_padding_left) + '" placeholder="← 左">' +
+          '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
+        '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">表单外边距</div>' +
+        '<div class="input-group input-group-sm">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_top" value="' + esc(d.form_margin_top) + '" placeholder="↑ 上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_right" value="' + esc(d.form_margin_right) + '" placeholder="→ 右">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_bottom" value="' + esc(d.form_margin_bottom) + '" placeholder="↓ 下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_left" value="' + esc(d.form_margin_left) + '" placeholder="← 左">' +
+          '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">按钮样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_btn_bg', '按钮背景色', d.btn_bg) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_btn_color', '按钮文字色', d.btn_color) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_btn_size', '按钮文字大小', ['px','rem','em'], d.btn_size) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_btn_radius', '按钮圆角', ['px','rem','%'], d.btn_radius) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_btn_align', '按钮位置', [{value:'left',label:'靠左'},{value:'center',label:'居中'},{value:'right',label:'靠右'}], d.btn_align || 'left') + '</div>' +
+        '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">按钮内边距</div>' +
+        '<div class="input-group input-group-sm">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_top" value="' + esc(d.btn_padding_top) + '" placeholder="↑ 上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_right" value="' + esc(d.btn_padding_right) + '" placeholder="→ 右">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_bottom" value="' + esc(d.btn_padding_bottom) + '" placeholder="↓ 下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_left" value="' + esc(d.btn_padding_left) + '" placeholder="← 左">' +
+          '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
+        '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">按钮外边距</div>' +
+        '<div class="input-group input-group-sm">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_top" value="' + esc(d.btn_margin_top) + '" placeholder="↑ 上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_right" value="' + esc(d.btn_margin_right) + '" placeholder="→ 右">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_bottom" value="' + esc(d.btn_margin_bottom) + '" placeholder="↓ 下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_left" value="' + esc(d.btn_margin_left) + '" placeholder="← 左">' +
+          '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">地图样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_map_height', '地图高度', ['px','rem','vh'], d.map_height) + '</div>' +
+        '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_map_radius', '地图圆角', ['px','rem','%'], d.map_radius) + '</div>' +
+        '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">地图外边距</div>' +
+        '<div class="input-group input-group-sm">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_top" value="' + esc(d.map_margin_top) + '" placeholder="↑ 上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_right" value="' + esc(d.map_margin_right) + '" placeholder="→ 右">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_bottom" value="' + esc(d.map_margin_bottom) + '" placeholder="↓ 下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_left" value="' + esc(d.map_margin_left) + '" placeholder="← 左">' +
+          '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
+        '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">地图内边距</div>' +
+        '<div class="input-group input-group-sm">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_top" value="' + esc(d.map_padding_top) + '" placeholder="↑ 上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_right" value="' + esc(d.map_padding_right) + '" placeholder="→ 右">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_bottom" value="' + esc(d.map_padding_bottom) + '" placeholder="↓ 下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_left" value="' + esc(d.map_padding_left) + '" placeholder="← 左">' +
+          '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
+        '</div>' +
+        '<div class="small fw-semibold mb-1 mt-2 text-muted">表单显隐</div>' +
+        '<div class="d-flex flex-wrap gap-2">' +
+          '<div class="vis-item"><input type="hidden" name="module_' + idx + '_data_show_form" value="' + (d.show_form || 'true') + '"><span class="vis-label">显示表单</span></div>' +
+        '</div>';
     }
 
     /* ====== responsive 控件 ====== */
