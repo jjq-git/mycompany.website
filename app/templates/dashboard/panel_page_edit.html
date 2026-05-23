@@ -1276,6 +1276,7 @@
               <input type="text" class="form-control form-control-sm placeholder-light" name="module_{{ i }}_data_padding_left" value="{{ mdata.get('padding_left', '') }}" placeholder="← 左">
               <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
             </div>
+            </div>
             {# ===== 表单样式 ===== #}
             <hr class="my-2">
             <div class="small fw-semibold mb-1 text-muted">表单样式</div>
