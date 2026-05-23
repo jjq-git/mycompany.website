@@ -2767,8 +2767,30 @@ function toggleModuleAccordion(moduleItem) {
     var tabName = activeTab ? activeTab.dataset.tab : 'content';
     var target = moduleItem.querySelector('.panel-' + tabName);
     if (target) target.style.display = '';
+    // 联动中间预览：选中对应模块
+    selectModuleInPreview(moduleItem.dataset.moduleIndex);
   }
 }
+
+// 在中间预览 iframe 中选中对应模块（面板 → 预览联动）
+function selectModuleInPreview(moduleIndex) {
+  var frame = document.getElementById('previewFrame');
+  if (!frame) return;
+  var doc;
+  try { doc = frame.contentDocument || frame.contentWindow.document; } catch (e) { return; }
+  if (!doc) return;
+  // 清除预览中所有模块的选中状态
+  doc.querySelectorAll('.builder-module.builder-canvas-selected,.builder-region.builder-canvas-selected').forEach(function(el) {
+    el.classList.remove('builder-canvas-selected');
+  });
+  // 选中对应模块并滚动到可见区域
+  var targetMod = doc.querySelector('.builder-module[data-builder-module-index="' + moduleIndex + '"]');
+  if (targetMod) {
+    targetMod.classList.add('builder-canvas-selected');
+    targetMod.scrollIntoView({behavior: 'smooth', block: 'center'});
+  }
+}
+
 
 // 联系方式模块显隐眼睛图标切换
 var EYE_OPEN_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
