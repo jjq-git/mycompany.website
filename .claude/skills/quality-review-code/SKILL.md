@@ -25,6 +25,17 @@ description: "代码审查——对照 CLAUDE.md 核心信念和"不做的事"�
 | 6 | 简单 > 优化 | 是否有过度优化的代码?为了省几十 MB 增加了判断逻辑? |
 | 7 | 低频用户友好 | 6 个月没登录的用户回来还能用吗? |
 
+**一-B、后台 UI 国际化（i18n）**
+
+| 检查点 | 说明 |
+|--------|------|
+| 新增 panel_*.html 模板中是否有硬编码中文？ | 必须用 `{{ _t('key') }}` 替代，见 `admin-add-admin-page` skill |
+| 新增的翻译 key 是否已加入 `app/translations/admin_zh-CN.json`？ | 所有 _t() 引用的 key 必须在翻译文件中存在 |
+| 是否复用了 common 分组的公共 key？ | `common.btn_save`、`common.tab_content` 等已存在则复用 |
+| base.html 中新增的导航项文字是否用了 _t()？ | 左侧导航项文字也要国际化 |
+
+详见 `.claude/admin-i18n.md`。 |
+
 **二、"不做的事"符合度**
 
 - [ ] 是否引入了可视化模板编辑器?

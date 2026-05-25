@@ -753,6 +753,8 @@ def page_home():
         page.setdefault('hero', {})
         for key in ('featured_section', 'features_section', 'about_brief', 'blog_section', 'subscribe_section'):
             page.setdefault(key, {})
+    # 将 meta.yaml 默认值合并到模块数据，让属性面板显示 CSS 兜底值
+    _merge_block_defaults(page.get('modules'), blocks)
 
     return render_template('dashboard/panel_page_edit.html',
                            user=user, site=site, page=page,
@@ -881,6 +883,7 @@ def header_edit():
         header = settings.setdefault('header', {})
         header['variant'] = request.form.get('header_variant', header_variants[0]['key'])
         # 头部样式字段
+        header['outer_width'] = request.form.get('header_outer_width', '').strip()
         header['inner_width'] = request.form.get('header_inner_width', '').strip()
         header['padding_top'] = request.form.get('header_padding_top', '').strip()
         header['padding_right'] = request.form.get('header_padding_right', '').strip()
@@ -1692,6 +1695,8 @@ def page_panel(page_key):
     if page:
         blocks = _get_available_blocks(site.template_name)
         is_modules_format = 'modules' in page
+        page.setdefault('modules', [])
+        _merge_block_defaults(page.get('modules'), blocks)
         return _render('dashboard/panel_page_edit.html',
                        user=user, site=site,
                        page_key=page_key, page=page,
@@ -1705,6 +1710,7 @@ def page_panel(page_key):
     new_page = {'modules': []}
     write_yaml(site.id, f'pages/{page_key}.yaml', new_page, lang=storage_lang)
     blocks = _get_available_blocks(site.template_name)
+    _merge_block_defaults(new_page.get('modules'), blocks)
     return _render('dashboard/panel_page_edit.html',
                    user=user, site=site,
                    page_key=page_key, page=new_page,
@@ -1722,6 +1728,37 @@ def _get_available_blocks(template_name):
         return scan_blocks(template_name)
     except Exception:
         return []
+
+
+def _merge_block_defaults(modules, blocks):
+    """将 meta.yaml 中非空 default 值合并到模块显示数据中（仅补全缺失的 key，不覆盖已有值）。
+    这样属性面板的 Jinja2 模板用 mdata.get('key', '') 就能拿到 CSS 兜底值。
+    """
+    if not modules or not blocks:
+        return
+    # block name → {field_key: default_value}
+    defaults_by_type = {}
+    for b in blocks:
+        field_defaults = {}
+        for f in b.get('fields', []):
+            d = f.get('default')
+            if d is not None and d != '':
+                field_defaults[f['key']] = d
+        if field_defaults:
+            defaults_by_type[b['name']] = field_defaults
+
+    for m in modules:
+        if not isinstance(m, dict):
+            continue
+        field_defaults = defaults_by_type.get(m.get('type', ''))
+        if not field_defaults:
+            continue
+        data = m.get('data')
+        if not isinstance(data, dict):
+            continue
+        for key, val in field_defaults.items():
+            if key not in data:
+                data[key] = val
 
 
 def _parse_modules_form(form, existing_modules=None):

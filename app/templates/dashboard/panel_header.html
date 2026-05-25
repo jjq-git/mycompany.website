@@ -44,48 +44,36 @@
         {% endfor %}
       </div>
     </div>
-    {# 样式 Tab：内层宽度 + 内层内边距 #}
+      {# 样式 Tab：外层宽度(header-main) + 内层样式(container 宽度 + 内边距) #}
     <div class="content-style-panel panel-style" style="display:none">
+      <div class="small fw-semibold mb-1 text-muted mt-2">外层样式</div>
       <div class="row g-2">
         <div class="col-12">
           {% set gw = settings.get('layout', {}).get('global_width', '90%') %}
-          <label class="form-label small mb-1 text-muted">内层宽度 <span class="text-muted" style="font-weight:normal;">（头部内容区最大宽度，留空=使用全局宽度 {{ gw }}）</span></label>
+          <label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（头部整体最大宽度，留空=使用全局宽度 {{ gw }}）</span></label>
           <div class="input-group input-group-sm">
-            <input type="text" class="form-control form-control-sm" name="header_inner_width" value="{{ current_header.get('inner_width', '') }}" placeholder="留空则使用全局宽度 {{ gw }}" style="width:60%">
-            <select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'header_inner_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select>
+            <input type="text" class="form-control form-control-sm" name="header_outer_width" value="{{ current_header.get('outer_width', '') }}" placeholder="留空则使用全局宽度 {{ gw }}" style="width:60%">
+            <select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'header_outer_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select>
           </div>
         </div>
       </div>
-      <div class="small fw-semibold mb-1 text-muted mt-2">内层内边距</div>
+      <div class="small fw-semibold mb-1 text-muted mt-2">内层样式</div>
       <div class="row g-2">
-        <div class="col-6">
-          <label class="form-label small mb-1 text-muted">上</label>
+        <div class="col-12">
+          <label class="form-label small mb-1 text-muted">内层宽度 <span class="text-muted" style="font-weight:normal;">（头部内容区最大宽度，留空=撑满外层）</span></label>
           <div class="input-group input-group-sm">
-            <input type="text" class="form-control form-control-sm" name="header_padding_top" value="{{ current_header.get('padding_top', '') }}" placeholder="如 1rem" style="width:60%">
-            <select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'header_padding_top\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select>
+            <input type="text" class="form-control form-control-sm" name="header_inner_width" value="{{ current_header.get('inner_width', '') }}" placeholder="留空则撑满外层" style="width:60%">
+            <select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'header_inner_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select>
           </div>
         </div>
-        <div class="col-6">
-          <label class="form-label small mb-1 text-muted">右</label>
-          <div class="input-group input-group-sm">
-            <input type="text" class="form-control form-control-sm" name="header_padding_right" value="{{ current_header.get('padding_right', '') }}" placeholder="如 1rem" style="width:60%">
-            <select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'header_padding_right\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select>
-          </div>
-        </div>
-        <div class="col-6">
-          <label class="form-label small mb-1 text-muted">下</label>
-          <div class="input-group input-group-sm">
-            <input type="text" class="form-control form-control-sm" name="header_padding_bottom" value="{{ current_header.get('padding_bottom', '') }}" placeholder="如 1rem" style="width:60%">
-            <select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'header_padding_bottom\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select>
-          </div>
-        </div>
-        <div class="col-6">
-          <label class="form-label small mb-1 text-muted">左</label>
-          <div class="input-group input-group-sm">
-            <input type="text" class="form-control form-control-sm" name="header_padding_left" value="{{ current_header.get('padding_left', '') }}" placeholder="如 1rem" style="width:60%">
-            <select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'header_padding_left\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="rem">rem</option></select>
-          </div>
-        </div>
+      </div>
+      <div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>
+      <div class="input-group input-group-sm">
+        <input type="text" class="form-control form-control-sm placeholder-light" name="header_padding_top" value="{{ current_header.get('padding_top', '') }}" placeholder="↑ 上">
+        <input type="text" class="form-control form-control-sm placeholder-light" name="header_padding_right" value="{{ current_header.get('padding_right', '') }}" placeholder="→ 右">
+        <input type="text" class="form-control form-control-sm placeholder-light" name="header_padding_bottom" value="{{ current_header.get('padding_bottom', '') }}" placeholder="↓ 下">
+        <input type="text" class="form-control form-control-sm placeholder-light" name="header_padding_left" value="{{ current_header.get('padding_left', '') }}" placeholder="← 左">
+        <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
       </div>
     </div>
   </div>

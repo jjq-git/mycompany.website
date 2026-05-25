@@ -1,6 +1,32 @@
 {
   "permissions": {
     "allow": [
+      "Bash(*)",
+      "PowerShell(*)",
+      "Edit(*)",
+      "Write(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "Read(*)",
+      "TodoWrite(*)",
+      "Agent(*)",
+      "Skill(*)",
+      "AskUserQuestion(*)",
+      "EnterPlanMode(*)",
+      "ExitPlanMode(*)",
+      "NotebookEdit(*)",
+      "Monitor(*)",
+      "CronCreate(*)",
+      "CronDelete(*)",
+      "CronList(*)",
+      "ScheduleWakeup(*)",
+      "TaskOutput(*)",
+      "TaskStop(*)",
+      "PushNotification(*)",
+      "EnterWorktree(*)",
+      "ExitWorktree(*)",
       "Bash(python run.py)",
       "Bash(pip install *)",
       "Bash(flask --app run *)",
@@ -72,7 +98,14 @@
       "Bash(python \"f:\\\\dengtec\\\\mycompany.website\\\\fix_addmodule.py\")",
       "Bash(python -c \"import re; path=r'f:\\\\dengtec\\\\mycompany.website\\\\app\\\\templates\\\\dashboard\\\\panel_page_edit.html'; content=open\\(path,encoding='utf-8'\\).read\\(\\); m=re.search\\(r'querySelector\\\\\\(.+?input_radius.+?\\\\\\)', content\\); print\\(repr\\(m.group\\(\\)\\)\\); print\\('Has backslash-quote:', r\\\\\"\\\\'\\\\\" in m.group\\(\\)\\)\")",
       "Bash(Start-Sleep -Seconds 2)",
-      "PowerShell(python \"f:\\\\dengtec\\\\mycompany.website\\\\_gen_content_patterns.py\")"
+      "PowerShell(python \"f:\\\\dengtec\\\\mycompany.website\\\\_gen_content_patterns.py\")",
+      "PowerShell(python _fix_header.py)",
+      "PowerShell(python _fix_header2.py)",
+      "Bash(python _fix_header.py)",
+      "Bash(python _fix_header2.py)",
+      "PowerShell(python _fix_*.py)",
+      "Bash(python _fix_*.py)",
+      "Bash(python -c \"import json; fp = r'C:\\\\\\\\Users\\\\\\\\admin\\\\\\\\.claude\\\\\\\\projects\\\\\\\\f--dengtec-mycompany-website\\\\\\\\8e832519-2711-4c09-89a9-9d8519a92ac0.jsonl'; f = open\\(fp, 'r', encoding='utf-8'\\); [print\\('Keys:', list\\(json.loads\\(line\\).keys\\(\\)\\), '| content type:', type\\(json.loads\\(line\\).get\\('content',''\\)\\).__name__\\) for line in f if json.loads\\(line\\).get\\('type'\\) == 'assistant'][:3]\")"
     ]
   }
 }

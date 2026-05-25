@@ -43,7 +43,7 @@
           {% for lang_opt in languages %}
           <li class="language-item{% if lang == lang_opt.code %} active{% endif %}">
             <a href="{{ base_url }}/{{ lang_opt.code }}{{ current_path }}" class="lang-name" style="color:inherit;text-decoration:none;">{{ lang_opt.name }}</a>
-            {% if lang == lang_opt.code %}<span class="checkmark">✓</span>{% endif %}
+            <!-- {% if lang == lang_opt.code %}<span class="checkmark">✓</span>{% endif %} -->
           </li>
           {% endfor %}
         </ul>

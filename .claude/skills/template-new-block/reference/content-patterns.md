@@ -58,6 +58,10 @@ Block 的标题区（`.section-header`）是统一的，但内容区（`.section
 </section>
 ```
 
+![hero_banner 结构示意图](../../../../site_templates/dengtec/blocks/hero_banner/structure-diagram.svg)
+
+*上图：hero_banner HTML 骨架的层级结构。红色色块=padding 区域，红色连线标注=可配置的字段属性，蓝色标注=section 层属性。*
+
 **hero_banner 不使用 `.section-header`**。标题和副标题在 `.hero-banner-content` 内部实现。
 
 **可见即所得的排版**：`banner_align` 字段直接决定文字块的 `left`/`top`/`transform` 定位，不需要用户写 CSS。

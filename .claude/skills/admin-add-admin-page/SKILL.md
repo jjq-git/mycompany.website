@@ -16,6 +16,7 @@ description: "新增后台管理页面(模板 + Panel 片段 + 路由 + 导航)"
 - Panel 片段:`app/templates/dashboard/panel_<page_key>.html`(无 extends)
 - 路由:`app/core/routes.py` 中的 `@bp.route(...)` + 对应视图函数
 - 导航:`app/templates/base.html` 中的 `<a class="left-nav-item">`
+- **国际化:所有界面文字必须用 `{{ _t('key') }}` 函数,禁止硬编码中文**（详见下文"国际化约束"）
 
 ## 第一步:明确需求
 
@@ -34,7 +35,93 @@ description: "新增后台管理页面(模板 + Panel 片段 + 路由 + 导航)"
 - **内容**:数据管理(产品、功能、博客、→ 新增的自定义数据集)
 - **站点**:站点操作(概览、页面管理、模板库、发布)
 
-## 第二步:创建 Panel 片段模板
+## 第二步:国际化约束（硬约束，写模板前必读）
+
+**所有在后台管理界面中显示的硬编码文字必须通过 `_t()` 函数取值，禁止直接写中文。**
+
+### 为什么
+
+后台 UI 的语言列表与网站语言版本（属性面板 → 语言设置）保持一致。如果店主启用了 zh-CN、zh-TW、en 三种语言，后台应支持在这三种语言间切换。硬编码中文会让多语言切换失效。
+
+### 翻译文件
+
+```
+app/translations/
+  admin_zh-CN.json    ← 简体中文（兜底语言，新 key 先加这里）
+  admin_zh-TW.json    ← 繁體中文
+  admin_en.json       ← English
+```
+
+格式：两级 key，`页面分组.key名`：
+
+```json
+{
+  "panel_<page_key>": {
+    "section_title": "基本设置",
+    "label_title": "标题",
+    "label_desc": "描述",
+    "btn_save": "保存"
+  }
+}
+```
+
+### 模板中使用
+
+```html
+<!-- 错误：硬编码中文 -->
+<div class="panel-section-title">基本设置</div>
+<label>标题</label>
+<button>保存</button>
+
+<!-- 正确：用 _t() 取翻译值 -->
+<div class="panel-section-title">{{ _t('panel_<page_key>.section_title') }}</div>
+<label>{{ _t('panel_<page_key>.label_title') }}</label>
+<button>{{ _t('panel_<page_key>.btn_save') }}</button>
+```
+
+### 新增面板时的 i18n checklist
+
+- [ ] 模板中所有中文界面文字都替换为 `{{ _t('...') }}`
+- [ ] 对应的 key 已添加到 `app/translations/admin_zh-CN.json`
+- [ ] key 命名遵循 `panel_<page_key>.<语义名>` 格式
+- [ ] 同义词统一用一个 key（如所有"保存"按钮都用 `common.btn_save`，不重复造 key）
+
+### 公共 key（跨面板复用）
+
+以下 key 已定义在 `common` 分组下，新面板直接复用，不要自造：
+
+```json
+"common": {
+  "btn_save": "保存",
+  "btn_cancel": "取消",
+  "btn_delete": "删除",
+  "btn_add": "添加",
+  "tab_content": "内容",
+  "tab_style": "样式",
+  "label_title": "标题",
+  "label_desc": "描述",
+  "label_image": "图片",
+  "label_url": "链接",
+  "section_outer_style": "外层样式",
+  "section_inner_style": "内层样式",
+  "section_padding": "内边距",
+  "section_margin": "外边距",
+  "section_color": "配色"
+}
+```
+
+> 如果现有 common key 不够用，先在 `admin_zh-CN.json` 的 common 组补上，再在新面板中使用。不要在新面板的 panel 分组下重复定义。
+
+### _t() 函数说明
+
+由 `app/core/i18n.py` 注册为 Jinja2 全局函数：
+- 根据当前用户选择的 UI 语言加载对应 JSON
+- key 不存在时 fallback 到 `admin_zh-CN.json`
+- zh-CN 也没有时返回 key 名本身（方便开发时发现缺失）
+
+详细方案见 [.claude/admin-i18n.md](../../.claude/admin-i18n.md)。
+
+## 第三步:创建 Panel 片段模板
 
 文件:`app/templates/dashboard/panel_<page_key>.html`
 
@@ -54,14 +141,14 @@ description: "新增后台管理页面(模板 + Panel 片段 + 路由 + 导航)"
 <div class="right-panel-body">
   <form method="POST" action="{{ url_for('core.partners', site=site.id, _fragment='1') }}">
     <div class="panel-section">
-      <div class="panel-section-title">基本设置</div>
+      <div class="panel-section-title">{{ _t('panel_partners.section_title') }}</div>
       <div class="form-group">
-        <label>合作伙伴标题</label>
+        <label>{{ _t('panel_partners.label_title') }}</label>
         <input class="form-control form-control-sm" name="title"
                value="{{ data.get('title', '') }}">
       </div>
       <div class="form-group">
-        <label>描述</label>
+        <label>{{ _t('panel_partners.label_desc') }}</label>
         <textarea class="form-control form-control-sm" name="desc"
                   rows="3">{{ data.get('desc', '') }}</textarea>
       </div>
@@ -69,13 +156,13 @@ description: "新增后台管理页面(模板 + Panel 片段 + 路由 + 导航)"
 
     <div style="padding:12px 20px;border-top:1px solid #e8ecf0;">
       <button type="submit" class="btn btn-sm"
-              style="background:#067a7a;border-color:#067a7a;color:#fff">保存</button>
+              style="background:#067a7a;border-color:#067a7a;color:#fff">{{ _t('common.btn_save') }}</button>
     </div>
   </form>
 </div>
 ```
 
-## 第三步:创建全页面模板
+## 第四步:创建全页面模板
 
 文件:`app/templates/dashboard/<page_key>.html`
 
@@ -94,7 +181,7 @@ description: "新增后台管理页面(模板 + Panel 片段 + 路由 + 导航)"
 
 如果页面包含列表(如数据集),直接写表格等内容.
 
-## 第四步:注册路由
+## 第五步:注册路由
 
 在 `app/core/routes.py` 中添加两个路由(GET 渲染 + POST 处理).
 
@@ -130,7 +217,7 @@ def <page_key>():
 
 如果是多语言支持的面板,参考 `_get_panel_lang()` 和 `page_panel()` 的实现.
 
-## 第五步:添加左侧导航项
+## 第六步:添加左侧导航项
 
 在 `app/templates/base.html` 对应分类区域添加导航项:
 
@@ -158,7 +245,7 @@ def <page_key>():
 - **内容**:在 产品/功能/博客 等数据集管理项附近
 - **站点**:在 概览/页面管理/模板库 附近
 
-## 第六步:验证
+## 第七步:验证
 
 1. 启动服务器:`python run.py`
 2. 登录后台 → 选择站点

@@ -24,7 +24,7 @@ Block 设计的核心原则:
 - **一个 Block 做好一件事**(不要做一个"万能通用模块")
 - **字段够用就好**(不是越多越好,店主填起来累)
 - **固定样式写在 CSS**,可变样式通过字段配置
-
+- **meta.yaml 的 default 必须与 CSS 兜底值一致**: 每个字段的 `default` 要填模板 CSS 中的实际默认值(如 padding 默认 1rem、header 内层宽度默认 1440px), 不能随意留空。 详见 [reference/meta-yaml.md](reference/meta-yaml.md#default-字段填写规则硬约束)
 ## 创建目录和文件
 
 ```
@@ -169,6 +169,20 @@ Block 创建后立即可在后台页面编辑器中使用.
 | logo_cloud | social | 客户 Logo 墙 |
 | contact_info | content | 联系信息展示 |
 | process_steps | content | 流程步骤展示 |
+
+## 国际化约束（与 admin_modules.js 相关）
+
+**新建或修改 Block 时，meta.yaml 中的 `label` 和 `placeholder` 目前仍直接使用中文**，这些文字由 `admin_modules.js` 中的 `renderField()` 函数渲染到后台属性面板。
+
+后续管理员后台 UI 国际化实施后（方案见 `.claude/admin-i18n.md`），Block 字段标签也需要支持多语言。当前的过渡约定：
+
+1. **label 用中文写描述性名称**（如 `标题`、`外层背景色`），保持与现有 Block 一致
+2. **不要为了"将来可能支持 i18n"而在 label 中使用英文 key**——当前 admin_modules.js 直接渲染 label 值，用英文 key 会让店主看不懂
+3. **相似字段复用相同的 label 措辞**（如所有模块的 padding 字段都叫 `内边距`），这样后续做 i18n 时能批量替换
+
+未来改造方向（不在此 skill 范围内）：
+- meta.yaml 的 label 改为 i18n key → admin_modules.js 通过 `_t()` 查翻译表
+- 或者 meta.yaml 增加 `label_i18n` 字段，存储按语言的翻译
 
 ## 关联技能
 

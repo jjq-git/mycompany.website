@@ -220,7 +220,7 @@
       styleEditor =
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2 mb-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_hero_width', 'Banner 宽度', ['px','%','vw','rem'], d.hero_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_hero_width', 'Banner 外层宽度', ['px','%','vw','rem'], d.hero_width) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_hero_height', 'Banner 高度', ['px','vh','rem','%'], d.hero_height) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_content_width', '内容区宽度', ['px','%','vw','rem'], d.content_width) + '</div>' +
           '<div class="col-6">' + sel('module_' + idx + '_data_banner_align', 'Banner 文字排版', [{value:'',label:'默认（全宽）'},{value:'center',label:'居中'},{value:'left',label:'居左'},{value:'right',label:'居右'}], d.banner_align) + '</div>' +

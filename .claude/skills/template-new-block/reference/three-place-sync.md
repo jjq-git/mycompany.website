@@ -114,6 +114,26 @@ process_steps 有额外的"配色"分组，包含：
 4. 修改 `admin_modules.js` 中对应的 `buildModuleHTML()` 分支
 5. 启动服务器验证：新建模块 + 保存后再打开，两边表单一致
 
+## 单位选择器默认值（硬约束）
+
+**所有单位选择器的第一个 `<option>` 必须有一个非空的默认单位值，禁止使用 `<option value="">—</option>`。**
+
+原因：用户输入纯数字（如 `1200`）后不碰单位选择器，值就是裸数字，CSS 不认，设置无效。
+
+| 字段类型 | 默认单位 | 示例 option |
+|---------|---------|------------|
+| 宽度 (width) | `px` | `<option value="px">px</option>` |
+| 高度 (height) | `px` | `<option value="px">px</option>` |
+| 字体大小 (font-size) | `px` | `<option value="px">px</option>` |
+| 内边距 (padding) | `px` | `<option value="px">px</option>` |
+| 外边距 (margin) | `px` | `<option value="px">px</option>` |
+| 圆角 (border-radius) | `px` | `<option value="px">px</option>` |
+| 全局宽度 (global_width) | `%` | `<option value="%">%</option>` |
+
+**三处同步时（Jinja 模板 / addModule() / admin_modules.js），三处的单位选择器默认值必须一致。**
+
+`base.html` 中有全局 JS 归一化函数 `normalizeUnitInputs()`，会在表单提交前自动给裸数字追加当前选择的单位作为兜底——但这不意味着可以不设默认值。UI 层面仍然需要显示正确的默认单位。
+
 ## 常见错误
 
 | 错误 | 后果 | 预防 |

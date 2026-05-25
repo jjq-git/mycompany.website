@@ -8,8 +8,8 @@
 | `label` | 是 | 后台显示标签 |
 | `type` | 是 | 字段类型 |
 | `group` | 推荐 | 后台分组, 同名 group 归到一组显示 |
-| `default` | 推荐 | 默认值(字符串) |
-| `placeholder` | 否 | 占位提示 |
+| `default` | **必填** | 默认值(字符串), 必须与模板 CSS 实际兜底值一致 |
+| `placeholder` | 推荐 | 占位提示, 应注明"留空=CSS 默认值" |
 | `options` | select 必填 | `[{value, label}]` |
 | `item_label` | list 推荐 | 列表项显示标签 |
 | `item_fields` | list 必填 | 子字段定义(用 `key`, 不是 `name`) |
@@ -40,6 +40,33 @@
 | 内层边距 | padding | padding_top/right/bottom/left |
 | 配色 | 颜色 | title_color, desc_color, btn_bg, btn_color |
 | 字体样式 | 字号 | title_size, body_size, title_font_size |
+
+### default 字段填写规则（硬约束 ⚠️）
+
+**`default` 必须填写模板 CSS 中该属性的实际兜底值**, 不能随意留空。 原因:
+
+1. 新建站点/新加模块时, 属性面板通过 `d[f.key] || f.default || ''` 渲染初始值
+2. 如果 `default: ""`, 面板显示为空, 用户不知道"现在的实际效果是什么"
+3. 模板的 CSS 文件(main.css)定义了视觉兜底, meta.yaml 的 default 必须与之同步
+
+**填写方法**:
+
+1. 打开模板的 CSS 文件(如 `site_templates/<name>/static/css/main.css`)
+2. 找到该 block 对应的 CSS 规则, 提取属性值
+3. 将 CSS 值写入 meta.yaml 的 `default` 字段
+
+**常见 CSS 默认值速查**(以 dengtec 模板为例):
+
+| CSS 规则 | 属性 | meta.yaml default |
+|----------|------|-------------------|
+| `.section { padding-top: var(--spacing-md) }` | 外层上内边距 | `"1rem"` |
+| `.section { padding-bottom: var(--spacing-md) }` | 外层下内边距 | `"1rem"` |
+| `.hero-banner { height: 77vh }` | Banner 高度 | `"77vh"` |
+| `.container { max-width: var(--container-max) }` | 内容区宽度(header) | `"1440px"` |
+| `background: transparent` (无 CSS 规则) | 背景色 | `""` (空=透明) |
+| `padding: 0` (无 CSS 规则) | 内边距为 0 | `""` (空=0, 避免冗余 inline style) |
+
+**例外**: 值为 `0`、`none`、`transparent` 的字段可保持 `default: ""`, 避免生成冗余的 inline style。 此时 `placeholder` 应明确说明默认值(如"留空=透明")。
 
 ## 完整示例 (highlight_card)
 

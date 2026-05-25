@@ -72,14 +72,19 @@
 {% set lang_switcher_enabled = header_config.get('language_switcher', {}).get('enabled', True) %}
 {% set lang_switcher_style = header_config.get('language_switcher', {}).get('style', 'vertical_dropdown') %}
 
-{# 头部自定义样式：内层宽度 + 内层内边距 #}
-{% set h_inner_w = header_config.get('inner_width', '') or settings.get('layout', {}).get('global_width', '90%') %}
+{# 头部自定义样式：外层宽度(header-main) + 内层宽度(container) + 内边距 #}
+{% set global_w = settings.get('layout', {}).get('global_width', '90%') %}
+{% set h_outer_w = header_config.get('outer_width', '') or global_w %}
+{% set h_inner_w = header_config.get('inner_width', '') %}
 {% set h_pad_top = header_config.get('padding_top', '') %}
 {% set h_pad_right = header_config.get('padding_right', '') %}
 {% set h_pad_bottom = header_config.get('padding_bottom', '') %}
 {% set h_pad_left = header_config.get('padding_left', '') %}
-{% if h_inner_w or h_pad_top or h_pad_right or h_pad_bottom or h_pad_left %}
+{% if h_outer_w or h_inner_w or h_pad_top or h_pad_right or h_pad_bottom or h_pad_left %}
 <style>
+  .site-header .header-main {
+    {% if h_outer_w %}max-width: {{ h_outer_w }}; margin-left: auto; margin-right: auto;{% endif %}
+  }
   .site-header .header-main .container {
     {% if h_inner_w %}max-width: {{ h_inner_w }}; margin-left: auto; margin-right: auto;{% endif %}
     {% if h_pad_top %}padding-top: {{ h_pad_top }};{% endif %}
@@ -89,6 +94,21 @@
   }
 </style>
 {% endif %}
+
+{# 修复后台预览选中 header 时 .builder-canvas-selected 框被 .header-main 背景遮盖：改用 ::after 伪元素（header 本身 position:fixed 已提供定位上下文）#}
+<style>
+  .site-header.builder-region.builder-canvas-selected {
+    box-shadow: none;
+  }
+  .site-header.builder-region.builder-canvas-selected::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    box-shadow: inset 0 0 0 2px #067a7a, inset 0 0 15px #067a7a70;
+  }
+</style>
+
 
 {# ===== HEADER VARIANT: logo_left_menu_right (default / classic) ===== #}
 {% if header_variant == 'logo_left_menu_right' %}

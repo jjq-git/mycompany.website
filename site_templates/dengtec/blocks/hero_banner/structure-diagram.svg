@@ -1,0 +1,256 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 720" width="1400" height="720">
+  <defs>
+    <marker id="aD" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,1 L3.5,6 L7,1" fill="#e74c3c"/></marker>
+    <marker id="aU" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,6 L3.5,1 L7,6" fill="#e74c3c"/></marker>
+    <marker id="aL" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M6,0 L1,3.5 L6,7" fill="#e74c3c"/></marker>
+    <marker id="aR" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M1,0 L6,3.5 L1,7" fill="#e74c3c"/></marker>
+    <marker id="aRb" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M1,0 L6,3.5 L1,7" fill="#2980b9"/></marker>
+    <marker id="aLb" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M6,0 L1,3.5 L6,7" fill="#2980b9"/></marker>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a3f47"/><stop offset="100%" stop-color="#2a2d34"/>
+    </linearGradient>
+  </defs>
+
+  <style>
+    text { font-family: "Microsoft YaHei","PingFang SC",sans-serif; }
+    .t { font-size: 12px; fill: #c0c4cc; }
+    .b { font-weight: bold; }
+    .w { fill: #fff; }
+    .s { font-size: 10px; }
+  </style>
+
+  <!-- ====== 画布背景 ====== -->
+  <rect x="0" y="0" width="1400" height="720" fill="#1a1d23" rx="4"/>
+
+  <!-- ====== 顶部标题栏 ====== -->
+  <rect x="0" y="0" width="1400" height="44" fill="#21242b" rx="4"/>
+  <text x="700" y="27" text-anchor="middle" font-size="17" font-weight="bold" fill="#e8eaed">hero_banner — HTML 骨架与属性映射</text>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 层 — 浅蓝虚线大框 -->
+  <!-- ============================================================ -->
+  <rect x="60" y="60" width="1280" height="600" fill="none" stroke="#5b8def" stroke-width="2" stroke-dasharray="10 4" rx="4"/>
+
+  <!-- section_bg 色块示意 -->
+  <rect x="60" y="60" width="1280" height="600" fill="rgba(91,141,239,0.04)" rx="4"/>
+
+  <!-- hero_width 双向箭头 -->
+  <line x1="60" y1="80" x2="20" y2="80" stroke="#5b8def" stroke-width="1.2"/>
+  <line x1="1340" y1="80" x2="1380" y2="80" stroke="#5b8def" stroke-width="1.2"/>
+  <line x1="60" y1="76" x2="60" y2="84" stroke="#5b8def" stroke-width="1.2"/>
+  <line x1="1340" y1="76" x2="1340" y2="84" stroke="#5b8def" stroke-width="1.2"/>
+  <text x="700" y="76" text-anchor="middle" font-size="11" fill="#5b8def" font-weight="bold">hero_width (max-width) — 控制 Banner 最大宽度</text>
+
+  <!-- hero_height 双向箭头 -->
+  <line x1="76" y1="60" x2="76" y2="20" stroke="#5b8def" stroke-width="1.2"/>
+  <line x1="76" y1="660" x2="76" y2="700" stroke="#5b8def" stroke-width="1.2"/>
+  <text x="64" y="365" text-anchor="middle" font-size="11" fill="#5b8def" font-weight="bold" transform="rotate(-90, 64, 365)">hero_height</text>
+
+  <!-- section_bg 标签 -->
+  <text x="72" y="110" font-size="10" fill="#5b8def" font-weight="bold">section_bg</text>
+
+  <!-- ============================================================ -->
+  <!-- padding 区域 -->
+  <!-- ============================================================ -->
+  <!-- padding_top -->
+  <rect x="60" y="100" width="1280" height="24" fill="rgba(231,76,60,0.2)" stroke="rgba(231,76,60,0.4)" stroke-width="0.5"/>
+  <text x="700" y="116" text-anchor="middle" font-size="10" fill="#e74c3c" font-weight="bold">padding_top</text>
+  <line x1="580" y1="107" x2="580" y2="96" stroke="#e74c3c" stroke-width="1" marker-end="url(#aU)"/>
+  <line x1="820" y1="120" x2="820" y2="131" stroke="#e74c3c" stroke-width="1" marker-end="url(#aD)"/>
+
+  <!-- padding_bottom -->
+  <rect x="60" y="636" width="1280" height="24" fill="rgba(231,76,60,0.2)" stroke="rgba(231,76,60,0.4)" stroke-width="0.5"/>
+  <text x="700" y="652" text-anchor="middle" font-size="10" fill="#e74c3c" font-weight="bold">padding_bottom</text>
+
+  <!-- padding_left -->
+  <rect x="60" y="124" width="24" height="512" fill="rgba(231,76,60,0.2)" stroke="rgba(231,76,60,0.4)" stroke-width="0.5"/>
+  <text x="72" y="400" text-anchor="middle" font-size="10" fill="#e74c3c" font-weight="bold" transform="rotate(-90, 72, 400)">padding_left</text>
+
+  <!-- padding_right -->
+  <rect x="1316" y="124" width="24" height="512" fill="rgba(231,76,60,0.2)" stroke="rgba(231,76,60,0.4)" stroke-width="0.5"/>
+  <text x="1328" y="400" text-anchor="middle" font-size="10" fill="#e74c3c" font-weight="bold" transform="rotate(90, 1328, 400)">padding_right</text>
+
+  <!-- ============================================================ -->
+  <!-- .container -->
+  <!-- ============================================================ -->
+  <rect x="90" y="130" width="1220" height="500" fill="none" stroke="#27ae60" stroke-width="1.2" stroke-dasharray="6 4" rx="3"/>
+  <text x="100" y="146" font-size="11" fill="#27ae60" font-weight="bold">.container (height: 100%)</text>
+
+  <!-- ============================================================ -->
+  <!-- .hero-banner-slides -->
+  <!-- ============================================================ -->
+  <rect x="100" y="155" width="1200" height="465" fill="none" stroke="#f39c12" stroke-width="0.8" stroke-dasharray="5 3" rx="3"/>
+  <text x="110" y="170" class="s" fill="#f39c12" font-weight="bold">.hero-banner-slides</text>
+
+  <!-- ============================================================ -->
+  <!-- .hero-banner-slide -->
+  <!-- ============================================================ -->
+  <rect x="115" y="178" width="1170" height="432" fill="none" stroke="#a259ff" stroke-width="1" rx="3"/>
+  <text x="125" y="194" class="s" fill="#a259ff" font-weight="bold">.hero-banner-slide.active</text>
+
+  <!-- ==================== 媒体层 ==================== -->
+  <rect x="128" y="202" width="1144" height="280" fill="url(#bgGrad)" rx="5"/>
+  <text x="142" y="222" font-size="12" fill="#fff" font-weight="bold">.hero-banner-media    ← slides[].type (image / video)</text>
+  <text x="142" y="236" class="s" fill="rgba(255,255,255,0.5)">.hero-banner-image { background-image: url(...) }  /  .hero-banner-video</text>
+
+  <!-- 示意图片 -->
+  <rect x="500" y="250" width="340" height="180" fill="rgba(255,255,255,0.06)" rx="4"/>
+  <text x="670" y="345" text-anchor="middle" font-size="14" fill="rgba(255,255,255,0.35)">背景图 / 视频</text>
+  <text x="670" y="362" text-anchor="middle" class="s" fill="rgba(255,255,255,0.25)">slides[].media</text>
+
+  <!-- ==================== 遮罩层 ==================== -->
+  <rect x="128" y="295" width="1144" height="188" fill="rgba(0,0,0,0.4)" rx="5"/>
+  <text x="142" y="315" font-size="12" fill="#fff" font-weight="bold">.hero-banner-overlay</text>
+  <text x="142" y="329" class="s" fill="rgba(255,255,255,0.6)">overlay_color (background) / overlay_opacity</text>
+
+  <!-- ==================== 内容区 ==================== -->
+  <rect x="360" y="310" width="680" height="150" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" rx="5"/>
+
+  <!-- content_width 标注 — 上方 -->
+  <line x1="360" y1="308" x2="360" y2="298" stroke="#e67e22" stroke-width="1.2" marker-end="url(#aU)"/>
+  <line x1="1040" y1="308" x2="1040" y2="298" stroke="#e67e22" stroke-width="1.2" marker-end="url(#aU)"/>
+  <rect x="520" y="288" width="360" height="16" fill="#e67e22" rx="3"/>
+  <text x="700" y="301" text-anchor="middle" class="s" fill="#fff" font-weight="bold">content_width (max-width) — 内容区最大宽度</text>
+
+  <!-- banner_align 标注 — 左上角 -->
+  <text x="374" y="326" font-size="10" fill="#a259ff" font-weight="bold">banner_align →</text>
+
+  <!-- 标题 -->
+  <rect x="420" y="325" width="560" height="36" fill="rgba(255,255,255,0.1)" rx="3"/>
+  <text x="700" y="347" text-anchor="middle" font-size="17" fill="#fff" font-weight="bold">主标题 — slides[].title</text>
+  <text x="700" y="358" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.4)">.hero-banner-title (h1)</text>
+
+  <!-- 副标题 -->
+  <rect x="460" y="370" width="480" height="22" fill="rgba(255,255,255,0.05)" rx="3"/>
+  <text x="700" y="385" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.8)">副标题 — slides[].subtitle  .hero-banner-subtitle (p)</text>
+
+  <!-- 按钮区 -->
+  <rect x="520" y="402" width="360" height="38" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="0.6" rx="3"/>
+  <!-- 主按钮 -->
+  <rect x="555" y="408" width="110" height="26" fill="#067a7a" rx="5"/>
+  <text x="610" y="426" text-anchor="middle" font-size="10" fill="#fff" font-weight="bold">主按钮</text>
+  <!-- 副按钮 -->
+  <rect x="680" y="408" width="110" height="26" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.2" rx="5"/>
+  <text x="735" y="426" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.7)">副按钮</text>
+  <text x="700" y="448" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.3)">.hero-banner-actions  /  .btn.btn-primary  /  .btn.btn-secondary</text>
+
+  <!-- ============================================================ -->
+  <!-- ===== 属性标注 ===== 每条放在版心两侧，互不重叠 -->
+  <!-- ============================================================ -->
+
+  <!-- 左侧标注列 — 从上到下 -->
+  <!-- 1. section 外层属性 -->
+  <rect x="10" y="165" width="170" height="58" fill="#21242b" stroke="#5b8def" stroke-width="0.8" rx="4"/>
+  <text x="22" y="183" class="s" fill="#5b8def" font-weight="bold">section 属性</text>
+  <text x="22" y="197" class="s" fill="#a0a4ac">hero_width : max-width</text>
+  <text x="22" y="210" class="s" fill="#a0a4ac">hero_height : height</text>
+  <text x="22" y="223" class="s" fill="#a0a4ac">section_bg : background</text>
+  <line x1="180" y1="194" x2="358" y2="194" stroke="#5b8def" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#aRb)"/>
+
+  <!-- 2. padding 属性 -->
+  <rect x="10" y="240" width="170" height="44" fill="#21242b" stroke="#e74c3c" stroke-width="0.8" rx="4"/>
+  <text x="22" y="256" class="s" fill="#e74c3c" font-weight="bold">padding 四边</text>
+  <text x="22" y="270" class="s" fill="#a0a4ac">padding_top / right</text>
+  <text x="22" y="283" class="s" fill="#a0a4ac">padding_bottom / left</text>
+
+  <!-- 3. overlay 属性 -->
+  <rect x="10" y="305" width="170" height="44" fill="#21242b" stroke="#aaa" stroke-width="0.8" rx="4"/>
+  <text x="22" y="321" class="s" fill="#ddd" font-weight="bold">overlay 遮罩</text>
+  <text x="22" y="335" class="s" fill="#a0a4ac">overlay_color : background</text>
+  <text x="22" y="348" class="s" fill="#a0a4ac">overlay_opacity : opacity</text>
+  <line x1="180" y1="327" x2="358" y2="375" stroke="#999" stroke-width="0.6" stroke-dasharray="2 2"/>
+
+  <!-- 4. content 属性 -->
+  <rect x="10" y="370" width="170" height="44" fill="#21242b" stroke="#e67e22" stroke-width="0.8" rx="4"/>
+  <text x="22" y="386" class="s" fill="#e67e22" font-weight="bold">content 内容区</text>
+  <text x="22" y="400" class="s" fill="#a0a4ac">content_width : max-width</text>
+  <text x="22" y="413" class="s" fill="#a0a4ac">banner_align : 排版对齐</text>
+  <line x1="180" y1="392" x2="358" y2="385" stroke="#e67e22" stroke-width="0.6" stroke-dasharray="2 2"/>
+
+  <!-- 5. 标题属性 -->
+  <rect x="10" y="435" width="170" height="44" fill="#21242b" stroke="#ff6b6b" stroke-width="0.8" rx="4"/>
+  <text x="22" y="451" class="s" fill="#ff6b6b" font-weight="bold">标题 .hero-banner-title</text>
+  <text x="22" y="465" class="s" fill="#a0a4ac">title_font_size / color</text>
+  <text x="22" y="478" class="s" fill="#a0a4ac">weight / line_height / text_shadow</text>
+  <line x1="180" y1="457" x2="418" y2="343" stroke="#ff6b6b" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+  <!-- 6. 副标题属性 -->
+  <rect x="10" y="500" width="170" height="44" fill="#21242b" stroke="#ff9f43" stroke-width="0.8" rx="4"/>
+  <text x="22" y="516" class="s" fill="#ff9f43" font-weight="bold">副标题 .hero-banner-subtitle</text>
+  <text x="22" y="530" class="s" fill="#a0a4ac">subtitle_font_size / color</text>
+  <text x="22" y="543" class="s" fill="#a0a4ac">weight / line_height / max_width</text>
+  <line x1="180" y1="522" x2="458" y2="381" stroke="#ff9f43" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+  <!-- 7. dots 属性 -->
+  <rect x="10" y="565" width="170" height="44" fill="#21242b" stroke="#7bed9f" stroke-width="0.8" rx="4"/>
+  <text x="22" y="581" class="s" fill="#7bed9f" font-weight="bold">导航点 .hero-banner-dots</text>
+  <text x="22" y="595" class="s" fill="#a0a4ac">dot_color / dot_active_color</text>
+  <text x="22" y="608" class="s" fill="#a0a4ac">autoplay / autoplay_interval</text>
+
+  <!-- 右侧标注列 — 从上到下 -->
+  <!-- 8. 按钮属性 -->
+  <rect x="1200" y="340" width="170" height="72" fill="#21242b" stroke="#2ecc71" stroke-width="0.8" rx="4"/>
+  <text x="1212" y="358" class="s" fill="#2ecc71" font-weight="bold">按钮 .btn</text>
+  <text x="1212" y="372" class="s" fill="#a0a4ac">btn_bg : background</text>
+  <text x="1212" y="385" class="s" fill="#a0a4ac">btn_text_color : color</text>
+  <text x="1212" y="398" class="s" fill="#a0a4ac">btn_font_size / radius</text>
+  <text x="1212" y="411" class="s" fill="#a0a4ac">btn_padding / weight</text>
+  <line x1="1200" y1="376" x2="1042" y2="420" stroke="#2ecc71" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+  <!-- 9. nav 箭头 -->
+  <rect x="1200" y="440" width="170" height="44" fill="#21242b" stroke="#74b9ff" stroke-width="0.8" rx="4"/>
+  <text x="1212" y="456" class="s" fill="#74b9ff" font-weight="bold">导航箭头 .hero-banner-nav</text>
+  <text x="1212" y="470" class="s" fill="#a0a4ac">nav_color : color</text>
+  <text x="1212" y="483" class="s" fill="#a0a4ac">nav_bg : background</text>
+
+  <!-- 10. slides 数据字段 -->
+  <rect x="1200" y="510" width="170" height="60" fill="#21242b" stroke="#a259ff" stroke-width="0.8" rx="4"/>
+  <text x="1212" y="528" class="s" fill="#a259ff" font-weight="bold">slides[] 数据字段</text>
+  <text x="1212" y="542" class="s" fill="#a0a4ac">type / media</text>
+  <text x="1212" y="555" class="s" fill="#a0a4ac">title / subtitle</text>
+  <text x="1212" y="568" class="s" fill="#a0a4ac">primaryBtn / secondaryBtn</text>
+  <line x1="1200" y1="540" x2="1146" y2="380" stroke="#a259ff" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+  <!-- ============================================================ -->
+  <!-- 导航控件（底部） -->
+  <!-- ============================================================ -->
+  <!-- dots -->
+  <circle cx="655" cy="618" r="7" fill="#067a7a"/>
+  <circle cx="685" cy="618" r="7" fill="#555"/>
+  <circle cx="715" cy="618" r="7" fill="#555"/>
+  <text x="700" y="600" text-anchor="middle" class="s" fill="#888">.hero-banner-dots</text>
+
+  <!-- 左右箭头 -->
+  <text x="610" y="624" font-size="16" fill="#777">◀</text>
+  <text x="760" y="624" font-size="16" fill="#777">▶</text>
+  <text x="685" y="640" text-anchor="middle" class="s" fill="#888">.hero-banner-nav</text>
+
+  <!-- ============================================================ -->
+  <!-- 图例 -->
+  <!-- ============================================================ -->
+  <rect x="60" y="672" width="1280" height="36" fill="#21242b" stroke="#333" stroke-width="0.6" rx="4"/>
+  <!-- 红色=padding -->
+  <rect x="80" y="683" width="14" height="12" fill="rgba(231,76,60,0.35)" stroke="#e74c3c" stroke-width="0.5"/>
+  <text x="100" y="695" class="s" fill="#999">padding</text>
+  <!-- 蓝色=section -->
+  <rect x="180" y="683" width="14" height="12" fill="none" stroke="#5b8def" stroke-width="1.5"/>
+  <text x="200" y="695" class="s" fill="#999">section 层属性</text>
+  <!-- 橙色=content -->
+  <rect x="310" y="683" width="14" height="12" fill="#e67e22" rx="2"/>
+  <text x="330" y="695" class="s" fill="#999">content 属性</text>
+  <!-- 深灰=overlay -->
+  <rect x="450" y="683" width="14" height="12" fill="rgba(0,0,0,0.4)" stroke="#777" stroke-width="0.5"/>
+  <text x="470" y="695" class="s" fill="#999">overlay 遮罩</text>
+  <!-- 青绿=按钮 -->
+  <rect x="580" y="683" width="14" height="12" fill="#067a7a" rx="2"/>
+  <text x="600" y="695" class="s" fill="#999">按钮属性</text>
+  <!-- 红粉=文字 -->
+  <rect x="700" y="683" width="14" height="12" fill="#ff6b6b" rx="2"/>
+  <text x="720" y="695" class="s" fill="#999">标题/副标题属性</text>
+  <!-- 导航 -->
+  <rect x="850" y="683" width="14" height="12" fill="#7bed9f" rx="2"/>
+  <text x="870" y="695" class="s" fill="#999">导航控件</text>
+  <!-- 数据 -->
+  <rect x="970" y="683" width="14" height="12" fill="#a259ff" rx="2"/>
+  <text x="990" y="695" class="s" fill="#999">数据字段</text>
+</svg>
