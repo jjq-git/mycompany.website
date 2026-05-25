@@ -5028,9 +5028,9 @@ h6 { font-size: var(--font-size-md); }
   gap: var(--spacing-xl, 1.5rem);
 }
 
-/* 左图右文布局 */
+/* 左图右文布局：仅标记卡片方向，列数由模块设置的 columns 控制 */
 .dg-list--horizontal {
-  grid-template-columns: 1fr;
+  /* grid-template-columns 由内联样式控制，此处不覆盖 */
 }
 
 .dg-card {
@@ -5145,14 +5145,27 @@ h6 { font-size: var(--font-size-md); }
 
 @media (max-width: 1024px) {
   .dg-list { grid-template-columns: repeat(2, 1fr); }
+  /* 水平布局在平板端：图片适当缩小，避免文字区太窄 */
+  .dg-card--horizontal .dg-card-image {
+    width: 200px;
+    min-height: 140px;
+  }
 }
 
 @media (max-width: 768px) {
   .dg-list { grid-template-columns: 1fr; }
-  .dg-card--horizontal { flex-direction: column; }
+  /* 水平布局在手机端：卡片改为上下堆叠 */
+  .dg-card--horizontal {
+    flex-direction: column;
+    align-items: stretch;
+  }
   .dg-card--horizontal .dg-card-image {
     width: 100%;
-    min-height: 200px;
+    min-height: 180px;
+  }
+  /* 手机端卡片间距适当缩小 */
+  .dg-list--horizontal {
+    gap: var(--spacing-md, 1rem);
   }
 }
 

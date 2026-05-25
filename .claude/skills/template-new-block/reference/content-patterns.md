@@ -47,7 +47,7 @@ Block 的标题区（`.section-header`）是统一的，但内容区（`.section
 </section>
 ```
 
-![hero_banner 结构示意图](../../../../site_templates/dengtec/blocks/hero_banner/structure-diagram.svg)
+![hero_banner 结构示意图](../../block-diagram-svg/reference/hero_banner.svg)
 
 *上图：hero_banner HTML 骨架的层级结构。红色色块=padding 区域，红色连线标注=可配置的字段属性，蓝色标注=section 层属性。*
 
@@ -205,7 +205,7 @@ hero_banner 覆盖了外层 section 的默认行为，使用专属的 `hero_heig
 </div>
 ```
 
-![highlight_card 结构示意图](../../../../site_templates/dengtec/blocks/highlight_card/structure-diagram.svg)
+![highlight_card 结构示意图](../../block-diagram-svg/reference/highlight_card.svg)
 
 *上图：highlight_card HTML 骨架的层级结构，左图右文双栏布局。hl-image（图片侧）+ hl-text（文字侧：标签→标题→描述→功能列表→按钮）。橙色边框=hl-grid，紫色=image，蓝色=text，绿色=按钮。image_position 控制图文左右位置。*
 

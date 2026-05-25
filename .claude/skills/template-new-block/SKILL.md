@@ -188,5 +188,6 @@ Block 创建后立即可在后台页面编辑器中使用.
 
 - `new-template`:创建新模板(Block 属于模板)
 - `edit-template-style`:为 Block 添加 CSS 样式
+- `block-diagram-svg`:为 Block 生成 HTML 骨架结构示意图 SVG
 - `seed-data`:在种子数据中使用 Block
 - `add-admin-page`:如果需要后台特殊处理
