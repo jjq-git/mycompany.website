@@ -21,30 +21,8 @@
 </div>
 ```
 ## builder-module
-<!-- flowchart  -->
-```mermaid
-flowchart TB
-    subgraph bm["builder-module（框架外挂）"]
-        direction TB
-        subgraph sec["section.section（一、外层）"]
-            direction TB
-            subgraph con["div.container（二、内层）"]
-                direction TB
-                sh["三、标题区"]
-                grid["四、内容区"]
-                sh ~~~ grid
-            end
-        end
-    end
 
-    %% 色块样式（黑白灰，外层深内层浅）
-    style bm fill:#374151,stroke:#1f2937,color:#f3f4f6
-    style sec fill:#4b5563,stroke:#374151,color:#f3f4f6
-    style con fill:#6b7280,stroke:#4b5563,color:#fff
-    style sh fill:#9ca3af,stroke:#6b7280,color:#1f2937
-    style grid fill:#d1d5db,stroke:#9ca3af,color:#1f2937
-    linkStyle 0 stroke:none
-```
+![builder-module 结构](builder-module-structure.svg)
 
 **Block 模板不需要写 `builder-module`**——它由框架在运行时自动外挂。
 
