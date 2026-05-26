@@ -1,0 +1,405 @@
+﻿diff --git a/app/templates/dashboard/panel_page_edit.html b/app/templates/dashboard/panel_page_edit.html
+index 755c6c6..f67b5e7 100644
+--- a/app/templates/dashboard/panel_page_edit.html
++++ b/app/templates/dashboard/panel_page_edit.html
+@@ -779,7 +779,47 @@
+             <div class="row g-2">
+               <div class="col-6"><label class="form-label small mb-1 text-muted">内层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_inner_width" value="{{ mdata.get('inner_width', '') }}" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_inner_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>
+             </div>
+-            <div class="small fw-semibold mb-1 text-muted mt-2">卡片样式</div>
++                        <div class="small fw-semibold mb-1 text-muted mt-2">标题区样式</div>
++            <div class="row g-2">
++              <div class="col-6"><label class="form-label small mb-1 text-muted">标题区背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('header_bg', '#888888') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_header_bg" value="{{ mdata.get('header_bg', '') }}" placeholder="如 #f7f8fa" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">标题区内边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_header_padding" value="{{ mdata.get('header_padding', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_header_padding\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
++            </div>
++            <div class="mb-2">
++              <label class="form-label small mb-1 text-muted">标题区文字排版</label>
++              <select class="form-select form-select-sm" name="module_{{ i }}_data_header_align">
++                <option value="" {% if not mdata.get('header_align') %}selected{% endif %}>默认</option>
++                <option value="left" {% if mdata.get('header_align') == 'left' %}selected{% endif %}>左对齐</option>
++                <option value="center" {% if mdata.get('header_align') == 'center' %}selected{% endif %}>居中</option>
++                <option value="right" {% if mdata.get('header_align') == 'right' %}selected{% endif %}>右对齐</option>
++              </select>
++            </div>
++            <div class="small text-muted mt-2 mb-1" style="font-size:11px">主标题</div>
++            <div class="row g-2">
++              <div class="col-6"><label class="form-label small mb-1 text-muted">标题字号</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title_size" value="{{ mdata.get('title_size', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_title_size\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">标题颜色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('title_color', '#888888') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title_color" value="{{ mdata.get('title_color', '') }}" placeholder="如 #1a1a2e" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">标题下外边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title_margin_bottom" value="{{ mdata.get('title_margin_bottom', '') }}" placeholder="如 0.5rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_title_margin_bottom\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
++            </div>
++            <div class="small text-muted mt-2 mb-1" style="font-size:11px">副标题</div>
++            <div class="row g-2">
++              <div class="col-6"><label class="form-label small mb-1 text-muted">副标题字号</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_subtitle_size" value="{{ mdata.get('subtitle_size', '') }}" placeholder="如 1.125rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_subtitle_size\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">副标题颜色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('subtitle_color', '#888888') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_subtitle_color" value="{{ mdata.get('subtitle_color', '') }}" placeholder="如 #64748b" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
++            </div>
++            <div class="small fw-semibold mb-1 text-muted mt-2">网格样式</div>
++            <div class="mb-2">
++              <label class="form-label small mb-1 text-muted">网格列数</label>
++              <select class="form-select form-select-sm" name="module_{{ i }}_data_grid_columns">
++                <option value="2" {% if mdata.get('grid_columns', '3') == '2' %}selected{% endif %}>2 列</option>
++                <option value="3" {% if mdata.get('grid_columns', '3') == '3' %}selected{% endif %}>3 列</option>
++                <option value="4" {% if mdata.get('grid_columns') == '4' %}selected{% endif %}>4 列</option>
++              </select>
++            </div>
++            <div class="row g-2">
++              <div class="col-6"><label class="form-label small mb-1 text-muted">卡片间距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_grid_gap" value="{{ mdata.get('grid_gap', '') }}" placeholder="如 1.5rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_grid_gap\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">行间距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_grid_row_gap" value="{{ mdata.get('grid_row_gap', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_grid_row_gap\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">列间距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_grid_column_gap" value="{{ mdata.get('grid_column_gap', '') }}" placeholder="如 1.5rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_grid_column_gap\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
++            </div>
++
++<div class="small fw-semibold mb-1 text-muted mt-2">卡片样式</div>
+             <div class="mb-2">
+               <label class="form-label small mb-1 text-muted">显示边框</label>
+               <select class="form-select form-select-sm" name="module_{{ i }}_data_card_show_border">
+@@ -802,7 +842,42 @@
+               <div class="col-6"><label class="form-label small mb-1 text-muted">右下</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_card_radius_bottom_right" value="{{ mdata.get('card_radius_bottom_right', mdata.get('card_radius', '')) }}" placeholder="如 12px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_card_radius_bottom_right\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select></div></div>
+               <div class="col-6"><label class="form-label small mb-1 text-muted">左下</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_card_radius_bottom_left" value="{{ mdata.get('card_radius_bottom_left', mdata.get('card_radius', '')) }}" placeholder="如 12px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_card_radius_bottom_left\']);if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select></div></div>
+             </div>
++                        <div class="small fw-semibold mb-1 text-muted mt-2">图标样式</div>
++            <div class="row g-2">
++              <div class="col-6"><label class="form-label small mb-1 text-muted">图标大小</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_icon_size" value="{{ mdata.get('icon_size', '') }}" placeholder="如 24px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_icon_size\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">图标颜色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('icon_color', '#888888') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_icon_color" value="{{ mdata.get('icon_color', '') }}" placeholder="如 #067a7a" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">图标背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('icon_bg', '#888888') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_icon_bg" value="{{ mdata.get('icon_bg', '') }}" placeholder="如 #e8f4fd" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">图标区宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_icon_width" value="{{ mdata.get('icon_width', '') }}" placeholder="如 48px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_icon_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">图标区高度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_icon_height" value="{{ mdata.get('icon_height', '') }}" placeholder="如 48px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_icon_height\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">图标圆角</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_icon_radius" value="{{ mdata.get('icon_radius', '') }}" placeholder="如 8px 或 50%" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_icon_radius\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option></select></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">图标右外边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_icon_margin_right" value="{{ mdata.get('icon_margin_right', '') }}" placeholder="如 1rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_icon_margin_right\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">图标下外边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_icon_margin_bottom" value="{{ mdata.get('icon_margin_bottom', '') }}" placeholder="如 0.5rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_icon_margin_bottom\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
++            </div>
++            <div class="small fw-semibold mb-1 text-muted mt-2">卡片文字样式</div>
++            <div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片标题</div>
++            <div class="row g-2">
++              <div class="col-6"><label class="form-label small mb-1 text-muted">标题字号</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_card_title_size" value="{{ mdata.get('card_title_size', '') }}" placeholder="如 1.125rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_card_title_size\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">标题颜色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('card_title_color', '#888888') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_card_title_color" value="{{ mdata.get('card_title_color', '') }}" placeholder="如 #1a1a2e" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
++              <div class="col-6">
++                <label class="form-label small mb-1 text-muted">标题字重</label>
++                <select class="form-select form-select-sm" name="module_{{ i }}_data_card_title_weight">
++                  <option value="" {% if not mdata.get('card_title_weight') %}selected{% endif %}>默认</option>
++                  <option value="400" {% if mdata.get('card_title_weight') == '400' %}selected{% endif %}>400</option>
++                  <option value="500" {% if mdata.get('card_title_weight') == '500' %}selected{% endif %}>500</option>
++                  <option value="600" {% if mdata.get('card_title_weight') == '600' %}selected{% endif %}>600</option>
++                  <option value="700" {% if mdata.get('card_title_weight') == '700' %}selected{% endif %}>700</option>
++                </select>
++              </div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">标题下外边距</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_card_title_margin_bottom" value="{{ mdata.get('card_title_margin_bottom', '') }}" placeholder="如 0.25rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_card_title_margin_bottom\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
+             </div>
++            <div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片描述</div>
++            <div class="row g-2">
++              <div class="col-6"><label class="form-label small mb-1 text-muted">描述字号</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_card_desc_size" value="{{ mdata.get('card_desc_size', '') }}" placeholder="如 0.95rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_card_desc_size\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">描述颜色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('card_desc_color', '#888888') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_card_desc_color" value="{{ mdata.get('card_desc_color', '') }}" placeholder="如 #64748b" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
++              <div class="col-6"><label class="form-label small mb-1 text-muted">描述行高</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_card_desc_line_height" value="{{ mdata.get('card_desc_line_height', '') }}" placeholder="如 1.6" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_card_desc_line_height\']');if(inp){var v=inp.value.replace(/rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="rem">rem</option><option value="">无单位</option></select></div></div>
++            </div>
++
++</div>
+             {% elif module.type == 'text_content' %}
+             <div class="d-flex mb-2">
+               <button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="switchContentStyleTab(this, 'content')">内容</button>
+@@ -1492,7 +1567,7 @@
+   </form>
+ </div>
+ 
+-<script src="/static/js/admin_modules.js"></script>
++<script src="/static/js/admin_modules.js?v=3"></script>
+ <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
+ <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
+ <script>
+@@ -1569,7 +1644,7 @@ function renderDynamicField(prefix, field, value, placeholder) {
+     else if (needsWidthUnit) unitOptions = '<option value="px">px</option><option value="%">%</option><option value="rem">rem</option>';
+     else if (needsRadiusUnit) unitOptions = '<option value="px">px</option><option value="rem">rem</option><option value="%">%</option>';
+     else if (needsSpacingUnit) unitOptions = '<option value="px">px</option><option value="rem">rem</option>';
+-    html += '<div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="' + prefix + key + '" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name="' + prefix + key + '"]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}">' + unitOptions + '</select></div>';
++    html += '<div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="' + prefix + key + '" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name="' + prefix + key + '"]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}">' + unitOptions + '</select></div>';
+   } else {
+     html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '">';
+   }
+@@ -1926,7 +2001,7 @@ function addModule(type, variant) {
+   }).join('');
+ 
+   var cP = function(name, ph, dv) { return '<label class="form-label small mb-1 text-muted">' + ph + '</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="' + (dv || '#888888') + '" oninput="this.parentElement.querySelector(\'input[type=text]\').value=this.value"><input type="text" class="form-control form-control-sm" name="' + name + '" value="' + (dv || '') + '" placeholder="' + ph + '" oninput="this.parentElement.querySelector(\'input[type=color]\').value=this.value"></div>'; };
+-  var uP = function(name, ph, units, dv) { var o = units.map(function(u){return '<option value="'+u+'">'+u+'</option>';}).join(''); return '<label class="form-label small mb-1 text-muted">' + ph + '</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="' + name + '" value="' + (dv || '') + '" placeholder="' + ph + '" style="width:60%"><select class="form-select form-select-sm unit-picker" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name="' + name + '"]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option>' + o + '</select></div>'; };
++  var uP = function(name, ph, units, dv) { var o = units.map(function(u){return '<option value="'+u+'">'+u+'</option>';}).join(''); return '<label class="form-label small mb-1 text-muted">' + ph + '</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="' + name + '" value="' + (dv || '') + '" placeholder="' + ph + '" style="width:60%"><select class="form-select form-select-sm unit-picker" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name="' + name + '"]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option>' + o + '</select></div>'; };
+   var vT = function(name, label, dv) {
+     var eyeOpen = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+     var eyeClosed = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72 1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+@@ -1958,7 +2033,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2001,7 +2076,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2017,7 +2092,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2097,7 +2172,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2108,7 +2183,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2141,7 +2216,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2161,7 +2236,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2170,13 +2245,38 @@ function addModule(type, variant) {
+     '<div class="row g-2">' +
+       '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
+     '</div>' +
++    '<div class="small fw-semibold mb-1 text-muted mt-2">标题区样式</div>' +
++    '<div class="row g-2">' +
++      '<div class="col-6">' + cP('module_' + idx + '_data_header_bg', '标题区背景色', '') + '</div>' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_header_padding', '标题区内边距', ['px','rem']) + '</div>' +
++    '</div>' +
++    '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题区文字排版</label><select class="form-select form-select-sm" name="module_' + idx + '_data_header_align"><option value="">默认</option><option value="left">左对齐</option><option value="center">居中</option><option value="right">右对齐</option></select></div>' +
++    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">主标题</div>' +
++    '<div class="row g-2">' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_title_size', '标题字号', ['px','rem']) + '</div>' +
++      '<div class="col-6">' + cP('module_' + idx + '_data_title_color', '标题颜色', '') + '</div>' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_title_margin_bottom', '标题下外边距', ['px','rem']) + '</div>' +
++    '</div>' +
++    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">副标题</div>' +
++    '<div class="row g-2">' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_subtitle_size', '副标题字号', ['px','rem']) + '</div>' +
++      '<div class="col-6">' + cP('module_' + idx + '_data_subtitle_color', '副标题颜色', '') + '</div>' +
++    '</div>' +
++    '<div class="small fw-semibold mb-1 text-muted mt-2">网格样式</div>' +
++    '<div class="mb-2"><label class="form-label small mb-1 text-muted">网格列数</label><select class="form-select form-select-sm" name="module_' + idx + '_data_grid_columns"><option value="2">2 列</option><option value="3">3 列</option><option value="4">4 列</option></select></div>' +
++    '<div class="row g-2">' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_grid_gap', '卡片间距', ['px','rem']) + '</div>' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_grid_row_gap', '行间距', ['px','rem']) + '</div>' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_grid_column_gap', '列间距', ['px','rem']) + '</div>' +
++    '</div>' +
++'</div>' +
+ '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
+     '<div class="input-group input-group-sm">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" placeholder="↑ 上">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2189,7 +2289,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2200,7 +2300,34 @@ function addModule(type, variant) {
+       '<div class="col-6">' + uP('module_' + idx + '_data_card_radius_top_right', '右上', ['px','rem','%']) + '</div>' +
+       '<div class="col-6">' + uP('module_' + idx + '_data_card_radius_bottom_right', '右下', ['px','rem','%']) + '</div>' +
+       '<div class="col-6">' + uP('module_' + idx + '_data_card_radius_bottom_left', '左下', ['px','rem','%']) + '</div>' +
++    '</div>' +
++    '<div class="small fw-semibold mb-1 text-muted mt-2">图标样式</div>' +
++    '<div class="row g-2">' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_icon_size', '图标大小', ['px','rem']) + '</div>' +
++      '<div class="col-6">' + cP('module_' + idx + '_data_icon_color', '图标颜色', '') + '</div>' +
++      '<div class="col-6">' + cP('module_' + idx + '_data_icon_bg', '图标背景色', '') + '</div>' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_icon_width', '图标区宽度', ['px','rem']) + '</div>' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_icon_height', '图标区高度', ['px','rem']) + '</div>' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_icon_radius', '图标圆角', ['px','%']) + '</div>' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_icon_margin_right', '图标右外边距', ['px','rem']) + '</div>' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_icon_margin_bottom', '图标下外边距', ['px','rem']) + '</div>' +
++    '</div>' +
++    '<div class="small fw-semibold mb-1 text-muted mt-2">卡片文字样式</div>' +
++    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片标题</div>' +
++    '<div class="row g-2">' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_card_title_size', '标题字号', ['px','rem']) + '</div>' +
++      '<div class="col-6">' + cP('module_' + idx + '_data_card_title_color', '标题颜色', '') + '</div>' +
++      '<div class="col-6"><label class="form-label small mb-1 text-muted">标题字重</label><select class="form-select form-select-sm" name="module_' + idx + '_data_card_title_weight"><option value="">默认</option><option value="400">400</option><option value="500">500</option><option value="600">600</option><option value="700">700</option></select></div>' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_card_title_margin_bottom', '标题下外边距', ['px','rem']) + '</div>' +
++    '</div>' +
++    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片描述</div>' +
++    '<div class="row g-2">' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_card_desc_size', '描述字号', ['px','rem']) + '</div>' +
++      '<div class="col-6">' + cP('module_' + idx + '_data_card_desc_color', '描述颜色', '') + '</div>' +
++      '<div class="col-6">' + uP('module_' + idx + '_data_card_desc_line_height', '描述行高', ['rem','']) + '</div>' +
+     '</div>';
++
++
+   } else if (type === 'highlight_card') {
+ 	    styleEditor =
+ 	    '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+@@ -2212,7 +2339,7 @@ function addModule(type, variant) {
+     '<div class="input-group input-group-sm">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" placeholder="↑ 上">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" placeholder="↓ 下">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2229,7 +2356,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2296,7 +2423,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2307,7 +2434,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2341,7 +2468,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2389,7 +2516,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2427,7 +2554,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+         '<option value="%">%</option>' +
+@@ -2466,7 +2593,7 @@ function addModule(type, variant) {
+     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+     '<div class="row g-2">' +
+       '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色') + '</div>' +
+-      '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空使用全局宽度）</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
++      '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空使用全局宽度）</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+     '</div>' +
+     '<hr class="my-2">' +
+     '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
+@@ -2478,7 +2605,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2526,7 +2653,7 @@ function addModule(type, variant) {
+     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+     '<div class="row g-2">' +
+       '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色') + '</div>' +
+-      '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空使用全局宽度）</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
++      '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空使用全局宽度）</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+     '</div>' +
+     '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
+     '<div class="input-group input-group-sm">' +
+@@ -2534,7 +2661,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2549,7 +2676,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2618,7 +2745,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2629,7 +2756,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +
+@@ -2694,7 +2821,7 @@ function addModule(type, variant) {
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+       '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
++      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});">' +
+         '<option value="px">px</option>' +
+         '<option value="rem">rem</option>' +
+       '</select>' +

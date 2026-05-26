@@ -387,6 +387,8 @@
     } else if (type === 'feature_grid') {
       var featCount = d.feature_count || '1';
       specialEditor =
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title) + '" placeholder="如 产品特点"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle) + '" placeholder="如 为什么选择我们"></div>' +
         '<div class="feature-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">功能卡片</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addFeatureItem(' + idx + ')">+ 添加功能卡片</button></div><input type="hidden" name="module_' + idx + '_feature_count" class="feature-item-count" value="' + featCount + '"><div class="feature-item-list">' + (window._featureItemHtml ? window._featureItemHtml(idx, 0, d) : '') + '</div></div>';
       styleEditor =
         '<div class="small fw-semibold mb-1 text-muted mt-2">外层样式</div>' +
@@ -406,6 +408,45 @@
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">标题区样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_header_bg', '标题区背景色', d.header_bg) + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_header_align', '标题区文字排版', [{value:'',label:'默认'},{value:'left',label:'左对齐'},{value:'center',label:'居中'},{value:'right',label:'右对齐'}], d.header_align || 'center') + '</div>' +
+        '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">标题区外边距</div>' +
+        '<div class="input-group input-group-sm">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_top" value="' + esc(d.header_margin_top) + '" placeholder="↑ 上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_right" value="' + esc(d.header_margin_right) + '" placeholder="→ 右">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_bottom" value="' + esc(d.header_margin_bottom || '4rem') + '" placeholder="↓ 下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_left" value="' + esc(d.header_margin_left) + '" placeholder="← 左">' +
+          '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
+        '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">标题区内边距</div>' +
+        '<div class="input-group input-group-sm">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_top" value="' + esc(d.header_padding_top) + '" placeholder="↑ 上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_right" value="' + esc(d.header_padding_right) + '" placeholder="→ 右">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_bottom" value="' + esc(d.header_padding_bottom || '2rem') + '" placeholder="↓ 下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_left" value="' + esc(d.header_padding_left) + '" placeholder="← 左">' +
+          '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
+        '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">主标题</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_title_size', '标题字号', ['px','rem'], d.title_size || '2.25rem') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_title_margin_bottom', '标题下外边距', ['px','rem'], d.title_margin_bottom || '0.5rem') + '</div>' +
+        '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">副标题</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_subtitle_size', '副标题字号', ['px','rem'], d.subtitle_size || '1.125rem') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_subtitle_color', '副标题颜色', d.subtitle_color || '#64748b') + '</div>' +
+        '</div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">网格样式</div>' +
+        '<div class="mb-2">' + sel('module_' + idx + '_data_grid_columns', '网格列数', [{value:'2',label:'2 列'},{value:'3',label:'3 列'},{value:'4',label:'4 列'}], d.grid_columns) + '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_grid_gap', '卡片间距', ['px','rem'], d.grid_gap) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_grid_row_gap', '行间距', ['px','rem'], d.grid_row_gap) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_grid_column_gap', '列间距', ['px','rem'], d.grid_column_gap) + '</div>' +
+        '</div>' +
         '<div class="small fw-semibold mb-1 text-muted mt-2">卡片样式</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">显示边框</label><select class="form-select form-select-sm" name="module_' + idx + '_data_card_show_border"><option value=""' + (d.card_show_border !== '0' ? ' selected' : '') + '>默认（显示）</option><option value="0"' + (d.card_show_border === '0' ? ' selected' : '') + '>隐藏边框</option></select></div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片内边距</div>' +
@@ -422,6 +463,31 @@
           '<div class="col-6">' + un('module_' + idx + '_data_card_radius_top_right', '右上', ['px','rem','%'], d.card_radius_top_right) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_card_radius_bottom_right', '右下', ['px','rem','%'], d.card_radius_bottom_right) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_card_radius_bottom_left', '左下', ['px','rem','%'], d.card_radius_bottom_left) + '</div>' +
+        '</div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">图标样式</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_size', '图标大小', ['px','rem'], d.icon_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_icon_color', '图标颜色', d.icon_color) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_icon_bg', '图标背景色', d.icon_bg) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_width', '图标区宽度', ['px','rem'], d.icon_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_height', '图标区高度', ['px','rem'], d.icon_height) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_radius', '图标圆角', ['px','%'], d.icon_radius) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_margin_right', '图标右外边距', ['px','rem'], d.icon_margin_right) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_margin_bottom', '图标下外边距', ['px','rem'], d.icon_margin_bottom) + '</div>' +
+        '</div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">卡片文字样式</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片标题</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_title_size', '标题字号', ['px','rem'], d.card_title_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_card_title_color', '标题颜色', d.card_title_color) + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_card_title_weight', '标题字重', [{value:'',label:'默认'},{value:'400',label:'400'},{value:'500',label:'500'},{value:'600',label:'600'},{value:'700',label:'700'}], d.card_title_weight) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_title_margin_bottom', '标题下外边距', ['px','rem'], d.card_title_margin_bottom) + '</div>' +
+        '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片描述</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_desc_size', '描述字号', ['px','rem'], d.card_desc_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_card_desc_color', '描述颜色', d.card_desc_color) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_desc_line_height', '描述行高', ['rem',''], d.card_desc_line_height) + '</div>' +
         '</div>';
 
     /* ====== highlight_card ====== */

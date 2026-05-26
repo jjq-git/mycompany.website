@@ -12,7 +12,9 @@ description: "为 Block 生成 HTML 骨架结构示意图 SVG"
 1. **读取模板**：`site_templates/dengtec/blocks/<name>/template.html`
 2. **提取 HTML 结构**：识别 `<section>` → `<div class="container">` → 自定义内容区的层级嵌套关系
 3. **按规范生成 SVG**：遵循下文约定的颜色、字号、间距、布局
-4. **写入文件**：`structure-diagram.svg` 放到 Block 目录下
+4. **写入文件**：同时输出到两个位置，并验证 MD5 一致：
+   - `site_templates/dengtec/blocks/<name>/structure-diagram.svg`
+   - `.claude/skills/block-diagram-svg/reference/<name>.svg`
 
 ## 参考示例
 
@@ -153,3 +155,4 @@ description: "为 Block 生成 HTML 骨架结构示意图 SVG"
 - **不做 CSS 属性注释**：结构图内部只标注 HTML class 名和数据字段来源（如 `slides[].title`），不标注 CSS 属性（如 `background`、`font-size`）。CSS 属性映射统一放在底部的"属性字段"表格中
 - **箭头标注**：如需标注间距/宽度，使用 `marker-end` 箭头 + 文字说明，箭头颜色用 `#e67e22`
 - **image_position 等特殊标注**：放在对应容器上方的小色块内，不与其它文字重叠
+- **新建或修改 SVG 必须双写**：任何 SVG 的新建或修改，必须同时输出到 `site_templates/dengtec/blocks/<name>/structure-diagram.svg` 和 `.claude/skills/block-diagram-svg/reference/<name>.svg`，两份文件内容完全一致（用 MD5 校验）

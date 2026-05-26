@@ -1,200 +1,150 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1540 1310" width="1540" height="1310">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1620 1310" width="1620" height="1310">
   <defs>
     <linearGradient id="mg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#c8cdd4"/><stop offset="100%" stop-color="#a8aeb6"/>
     </linearGradient>
   </defs>
   <style>text{font-family:"Microsoft YaHei","PingFang SC",sans-serif}</style>
-  <rect x="0" y="0" width="1540" height="1310" fill="#fff" rx="4"/>
-  <rect x="0" y="0" width="1540" height="50" fill="#f0f2f5" rx="4"/>
-  <text x="770" y="34" text-anchor="middle" font-size="22" font-weight="bold" fill="#1a1a2e">hero_banner — HTML 骨架 与 属性映射</text>
-  <g transform="translate(20, 0)">
-    <!-- section -->
-    <rect x="15" y="68" width="1470" height="580" fill="rgba(91,141,239,0.06)" stroke="#5b8def" stroke-width="2" stroke-dasharray="10 4" rx="4"/>
-    <rect x="25" y="58" width="80" height="20" fill="#fff" rx="2"/>
-    <text x="65" y="73" text-anchor="middle" font-size="17" fill="#3b6fd4" font-weight="bold">.section</text>
 
-    <!-- container -->
-    <rect x="44" y="130" width="1412" height="500" fill="none" stroke="#27ae60" stroke-width="1.2" stroke-dasharray="6 4" rx="3"/>
-    <rect x="52" y="120" width="210" height="20" fill="#fff" rx="2"/>
-    <text x="157" y="135" text-anchor="middle" font-size="17" fill="#1e7a45" font-weight="bold">.container (height: 100%)</text>
+  <rect x="0" y="0" width="1620" height="1310" fill="#fff" rx="4"/>
 
-    <!-- slides -->
-    <rect x="58" y="162" width="1384" height="458" fill="none" stroke="#d4a017" stroke-width="1" stroke-dasharray="5 3" rx="3"/>
-    <rect x="66" y="152" width="170" height="20" fill="#fff" rx="2"/>
-    <text x="151" y="167" text-anchor="middle" font-size="16" fill="#9a760e" font-weight="bold">.hero-banner-slides</text>
+  <rect x="0" y="0" width="1620" height="50" fill="#f0f2f5" rx="4"/>
+  <text x="810" y="34" text-anchor="middle" font-size="22" font-weight="bold" fill="#1a1a2e">hero_banner — HTML 骨架 与 属性映射</text>
 
-    <!-- slide -->
-    <rect x="75" y="192" width="1350" height="420" fill="none" stroke="#8b5cf6" stroke-width="1.2" rx="3"/>
-    <rect x="83" y="182" width="210" height="20" fill="#fff" rx="2"/>
-    <text x="188" y="197" text-anchor="middle" font-size="16" fill="#6d3fd6" font-weight="bold">.hero-banner-slide.active</text>
-
-    <!-- media -->
-    <rect x="90" y="222" width="1320" height="240" fill="url(#mg)" rx="5"/>
-    <rect x="98" y="212" width="180" height="20" fill="#fff" rx="2"/>
-    <text x="188" y="227" text-anchor="middle" font-size="18" fill="#1a1a2e" font-weight="bold">.hero-banner-media</text>
-    <text x="750" y="348" text-anchor="middle" font-size="19" fill="#555">背景图 / 视频</text>
-
-    <!-- overlay (on top of media) -->
-    <rect x="90" y="272" width="1320" height="210" fill="rgba(0,0,0,0.35)" rx="5"/>
-    <rect x="98" y="262" width="190" height="20" fill="#fff" rx="2"/>
-    <text x="193" y="277" text-anchor="middle" font-size="18" fill="#333" font-weight="bold">.hero-banner-overlay</text>
-
-    <!-- content (inside overlay) -->
-    <rect x="300" y="305" width="900" height="168" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" rx="5"/>
-    <rect x="975" y="295" width="230" height="20" fill="#fff" rx="2"/>
-    <text x="1090" y="310" text-anchor="middle" font-size="16" fill="#333" font-weight="bold">.hero-banner-content</text>
-
-    <!-- title -->
-    <rect x="370" y="345" width="760" height="34" fill="rgba(255,255,255,0.15)" rx="3"/>
-    <rect x="940" y="335" width="175" height="20" fill="#fff" rx="2"/>
-    <text x="1027" y="350" text-anchor="middle" font-size="15" fill="#333" font-weight="bold">.hero-banner-title</text>
-    <text x="750" y="368" text-anchor="middle" font-size="23" fill="#fff" font-weight="bold">主标题 — slides[].title</text>
-
-    <!-- subtitle -->
-    <rect x="400" y="392" width="700" height="22" fill="rgba(255,255,255,0.08)" rx="3"/>
-    <rect x="910" y="382" width="185" height="20" fill="#fff" rx="2"/>
-    <text x="1002" y="397" text-anchor="middle" font-size="15" fill="#333" font-weight="bold">.hero-banner-subtitle</text>
-    <text x="750" y="408" text-anchor="middle" font-size="17" fill="#fff">副标题 — slides[].subtitle</text>
-
-    <!-- actions -->
-    <rect x="500" y="428" width="500" height="38" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1" rx="3"/>
-    <rect x="980" y="418" width="160" height="20" fill="#fff" rx="2"/>
-    <text x="1060" y="433" text-anchor="middle" font-size="15" fill="#333" font-weight="bold">.hero-banner-actions</text>
-
-    <!-- primary button -->
-    <rect x="540" y="434" width="120" height="24" fill="#067a7a" rx="5"/>
-    <text x="600" y="451" text-anchor="middle" font-size="15" fill="#fff" font-weight="bold">主按钮</text>
-    <rect x="536" y="460" width="128" height="17" fill="#fff" rx="2"/>
-    <text x="600" y="472" text-anchor="middle" font-size="13" fill="#333" font-weight="bold">.btn.btn-primary</text>
-
-    <!-- secondary button -->
-    <rect x="690" y="434" width="120" height="24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.2" rx="5"/>
-    <text x="750" y="451" text-anchor="middle" font-size="15" fill="#fff">副按钮</text>
-    <rect x="680" y="460" width="140" height="17" fill="#fff" rx="2"/>
-    <text x="750" y="472" text-anchor="middle" font-size="13" fill="#333" font-weight="bold">.btn.btn-secondary</text>
-
-    <!-- dots -->
-    <circle cx="705" cy="510" r="8" fill="#067a7a"/>
-    <circle cx="742" cy="510" r="8" fill="#ccc"/>
-    <circle cx="779" cy="510" r="8" fill="#ccc"/>
-    <text x="742" y="495" text-anchor="middle" font-size="15" fill="#888">.hero-banner-dots</text>
-
-    <!-- nav arrows -->
-    <rect x="600" y="524" width="30" height="28" fill="none" stroke="#ccc" stroke-width="1" rx="3"/>
-    <text x="615" y="544" text-anchor="middle" font-size="21" fill="#999">&#x25C0;</text>
-    <rect x="860" y="524" width="30" height="28" fill="none" stroke="#ccc" stroke-width="1" rx="3"/>
-    <text x="875" y="544" text-anchor="middle" font-size="21" fill="#999">&#x25B6;</text>
-    <text x="742" y="574" text-anchor="middle" font-size="15" fill="#888">.hero-banner-nav (prev / next)</text>
+  <g transform="translate(40, 0)">
+    <rect x="15" y="58" width="1510" height="600" fill="rgba(91,141,239,0.035)" stroke="#5b8def" stroke-width="2" rx="4"/>
+    <rect x="23" y="48" width="119" height="20" fill="#fff" rx="2"/>
+    <text x="82" y="63" text-anchor="middle" font-size="17" fill="#3b6fd4" font-weight="bold">.section</text>
+    <rect x="47" y="90" width="1446" height="536" fill="none" stroke="#27ae60" stroke-width="1.2" stroke-dasharray="6 4" rx="3"/>
+    <rect x="55" y="80" width="321" height="20" fill="#fff" rx="2"/>
+    <text x="215" y="95" text-anchor="middle" font-size="17" fill="#1e7a45" font-weight="bold">.container (height: 100%)</text>
+    <rect x="79" y="122" width="1382" height="472" fill="none" stroke="#d4a017" stroke-width="1" stroke-dasharray="5 3" rx="3"/>
+    <rect x="87" y="112" width="237" height="20" fill="#fff" rx="2"/>
+    <text x="205" y="127" text-anchor="middle" font-size="16" fill="#9a760e" font-weight="bold">.hero-banner-slides</text>
+    <rect x="111" y="154" width="1318" height="408" fill="none" stroke="#8b5cf6" stroke-width="1.2" rx="3"/>
+    <rect x="119" y="144" width="304" height="20" fill="#fff" rx="2"/>
+    <text x="271" y="159" text-anchor="middle" font-size="16" fill="#6d3fd6" font-weight="bold">.hero-banner-slide.active</text>
+    <rect x="143" y="186" width="1254" height="344" fill="url(#mg)" rx="5"/>
+    <rect x="151" y="176" width="251" height="20" fill="#fff" rx="2"/>
+    <text x="276" y="191" text-anchor="middle" font-size="18" fill="#1a1a2e" font-weight="bold">.hero-banner-media</text>
+    <rect x="243" y="206" width="1054" height="55" fill="rgba(255,255,255,0.35)" rx="4"/>
+    <text x="770" y="238" text-anchor="middle" font-size="19" fill="#555">背景图 / 视频</text>
+    <circle cx="696" cy="512" r="8" fill="#067a7a"/>
+    <circle cx="733" cy="512" r="8" fill="#ccc"/>
+    <circle cx="770" cy="512" r="8" fill="#ccc"/>
+    <circle cx="807" cy="512" r="8" fill="#ccc"/>
+    <circle cx="844" cy="512" r="8" fill="#ccc"/>
+    <text x="770" y="494" text-anchor="middle" font-size="15" fill="#555">.hero-banner-dots</text>
+    <rect x="143" y="276" width="1254" height="190" fill="rgba(0,0,0,0.3)" rx="5"/>
+    <rect x="151" y="266" width="276" height="20" fill="#fff" rx="2"/>
+    <text x="289" y="281" text-anchor="middle" font-size="18" fill="#333" font-weight="bold">.hero-banner-overlay</text>
+    <rect x="340" y="306" width="860" height="160" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" rx="5"/>
+    <rect x="934" y="296" width="258" height="20" fill="#fff" rx="2"/>
+    <text x="1063" y="311" text-anchor="middle" font-size="16" fill="#333" font-weight="bold">.hero-banner-content</text>
+    <rect x="390" y="312" width="760" height="36" fill="rgba(255,255,255,0.15)" rx="3"/>
+    <text x="770" y="335" text-anchor="middle" font-size="23" fill="#fff" font-weight="bold">主标题 — slides[].title ( .hero-banner-title )</text>
+    <rect x="440" y="358" width="660" height="24" fill="rgba(255,255,255,0.08)" rx="3"/>
+    <text x="770" y="375" text-anchor="middle" font-size="17" fill="#fff">副标题 — slides[].subtitle ( .hero-banner-subtitle )</text>
+    <rect x="520" y="390" width="500" height="34" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1" rx="3"/>
+    <rect x="570" y="394" width="130" height="26" fill="#067a7a" rx="5"/>
+    <text x="635" y="412" text-anchor="middle" font-size="16" fill="#fff" font-weight="bold">主按钮</text>
+    <rect x="720" y="394" width="130" height="26" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.2" rx="5"/>
+    <text x="785" y="412" text-anchor="middle" font-size="16" fill="#fff">副按钮</text>
+    <text x="1190" y="409" text-anchor="end" font-size="15" fill="#fff">.hero-banner-actions · .btn</text>
+    <rect x="570" y="434" width="128" height="17" fill="#fff" rx="2"/>
+    <text x="634" y="446" text-anchor="middle" font-size="13" fill="#333" font-weight="bold">.btn.btn-primary</text>
+    <rect x="720" y="434" width="140" height="17" fill="#fff" rx="2"/>
+    <text x="790" y="446" text-anchor="middle" font-size="13" fill="#333" font-weight="bold">.btn.btn-secondary</text>
+    <rect x="163" y="353" width="36" height="36" fill="rgba(255,255,255,0.2)" rx="6"/>
+    <text x="181" y="381" text-anchor="middle" font-size="28" fill="#fff">◀</text>
+    <text x="205" y="376" text-anchor="start" font-size="15" fill="#fff" font-weight="bold">.hero-banner-nav-prev</text>
+    <rect x="1341" y="353" width="36" height="36" fill="rgba(255,255,255,0.2)" rx="6"/>
+    <text x="1359" y="381" text-anchor="middle" font-size="28" fill="#fff">▶</text>
+    <text x="1335" y="376" text-anchor="end" font-size="15" fill="#fff" font-weight="bold">.hero-banner-nav-next</text>
   </g>
-  <g transform="translate(26, 0)">
-<rect x="16" y="664" width="476" height="168" fill="#fff" stroke="#5b8def" stroke-width="1.2" rx="4"/>
-<text x="26" y="686" font-size="16" fill="#3b6fd4" font-weight="bold">.section 属性</text>
-<text x="26" y="706" font-size="14" fill="#555">hero_width → max-width</text>
-<text x="26" y="723" font-size="14" fill="#555">hero_height → height</text>
-<text x="26" y="740" font-size="14" fill="#555">section_bg → background</text>
-<text x="26" y="757" font-size="14" fill="#555">banner_align → 文字排版</text>
-<text x="26" y="774" font-size="14" fill="#555">padding_top → padding-top</text>
-<text x="26" y="791" font-size="14" fill="#555">padding_right → padding-right</text>
-<text x="26" y="808" font-size="14" fill="#555">padding_bottom → padding-bottom</text>
-<text x="26" y="825" font-size="14" fill="#555">padding_left → padding-left</text>
-<rect x="506" y="664" width="476" height="168" fill="#fff" stroke="#6b7d8e" stroke-width="1.2" rx="4"/>
-<text x="516" y="686" font-size="16" fill="#4a5a6a" font-weight="bold">overlay 遮罩层 .hero-banner-overlay</text>
-<text x="516" y="706" font-size="14" fill="#555">overlay_enabled → true / false</text>
-<text x="516" y="723" font-size="14" fill="#555">overlay_color → background</text>
-<text x="516" y="740" font-size="14" fill="#555">overlay_opacity → opacity</text>
-<rect x="996" y="664" width="476" height="168" fill="#fff" stroke="#e67e22" stroke-width="1.2" rx="4"/>
-<text x="1006" y="686" font-size="16" fill="#b8601f" font-weight="bold">content 内容区 .hero-banner-content</text>
-<text x="1006" y="706" font-size="14" fill="#555">content_width → max-width</text>
-<text x="1006" y="723" font-size="14" fill="#555">content_max_width → max-width</text>
-<text x="1006" y="740" font-size="14" fill="#555">content_padding → padding</text>
-<text x="1006" y="757" font-size="14" fill="#555">content_bg → background</text>
-<text x="1006" y="774" font-size="14" fill="#555">content_radius → border-radius</text>
-<rect x="16" y="847" width="476" height="151" fill="#fff" stroke="#e85d5d" stroke-width="1.2" rx="4"/>
-<text x="26" y="869" font-size="16" fill="#c0392b" font-weight="bold">标题 .hero-banner-title</text>
-<text x="26" y="889" font-size="14" fill="#555">title_font_size → font-size</text>
-<text x="26" y="906" font-size="14" fill="#555">title_color → color</text>
-<text x="26" y="923" font-size="14" fill="#555">title_weight → font-weight</text>
-<text x="26" y="940" font-size="14" fill="#555">title_line_height → line-height</text>
-<text x="26" y="957" font-size="14" fill="#555">title_text_shadow → text-shadow</text>
-<text x="26" y="974" font-size="13" fill="#999">显示条件: slides[].title 非空时渲染</text>
-<rect x="506" y="847" width="476" height="151" fill="#fff" stroke="#e8963b" stroke-width="1.2" rx="4"/>
-<text x="516" y="869" font-size="16" fill="#b87020" font-weight="bold">副标题 .hero-banner-subtitle</text>
-<text x="516" y="889" font-size="14" fill="#555">subtitle_font_size → font-size</text>
-<text x="516" y="906" font-size="14" fill="#555">subtitle_color → color</text>
-<text x="516" y="923" font-size="14" fill="#555">subtitle_weight → font-weight</text>
-<text x="516" y="940" font-size="14" fill="#555">subtitle_line_height → line-height</text>
-<text x="516" y="957" font-size="14" fill="#555">subtitle_max_width → max-width</text>
-<text x="516" y="974" font-size="13" fill="#999">显示条件: slides[].subtitle 非空时渲染</text>
-<rect x="996" y="847" width="476" height="151" fill="#fff" stroke="#5bbf7e" stroke-width="1.2" rx="4"/>
-<text x="1006" y="869" font-size="16" fill="#2d6a47" font-weight="bold">导航控件 .hero-banner-dots / .nav</text>
-<text x="1006" y="889" font-size="14" fill="#555">dot_color → 导航点颜色</text>
-<text x="1006" y="906" font-size="14" fill="#555">dot_active_color → 激活点颜色</text>
-<text x="1006" y="923" font-size="14" fill="#555">nav_color → 箭头颜色</text>
-<text x="1006" y="940" font-size="14" fill="#555">nav_bg → 箭头背景</text>
-<text x="1006" y="957" font-size="14" fill="#555">autoplay → 自动播放</text>
-<text x="1006" y="974" font-size="14" fill="#555">autoplay_interval → 轮播间隔</text>
-<text x="1006" y="991" font-size="13" fill="#999">显示条件: slides 数量 > 1 时显示</text>
-<rect x="16" y="1013" width="476" height="202" fill="#fff" stroke="#27ae60" stroke-width="1.2" rx="4"/>
-<text x="26" y="1035" font-size="16" fill="#1e7a45" font-weight="bold">主按钮 .btn.btn-primary</text>
-<text x="26" y="1055" font-size="14" fill="#555">btn_font_size → font-size</text>
-<text x="26" y="1072" font-size="14" fill="#555">btn_text_color → color</text>
-<text x="26" y="1089" font-size="14" fill="#555">btn_bg → background</text>
-<text x="26" y="1106" font-size="14" fill="#555">btn_radius → border-radius</text>
-<text x="26" y="1123" font-size="14" fill="#555">btn_padding → padding</text>
-<text x="26" y="1140" font-size="14" fill="#555">btn_weight → font-weight</text>
-<text x="26" y="1157" font-size="14" fill="#555">btn_hover_bg → hover 背景</text>
-<text x="26" y="1174" font-size="14" fill="#555">btn_hover_color → hover 字体色</text>
-<text x="26" y="1191" font-size="14" fill="#555">btn_transition → transition</text>
-<text x="26" y="1208" font-size="13" fill="#999">显示条件: slides[].primaryBtn 非空</text>
-<rect x="506" y="1013" width="476" height="202" fill="#fff" stroke="#27ae60" stroke-width="1.2" rx="4"/>
-<text x="516" y="1035" font-size="16" fill="#1e7a45" font-weight="bold">副按钮 .btn.btn-secondary</text>
-<text x="516" y="1055" font-size="14" fill="#555">btn_font_size → font-size</text>
-<text x="516" y="1072" font-size="14" fill="#555">btn_text_color → color</text>
-<text x="516" y="1089" font-size="14" fill="#555">btn_bg → background</text>
-<text x="516" y="1106" font-size="14" fill="#555">btn_radius → border-radius</text>
-<text x="516" y="1123" font-size="14" fill="#555">btn_padding → padding</text>
-<text x="516" y="1140" font-size="14" fill="#555">btn_weight → font-weight</text>
-<text x="516" y="1157" font-size="14" fill="#555">btn_hover_bg → hover 背景</text>
-<text x="516" y="1174" font-size="14" fill="#555">btn_hover_color → hover 字体色</text>
-<text x="516" y="1191" font-size="14" fill="#555">btn_transition → transition</text>
-<text x="516" y="1208" font-size="13" fill="#999">显示条件: slides[].secondaryBtn 非空</text>
-<rect x="996" y="1013" width="476" height="202" fill="#fff" stroke="#8b5cf6" stroke-width="1.2" rx="4"/>
-<text x="1006" y="1035" font-size="16" fill="#6d3fd6" font-weight="bold">slides[] 数据字段</text>
-<text x="1006" y="1055" font-size="14" fill="#555">type → 媒体类型 (image / video)</text>
-<text x="1006" y="1072" font-size="14" fill="#555">media → 媒体地址</text>
-<text x="1006" y="1089" font-size="14" fill="#555">title → 主标题</text>
-<text x="1006" y="1106" font-size="14" fill="#555">subtitle → 副标题</text>
-<text x="1006" y="1123" font-size="14" fill="#555">primaryBtn → 主按钮文字</text>
-<text x="1006" y="1140" font-size="14" fill="#555">primaryBtnLink → 主按钮链接</text>
-<text x="1006" y="1157" font-size="14" fill="#555">secondaryBtn → 副按钮文字</text>
-<text x="1006" y="1174" font-size="14" fill="#555">secondaryBtnLink → 副按钮链接</text>
+
+  <g transform="translate(40, 0)">
+    <rect x="15" y="698" width="476" height="168" fill="#fff" stroke="#5b8def" stroke-width="1.2" rx="4"/>
+<text x="25" y="720" font-size="16" fill="#5b8def" font-weight="bold">.section 属性</text>
+<text x="25" y="740" font-size="14" fill="#555">hero_width → max-width</text>
+<text x="25" y="757" font-size="14" fill="#555">hero_height → height</text>
+<text x="25" y="774" font-size="14" fill="#555">section_bg → background</text>
+<text x="25" y="791" font-size="14" fill="#555">banner_align → 文字排版</text>
+<text x="25" y="808" font-size="14" fill="#555">padding_top → padding-top</text>
+<text x="25" y="825" font-size="14" fill="#555">padding_right → padding-right</text>
+<text x="25" y="842" font-size="14" fill="#555">padding_bottom → padding-bottom</text>
+<text x="25" y="859" font-size="14" fill="#555">padding_left → padding-left</text>
+    <rect x="532" y="698" width="476" height="168" fill="#fff" stroke="#6b7d8e" stroke-width="1.2" rx="4"/>
+<text x="542" y="720" font-size="16" fill="#6b7d8e" font-weight="bold">overlay 遮罩层 .hero-banner-overlay</text>
+<text x="542" y="740" font-size="14" fill="#555">overlay_enabled → true / false (是否渲染)</text>
+<text x="542" y="757" font-size="14" fill="#555">overlay_color → background</text>
+<text x="542" y="774" font-size="14" fill="#555">overlay_opacity → opacity</text>
+    <rect x="1049" y="698" width="476" height="168" fill="#fff" stroke="#e67e22" stroke-width="1.2" rx="4"/>
+<text x="1059" y="720" font-size="16" fill="#e67e22" font-weight="bold">content 内容区 .hero-banner-content</text>
+<text x="1059" y="740" font-size="14" fill="#555">content_width → max-width</text>
+<text x="1059" y="757" font-size="14" fill="#555">content_max_width → max-width</text>
+<text x="1059" y="774" font-size="14" fill="#555">content_padding → padding</text>
+<text x="1059" y="791" font-size="14" fill="#555">content_bg → background</text>
+<text x="1059" y="808" font-size="14" fill="#555">content_radius → border-radius</text>
+    <rect x="15" y="882" width="476" height="168" fill="#fff" stroke="#e85d5d" stroke-width="1.2" rx="4"/>
+<text x="25" y="904" font-size="16" fill="#e85d5d" font-weight="bold">标题 .hero-banner-title</text>
+<text x="25" y="924" font-size="14" fill="#555">title_font_size → font-size</text>
+<text x="25" y="941" font-size="14" fill="#555">title_color → color</text>
+<text x="25" y="958" font-size="14" fill="#555">title_weight → font-weight</text>
+<text x="25" y="975" font-size="14" fill="#555">title_line_height → line-height</text>
+<text x="25" y="992" font-size="14" fill="#555">title_text_shadow → text-shadow</text>
+<text x="25" y="1009" font-size="14" fill="#555">显示条件 → slides[].title 非空时渲染</text>
+    <rect x="532" y="882" width="476" height="168" fill="#fff" stroke="#e8963b" stroke-width="1.2" rx="4"/>
+<text x="542" y="904" font-size="16" fill="#e8963b" font-weight="bold">副标题 .hero-banner-subtitle</text>
+<text x="542" y="924" font-size="14" fill="#555">subtitle_font_size → font-size</text>
+<text x="542" y="941" font-size="14" fill="#555">subtitle_color → color</text>
+<text x="542" y="958" font-size="14" fill="#555">subtitle_weight → font-weight</text>
+<text x="542" y="975" font-size="14" fill="#555">subtitle_line_height → line-height</text>
+<text x="542" y="992" font-size="14" fill="#555">subtitle_max_width → max-width</text>
+<text x="542" y="1009" font-size="14" fill="#555">显示条件 → slides[].subtitle 非空时渲染</text>
+    <rect x="1049" y="882" width="476" height="168" fill="#fff" stroke="#5bbf7e" stroke-width="1.2" rx="4"/>
+<text x="1059" y="904" font-size="16" fill="#5bbf7e" font-weight="bold">导航控件 .hero-banner-dots / .nav</text>
+<text x="1059" y="924" font-size="14" fill="#555">dot_color → 导航点颜色</text>
+<text x="1059" y="941" font-size="14" fill="#555">dot_active_color → 激活点颜色</text>
+<text x="1059" y="958" font-size="14" fill="#555">nav_color → 箭头颜色</text>
+<text x="1059" y="975" font-size="14" fill="#555">nav_bg → 箭头背景</text>
+<text x="1059" y="992" font-size="14" fill="#555">autoplay → 自动播放</text>
+<text x="1059" y="1009" font-size="14" fill="#555">autoplay_interval → 轮播间隔</text>
+<text x="1059" y="1026" font-size="14" fill="#555">显示条件 → slides 数量 > 1 时显示</text>
+    <rect x="15" y="1066" width="476" height="202" fill="#fff" stroke="#27ae60" stroke-width="1.2" rx="4"/>
+<text x="25" y="1088" font-size="16" fill="#27ae60" font-weight="bold">主按钮 .btn.btn-primary</text>
+<text x="25" y="1108" font-size="14" fill="#555">btn_font_size → font-size</text>
+<text x="25" y="1125" font-size="14" fill="#555">btn_text_color → color</text>
+<text x="25" y="1142" font-size="14" fill="#555">btn_bg → background / border-color</text>
+<text x="25" y="1159" font-size="14" fill="#555">btn_radius → border-radius</text>
+<text x="25" y="1176" font-size="14" fill="#555">btn_padding → padding</text>
+<text x="25" y="1193" font-size="14" fill="#555">btn_weight → font-weight</text>
+<text x="25" y="1210" font-size="14" fill="#555">btn_hover_bg → hover 背景</text>
+<text x="25" y="1227" font-size="14" fill="#555">btn_hover_color → hover 字体色</text>
+<text x="25" y="1244" font-size="14" fill="#555">btn_transition → transition</text>
+<text x="25" y="1261" font-size="14" fill="#555">显示条件 → slides[].primaryBtn 非空</text>
+    <rect x="532" y="1066" width="476" height="202" fill="#fff" stroke="#27ae60" stroke-width="1.2" rx="4"/>
+<text x="542" y="1088" font-size="16" fill="#27ae60" font-weight="bold">副按钮 .btn.btn-secondary</text>
+<text x="542" y="1108" font-size="14" fill="#555">btn_font_size → font-size</text>
+<text x="542" y="1125" font-size="14" fill="#555">btn_text_color → color</text>
+<text x="542" y="1142" font-size="14" fill="#555">btn_bg → background / border-color</text>
+<text x="542" y="1159" font-size="14" fill="#555">btn_radius → border-radius</text>
+<text x="542" y="1176" font-size="14" fill="#555">btn_padding → padding</text>
+<text x="542" y="1193" font-size="14" fill="#555">btn_weight → font-weight</text>
+<text x="542" y="1210" font-size="14" fill="#555">btn_hover_bg → hover 背景</text>
+<text x="542" y="1227" font-size="14" fill="#555">btn_hover_color → hover 字体色</text>
+<text x="542" y="1244" font-size="14" fill="#555">btn_transition → transition</text>
+<text x="542" y="1261" font-size="14" fill="#555">显示条件 → slides[].secondaryBtn 非空</text>
+    <rect x="1049" y="1066" width="476" height="202" fill="#fff" stroke="#8b5cf6" stroke-width="1.2" rx="4"/>
+<text x="1059" y="1088" font-size="16" fill="#8b5cf6" font-weight="bold">slides[] 数据字段</text>
+<text x="1059" y="1108" font-size="14" fill="#555">type → 媒体类型 (image / video)</text>
+<text x="1059" y="1125" font-size="14" fill="#555">media → 媒体地址</text>
+<text x="1059" y="1142" font-size="14" fill="#555">title → 主标题</text>
+<text x="1059" y="1159" font-size="14" fill="#555">subtitle → 副标题</text>
+<text x="1059" y="1176" font-size="14" fill="#555">primaryBtn → 主按钮文字</text>
+<text x="1059" y="1193" font-size="14" fill="#555">primaryBtnLink → 主按钮链接</text>
+<text x="1059" y="1210" font-size="14" fill="#555">secondaryBtn → 副按钮文字</text>
+<text x="1059" y="1227" font-size="14" fill="#555">secondaryBtnLink → 副按钮链接</text>
   </g>
-  <g transform="translate(15, 0)">
-    <rect x="15" y="1230" width="1470" height="60" fill="#f0f2f5" stroke="#d5d8de" stroke-width="0.6" rx="4"/>
-    <!-- row 1 -->
-    <rect x="35" y="1242" width="16" height="12" fill="none" stroke="#5b8def" stroke-width="1.5"/>
-    <text x="59" y="1254" font-size="14" fill="#666">section</text>
-    <rect x="155" y="1242" width="16" height="12" fill="none" stroke="#27ae60" stroke-width="1.5"/>
-    <text x="179" y="1254" font-size="14" fill="#666">container</text>
-    <rect x="299" y="1242" width="16" height="12" fill="none" stroke="#d4a017" stroke-width="1.5"/>
-    <text x="323" y="1254" font-size="14" fill="#666">slides</text>
-    <rect x="443" y="1242" width="16" height="12" fill="none" stroke="#8b5cf6" stroke-width="1.5"/>
-    <text x="467" y="1254" font-size="14" fill="#666">slide.active</text>
-    <rect x="587" y="1242" width="16" height="12" fill="rgba(0,0,0,0.3)" stroke="#999" stroke-width="0.5"/>
-    <text x="611" y="1254" font-size="14" fill="#666">overlay 遮罩</text>
-    <!-- row 2 -->
-    <rect x="35" y="1265" width="16" height="12" fill="none" stroke="#e67e22" stroke-width="1.5"/>
-    <text x="59" y="1277" font-size="14" fill="#666">.hero-banner-content</text>
-    <rect x="275" y="1265" width="16" height="12" fill="none" stroke="#e85d5d" stroke-width="1.5"/>
-    <text x="299" y="1277" font-size="14" fill="#666">.hero-banner-title 标题</text>
-    <rect x="519" y="1265" width="16" height="12" fill="none" stroke="#e8963b" stroke-width="1.5"/>
-    <text x="543" y="1277" font-size="14" fill="#666">.hero-banner-subtitle 副标题</text>
-    <rect x="763" y="1265" width="16" height="12" fill="none" stroke="#067a7a" stroke-width="1.5"/>
-    <text x="787" y="1277" font-size="14" fill="#666">.btn 按钮</text>
-    <rect x="907" y="1265" width="16" height="12" fill="none" stroke="#5bbf7e" stroke-width="1.5"/>
-    <text x="931" y="1277" font-size="14" fill="#666">.hero-banner-dots / .nav</text>
-    <rect x="1151" y="1265" width="16" height="12" fill="none" stroke="#8b5cf6" stroke-width="1.5"/>
-    <text x="1175" y="1277" font-size="14" fill="#666">slides[] 数据字段</text>
-  </g>
+
 </svg>

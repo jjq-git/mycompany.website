@@ -4,35 +4,36 @@
 
 ```html
 <!-- ===== 全屏轮播 ===== -->
-<section class="section hero-banner">
-    <div class="container">
+<section class="section hero-banner" id="heroBanner">
+    <div class="container" style="height: 100%; max-width: none;">
         <div class="hero-banner-slides">
             <div class="hero-banner-slide active">
                 <div class="hero-banner-media">                       <!-- 媒体区 -->
-                <div class="hero-banner-image" style="..."></div>    <!-- 图片背景 -->
-                <!-- 或 <video class="hero-banner-video" ...> -->
+                    <div class="hero-banner-image" style="..."></div>  <!-- 图片背景 -->
+                    <!-- 或 <video class="hero-banner-video" ...> -->
                 </div>
-                <div class="hero-banner-overlay"></div>                <!-- 遮罩层 -->
-                <div class="hero-banner-content" style="">             <!-- 文字内容 -->
-                <h1 class="hero-banner-title" style="">标题</h1>
-                <p class="hero-banner-subtitle" style="">副标题</p>
-                <div class="hero-banner-actions" style="">            <!-- 按钮区 -->
-                    <a href="..." class="btn btn-primary btn-lg" style="">主按钮</a>
-                    <a href="..." class="btn btn-secondary btn-lg">副按钮</a>
-                </div>
+                <div class="hero-banner-overlay"></div>                <!-- 遮罩层（overlay_enabled=false 时不渲染） -->
+                <div class="hero-banner-content" style="">             <!-- 文字内容（绝对定位） -->
+                    <h1 class="hero-banner-title" style="">标题</h1>
+                    <p class="hero-banner-subtitle" style="">副标题</p>
+                    <div class="hero-banner-actions" style="">        <!-- 按钮区 -->
+                        <a href="..." class="btn btn-primary btn-lg" style="">主按钮</a>
+                        <a href="..." class="btn btn-secondary btn-lg">副按钮</a>
+                    </div>
                 </div>
             </div>
         </div>
-        <!-- 多张时显示导航点 + 左右箭头 -->
-        <div class="hero-banner-dots">...</div>
-        <button class="hero-banner-nav">...</button>
-  </div>
+    </div>
+    <!-- 导航控件：section 的直接子元素，CSS 绝对定位叠在 media 上方 -->
+    <div class="hero-banner-dots">...</div>
+    <button class="hero-banner-nav hero-banner-nav-prev" aria-label="Previous">...</button>
+    <button class="hero-banner-nav hero-banner-nav-next" aria-label="Next">...</button>
 </section>
 ```
 
 ![hero_banner 结构示意图](./hero_banner.svg)
 
-*上图：hero_banner HTML 骨架的层级结构。每个 class 标签骑在对应元素的边框线上，底部卡片列出全部可配置字段。*
+*上图：hero_banner HTML 骨架的层级结构。每层统一间距，导航点叠在 media 底部，左右箭头分列 media 两侧，底部卡片列出全部可配置字段。*
 
 **hero_banner 不使用 `.section-header`**。标题和副标题在 `.hero-banner-content` 内部实现。
 

@@ -2,9 +2,28 @@
 {% set inline_features = module.data.get('features', []) if module.data and module.data.get('features') is iterable and module.data.get('features') is not string else [] %}
 {% set display_features = inline_features if inline_features else (features if features else []) %}
 {% set md = module.data if module.data else {} %}
+{# ── 外层 ── #}
 {% set section_bg = md.get('section_bg', '') %}
 {% set outer_w = md.get('outer_width', '') or settings.get('layout', {}).get('global_width', '') %}
 {% set inner_w = md.get('inner_width', '') %}
+{# ── 标题区容器 ── #}
+{% set header_bg = md.get('header_bg', '') %}
+{% set header_align = md.get('header_align', '') %}
+{% set hmg_top = md.get('header_margin_top', '') %}{% set hmg_right = md.get('header_margin_right', '') %}{% set hmg_bottom = md.get('header_margin_bottom', '4rem') %}{% set hmg_left = md.get('header_margin_left', '') %}{% set has_hmargin = hmg_top or hmg_right or hmg_bottom or hmg_left %}
+{% set hpd_top = md.get('header_padding_top', '') %}{% set hpd_right = md.get('header_padding_right', '') %}{% set hpd_bottom = md.get('header_padding_bottom', '2rem') %}{% set hpd_left = md.get('header_padding_left', '') %}{% set has_hpadding = hpd_top or hpd_right or hpd_bottom or hpd_left %}
+{# ── 区块主标题 ── #}
+{% set title_size = md.get('title_size', '') %}
+{% set title_color = md.get('title_color', '') %}
+{% set title_margin_bottom = md.get('title_margin_bottom', '') %}
+{# ── 区块副标题 ── #}
+{% set subtitle_size = md.get('subtitle_size', '') %}
+{% set subtitle_color = md.get('subtitle_color', '') %}
+{# ── 网格容器 ── #}
+{% set grid_columns = md.get('grid_columns', '') %}
+{% set grid_gap = md.get('grid_gap', '') %}
+{% set grid_row_gap = md.get('grid_row_gap', '') %}
+{% set grid_column_gap = md.get('grid_column_gap', '') %}
+{# ── 卡片样式 ── #}
 {% set card_show_border = md.get('card_show_border', '') %}
 {% set card_padding_top = md.get('card_padding_top', md.get('card_padding', '')) %}
 {% set card_padding_right = md.get('card_padding_right', md.get('card_padding', '')) %}
@@ -14,11 +33,29 @@
 {% set card_radius_top_right = md.get('card_radius_top_right', md.get('card_radius', '')) %}
 {% set card_radius_bottom_right = md.get('card_radius_bottom_right', md.get('card_radius', '')) %}
 {% set card_radius_bottom_left = md.get('card_radius_bottom_left', md.get('card_radius', '')) %}
+{# ── 图标样式 ── #}
+{% set icon_size = md.get('icon_size', '') %}
+{% set icon_color = md.get('icon_color', '') %}
+{% set icon_bg = md.get('icon_bg', '') %}
+{% set icon_width = md.get('icon_width', '') %}
+{% set icon_height = md.get('icon_height', '') %}
+{% set icon_radius = md.get('icon_radius', '') %}
+{% set icon_margin_right = md.get('icon_margin_right', '') %}
+{% set icon_margin_bottom = md.get('icon_margin_bottom', '') %}
+{# ── 卡片标题样式 ── #}
+{% set card_title_size = md.get('card_title_size', '') %}
+{% set card_title_color = md.get('card_title_color', '') %}
+{% set card_title_weight = md.get('card_title_weight', '') %}
+{% set card_title_margin_bottom = md.get('card_title_margin_bottom', '') %}
+{# ── 卡片描述样式 ── #}
+{% set card_desc_size = md.get('card_desc_size', '') %}
+{% set card_desc_color = md.get('card_desc_color', '') %}
+{% set card_desc_line_height = md.get('card_desc_line_height', '') %}
+{# ── 数据控制 ── #}
 {% set max_items = md.get('max_items', 0) | int %}
 {% if max_items > 0 and display_features | length > max_items %}
   {% set display_features = display_features[:max_items] %}
 {% endif %}
-{# 有标题或副标题时也需要显示区块（不依赖 features 是否存在） #}
 {% set has_features = display_features and display_features | length > 0 %}
 {% set has_header = md.title or md.subtitle %}
 {% if has_header or has_features %}
@@ -27,21 +64,20 @@
 <section class="section"{% if section_bg or has_margin or has_padding or outer_w %} style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}{% if pd_top %}padding-top: {{ pd_top }};{% endif %}{% if pd_right %}padding-right: {{ pd_right }};{% endif %}{% if pd_bottom %}padding-bottom: {{ pd_bottom }};{% endif %}{% if pd_left %}padding-left: {{ pd_left }};{% endif %}{% if mg_top %}margin-top: {{ mg_top }};{% endif %}{% if mg_right %}margin-right: {{ mg_right }};{% endif %}{% if mg_bottom %}margin-bottom: {{ mg_bottom }};{% endif %}{% if mg_left %}margin-left: {{ mg_left }};{% endif %}"{% endif %}>
   <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
     {% if has_header %}
-    <div class="section-header">
-      {% if md.title %}<h2 class="section-title">{{ md.title }}</h2>{% endif %}
-      {% if md.subtitle %}<p class="section-description">{{ md.subtitle }}</p>{% endif %}
+    <div class="section-header"{% if header_bg or header_align or has_hmargin or has_hpadding %} style="{% if header_bg %}background: {{ header_bg }};{% endif %}{% if header_align %}text-align: {{ header_align }};{% endif %}{% if hmg_top %}margin-top: {{ hmg_top }};{% endif %}{% if hmg_right %}margin-right: {{ hmg_right }};{% endif %}{% if hmg_bottom %}margin-bottom: {{ hmg_bottom }};{% endif %}{% if hmg_left %}margin-left: {{ hmg_left }};{% endif %}{% if hpd_top %}padding-top: {{ hpd_top }};{% endif %}{% if hpd_right %}padding-right: {{ hpd_right }};{% endif %}{% if hpd_bottom %}padding-bottom: {{ hpd_bottom }};{% endif %}{% if hpd_left %}padding-left: {{ hpd_left }};{% endif %}"{% endif %}>
+      {% if md.title %}<h2 class="section-title"{% if title_size or title_color or title_margin_bottom %} style="{% if title_size %}font-size: {{ title_size }};{% endif %}{% if title_color %}color: {{ title_color }};{% endif %}{% if title_margin_bottom %}margin-bottom: {{ title_margin_bottom }};{% endif %}"{% endif %}>{{ md.title }}</h2>{% endif %}
+      {% if md.subtitle %}<p class="section-description"{% if subtitle_size or subtitle_color %} style="{% if subtitle_size %}font-size: {{ subtitle_size }};{% endif %}{% if subtitle_color %}color: {{ subtitle_color }};{% endif %}"{% endif %}>{{ md.subtitle }}</p>{% endif %}
     </div>
     {% endif %}
     {% if has_features %}
-    <div class="services-grid">
+    <div class="services-grid"{% if grid_gap or grid_row_gap or grid_column_gap or grid_columns %} style="{% if grid_columns %}--grid-columns: {{ grid_columns }};{% endif %}{% if grid_gap %}gap: {{ grid_gap }};{% endif %}{% if grid_row_gap %}row-gap: {{ grid_row_gap }};{% endif %}{% if grid_column_gap %}column-gap: {{ grid_column_gap }};{% endif %}"{% endif %}>
       {% for feature in display_features %}
       <div class="service-card" style="
         {% if card_show_border == '0' or card_show_border == 0 %}border: none;{% endif %}
         {% if card_padding_top or card_padding_right or card_padding_bottom or card_padding_left %}padding-top: {{ card_padding_top | default('0') }}; padding-right: {{ card_padding_right | default('0') }}; padding-bottom: {{ card_padding_bottom | default('0') }}; padding-left: {{ card_padding_left | default('0') }};{% endif %}
         {% if card_radius_top_left or card_radius_top_right or card_radius_bottom_right or card_radius_bottom_left %}border-radius: {{ card_radius_top_left | default('0') }} {{ card_radius_top_right | default('0') }} {{ card_radius_bottom_right | default('0') }} {{ card_radius_bottom_left | default('0') }};{% endif %}
-        
       ">
-        <div class="service-icon">
+        <div class="service-icon"{% if icon_size or icon_color or icon_bg or icon_width or icon_height or icon_radius or icon_margin_right or icon_margin_bottom %} style="{% if icon_size %}width: {{ icon_size }}; height: {{ icon_size }};{% endif %}{% if icon_color %}color: {{ icon_color }};{% endif %}{% if icon_bg %}background-color: {{ icon_bg }};{% endif %}{% if icon_width %}width: {{ icon_width }};{% endif %}{% if icon_height %}height: {{ icon_height }};{% endif %}{% if icon_radius %}border-radius: {{ icon_radius }};{% endif %}{% if icon_margin_right %}margin-right: {{ icon_margin_right }};{% endif %}{% if icon_margin_bottom %}margin-bottom: {{ icon_margin_bottom }};{% endif %}"{% endif %}>
           {% set icon = feature.icon | default('') %}
           {% if icon == 'circuit' %}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg>
@@ -88,8 +124,8 @@
           {% endif %}
         </div>
         <div class="service-content">
-          <h3 class="service-title">{{ feature.title }}</h3>
-          {% if feature.desc %}<p class="service-description">{{ feature.desc }}</p>{% endif %}
+          <h3 class="service-title"{% if card_title_size or card_title_color or card_title_weight or card_title_margin_bottom %} style="{% if card_title_size %}font-size: {{ card_title_size }};{% endif %}{% if card_title_color %}color: {{ card_title_color }};{% endif %}{% if card_title_weight %}font-weight: {{ card_title_weight }};{% endif %}{% if card_title_margin_bottom %}margin-bottom: {{ card_title_margin_bottom }};{% endif %}"{% endif %}>{{ feature.title }}</h3>
+          {% if feature.desc %}<p class="service-description"{% if card_desc_size or card_desc_color or card_desc_line_height %} style="{% if card_desc_size %}font-size: {{ card_desc_size }};{% endif %}{% if card_desc_color %}color: {{ card_desc_color }};{% endif %}{% if card_desc_line_height %}line-height: {{ card_desc_line_height }};{% endif %}"{% endif %}>{{ feature.desc }}</p>{% endif %}
         </div>
       </div>
       {% endfor %}

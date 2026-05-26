@@ -643,15 +643,16 @@ function initUnitPickers(container) {
   container.querySelectorAll('.input-group').forEach(function(group) {
     var sel = group.querySelector('select');
     if (!sel) return;
-    // 取第一个文本输入框的值来推断单位
-    var inp = group.querySelector('input[type=text], input:not([type])');
-    if (!inp) return;
-    var val = inp.value.trim();
-    if (!val) return;
-    // 从值末尾提取 CSS 单位
-    var m = val.match(/(px|rem|em|%|vw|vh|vmin|vmax)$/i);
-    if (!m) return;
-    var unit = m[1].toLowerCase();
+    // 遍历所有文本输入框，找到第一个带单位的来推断
+    var inputs = group.querySelectorAll('input[type=text], input:not([type])');
+    var val = '', unit = '';
+    for (var j = 0; j < inputs.length; j++) {
+      val = inputs[j].value.trim();
+      if (!val) continue;
+      var m = val.match(/(px|rem|em|%|vw|vh|vmin|vmax)$/i);
+      if (m) { unit = m[1].toLowerCase(); break; }
+    }
+    if (!unit) return;
     // 检查 select 中是否有匹配的 option，有则选中
     var found = false;
     for (var i = 0; i < sel.options.length; i++) {
