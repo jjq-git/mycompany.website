@@ -32,7 +32,7 @@
 
 ![hero_banner 结构示意图](./hero_banner.svg)
 
-*上图：hero_banner HTML 骨架的层级结构。红色色块=padding 区域，红色连线标注=可配置的字段属性，蓝色标注=section 层属性。*
+*上图：hero_banner HTML 骨架的层级结构。每个 class 标签骑在对应元素的边框线上，底部卡片列出全部可配置字段。*
 
 **hero_banner 不使用 `.section-header`**。标题和副标题在 `.hero-banner-content` 内部实现。
 
@@ -55,12 +55,13 @@ hero_banner 覆盖了外层 section 的默认行为，使用专属的 `hero_heig
 
 #### 2.2 `.hero-banner-overlay` — 遮罩层
 
-**作用：** 在媒体层之上、文字之下叠加半透明遮罩，保证文字可读性。
+**作用：** 在媒体层之上、文字之下叠加半透明遮罩，保证文字可读性。可通过 `overlay_enabled` 控制是否渲染遮罩层。
 
 **内联style中自定义的css属性：** background、opacity
 
 | key | label | type | CSS 属性 | default | 说明 |
 |-----|-------|------|----------|---------|------|
+| `overlay_enabled` | 启用遮罩 | select | — | `"true"` | `true`=渲染遮罩 / `false`=不渲染 |
 | `overlay_color` | 遮罩颜色 | color | `background` | `""` | 如 `#000000`（留空=CSS 默认渐变） |
 | `overlay_opacity` | 遮罩透明度 | text | `opacity` | `""` | 如 `0.4`（留空=CSS 默认） |
 
@@ -148,12 +149,13 @@ hero_banner 覆盖了外层 section 的默认行为，使用专属的 `hero_heig
 
 | group | 包含字段 |
 |-------|---------|
-| 外层样式 | `hero_width`、`hero_height`、`section_bg`、`banner_align`、`outer_width`、`padding_*` |
-| 遮罩层 | `overlay_color`、`overlay_opacity` |
+| 外层样式 | `hero_width`、`hero_height`、`section_bg`、`banner_align`、`outer_width` |
+| 遮罩层 | `overlay_enabled`、`overlay_color`、`overlay_opacity` |
 | 内容区 | `content_width`、`content_max_width`、`content_padding`、`content_bg`、`content_radius` |
 | 标题 | `title_font_size`、`title_color`、`title_weight`、`title_line_height`、`title_text_shadow` |
 | 副标题 | `subtitle_font_size`、`subtitle_color`、`subtitle_weight`、`subtitle_line_height`、`subtitle_max_width` |
-| 按钮 | `btn_font_size`、`btn_text_color`、`btn_bg`、`btn_radius`、`btn_padding`、`btn_weight`、`btn_hover_bg`、`btn_hover_color`、`btn_transition` |
+| 主按钮 | `btn_font_size`、`btn_text_color`、`btn_bg`、`btn_radius`、`btn_padding`、`btn_weight`、`btn_hover_bg`、`btn_hover_color`、`btn_transition` |
+| 副按钮 | `btn_font_size`、`btn_text_color`、`btn_bg`、`btn_radius`、`btn_padding`、`btn_weight`、`btn_hover_bg`、`btn_hover_color`、`btn_transition` |
 | 导航 | `dot_color`、`dot_active_color`、`nav_color`、`nav_bg`、`autoplay`、`autoplay_interval` |
 | 数据源 | `slides`（`type`、`media`、`title`、`subtitle`、`primaryBtn`、`primaryBtnLink`、`secondaryBtn`、`secondaryBtnLink`） |
 

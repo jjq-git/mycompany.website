@@ -220,6 +220,17 @@
               <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
             </div>
             <hr class="my-2">
+            <div class="small fw-semibold mb-1 text-muted">遮罩层</div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label small mb-1 text-muted">启用遮罩</label>
+                <select class="form-select form-select-sm" name="module_{{ i }}_data_overlay_enabled">
+                  <option value="true" {% if mdata.get('overlay_enabled', 'true') != 'false' %}selected{% endif %}>启用</option>
+                  <option value="false" {% if mdata.get('overlay_enabled', 'true') == 'false' %}selected{% endif %}>不启用</option>
+                </select>
+              </div>
+            </div>
+            <hr class="my-2">
             <div class="small fw-semibold mb-1 text-muted">配色</div>
             <div class="row g-2">
               <div class="col-6"><label class="form-label small mb-1 text-muted">标题字体大小</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title_font_size" value="{{ mdata.get('title_font_size', '') }}" placeholder="如 3rem" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="module_{{ i }}_data_title_font_size" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_title_font_size\']');if(inp){var v=inp.value.replace(/px|rem$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
@@ -1951,6 +1962,11 @@ function addModule(type, variant) {
         '<option value="px">px</option>' +
         '<option value="rem">rem</option>' +
       '</select>' +
+    '</div>' +
+    '<hr class="my-2">' +
+    '<div class="small fw-semibold mb-1 text-muted">遮罩层</div>' +
+    '<div class="row g-2 mb-2">' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">启用遮罩</label><select class="form-select form-select-sm" name="module_' + idx + '_data_overlay_enabled"><option value="true">启用</option><option value="false">不启用</option></select></div>' +
     '</div>' +
     '<hr class="my-2">' +
     '<div class="small fw-semibold mb-1 text-muted">配色</div>' +

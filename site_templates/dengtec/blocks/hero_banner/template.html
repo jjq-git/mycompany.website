@@ -74,7 +74,10 @@
           <div class="hero-banner-image" style="background-image: url('{{ _media_src if _media_src.startswith('http') else base_url ~ _media_src }}')"></div>
           {% endif %}
         </div>
+        {% set overlay_enabled = module.data.get('overlay_enabled', 'true') if module.data is mapping else 'true' %}
+        {% if overlay_enabled != 'false' %}
         <div class="hero-banner-overlay"></div>
+        {% endif %}
         <div class="hero-banner-content"{% if content_style_parts %} style="{{ content_style_parts | join(' ') }}"{% endif %}>
           {% if item.title %}<h1 class="hero-banner-title"{% if title_font_size or title_color %} style="{% if title_font_size %}font-size: {{ title_font_size }};{% endif %}{% if title_color %}color: {{ title_color }};{% endif %}"{% endif %}>{{ item.title }}</h1>{% endif %}
           {% if item.subtitle %}<p class="hero-banner-subtitle"{% if subtitle_style_parts %} style="{{ subtitle_style_parts | join(' ') }}"{% endif %}>{{ item.subtitle }}</p>{% endif %}

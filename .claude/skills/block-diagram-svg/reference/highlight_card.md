@@ -26,7 +26,7 @@
 
 ![highlight_card 结构示意图](./highlight_card.svg)
 
-*上图：highlight_card HTML 骨架的层级结构，左图右文双栏布局。hl-image（图片侧）+ hl-text（文字侧：标签→标题→描述→功能列表→按钮）。橙色边框=hl-grid，紫色=image，蓝色=text，绿色=按钮。image_position 控制图文左右位置。*
+*上图：highlight_card HTML 骨架的层级结构，左图右文双栏布局。每个 class 标签骑在对应元素的边框线上，底部卡片列出全部可配置字段。hl-image（图片侧）+ hl-text（文字侧：标签→标题→描述→功能列表→按钮）。image_position 控制图文左右位置。*
 
 **highlight_card 不使用 `.section-header`**。标题区的概念由 `.hl-title` + `.hl-desc` 在内容区内部实现，见下方字段。
 
@@ -191,8 +191,8 @@
 
 | group | 包含字段 |
 |-------|---------|
-| 外层样式 | `section_bg`、`outer_width`、`margin_top`、`margin_bottom`、`padding_top`、`padding_right`、`padding_bottom`、`padding_left` |
-| 内层样式 | `inner_width` |
+| section 层 | `section_bg`、`padding_top`、`padding_right`、`padding_bottom`、`padding_left` |
+| container 层 | `outer_width`、`inner_width`、`margin_top`、`margin_bottom` |
 | 图文布局 | `image_position`、`border_radius`、`content_gap`、`grid_min_height`、`grid_background` |
 | 图片 | `image`、`image_width`、`image_height`、`image_aspect_ratio`、`image_fit`、`image_position_obj`、`image_radius`、`image_bg`、`image_opacity` |
 | 文字区 | `text_bg`、`text_color`、`text_padding`、`text_gap`、`text_align`、`text_justify` |
@@ -201,7 +201,8 @@
 | 描述 | `desc`、`desc_size`、`desc_color`、`desc_weight`、`desc_line_height`、`desc_opacity`、`desc_margin_bottom` |
 | 功能列表 | `features`、`features_color`、`features_size`、`features_line_height`、`features_gap`、`features_icon_color`、`features_icon_size`、`features_margin_bottom` |
 | 按钮区 | `actions_gap`、`actions_align`、`actions_margin_top`、`actions_wrap` |
-| 按钮 | `primaryBtn`、`primaryLink`、`primaryLinkTarget`、`secondaryBtn`、`secondaryLink`、`btn_bg`、`btn_color`、`btn_size`、`btn_weight`、`btn_radius`、`btn_padding`、`btn_hover_bg`、`btn_hover_color`、`btn_secondary_border`、`btn_secondary_color`、`btn_secondary_hover_bg`、`btn_secondary_hover_color`、`btn_transition` |
+| 主按钮 | `primaryBtn`、`primaryLink`、`primaryLinkTarget`、`btn_bg`、`btn_color`、`btn_size`、`btn_weight`、`btn_radius`、`btn_padding`、`btn_hover_bg`、`btn_hover_color`、`btn_transition` |
+| 副按钮 | `secondaryBtn`、`secondaryLink`、`btn_secondary_border`、`btn_secondary_color`、`btn_secondary_hover_bg`、`btn_secondary_hover_color`、`btn_size`、`btn_weight`、`btn_radius`、`btn_padding`、`btn_transition` |
 
 ---
 

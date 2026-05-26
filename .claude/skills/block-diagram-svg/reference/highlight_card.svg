@@ -1,153 +1,207 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 940" width="1500" height="940">
-  <defs>
-    <marker id="aD" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,1 L3.5,6 L7,1" fill="#e74c3c"/></marker>
-    <marker id="aU" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,6 L3.5,1 L7,6" fill="#e74c3c"/></marker>
-    <linearGradient id="imgG" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#d5dbe3"/><stop offset="100%" stop-color="#bcc3cc"/>
-    </linearGradient>
-  </defs>
-  <style>text{font-family:"Microsoft YaHei","PingFang SC",sans-serif}</style>
-
-  <rect x="0" y="0" width="1500" height="940" fill="#fff" rx="4"/>
-  <rect x="0" y="0" width="1500" height="50" fill="#f0f2f5" rx="4"/>
-  <text x="750" y="34" text-anchor="middle" font-size="22" font-weight="bold" fill="#1a1a2e">highlight_card — HTML 骨架 与 属性映射</text>
-
-  <!-- section -->
-  <rect x="15" y="58" width="1470" height="596" fill="rgba(91,141,239,0.035)" stroke="#5b8def" stroke-width="2" stroke-dasharray="10 4" rx="4"/>
-  <text x="30" y="110" font-size="17" fill="#3b6fd4" font-weight="bold">.section</text>
-
-  <!-- padding -->
-  <rect x="15" y="98" width="1470" height="22" fill="rgba(231,76,60,0.13)" stroke="rgba(231,76,60,0.25)" stroke-width="0.5"/>
-  <text x="750" y="115" text-anchor="middle" font-size="15" fill="#c0392b" font-weight="bold">padding_top</text>
-  <rect x="15" y="632" width="1470" height="22" fill="rgba(231,76,60,0.13)" stroke="rgba(231,76,60,0.25)" stroke-width="0.5"/>
-  <text x="750" y="649" text-anchor="middle" font-size="15" fill="#c0392b" font-weight="bold">padding_bottom</text>
-  <rect x="15" y="120" width="22" height="512" fill="rgba(231,76,60,0.13)" stroke="rgba(231,76,60,0.25)" stroke-width="0.5"/>
-  <text x="26" y="396" text-anchor="middle" font-size="15" fill="#c0392b" font-weight="bold" transform="rotate(-90, 26, 396)">padding_left</text>
-  <rect x="1463" y="120" width="22" height="512" fill="rgba(231,76,60,0.13)" stroke="rgba(231,76,60,0.25)" stroke-width="0.5"/>
-  <text x="1474" y="396" text-anchor="middle" font-size="15" fill="#c0392b" font-weight="bold" transform="rotate(90, 1474, 396)">padding_right</text>
-
-  <!-- container -->
-  <rect x="44" y="130" width="1412" height="498" fill="none" stroke="#27ae60" stroke-width="1.2" stroke-dasharray="6 4" rx="3"/>
-  <text x="60" y="150" font-size="17" fill="#1e7a45" font-weight="bold">.container</text>
-
-  <!-- hl-grid -->
-  <rect x="58" y="162" width="1384" height="456" fill="none" stroke="#e67e22" stroke-width="1.3" rx="4"/>
-  <text x="74" y="184" font-size="17" fill="#b8601f" font-weight="bold">.hl-grid</text>
-
-  <rect x="700" y="170" width="165" height="22" fill="#fff" stroke="#e67e22" stroke-width="0.6" rx="3"/>
-  <text x="782" y="186" text-anchor="middle" font-size="15" fill="#e67e22" font-weight="bold">image_position</text>
-
-  <!-- 双栏 -->
-  <line x1="770" y1="196" x2="770" y2="606" stroke="#ccc" stroke-width="1" stroke-dasharray="5 4"/>
-
-  <line x1="733" y1="196" x2="733" y2="188" stroke="#e67e22" stroke-width="1" marker-end="url(#aU)"/>
-  <line x1="807" y1="196" x2="807" y2="188" stroke="#e67e22" stroke-width="1" marker-end="url(#aU)"/>
-  <text x="770" y="169" text-anchor="middle" font-size="15" fill="#e67e22" font-weight="bold">content_gap</text>
-
-  <!-- hl-image -->
-  <rect x="72" y="200" width="650" height="408" fill="none" stroke="#6c5ce7" stroke-width="1" rx="3"/>
-  <text x="88" y="221" font-size="16" fill="#5b4bc4" font-weight="bold">.hl-image</text>
-
-  <rect x="90" y="234" width="614" height="356" fill="url(#imgG)" rx="5"/>
-  <text x="397" y="405" text-anchor="middle" font-size="19" fill="#555">产品图片</text>
-
-  <!-- hl-text -->
-  <rect x="815" y="200" width="618" height="408" fill="rgba(9,132,227,0.025)" stroke="#0984e3" stroke-width="1" rx="3"/>
-  <text x="832" y="221" font-size="16" fill="#0767b3" font-weight="bold">.hl-text</text>
-
-  <!-- hl-tag -->
-  <rect x="832" y="240" width="120" height="26" fill="#067a7a" rx="4"/>
-  <text x="892" y="258" text-anchor="middle" font-size="15" fill="#fff" font-weight="bold">分类标签</text>
-  <text x="965" y="258" font-size="14" fill="#888">.hl-tag</text>
-
-  <!-- hl-title -->
-  <rect x="832" y="278" width="586" height="52" fill="none" stroke="#d4a0a0" stroke-width="1" rx="2"/>
-  <text x="1392" y="287" text-anchor="end" font-size="14" fill="#aaa">.hl-title</text>
-  <text x="1408" y="312" text-anchor="end" font-size="22" fill="#1a1a2e" font-weight="bold">模块主标题</text>
-
-  <!-- hl-desc -->
-  <rect x="832" y="344" width="586" height="52" fill="none" stroke="#d4b890" stroke-width="1" rx="2"/>
-  <text x="1392" y="353" text-anchor="end" font-size="14" fill="#aaa">.hl-desc</text>
-  <text x="850" y="368" font-size="16" fill="#555">产品描述文字，补充说明标题内容，</text>
-  <text x="850" y="390" font-size="16" fill="#555">展示更多细节和卖点。</text>
-
-  <!-- hl-features -->
-  <rect x="832" y="410" width="586" height="76" fill="none" stroke="#d4c870" stroke-width="1" rx="2"/>
-  <text x="1392" y="419" text-anchor="end" font-size="14" fill="#aaa">.hl-features</text>
-  <text x="850" y="438" font-size="16" fill="#333">✓ 功能特点 A</text>
-  <text x="850" y="460" font-size="16" fill="#333">✓ 功能特点 B</text>
-  <text x="850" y="482" font-size="16" fill="#333">✓ 功能特点 C</text>
-
-  <!-- hl-actions -->
-  <rect x="832" y="498" width="586" height="52" fill="none" stroke="#90c890" stroke-width="1" rx="2"/>
-  <text x="1392" y="507" text-anchor="end" font-size="14" fill="#aaa">.hl-actions</text>
-  <rect x="875" y="512" width="120" height="30" fill="#067a7a" rx="5"/>
-  <text x="935" y="533" text-anchor="middle" font-size="15" fill="#fff" font-weight="bold">主按钮</text>
-  <rect x="1015" y="512" width="120" height="30" fill="none" stroke="#067a7a" stroke-width="1.5" rx="5"/>
-  <text x="1075" y="533" text-anchor="middle" font-size="15" fill="#067a7a">副按钮</text>
-
-  <!-- 底部属性字段 -->
-  <rect x="10" y="664" width="1480" height="226" fill="#f7f8fa" stroke="#d5d8de" stroke-width="0.8" rx="4"/>
-  <text x="750" y="684" text-anchor="middle" font-size="16" fill="#888" font-weight="bold">属性字段</text>
-  <rect x="16" y="670" width="282" height="90" fill="#fff" stroke="#5b8def" stroke-width="1.2" rx="4"/>
-  <text x="26" y="692" font-size="16" fill="#3b6fd4" font-weight="bold">.section / .container</text>
-  <text x="26" y="712" font-size="15" fill="#555">section_bg : background</text>
-  <text x="26" y="729" font-size="15" fill="#555">outer_width / inner_width</text>
-  <text x="26" y="746" font-size="15" fill="#555">margin_top / margin_bottom</text>
-  <rect x="312" y="670" width="282" height="90" fill="#fff" stroke="#e74c3c" stroke-width="1.2" rx="4"/>
-  <text x="322" y="692" font-size="16" fill="#c0392b" font-weight="bold">padding 四边</text>
-  <text x="322" y="712" font-size="15" fill="#555">padding_top / right</text>
-  <text x="322" y="729" font-size="15" fill="#555">padding_bottom / left</text>
-  <rect x="608" y="670" width="282" height="90" fill="#fff" stroke="#e67e22" stroke-width="1.2" rx="4"/>
-  <text x="618" y="692" font-size="16" fill="#b8601f" font-weight="bold">.hl-grid 容器</text>
-  <text x="618" y="712" font-size="15" fill="#555">image_position : 图文位置</text>
-  <text x="618" y="729" font-size="15" fill="#555">content_gap / grid_background</text>
-  <text x="618" y="746" font-size="15" fill="#555">border_radius</text>
-  <rect x="904" y="670" width="282" height="90" fill="#fff" stroke="#6c5ce7" stroke-width="1.2" rx="4"/>
-  <text x="914" y="692" font-size="16" fill="#5b4bc4" font-weight="bold">.hl-image 图片侧</text>
-  <text x="914" y="712" font-size="15" fill="#555">image_width / height</text>
-  <text x="914" y="729" font-size="15" fill="#555">image_fit / aspect_ratio</text>
-  <text x="914" y="746" font-size="15" fill="#555">image_radius / bg / opacity</text>
-  <rect x="1200" y="670" width="282" height="90" fill="#fff" stroke="#0984e3" stroke-width="1.2" rx="4"/>
-  <text x="1210" y="692" font-size="16" fill="#0767b3" font-weight="bold">.hl-text 文字侧</text>
-  <text x="1210" y="712" font-size="15" fill="#555">text_bg / text_color</text>
-  <text x="1210" y="729" font-size="15" fill="#555">text_padding / gap / align</text>
-  <rect x="16" y="766" width="282" height="90" fill="#fff" stroke="#27ae60" stroke-width="1.2" rx="4"/>
-  <text x="26" y="788" font-size="16" fill="#1e7a45" font-weight="bold">.hl-tag 标签</text>
-  <text x="26" y="808" font-size="15" fill="#555">tag_bg / color / size</text>
-  <text x="26" y="825" font-size="15" fill="#555">tag_radius / padding</text>
-  <rect x="312" y="766" width="282" height="90" fill="#fff" stroke="#e85d5d" stroke-width="1.2" rx="4"/>
-  <text x="322" y="788" font-size="16" fill="#c0392b" font-weight="bold">.hl-title 标题</text>
-  <text x="322" y="808" font-size="15" fill="#555">title_size / color</text>
-  <text x="322" y="825" font-size="15" fill="#555">title_weight / line_height</text>
-  <rect x="608" y="766" width="282" height="90" fill="#fff" stroke="#e8963b" stroke-width="1.2" rx="4"/>
-  <text x="618" y="788" font-size="16" fill="#b87020" font-weight="bold">.hl-desc 描述</text>
-  <text x="618" y="808" font-size="15" fill="#555">desc_size / color</text>
-  <text x="618" y="825" font-size="15" fill="#555">desc_weight / line_height</text>
-  <rect x="904" y="766" width="282" height="90" fill="#fff" stroke="#f1c40f" stroke-width="1.2" rx="4"/>
-  <text x="914" y="788" font-size="16" fill="#b8950e" font-weight="bold">.hl-features 功能列表</text>
-  <text x="914" y="808" font-size="15" fill="#555">features_color / size</text>
-  <text x="914" y="825" font-size="15" fill="#555">features_gap / icon_color</text>
-  <rect x="1200" y="766" width="282" height="90" fill="#fff" stroke="#2ecc71" stroke-width="1.2" rx="4"/>
-  <text x="1210" y="788" font-size="16" fill="#1e7a45" font-weight="bold">.hl-actions + 按钮</text>
-  <text x="1210" y="808" font-size="15" fill="#555">actions_gap / align</text>
-  <text x="1210" y="825" font-size="15" fill="#555">btn_bg / color / size</text>
-  <text x="1210" y="842" font-size="15" fill="#555">btn_radius / padding</text>
-
-  <!-- 图例 -->
-  <rect x="15" y="896" width="1470" height="36" fill="#f0f2f5" stroke="#d5d8de" stroke-width="0.6" rx="4"/>
-  <rect x="35" y="906" width="16" height="12" fill="rgba(231,76,60,0.18)" stroke="#e74c3c" stroke-width="0.5"/>
-  <text x="60" y="917" font-size="16" fill="#666">padding</text>
-  <rect x="160" y="906" width="16" height="12" fill="none" stroke="#5b8def" stroke-width="1.5"/>
-  <text x="188" y="917" font-size="16" fill="#666">section</text>
-  <rect x="290" y="906" width="16" height="12" fill="none" stroke="#e67e22" stroke-width="1.3"/>
-  <text x="318" y="917" font-size="16" fill="#666">hl-grid</text>
-  <rect x="420" y="906" width="16" height="12" fill="none" stroke="#6c5ce7" stroke-width="1.2"/>
-  <text x="448" y="917" font-size="16" fill="#666">hl-image</text>
-  <rect x="560" y="906" width="16" height="12" fill="none" stroke="#0984e3" stroke-width="1.2"/>
-  <text x="588" y="917" font-size="16" fill="#666">hl-text</text>
-  <rect x="690" y="906" width="16" height="12" fill="#067a7a" rx="2"/>
-  <text x="718" y="917" font-size="16" fill="#666">hl-tag / 按钮</text>
-  <rect x="850" y="906" width="16" height="12" fill="none" stroke="#f1c40f" stroke-width="1"/>
-  <text x="878" y="917" font-size="16" fill="#666">hl-features</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1540 1370" width="1540" height="1370">
+<defs>
+<linearGradient id="imgG" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#d5dbe3"/><stop offset="100%" stop-color="#bcc3cc"/>
+</linearGradient>
+</defs>
+<style>text{font-family:"Microsoft YaHei","PingFang SC",sans-serif}</style>
+<rect x="0" y="0" width="1540" height="1370" fill="#fff" rx="4"/>
+<rect x="0" y="0" width="1540" height="50" fill="#f0f2f5" rx="4"/>
+<text x="770" y="34" text-anchor="middle" font-size="22" font-weight="bold" fill="#1a1a2e">highlight_card — HTML 骨架 与 属性映射</text>
+<g transform="translate(20, 0)">
+<rect x="15" y="68" width="1470" height="520" fill="rgba(91,141,239,0.06)" stroke="#5b8def" stroke-width="2" stroke-dasharray="10 4" rx="4"/>
+<rect x="25" y="58" width="80" height="20" fill="#fff" rx="2"/>
+<text x="65" y="73" text-anchor="middle" font-size="17" fill="#3b6fd4" font-weight="bold">.section</text>
+<rect x="44" y="122" width="1412" height="450" fill="none" stroke="#27ae60" stroke-width="1.2" stroke-dasharray="6 4" rx="3"/>
+<rect x="52" y="112" width="100" height="20" fill="#fff" rx="2"/>
+<text x="102" y="127" text-anchor="middle" font-size="17" fill="#1e7a45" font-weight="bold">.container</text>
+<rect x="58" y="154" width="1384" height="410" fill="none" stroke="#e67e22" stroke-width="1.3" rx="4"/>
+<rect x="66" y="144" width="80" height="20" fill="#fff" rx="2"/>
+<text x="106" y="159" text-anchor="middle" font-size="17" fill="#b8601f" font-weight="bold">.hl-grid</text>
+<rect x="1267" y="144" width="175" height="20" fill="#fff" stroke="#e67e22" stroke-width="0.6" rx="3"/>
+<text x="1354" y="159" text-anchor="middle" font-size="13" fill="#e67e22" font-weight="bold">image_position → .hl-grid--reverse</text>
+<line x1="770" y1="194" x2="770" y2="556" stroke="#ccc" stroke-width="1" stroke-dasharray="5 4"/>
+<line x1="770" y1="190" x2="720" y2="190" stroke="#e67e22" stroke-width="1"/>
+<line x1="770" y1="190" x2="820" y2="190" stroke="#e67e22" stroke-width="1"/>
+<line x1="720" y1="190" x2="720" y2="182" stroke="#e67e22" stroke-width="1"/>
+<line x1="820" y1="190" x2="820" y2="182" stroke="#e67e22" stroke-width="1"/>
+<text x="770" y="178" text-anchor="middle" font-size="13" fill="#e67e22" font-weight="bold">content_gap</text>
+<rect x="72" y="200" width="650" height="355" fill="none" stroke="#6c5ce7" stroke-width="1" rx="3"/>
+<rect x="80" y="190" width="90" height="20" fill="#fff" rx="2"/>
+<text x="125" y="205" text-anchor="middle" font-size="16" fill="#5b4bc4" font-weight="bold">.hl-image</text>
+<rect x="88" y="228" width="618" height="307" fill="url(#imgG)" rx="5"/>
+<text x="397" y="377" text-anchor="middle" font-size="19" fill="#555">产品图片</text>
+<rect x="815" y="200" width="618" height="355" fill="rgba(9,132,227,0.025)" stroke="#0984e3" stroke-width="1" rx="3"/>
+<rect x="823" y="190" width="75" height="20" fill="#fff" rx="2"/>
+<text x="860" y="205" text-anchor="middle" font-size="16" fill="#0767b3" font-weight="bold">.hl-text</text>
+<rect x="831" y="228" width="120" height="24" fill="#067a7a" rx="4"/>
+<text x="891" y="245" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold">分类标签</text>
+<rect x="963" y="230" width="60" height="20" fill="#fff" rx="2"/>
+<text x="993" y="244" text-anchor="middle" font-size="13" fill="#333" font-weight="bold">.hl-tag</text>
+<rect x="831" y="262" width="586" height="40" fill="none" stroke="#d4a0a0" stroke-width="1" rx="2"/>
+<rect x="1333" y="252" width="85" height="20" fill="#fff" rx="2"/>
+<text x="1375" y="267" text-anchor="middle" font-size="14" fill="#c0392b" font-weight="bold">.hl-title</text>
+<text x="1124" y="290" text-anchor="middle" font-size="20" fill="#1a1a2e" font-weight="bold">模块主标题</text>
+<rect x="831" y="312" width="586" height="40" fill="none" stroke="#d4b890" stroke-width="1" rx="2"/>
+<rect x="1333" y="302" width="85" height="20" fill="#fff" rx="2"/>
+<text x="1375" y="317" text-anchor="middle" font-size="14" fill="#b87020" font-weight="bold">.hl-desc</text>
+<text x="845" y="338" font-size="15" fill="#555">产品描述文字，展示更多细节和卖点。</text>
+<rect x="831" y="362" width="586" height="66" fill="none" stroke="#d4c870" stroke-width="1" rx="2"/>
+<rect x="1303" y="352" width="115" height="20" fill="#fff" rx="2"/>
+<text x="1360" y="367" text-anchor="middle" font-size="14" fill="#b8950e" font-weight="bold">.hl-features</text>
+<text x="845" y="382" font-size="14" fill="#333">✓ 功能特点 A</text>
+<text x="845" y="400" font-size="14" fill="#333">✓ 功能特点 B</text>
+<text x="845" y="418" font-size="14" fill="#333">✓ 功能特点 C</text>
+<rect x="831" y="438" width="586" height="44" fill="none" stroke="#90c890" stroke-width="1" rx="2"/>
+<rect x="1323" y="428" width="100" height="20" fill="#fff" rx="2"/>
+<text x="1373" y="443" text-anchor="middle" font-size="14" fill="#1e7a45" font-weight="bold">.hl-actions</text>
+<rect x="875" y="446" width="105" height="26" fill="#067a7a" rx="5"/>
+<text x="927" y="464" text-anchor="middle" font-size="13" fill="#fff" font-weight="bold">主按钮</text>
+<rect x="861" y="474" width="132" height="14" fill="#fff" rx="2"/>
+<text x="927" y="485" text-anchor="middle" font-size="11" fill="#333" font-weight="bold">.hl-btn.hl-btn--primary</text>
+<rect x="1010" y="446" width="105" height="26" fill="none" stroke="#067a7a" stroke-width="1.5" rx="5"/>
+<text x="1062" y="464" text-anchor="middle" font-size="13" fill="#067a7a">副按钮</text>
+<rect x="995" y="474" width="136" height="14" fill="#fff" rx="2"/>
+<text x="1063" y="485" text-anchor="middle" font-size="11" fill="#333" font-weight="bold">.hl-btn.hl-btn--secondary</text>
+</g>
+<g transform="translate(26, 0)">
+<rect x="16" y="624" width="362" height="185" fill="#fff" stroke="#5b8def" stroke-width="1.2" rx="4"/>
+<text x="24" y="646" font-size="15" fill="#3b6fd4" font-weight="bold">.section 属性</text>
+<text x="24" y="666" font-size="14" fill="#555">section_bg → background</text>
+<text x="24" y="683" font-size="14" fill="#555">padding_top → padding-top</text>
+<text x="24" y="700" font-size="14" fill="#555">padding_right → padding-right</text>
+<text x="24" y="717" font-size="14" fill="#555">padding_bottom → padding-bottom</text>
+<text x="24" y="734" font-size="14" fill="#555">padding_left → padding-left</text>
+<rect x="390" y="624" width="362" height="185" fill="#fff" stroke="#27ae60" stroke-width="1.2" rx="4"/>
+<text x="398" y="646" font-size="15" fill="#1e7a45" font-weight="bold">.container 属性</text>
+<text x="398" y="666" font-size="14" fill="#555">outer_width → max-width</text>
+<text x="398" y="683" font-size="14" fill="#555">inner_width → max-width</text>
+<text x="398" y="700" font-size="14" fill="#555">margin_top → margin-top</text>
+<text x="398" y="717" font-size="14" fill="#555">margin_bottom → margin-bottom</text>
+<rect x="764" y="624" width="362" height="185" fill="#fff" stroke="#e67e22" stroke-width="1.2" rx="4"/>
+<text x="772" y="646" font-size="15" fill="#b8601f" font-weight="bold">.hl-grid 容器</text>
+<text x="772" y="666" font-size="14" fill="#555">image_position → left=图左文右 / right=图右文左</text>
+<text x="772" y="683" font-size="13" fill="#555">  (right 时添加 .hl-grid--reverse class)</text>
+<text x="772" y="700" font-size="14" fill="#555">border_radius → border-radius</text>
+<text x="772" y="717" font-size="14" fill="#555">content_gap → gap</text>
+<text x="772" y="734" font-size="14" fill="#555">grid_min_height → min-height</text>
+<text x="772" y="751" font-size="14" fill="#555">grid_background → background</text>
+<rect x="1138" y="624" width="362" height="185" fill="#fff" stroke="#6c5ce7" stroke-width="1.2" rx="4"/>
+<text x="1146" y="646" font-size="15" fill="#5b4bc4" font-weight="bold">.hl-image 图片侧</text>
+<text x="1146" y="666" font-size="14" fill="#555">image → 图片 URL</text>
+<text x="1146" y="683" font-size="14" fill="#555">image_width → width</text>
+<text x="1146" y="700" font-size="14" fill="#555">image_height → height</text>
+<text x="1146" y="717" font-size="14" fill="#555">image_aspect_ratio → aspect-ratio</text>
+<text x="1146" y="734" font-size="14" fill="#555">image_fit → object-fit</text>
+<text x="1146" y="751" font-size="14" fill="#555">image_position_obj → object-position</text>
+<text x="1146" y="768" font-size="14" fill="#555">image_radius → border-radius</text>
+<text x="1146" y="785" font-size="14" fill="#555">image_bg → background-color</text>
+<text x="1146" y="802" font-size="14" fill="#555">image_opacity → opacity</text>
+<rect x="16" y="824" width="362" height="219" fill="#fff" stroke="#0984e3" stroke-width="1.2" rx="4"/>
+<text x="24" y="846" font-size="15" fill="#0767b3" font-weight="bold">.hl-text 文字侧</text>
+<text x="24" y="866" font-size="14" fill="#555">text_bg → background</text>
+<text x="24" y="883" font-size="14" fill="#555">text_color → color</text>
+<text x="24" y="900" font-size="14" fill="#555">text_padding → padding</text>
+<text x="24" y="917" font-size="14" fill="#555">text_gap → gap</text>
+<text x="24" y="934" font-size="14" fill="#555">text_align → text-align</text>
+<text x="24" y="951" font-size="14" fill="#555">text_justify → justify-content</text>
+<rect x="390" y="824" width="362" height="219" fill="#fff" stroke="#27ae60" stroke-width="1.2" rx="4"/>
+<text x="398" y="846" font-size="15" fill="#1e7a45" font-weight="bold">.hl-tag 标签</text>
+<text x="398" y="866" font-size="14" fill="#555">tag → 标签文字</text>
+<text x="398" y="883" font-size="14" fill="#555">tag_bg → background</text>
+<text x="398" y="900" font-size="14" fill="#555">tag_color → color</text>
+<text x="398" y="917" font-size="14" fill="#555">tag_size → font-size</text>
+<text x="398" y="934" font-size="14" fill="#555">tag_weight → font-weight</text>
+<text x="398" y="951" font-size="14" fill="#555">tag_transform → text-transform</text>
+<text x="398" y="968" font-size="14" fill="#555">tag_letter_spacing → letter-spacing</text>
+<text x="398" y="985" font-size="14" fill="#555">tag_radius → border-radius</text>
+<text x="398" y="1002" font-size="14" fill="#555">tag_padding → padding</text>
+<text x="398" y="1019" font-size="14" fill="#555">tag_margin_bottom → margin-bottom</text>
+<text x="398" y="1036" font-size="13" fill="#999">显示条件: tag 非空时渲染</text>
+<rect x="764" y="824" width="362" height="219" fill="#fff" stroke="#e85d5d" stroke-width="1.2" rx="4"/>
+<text x="772" y="846" font-size="15" fill="#c0392b" font-weight="bold">.hl-title 标题</text>
+<text x="772" y="866" font-size="14" fill="#555">title → 标题文字</text>
+<text x="772" y="883" font-size="14" fill="#555">title_size → font-size</text>
+<text x="772" y="900" font-size="14" fill="#555">title_color → color</text>
+<text x="772" y="917" font-size="14" fill="#555">title_weight → font-weight</text>
+<text x="772" y="934" font-size="14" fill="#555">title_line_height → line-height</text>
+<text x="772" y="951" font-size="14" fill="#555">title_align → text-align</text>
+<text x="772" y="968" font-size="14" fill="#555">title_margin_bottom → margin-bottom</text>
+<text x="772" y="985" font-size="13" fill="#999">显示条件: title 非空时渲染（控制整个模块显隐）</text>
+<rect x="1138" y="824" width="362" height="219" fill="#fff" stroke="#e8963b" stroke-width="1.2" rx="4"/>
+<text x="1146" y="846" font-size="15" fill="#b87020" font-weight="bold">.hl-desc 描述</text>
+<text x="1146" y="866" font-size="14" fill="#555">desc → 描述文字</text>
+<text x="1146" y="883" font-size="14" fill="#555">desc_size → font-size</text>
+<text x="1146" y="900" font-size="14" fill="#555">desc_color → color</text>
+<text x="1146" y="917" font-size="14" fill="#555">desc_weight → font-weight</text>
+<text x="1146" y="934" font-size="14" fill="#555">desc_line_height → line-height</text>
+<text x="1146" y="951" font-size="14" fill="#555">desc_opacity → opacity</text>
+<text x="1146" y="968" font-size="14" fill="#555">desc_margin_bottom → margin-bottom</text>
+<text x="1146" y="985" font-size="13" fill="#999">显示条件: desc 非空时渲染</text>
+<rect x="16" y="1058" width="362" height="253" fill="#fff" stroke="#f1c40f" stroke-width="1.2" rx="4"/>
+<text x="24" y="1080" font-size="15" fill="#b8950e" font-weight="bold">.hl-features 功能列表</text>
+<text x="24" y="1100" font-size="14" fill="#555">features → 功能点列表</text>
+<text x="24" y="1117" font-size="14" fill="#555">features_color → color</text>
+<text x="24" y="1134" font-size="14" fill="#555">features_size → font-size</text>
+<text x="24" y="1151" font-size="14" fill="#555">features_line_height → line-height</text>
+<text x="24" y="1168" font-size="14" fill="#555">features_gap → gap</text>
+<text x="24" y="1185" font-size="14" fill="#555">features_icon_color → ✓ 图标颜色</text>
+<text x="24" y="1202" font-size="14" fill="#555">features_icon_size → ✓ 图标字号</text>
+<text x="24" y="1219" font-size="14" fill="#555">features_margin_bottom → margin-bottom</text>
+<text x="24" y="1236" font-size="13" fill="#999">显示条件: features 非空时渲染</text>
+<rect x="390" y="1058" width="362" height="253" fill="#fff" stroke="#2ecc71" stroke-width="1.2" rx="4"/>
+<text x="398" y="1080" font-size="15" fill="#1e7a45" font-weight="bold">.hl-actions 按钮区</text>
+<text x="398" y="1100" font-size="14" fill="#555">actions_gap → gap</text>
+<text x="398" y="1117" font-size="14" fill="#555">actions_align → justify-content</text>
+<text x="398" y="1134" font-size="14" fill="#555">actions_margin_top → margin-top</text>
+<text x="398" y="1151" font-size="14" fill="#555">actions_wrap → flex-wrap</text>
+<rect x="764" y="1058" width="362" height="253" fill="#fff" stroke="#27ae60" stroke-width="1.2" rx="4"/>
+<text x="772" y="1080" font-size="15" fill="#1e7a45" font-weight="bold">主按钮 .hl-btn--primary</text>
+<text x="772" y="1100" font-size="14" fill="#555">primaryBtn → 按钮文字</text>
+<text x="772" y="1117" font-size="14" fill="#555">primaryLink → 链接</text>
+<text x="772" y="1134" font-size="14" fill="#555">primaryLinkTarget → 打开方式</text>
+<text x="772" y="1151" font-size="14" fill="#555">btn_bg → background</text>
+<text x="772" y="1168" font-size="14" fill="#555">btn_color → color</text>
+<text x="772" y="1185" font-size="14" fill="#555">btn_size → font-size</text>
+<text x="772" y="1202" font-size="14" fill="#555">btn_weight → font-weight</text>
+<text x="772" y="1219" font-size="14" fill="#555">btn_radius → border-radius</text>
+<text x="772" y="1236" font-size="14" fill="#555">btn_padding → padding</text>
+<text x="772" y="1253" font-size="14" fill="#555">btn_hover_bg → hover 背景</text>
+<text x="772" y="1270" font-size="14" fill="#555">btn_hover_color → hover 字体色</text>
+<text x="772" y="1287" font-size="14" fill="#555">btn_transition → transition</text>
+<text x="772" y="1304" font-size="13" fill="#999">显示条件: primaryBtn 非空且 primaryLink 非空</text>
+<rect x="1138" y="1058" width="362" height="253" fill="#fff" stroke="#27ae60" stroke-width="1.2" rx="4"/>
+<text x="1146" y="1080" font-size="15" fill="#1e7a45" font-weight="bold">副按钮 .hl-btn--secondary</text>
+<text x="1146" y="1100" font-size="14" fill="#555">secondaryBtn → 按钮文字</text>
+<text x="1146" y="1117" font-size="14" fill="#555">secondaryLink → 链接</text>
+<text x="1146" y="1134" font-size="14" fill="#555">btn_secondary_border → border-color</text>
+<text x="1146" y="1151" font-size="14" fill="#555">btn_secondary_color → color</text>
+<text x="1146" y="1168" font-size="14" fill="#555">btn_secondary_hover_bg → hover 背景</text>
+<text x="1146" y="1185" font-size="14" fill="#555">btn_secondary_hover_color → hover 字体色</text>
+<text x="1146" y="1202" font-size="14" fill="#555">btn_size → font-size</text>
+<text x="1146" y="1219" font-size="14" fill="#555">btn_weight → font-weight</text>
+<text x="1146" y="1236" font-size="14" fill="#555">btn_radius → border-radius</text>
+<text x="1146" y="1253" font-size="14" fill="#555">btn_padding → padding</text>
+<text x="1146" y="1270" font-size="14" fill="#555">btn_transition → transition</text>
+<text x="1146" y="1287" font-size="13" fill="#999">显示条件: secondaryBtn 非空且 secondaryLink 非空</text>
+</g>
+<g transform="translate(12, 0)">
+<rect x="15" y="1331" width="1470" height="30" fill="#f0f2f5" stroke="#d5d8de" stroke-width="0.6" rx="4"/>
+<rect x="35" y="1340" width="16" height="12" fill="none" stroke="#5b8def" stroke-width="1.5"/>
+<text x="59" y="1352" font-size="14" fill="#666">section</text>
+<rect x="203" y="1340" width="16" height="12" fill="none" stroke="#27ae60" stroke-width="1.5"/>
+<text x="227" y="1352" font-size="14" fill="#666">container</text>
+<rect x="371" y="1340" width="16" height="12" fill="none" stroke="#e67e22" stroke-width="1.5"/>
+<text x="395" y="1352" font-size="14" fill="#666">hl-grid</text>
+<rect x="539" y="1340" width="16" height="12" fill="none" stroke="#6c5ce7" stroke-width="1.5"/>
+<text x="563" y="1352" font-size="14" fill="#666">hl-image</text>
+<rect x="707" y="1340" width="16" height="12" fill="none" stroke="#0984e3" stroke-width="1.5"/>
+<text x="731" y="1352" font-size="14" fill="#666">hl-text</text>
+<rect x="875" y="1340" width="16" height="12" fill="none" stroke="#067a7a" stroke-width="1.5"/>
+<text x="899" y="1352" font-size="14" fill="#666">hl-tag / 按钮</text>
+<rect x="1043" y="1340" width="16" height="12" fill="none" stroke="#f1c40f" stroke-width="1.5"/>
+<text x="1067" y="1352" font-size="14" fill="#666">hl-features</text>
+<rect x="1211" y="1340" width="16" height="12" fill="none" stroke="#e85d5d" stroke-width="1.5"/>
+<text x="1235" y="1352" font-size="14" fill="#666">标题 / 描述</text>
+</g>
 </svg>

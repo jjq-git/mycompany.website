@@ -237,6 +237,11 @@
           '</select>' +
         '</div>' +
         '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">遮罩层</div>' +
+        '<div class="row g-2 mb-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">启用遮罩</label><select class="form-select form-select-sm" name="module_' + idx + '_data_overlay_enabled"><option value="true"' + (d.overlay_enabled !== 'false' ? ' selected' : '') + '>启用</option><option value="false"' + (d.overlay_enabled === 'false' ? ' selected' : '') + '>不启用</option></select></div>' +
+        '</div>' +
+        '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">配色</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_title_font_size', '标题字体大小', ['px','rem'], d.title_font_size) + '</div>' +
