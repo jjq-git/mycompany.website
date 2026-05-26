@@ -13,14 +13,13 @@
 {% set hpd_top = md.get('header_padding_top', '') %}{% set hpd_right = md.get('header_padding_right', '') %}{% set hpd_bottom = md.get('header_padding_bottom', '2rem') %}{% set hpd_left = md.get('header_padding_left', '') %}{% set has_hpadding = hpd_top or hpd_right or hpd_bottom or hpd_left %}
 {# ── 区块主标题 ── #}
 {% set title_size = md.get('title_size', '') %}
-{% set title_color = md.get('title_color', '') %}
+{% set title_color = md.get('title_color', '#1e293b') %}
 {% set title_margin_bottom = md.get('title_margin_bottom', '') %}
 {# ── 区块副标题 ── #}
 {% set subtitle_size = md.get('subtitle_size', '') %}
 {% set subtitle_color = md.get('subtitle_color', '') %}
 {# ── 网格容器 ── #}
-{% set grid_columns = md.get('grid_columns', '') %}
-{% set grid_gap = md.get('grid_gap', '') %}
+{% set grid_gap = md.get('grid_gap', '2rem') %}
 {% set grid_row_gap = md.get('grid_row_gap', '') %}
 {% set grid_column_gap = md.get('grid_column_gap', '') %}
 {# ── 卡片样式 ── #}
@@ -34,23 +33,23 @@
 {% set card_radius_bottom_right = md.get('card_radius_bottom_right', md.get('card_radius', '')) %}
 {% set card_radius_bottom_left = md.get('card_radius_bottom_left', md.get('card_radius', '')) %}
 {# ── 图标样式 ── #}
-{% set icon_size = md.get('icon_size', '') %}
-{% set icon_color = md.get('icon_color', '') %}
+{% set icon_size = md.get('icon_size', '56px') %}
+{% set icon_color = md.get('icon_color', '#067a7a') %}
 {% set icon_bg = md.get('icon_bg', '') %}
-{% set icon_width = md.get('icon_width', '') %}
-{% set icon_height = md.get('icon_height', '') %}
-{% set icon_radius = md.get('icon_radius', '') %}
+{% set icon_width = md.get('icon_width', '56px') %}
+{% set icon_height = md.get('icon_height', '56px') %}
+{% set icon_radius = md.get('icon_radius', '8px') %}
 {% set icon_margin_right = md.get('icon_margin_right', '') %}
-{% set icon_margin_bottom = md.get('icon_margin_bottom', '') %}
+{% set icon_margin_bottom = md.get('icon_margin_bottom', '0.25rem') %}
 {# ── 卡片标题样式 ── #}
-{% set card_title_size = md.get('card_title_size', '') %}
-{% set card_title_color = md.get('card_title_color', '') %}
-{% set card_title_weight = md.get('card_title_weight', '') %}
-{% set card_title_margin_bottom = md.get('card_title_margin_bottom', '') %}
+{% set card_title_size = md.get('card_title_size', '1rem') %}
+{% set card_title_color = md.get('card_title_color', '#1e293b') %}
+{% set card_title_weight = md.get('card_title_weight', '600') %}
+{% set card_title_margin_bottom = md.get('card_title_margin_bottom', '0.5rem') %}
 {# ── 卡片描述样式 ── #}
-{% set card_desc_size = md.get('card_desc_size', '') %}
-{% set card_desc_color = md.get('card_desc_color', '') %}
-{% set card_desc_line_height = md.get('card_desc_line_height', '') %}
+{% set card_desc_size = md.get('card_desc_size', '0.875rem') %}
+{% set card_desc_color = md.get('card_desc_color', '#64748b') %}
+{% set card_desc_line_height = md.get('card_desc_line_height', '1.6') %}
 {# ── 数据控制 ── #}
 {% set max_items = md.get('max_items', 0) | int %}
 {% if max_items > 0 and display_features | length > max_items %}
@@ -70,7 +69,7 @@
     </div>
     {% endif %}
     {% if has_features %}
-    <div class="services-grid"{% if grid_gap or grid_row_gap or grid_column_gap or grid_columns %} style="{% if grid_columns %}--grid-columns: {{ grid_columns }};{% endif %}{% if grid_gap %}gap: {{ grid_gap }};{% endif %}{% if grid_row_gap %}row-gap: {{ grid_row_gap }};{% endif %}{% if grid_column_gap %}column-gap: {{ grid_column_gap }};{% endif %}"{% endif %}>
+    <div class="services-grid"{% if grid_gap or grid_row_gap or grid_column_gap %} style="{% if grid_gap %}gap: {{ grid_gap }};{% endif %}{% if grid_row_gap %}row-gap: {{ grid_row_gap }};{% endif %}{% if grid_column_gap %}column-gap: {{ grid_column_gap }};{% endif %}"{% endif %}>
       {% for feature in display_features %}
       <div class="service-card" style="
         {% if card_show_border == '0' or card_show_border == 0 %}border: none;{% endif %}

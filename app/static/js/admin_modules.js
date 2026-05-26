@@ -448,7 +448,7 @@
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">主标题</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_title_size', '标题字号', ['px','rem'], d.title_size || '2.25rem') + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color || '#1e293b') + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_title_margin_bottom', '标题下外边距', ['px','rem'], d.title_margin_bottom || '0.5rem') + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">副标题</div>' +
@@ -457,9 +457,8 @@
           '<div class="col-6">' + cn('module_' + idx + '_data_subtitle_color', '副标题颜色', d.subtitle_color || '#64748b') + '</div>' +
         '</div>' +
         '<div class="small fw-semibold mb-1 text-muted mt-2">网格样式</div>' +
-        '<div class="mb-2">' + sel('module_' + idx + '_data_grid_columns', '网格列数', [{value:'2',label:'2 列'},{value:'3',label:'3 列'},{value:'4',label:'4 列'}], d.grid_columns) + '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_grid_gap', '卡片间距', ['px','rem'], d.grid_gap) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_grid_gap', '卡片间距', ['px','rem'], d.grid_gap || '2rem') + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_grid_row_gap', '行间距', ['px','rem'], d.grid_row_gap) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_grid_column_gap', '列间距', ['px','rem'], d.grid_column_gap) + '</div>' +
         '</div>' +
@@ -483,28 +482,28 @@
         '</div>' +
         '<div class="small fw-semibold mb-1 text-muted mt-2">图标样式</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_icon_size', '图标大小', ['px','rem'], d.icon_size) + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_icon_color', '图标颜色', d.icon_color) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_size', '图标大小', ['px','rem'], d.icon_size || '56px') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_icon_color', '图标颜色', d.icon_color || '#067a7a') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_icon_bg', '图标背景色', d.icon_bg) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_icon_width', '图标区宽度', ['px','rem'], d.icon_width) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_icon_height', '图标区高度', ['px','rem'], d.icon_height) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_icon_radius', '图标圆角', ['px','%'], d.icon_radius) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_width', '图标区宽度', ['px','rem'], d.icon_width || '56px') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_height', '图标区高度', ['px','rem'], d.icon_height || '56px') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_radius', '图标圆角', ['px','%'], d.icon_radius || '8px') + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_icon_margin_right', '图标右外边距', ['px','rem'], d.icon_margin_right) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_icon_margin_bottom', '图标下外边距', ['px','rem'], d.icon_margin_bottom) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_margin_bottom', '图标下外边距', ['px','rem'], d.icon_margin_bottom || '0.25rem') + '</div>' +
         '</div>' +
         '<div class="small fw-semibold mb-1 text-muted mt-2">卡片文字样式</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片标题</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_card_title_size', '标题字号', ['px','rem'], d.card_title_size) + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_card_title_color', '标题颜色', d.card_title_color) + '</div>' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_card_title_weight', '标题字重', [{value:'',label:'默认'},{value:'400',label:'400'},{value:'500',label:'500'},{value:'600',label:'600'},{value:'700',label:'700'}], d.card_title_weight) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_card_title_margin_bottom', '标题下外边距', ['px','rem'], d.card_title_margin_bottom) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_title_size', '标题字号', ['px','rem'], d.card_title_size || '1rem') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_card_title_color', '标题颜色', d.card_title_color || '#1e293b') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_card_title_weight', '标题字重', [{value:'',label:'默认'},{value:'400',label:'400'},{value:'500',label:'500'},{value:'600',label:'600'},{value:'700',label:'700'}], d.card_title_weight || '600') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_title_margin_bottom', '标题下外边距', ['px','rem'], d.card_title_margin_bottom || '0.5rem') + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片描述</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_card_desc_size', '描述字号', ['px','rem'], d.card_desc_size) + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_card_desc_color', '描述颜色', d.card_desc_color) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_card_desc_line_height', '描述行高', ['rem',''], d.card_desc_line_height) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_desc_size', '描述字号', ['px','rem'], d.card_desc_size || '0.875rem') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_card_desc_color', '描述颜色', d.card_desc_color || '#64748b') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_desc_line_height', '描述行高', ['rem',''], d.card_desc_line_height || '1.6') + '</div>' +
         '</div>';
 
     /* ====== highlight_card ====== */
