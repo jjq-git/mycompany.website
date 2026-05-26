@@ -287,6 +287,14 @@
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="← 左">' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
+        '<div class="input-group input-group-sm">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top || '1rem') + '" placeholder="↑ 上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="→ 右">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom || '1rem') + '" placeholder="↓ 下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="← 左">' +
+          '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
+        '</div>' +
         '<div class="small fw-semibold mb-1 text-muted mt-2">内层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
@@ -404,6 +412,14 @@
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="← 左">' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
+        '<div class="input-group input-group-sm">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top || '1rem') + '" placeholder="↑ 上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="→ 右">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom || '1rem') + '" placeholder="↓ 下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="← 左">' +
+          '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
+        '</div>' +
         '<div class="small fw-semibold mb-1 text-muted mt-2">内层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
@@ -451,18 +467,19 @@
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">显示边框</label><select class="form-select form-select-sm" name="module_' + idx + '_data_card_show_border"><option value=""' + (d.card_show_border !== '0' ? ' selected' : '') + '>默认（显示）</option><option value="0"' + (d.card_show_border === '0' ? ' selected' : '') + '>隐藏边框</option></select></div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_top" value="' + esc(d.card_padding_top) + '" placeholder="↑ 上">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_right" value="' + esc(d.card_padding_right) + '" placeholder="→ 右">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_bottom" value="' + esc(d.card_padding_bottom) + '" placeholder="↓ 下">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_left" value="' + esc(d.card_padding_left) + '" placeholder="← 左">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_top" value="' + esc(d.card_padding_top || '2rem') + '" placeholder="↑ 上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_right" value="' + esc(d.card_padding_right || '1.5rem') + '" placeholder="→ 右">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_bottom" value="' + esc(d.card_padding_bottom || '2rem') + '" placeholder="↓ 下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_left" value="' + esc(d.card_padding_left || '1.5rem') + '" placeholder="← 左">' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片圆角</div>' +
-        '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_card_radius_top_left', '左上', ['px','rem','%'], d.card_radius_top_left) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_card_radius_top_right', '右上', ['px','rem','%'], d.card_radius_top_right) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_card_radius_bottom_right', '右下', ['px','rem','%'], d.card_radius_bottom_right) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_card_radius_bottom_left', '左下', ['px','rem','%'], d.card_radius_bottom_left) + '</div>' +
+        '<div class="input-group input-group-sm">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_top_left" value="' + esc(d.card_radius_top_left || '12px') + '" placeholder="↖ 左上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_top_right" value="' + esc(d.card_radius_top_right || '12px') + '" placeholder="↗ 右上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_bottom_right" value="' + esc(d.card_radius_bottom_right || '12px') + '" placeholder="↘ 右下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_bottom_left" value="' + esc(d.card_radius_bottom_left || '12px') + '" placeholder="↙ 左下">' +
+          '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option><option value=\"%\">%</option></select>' +
         '</div>' +
         '<div class="small fw-semibold mb-1 text-muted mt-2">图标样式</div>' +
         '<div class="row g-2">' +
