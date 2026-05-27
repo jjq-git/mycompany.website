@@ -109,14 +109,14 @@
 > <!-- 新：flexbox，text-align 作为独立 CSS 字段 -->
 > <div class="hero-banner-content" style="display: flex; flex-direction: column;
 >      justify-content: center; align-items: center; text-align: center;"
->      data-key="content" data-label-text-align="内容排版">
+>      data-name="content" data-label-text-align="内容排版">
 > ```
 > 配合 `<meta>` 声明下拉选项：
 > ```html
 > <meta data-field="content_text_align" data-label="内容排版" data-type="select"
 >       data-options="居中:center, 居左:left, 居右:right" data-default="center">
 > ```
-> 字段 key 生成规则：`data-key="content"` + CSS 属性 `text-align` → `content_text_align`。`inject_styles()` 自动将选中的值写入 `style` 末尾，覆盖默认值。
+> 字段 key 生成规则：`data-name="content"` + CSS 属性 `text-align` → `content_text_align`。`inject_styles()` 自动将选中的值写入 `style` 末尾，覆盖默认值。
 
 ### 2.4 特殊 JS 交互
 

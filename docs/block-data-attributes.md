@@ -10,7 +10,7 @@
 
 ### 1.1 一句话原则
 
-- `data-key` 给元素起名
+- `data-name` 给元素起名
 - `data-label`/`data-label-*` 声明可编辑的 CSS 字段
 - `data-content`/`data-src`/`data-href`/`data-bg`/`data-target` 声明内容注入
 - `data-when` 声明条件可见性（字段和匹配值用 `=` 分隔）
@@ -25,9 +25,9 @@
 
 | 场景 | key 生成方式 | 示例 |
 |---|---|---|
-| 元素有 `data-key` | `<data-key>_<css属性>`（中划线转下划线） | `data-key="title"` + `font-size` → `title_font_size` |
-| 元素有 `data-key`，CSS 属性含中划线 | 中划线全部转下划线 | `data-key="btn"` + `background-color` → `btn_background_color` |
-| 元素无 `data-key` | 直接用 CSS 属性名（中划线转下划线） | `data-label-height` → `height` |
+| 元素有 `data-name` | `<data-name>_<css属性>`（中划线转下划线） | `data-name="title"` + `font-size` → `title_font_size` |
+| 元素有 `data-name`，CSS 属性含中划线 | 中划线全部转下划线 | `data-name="btn"` + `background-color` → `btn_background_color` |
+| 元素无 `data-name` | 直接用 CSS 属性名（中划线转下划线） | `data-label-height` → `height` |
 | `<meta data-field>` | 直接用 `data-field` 的值（不做转换） | `data-field="overlay_enabled"` → `overlay_enabled` |
 | `data-type="list"` 容器直接子元素内 | 同上（自动归入列表项的 item_fields） | `data-field="title"` → 列表项属性 `title` |
 
@@ -47,12 +47,12 @@
 
 ```
 正确（模板仅写一份，expand_repeat_items() 克隆 N 份）：
-<div data-type="list" data-key="slides">
+<div data-type="list" data-name="slides">
   <div> ... </div>
 </div>
 
 错误（中间有包裹元素）：
-<div data-type="list" data-key="slides">
+<div data-type="list" data-name="slides">
   <div class="wrapper">
     <div> ... </div>   ← 不是直接子元素，扫描器报错
   </div>
@@ -91,12 +91,12 @@ if value is None:
 
 ## 二、属性语法规范
 
-### 2.1 data-key —— 元素标识符
+### 2.1 data-name —— 元素标识符
 
 给元素命名，作为其 CSS 字段的 key 前缀。
 
 ```html
-<h1 data-key="title"
+<h1 data-name="title"
     style="font-size: 3rem; color: #ffffff;"
     data-label-font-size="标题字号"
     data-label-color="标题颜色">
@@ -106,10 +106,10 @@ if value is None:
 
 **规则：**
 - 值必须是合法的 Python 标识符（`[a-zA-Z_][a-zA-Z0-9_]*`），不能数字开头
-- 同一 template.html 内 section 级的 `data-key` 值必须唯一
-- 容器直接子元素内的 `data-key` 只在其所属的 `data-type="list"` 容器内要求唯一（不同 repeat 容器之间可以重复）
-- 可选：纯 CSS 字段（无注入属性）可不写 `data-key`，key 直接用 CSS 属性名（仅适合全模板唯一的属性）
-- **有 `data-content` / `data-src` / `data-href` / `data-bg` / `data-target` 注入属性的元素，必须写 `data-key`**（后处理用它定位目标元素）
+- 同一 template.html 内 section 级的 `data-name` 值必须唯一
+- 容器直接子元素内的 `data-name` 只在其所属的 `data-type="list"` 容器内要求唯一（不同 repeat 容器之间可以重复）
+- 可选：纯 CSS 字段（无注入属性）可不写 `data-name`，key 直接用 CSS 属性名（仅适合全模板唯一的属性）
+- **有 `data-content` / `data-src` / `data-href` / `data-bg` / `data-target` 注入属性的元素，必须写 `data-name`**（后处理用它定位目标元素）
 
 ### 2.2 CSS 属性字段 —— `data-label-<css属性>`
 
@@ -119,14 +119,14 @@ if value is None:
 
 ```html
 <!-- ✅ font-size 和 color 在 style 中 → 属性面板显示两个字段 -->
-<h1 data-key="title"
+<h1 data-name="title"
     style="font-size: 3rem; color: #ffffff;"
     data-label-font-size="标题字号"
     data-label-color="标题颜色">
 
 <!-- ❌ border 只在 <style> 块中，不在内联 style 中 → 属性面板不显示 -->
 <style> h2 { border: solid 2px #f00; } </style>
-<h2 data-key="subtitle" style="font-size: 18px; color: #fff;"></h2>
+<h2 data-name="subtitle" style="font-size: 18px; color: #fff;"></h2>
 ```
 
 **属性列表：**
@@ -201,7 +201,7 @@ style="font-size: 3rem; color: #ffffff;"
 ```
 
 - CSS 属性名匹配**大小写不敏感**
-- 如果 `data-label-*` 对应的 CSS 属性在 `style` 中**找不到** → 扫描器报错，输出明确信息：`元素 <h1 data-key="title"> 的 style 中缺少 CSS 属性 "font-size"（data-label-font-size 要求）`
+- 如果 `data-label-*` 对应的 CSS 属性在 `style` 中**找不到** → 扫描器报错，输出明确信息：`元素 <h1 data-name="title"> 的 style 中缺少 CSS 属性 "font-size"（data-label-font-size 要求）`
 - 值可以包含空格（如 `rgba(255, 255, 255, 0.9)`）
 - 值**不支持包含 `;` 字符**（分号是 CSS 分隔符）。如果确实需要（极少见），用 `<meta data-type="text">` 代替
 
@@ -299,9 +299,9 @@ data-options="显示文字1:值1, 显示文字2:值2"
       data-options="图片:image, 视频:video" data-default="image">
 
 <video data-when="type=video"
-       data-key="video" data-src="media" ...></video>
+       data-name="video" data-src="media" ...></video>
 <div data-when="type=image"
-     data-key="image" data-bg="media"></div>
+     data-name="image" data-bg="media"></div>
 ```
 
 ```html
@@ -311,9 +311,9 @@ data-options="显示文字1:值1, 显示文字2:值2"
        data-field-label="媒体类型"
        data-field-options="图片:image, 视频:video"
        data-field-default="image"
-       data-key="video" data-src="media" ...></video>
+       data-name="video" data-src="media" ...></video>
 <div data-when="type=image"
-     data-key="image" data-bg="media"></div>
+     data-name="image" data-bg="media"></div>
 ```
 
 | 对比 | 方案 A `<meta>` | 方案 B 挂在元素上 |
@@ -388,7 +388,7 @@ data-options="显示文字1:值1, 显示文字2:值2"
 
 ```html
 <!-- 图标互斥组：根据 icon 字段值只保留一个 SVG -->
-<div class="service-icon" data-key="icon" style="...">
+<div class="service-icon" data-name="icon" style="...">
   <svg data-when="icon=circuit">...</svg>
   <svg data-when="icon=code">...</svg>
   <svg data-when="icon=shield">...</svg>
@@ -434,12 +434,12 @@ data-options="显示文字1:值1, 显示文字2:值2"
 容器标记 `data-type="list"`，其**直接子元素**即为模板项，内部的字段自动成为列表项的属性。**模板只写一份**，`expand_repeat_items()` 后处理函数根据数据数组的长度自动克隆 N 份，替代 Jinja2 `{% for %}` 循环和 `{% if items %}` 空列表守护。
 
 ```html
-<div data-key="slides"
-     data-type="list" data-key="slides"
+<div data-name="slides"
+     data-type="list" data-name="slides"
      data-label="轮播媒体项"
      data-group="轮播内容">
   <div>
-    <div data-key="media_bg"
+    <div data-name="media_bg"
          style="background-image: url('');"
          data-label-background-image="媒体图片"></div>
     <meta data-field="type" data-label="媒体类型" data-type="select"
@@ -453,15 +453,15 @@ data-options="显示文字1:值1, 显示文字2:值2"
 → 生成一个列表字段 `slides`，每项的 `item_fields` 包含：`media_bg_background_image`、`type`、`media`、`title`
 
 **规则：**
-- `data-key` 值 = 列表字段 key（即 `module.data` 中的键名）（如 `slides` → `module.data.slides`）
+- `data-name` 值 = 列表字段 key（即 `module.data` 中的键名）（如 `slides` → `module.data.slides`）
 - `data-label` = 列表的中文标签（必填，在容器元素上声明）
 - `data-group` = 分组名（可选，不写则默认等于 `data-label`）
 - 模板项必须是 `data-type="list"` 容器的直接子元素，否则扫描器报错
 - 列表字段不支持嵌套子列表
-- 直接子元素内部的 `data-key` 命名空间独立，不会和 section 级或其他 `data-type="list"` 容器冲突
+- 直接子元素内部的 `data-name` 命名空间独立，不会和 section 级或其他 `data-type="list"` 容器冲突
 - `<meta>` 标签在构建输出中自动移除
 
-**多列表支持：** 一个 template.html 可以包含多个 `data-type="list"` 容器（如 item_detail 同时有 images 列表和 specs 列表）。每个 `data-type="list"` 有独立的直接子元素和字段命名空间，扫描器通过 `data-key` 的值（listKey）区分它们。同一 template 内不同 `data-type="list"` 的 `data-key` 值必须唯一。
+**多列表支持：** 一个 template.html 可以包含多个 `data-type="list"` 容器（如 item_detail 同时有 images 列表和 specs 列表）。每个 `data-type="list"` 有独立的直接子元素和字段命名空间，扫描器通过 `data-name` 的值（listKey）区分它们。同一 template 内不同 `data-type="list"` 的 `data-name` 值必须唯一。
 
 ### 2.7 响应式控件声明 —— `data-no-resp`
 
@@ -521,11 +521,11 @@ data-options="显示文字1:值1, 显示文字2:值2"
    - 中间隔着 {% for %} / {% if %} 等 Jinja2 控制标签的，跳过它们检查其内部
 5. 第三遍遍历：对每个 HTML 元素
    a. 判断归属（section 级 / 哪个 `data-type="list"` 的 item 级）
-   b. 有 data-key + 有 data-label-* → 收集 CSS 字段（逐个声明模式）
-   b2. 有 data-key + 有 data-label → 遍历 style 所有 CSS 属性，从内置字典查中文名，
+   b. 有 data-name + 有 data-label-* → 收集 CSS 字段（逐个声明模式）
+   b2. 有 data-name + 有 data-label → 遍历 style 所有 CSS 属性，从内置字典查中文名，
        自动生成字段（批量模式）。
        如果某属性同时有 data-label-* → 逐个声明覆盖自动生成的标签
-   c. 无 data-key 但有 data-label-* → CSS 字段，key 直接是 CSS 属性名
+   c. 无 data-name 但有 data-label-* → CSS 字段，key 直接是 CSS 属性名
    d. 是 <meta data-field> → 收集非 CSS 字段
    e. 有 data-content / data-src / data-href / data-bg / data-target → 收集内容注入字段
       - 提取注入类型（content/src/href/bg/attr-style/attr）和对应的 fieldKey
@@ -590,7 +590,7 @@ data-options="显示文字1:值1, 显示文字2:值2"
 
 **输出格式说明：**
 - `_css_prop`：内部标记，记录原始 CSS 属性名（中划线格式，如 `max-width`），供 `inject_styles()` 在拼接 style 字符串时使用。不传给前端
-- `_data_key`：内部标记，记录该字段所属的 `data-key` 值（如 `content`、`section`、`title`），供 `inject_styles()` 按元素分组样式。不传给前端。**扫描器直接从 HTML 元素的 `data-key` 属性读取，不靠字符串推导**（因为 `rsplit('_', 1)` 对 `max-width`、`background-color` 等多段 CSS 属性名会拆分错误）
+- `_data_key`：内部标记，记录该字段所属的 `data-name` 值（如 `content`、`section`、`title`），供 `inject_styles()` 按元素分组样式。不传给前端。**扫描器直接从 HTML 元素的 `data-name` 属性读取，不靠字符串推导**（因为 `rsplit('_', 1)` 对 `max-width`、`background-color` 等多段 CSS 属性名会拆分错误）
 - 字段顺序：section 级字段按模板中出现顺序，然后是列表字段
 - `name` 提取：从 template.html 中第一个 `{# ... #}` Jinja2 注释提取；兜底用目录名（`hero_banner` → `Hero Banner`）
 - `description` 提取：同上注释的第二句；兜底为空字符串
@@ -632,7 +632,7 @@ def parse_style_defaults(style_str: str, target_props: list[str]) -> dict[str, s
 
 | 字段类型 | 声明方式 | 注入方式 |
 |---|---|---|
-| CSS 字段 | 内联 `style` + `data-label-*` | `inject_styles()` 按 `data-key` 定位元素，追加到 `style` 末尾 |
+| CSS 字段 | 内联 `style` + `data-label-*` | `inject_styles()` 按 `data-name` 定位元素，追加到 `style` 末尾 |
 | 内容字段 | `data-content` / `data-src` / `data-href` / `data-bg` | `inject_content()` 按属性类型替换文本/src/href/背景 |
 | 条件可见性 | 自动（空值隐藏）+ `data-when` | `apply_visibility()` 按字段值添加/移除 `hidden` 属性 |
 | 其他非 CSS 字段 | `<meta data-field>` | 声明字段存在，控制后台表单，值通过内容注入属性或 CSS 字段反映 |
@@ -730,17 +730,17 @@ def expand_repeat_items(html: str, module: dict, block_fields: dict[str, list[di
 ```html
 <!-- 模板：无需 {% for item in items %}、无需 {% if items %} -->
 <div class="hero-banner-slides"
-     data-type="list" data-key="slides"
+     data-type="list" data-name="slides"
      data-label="轮播媒体项">
 
   <div class="hero-banner-slide active">
     <!-- 模板项（容器直接子元素）：只写一份，expand_repeat_items() 克隆 N 份 -->
     <div class="hero-banner-media">
       <video data-when="type=video"
-             data-key="video" data-src="media"
+             data-name="video" data-src="media"
              autoplay muted loop playsinline></video>
       <div data-when="type=image"
-           data-key="image" data-bg="media"></div>
+           data-name="image" data-bg="media"></div>
     </div>
     ...
   </div>
@@ -751,7 +751,7 @@ def expand_repeat_items(html: str, module: dict, block_fields: dict[str, list[di
 
 ```
 {% if items %}                              → 数据数组非空 → 保留容器 + 克隆
-  <div ... data-type="list" data-key="slides">  → 数据数组为空 → 删除整个容器
+  <div ... data-type="list" data-name="slides">  → 数据数组为空 → 删除整个容器
     ...
   </div>
 {% endif %}
@@ -785,14 +785,14 @@ for f in fields:
 
 **第二步：注入 Section 级 CSS**
 
-找到 HTML 中所有带 `data-key` 属性的元素，跳过 `data-type="list"` 容器直接子元素内部的（留给第四步处理）：
+找到 HTML 中所有带 `data-name` 属性的元素，跳过 `data-type="list"` 容器直接子元素内部的（留给第四步处理）：
 
 ```python
-for element in find_elements_with_attr('data-key'):
+for element in find_elements_with_attr('data-name'):
     if is_inside_repeat_item(element):
         continue
 
-    dk = element.get_attr('data-key')
+    dk = element.get_attr('data-name')
     user_styles = []
     for f in section_css_fields:
         if f.get('_data_key') != dk:
@@ -840,9 +840,9 @@ for idx, item_elem in enumerate(repeat_items):
         break
     item_data = data_array[idx]
 
-    # 在该 item_elem 子树内找所有带 data-key 的元素
-    for child in find_descendants_with_attr(item_elem, 'data-key'):
-        dk = child.get_attr('data-key')
+    # 在该 item_elem 子树内找所有带 data-name 的元素
+    for child in find_descendants_with_attr(item_elem, 'data-name'):
+        dk = child.get_attr('data-name')
         user_styles = []
         for f in item_css_fields:
             if f.get('_data_key') != dk:
@@ -862,7 +862,7 @@ for idx, item_elem in enumerate(repeat_items):
 
 将修改后的元素序列化为 HTML 字符串返回。
 
-> **实现备注：** 如果项目不引入第三方 HTML 解析库，可用 Python 标准库 `html.parser.HTMLParser` 配合字符串操作实现。核心逻辑：定位 `data-key="xxx"` → 找到所在标签的 `style="..."` → 在闭合引号前追加用户值。容器直接子元素的深度匹配可用简单的栈计数器实现，不必构建完整 DOM 树。
+> **实现备注：** 如果项目不引入第三方 HTML 解析库，可用 Python 标准库 `html.parser.HTMLParser` 配合字符串操作实现。核心逻辑：定位 `data-name="xxx"` → 找到所在标签的 `style="..."` → 在闭合引号前追加用户值。容器直接子元素的深度匹配可用简单的栈计数器实现，不必构建完整 DOM 树。
 
 #### 4.4.2 内容注入 —— `inject_content()`
 
@@ -905,7 +905,7 @@ for f in fields:
             section_content_fields.append(f)
 ```
 
-> **`_inject_type` 标记：** 扫描器在解析 `data-content` / `data-src` / `data-href` / `data-bg` 时，为字段定义添加 `_inject_type` 内部标记，值分别为 `"content"`、`"src"`、`"href"`、`"bg"`。同时记录 `_data_key`（元素所在 `data-key` 值），用于后处理定位目标元素。
+> **`_inject_type` 标记：** 扫描器在解析 `data-content` / `data-src` / `data-href` / `data-bg` 时，为字段定义添加 `_inject_type` 内部标记，值分别为 `"content"`、`"src"`、`"href"`、`"bg"`。同时记录 `_data_key`（元素所在 `data-name` 值），用于后处理定位目标元素。
 
 **第二步：注入 Section 级内容**
 
@@ -914,7 +914,7 @@ for element in find_elements_with_attr_in('data-content|data-src|data-href|data-
     if is_inside_repeat_item(element):
         continue
 
-    dk = element.get_attr('data-key') or ''
+    dk = element.get_attr('data-name') or ''
     for f in section_content_fields:
         if f.get('_data_key') != dk:
             continue
@@ -956,7 +956,7 @@ for idx, item_elem in enumerate(repeat_items):
     item_data = data_array[idx]
 
     for child in find_descendants_with_attr_in(item_elem, 'data-content|data-src|data-href|data-bg'):
-        dk = child.get_attr('data-key') or ''
+        dk = child.get_attr('data-name') or ''
         for f in item_content_fields:
             if f.get('_data_key') != dk:
                 continue
@@ -978,7 +978,7 @@ for idx, item_elem in enumerate(repeat_items):
 
     # 注入 section 级字段到 item 级元素（跨作用域引用，如 content_position）
 
-        dk = child.get_attr("data-key") or ""
+        dk = child.get_attr("data-name") or ""
         for f in section_content_fields:
             if f.get("_data_key") != dk:
                 continue
@@ -1100,7 +1100,7 @@ SCHEMA_ATTR_RE = re.compile(
     r'data-group|'
     r'data-placeholder-[a-zA-Z0-9\-]+|'
     r'data-placeholder|'
-    r'data-key|'
+    r'data-name|'
     r'data-type|'
     r'data-content|'
     r'data-src|'
@@ -1225,7 +1225,7 @@ def _has_data_attributes(html: str) -> bool:
                 padding-bottom: 0; padding-left: 0;
                 background: transparent;"
          data-no-resp
-         data-key="section"
+         data-name="section"
          data-label="Banner">
 
   <div class="container" style="height: 100%; max-width: none;">
@@ -1234,7 +1234,7 @@ def _has_data_attributes(html: str) -> bool:
         expand_repeat_items() 根据 module.data.slides 的长度
         自动克隆。数组为空时删除整个容器。 #}
     <div class="hero-banner-slides"
-         data-type="list" data-key="slides"
+         data-type="list" data-name="slides"
          data-label="轮播媒体项"
          data-group="轮播内容">
 
@@ -1250,11 +1250,11 @@ def _has_data_attributes(html: str) -> bool:
         <div class="hero-banner-media">
           <video class="hero-banner-video"
                  data-when="type=video"
-                 data-key="video" data-src="media"
+                 data-name="video" data-src="media"
                  autoplay muted loop playsinline></video>
           <div class="hero-banner-image"
                data-when="type=image"
-               data-key="image" data-bg="media"></div>
+               data-name="image" data-bg="media"></div>
         </div>
 
         {#
@@ -1270,7 +1270,7 @@ def _has_data_attributes(html: str) -> bool:
         #}
         <div class="hero-banner-content"
              style="max-width: 900px; text-align: center;"
-             data-key="content"
+             data-name="content"
              data-label="内容区"
              data-placeholder="如 1200px">
 
@@ -1281,7 +1281,7 @@ def _has_data_attributes(html: str) -> bool:
           #}
           <h1 class="hero-banner-title"
               style="font-size: 3rem; color: #ffffff;"
-              data-key="title"
+              data-name="title"
               data-content="title"
               data-label="标题">主标题占位文本</h1>
 
@@ -1291,7 +1291,7 @@ def _has_data_attributes(html: str) -> bool:
           #}
           <p class="hero-banner-subtitle"
              style="font-size: 1.25rem; color: rgba(255,255,255,0.9);"
-             data-key="subtitle"
+             data-name="subtitle"
              data-content="subtitle"
              data-label="副标题">副标题占位文本</p>
 
@@ -1306,11 +1306,11 @@ def _has_data_attributes(html: str) -> bool:
                data-content="primaryBtn"
                data-href="primaryBtnLink"
                data-target="primaryBtnLinkTarget"
-               data-key="btn"
+               data-name="btn"
                data-label="按钮">主按钮</a>
 
             <a class="btn btn-secondary btn-lg"
-               data-key="btn-secondary"
+               data-name="btn-secondary"
                data-content="secondaryBtn"
                data-href="secondaryBtnLink">副按钮</a>
           </div>
@@ -1393,7 +1393,7 @@ def _has_data_attributes(html: str) -> bool:
 
 **Item 级 CSS 字段**（容器直接子元素内各元素的内联样式 → 9 个字段）：
 
-| data-key | 内联 CSS | 默认值 | 标签来源 | 属性面板字段 |
+| data-name | 内联 CSS | 默认值 | 标签来源 | 属性面板字段 |
 |---|---|---|---|---|---|
 | `content` | `max-width` | `900px` | `data-label="内容区"` | 内容区最大宽度 |
 | `content` | `text-align` | `center` | `data-label="内容区"` | 内容区文字对齐 |
@@ -1431,7 +1431,7 @@ def _has_data_attributes(html: str) -> bool:
 ### 5.3 改造要点总结
 
 1. **模板只写纯 HTML + data-* 声明**：零 Jinja2。后处理五个函数依次完成列表展开、CSS 注入、内容注入、条件可见性、Schema 清理
-2. **CSS 字段 = 内联 style + data-label / data-label-\***：扫描器从 style 提取默认值，`data-label` 批量自动生成标签（内置字典），`data-label-*` 逐个精确覆盖。`inject_styles()` 根据 data-key 定位元素，追加用户修改值到 style 末尾（CSS 级联覆盖）
+2. **CSS 字段 = 内联 style + data-label / data-label-\***：扫描器从 style 提取默认值，`data-label` 批量自动生成标签（内置字典），`data-label-*` 逐个精确覆盖。`inject_styles()` 根据 data-name 定位元素，追加用户修改值到 style 末尾（CSS 级联覆盖）
 3. **内容字段 = data-content / data-src / data-href / data-bg / data-target**：替代所有 `{{ }}` 变量输出。`inject_content()` 根据属性类型替换文本、src、href、背景图、target
 4. **条件可见性 = 空值自动隐藏 + data-when**：`data-content`/`data-src`/`data-href`/`data-bg` 的元素字段为空时自动 hidden。`data-when` 处理值判断。互斥组（`data-type="default"`）替代 `{% if %}`/`{% elif %}`/`{% else %}` 链
 5. **列表展开 = expand_repeat_items()**：替代 `{% for %}` 循环和 `{% if items %}` 空列表守护。模板只写一份，后处理根据数据数组长度自动克隆。数组为空时删除整个容器
@@ -1455,7 +1455,7 @@ feature_grid 是展示服务/功能亮点的网格模块，包含图标、标题
                 padding-top: 2rem; padding-bottom: 2rem;
                 margin-top: 0; margin-bottom: 0;
                 background: transparent;"
-         data-key="section"
+         data-name="section"
          data-label="外层"
          data-placeholder="如 1200px">
 
@@ -1464,7 +1464,7 @@ feature_grid 是展示服务/功能亮点的网格模块，包含图标、标题
   #}
   <div class="container"
        style="max-width: 1200px; margin: 0 auto;"
-       data-key="container"
+       data-name="container"
        data-label="容器">
 
     {#
@@ -1476,7 +1476,7 @@ feature_grid 是展示服务/功能亮点的网格模块，包含图标、标题
          style="text-align: center; margin-bottom: 4rem;
                 padding-bottom: 2rem; padding-top: 0;
                 margin-top: 0; background: transparent;"
-         data-key="header"
+         data-name="header"
          data-label="标题区">
 
       {#
@@ -1485,7 +1485,7 @@ feature_grid 是展示服务/功能亮点的网格模块，包含图标、标题
       #}
       <h2 class="section-title"
           style="font-size: 2.25rem; color: #1e293b; margin-bottom: 0.5rem;"
-          data-key="section-title"
+          data-name="section-title"
           data-content="title"
           data-label="区块标题">区块标题占位</h2>
 
@@ -1494,7 +1494,7 @@ feature_grid 是展示服务/功能亮点的网格模块，包含图标、标题
       #}
       <p class="section-description"
          style="font-size: 1.125rem; color: #64748b;"
-         data-key="section-subtitle"
+         data-name="section-subtitle"
          data-content="subtitle"
          data-label="区块副标题">副标题占位文本</p>
     </div>
@@ -1505,9 +1505,9 @@ feature_grid 是展示服务/功能亮点的网格模块，包含图标、标题
     #}
     <div class="services-grid"
          style="gap: 2rem;"
-         data-key="grid"
+         data-name="grid"
          data-label="网格"
-         data-type="list" data-key="features"
+         data-type="list" data-name="features"
          data-label="功能卡片">
 
       {# ══════════ 卡片（Item 级，模板项：仅一份）══════════ #}
@@ -1515,7 +1515,7 @@ feature_grid 是展示服务/功能亮点的网格模块，包含图标、标题
            style="padding: 2rem 1.5rem;
                   border-radius: 12px;
                   border: 1px solid #e2e8f0;"
-           data-key="card"
+           data-name="card"
            data-label="卡片">
 
         {#
@@ -1527,7 +1527,7 @@ feature_grid 是展示服务/功能亮点的网格模块，包含图标、标题
              style="width: 56px; height: 56px; color: #067a7a;
                     border-radius: 8px; margin-bottom: 0.25rem;
                     margin-right: 0; background-color: transparent;"
-             data-key="icon"
+             data-name="icon"
              data-label="图标">
           <svg data-when="icon=circuit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg>
           <svg data-when="icon=code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
@@ -1547,7 +1547,7 @@ feature_grid 是展示服务/功能亮点的网格模块，包含图标、标题
           <h3 class="service-title"
               style="font-size: 1rem; color: #1e293b;
                      font-weight: 600; margin-bottom: 0.5rem;"
-              data-key="card-title"
+              data-name="card-title"
               data-content="title"
               data-label="卡片标题">功能标题占位</h3>
 
@@ -1556,7 +1556,7 @@ feature_grid 是展示服务/功能亮点的网格模块，包含图标、标题
           #}
           <p class="service-description"
              style="font-size: 0.875rem; color: #64748b; line-height: 1.6;"
-             data-key="card-desc"
+             data-name="card-desc"
              data-content="desc"
              data-label="卡片描述">功能描述占位文本</p>
         </div>
@@ -1577,7 +1577,7 @@ feature_grid 是展示服务/功能亮点的网格模块，包含图标、标题
 
 **字段分布总览：**
 
-| 元素 | data-key | 声明方式 | CSS 字段数 | 内容注入 | 说明 |
+| 元素 | data-name | 声明方式 | CSS 字段数 | 内容注入 | 说明 |
 |---|---|---|---|---|---|
 | `<section>` | `section` | `data-label="外层"` | 6 | — | 外层：宽度、背景、内外边距 |
 | `.container` | `container` | `data-label="容器"` | 2 | — | 内层：宽度、外边距 |
@@ -1606,16 +1606,16 @@ feature_grid 是展示服务/功能亮点的网格模块，包含图标、标题
 
 | 错误场景 | 错误信息格式 |
 |---|---|
-| `data-label-*` 对应的 CSS 属性不在元素 `style` 中 | `hero_banner/template.html L42: <h1 data-key="title"> 的 style 中缺少 "line-height"（data-label-line-height 要求）` |
-| section 级 `data-key` 值重复 | `hero_banner/template.html L10 和 L35: data-key "title" 重复（section 级必须唯一）` |
-| section 级字段 key 重复（含 CSS vs meta 冲突） | `hero_banner/template.html: 字段 key "overlay_enabled" 在 L52 <meta> 和 L15 <div data-key="overlay"> 产生冲突` |
-| 内 `data-key` 值重复 | `hero_banner/template.html L60: 内 data-key "title" 重复` |
+| `data-label-*` 对应的 CSS 属性不在元素 `style` 中 | `hero_banner/template.html L42: <h1 data-name="title"> 的 style 中缺少 "line-height"（data-label-line-height 要求）` |
+| section 级 `data-name` 值重复 | `hero_banner/template.html L10 和 L35: data-name "title" 重复（section 级必须唯一）` |
+| section 级字段 key 重复（含 CSS vs meta 冲突） | `hero_banner/template.html: 字段 key "overlay_enabled" 在 L52 <meta> 和 L15 <div data-name="overlay"> 产生冲突` |
+| 内 `data-name` 值重复 | `hero_banner/template.html L60: 内 data-name "title" 重复` |
 | 模板项不是 `data-type="list"` 容器的直接子元素 | `hero_banner/template.html L30: 列表模板项必须是 data-type="list" 的直接子元素（当前嵌套在 <div class="wrapper"> 内）` |
-| `data-type="list"` 容器内无直接子元素 | `hero_banner/template.html L25: data-type="list" data-key="slides" 容器内缺少直接子元素` |
+| `data-type="list"` 容器内无直接子元素 | `hero_banner/template.html L25: data-type="list" data-name="slides" 容器内缺少直接子元素` |
 | `<meta data-type="select">` 缺少 `data-options` | `hero_banner/template.html L80: <meta data-field="type" data-type="select"> 缺少 data-options` |
 | `data-options` 格式无法解析 | `hero_banner/template.html L80: data-options 格式错误，期望 "标签:值, 标签:值"，得到 "图片image,视频"` |
 | `<meta>` 缺少必填属性 | `hero_banner/template.html L55: <meta data-field="xxx"> 缺少 data-type` |
-| CSS 属性值包含 `;` | `hero_banner/template.html L42: <h1 data-key="title"> 的 style 值包含 ";" 字符，不支持` |
+| CSS 属性值包含 `;` | `hero_banner/template.html L42: <h1 data-name="title"> 的 style 值包含 ";" 字符，不支持` |
 
 ---
 
@@ -1739,7 +1739,7 @@ cp meta.yaml meta.yaml.bak
 
 0. **备份**：`cp template.html template.html.bak && cp meta.yaml meta.yaml.bak`
 1. **对照 meta.yaml**，确认所有字段的类型和默认值
-2. **CSS 字段**：找到对应 HTML 元素 → 加 `data-key` → 加 `data-label-*` → 确认 style 中有对应 CSS 属性及默认值
+2. **CSS 字段**：找到对应 HTML 元素 → 加 `data-name` → 加 `data-label-*` → 确认 style 中有对应 CSS 属性及默认值
 3. **非 CSS 字段**：Section 级放 `</section>` 后，item 级放容器直接子元素内末尾 → 加 `<meta data-field ...>`
 4. **列表字段**：容器加 `data-type="list"` + `data-label`，容器直接子元素即为模板项
 5. **内容注入替代**：将 `{{ item.xxx }}` 替换为 `data-content="xxx"` / `data-src="xxx"` / `data-href="xxx"` / `data-bg="xxx"` 等注入属性
@@ -1931,7 +1931,7 @@ module_0_data_slides_1_type     → slides[1].type
 ...
 ```
 
-- `listKey` 使用 `data-key` 的值（即列表容器的 `data-key`，如 `slides`）
+- `listKey` 使用 `data-name` 的值（即列表容器的 `data-name`，如 `slides`）
 - `data_` 前缀与非列表字段的 `module_N_data_<field>` 命名保持一致
 - `index` 从 0 开始，连续递增
 - `itemField` 使用扫描器输出的字段 key
@@ -1976,8 +1976,8 @@ module_0_data_slides_1_type     → slides[1].type
 
 `renderField()` 中有一项**现有行为**需要保留：字段 key 匹配 `/image|cover|background|media|photo|logo/i` 时自动追加 `<input type="file">`。这意味着：
 
-- `data-key="media_bg"` + `data-label-background-image` → key = `media_bg_background_image` → 匹配 `image` → 自动带上文件上传
-- `data-key="btn"` + `data-label-background-color` → key = `btn_background_color` → 匹配 `background` → 也会带上文件上传（误触发）
+- `data-name="media_bg"` + `data-label-background-image` → key = `media_bg_background_image` → 匹配 `image` → 自动带上文件上传
+- `data-name="btn"` + `data-label-background-color` → key = `btn_background_color` → 匹配 `background` → 也会带上文件上传（误触发）
 
 **模板作者注意事项：** 如果某个颜色字段的 key 意外包含了上述关键词（如 `section_background` 因为包含 `background` 而触发上传控件），可以通过 `<meta data-field>` 声明同名字段来覆盖 type，或者接受多一个上传按钮（无害）。
 
@@ -2103,13 +2103,13 @@ for module in page.get('modules', []):
 ## 十、限制与边界
 
 1. **`data-type="list"` 不支持嵌套** —— 列表项内部不能有子列表
-2. **同一个 `data-type="list"` 容器内的 `data-key` 必须唯一** —— 不同 scope 之间允许重复。`data-key` 推荐用纯字母数字命名（可读性），但技术上允许下划线
+2. **同一个 `data-type="list"` 容器内的 `data-name` 必须唯一** —— 不同 scope 之间允许重复。`data-name` 推荐用纯字母数字命名（可读性），但技术上允许下划线
 3. **CSS 简写属性和子属性是独立字段** —— `padding` 和 `padding-top` 不会自动关联，模板作者自行保证不重复声明
 4. **`data-options` 分隔符不转义** —— 标签和值中不能包含 `:` 或 `, `。必要时用全角 `：` `，` 替代，扫描器自动还原
 5. **`font-weight` 和 `text-align` 的下拉选项固定** —— 如需自定义选项，用 `<meta data-type="select">` 声明同名 key 覆盖（meta 优先级高于 CSS 自动推断）
 6. **`html.parser` 对畸形 HTML 的容忍度有限** —— template.html 必须是合法的 HTML（可以含 Jinja2 标签，但 HTML 标签必须正确闭合）
 7. **变体（variants）已通过 CSS 字段 + data-when 解决** —— 旧 meta.yaml 的 `variants:` 机制（如 highlight_card 的 image_position 左/右布局、contact_form 的 layout 正/反布局）已替换为 CSS `flex-direction` select 字段。process_steps 的 `step_style` / `direction` 变体已替换为 `data-when` 互斥组。旧 variants 机制不再需要
-8. **文件上传控件的触发依赖 key 命名约定** —— `renderField()` 根据 key 是否匹配 `/image|cover|background|media|photo|logo/i` 来决定是否追加上传控件。如果 CSS 字段 key 中意外包含这些关键词（如 `section_background` 触发上传），会多出一个无害但多余的按钮。模板作者命名 `data-key` 时需注意
+8. **文件上传控件的触发依赖 key 命名约定** —— `renderField()` 根据 key 是否匹配 `/image|cover|background|media|photo|logo/i` 来决定是否追加上传控件。如果 CSS 字段 key 中意外包含这些关键词（如 `section_background` 触发上传），会多出一个无害但多余的按钮。模板作者命名 `data-name` 时需注意
 9. **数据集绑定 Block（data_grid / product_grid）的迁移复杂度高** —— 它们涉及 `all_datasets` 数据源、动态字段映射、`_modules.html` 的 `detail` 路由、模板中的 `{% for item in dataset_key %}` 等特殊逻辑。这些 Block 排在迁移顺序最后，确保基础设施在简单 Block 上充分验证后再处理。**注意：item_detail 不属于此类**——它使用 `module.data` 而非 `all_datasets`，是自包含模块（详见 §8.4）
 10. **旧数据格式兼容** —— 部分旧站点的 hero_banner data 直接存储为列表（`data: [{type: image, ...}]`），而非 `data: {slides: [...]}`。扫描器和后处理函数不需要处理此兼容（由 builder 在渲染前做格式标准化，详见 §9.3-K），但迁移验证时必须用新旧两种数据格式各构建一次确保输出一致
 11. **`_modules.html` 的 `module.type` 硬编码** —— 当前 `_modules.html` 第 3 行有 `module.type == 'hero_banner'` 判断（旧数据格式兼容）。标准化在 builder.py 的 `_normalize_module_data()` 中完成（§9.3-K），`_modules.html` 简化为 `{% if module.data is mapping %}`
@@ -2124,14 +2124,14 @@ for module in page.get('modules', []):
 
 19. **用户字段值含引号破坏 HTML** —— 如果管理员在字段中填写 `12" monitor` 或 `it's good`，直接拼接到 `style="..."` 或 `content="..."` 会破坏属性边界。**解决方案：** `inject_content()` 和 `inject_styles()` 在写入属性值前统一调用 `html.escape(value, quote=True)`，把 `"` 转成 `&quot;`、`'` 转成 `&#x27;`。style 属性中的值额外检查：`;` 和 `{` `}` 不转义（它们是 CSS 合法字符），但确保整个 style 值被 `"` 包裹且内部 `"` 已转义。
 
-20. **扫描器不检测注入元素是否缺少 `data-key`** —— 合法的 `data-content="title"` 所在元素没有 `data-key` 时，后处理函数找不到目标（因为 `inject_content()` 用 `data-key` 匹配），值永远注入不进去，形成静默失效。**解决方案：** 模板扫描器第 5e 步增加验证：遍历所有带注入属性（`data-content`, `data-src`, `data-href`, `data-bg`, `data-target`）的元素，如果该元素缺少 `data-key` 则**报错退出**（不是警告），阻断不完整的模板进入生产。
+20. **扫描器不检测注入元素是否缺少 `data-name`** —— 合法的 `data-content="title"` 所在元素没有 `data-name` 时，后处理函数找不到目标（因为 `inject_content()` 用 `data-name` 匹配），值永远注入不进去，形成静默失效。**解决方案：** 模板扫描器第 5e 步增加验证：遍历所有带注入属性（`data-content`, `data-src`, `data-href`, `data-bg`, `data-target`）的元素，如果该元素缺少 `data-name` 则**报错退出**（不是警告），阻断不完整的模板进入生产。
 
-21. **`expand_repeat_items()` 克隆导致 `data-key` 重复** —— 列表模板项被克隆 N 次后，每个克隆体都有相同的 `data-key` 值（如 `data-key="title"` 出现在 3 个 slide 中）。**解决方案：** `data-key` 的唯一性约束是**同一 `data-type="list"` 容器内**的要求（见 §十第 2 条），跨 item 的重复是合法的。后处理函数（`inject_content`/`inject_styles`）按 item 索引独立处理每个克隆体，互不干扰。`strip_schema_output()` 也不依赖 `data-key` 做匹配，不受影响。唯一需要确保的是：编辑器的表单 name 前缀包含 `_{itemIndex}_` 以区分不同项的同名字段。
+21. **`expand_repeat_items()` 克隆导致 `data-name` 重复** —— 列表模板项被克隆 N 次后，每个克隆体都有相同的 `data-name` 值（如 `data-name="title"` 出现在 3 个 slide 中）。**解决方案：** `data-name` 的唯一性约束是**同一 `data-type="list"` 容器内**的要求（见 §十第 2 条），跨 item 的重复是合法的。后处理函数（`inject_content`/`inject_styles`）按 item 索引独立处理每个克隆体，互不干扰。`strip_schema_output()` 也不依赖 `data-name` 做匹配，不受影响。唯一需要确保的是：编辑器的表单 name 前缀包含 `_{itemIndex}_` 以区分不同项的同名字段。
 
 22. **每个模块渲染时做 5 轮 HTML parse/serialize（性能隐患）** —— 管线中 `expand_repeat_items()`、`inject_styles()`、`inject_content()`、`apply_visibility()`、`strip_schema_output()` 各自独立 parse → modify → serialize，对于有 50 个模块的页面就是 250 轮树遍历。**解决方案：** 合并 `inject_styles() + inject_content() + apply_visibility()` 为一轮遍历（`apply_all_injections()`），一次 parse 完成三种注入。`expand_repeat_items()` 和 `strip_schema_output()` 因逻辑独立（一个在渲染前，一个在渲染后）保持独立步骤。最终管线简化为：Jinja2 渲染 → expand_repeat_items() → apply_all_injections() → strip_schema_output()，从 5 步降到 4 步，parse/serialize 从 5 次降到 3 次。
 
 23. **`strip_schema_output()` 的正则方案有边界情况** —— 用正则 `/data-(key|content|src|href|bg|target|label|show-if)="[^"]*"/g` 删除 schema 属性时，如果属性值内含转义引号 `"` 或属性跨行（`data-target="...
-..."` 虽然不是合法 HTML 但 html.parser 能容忍），正则可能残留垃圾或误删内容。**解决方案：** 不用正则，改用 `html.parser`（Python 标准库）：解析 HTML → 遍历所有元素 → `del elem.attrs['data-key']` 等 → serialize 回去。比正则慢一点但完全可靠。如果性能敏感，可以先 benchmark —— 50 模块页面的 parse/serialize 在现代机器上应在 50ms 以内，可接受。
+..."` 虽然不是合法 HTML 但 html.parser 能容忍），正则可能残留垃圾或误删内容。**解决方案：** 不用正则，改用 `html.parser`（Python 标准库）：解析 HTML → 遍历所有元素 → `del elem.attrs['data-name']` 等 → serialize 回去。比正则慢一点但完全可靠。如果性能敏感，可以先 benchmark —— 50 模块页面的 parse/serialize 在现代机器上应在 50ms 以内，可接受。
 
 24. **基础设施改动影响所有 13 个 Block 的渲染和编辑** —— `_parse_modules_form()`、`renderField()`、`buildModuleHTML()` 等函数的修改是一次性切换，万一改错会影响全站（所有 Block 的管理后台都会坏）。**解决方案：** （a）旧代码只注释不删除，用 `## OLD:` 前缀标记，等 hero_banner 验证通过 + 回归测试全部 13 个 Block 后再统一清理；（b）为 `renderField()` 新增字段类型时用 feature flag（`if field.get('_schema_v2'): ... else: ...`），让新旧两种字段定义格式共存，渐进切换。
 
