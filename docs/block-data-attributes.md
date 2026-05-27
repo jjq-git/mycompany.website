@@ -383,6 +383,43 @@ data-options="显示文字1:值1, 显示文字2:值2"
 - Item 级：放在 `data-repeat-item` 元素内部的**末尾**（所有可见 HTML 之后）
 - 扫描器仅根据 DOM 位置（是否在 `data-repeat-item` 内）判断归属，`<meta>` 在 HTML 树中的具体顺序不影响字段排序
 
+#### 2.3.1 替代方案（不推荐）：不用 `<meta>`，字段属性挂在引用元素上
+
+将 `<meta>` 上的 `data-type`、`data-label`、`data-options`、`data-default` 等信息直接写到引用该字段的元素上：
+
+```html
+<!-- 方案 A（推荐）：<meta> 集中声明 -->
+<meta data-field="type" data-label="媒体类型" data-type="select"
+      data-options="图片:image, 视频:video" data-default="image">
+
+<video data-show-if="type" data-show-if-value="video"
+       data-key="video" data-src="media" ...></video>
+<div data-show-if="type" data-show-if-value="image"
+     data-key="image" data-bg="media"></div>
+```
+
+```html
+<!-- 方案 B（不推荐）：字段属性挂在首个引用元素上 -->
+<video data-show-if="type" data-show-if-value="video"
+       data-field-type="select"
+       data-field-label="媒体类型"
+       data-field-options="图片:image, 视频:video"
+       data-field-default="image"
+       data-key="video" data-src="media" ...></video>
+<div data-show-if="type" data-show-if-value="image"
+     data-key="image" data-bg="media"></div>
+```
+
+| 对比 | 方案 A `<meta>` | 方案 B 挂在元素上 |
+|---|---|---|
+| 字段声明位置 | 集中在 `<meta>` 区域 | 散落在各引用元素上 |
+| 多元素引用同字段 | 声明一次即可 | 需选一个"主元素"承载声明，其余只引用，容易遗漏 |
+| 扫描器实现 | 直接解析 `<meta>` | 需从引用处反向提取字段定义 |
+| 可读性 | 字段列表一目了然 | 混在业务元素中，不易找全 |
+| 构建输出 | `<meta>` 自动删除 | 额外的 `data-field-*` 属性需 strip（与注入属性混在一起，strip 正则更复杂） |
+
+**结论：** 方案 B 可行但不推荐。`<meta>` 更符合"Schema 与 Render 分离（但同文件）"的设计意图——字段定义集中在 `meta` 区域，注入引用在元素上，职责清晰。开发时保留方案 B 为备选，如果后续发现某些场景 `<meta>` 确实多余再切换。
+
 ### 2.4 内容注入属性 —— `data-content` / `data-src` / `data-href` / `data-bg`
 
 直接在 HTML 元素上声明内容来源，替代 Jinja2 `{{ }}` 变量输出。后处理阶段根据字段值注入实际内容。
