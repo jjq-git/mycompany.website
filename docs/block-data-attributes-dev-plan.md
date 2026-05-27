@@ -67,22 +67,22 @@
 | 条件 | Block | 实际机制 | 替换方式 |
 |---|---|---|---|
 | `image_position` | highlight_card | 仅添加 `hl-grid--reverse` class → 等价 `flex-direction: row-reverse` | CSS 字段 `flex-direction`，meta select 覆盖选项标签(row=图左文右, row-reverse=文左图右) |
-| `step_style` | process_steps | `{% if %}` 分支选择 SVG 或 `<span>` | data-show-if 互斥组（与 feature_grid 图标完全同模式） |
+| `step_style` | process_steps | `{% if %}` 分支选择 SVG 或 `<span>` | data-when 互斥组（与 feature_grid 图标完全同模式） |
 | `direction` | process_steps | 控制是否在 title+desc 外包 `<div class="ps-body">` | 模板始终包含包装层，CSS 处理横/纵向差异；`grid-template-columns: repeat(N, 1fr)` 保留 Jinja2 |
 | `layout` | contact_form | 仅添加 `cf-layout--reverse` class → 等价 `flex-direction: row-reverse` | 与 image_position 相同 |
 
-**已通过 `data-attr-style` 解决（整段 CSS 注入）：**
+**已通过 CSS 字段解决：**
 
 | 条件 | Block | 影响范围 | 替换方式 |
 |---|---|---|---|
-| `banner_align` | hero_banner | 4 个 CSS 属性 (left/right/transform/text-align) | `data-attr-style="content_position"` + `<meta data-type="select">`，选项值含整段 CSS |
-| `card_layout` | data_grid | 两个不同元素的 CSS：容器 `grid-template-columns` + 卡片 `flex-direction` | **两个独立** `data-attr-style` 字段（container_css + card_css），由同一个 `<meta>` 的下拉选项分别控制 |
+| `banner_align` | hero_banner | 1 个 CSS 属性 (text-align) | 模板改为 flexbox 布局，`data-label-text-align="内容排版"` + `<meta data-type="select">` 控制。详见下方迁移备注 |
+| `card_layout` | data_grid | 两个不同元素的 CSS：容器 `grid-template-columns` + 卡片 `flex-direction` | 拆为两个独立的 CSS 字段，各自用 `data-label-*` + `<meta data-type="select">` 控制 |
 
 **属于结构控制流（已由 `expand_repeat_items()` 替代）：**
 
 | 条件 | 处理方式 |
 |---|---|
-| `{% for item in items %}` / `{% if items %}` | `expand_repeat_items()` 根据数据数组自动克隆 data-repeat-item，空数组时删除容器 |
+| `{% for item in items %}` / `{% if items %}` | `expand_repeat_items()` 根据数据数组自动克隆 `data-type="list"` 的直接子元素，空数组时删除容器 |
 
 **仍保留 Jinja2 的场景（与 data-* 无关）：**
 
@@ -95,9 +95,28 @@
 
 | 条件 | Block | 处理方式 |
 |---|---|---|
-| `{% if item.type == 'video' %}` | hero_banner | data-show-if 互斥组 |
-| `show_phone/show_email/...` | contact_info/contact_form | data-show-if + data-show-if-value |
+| `{% if item.type == 'video' %}` | hero_banner | `data-when` 互斥组 |
+| `show_phone/show_email/...` | contact_info/contact_form | `data-when` |
 | `{% if item.title %}` / `{% if item.subtitle %}` | 多个 Block | 空值自动隐藏 |
+
+> **hero_banner 内容排版迁移备注：** 旧模板用绝对定位 + `data-attr-style` 注入整段 CSS（left/right/transform/text-align），现 `data-attr-style` 已删除。迁移时需将 `.hero-banner-content` 从绝对定位改为 flexbox 布局：
+> ```html
+> <!-- 旧：绝对定位，依赖 data-attr-style 注入整段 CSS -->
+> <div class="hero-banner-content" style="position: absolute; top: 50%; left: 50%;
+>      transform: translate(-50%, -50%); text-align: center;"
+>      data-attr-style="content_position">
+> 
+> <!-- 新：flexbox，text-align 作为独立 CSS 字段 -->
+> <div class="hero-banner-content" style="display: flex; flex-direction: column;
+>      justify-content: center; align-items: center; text-align: center;"
+>      data-key="content" data-label-text-align="内容排版">
+> ```
+> 配合 `<meta>` 声明下拉选项：
+> ```html
+> <meta data-field="content_text_align" data-label="内容排版" data-type="select"
+>       data-options="居中:center, 居左:left, 居右:right" data-default="center">
+> ```
+> 字段 key 生成规则：`data-key="content"` + CSS 属性 `text-align` → `content_text_align`。`inject_styles()` 自动将选中的值写入 `style` 末尾，覆盖默认值。
 
 ### 2.4 特殊 JS 交互
 
@@ -137,11 +156,11 @@
 
 | 模式 | 设计位置 | 验证重点 |
 |---|---|---|
-| 图标互斥组 (data-show-if + data-show-if-default) | §2.5.2, §5.4 | SVG 数量是否正确保留/删除 |
+| 图标互斥组 (data-when + data-type="default") | §2.5.2, §5.4 | SVG 数量是否正确保留/删除 |
 | 空值自动隐藏 (data-content 等) | §2.5.1 | 模板默认文本是否被替换 |
-| 内容注入 5 种属性 | §2.4 | data-content/src/href/bg/attr 都正确替换 |
+| 内容注入 5 种属性 | §2.4 | data-content/src/href/bg/target 都正确替换 |
 | CSS 级联覆盖 | §4.4.1 | 追加到 style 末尾，不修改默认值 |
-| 多列表 (data-repeat) | §2.6 | item_detail 的 images+specs 双列表 |
+| 多列表 (data-type="list") | §2.6 | item_detail 的 images+specs 双列表 |
 | data-no-resp | §2.7 | hero_banner 不显示响应式控件 |
 | global_width 预填 | §9.3-D | 新建模块时预填 settings.layout.global_width |
 
@@ -166,14 +185,14 @@
 
 | 情况 | 替换方式 |
 |---|---|
-| `banner_align` 多 CSS 属性联动 | `data-attr-style` + `<meta data-type="select">`，选项值含整段 CSS |
-| `card_layout` 跨元素联动 | 两个独立 `data-attr-style` 字段，分别控制容器 CSS 和卡片 CSS |
-| `{% for %}` 循环 + `{% if items %}` | `expand_repeat_items()` 后处理，模板只写一份 data-repeat-item |
-| `{% if item.type == 'xxx' %}` | `data-show-if` 互斥组 |
+| `banner_align` 多 CSS 属性联动 | 模板改 flexbox，`data-label-text-align` + `<meta data-type="select">` 控制 |
+| `card_layout` 跨元素联动 | 拆为两个独立 CSS 字段，各自用 `data-label-*` + `<meta data-type="select">` 控制 |
+| `{% for %}` 循环 + `{% if items %}` | `expand_repeat_items()` 后处理，模板只写一份（直接子元素作为模板项） |
+| `{% if item.type == 'xxx' %}` | `data-when` 互斥组 |
 | `{% if item.title %}` / `{% if item.subtitle %}` | 空值自动隐藏 |
-| `{{ }}` 变量输出 | `data-content` / `data-src` / `data-href` / `data-bg` / `data-attr-style` |
+| `{{ }}` 变量输出 | `data-content` / `data-src` / `data-href` / `data-bg` / `data-target` |
 | CSS 字段逐个声明 | `data-label` 批量自动生成 + `data-label-*` 精确覆盖 |
-| `image_position` / `layout` / `step_style` / `direction` | CSS 字段 + data-show-if 互斥组 |
+| `image_position` / `layout` / `step_style` / `direction` | CSS 字段 + data-when 互斥组 |
 
 **不需要替换（不属于 data-* 迁移范围）：**
 
@@ -328,7 +347,7 @@ def _parse_list_from_form(form, module_prefix, list_key, item_fields, request):
 14. stat_counter    (列表+columns)
 15. logo_cloud      (列表+文件上传)
 16. feature_grid    (列表+图标互斥组)
-17. process_steps   (列表+data-show-if互斥组)
+17. process_steps   (列表+data-when互斥组)
 18. contact_info    (visibility+跨数据源保留)
 19. item_detail     (双列表+详情页，数据自包含)
 ```
@@ -410,16 +429,15 @@ flask --app run scan-templates
 原设计文档 (`block-data-attributes.md`) 已非常详尽。逐模板复查后，本方案补充/纠正了以下内容：
 
 1. **跨数据源字段** (§2.1)：contact_info/contact_form 从 `settings.contact` 取值，迁移范围缩小为 CSS 字段 + visibility 开关
-2. **变体可替换性重新评估** (§2.3)：初判 6 个 Block 有 DOM 变体需保留 Jinja2 → 全部可替换（banner_align/card_layout 用 data-attr-style，image_position/layout 用 flex-direction CSS 字段，step_style 用 data-show-if 互斥组，direction 用 CSS）
-3. **data-attr-style 整段 CSS 注入**：新增注入属性，一个字段含整段 CSS 字符串，替代多属性联动的 Jinja2 {% if %}
-4. **expand_repeat_items() 列表展开**：新增后处理函数，替代 {% for %} 循环和 {% if items %} 空列表守护。模板只写一份 data-repeat-item
-5. **data-label 批量标签**：新增属性，style 中所有 CSS 属性自动生成字段标签（内置中文字典），替代逐行 data-label-*
-6. **item_detail 纠正**：初判为"数据集绑定"→ 复查模板后发现数据全在 `module.data` 中，是自包含模块，可完全迁移
-7. **数据变换保留** (§2.2)：truncate/split/int/default 等 Jinja2 filter 不在 data-* 迁移范围内
-8. **富文本编辑器** (§2.4)：text_content 的 contenteditable 保留为 admin JS 控件类型
-9. **JS 脚本保留** (§2.4)：轮播/分页/计数动画/图片放大镜——JS 逻辑不涉及字段声明
-10. **panel_page_edit.html 迁移策略**：从"直接删除旧代码"改为"先注释后删除"
-11. **header Block**：暂无 template.html，后续补充模板后同样改为零 Jinja2 模式
+2. **变体可替换性重新评估** (§2.3)：初判 6 个 Block 有 DOM 变体需保留 Jinja2 → 全部可替换（banner_align 改 flexbox + text-align CSS 字段，card_layout 拆为独立 CSS 字段，image_position/layout 用 flex-direction CSS 字段，step_style 用 data-when 互斥组，direction 用 CSS）
+3. **expand_repeat_items() 列表展开**：新增后处理函数，替代 {% for %} 循环和 {% if items %} 空列表守护。模板只写一份，直接子元素作为模板项
+4. **data-label 批量标签**：新增属性，style 中所有 CSS 属性自动生成字段标签（内置中文字典），替代逐行 data-label-*
+5. **item_detail 纠正**：初判为"数据集绑定"→ 复查模板后发现数据全在 `module.data` 中，是自包含模块，可完全迁移
+6. **数据变换保留** (§2.2)：truncate/split/int/default 等 Jinja2 filter 不在 data-* 迁移范围内
+7. **富文本编辑器** (§2.4)：text_content 的 contenteditable 保留为 admin JS 控件类型
+8. **JS 脚本保留** (§2.4)：轮播/分页/计数动画/图片放大镜——JS 逻辑不涉及字段声明
+9. **panel_page_edit.html 迁移策略**：从"直接删除旧代码"改为"先注释后删除"
+10. **header Block**：暂无 template.html，后续补充模板后同样改为零 Jinja2 模式
 
 ---
 
