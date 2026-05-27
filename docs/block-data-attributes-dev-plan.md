@@ -23,7 +23,7 @@
 | | process_steps | 中 | 列表+**双变体**(direction+step_style 影响DOM结构)+图标映射 |
 | **表单/联系** | contact_info | 中 | **跨数据源**(settings.contact)+visibility toggle×5 |
 | | contact_form | 中 | **跨数据源**+visibility toggle×7+map嵌入+layout变体 |
-| **特殊** | header | — | 站点导航(无template.html, 不迁移) |
+| **特殊** | header | — | 站点导航(暂无 template.html，后续补充后同样改为零 Jinja2 模式) |
 | | item_data | — | **条目编辑器(不迁移)**，含 isDatasetMode/editItem 特殊上下文 |
 
 ### 1.2 四个硬编码位置现状
@@ -419,7 +419,7 @@ flask --app run scan-templates
 8. **富文本编辑器** (§2.4)：text_content 的 contenteditable 保留为 admin JS 控件类型
 9. **JS 脚本保留** (§2.4)：轮播/分页/计数动画/图片放大镜——JS 逻辑不涉及字段声明
 10. **panel_page_edit.html 迁移策略**：从"直接删除旧代码"改为"先注释后删除"
-11. **header Block**：无 template.html，不在迁移计划中
+11. **header Block**：暂无 template.html，后续补充模板后同样改为零 Jinja2 模式
 
 ---
 
