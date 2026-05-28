@@ -4,15 +4,14 @@
 
 | # | 属性 | 用途 |
 |---|---|---|
-| 1 | [`data-type`](#1-data-type) | 内容类型，决定如何存储、注入、编辑（含 list / grid / default 等全部枚举值） |
+| 1 | [`data-type`](#1-data-type) | 内容类型，决定如何存储、注入、编辑（含 list / grid 等全部枚举值） |
 | 2 | [`data-name`](#2-data-name) | 元素命名，字段 key |
 | 3 | [`data-href`](#3-data-href) | 链接地址，让任意元素可点击 |
 | 4 | [`data-style`](#4-data-style) | CSS 变量通道，开放给用户的结构选择 |
 | 5 | [`data-hideable`](#5-data-hideable) | 整块可隐藏（简单开关） |
-| 6 | [`data-when`](#6-data-when) | 条件可见性（字段=值匹配） |
-| 7 | [`data-source`](#7-data-source) | 列表数据来源（手动 / 动态 URL） |
-| 8 | [`data-page-size`](#8-data-page-size) | 列表分页，每页条数 |
-| 9 | [`data-cols`](#9-data-cols) | 二维栅格列数 |
+| 6 | [`data-source`](#6-data-source) | 列表数据来源（手动 / 动态 URL） |
+| 7 | [`data-page-size`](#7-data-page-size) | 列表分页，每页条数 |
+| 8 | [`data-cols`](#8-data-cols) | 二维栅格列数 |
 
 ---
 
@@ -25,11 +24,13 @@ HTML 模板同时承担 **Schema** 和 **Render** 两个角色。四类关注点
 | **内容** | `data-name` / `data-type` / `data-href` | 元素是什么、存什么、注入到哪 |
 | **样式** | `data-style` | 用户可调的结构性样式，改 CSS 变量不改 DOM |
 | **行为** | `data-page-size` / `data-cols` / `data-source` | 列表分页、栅格列数、数据从哪来 |
-| **能力** | `data-hideable` / `data-when` | 用户能对这块做什么（隐藏、条件显隐） |
+| **能力** | `data-hideable` | 用户控制整块显隐 |
 
 **核心原则：HTML 本身就是数据存储。** 模板里的文字、src、style 值即为默认值——编辑器读取展示，用户修改后写回对应元素。不需要额外的 JSON 或 `<meta>` 声明。
 
-**样式原则：只开放结构性选择给用户。** 字号、颜色、间距等设计细节固定在 `.css` 里，不暴露编辑。开放项通过 CSS 变量 + `data-style` 声明，每个变量在全局注册表定义控件和可选值。
+**样式原则：只开放模板作者声明过的 CSS 变量。** 店主通过预设选项（下拉/开关/颜色选择器）调整样式，不输入自由数值。所有可调项在全局注册表集中定义。
+
+**显隐原则：只有一种机制。** 用户手动开关 → `data-hideable` + 原生 `hidden`。字段值为空时元素自动隐藏（由类型驱动，不依赖额外属性）。
 
 ---
 
@@ -50,21 +51,22 @@ HTML 模板同时承担 **Schema** 和 **Render** 两个角色。四类关注点
 | `video` | video | src | 视频 URL | 自动隐藏 |
 | `audio` | audio | src | 音频 URL | 自动隐藏 |
 | `embed` | iframe | src | 嵌入 URL（地图/第三方视频） | 自动隐藏 |
-| `icon` | div（含 SVG 子元素） | 选中的图标名 | 图标选择器 | — |
+| `icon` | div | 图标名 | 图标选择器（从预定义图标集选择） | — |
 
 **结构类型**（组织子元素）：
 
 | type | 适用元素 | 含义 | 详见 |
 |---|---|---|---|
-| `group` | div / li / article / section | 复合项，子元素打包为一条记录 | [§七](#data-typelist--data-typegrid) |
-| `list` | div / ul / nav / section | 一维可重复列表，子元素按数据重复 N 份 | [§七](#data-typelist--data-typegrid) |
-| `grid` | div / table | 二维可重复栅格，子元素按数据重复行×列 | [§七](#data-typelist--data-typegrid) |
+| `group` | div / li / article / section | 复合项，子元素打包为一条记录 | [§六](#data-typelist--data-typegrid) |
+| `list` | div / ul / nav / section | 一维可重复列表，子元素按数据重复 N 份 | [§六](#data-typelist--data-typegrid) |
+| `grid` | div / table | 二维可重复栅格，子元素按数据重复行×列 | [§六](#data-typelist--data-typegrid) |
 
 **类型 = 内容是什么；链接 = 能不能点。两件事，两个字段。** 不单独设 `link` 类型：`text + data-href` = 文字链接，`image + data-href` = 图片链接。
 
 **HTML 中的值即默认值：**
 - `text` / `textarea` / `richtext`：标签里的文字是默认值
 - `image` / `video` / `audio` / `embed`：`src` 属性值是默认值
+- `icon`：标签里的默认 SVG 是初始图标
 - `list` / `grid`：模板里的那一项即默认样例，用户复制成多份
 
 ```html
@@ -84,6 +86,11 @@ HTML 模板同时承担 **Schema** 和 **Render** 两个角色。四类关注点
 <!-- 富文本 -->
 <div data-name="body" data-type="richtext"><h2>标题</h2><p>正文……</p></div>
 
+<!-- 图标 -->
+<div data-name="service-icon" data-type="icon">
+  <svg><!-- 默认图标 --></svg>
+</div>
+
 <!-- 复合项（打包多个字段为一条记录） -->
 <article data-name="member" data-type="group">
   <img data-name="photo" data-type="image" src="p1.jpg">
@@ -99,16 +106,7 @@ HTML 模板同时承担 **Schema** 和 **Render** 两个角色。四类关注点
 </section>
 ```
 
-**图标类型**（`data-type="icon"`）：元素内含多个 SVG，配合 [`data-when`](#6-data-when) 互斥组定义可选图标集。编辑器显示图标选择器，用户选中的值驱动互斥组显隐。
-
-```html
-<div data-name="service-icon" data-type="icon">
-  <svg data-when="icon=circuit"><!-- 电路图标 --></svg>
-  <svg data-when="icon=code"><!-- 代码图标 --></svg>
-  <svg data-when="icon=shield"><!-- 盾牌图标 --></svg>
-  <svg data-when="icon" data-type="default"><!-- 默认图标 --></svg>
-</div>
-```
+**空值自动隐藏：** 文本类型（`text` / `textarea` / `richtext`）值为空、媒体类型（`image` / `video` / `audio` / `embed`）src 为空时，元素自动加 `hidden`。不需要额外的条件属性。结合 `data-hideable` 可覆盖所有显隐场景。
 
 ---
 
@@ -150,15 +148,30 @@ HTML 模板同时承担 **Schema** 和 **Render** 两个角色。四类关注点
 
 ### 4. `data-style`
 
-开放**结构性 CSS 变量**给用户调整。字号、颜色、间距等设计细节固定在 `.css` 里，不暴露编辑。想开放给用户的结构选择（列数、图文方向），用 CSS 变量 + `data-style` 声明 + 全局注册表。
+模板作者将**可调样式**写成 CSS 变量，在注册表定义控件和可选值，元素上用 `data-style` 声明开放哪些。店主通过预设选项调整——不改代码，不输入自由数值。
+
+**可控类型：**
+
+| 控件 | 适用场景 | 示例 |
+|---|---|---|
+| `select` | 预设选项 | 列数 (2/3/4) |
+| `switch` | 二选一 | 图文方向 (左图右文/右图左文) |
 
 ```html
-<!-- 开放列数 + 图文方向 -->
+<!-- 开放：列数 + 图文方向 -->
 <section data-name="features" data-type="list"
-         data-style="cols,dir"
+         data-style="cols, dir"
          style="--cols: 3; --dir: row">
   ...
 </section>
+```
+
+```css
+/* 模板 CSS：用 var() 设默认值 */
+.feature-grid {
+  display: flex;
+  flex-direction: var(--dir, row);
+}
 ```
 
 **约定：**
@@ -167,7 +180,7 @@ HTML 模板同时承担 **Schema** 和 **Render** 两个角色。四类关注点
 - 用户改 → 写到元素 `style`；重置 → 删掉 `style` 里的变量，CSS 自动回落
 - 没进 `data-style` 的变量用户碰不到
 
-**样式注册表：** `data-style` 只列开放了哪些变量，每个变量的控件类型、可选值、标签集中维护在一份全局 JS 注册表中：
+**样式注册表：** 模板里用到的每个 CSS 变量，在全局注册表定义控件类型、可选值和中文标签：
 
 ```js
 const STYLE_REGISTRY = {
@@ -179,22 +192,17 @@ const STYLE_REGISTRY = {
 };
 ```
 
-**该不该开放某个样式：** 两条标准都满足才加：
-1. 用户**真的会想改**（`cols`/`dir` 会；`gap` 很少）
-2. 改了**不会破坏一致性**（`cols`/`dir` 安全；`gap`/`padding`/字号 容易乱）
+**该不该开放：** 两条都满足才加——
+1. 用户**真的会想改**（列数、图文方向都会）
+2. 改了**不会破坏设计**（预设选项保证安全）
 
-→ 只开放结构性选择；设计细节固定在 `.css`。按"变量"建表，不是按"block"建表——几个变量就几条，与 block 数量无关。
+→ 按"变量"建表，不是按"block"建表。几个变量就几条，与 block 数量无关。`features` 和 `news` 都用 `cols` → 共用同一条，改选项只改一处。
+
+> **备注：扩展视觉微调。** 如果后续需要让店主调整颜色、字号、间距等视觉细节，同一套机制就能支持——在 STYLE_REGISTRY 里加条目（如 `gap: { label: "间距", control: "select", options: [{ value: "16", text: "紧凑" }, ...] }`），模板元素加 `data-style="gap"`，CSS 用 `var(--gap, 24px)` 取值。店主通过下拉/调色板选预设值，不改代码。是否开放、开哪些，由模板作者决定。
 
 ---
 
-## 六、可见性控制
-
-两种粒度的可见性控制：
-
-| 机制 | 粒度 | 触发方式 | 不匹配时 |
-|---|---|---|---|
-| `data-hideable` | 整块 | 用户手动开关 | 加/删 `hidden` 属性 |
-| `data-when` | 元素级 | 字段值自动判断 | 从输出中删除 |
+## 六、可见性
 
 ### 5. `data-hideable`
 
@@ -211,56 +219,7 @@ const STYLE_REGISTRY = {
 - 隐藏用原生 `hidden`（等价 `display: none`），**不用 `visibility`**（会留空白坑）
 - Header / Footer / 文章正文 / 产品正文 → **不加** `data-hideable`（必显块）
 - 其余营销/展示块 → 加 `data-hideable`
-
-### 6. `data-when`
-
-根据字段值决定元素显隐。**不匹配时元素从输出中删除。**
-
-| 写法 | 效果 |
-|---|---|
-| `data-when="field"` | 字段值非空即显示 |
-| `data-when="field=value"` | 字段值等于 value 时显示 |
-| `data-when="field=value1,value2"` | 字段值匹配任一逗号分隔值时显示 |
-
-解析规则：按第一个 `=` 拆字段名和值，无 `=` 则为非空检查。
-
-**适用场景：** 媒体类型切换、遮罩开关、联系方式显隐。
-
-```html
-<!-- 根据 type 字段值切换媒体类型 -->
-<video data-when="type=video"
-       data-name="video" data-type="video" src="..."></video>
-
-<img data-when="type=image"
-     data-name="cover" data-type="image" src="default.jpg">
-```
-
-### `data-type="default"`
-
-互斥组兜底项。同父元素下多个 `data-when` 引用同名字段时构成**互斥组**——后处理只保留匹配的那一个。无匹配则保留 `data-type="default"` 项。
-
-```html
-<div data-name="icon" data-type="icon">
-  <svg data-when="icon=circuit">...</svg>
-  <svg data-when="icon=code">...</svg>
-  <svg data-when="icon=shield">...</svg>
-  <svg data-when="icon" data-type="default">...</svg>
-</div>
-```
-
-| 规则 | 说明 |
-|---|---|
-| 互斥组判定 | 同一父元素下，`data-when` 值相同的所有元素构成一个互斥组 |
-| 匹配逻辑 | 找到 `data-when` 值匹配当前字段值的 → 保留，删除组内其余 |
-| 兜底逻辑 | 无匹配时保留 `data-type="default"`，删除其余；无 default 则全部删除 |
-| 删除方式 | 从 HTML 中移除元素（不是 `hidden`），输出中不留痕迹 |
-
-**section 级条件：** `data-when` 也可用于 section 级元素，从 section 级数据取值：
-
-```html
-<div class="hero-banner-overlay"
-     data-when="overlay_enabled=true"></div>
-```
+- 元素级显隐：字段值为空时自动隐藏（由 `data-type` 的类型逻辑驱动，不需要额外属性）
 
 ---
 
@@ -297,7 +256,7 @@ const STYLE_REGISTRY = {
 - 数据数组为空 → 整个容器被删除
 - 同一 template 内多个容器的 `data-name` 值必须唯一
 
-### 7. `data-source`
+### 6. `data-source`
 
 `list` / `grid` 用 `data-source` 区分项从哪来：
 
@@ -324,7 +283,7 @@ const STYLE_REGISTRY = {
 
 **静态站要点：** 静态服务器忽略 `?` 参数，`articles.json?category=news` 返回的是整个文件。query 是给前端渲染器的指令——过滤/排序/截断在前端 JS 做。
 
-### 8. `data-page-size`
+### 7. `data-page-size`
 
 `list` 容器专用。每页最多几条，超过则渲染器**自动追加页码**。省略则不分页，全显示。
 
@@ -335,7 +294,7 @@ const STYLE_REGISTRY = {
 </section>
 ```
 
-### 9. `data-cols`
+### 8. `data-cols`
 
 `grid` 容器专用。二维栅格列数，用于位置有意义的真阵列（日历/键盘/参数表）。
 
@@ -361,10 +320,9 @@ const STYLE_REGISTRY = {
 | `video` | 叶子 | 视频 | src | 视频 URL |
 | `audio` | 叶子 | 音频 | src | 音频 URL |
 | `embed` | 叶子 | 嵌入内容 | src | 嵌入 URL |
-| `icon` | 叶子 | 图标选择 | data-when 互斥组 | 图标选择器 |
+| `icon` | 叶子 | 图标选择 | 图标名 | 图标选择器 |
 | `group` | 结构 | 复合项 | 子元素集合 | 整体编辑 |
 | `list` | 结构 | 一维可重复列表 | 子元素×N | 增删项 + 编辑每项 |
 | `grid` | 结构 | 二维可重复栅格 | 子元素×行×列 | 增删 + 编辑单元格 |
-| `default` | 标记 | 互斥组兜底 | — | — |
 
 叶子类型**自动推断**字段和控件，不需要额外声明。结构类型**组织子元素**，内部的叶子类型各自声明自己的 `data-type`。
