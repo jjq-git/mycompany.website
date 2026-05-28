@@ -11,7 +11,8 @@
 | 5 | [`data-hideable`](#5-data-hideable) | 整块可隐藏（简单开关） |
 | 6 | [`data-when`](#6-data-when) | 条件可见性（字段=值匹配） |
 | 7 | [`data-source`](#7-data-source) | 列表数据来源（手动 / 动态 URL） |
-| 8 | [`data-page-size` / `data-cols`](#8-data-page-size--data-cols) | 分页条数 / 栅格列数 |
+| 8 | [`data-page-size`](#8-data-page-size) | 列表分页，每页条数 |
+| 9 | [`data-cols`](#9-data-cols) | 二维栅格列数 |
 
 ---
 
@@ -23,7 +24,7 @@ HTML 模板同时承担 **Schema** 和 **Render** 两个角色。四类关注点
 |---|---|---|
 | **内容** | `data-name` / `data-type` / `data-href` | 元素是什么、存什么、注入到哪 |
 | **样式** | `data-style` | 用户可调的结构性样式，改 CSS 变量不改 DOM |
-| **行为** | `data-page-size` / `data-cols` / `data-source` | 列表如何分页、栅格列数、数据从哪来 |
+| **行为** | `data-page-size` / `data-cols` / `data-source` | 列表分页、栅格列数、数据从哪来 |
 | **能力** | `data-hideable` / `data-when` | 用户能对这块做什么（隐藏、条件显隐） |
 
 **核心原则：HTML 本身就是数据存储。** 模板里的文字、src、style 值即为默认值——编辑器读取展示，用户修改后写回对应元素。不需要额外的 JSON 或 `<meta>` 声明。
@@ -323,20 +324,26 @@ const STYLE_REGISTRY = {
 
 **静态站要点：** 静态服务器忽略 `?` 参数，`articles.json?category=news` 返回的是整个文件。query 是给前端渲染器的指令——过滤/排序/截断在前端 JS 做。
 
-### 8. `data-page-size` / `data-cols`
+### 8. `data-page-size`
 
-| 属性 | 适用 | 用途 | 默认 |
-|---|---|---|---|
-| `data-page-size` | `list` | 每页最多几条，超过则渲染器**自动追加页码** | 无（不分页） |
-| `data-cols` | `grid` | 二维栅格列数 | — |
+`list` 容器专用。每页最多几条，超过则渲染器**自动追加页码**。省略则不分页，全显示。
 
 ```html
-<!-- 文章列表：3 列、每页 9 条 -->
-<section data-name="news" data-type="list"
-         data-page-size="9"
-         data-style="cols" style="--cols: 3">
+<!-- 文章列表：每页 9 条 -->
+<section data-name="news" data-type="list" data-page-size="9">
   ...
 </section>
+```
+
+### 9. `data-cols`
+
+`grid` 容器专用。二维栅格列数，用于位置有意义的真阵列（日历/键盘/参数表）。
+
+```html
+<!-- 价格表：3 列 -->
+<table data-name="price-grid" data-type="grid" data-cols="3">
+  <td data-name="cell" data-type="text">默认</td>
+</table>
 ```
 
 > **列数的两种归属**，别混：只是"一行排几个"的视觉流式列表 → CSS `--cols`；位置有意义的真阵列 → `data-cols`。
