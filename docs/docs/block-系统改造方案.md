@@ -537,4 +537,66 @@ modules:
 
 **测试现状：** `test_block_roundtrip.py` 48 项（含交错文本/charref/XSS/href/空列表安全回归）、section_title/text_content 端到端、向后兼容、单语言分支均通过。
 
-**新增测试脚本（scripts/）：** test_block_roundtrip / test_section_title / test_e2e_section_title / test_render_block_compat / cleanup_orphan_records。
+**新增测试脚本（scripts/）：** test_block_roundtrip / test_section_title / test_e2e_section_title / test_render_block_compat / test_editor_schema_form / cleanup_orphan_records / extract_icons。
+
+---
+
+## 十二、续作清单（下次照此继续）
+
+> 截至 2026-05-29 的进度快照与待办。**已转 6/14 个 block**：section_title, text_content, feature_grid, stat_counter, process_steps, logo_cloud。开关 `ENABLE_DATA_ATTR_BLOCKS` 默认关，开发验证时在 config 或环境变量 `ENABLE_DATA_ATTR_BLOCKS=1` 打开。
+
+### 当前状态速览
+
+| 维度 | 状态 |
+|------|------|
+| 渲染引擎（parser/renderer/style_registry/icon_registry） | ✅ 稳定，覆盖 text/textarea/richtext/image/video/embed/icon/group/list/grid + data-style/href/hideable/source + CDATA script + 业务 data-* 保留 |
+| builder 双路径 | ✅ 开关关回退 .jinja2.bak，开关开走 renderer |
+| 编辑器表单（新增模块） | 🟡 叶子字段（text/richtext/image/icon-当文本）+ data-style + 显隐开关已通；**list/grid 增删条目未做**（只显占位提示） |
+| 编辑器表单（已有模块） | 🟡 仍走旧 Jinja2 服务端分支（有 elif 保底，功能一致） |
+| 后端 list 解析 | 🔴 仍按 block 类型**硬编码**（feature_count/stat_count/...），未通用化 |
+
+### 待办（按优先级）
+
+**P0 — 完成 Phase 3 编辑器闭环（让店主能在后台增删 list 条目）**
+
+现状：feature_grid/stat_counter/process_steps/logo_cloud 渲染没问题，但后台**无法增删卡片/条目**——这 4 个 block 在编辑器里是"半残"。要两端配合：
+
+1. **前端**（`app/templates/dashboard/panel_page_edit.html`，约 1631 行 `generateSchemaForm` 里 `field.type === 'list'/'grid'` 分支，现在只输出占位提示）：
+   - 写一个 list 条目编辑器：渲染已有条目 + "添加条目"/"删除条目"按钮；每条目用 `field.children`（schema 里的项字段）渲染子表单。
+   - 字段命名约定：`module_<idx>_<listName>_<itemIdx>_<subField>`（如 `module_0_features_0_title`），外加隐藏的 `module_<idx>_<listName>_count`。**可参考现有 hero_banner/feature_grid 的硬编码增删实现**（同文件里 `_addFeatureItem`/`_addHeroSlide` 等函数）——命名规则照搬，但改成由 schema 驱动通用生成。
+   - icon 子字段：生成图标下拉选择器（图标名列表从后端下发；可让 routes 额外传 `icon_registry.icon_names()` 类似 styleRegistry 那样注入 `iconListJson`）。
+
+2. **后端**（`app/core/routes.py` 的 `_parse_modules_form`，约 1810 行循环内）：
+   - 现在按 `if m_type == 'feature_grid'` 等硬编码解析 list（1947/1977 行等）。要在这些硬编码分支**之前**加一个**通用 data-* list 解析**：若该 block 是 data-* 声明式（查 schema，schema 里 root 含 list/grid 字段），按 `module_<idx>_<listName>_count` + `module_<idx>_<listName>_<i>_<subField>` 通用还原成 `data[listName] = [{...}, ...]`，并跳过后面的硬编码分支。
+   - 注意：`_parse_modules_form` 当前不一定能拿到 schema，需要把 `_get_available_blocks` 的结果（含 schema）传进去或在函数内取。
+   - 坑：`_parse_value` 会把 'true'/'false' 保留为字符串；list 子字段同样要走它。
+
+3. **验证**：扩展 `scripts/test_editor_schema_form.py`，POST 一个带 features 的 feature_grid（`module_0_features_count=2` + 各子字段），确认 YAML 还原出 `features: [{...},{...}]`，再构建确认渲染。
+
+**P1 — 已有模块统一走 schema 表单**
+现在已有模块用旧 Jinja2 分支（`panel_page_edit.html` 的 14 个 `{% elif module.type %}`）。已转的 6 个 block 可以让服务端渲染也走 schema 占位 + JS 初始化填充，删掉对应 Jinja2 分支。**与 Phase 6 清理合并做**。
+
+**P2 — 继续转剩余 block（按难度排序）**
+未转 8 个：`highlight_card`（group，类似已转的，最简单）、`item_detail`（嵌套 list：images+specs，需 renderer 支持嵌套 list——目前规范说不支持嵌套，要评估）、`contact_form`（表单字段特殊）、`data_grid`/`product_grid`（**Phase 4 数据集驱动**，data-source 机制 renderer 已支持但未接真实 block）、`contact_info`（数据来自 settings.contact，需 renderer 加"从 settings 取数"能力）、`hero_banner`（轮播 JS + list/dict 双数据形态）。`item_data` 不转（是数据集条目编辑器，非页面 block）。
+
+**P3 — Phase 6 清理**
+删 `admin_modules.js` + `panel_page_edit.html` + `page_home.html` 的硬编码分支；删 meta.yaml 的 fields 键；删 `.jinja2.bak`；开关默认改 True。
+
+### 非代码遗留（环境/约定）
+- **richtext 录入侧 sanitize**：richtext 按 innerHTML 不转义，内容须在编辑器录入时做 HTML 白名单清洗（防存储型 XSS）。目前编辑器是否做需确认。
+- **改 block 后须重启**：`_SCHEMA_CACHE`（builder.py）进程内永不失效，改 block 模板后开发服务器要重启才生效（同 CLAUDE.md 的 Flask 非 debug 不重载坑）。
+- **key 约定**（前后端对齐用）：样式 `style_<token>`、整块显隐 `_hidden`（字符串 'true'/'false'，renderer 用 `_is_truthy` 判断）、数据集驱动列表数据集名 `dataset`。
+- **图标扩展**：新图标加进 `icon_registry.py` 的 `ICON_REGISTRY` 即可，全 block 共用。
+
+### 关键文件地图（续作直接定位）
+| 文件 | 职责 |
+|------|------|
+| `app/core/block_parser.py` | HTML→BlockSchema（_Node 有序节点树、CDATA、项模板识别） |
+| `app/core/block_renderer.py` | schema+数据→HTML（5 步管线、icon/href/style 注入、转义、白名单） |
+| `app/core/style_registry.py` | CSS 变量 token 注册表 |
+| `app/core/icon_registry.py` | 图标名→SVG（46 个） |
+| `app/core/builder.py` | `_make_render_block`/`_load_block_for_render` 双路径 + `_SCHEMA_CACHE` |
+| `app/core/template_loader.py` | `scan_blocks` 附加 is_data_attr/schema |
+| `app/core/routes.py` | `_parse_modules_form`（~1810，表单→module.data，**待通用化 list**）、`page_panel`（~1626，下发 blocks/style_registry） |
+| `app/templates/dashboard/panel_page_edit.html` | `generateSchemaForm`/`generateSchemaStyleForm`（~1588 前）、`addModule`（~1990，is_data_attr 拦截在 ~2024） |
+| `site_templates/dengtec/blocks/<name>/template.html` | data-* 模板；旧版备份 `template.jinja2.bak` |
