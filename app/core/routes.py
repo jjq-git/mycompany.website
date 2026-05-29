@@ -1697,12 +1697,14 @@ def page_panel(page_key):
         is_modules_format = 'modules' in page
         page.setdefault('modules', [])
         _merge_block_defaults(page.get('modules'), blocks)
+        from .style_registry import STYLE_REGISTRY
         return _render('dashboard/panel_page_edit.html',
                        user=user, site=site,
                        page_key=page_key, page=page,
                        blocks=blocks, is_modules_format=is_modules_format,
                        is_list_page=is_list_page,
                        all_list_datasets=all_list_datasets,
+                       style_registry=STYLE_REGISTRY,
                        current_lang=lang, languages=languages, default_lang=default_lang,
                        active=page_key)
 

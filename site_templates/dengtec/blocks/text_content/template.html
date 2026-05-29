@@ -1,46 +1,8 @@
-{# 文本内容 — 标题 + 多段落正文 #}
-{% set md = module.data if module.data else {} %}
-{% if md.title or md.body %}
-{# ---- 外层样式 ---- #}
-{% set section_bg = md.get('section_bg', '') %}
-{% set outer_w = md.get('outer_width', '') or settings.get('layout', {}).get('global_width', '') %}
-{% set inner_w = md.get('inner_width', '') %}
-{% set margin_top = md.get('margin_top', '') %}
-{% set margin_right = md.get('margin_right', '') %}
-{% set margin_bottom = md.get('margin_bottom', '') %}
-{% set margin_left = md.get('margin_left', '') %}
-{# ---- 内层边距 ---- #}
-{% set padding_top = md.get('padding_top', '') %}
-{% set padding_right = md.get('padding_right', '') %}
-{% set padding_bottom = md.get('padding_bottom', '') %}
-{% set padding_left = md.get('padding_left', '') %}
-{# ---- 内容与文字 ---- #}
-{% set text_align = md.get('text_align', 'left') %}
-{% set title_color = md.get('title_color', '') %}
-{% set body_color = md.get('body_color', '') %}
-{% set title_size = md.get('title_size', '') %}
-{% set body_size = md.get('body_size', '') %}
-{% set cols = md.get('columns', '1') %}
-
-<section class="section" style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}{% if margin_top %}margin-top: {{ margin_top }};{% endif %}{% if margin_right %}margin-right: {{ margin_right }};{% endif %}{% if margin_bottom %}margin-bottom: {{ margin_bottom }};{% endif %}{% if margin_left %}margin-left: {{ margin_left }};{% endif %}">
-  <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
-    <div class="tc-block" style="text-align: {{ text_align }};{% if (cols | string) == '2' %} column-count: 2; column-gap: 2rem;{% endif %}{% if padding_top %}padding-top: {{ padding_top }};{% endif %}{% if padding_right %}padding-right: {{ padding_right }};{% endif %}{% if padding_bottom %}padding-bottom: {{ padding_bottom }};{% endif %}{% if padding_left %}padding-left: {{ padding_left }};{% endif %}">
-      {% if md.title %}
-      <h2 class="tc-title" style="{% if title_color %}color: {{ title_color }};{% endif %}{% if title_size %}font-size: {{ title_size }};{% endif %}">{{ md.title }}</h2>
-      {% endif %}
-      {% if md.body %}
-      {% set body_str = md.body | string %}
-      <div class="tc-body" style="{% if body_color %}color: {{ body_color }};{% endif %}{% if body_size %}font-size: {{ body_size }};{% endif %}">
-        {% if '</' in body_str or '<br' in body_str %}
-        {{ body_str | safe }}
-        {% else %}
-        {% for para in body_str.split('\n\n') %}
-        <p>{{ para | replace('\n', '<br>') }}</p>
-        {% endfor %}
-        {% endif %}
-      </div>
-      {% endif %}
+<section data-name="text_content" data-type="group" data-hideable data-style="text-align" class="section">
+  <div class="container">
+    <div class="tc-block">
+      <h2 data-name="title" data-type="text" class="tc-title">内容标题</h2>
+      <div data-name="body" data-type="richtext" class="tc-body"><p>正文内容，支持多段落与富文本格式。</p></div>
     </div>
   </div>
 </section>
-{% endif %}

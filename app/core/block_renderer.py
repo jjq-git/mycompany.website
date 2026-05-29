@@ -20,11 +20,12 @@
 import re
 
 from . import block_parser as bp
+from . import icon_registry
 from . import style_registry
 
 # 媒体类型 → 注入到哪个属性
 _MEDIA_SRC_ATTR = {'image': 'src', 'video': 'src', 'audio': 'src', 'embed': 'src'}
-_TEXT_TYPES = {'text', 'textarea', 'richtext', 'icon'}
+_TEXT_TYPES = {'text', 'textarea', 'richtext'}  # icon 单独处理（查图标注册表注 SVG）
 
 # data-href 允许的 URL scheme（其余如 javascript:/data: 一律丢弃，防 XSS）
 _SAFE_HREF = re.compile(r'^(https?:|mailto:|tel:|/|#|\./|\.\./|[^:]*$)', re.I)
@@ -46,9 +47,17 @@ def _hide(node):
     node.attrs['hidden'] = None  # None = 无值属性，序列化为 hidden
 
 
+# schema 声明用的 data-* 属性（渲染后清理掉）。其余 data-*（如 data-target、
+# data-index 等给前端 JS 用的业务属性）保留，否则会破坏 block 内嵌脚本（如数字动画）。
+_SCHEMA_DATA_ATTRS = {
+    'data-name', 'data-type', 'data-href', 'data-style', 'data-hideable',
+    'data-source', 'data-page-size', 'data-cols',
+}
+
+
 def _strip_data_attrs(node):
-    """递归删除所有 data-* 属性，输出干净 HTML（管线第 5 步）。"""
-    node.attrs = {k: v for k, v in node.attrs.items() if not k.startswith('data-')}
+    """递归删除 schema 声明用的 data-* 属性（管线第 5 步），保留业务用 data-*。"""
+    node.attrs = {k: v for k, v in node.attrs.items() if k not in _SCHEMA_DATA_ATTRS}
     for child in node.children:
         _strip_data_attrs(child)
 
@@ -57,6 +66,18 @@ def _safe_href(value):
     """校验 href：仅放行安全 scheme，危险的（javascript:/data: 等）返回空。"""
     v = str(value).strip()
     return v if _SAFE_HREF.match(v) else ''
+
+
+def _is_truthy(value):
+    """判断开关值是否为真。表单存的是字符串布尔，'false'/'no'/'0'/'' 均视为假。"""
+    if isinstance(value, str):
+        return value.strip().lower() in ('true', 'yes', 'on', '1')
+    return bool(value)
+
+
+def _icon_svg(name):
+    """图标名 → SVG 字符串。注册表的 SVG 是可信的（开发者维护），原样注入。"""
+    return icon_registry.get_icon_svg(name)
 
 
 def _inject_leaf(node, field_def, value):
@@ -69,7 +90,16 @@ def _inject_leaf(node, field_def, value):
     dtype = field_def.type
     has_content = value not in (None, '')
 
-    if dtype in _TEXT_TYPES:
+    if dtype == 'icon':
+        # icon：值是图标名，查注册表注入对应 SVG（作为 innerHTML）。
+        # 未知图标名或空值 → 当无内容（隐藏），不输出占位。
+        svg = _icon_svg(value) if has_content else None
+        if svg:
+            _set_text(node, svg, raw_html=True)
+        else:
+            _set_text(node, '')
+            has_content = False
+    elif dtype in _TEXT_TYPES:
         if has_content:
             _set_text(node, value, raw_html=(dtype == 'richtext'))
         else:
@@ -318,7 +348,9 @@ def render(block_html, schema, data_dict, context=None):
         _inject_href(root, schema.href_field, data_dict)
 
     # 3. 显隐处理：data-hideable + 隐藏标记
-    if schema.hideable and data_dict.get('_hidden'):
+    # _hidden 可能是布尔 True 或字符串 'true'（表单存的是字符串布尔，
+    # 注意字符串 'false' 也是真值，必须显式判断而非裸真值）
+    if schema.hideable and _is_truthy(data_dict.get('_hidden')):
         _hide(root)
 
     # 4. 样式注入

@@ -133,7 +133,10 @@ class _DomBuilder(HTMLParser):
                 break
 
     def handle_data(self, data):
-        self._append(_Text(data))
+        # script/style 内是 CDATA：HTMLParser 给的是原始未解析文本（含 < > &），
+        # 必须原样输出不转义，否则会破坏 JS（如 a < b 变 a &lt; b）。
+        in_cdata = bool(self._stack) and self._stack[-1].tag.lower() in ('script', 'style')
+        self._append(_Text(data, raw=in_cdata))
 
     def handle_entityref(self, name):
         # convert_charrefs=False 下命名实体走这里：原样保留 &name;

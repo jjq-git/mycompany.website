@@ -1453,7 +1453,8 @@ h6 { font-size: var(--font-size-md); }
 /* === Service Cards === */
 .services-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  /* 列数由 data-style="cols" 注入的 --cols 控制，默认 3；窄屏由 media query 降级 */
+  grid-template-columns: repeat(var(--cols, 3), 1fr);
   gap: var(--spacing-xl);
   /* max-width: 1200px; */
   margin-left: auto;
@@ -5426,6 +5427,8 @@ h6 { font-size: var(--font-size-md); }
 .tc-block {
   /* max-width: var(--container-narrow, 1280px); */
   margin: 0 auto;
+  /* text-align 由 data-style="text-align" 注入的 --text-align 变量控制，默认左对齐 */
+  text-align: var(--text-align, left);
 }
 
 .tc-title {
@@ -5480,6 +5483,8 @@ h6 { font-size: var(--font-size-md); }
    ============================================ */
 .sc-grid {
   display: grid;
+  /* 列数由 data-style="cols" 注入的 --cols 控制，默认 4 */
+  grid-template-columns: repeat(var(--cols, 4), 1fr);
   gap: 2rem;
 }
 
@@ -5816,6 +5821,8 @@ a.ci-value:hover {
    ============================================ */
 .lc-grid {
   display: grid;
+  /* 列数由 data-cols 控制（grid 真阵列），默认 6 */
+  grid-template-columns: repeat(var(--cols, 6), 1fr);
   gap: 1.5rem;
   align-items: center;
 }

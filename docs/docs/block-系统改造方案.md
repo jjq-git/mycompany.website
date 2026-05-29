@@ -199,24 +199,27 @@ ENABLE_DATA_ATTR_BLOCKS = True
 
 ---
 
-### Phase 2：转换简单 block（验证全流程）
+### Phase 2：转换简单 block（验证全流程）✅ 部分完成（2026-05-29）
 
-转换 4 个最简单的非列表 block，验证"编辑 → 存储 → 构建"完整链路。
+转换最简单的非列表 block，验证"编辑 → 存储 → 构建"完整链路。
 
-| block | 字段 | 复杂点 |
-|-------|------|--------|
-| **section_title** | tag, title, desc, btn_text, btn_url | 无 |
-| **text_content** | title, body | body 是富文本 |
-| **contact_info** | addr, phone, email, map | email 有 data-href，map 有 embed |
-| **hero_banner** | title, subtitle, cta, bg | data-style="bg"，有 data-href |
+| block | 字段 | 复杂点 | 状态 |
+|-------|------|--------|------|
+| **section_title** | tag, title, desc, btn(+btn_url) | data-style="text-align"，btn 有 data-href | ✅ 已转 |
+| **text_content** | title, body | body 是 richtext（富文本） | ✅ 已转 |
+| **contact_info** | addr, phone, email, map | **数据来自 settings.contact 而非 module.data**；5 固定卡片 + SVG 图标 + show_xxx 开关 | ⏸ 跳过（见下） |
+| **hero_banner** | title, subtitle, cta, bg | **全屏轮播 + 内嵌 `<script>` + data 可为 list/dict 双形态 + video/image 分支** | ⏸ 跳过（见下） |
+
+**为什么跳过后两个（原方案误判为"简单"）：**
+- **contact_info** 不符合 data-* 的"字段=data-name、数据来自 module.data"模型——它从全站 `settings.contact` 取数。需要先给 renderer 加"从 settings 取数"的特殊能力（方案 3.2 末尾提过此设计点，尚未实现）。归到数据来源特殊的一批，单独处理。
+- **hero_banner** 带轮播交互 JS（内嵌 `<script>`）、双数据形态、条件媒体渲染，远超"简单 block"。归到复杂交互 block，待基础设施更成熟（如编辑器 schema 表单完成）再啃。
 
 **每步操作：**
 1. 重写 `template.html` 为纯 HTML + data-*（现有 Jinja2 版改名为 `template.jinja2.bak`）
-2. 在编辑器中测试 schema 驱动表单生成（新增/编辑/保存）
-3. 构建站点，浏览器打开 output/ 确认渲染结果
-4. 与改造前的 output/ 做 diff 对比
+2. 构建站点，确认渲染结果与改造前一致（已转的两个均端到端验证通过）
+3. 同步 CSS（结构性样式收回 CSS 变量）+ 种子数据（字段 key 对齐 data-name）
 
-**Phase 2 交付物：** 4 个简单 block 全流程走通，编辑器不再依赖硬编码分支。
+**Phase 2 交付物：** section_title + text_content 全流程走通（双路径渲染、富文本字段、样式收回、空值隐藏、向后兼容均验证）。contact_info / hero_banner 留待专门 Phase。编辑器 schema 驱动表单（前端 + API 端点）仍待做。
 
 ---
 
@@ -450,3 +453,88 @@ modules:
 **已验证（不影响现有功能的证据）：**
 - 开关默认 False；`scan_blocks('dengtec')` 扫 14 个旧 block 全部识别为 Jinja2 旧式、schema=None，无异常。
 - 往返测试覆盖：text/image/data-href、group、list(手动)、list(数据集驱动)、grid、data-style 注入、data-hideable、叶子空值自动隐藏、data-* 全清理。
+
+## 十、Phase 2 实施记录（2026-05-29）
+
+**已完成：**
+
+| 项 | 说明 |
+|----|------|
+| builder 双路径渲染 | 新增 `render_block(module)` Jinja2 全局函数 + `_SCHEMA_CACHE` 缓存；`_modules.html` 的 `{% include %}` 换成 `{{- render_block(module) }}`；两处 env（build_site / build_template_preview）均注册 |
+| 开关关回退 | 开关关时，已转 data-* 的 block 自动回退到 `template.jinja2.bak`（否则 data-* HTML 会被当 Jinja2 原样吐出脏属性）；向后兼容验证 contact/about 逐字节一致 |
+| section_title 转换 | 26 字段 → 4 内容字段（tag/title/desc/btn）+ data-style="text-align"；CSS 收回变量；种子数据 subtitle→desc、删 section_bg |
+| text_content 转换 | title + body(richtext)；CSS 收回 text-align 变量；种子数据 body 转 HTML 段落（richtext=innerHTML） |
+| 单语言构建 bug 修复 | `build_site` 单语言分支引用未定义的 products_categories/items 导致崩溃，已补提取 + all_datasets |
+| 孤儿记录清理 | 删除指向缺失模板的 3 Site + 3 Template（globex/serveco/tasty），当前仅 dengtec |
+
+**跳过：** contact_info（数据来自 settings.contact，需 renderer 加特殊取数）、hero_banner（轮播 JS + 双数据形态），见 Phase 2 表格说明。
+
+**代码审查修复（独立 reviewer 实测复现，全部已修 + 加回归测试）：**
+
+| 级别 | 问题 | 修复 |
+|------|------|------|
+| P0 | `_Node` 文本/子元素分开存 → 序列化重排（破坏 inline 排版） | 重构为**有序节点列表**（_Text + _Node 混排） |
+| P0 | `convert_charrefs=True` → 属性里 HTML 实体被解码后裸写破坏 HTML | `convert_charrefs=False` + 序列化属性值统一转义 |
+| P0 | `_apply_style` 样式值不转义 → 可逃逸出 style 属性 XSS | 按 control 类型白名单校验（select/color/image）+ 转义 |
+| P1 | `_expand_list._ctx` 模块级全局 → 并发构建串味 | context 全程显式传递，删全局状态 |
+| P1 | 空数组列表留可见空容器 | 空列表容器自动 hidden |
+| P1 | data-href 不挡 javascript: scheme | href scheme 白名单 |
+
+**遗留（非代码，待后续）：**
+- richtext 按 innerHTML 不转义 → 内容须在**录入侧** sanitize（编辑器链路待确认）
+- `_SCHEMA_CACHE` 进程内永不失效 → 改 block 后须重启开发服务器（同 CLAUDE.md 已记的 Flask 重载坑）
+
+### 编辑器 schema 驱动表单（2026-05-29，新增模块场景已通）
+
+让 data-* block 在店主后台用 schema 自动生成编辑表单，不再写硬编码分支。
+
+| 改动 | 文件 | 说明 |
+|------|------|------|
+| 前端 schema 表单 | `panel_page_edit.html` | 新增 `generateSchemaForm`（内容字段+显隐开关）/ `generateSchemaStyleForm`（data-style 控件）/ `_schemaFieldHtml` / `_schemaHideToggle` |
+| addModule 拦截 | `panel_page_edit.html` | 在所有硬编码 `if type===` 分支**最前面**加 `if (meta.is_data_attr && meta.schema)` → 走 schema 表单，零侵入旧分支 |
+| 样式注册表下发 | `routes.py` + `panel_page_edit.html` | page_panel 传 `style_registry`，模板加 `styleRegistryJson`，前端按 token 查控件类型 |
+| _hidden 判断修正 | `block_renderer.py` | 表单存字符串布尔，`'false'` 是真值会误隐藏 → 加 `_is_truthy()` 显式判断 |
+
+**字段命名对齐**：schema 表单字段 name = `module_<idx>_data_<fieldName>`，data-href 额外生成 `<href_field>`，样式 `style_<token>`，显隐 `_hidden`——与后端 `_parse_modules_form` 还原规则一致。无需新增 API 端点（schema 已随 `blockLibraryJson` 全量下发）。
+
+**已验证（test client 端到端 20/20）**：编辑器下发 schema 函数+注册表 → POST schema 表单字段 → YAML 正确写入（tag/title/desc/btn/btn_url/style/​_hidden）→ 渲染闭环正确、无 data-* 残留。测试自清理无污染。
+
+**仍待做**：
+- **已有模块**的服务端渲染仍走旧 Jinja2 分支（section_title/text_content 有 elif 保底，功能一致）；统一到 schema 表单需改 panel_page_edit.html 的 Jinja2 链（Phase 6 清理时一起做）
+- schema 字段缺中文 label（现用字段名）——后续可在 meta 或 data-label 补
+- group/list/grid 结构字段的编辑器（增删条目）未做 → Phase 3
+
+## 十一、Phase 3 实施记录（2026-05-29，渲染侧完成）
+
+转换 4 个 list/grid block，并为此给渲染器补了三项能力。
+
+**新增能力（renderer/parser）：**
+
+| 能力 | 文件 | 说明 |
+|------|------|------|
+| 图标注册表 | `icon_registry.py`（新增，46 图标） | data-type="icon" 字段存图标名，渲染时查表注入 SVG。由 `scripts/extract_icons.py` 从原模板硬编码 SVG 分支自动抽取，去掉写死 width/height 改 CSS 控制 |
+| icon 类型渲染 | `block_renderer.py` | `_inject_leaf` 加 icon 分支：图标名→SVG（innerHTML）；未知名/空值隐藏 |
+| CDATA(script) 保护 | `block_parser.py` | script/style 内文本按 CDATA 原样保留，不转义（否则 JS 的 `a < b` 会变 `a &lt; b` 破坏脚本） |
+| 业务 data-* 保留 | `block_renderer.py` | `_strip_data_attrs` 改白名单：只删 schema 用的 data-*（name/type/href/style/...），保留业务 data-*（data-target 等） |
+
+**转换的 block：**
+
+| block | 结构 | 要点 |
+|-------|------|------|
+| feature_grid | group 包 list，项=group(icon/title/desc) | 顶层标题用 heading/subheading（避免与项内 title 同名）；data-style="cols" |
+| stat_counter | group 包 list + 数字动画 script | script 移进 section 内（根子树），改读 textContent 作动画目标（原用 data-target 会被清理） |
+| process_steps | group 包 list，项=group(icon/title/desc) | ps-track 横向布局 |
+| logo_cloud | group 包 grid，项=image 叶子(+data-href) | data-cols="6" 固定列数 |
+
+**CSS 同步**：services-grid / sc-grid / lc-grid 改用 `repeat(var(--cols, N), 1fr)`，列数由 data-style/data-cols 注入。
+
+**已验证（端到端构建）**：home 页 feature_grid（3 卡片+图标）、about 页 stat_counter（4 卡片+数字+动画 script 完整保留）正确渲染，无 schema data-* 残留。种子数据 stat_counter 字段对齐（title/subtitle→heading/subheading，columns→style_cols）。全套回归 48+20 项通过。
+
+**仍待做（Phase 3 编辑器侧）：**
+- 前端 schema 表单的 **list 增删条目编辑器** + **icon 下拉选择器**（现 generateSchemaForm 对 list 字段只显示占位提示）
+- 后端 `_parse_modules_form` 的 **data-* list 通用解析**（现仍按 block 类型硬编码解析 features/stats/slides，需改为按 schema 通用还原 `module_<idx>_<list>_<i>_<field>`）
+- 已转 6/14 个 block（section_title, text_content, feature_grid, stat_counter, process_steps, logo_cloud）
+
+**测试现状：** `test_block_roundtrip.py` 48 项（含交错文本/charref/XSS/href/空列表安全回归）、section_title/text_content 端到端、向后兼容、单语言分支均通过。
+
+**新增测试脚本（scripts/）：** test_block_roundtrip / test_section_title / test_e2e_section_title / test_render_block_compat / cleanup_orphan_records。

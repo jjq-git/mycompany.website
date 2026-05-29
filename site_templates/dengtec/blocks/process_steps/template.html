@@ -1,78 +1,17 @@
-{# 流程步骤 — 服务流程/合作方式展示 #}
-{% set md = module.data if module.data else {} %}
-{% set steps = md.get('steps', []) %}
-{% if steps is iterable and steps is not string and steps | length > 0 %}
-{% set section_bg = md.get('section_bg', '') %}
-{% set outer_w = md.get('outer_width', '') or settings.get('layout', {}).get('global_width', '') %}
-{% set inner_w = md.get('inner_width', '') %}
-{% set inner_bg = md.get('inner_bg', '') %}
-{% set padding_top = md.get('padding_top', '') %}
-{% set padding_right = md.get('padding_right', '') %}
-{% set padding_bottom = md.get('padding_bottom', '') %}
-{% set padding_left = md.get('padding_left', '') %}
-{% set direction = md.get('direction', 'horizontal') %}
-{% set step_style = md.get('step_style', 'number') %}
-{% set title_font_size = md.get('title_font_size', '') %}
-{% set title_color = md.get('title_color', '') %}
-{% set desc_font_size = md.get('desc_font_size', '') %}
-{% set desc_color = md.get('desc_color', '') %}
-{% set icon_color = md.get('icon_color', '') %}
-{% set number_bg = md.get('number_bg', '') %}
-{% set number_font_size = md.get('number_font_size', '') %}
-{% set inner_style_parts = [] %}
-{% if inner_bg %}{% set _ = inner_style_parts.append('background-color: ' ~ inner_bg ~ ';') %}{% endif %}
-{% if padding_top %}{% set _ = inner_style_parts.append('padding-top: ' ~ padding_top ~ ';') %}{% endif %}
-{% if padding_right %}{% set _ = inner_style_parts.append('padding-right: ' ~ padding_right ~ ';') %}{% endif %}
-{% if padding_bottom %}{% set _ = inner_style_parts.append('padding-bottom: ' ~ padding_bottom ~ ';') %}{% endif %}
-{% if padding_left %}{% set _ = inner_style_parts.append('padding-left: ' ~ padding_left ~ ';') %}{% endif %}
-{% set inner_style = inner_style_parts | join(' ') %}
-
-<section class="section"{% if section_bg or outer_w %} style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}"{% endif %}>
-  <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;{% if inner_style %} {{ inner_style }}{% endif %}">
-    {% if md.title %}
+<section data-name="process_steps" data-type="group" data-hideable data-style="cols" class="section">
+  <div class="container">
     <div class="section-header">
-      <h2 class="section-title">{{ md.title }}</h2>
-      {% if md.subtitle %}<p class="section-description">{{ md.subtitle }}</p>{% endif %}
+      <h2 data-name="heading" data-type="text" class="section-title">流程步骤</h2>
+      <p data-name="subheading" data-type="text" class="section-description">区块副标题</p>
     </div>
-    {% endif %}
-    <div class="ps-track ps-track--{{ direction }}"{% if direction == 'horizontal' %} style="grid-template-columns: repeat({{ steps | length }}, 1fr);"{% endif %}>
-      {% for step in steps %}
-      <div class="ps-step">
+    <div data-name="steps" data-type="list" class="ps-track ps-track--horizontal">
+      <div data-name="step" data-type="group" class="ps-step">
         <div class="ps-marker">
-          {% if step_style == 'icon' and step.icon %}
-          <div class="ps-icon"{% if icon_color %} style="color: {{ icon_color }};"{% endif %}>
-            {% set icon = step.icon | default('') %}
-            {% if icon == 'search' or icon == 'magnify' %}
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            {% elif icon == 'edit' or icon == 'pen' %}
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            {% elif icon == 'check' or icon == 'check-circle' %}
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            {% elif icon == 'truck' or icon == 'shipping' %}
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-            {% elif icon == 'settings' or icon == 'gear' %}
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-            {% elif icon == 'chat' or icon == 'message' %}
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-            {% else %}
-            <span class="ps-number"{% if number_bg or number_font_size %} style="{% if number_bg %}background-color: {{ number_bg }};{% endif %}{% if number_font_size %}font-size: {{ number_font_size }};{% endif %}"{% endif %}>{{ loop.index }}</span>
-            {% endif %}
-          </div>
-          {% else %}
-          <span class="ps-number"{% if number_bg or number_font_size %} style="{% if number_bg %}background-color: {{ number_bg }};{% endif %}{% if number_font_size %}font-size: {{ number_font_size }};{% endif %}"{% endif %}>{{ loop.index }}</span>
-          {% endif %}
+          <div data-name="icon" data-type="icon" class="ps-icon"></div>
         </div>
-        {% if direction == 'vertical' %}
-        <div class="ps-body">
-        {% endif %}
-        <h3 class="ps-title"{% if title_font_size or title_color %} style="{% if title_font_size %}font-size: {{ title_font_size }};{% endif %}{% if title_color %}color: {{ title_color }};{% endif %}"{% endif %}>{{ step.title }}</h3>
-        {% if step.desc %}<p class="ps-desc"{% if desc_font_size or desc_color %} style="{% if desc_font_size %}font-size: {{ desc_font_size }};{% endif %}{% if desc_color %}color: {{ desc_color }};{% endif %}"{% endif %}>{{ step.desc | replace('\n', '<br>') }}</p>{% endif %}
-        {% if direction == 'vertical' %}
-        </div>
-        {% endif %}
+        <h3 data-name="title" data-type="text" class="ps-title">步骤标题</h3>
+        <p data-name="desc" data-type="text" class="ps-desc">步骤说明文字</p>
       </div>
-      {% endfor %}
     </div>
   </div>
 </section>
-{% endif %}

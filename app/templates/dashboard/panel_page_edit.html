@@ -1572,14 +1572,122 @@
 <script src="/static/js/admin_modules.js?v=3"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
+<script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
 <script>
 var blockLibrary = JSON.parse(document.getElementById('blockLibraryJson').textContent || '[]');
 var datasetNames = JSON.parse(document.getElementById('datasetNamesJson').textContent || '[]');
+// data-* 样式注册表：token → {label, control, options}，供 schema 表单生成样式控件
+var styleRegistry = JSON.parse((document.getElementById('styleRegistryJson') || {}).textContent || '{}');
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>'"]/g, function(ch) {
     return {'&':'&','<':'<','>':'>',"'":'&#39;','"':'"'}[ch];
   });
+}
+
+/* ===== data-* 声明式 block 的 schema 驱动表单 =====
+   meta.schema 由后端 block_parser 解析、随 blockLibraryJson 下发。
+   字段 name 必须是 <prefix><fieldName>（prefix = module_<idx>_data_），
+   与后端 _parse_modules_form 的还原规则对齐。 */
+
+function _schemaEsc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* 单个内容字段 → 编辑控件 */
+function _schemaFieldHtml(prefix, field, mdata) {
+  var name = prefix + field.name;
+  var val = (mdata && mdata[field.name] != null) ? mdata[field.name] : '';
+  var label = field.name;  // schema 无中文 label，用字段名（后续可在 meta 补 label 映射）
+  var html = '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + _schemaEsc(label) + '</label>';
+
+  if (field.type === 'textarea' || field.type === 'richtext') {
+    var hint = field.type === 'richtext' ? ' （支持 HTML）' : '';
+    html += '<textarea class="form-control form-control-sm" name="' + _schemaEsc(name) + '" rows="4" placeholder="' + _schemaEsc(label + hint) + '">' + _schemaEsc(val) + '</textarea>';
+  } else if (field.type === 'image' || field.type === 'video' || field.type === 'embed' || field.type === 'audio') {
+    html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="' + _schemaEsc(field.type) + ' URL">';
+  } else {
+    // text / icon / 其他叶子 → 单行输入
+    html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '">';
+  }
+  html += '</div>';
+
+  // data-href：该字段可点 → 额外生成链接输入（key = href_field）
+  if (field.href_field) {
+    var hname = prefix + field.href_field;
+    var hval = (mdata && mdata[field.href_field] != null) ? mdata[field.href_field] : '';
+    html += '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + _schemaEsc(label + ' 链接') + '</label>' +
+      '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(hname) + '" value="' + _schemaEsc(hval) + '" placeholder="如 /contact"></div>';
+  }
+  return html;
+}
+
+/* 内容面板：遍历 schema.fields 生成所有字段 + 整块显隐开关 */
+function generateSchemaForm(prefix, schema, mdata, vTFn) {
+  mdata = mdata || {};
+  var html = '';
+  (schema.fields || []).forEach(function(field) {
+    // group/list/grid 等结构类型暂不在简单 block 出现（Phase 3+ 再支持），这里只处理叶子
+    if (field.type === 'group' || field.type === 'list' || field.type === 'grid') {
+      html += '<div class="small text-muted mb-2">（' + _schemaEsc(field.name) + '：列表/复合字段，编辑器暂不支持，Phase 3+ 支持）</div>';
+    } else {
+      html += _schemaFieldHtml(prefix, field, mdata);
+    }
+  });
+  // data-hideable → 整块显隐开关（复用 addModule 里的 vT）。显示存 'false'，隐藏存 'true'
+  if (schema.hideable && typeof vTFn === 'function') {
+    var hiddenVal = mdata._hidden === true || mdata._hidden === 'true' ? 'true' : 'false';
+    // vT 的 dv 是"是否可见"：可见=true → _hidden 应反过来。这里用独立开关语义：直接控制 _hidden
+    html += '<div class="mt-2 pt-2 border-top">' +
+      _schemaHideToggle(prefix + '_hidden', '整块显示', hiddenVal) + '</div>';
+  }
+  return html;
+}
+
+/* 显隐开关：勾选=显示(_hidden=false)，取消=隐藏(_hidden=true) */
+function _schemaHideToggle(name, label, hiddenVal) {
+  var checked = hiddenVal !== 'true';  // 默认显示
+  return '<div class="form-check form-switch">' +
+    '<input class="form-check-input" type="checkbox" role="switch" ' + (checked ? 'checked' : '') +
+    ' onchange="this.nextElementSibling.nextElementSibling.value = this.checked ? \'false\' : \'true\'">' +
+    '<label class="form-check-label small">' + _schemaEsc(label) + '</label>' +
+    '<input type="hidden" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(hiddenVal) + '">' +
+    '</div>';
+}
+
+/* 样式面板：遍历 schema.style_tokens 查 styleRegistry 生成控件 */
+function generateSchemaStyleForm(prefix, schema, mdata) {
+  mdata = mdata || {};
+  var tokens = schema.style_tokens || [];
+  if (!tokens.length) return '<div class="small text-muted">该模块无可调样式</div>';
+  var html = '';
+  tokens.forEach(function(token) {
+    var def = styleRegistry[token];
+    if (!def) return;
+    var name = prefix + 'style_' + token;
+    var val = (mdata && mdata['style_' + token] != null) ? mdata['style_' + token] : '';
+    html += '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + _schemaEsc(def.label || token) + '</label>';
+    if (def.control === 'select' || def.control === 'switch') {
+      html += '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">';
+      html += '<option value="">默认</option>';
+      (def.options || []).forEach(function(o) {
+        var ov = o.value, ol = o.text || o.value;
+        html += '<option value="' + _schemaEsc(ov) + '"' + (String(val) === String(ov) ? ' selected' : '') + '>' + _schemaEsc(ol) + '</option>';
+      });
+      html += '</select>';
+    } else if (def.control === 'color') {
+      html += '<div class="input-group input-group-sm">' +
+        '<input type="color" class="form-control form-control-color" value="' + _schemaEsc(val || '#888888') + '" oninput="this.nextElementSibling.value=this.value">' +
+        '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="如 #f5f7fa"></div>';
+    } else if (def.control === 'image') {
+      html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="背景图 URL">';
+    } else {
+      html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '">';
+    }
+    html += '</div>';
+  });
+  return html || '<div class="small text-muted">该模块无可调样式</div>';
 }
 
 function findBlockMeta(type) {
@@ -2020,7 +2128,12 @@ function addModule(type, variant) {
   var container = document.getElementById('selectedModules');
   var specialEditor = '';
   var styleEditor = '';
-  if (type === 'hero_banner') {
+  // data-* 声明式 block：用 schema 自动生成表单，拦截在所有硬编码分支之前。
+  // meta.is_data_attr/schema 由后端 scan_blocks 解析、随 blockLibraryJson 下发。
+  if (meta.is_data_attr && meta.schema) {
+    specialEditor = generateSchemaForm('module_' + idx + '_data_', meta.schema, {}, vT);
+    styleEditor = generateSchemaStyleForm('module_' + idx + '_data_', meta.schema, {});
+  } else if (type === 'hero_banner') {
     styleEditor =
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
     '<div class="row g-2 mb-2">' +
