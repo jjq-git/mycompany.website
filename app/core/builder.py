@@ -11,10 +11,105 @@ from pathlib import Path
 
 import yaml
 from flask import current_app
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, select_autoescape, pass_context
+from markupsafe import Markup
 
+from . import block_parser, block_renderer
 from . import menu as menu_lib
 from .models import Site
+
+
+# block schema 解析缓存：同一次构建里一个 block 只解析一次。
+# key = (template_name, block_name, variant)，value = (html, schema) 或 None（旧式 Jinja2）。
+_SCHEMA_CACHE = {}
+
+
+def _load_block_for_render(tpl_root, template_name, block_type, variant):
+    """加载 block 模板并判断走新/旧路径，带缓存。
+
+    返回 (html, schema)：schema 非 None → data-* 声明式；schema 为 None → 旧 Jinja2。
+    找不到模板返回 (None, None)。
+    """
+    cache_key = (str(tpl_root), block_type, variant)
+    if cache_key in _SCHEMA_CACHE:
+        return _SCHEMA_CACHE[cache_key]
+
+    blocks_dir = tpl_root / 'blocks' / block_type
+    # 与 _modules.html 的 include 列表一致：优先变体，回退默认 template.html
+    candidates = []
+    if variant and variant != 'default':
+        candidates.append(blocks_dir / 'variants' / f'{variant}.html')
+    candidates.append(blocks_dir / 'template.html')
+
+    html = None
+    for path in candidates:
+        if path.exists():
+            html = path.read_text(encoding='utf-8')
+            break
+
+    if html is None:
+        result = (None, None)
+    elif block_parser.is_data_attr_block(html):
+        try:
+            result = (html, block_parser.parse(html))
+        except Exception as e:
+            current_app.logger.warning('block %s 解析失败，回退 Jinja2: %s', block_type, e)
+            result = (html, None)
+    else:
+        result = (html, None)
+
+    _SCHEMA_CACHE[cache_key] = result
+    return result
+
+
+def _make_render_block(env, tpl_root, template_name, enable_data_attr):
+    """工厂：生成注册到 Jinja2 的 render_block 全局函数.
+
+    _modules.html 中对每个 module 调用 render_block(module)，本函数全权决定渲染路径：
+    - data-* 声明式 block 且开关开 → 用 block_renderer 渲染，返回安全 HTML
+    - 否则 → 走旧 Jinja2 include 逻辑（加载子模板渲染），行为与改造前完全一致
+    """
+    @pass_context
+    def render_block(jinja_ctx, module):
+        block_type = module.get('type')
+        variant = module.get('variant') or 'default'
+        if not block_type:
+            return Markup('')
+
+        html, schema = _load_block_for_render(tpl_root, template_name, block_type, variant)
+        if html is None:
+            return Markup('')  # 模板缺失，静默跳过（与 include ignore missing 一致）
+
+        # 新路径：开关开 + 是 data-* 声明式
+        if enable_data_attr and schema is not None:
+            data_dict = module.get('data') if isinstance(module.get('data'), dict) else {}
+            context = {'all_datasets': jinja_ctx.get('all_datasets', {})}
+            try:
+                out = block_renderer.render(html, schema, data_dict, context)
+                return Markup(out)
+            except Exception as e:
+                current_app.logger.error('block %s 渲染失败: %s', block_type, e)
+                return Markup('')
+
+        # 旧路径：用 Jinja2 渲染子模板，复用当前 ctx + 注入 module 变量
+        sub_ctx = dict(jinja_ctx)
+        sub_ctx['module'] = module
+        names = []
+        if variant and variant != 'default':
+            names.append(f'blocks/{block_type}/variants/{variant}.html')
+        # 若 template.html 已是 data-* 写法（schema 非 None），但开关关 →
+        # 不能把 data-* HTML 当 Jinja2 渲染（会原样吐出脏属性），优先回退到旧版备份。
+        if schema is not None:
+            names.append(f'blocks/{block_type}/template.jinja2.bak')
+        names.append(f'blocks/{block_type}/template.html')
+        try:
+            tpl = env.select_template(names)
+        except Exception:
+            return Markup('')
+        # rstrip 尾换行，对齐 {% include %} 的 trim_blocks 行为（消除纯空白 diff）
+        return Markup(tpl.render(**sub_ctx).rstrip('\n'))
+
+    return render_block
 
 
 def _load_yaml(path):
@@ -233,6 +328,9 @@ def build_site(site_id, base_url=''):
         autoescape=select_autoescape(['html']),
         trim_blocks=True, lstrip_blocks=True,
     )
+    # 注册 data-* block 双路径渲染入口（开关关时等价旧 Jinja2 include）
+    _enable_da = current_app.config.get('ENABLE_DATA_ATTR_BLOCKS', False)
+    env.globals['render_block'] = _make_render_block(env, tpl_root, site.template_name, _enable_da)
 
     output_root = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
     if output_root.exists():
@@ -304,6 +402,10 @@ def build_site(site_id, base_url=''):
             _render_for_language(env, tpl_html_dir, output_root, lang_code, common, lang_pages, lang_data, meta)
     else:
         # 单语言模式 (兼容旧模板)
+        # 修复：原先引用了未定义的 products_categories/products_items 导致单语言站点构建崩溃。
+        # 从 data 提取（与多语言分支的 lang_data 提取逻辑对齐），并补 all_datasets。
+        products_categories = _extract_products_categories(data)
+        products_items = _extract_products_items(data)
         common = {
             'settings': settings,
             'theme': theme,
@@ -317,6 +419,7 @@ def build_site(site_id, base_url=''):
             'portfolio': data.get('portfolio', []),
             'posts': data.get('posts', []),
             'features': data.get('features', []),
+            'all_datasets': data,
         }
         _render_for_language(env, tpl_html_dir, output_root, '', common, pages, data, meta)
 
@@ -372,6 +475,9 @@ def build_template_preview(template_name, base_url=''):
         autoescape=select_autoescape(['html']),
         trim_blocks=True, lstrip_blocks=True,
     )
+    # 注册 data-* block 双路径渲染入口（开关关时等价旧 Jinja2 include）
+    _enable_da = current_app.config.get('ENABLE_DATA_ATTR_BLOCKS', False)
+    env.globals['render_block'] = _make_render_block(env, tpl_root, template_name, _enable_da)
 
     output_root = Path(current_app.config['OUTPUT_DIR']) / '_preview' / template_name
     if output_root.exists():

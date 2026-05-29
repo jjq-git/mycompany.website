@@ -13,6 +13,7 @@ from pathlib import Path
 import yaml
 from flask import current_app
 
+from . import block_parser
 from .db import db
 from .models import Template
 
@@ -57,7 +58,10 @@ def scan_blocks(template_name):
     """扫描模板的 blocks/ 目录, 返回模块列表.
 
     返回: list of dict, 每个模块:
-        name, category, icon, description, fields, variants
+        name, category, icon, description, fields, variants, is_data_attr, schema
+
+    is_data_attr / schema: 若 template.html 为 data-* 声明式写法（不含 Jinja2 标记），
+    附加解析出的 schema（供编辑器 schema 驱动表单）；旧 Jinja2 block 这两项为 False/None。
     """
     blocks_dir = Path(current_app.config['TEMPLATES_DIR']) / template_name / 'blocks'
     if not blocks_dir.exists():
@@ -72,6 +76,22 @@ def scan_blocks(template_name):
             continue
 
         meta = yaml.safe_load(meta_path.read_text(encoding='utf-8')) or {}
+
+        # 检测 template.html 是否为 data-* 声明式，是则解析 schema。
+        # 解析失败（如旧式 Jinja2）静默降级，不影响扫描——混合模式共存。
+        is_data_attr = False
+        schema = None
+        tpl_path = block_dir / 'template.html'
+        if tpl_path.exists():
+            html = tpl_path.read_text(encoding='utf-8')
+            if block_parser.is_data_attr_block(html):
+                try:
+                    schema = block_parser.parse(html)
+                    is_data_attr = True
+                except Exception:
+                    is_data_attr = False
+                    schema = None
+
         blocks.append({
             'name': block_dir.name,
             'display_name': meta.get('name', block_dir.name),
@@ -80,6 +100,26 @@ def scan_blocks(template_name):
             'description': meta.get('description', ''),
             'fields': meta.get('fields', []),
             'variants': meta.get('variants', []),
+            'is_data_attr': is_data_attr,
+            'schema': schema,
         })
 
     return blocks
+
+
+def scan_block_schema(template_name, block_name):
+    """只解析单个 block 的 schema（不扫描整个目录）。
+
+    用于 API 端点按需取 schema。block 非 data-* 写法或解析失败返回 None。
+    """
+    tpl_path = (Path(current_app.config['TEMPLATES_DIR']) / template_name
+                / 'blocks' / block_name / 'template.html')
+    if not tpl_path.exists():
+        return None
+    html = tpl_path.read_text(encoding='utf-8')
+    if not block_parser.is_data_attr_block(html):
+        return None
+    try:
+        return block_parser.parse(html)
+    except Exception:
+        return None

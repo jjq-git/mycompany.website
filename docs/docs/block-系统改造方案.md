@@ -80,7 +80,10 @@ Block 模板用纯 HTML + data-* 属性编写，HTML 同时承担 Schema 和 Ren
 
 ## 三、分阶段实施
 
-### Phase 1：基础设施（不改任何 block 模板）
+### Phase 1：基础设施（不改任何 block 模板）✅ 已完成（2026-05-29）
+
+> 落地情况见文末「九、Phase 1 实施记录」。3 个新模块 + 开关 + loader 改造已就绪，
+> 39 项往返测试全过，开关默认关，现有 14 个 Jinja2 block 行为零变化。
 
 **新增 3 个 Python 模块：**
 
@@ -411,3 +414,39 @@ modules:
 - **每 Phase**：创建测试站点 → 编辑 block → 保存 → 构建 → 浏览器打开 output/ 确认渲染正确
 - **最终验证**：`flask --app run build-site 1` 构建已有站点，对比 output/ 与改造前是否一致（允许空格/缩进差异）
 - **前端验证**：打开店主后台 → 每个 block 的编辑面板表单由 schema 自动生成 → 确认所有字段可编辑、保存正确
+
+---
+
+## 八、原方案与现状的偏差（动手前核对发现）
+
+落地 Phase 1 前对照真实代码，发现几处方案需修正，记录在此供后续 Phase 参考：
+
+| 方案描述 | 实际代码 | 影响 |
+|---|---|---|
+| block 用 `{% include %}` 加载 | ✅ 属实，在 `_modules.html` 第 6 行 | 双路径渲染应通过 Jinja2 全局函数注入，不动 `_render_for_language` |
+| config 用 `ENABLE_DATA_ATTR_BLOCKS = True`（class 风格） | config 是 `load_config()` 返回 dict | 开关加进 dict，由环境变量 `ENABLE_DATA_ATTR_BLOCKS=1` 控制 |
+| 硬编码分支只在 `admin_modules.js`（约 600 行） | **还有 `panel_page_edit.html`（约 1250 行、14 个 elif）+ `page_home.html` 也有一份** | Phase 6 前端工作量比方案估计大；三处需同步改，否则首页/子页编辑器表单不一致 |
+| builder.py 有一处 env | **build_site 和 build_template_preview 各一处 env**（231/370 行） | 双路径渲染要在两处都注册 render_blocks |
+| 14 个 block | 实际目录 16 个（多 `header`/`item_data`，方案明确不动这两个） | scan_blocks 自然只扫到 14 个标准 block，符合预期 |
+
+## 九、Phase 1 实施记录（2026-05-29）
+
+**交付物（全部完成，开关默认关 → 现有功能零影响）：**
+
+| 文件 | 状态 | 说明 |
+|---|---|---|
+| `app/core/style_registry.py` | 新增 | CSS 变量注册表，5 个 token（cols/dir/bg/bg-color/text-align）；默认值只在 CSS，注册表不重复 |
+| `app/core/block_parser.py` | 新增 | 自建轻量 DOM 树（stdlib html.parser），还原父子关系识别项模板；输出 BlockSchema/FieldDef |
+| `app/core/block_renderer.py` | 新增 | 5 步管线：字段注入→列表展开→显隐→样式→清 data-*；在 DOM 树上变换后序列化（不用正则替换） |
+| `app/core/config.py` | 改 | 加 `ENABLE_DATA_ATTR_BLOCKS` 开关，默认 False |
+| `app/core/template_loader.py` | 改 | `scan_blocks()` 增加 `is_data_attr`/`schema` 字段；新增 `scan_block_schema()`；旧 Jinja2 block 解析失败静默降级 |
+| `scripts/test_block_roundtrip.py` | 新增 | 39 项往返测试，全过 |
+
+**与方案的实现差异：**
+- 方案 3.4 说"在 `_render_for_language()` 里注册 render_blocks"，实际**未改 builder.py**——Phase 1 定位为纯基础设施、零破坏，builder 的双路径渲染留到 Phase 2 接第一个真实 block 时再接（届时通过 Jinja2 全局函数注入，不动 `_render_for_language` 主体）。
+- 方案 3.6 的 `GET /_api/block/<name>/schema` API 端点**未做**——Phase 1 无前端消费方，留到 Phase 2 前端 schema 驱动表单时一起加（`scan_block_schema()` 已备好底层函数）。
+- 渲染器约定：用户调样式存 `style_<token>`（如 `style_cols`）、整块隐藏存 `_hidden`、数据集驱动列表的数据集名存 `dataset`。这些 key 约定原方案未明确，Phase 2 前端需对齐。
+
+**已验证（不影响现有功能的证据）：**
+- 开关默认 False；`scan_blocks('dengtec')` 扫 14 个旧 block 全部识别为 Jinja2 旧式、schema=None，无异常。
+- 往返测试覆盖：text/image/data-href、group、list(手动)、list(数据集驱动)、grid、data-style 注入、data-hideable、叶子空值自动隐藏、data-* 全清理。

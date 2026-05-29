@@ -1,48 +1,10 @@
-{# 标题模块 — 通用标题/文本/按钮模块 #}
-{% if module.data %}
-{% set md = module.data if module.data else {} %}
-{% if md.title or md.tag or md.desc or (md.btn_text and md.btn_url) %}
-{# ---- 外层样式 ---- #}
-{% set section_bg = md.get('section_bg', '') %}
-{% set outer_w = md.get('outer_width', '') or settings.get('layout', {}).get('global_width', '') %}
-{% set inner_w = md.get('inner_width', '') %}
-{% set margin_top = md.get('margin_top', '') %}
-{% set margin_right = md.get('margin_right', '') %}
-{% set margin_bottom = md.get('margin_bottom', '') %}
-{% set margin_left = md.get('margin_left', '') %}
-{# ---- 内层边距 ---- #}
-{% set padding_top = md.get('padding_top', '') %}
-{% set padding_right = md.get('padding_right', '') %}
-{% set padding_bottom = md.get('padding_bottom', '') %}
-{% set padding_left = md.get('padding_left', '') %}
-{# ---- 内容与文字 ---- #}
-{% set text_align = md.get('text_align', 'center') %}
-{% set title_color = md.get('title_color', '') %}
-{% set desc_color = md.get('desc_color', '') %}
-{% set tag_bg = md.get('tag_bg', '') %}
-{% set tag_color = md.get('tag_color', '') %}
-{% set title_size = md.get('title_size', '') %}
-{% set desc_size = md.get('desc_size', '') %}
-{% set btn_bg = md.get('btn_bg', '') %}
-{% set btn_color = md.get('btn_color', '') %}
-
-<section class="section" style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}{% if margin_top %}margin-top: {{ margin_top }};{% endif %}{% if margin_right %}margin-right: {{ margin_right }};{% endif %}{% if margin_bottom %}margin-bottom: {{ margin_bottom }};{% endif %}{% if margin_left %}margin-left: {{ margin_left }};{% endif %}">
-  <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
-    <div class="st-block" style="text-align: {{ text_align }};{% if padding_top %}padding-top: {{ padding_top }};{% endif %}{% if padding_right %}padding-right: {{ padding_right }};{% endif %}{% if padding_bottom %}padding-bottom: {{ padding_bottom }};{% endif %}{% if padding_left %}padding-left: {{ padding_left }};{% endif %}">
-      {% if md.tag %}
-      <span class="st-tag" style="{% if tag_bg %}background: {{ tag_bg }};{% endif %}{% if tag_color %}color: {{ tag_color }};{% endif %}">{{ md.tag }}</span>
-      {% endif %}
-      {% if md.title %}
-      <h2 class="st-title" style="{% if title_color %}color: {{ title_color }};{% endif %}{% if title_size %}font-size: {{ title_size }};{% endif %}">{{ md.title }}</h2>
-      {% endif %}
-      {% if md.desc %}
-      <p class="st-desc" style="{% if desc_color %}color: {{ desc_color }};{% endif %}{% if desc_size %}font-size: {{ desc_size }};{% endif %}">{{ md.desc }}</p>
-      {% endif %}
-      {% if md.btn_text and md.btn_url %}
-      <a href="{{ md.btn_url }}" class="st-btn" style="{% if btn_bg %}background: {{ btn_bg }};{% endif %}{% if btn_color %}color: {{ btn_color }};{% endif %}"{% if md.btn_target == '_blank' %} target="_blank" rel="noopener"{% endif %}>{{ md.btn_text }}</a>
-      {% endif %}
+<section data-name="section_title" data-type="group" data-hideable data-style="text-align" class="section">
+  <div class="container">
+    <div class="st-block">
+      <span data-name="tag" data-type="text" class="st-tag">标签文字</span>
+      <h2 data-name="title" data-type="text" class="st-title">区块标题</h2>
+      <p data-name="desc" data-type="textarea" class="st-desc">区块描述文字，介绍这一部分的内容。</p>
+      <a data-name="btn" data-type="text" data-href="btn_url" class="st-btn">了解更多</a>
     </div>
   </div>
 </section>
-{% endif %}
-{% endif %}

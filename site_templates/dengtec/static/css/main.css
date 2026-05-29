@@ -5175,6 +5175,8 @@ h6 { font-size: var(--font-size-md); }
 .st-block {
   /* max-width: var(--container-narrow, 1280px); */
   margin: 0 auto;
+  /* text-align 由 data-style="text-align" 注入的 --text-align 变量控制，默认居中 */
+  text-align: var(--text-align, center);
 }
 
 .st-tag {
@@ -5207,19 +5209,9 @@ h6 { font-size: var(--font-size-md); }
   margin-right: auto;
 }
 
-/* 文本左对齐时，描述文字也左对齐 */
-.st-block[style*="text-align: left"] .st-desc,
-.st-block[style*="text-align:left"] .st-desc {
-  margin-left: 0;
-  margin-right: 0;
-}
-
-/* 文本右对齐时，描述文字也右对齐 */
-.st-block[style*="text-align: right"] .st-desc,
-.st-block[style*="text-align:right"] .st-desc {
-  margin-right: 0;
-  margin-left: auto;
-}
+/* 注：对齐改由 data-style="text-align" 注入的 --text-align 变量统一控制
+   （写在祖先 <section> 上，.st-block 通过 var() 继承）。desc 的左右 auto
+   margin 在居中场景让长文本居中收窄；左/右对齐时 text-align 已生效，足够。 */
 
 .st-btn {
   display: inline-flex;

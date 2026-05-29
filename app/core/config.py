@@ -53,6 +53,10 @@ def load_config(override=None):
         # 平台
         'PLATFORM_DOMAIN': os.environ.get('PLATFORM_DOMAIN', 'mycompany.website'),
 
+        # data-* 声明式 block 总开关（Phase 1 默认关：基础设施就绪但不影响现有功能）。
+        # 关闭时整个系统行为与改造前完全一致；逐个 block 转换验证通过后再打开。
+        'ENABLE_DATA_ATTR_BLOCKS': os.environ.get('ENABLE_DATA_ATTR_BLOCKS', '').strip() == '1',
+
         # AI 翻译 (DeepSeek / OpenAI 兼容)
         'TRANSLATION_API_KEY': os.environ.get('TRANSLATION_API_KEY', ''),
         'TRANSLATION_API_BASE': os.environ.get('TRANSLATION_API_BASE', 'https://api.deepseek.com/v1'),
