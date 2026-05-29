@@ -1,7 +1,5 @@
 # data-* 属性速查
 
-> 设计规范详见 [block-data-attributes.md](block-data-attributes.md)，迁移方案详见 [block-data-attributes-dev-plan.md](block-data-attributes-dev-plan.md)。
-
 | # | 属性 | 用途 |
 |---|---|---|
 | 1 | [`data-type`](#1-data-type) | 内容类型，决定如何存储、注入、编辑（含 list / grid 等全部枚举值） |
@@ -9,7 +7,7 @@
 | 3 | [`data-href`](#3-data-href) | 链接地址，让任意元素可点击 |
 | 4 | [`data-style`](#4-data-style) | CSS 变量通道，开放给用户的结构选择 |
 | 5 | [`data-hideable`](#5-data-hideable) | 整块可隐藏（简单开关） |
-| 6 | [`data-source`](#6-data-source) | 列表数据来源（手动 / 动态 URL） |
+| 6 | [`data-source`](#6-data-source) | 列表数据来源（手动 / 数据集） |
 | 7 | [`data-page-size`](#7-data-page-size) | 列表分页，每页条数 |
 | 8 | [`data-cols`](#8-data-cols) | 二维栅格列数 |
 
@@ -156,6 +154,8 @@ HTML 模板同时承担 **Schema** 和 **Render** 两个角色。四类关注点
 |---|---|---|
 | `select` | 预设选项 | 列数 (2/3/4) |
 | `switch` | 二选一 | 图文方向 (左图右文/右图左文) |
+| `image` | 图片选择/上传 | 背景图 (hero banner) |
+| `color` | 颜色选择器 | 背景色 (hero banner 底色) |
 
 ```html
 <!-- 开放：列数 + 图文方向 -->
@@ -189,6 +189,8 @@ const STYLE_REGISTRY = {
                     { value: "row-reverse", text: "图右文左" }] },
   cols: { label: "每行个数", control: "select", default: "3",
           options: [{ value: "2", text: "2" }, { value: "3", text: "3" }, { value: "4", text: "4" }] },
+  bg:   { label: "背景图", control: "image", default: "" },
+  "bg-color": { label: "背景色", control: "color", default: "" },
 };
 ```
 
@@ -263,25 +265,36 @@ const STYLE_REGISTRY = {
 | 值 | 类型 | 项从哪来 | 用户能干啥 |
 |---|---|---|---|
 | 省略 / `manual` | 手动 | HTML 写死 | 增/删/改每项 |
-| 一个 URL | 动态 | fetch 该 URL 的 JSON | 只配查询（写在 URL 里） |
+| 存在（空值或数据集名） | 动态 | 店主在后台选择数据集 | 选数据集 + 配每行列数 / 最大显示条数 |
+
+存在 `data-source` 属性 = 告诉系统"这个 list/grid 是数据驱动的"。店主在后台把模块加到页面时，系统根据此属性显示**数据集下拉框**（产品 / 文章 / 案例 / 服务）。店主的选择存到页面配置（`pages/<name>.yaml`），构建时从 `sites/<id>/data/<dataset>.yaml` 取数据渲染。
+
+模板作者可通过属性值限定可选数据集：`data-source="products"` 表示该模块只能用产品数据集；`data-source`（空值）表示店主可自由选择。
 
 ```html
-<!-- 手动：菜单 -->
+<!-- 手动：菜单（店主自己增删每一项） -->
 <nav data-name="main-menu" data-type="list" data-source="manual">
   <a data-name="item" data-type="text" data-href="/">首页</a>
 </nav>
 
-<!-- 动态：文章列表（查询写进 URL query，前端渲染器解释） -->
-<section data-name="news" data-type="list"
-         data-source="/data/articles.json?category=news&sort=date_desc&limit=9">
+<!-- 动态：店主在后台选择数据集 -->
+<section data-name="news" data-type="list" data-source>
   <article data-name="post" data-type="group">
     <img data-name="cover" data-type="image" src="default.jpg">
     <h3 data-name="title" data-type="text" data-href="">文章标题</h3>
   </article>
 </section>
+
+<!-- 限定数据集：只能用产品数据 -->
+<section data-name="products" data-type="list" data-source="products">
+  <div data-name="product" data-type="group">
+    <img data-name="img" data-type="image" src="default.jpg">
+    <h4 data-name="name" data-type="text" data-href="">产品名</h4>
+  </div>
+</section>
 ```
 
-**静态站要点：** 静态服务器忽略 `?` 参数，`articles.json?category=news` 返回的是整个文件。query 是给前端渲染器的指令——过滤/排序/截断在前端 JS 做。
+发布后，构建器将数据集转为 `data.json` 放在列表页同级目录，前端 JS 用其做过滤/排序/分页。`data-page-size` 控制每页条数。
 
 ### 7. `data-page-size`
 
