@@ -10,20 +10,15 @@ mycompany.website 的设计文档。
 
 ## 系统设计
 
-| 文档                                       | 说明                                  | 阅读对象      |
-| ------------------------------------------ | ------------------------------------- | ------------- |
-| [architecture.md](architecture.md)         | 整体架构、技术决策                    | 全体          |
-| [database.md](dashboard/database.md)                 | 数据库表（平台级元数据，4 张表）      | 后端          |
-| [sites.md](site/sites.md)                       | 站点源内容（settings / pages / data） | 后端          |
-| [output.md](site/output.md)                     | 生成的静态站（目录 / 页面 URL / 渲染策略） | 后端          |
-| [domains.md](cloud/domains.md)                   | 子域分配、URL 路径、预览、自定义域名  | 后端 / 运维   |
-| [themes/README.md](themes/README.md)       | 主题开发（目录结构、布局、block）     | 后端 / 设计师 |
-| [themes/meta.yaml.md](themes/meta.yaml.md) | 主题 `meta.yaml` 字段说明             | 后端 / 设计师 |
-| [content.md](dashboard/content.md)                   | 用户后台（内容管理界面）              | 前端          |
-| [publish.md](site/publish.md)                   | 发布、优化、自定义口子                | 后端          |
-| [seo.md](site/seo.md)                           | SEO + AI 检索（sitemap、llms.txt 等） | 后端 / 设计师 |
-| [i18n.md](i18n.md)                         | 用户网站多语言 + AI 翻译（Phase 2）   | 后端          |
-| [admin-i18n.md](dashboard/admin-i18n.md)             | 后台界面多语言（中 / 英）             | 后端          |
+| 入口 | 说明 | 阅读对象 |
+| --- | --- | --- |
+| [architecture.md](architecture.md) | 整体架构、技术决策 | 全体 |
+| [site/](site/README.md) | 一个用户站点：源内容 → 产物 → 发布 → SEO → 多语言 | 后端 |
+| [dashboard/](dashboard/README.md) | 后台 UI + 数据层：内容管理、后台多语言、数据库 | 后端 / 前端 |
+| [cloud/](cloud/README.md) | 托管设施：子域、自定义域名、CDN / SSL | 后端 / 运维 |
+| [themes/](themes/README.md) | 主题开发：结构、布局、block、meta、settings | 后端 / 设计师 |
+
+> 每个文件夹的具体文档，见其 `README.md`。
 
 ## 名词
 

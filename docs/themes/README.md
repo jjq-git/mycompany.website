@@ -49,7 +49,7 @@ builder 渲染每页时注入：
 | `base_url` | URL 前缀（拼资源与内部链接） | `''` |
 | `render_block(module)` | 渲染一个 block（全局函数） | 见第四节 |
 
-> **`settings` vs `t`**：`settings.*` 是用户填的内容（站名、菜单、产品…），多语言靠 `lang/<code>/` 覆盖；`t.*` 是主题自带的界面文案（导航词、按钮字），来自主题的 `translations.yaml`。详见 [../i18n.md](../i18n.md)。
+> **`settings` vs `t`**：`settings.*` 是用户填的内容（站名、菜单、产品…），多语言靠 `lang/<code>/` 覆盖；`t.*` 是主题自带的界面文案（导航词、按钮字），来自主题的 `translations.yaml`。详见 [i18n.md](../site/i18n.md)。
 
 ## 三、放 CSS / JS
 

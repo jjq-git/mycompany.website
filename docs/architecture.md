@@ -84,4 +84,4 @@ instance/            SQLite 数据库（gitignored）
 - [themes/blocks/](themes/blocks/) — Block 系统
 - [content.md](dashboard/content.md) — 用户三栏后台
 - [publish.md](site/publish.md) — 发布、优化、自定义口子
-- [i18n.md](i18n.md) — 多语言与 AI 翻译
+- [i18n.md](site/i18n.md) — 多语言与 AI 翻译

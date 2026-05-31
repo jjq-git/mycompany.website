@@ -11,12 +11,15 @@
 | [publish.md](publish.md) | 发布：资源语言策略、字体 / 图片优化、CDN、自定义口子 |
 | [seo.md](seo.md) | SEO + AI 检索（sitemap、hreflang、llms.txt 等） |
 | [LLM.md](LLM.md) | LLM / AI 爬虫检索优化（占位，待补） |
+| [i18n.md](i18n.md) | 多语言 + AI 翻译用户网站内容（Phase 2） |
 
 ## 工作流
 
 ```mermaid
 flowchart LR
     A[源内容<br/>sites.md] --> B[构建渲染]
+    A -.->|AI 翻译| M[多语言<br/>i18n.md]
+    M -.-> B
     B --> C[静态产物<br/>output.md]
     C --> D[发布 / CDN<br/>publish.md]
     C --> E[SEO / AI 检索<br/>seo.md · LLM.md]

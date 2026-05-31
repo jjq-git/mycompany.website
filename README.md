@@ -100,6 +100,6 @@ ls sites/1/
 | [docs/dashboard/content.md](docs/dashboard/content.md)               | 店主后台（内容管理界面）                       |
 | [docs/site/publish.md](docs/site/publish.md)               | 发布、优化、自定义口子                         |
 | [docs/site/seo.md](docs/site/seo.md)                       | SEO + AI 检索（sitemap、llms.txt 等）          |
-| [docs/i18n.md](docs/i18n.md)                     | 多语言 + AI 翻译                               |
+| [docs/site/i18n.md](docs/site/i18n.md)                     | 多语言 + AI 翻译                               |
 
 给 Claude 的工作指引：[CLAUDE.md](CLAUDE.md)

@@ -106,7 +106,7 @@ erDiagram
 - **用户权限**：
   - `User.role`：平台角色（owner / admin）；
   - `User.level`：会员等级，与主题 `level` 比较决定可选用哪些主题（[meta.yaml.md](../themes/meta.yaml.md) §四）；
-  - 能开几种语言等配额由 `level` 决定，**分级待定**（[i18n.md](../i18n.md) §〇）；
+  - 能开几种语言等配额由 `level` 决定，**分级待定**（[i18n.md](../site/i18n.md) §〇）；
   - 计费 / 到期不在 `User`，按站点走 `Site.expires_at`。
 - **主题多值字段**：
   - `industry` / `tags` / `languages`：数组（JSON 列）；
