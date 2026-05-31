@@ -7,7 +7,7 @@
 | 3 | [`data-href`](#3-data-href) | 链接地址，让任意元素可点击 |
 | 4 | [`data-style`](#4-data-style) | CSS 变量通道，开放给用户的结构选择 |
 | 5 | [`data-hideable`](#5-data-hideable) | 整块可隐藏（简单开关） |
-| 6 | [`data-source`](#6-data-source) | 列表数据来源（手动 / 数据集） |
+| 6 | [`data-source`](#6-data-source) | 列表数据来源（手动 / 数据集 / 保留源） |
 | 7 | [`data-page-size`](#7-data-page-size) | 列表分页，每页条数 |
 | 8 | [`data-cols`](#8-data-cols) | 二维栅格列数 |
 
@@ -28,7 +28,7 @@ HTML 模板同时承担 **Schema** 和 **Render** 两个角色。四类关注点
 
 **样式原则：只开放主题作者声明过的 CSS 变量。** 用户通过预设选项（下拉/开关/颜色选择器）调整样式，不输入自由数值。所有可调项在全局注册表集中定义。
 
-**显隐原则：只有一种机制。** 用户手动开关 → `data-hideable` + 原生 `hidden`。字段值为空时元素自动隐藏（由类型驱动，不依赖额外属性）。
+**显隐原则：两类显隐。** 用户手动开关 → `data-hideable` + 原生 `hidden`；字段值为空时元素自动隐藏（由类型驱动，不依赖额外属性）。
 
 ---
 
@@ -267,16 +267,20 @@ const STYLE_REGISTRY = {
 | 值 | 类型 | 项从哪来 | 用户能干啥 |
 |---|---|---|---|
 | 省略 / `manual` | 手动 | HTML 写死 | 增/删/改每项 |
-| 存在（空值或数据集名） | 动态 | 用户在后台选择数据集 | 选数据集 + 配每行列数 / 最大显示条数 |
+| 空值 或 数据集名 | 数据集 | 用户在后台选择数据集 | 选数据集 + 配每行列数 / 最大显示条数 |
+| `menu` | 保留源 | builder 从 `settings.menu` 注入（已解析出 `url` / `active` / `label`） | 在「菜单」里编辑，不在 block 内逐项填 |
+| `languages` | 保留源 | builder 注入已启用语言 + 当前语言 | 无（语言切换器自动生成） |
 
-存在 `data-source` 属性 = 告诉系统"这个 list/grid 是数据驱动的"。用户在后台把模块加到页面时，系统根据此属性显示**数据集下拉框**（产品 / 文章 / 案例 / 服务）。用户的选择存到页面配置（`pages/<name>.yaml`），构建时从 `sites/<id>/data/<dataset>.yaml` 取数据渲染。
+存在 `data-source` 属性 = 告诉系统"这个 list/grid 不是手动写死的"。取数据集时（空值或数据集名），用户在后台把模块加到页面，系统据此显示**数据集下拉框**（产品 / 文章 / 案例 / 服务）；用户的选择存到页面配置（`pages/<name>.yaml`），构建时从 `sites/<id>/data/<dataset>.yaml` 取数据渲染。
 
 主题作者可通过属性值限定可选数据集：`data-source="products"` 表示该模块只能用产品数据集；`data-source`（空值）表示用户可自由选择。
 
+**保留源（`menu` / `languages`）专供 Header / Footer 这类全局块**：导航菜单和语言切换是运行时算出来的（菜单含 `active` 态、语言切换含"已启用哪些 + 当前哪个"），不该让用户在 block 里逐项手填，故用保留名让 builder 注入。nav 仍是声明式 `list`，只是数据来自 `settings.menu` 而非手填。
+
 ```html
-<!-- 手动：菜单（用户自己增删每一项） -->
-<nav data-name="main-menu" data-type="list" data-source="manual">
-  <a data-name="item" data-type="text" data-href="/">首页</a>
+<!-- 手动：自定义链接组（用户自己增删每一项；主导航请用 data-source="menu"） -->
+<nav data-name="quick-links" data-type="list" data-source="manual">
+  <a data-name="item" data-type="text" data-href="/">快速链接</a>
 </nav>
 
 <!-- 动态：用户在后台选择数据集 -->
@@ -296,7 +300,11 @@ const STYLE_REGISTRY = {
 </section>
 ```
 
-发布后，构建器将数据集转为 `data.json` 放在列表页同级目录，前端 JS 用其做过滤/排序/分页。`data-page-size` 控制每页条数。
+发布后，**列表的全部条目在构建期就渲进同一个列表页 HTML**——不生成 `data.json`、不靠 JS 取数据渲染，内容直接在 HTML 里，SEO 吃得到。筛选 / 排序 / 分页由 JS 对**已渲染的 DOM** 做显隐：超出当前页的条目置 `hidden`，翻页 / 切筛选只是切换显隐，零网络请求；关 JS 时降级为"全部条目、不分页"，内容完整。`data-page-size` 控制每页显示几条（见 §7）。
+
+**筛选靠 `data-f-*`：** 构建时把每条记录的可筛字段盖到条目根元素上（如 `data-f-tags="智能锁,户外"`），JS 读它做显隐，不需要 json。筛选维度用用户自定义的 **tag**（产品记录里的 `tags` 字段，用户建产品时自己打——这是 per-site 的自由词表，区别于主题 `meta.yaml` 里受控的 `tags`）；筛选条按所有条目的 distinct tag 自动汇总生成，MVP 先做单选。
+
+**图片懒加载：** 列表条目里的图片一律加原生 `loading="lazy"`（首屏第一行除外，免拖慢 LCP）。被分页 / 筛选 `hidden` 掉的条目，其图片也不会下载——滚到视口或被显出来才加载。所以即使几百条全在 DOM 里，首屏也只下当前可见的那几张。
 
 ### 7. `data-page-size`
 

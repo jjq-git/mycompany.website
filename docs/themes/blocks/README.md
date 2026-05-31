@@ -52,9 +52,8 @@ template.html + module.data ──注入──▶ 干净静态 HTML（剥掉 dat
 - **数据格式**：`module.data` 的 key = `data-name`；换变体 = 同一份数据换一套 HTML 结构。
 - **样式只开放结构性变量**：`data-style` + 约 10 个全局 CSS 变量（cols / dir / bg…），登记在 `STYLE_REGISTRY`；不开像素级微调（padding / margin / 字号由主题 CSS 定）。
 - **CSS 变量默认值只写在 CSS 里**（`var(--cols, 3)`），HTML 与注册表不重复。
+- **Header / Footer 也是 block**：写在 `blocks/header/`、`blocks/footer/`，必显（不加 `data-hideable`）。其中导航菜单、语言切换不靠用户手填——用保留数据源 `data-source="menu"` / `"languages"` 由 builder 注入；页眉 / 页脚的不同排版走 block 变体（`variants/*.html`，对应 `settings.header.variant` / `settings.footer.variant`）。
 
 ## 不做
 
-- **Header / Footer 不走 data-***：涉及菜单树、语言切换等复杂逻辑，用 Jinja2 在 `_base.html` 里渲染。
-- 不做 `richtext` / `icon` / `audio` 等类型 —— 按需再加。
 - 不开放像素级样式微调。

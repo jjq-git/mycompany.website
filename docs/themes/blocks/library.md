@@ -14,13 +14,18 @@
 
 ## 一、全局
 
+> Header / Footer 是 block（写在 `blocks/header/`、`blocks/footer/`，必显）。导航菜单用保留数据源 `data-source="menu"`（builder 从 `settings.menu` 注入 label/url/active），语言切换用 `data-source="languages"`——不靠用户在 block 里手填。页眉 / 页脚的不同排版走 block 变体（`variants/*.html`）。详见 [data-attributes.md](data-attributes.md#6-data-source)。
+
 ### Header 顶部导航（必显）
 
 ```html
 <header data-name="header" data-type="group">
   <img data-name="logo" data-type="image" data-href="/" src="logo.svg">
-  <nav data-name="nav" data-type="list" data-source="manual">
-    <a data-name="item" data-type="text" data-href="/">首页</a>
+  <nav data-name="nav" data-type="list" data-source="menu">   <!-- 导航来自 settings.menu，builder 注入 label/url/active -->
+    <a data-name="item" data-type="text">首页</a>
+  </nav>
+  <nav data-name="lang-switcher" data-type="list" data-source="languages">  <!-- 语言切换，builder 注入已启用语言；单语言时自动不渲染 -->
+    <a data-name="lang" data-type="text">中文</a>
   </nav>
   <a data-name="cta" data-type="text" data-href="/contact">联系我们</a>
 </header>
@@ -194,9 +199,8 @@
   <div data-name="plan" data-type="group">
     <h3   data-name="name"  data-type="text">基础版</h3>
     <span data-name="price" data-type="text">¥99/月</span>
-    <ul   data-name="feats" data-type="list">
-      <li data-name="feat" data-type="text">功能一</li>
-    </ul>
+    <!-- 功能点用 richtext 叶子，不嵌套 list（满足"不支持嵌套 list/grid"约束），用户自己写带勾/划线的列表 -->
+    <div  data-name="feats" data-type="richtext"><ul><li>功能一</li><li>功能二</li></ul></div>
     <a data-name="btn" data-type="text" data-href="/buy">购买</a>
   </div>
 </section>
@@ -225,14 +229,16 @@
 
 ## 四、列表 / 内容型（带分页）
 
+> 列表全量渲进**一个 HTML 页**，JS 对 DOM 做分页 / 筛选显隐（不生成 data.json，内容在 HTML 里、SEO 吃得到）。条目图片加 `loading="lazy"`（首屏除外），被分页 / 筛选隐藏的条目不下载图。筛选维度 = 用户自定义 tag，构建期盖到条目的 `data-f-tags`。详见 [data-attributes.md](data-attributes.md#6-data-source)。
+
 ### News 新闻 / 动态列表
 
 ```html
 <section data-name="news" data-type="list"
          data-source
          data-hideable data-style="cols" data-page-size="9" style="--cols: 3">
-  <article data-name="post" data-type="group">   <!-- 项模板 = 字段映射 -->
-    <img  data-name="cover"   data-type="image" data-href="">         <!-- ← 记录.cover/.url -->
+  <article data-name="post" data-type="group" data-f-tags="">   <!-- 项模板；data-f-tags 由 builder 注入，供 JS 筛选 -->
+    <img  data-name="cover"   data-type="image" data-href="" loading="lazy">   <!-- ← 记录.cover/.url -->
     <h3   data-name="title"   data-type="text" data-href="">新闻标题</h3>
     <span data-name="date"    data-type="text">2026-05-27</span>
     <p    data-name="excerpt" data-type="text">摘要……</p>
@@ -246,8 +252,8 @@
 <section data-name="products" data-type="list"
          data-source
          data-hideable data-style="cols" data-page-size="12" style="--cols: 4">
-  <div data-name="product" data-type="group">   <!-- 项模板 = 字段映射 -->
-    <img data-name="img"  data-type="image" data-href="">       <!-- ← 记录.img/.url -->
+  <div data-name="product" data-type="group" data-f-tags="">   <!-- 项模板；data-f-tags 由 builder 注入，供 JS 按 tag 筛选 -->
+    <img data-name="img"  data-type="image" data-href="" loading="lazy">   <!-- ← 记录.img/.url -->
     <h4  data-name="name" data-type="text" data-href="">产品名</h4>
   </div>
 </section>
@@ -260,7 +266,7 @@
   <h1   data-name="title" data-type="text">文章标题</h1>
   <span data-name="meta"  data-type="text">2026-05-27 · 作者</span>
   <img  data-name="cover" data-type="image" src="cover.jpg">
-  <div  data-name="body"  data-type="text">正文（富文本）……</div>
+  <div  data-name="body"  data-type="richtext">正文（富文本）……</div>
 </article>
 ```
 
@@ -345,5 +351,5 @@
 | `data-style="bg-color"` | 任何需要背景色的区块                                                    |
 | `data-cols`             | logo 墙 / 团队 / 价格 / 画廊 / 资质 / 参数表（真阵列）                 |
 | `data-page-size`        | news / products 列表分页                                               |
-| `data-source`           | menu=`manual`（手动增删）；news/products 存在即数据驱动，用户在后台选数据集 |
+| `data-source`           | header nav=`menu`、语言切换=`languages`（保留源，builder 注入）；news/products 空值 = 数据驱动（后台选数据集）；其它手动列表=`manual` |
 | `data-hideable`         | 除 Header / Footer / 文章正文 / 产品正文 / Contact 外的展示块          |
