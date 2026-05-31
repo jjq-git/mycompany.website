@@ -25,6 +25,21 @@ sites/<name>/
 
 根目录的 `settings.yaml` / `pages/` / `data/` 是**源语言**内容 —— 用户建站时选的、用来填真实内容的语言（`settings.default_language` 记录它），不固定为某种语言。源语言内容由建站时把所选主题 `themes/<name>/i18n/<源语言>/` 整套拷到 `sites/<name>/` 而来，再由用户用母语填真实内容。`lang/<目标语言>/` 是把源语言逐篇 AI 翻译成目标语言的产出；其下同名文件覆盖源语言，缺失字段回退源语言。
 
+#### 生成的页面与 URL（导出的静态站）
+
+| 内容 | 生成路径 | 来源 |
+| --- | --- | --- |
+| 首页 | `/index.html` | `pages/home` |
+| 独立页 | `/<页面>.html`，如 `/contact_us.html` | `pages/<页面>` |
+| 产品列表 | `/products.html` | 数据集 `products` |
+| 产品详情 | `/products/<slug>.html`，如 `/products/abc.html` | `products` 每条（按 `slug`） |
+| 主题资源 | `/asset/`（css / js） | 主题 `static/` |
+| 用户资源 | 可自建目录：`image/`、`datasheet/` 等 | 上传的图片 / 图纸 / 视频 |
+
+> 资源目录由用户自定（`image/`、`datasheet/`…），构建时原样带进静态站。
+
+
+
 ### settings.yaml
 
 站点级配置（站名 / 配色 / 菜单 / 语言 / 页眉页脚 / 社交）。字段与示例见 [themes/settings.yaml.md](themes/settings.yaml.md)。
