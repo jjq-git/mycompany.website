@@ -13,7 +13,8 @@ mycompany.website 的设计文档。
 | 文档                                       | 说明                                  | 阅读对象      |
 | ------------------------------------------ | ------------------------------------- | ------------- |
 | [architecture.md](architecture.md)         | 整体架构、技术决策                    | 全体          |
-| [data-model.md](data-model.md)             | 数据库表 + 磁盘 YAML 结构             | 后端          |
+| [database.md](database.md)                 | 数据库表（平台级元数据，4 张表）      | 后端          |
+| [data-model.md](data-model.md)             | 磁盘 YAML 结构（网站内容模型）        | 后端          |
 | [infrastructure.md](infrastructure.md)     | CDN、SSL 自动化                       | 后端 / 运维   |
 | [domains.md](domains.md)                   | 子域分配、URL 路径、预览、自定义域名  | 后端 / 运维   |
 | [themes/README.md](themes/README.md)       | 主题开发（目录结构、布局、block）     | 后端 / 设计师 |

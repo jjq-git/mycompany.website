@@ -328,7 +328,7 @@ Let's Encrypt 跟着 CNAME 走，验证成功。
 
 ## 七、provisioning_jobs 表的作用
 
-这张表是**所有云资源自动化的事务总账**。详见 [data-model.md](data-model.md)。
+这张表是**所有云资源自动化的事务总账**（数据库后期表，索引见 [database.md](database.md)）。
 
 为什么需要：
 
