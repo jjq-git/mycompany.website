@@ -20,7 +20,7 @@
 ## 完整示例
 
 ```yaml
-title: 灯特科技                # 站点显示名
+title: 德恩基                  # 站点显示名
 slogan: 专业静音仓制造商
 favicon: /assets/favicon.webp
 logo: /assets/logo.webp
@@ -38,6 +38,21 @@ header: {variant: ...}        # 选用的页眉变体
 footer: {variant: ...}        # 选用的页脚变体
 custom_css: ""                # 全站自定义 CSS（注入每页末尾）
 head_html: ""                 # 注入 <head> 的代码（百度统计等）
+```
+
+> **示例语言无关**：上面拿 zh-CN 当源语言只是举例。**源语言 = 你建站时选的语言**——选英文，系统就拷主题的 `i18n/en/settings.yaml`，整份都是英文（`default_language: en`，title / slogan / 菜单全英文），你全程用英文编辑；中文若启用反而成 `lang/zh-CN/` 的翻译目标。前提是主题在 `meta.languages` 里声明了该语言、并提供了对应的 `i18n/<lang>/`（见 [meta.yaml.md](meta.yaml.md)）。
+
+**同一家公司**若建站时选英文作源语言（而非中文），它的源语言 settings 就长这样（`favicon` / `logo` / `theme` / `header` / `footer` 等语言无关字段同上，略）：
+
+```yaml
+title: DENGTEC                # 站点显示名（英文源语言）
+slogan: Silent Booth Maker
+languages: [en, zh-CN]        # 启用语言（顺序不决定源语言）
+default_language: en          # 源语言 = en
+menu:
+  - {label: Home, type: home}
+  - {label: Products, type: list, target: products}
+  - {label: About, type: page, target: about}
 ```
 
 ## 字段
@@ -74,7 +89,7 @@ settings 的多语言**按语言分文件**（和 pages / data 同一套机制�
 
 ```yaml
 # sites/<name>/settings.yaml —— 源语言（此例为 zh-CN）
-title: 灯特科技
+title: 德恩基
 slogan: 专业静音仓制造商
 menu:
   - {label: 首页, type: home}
@@ -83,7 +98,7 @@ menu:
 
 ```yaml
 # sites/<name>/lang/en/settings.yaml —— 目标语言（en，AI 翻译产出）
-title: Dente Tech
+title: DENGTEC
 slogan: Silent Booth Maker
 menu:
   - {label: Home, type: home}
