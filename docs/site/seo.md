@@ -178,7 +178,7 @@ AI 模型本身不会"记住"小公司网站（小站很难进入训练集）。
 
 根路径 `/` 必须返回**真实可读 HTML**，含两个语言版本的链接，别只放 JS 跳转 —— 大多数 LLM 爬虫（GPTBot / ClaudeBot / PerplexityBot）不跑 JS，纯 JS 跳转的根页对它们来说是空页面。
 
-详见 [domains.md 第三节](../domains.md)。
+详见 [domains.md 第三节](../cloud/domains.md)。
 
 ## 六、性能指标（也是排名因素）
 

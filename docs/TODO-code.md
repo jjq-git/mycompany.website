@@ -24,7 +24,7 @@
 
 ## 主题表字段补全（与 database.md 的 ER 图对齐）
 
-[database.md](database.md) 的 ER 图把主题表定为目标 schema，代码 `Template` 待补：
+[database.md](dashboard/database.md) 的 ER 图把主题表定为目标 schema，代码 `Template` 待补：
 
 - [ ] 加 `languages`（数组）—— 主题提供整套 seed 的语言（[meta.yaml.md](themes/meta.yaml.md) §五）
 - [ ] 加 `level`（int，会员门槛）、`tags`（数组，受控词表）、`author`

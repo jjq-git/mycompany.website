@@ -1,4 +1,4 @@
-"""平台级数据模型. 见 docs/database.md.
+"""平台级数据模型. 见 docs/dashboard/database.md.
 
 只存平台级数据 (账号、订阅、域名、发布历史等).
 店主网站的内容在 sites/<id>/*.yaml.
