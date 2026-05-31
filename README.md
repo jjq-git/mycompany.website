@@ -26,6 +26,7 @@
 |                   | 设计产品列表页                    | 数据集列表              |
 |                   | 设计产品详情页                    | 数据集详情              |
 | 添加内容          | 按产品 / 博客页面格式填字段与资源 | 图片、图纸、视频等      |
+| 修改内容          | 产品 / 博客页面进行修改           | 同编排 index 页面       |
 | 优化 SEO          | 只编辑必要的 SEO 信息             | 标题 / 描述等           |
 
 
@@ -87,18 +88,19 @@ ls sites/1/
 
 ## 文档
 
-| 文档                                             | 说明                                  |
-| ------------------------------------------------ | ------------------------------------- |
-| [docs/README.md](docs/README.md)                 | 文档索引（从这里开始）                |
-| [docs/architecture.md](docs/architecture.md)     | 整体架构、技术决策                    |
-| [docs/database.md](docs/database.md)             | 数据库表（平台级元数据）              |
-| [docs/sites.md](docs/sites.md)                   | 站点磁盘内容（settings / pages / data / 输出） |
-| [docs/infrastructure.md](docs/infrastructure.md) | CDN、SSL 自动化                       |
-| [docs/domains.md](docs/domains.md)               | 子域、URL 路径、预览、自定义域名      |
-| [docs/themes/README.md](docs/themes/README.md)   | 主题开发（目录结构、布局、block）     |
-| [docs/content.md](docs/content.md)               | 店主后台（内容管理界面）              |
-| [docs/publish.md](docs/publish.md)               | 发布、输出结构、字体优化              |
-| [docs/seo.md](docs/seo.md)                       | SEO + AI 检索（sitemap、llms.txt 等） |
-| [docs/i18n.md](docs/i18n.md)                     | 多语言 + AI 翻译                      |
+| 文档                                             | 说明                                           |
+| ------------------------------------------------ | ---------------------------------------------- |
+| [docs/README.md](docs/README.md)                 | 文档索引（从这里开始）                         |
+| [docs/architecture.md](docs/architecture.md)     | 整体架构、技术决策                             |
+| [docs/database.md](docs/database.md)             | 数据库表（平台级元数据）                       |
+| [docs/sites.md](docs/sites.md)                   | 站点源内容（settings / pages / data）          |
+| [docs/output.md](docs/output.md)                 | 生成的静态站（目录 / 页面 URL / 渲染策略）     |
+| [docs/infrastructure.md](docs/infrastructure.md) | CDN、SSL 自动化                                |
+| [docs/domains.md](docs/domains.md)               | 子域、URL 路径、预览、自定义域名               |
+| [docs/themes/README.md](docs/themes/README.md)   | 主题开发（目录结构、布局、block）              |
+| [docs/content.md](docs/content.md)               | 店主后台（内容管理界面）                       |
+| [docs/publish.md](docs/publish.md)               | 发布、优化、自定义口子                         |
+| [docs/seo.md](docs/seo.md)                       | SEO + AI 检索（sitemap、llms.txt 等）          |
+| [docs/i18n.md](docs/i18n.md)                     | 多语言 + AI 翻译                               |
 
 给 Claude 的工作指引：[CLAUDE.md](CLAUDE.md)

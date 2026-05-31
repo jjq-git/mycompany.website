@@ -78,9 +78,10 @@ instance/            SQLite 数据库（gitignored）
 ## 子系统文档
 
 - [database.md](database.md) — 数据库表（平台级元数据）
-- [sites.md](sites.md) — 站点磁盘内容（settings / pages / data / 输出）
+- [sites.md](sites.md) — 站点源内容（settings / pages / data）
+- [output.md](output.md) — 生成的静态站（目录 / URL / 渲染）
 - [themes/](themes/) — 主题开发（结构 / CSS·JS / 调用 block / 读取设置）
 - [themes/blocks/](themes/blocks/) — Block 系统
 - [content.md](content.md) — 用户三栏后台
-- [publish.md](publish.md) — 静态生成与导出
+- [publish.md](publish.md) — 发布、优化、自定义口子
 - [i18n.md](i18n.md) — 多语言与 AI 翻译

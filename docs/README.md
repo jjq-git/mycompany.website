@@ -14,13 +14,14 @@ mycompany.website 的设计文档。
 | ------------------------------------------ | ------------------------------------- | ------------- |
 | [architecture.md](architecture.md)         | 整体架构、技术决策                    | 全体          |
 | [database.md](database.md)                 | 数据库表（平台级元数据，4 张表）      | 后端          |
-| [sites.md](sites.md)                       | 站点磁盘内容（settings / pages / data / 输出） | 后端          |
+| [sites.md](sites.md)                       | 站点源内容（settings / pages / data） | 后端          |
+| [output.md](output.md)                     | 生成的静态站（目录 / 页面 URL / 渲染策略） | 后端          |
 | [infrastructure.md](infrastructure.md)     | CDN、SSL 自动化                       | 后端 / 运维   |
 | [domains.md](domains.md)                   | 子域分配、URL 路径、预览、自定义域名  | 后端 / 运维   |
 | [themes/README.md](themes/README.md)       | 主题开发（目录结构、布局、block）     | 后端 / 设计师 |
 | [themes/meta.yaml.md](themes/meta.yaml.md) | 主题 `meta.yaml` 字段说明             | 后端 / 设计师 |
 | [content.md](content.md)                   | 用户后台（内容管理界面）              | 前端          |
-| [publish.md](publish.md)                   | 发布、输出结构、字体优化、自定义口子  | 后端          |
+| [publish.md](publish.md)                   | 发布、优化、自定义口子                | 后端          |
 | [seo.md](seo.md)                           | SEO + AI 检索（sitemap、llms.txt 等） | 后端 / 设计师 |
 | [i18n.md](i18n.md)                         | 用户网站多语言 + AI 翻译（Phase 2）   | 后端          |
 | [admin-i18n.md](admin-i18n.md)             | 后台界面多语言（中 / 英）             | 后端          |
