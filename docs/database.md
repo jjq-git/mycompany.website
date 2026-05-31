@@ -17,6 +17,7 @@ erDiagram
         string email UK "唯一"
         datetime email_verified_at "邮箱验证时间"
         string phone "手机号"
+        datetime phone_verified_at "手机验证时间"
         string status "active / suspended / deleted"
         string role "owner / admin"
         string display_name "昵称"

@@ -39,7 +39,7 @@ ER 图新增、代码 [models.py](../app/core/models.py) 待补：
 
 - [ ] `Site`：`domain`（用户自定义域名）、`expires_at`（服务到期时间）
 - [ ] `Site`：审核字段 `review_status`（pending/approved/rejected）、`reviewed_at`、`reviewed_by`（FK→users）、`review_note`
-- [ ] `User`：`phone`（手机号）
+- [ ] `User`：`phone`（手机号）、`phone_verified_at`（手机验证时间）
 
 ## 文档待办（跨文档，最后一次性扫）— 非代码
 
