@@ -2,7 +2,7 @@
 
 `settings.yaml` 是一个站点的**基本设置**——配色、字体、菜单、语言、页眉页脚版式，以及全站自定义代码。
 
-> **设置 ≠ 内容**。这里只放**配置性、全站级**的东西。具体内容（联系方式、备案号、公司介绍、产品…）由 **block** 承载，不进 settings。
+> **settings 只放全站级字段**——配色 / 菜单 / 语言 / 页眉页脚版式 / 全站代码。其中 `title` / `slogan` / `menu` 标签虽是要翻译的文字，但属"全站级身份"，仍放这里（翻译走 `lang/`，机制见末节「多语言覆盖」）。**逐条业务内容**（联系方式、备案号、公司介绍、产品…）才由 **block** 承载，不进 settings。
 
 ## 两份，同一套结构
 
@@ -81,6 +81,8 @@ menu:
 | `list`  | 数据集列表页   | 数据集名（如 products）|
 | `page`  | 独立页         | 页面名（如 about）     |
 
+> 译文（`lang/<code>/settings.yaml`）里 `menu` 只写 `label`，`type` / `target` 不重复——按位置继承源语言（见下节）。
+
 ## 多语言覆盖
 
 settings 的多语言**按语言分文件**（和 pages / data 同一套机制，不用内联 `{zh, en}`）：源语言用根目录 `settings.yaml`，目标语言用 `lang/<code>/settings.yaml` 覆盖，缺字段回退源语言。源语言 = 用户建站时选的语言（不固定中文），`lang/<目标语言>/` 是 AI 从源语言翻译过来的产出。
@@ -100,11 +102,12 @@ menu:
 # sites/<name>/lang/en/settings.yaml —— 目标语言（en，AI 翻译产出）
 title: DENGTEC
 slogan: Silent Booth Maker
-menu:
-  - {label: Home, type: home}
-  - {label: Products, type: list, target: products}
+menu:                          # 只给 label；type/target 按位置继承源语言，不重复
+  - {label: Home}
+  - {label: Products}
 ```
 
-- 只覆盖要变的字段，没写的回退源语言（`favicon` / `logo` / `theme` 通常各语言共用，不必在 `lang/` 里重复）。
-- `menu` 覆盖时整个数组重写，但 `type` / `target` 各语言保持一致，只翻 `label`。
+- 只覆盖要变的字段，没写的回退源语言（`favicon` / `logo` / 配色 `theme` 通常各语言共用，不必在 `lang/` 里重复）。
+- **字体是例外**：`theme.font-*` 若用了 CJK 专用字体（简中 `Noto Sans SC` 与日文 `Noto Sans JP` 字形不同），多语言站点要在对应 `lang/` 里按语言覆盖，否则字形会错。
+- `menu` **按位置合并**：结构（`type` / `target`）只在源语言存一份，`lang/` 里每项只给 `label`，builder 按顺序套上源语言结构。源语言以后增删菜单项也不会与译文漂移——译文缺的项回退显示源语言 `label`。
 - 整套多语言策略（每语言独立文件 / 目录）见 [../i18n.md](../i18n.md)。
