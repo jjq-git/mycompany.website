@@ -7,16 +7,16 @@
 ```text
 mycompany.website                       平台介绍站（落地页）
 
-<slug>.mycompany.website                店主子域名（自动分配）
+<slug>.mycompany.website                用户子域名（自动分配）
                                         例: com-a.mycompany.website
 
 docs.mycompany.website                  平台文档站（这个目录的内容）
-design.mycompany.website                店主后台（在线设计 / 编辑器）
+design.mycompany.website                用户后台（在线设计 / 编辑器）
 ```
 
-`docs` / `design` / `www` / `api` / `admin` / `app` / `cdn` / `assets` / `mail` / `blog` / `status` / `help` / `about` 等都是**保留子域**，不能被店主注册成 slug（见 [database.md](database.md) 的 `Site.slug` 与 `SLUG_RESERVED`）。
+`docs` / `design` / `www` / `api` / `admin` / `app` / `cdn` / `assets` / `mail` / `blog` / `status` / `help` / `about` 等都是**保留子域**，不能被用户注册成 slug（见 [data-model.md](data-model.md) 的 `Site.name` 与 `SLUG_RESERVED`）。
 
-## 二、店主 slug 规则
+## 二、用户 slug 规则
 
 - 字符集：`[a-z0-9-]`（小写字母、数字、连字符）
 - 长度：3 ~ 30
@@ -28,10 +28,10 @@ design.mycompany.website                店主后台（在线设计 / 编辑器�
 
 ## 三、URL 路径与多语言
 
-**默认语言 = 英文**。所有店主站点用相同的语言路径策略：
+**默认语言由站点的 `default_language` 决定**（即站点的源语言 —— 用户建站时选的、用来填内容的语言；平台没有固定的默认语言）。所有用户站点用相同的语言路径策略：
 
 ```text
-com-a.mycompany.website/en/             英文（默认）
+com-a.mycompany.website/en/             英文
 com-a.mycompany.website/zh/             中文
 com-a.mycompany.website/                语言选择首页（hreflang + 即时 JS 跳转）
 ```
@@ -48,13 +48,14 @@ docs.mycompany.website/zh/              中文文档
 docs.mycompany.website/                 跳转到 /en/
 ```
 
-店主后台例外：
+用户后台例外：
 
 ```text
-design.mycompany.website/               单页应用，JS 切换语言（无路径前缀）
+design.mycompany.website/               Flask SSR 多页应用，语言不进路径（无前缀）
 ```
 
-后台是动态应用而不是静态发布产物，路径参数已经留给业务逻辑（路由、站点 ID），语言用 localStorage / 用户设置存。
+后台是动态应用而不是静态发布产物，路径参数已经留给业务逻辑（路由、站点 ID）。
+语言不用路径前缀，按用户偏好（`User.preferred_lang`）+ 浏览器 `Accept-Language` 决定，详见 [admin-i18n.md](admin-i18n.md)。
 
 ## 四、预览 URL
 
@@ -67,8 +68,8 @@ com-a.mycompany.website/_preview/<token>/zh/     预览的中文版
 ```
 
 - `<token>` 是一次性预览 token，过期后 404
-- token 由 design 后台生成；店主在后台点"预览"会跳到这个 URL
-- `_preview` 也加入保留 slug 列表，店主不能用
+- token 由 design 后台生成；用户在后台点"预览"会跳到这个 URL
+- `_preview` 也加入保留 slug 列表，用户不能用
 
 放在 design 域下（如 `design.mycompany.website/preview/com-a/`）的隐患：
 
@@ -88,10 +89,10 @@ com-a.mycompany.website/_preview/<token>/zh/     预览的中文版
 
 ## 六、自定义域名（Phase 2 之后）
 
-店主带自己的域名（例：`com-a.com` 直接指向我们的 CDN）：
+用户带自己的域名（例：`com-a.com` 直接指向我们的 CDN）：
 
-- 店主在后台填入自己的域名
-- 店主在自己的 DNS 后台加 CNAME 指向 `com-a.mycompany.website`
+- 用户在后台填入自己的域名
+- 用户在自己的 DNS 后台加 CNAME 指向 `com-a.mycompany.website`
 - 我们的 CDN 配置接受这个自定义域，签 Let's Encrypt 证书（不再是通配符，是按域单签）
 - 路径规则不变，仍然是 `/en/`、`/zh/`
 

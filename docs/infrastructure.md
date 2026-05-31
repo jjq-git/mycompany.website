@@ -4,8 +4,8 @@
 
 ## 一、为什么要 API 自动化
 
-如果靠人工：每加一个店主就要建桶、配 CDN、签 SSL、绑域名 —— 10 分钟一个，
-100 个店主就是 16 小时人工。规模化必死。
+如果靠人工：每加一个用户就要建桶、配 CDN、签 SSL、绑域名 —— 10 分钟一个，
+100 个用户就是 16 小时人工。规模化必死。
 
 所以：建桶、上传、绑域名、签 SSL，**全部 API 调用 + 状态机管理**。
 
@@ -88,16 +88,16 @@ DB `sites.storage_mode` 字段已留好（`shared` / `dedicated`）。
 ### 阿里云路径
 
 ```text
-店主在后台输入 "company-a.com"
+用户在后台输入 "company-a.com"
         ↓
 1. 后台调 AddCdnDomain
    → CDN 新增加速域名（status: pending verification）
    → 云返回一个 CNAME 目标（如 yyy.cdn.aliyuncs.com）
         ↓
-2. 后台显示 CNAME 配置指引给店主
+2. 后台显示 CNAME 配置指引给用户
    → "请把 company-a.com CNAME 解析到 yyy.cdn.aliyuncs.com"
         ↓
-3. 店主去他的域名服务商配 CNAME
+3. 用户去他的域名服务商配 CNAME
    → 这一步需要等
         ↓
 4. 后台轮询 DescribeDomainCertificateInfo（每分钟一次）
@@ -115,7 +115,7 @@ DB `sites.storage_mode` 字段已留好（`shared` / `dedicated`）。
 7. 后台调 EnableCdnDomain
    → 启用加速
         ↓
-8. 通知店主：✅ 已上线
+8. 通知用户：✅ 已上线
 ```
 
 ### 这个流程的代码结构
@@ -249,7 +249,7 @@ Let's Encrypt 跟着 CNAME 走，验证成功。
         ↓
     失败任务每天再试一次
     距过期 < 7 天还没续上 → 紧急告警 + 站长邮件
-    过期 → 强制店主重新走"绑域名"流程
+    过期 → 强制用户重新走"绑域名"流程
 ```
 
 每张证书每年续 4-5 次，对小企业 SaaS 完全可控。
@@ -328,7 +328,7 @@ Let's Encrypt 跟着 CNAME 走，验证成功。
 
 ## 七、provisioning_jobs 表的作用
 
-这张表是**所有云资源自动化的事务总账**。详见 [database.md](database.md)。
+这张表是**所有云资源自动化的事务总账**。详见 [data-model.md](data-model.md)。
 
 为什么需要：
 
@@ -427,7 +427,7 @@ T+30:   触发 cleanup provisioning_jobs:
 | 30 天内即将过期的 SSL 数 | > 0（提示续期任务在跑） |
 | OSS 总存储量 | 接近账号配额 |
 | CDN 当月流量 | 接近预算 |
-| 域名验证 pending > 7 天的 | > 0（店主可能忘了配 DNS） |
+| 域名验证 pending > 7 天的 | > 0（用户可能忘了配 DNS） |
 
 ## 十二、给开发的实操建议
 

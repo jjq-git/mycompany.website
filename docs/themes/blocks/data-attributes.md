@@ -26,7 +26,7 @@ HTML 模板同时承担 **Schema** 和 **Render** 两个角色。四类关注点
 
 **核心原则：HTML 本身就是数据存储。** 模板里的文字、src、style 值即为默认值——编辑器读取展示，用户修改后写回对应元素。不需要额外的 JSON 或 `<meta>` 声明。
 
-**样式原则：只开放主题作者声明过的 CSS 变量。** 店主通过预设选项（下拉/开关/颜色选择器）调整样式，不输入自由数值。所有可调项在全局注册表集中定义。
+**样式原则：只开放主题作者声明过的 CSS 变量。** 用户通过预设选项（下拉/开关/颜色选择器）调整样式，不输入自由数值。所有可调项在全局注册表集中定义。
 
 **显隐原则：只有一种机制。** 用户手动开关 → `data-hideable` + 原生 `hidden`。字段值为空时元素自动隐藏（由类型驱动，不依赖额外属性）。
 
@@ -146,7 +146,7 @@ HTML 模板同时承担 **Schema** 和 **Render** 两个角色。四类关注点
 
 ### 4. `data-style`
 
-主题作者将**可调样式**写成 CSS 变量，在注册表定义控件和可选值，元素上用 `data-style` 声明开放哪些。店主通过预设选项调整——不改代码，不输入自由数值。
+主题作者将**可调样式**写成 CSS 变量，在注册表定义控件和可选值，元素上用 `data-style` 声明开放哪些。用户通过预设选项调整——不改代码，不输入自由数值。
 
 **可控类型：**
 
@@ -202,7 +202,7 @@ const STYLE_REGISTRY = {
 
 → 按"变量"建表，不是按"block"建表。几个变量就几条，与 block 数量无关。`features` 和 `news` 都用 `cols` → 共用同一条，改选项只改一处。
 
-> **备注：扩展视觉微调。** 如果后续需要让店主调整颜色、字号、间距等视觉细节，同一套机制就能支持——在 STYLE_REGISTRY 里加条目（如 `gap: { label: "间距", control: "select", options: [{ value: "16", text: "紧凑" }, ...] }`），模板元素加 `data-style="gap"`，CSS 用 `var(--gap, 24px)` 取值。店主通过下拉/调色板选预设值，不改代码。是否开放、开哪些，由主题作者决定。
+> **备注：扩展视觉微调。** 如果后续需要让用户调整颜色、字号、间距等视觉细节，同一套机制就能支持——在 STYLE_REGISTRY 里加条目（如 `gap: { label: "间距", control: "select", options: [{ value: "16", text: "紧凑" }, ...] }`），模板元素加 `data-style="gap"`，CSS 用 `var(--gap, 24px)` 取值。用户通过下拉/调色板选预设值，不改代码。是否开放、开哪些，由主题作者决定。
 
 ---
 
@@ -267,19 +267,19 @@ const STYLE_REGISTRY = {
 | 值 | 类型 | 项从哪来 | 用户能干啥 |
 |---|---|---|---|
 | 省略 / `manual` | 手动 | HTML 写死 | 增/删/改每项 |
-| 存在（空值或数据集名） | 动态 | 店主在后台选择数据集 | 选数据集 + 配每行列数 / 最大显示条数 |
+| 存在（空值或数据集名） | 动态 | 用户在后台选择数据集 | 选数据集 + 配每行列数 / 最大显示条数 |
 
-存在 `data-source` 属性 = 告诉系统"这个 list/grid 是数据驱动的"。店主在后台把模块加到页面时，系统根据此属性显示**数据集下拉框**（产品 / 文章 / 案例 / 服务）。店主的选择存到页面配置（`pages/<name>.yaml`），构建时从 `sites/<id>/data/<dataset>.yaml` 取数据渲染。
+存在 `data-source` 属性 = 告诉系统"这个 list/grid 是数据驱动的"。用户在后台把模块加到页面时，系统根据此属性显示**数据集下拉框**（产品 / 文章 / 案例 / 服务）。用户的选择存到页面配置（`pages/<name>.yaml`），构建时从 `sites/<id>/data/<dataset>.yaml` 取数据渲染。
 
-主题作者可通过属性值限定可选数据集：`data-source="products"` 表示该模块只能用产品数据集；`data-source`（空值）表示店主可自由选择。
+主题作者可通过属性值限定可选数据集：`data-source="products"` 表示该模块只能用产品数据集；`data-source`（空值）表示用户可自由选择。
 
 ```html
-<!-- 手动：菜单（店主自己增删每一项） -->
+<!-- 手动：菜单（用户自己增删每一项） -->
 <nav data-name="main-menu" data-type="list" data-source="manual">
   <a data-name="item" data-type="text" data-href="/">首页</a>
 </nav>
 
-<!-- 动态：店主在后台选择数据集 -->
+<!-- 动态：用户在后台选择数据集 -->
 <section data-name="news" data-type="list" data-source>
   <article data-name="post" data-type="group">
     <img data-name="cover" data-type="image" src="default.jpg">

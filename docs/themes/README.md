@@ -8,23 +8,30 @@
 
 ```text
 themes/<name>/
-  meta.yaml            主题身份 + 默认值（datasets / 默认菜单 / 默认主题色 / 语言 / 变体清单）
-  layouts/             页面布局（Jinja2）
+  meta.yaml            主题概要（身份 / 分类 / 版本 / languages：声明本主题提供哪些语言的整套 seed）
+  preview/             主题缩略图 / 截图（后台展示用，不进 build）—— 语言无关
+    cover.webp         固定文件名，后台列表的主缩略图
+  layouts/             页面布局（Jinja2）—— 语言无关的皮肤
     _base.html         最外层：<head>、CSS/JS、主题色变量注入、header、footer
     _modules.html      把 page.modules 渲染成 block 序列
     index.html         首页
     _page.html         独立页（about / contact…）
     product_detail.html / _generic_detail.html   详情页（按数据集选，_generic 兜底）
-  blocks/<名>/          内容 block 库（写法见 blocks/）
-  static/
+  blocks/<名>/          内容 block 库（写法见 blocks/）—— 语言无关
+  static/              —— 语言无关
     css/main.css       全局样式（设计令牌 + 组件 + block 样式）
     js/                如需脚本放这里（可选）
-  seed_data/           建站时整体复制进 sites/<name>/ 的初始内容
-    settings.yaml、pages/*.yaml、data/*.yaml
+  translations.yaml    主题 UI 文案（t.*：导航 / 按钮等界面词），一个文件含所有语言 —— 语言无关
+  i18n/<lang>/         按语言分的整套 seed（meta.languages 里每个语言一套）
+    settings.yaml      该语言的默认站点设置（含 menu / title / slogan 及语言无关的配色，配色各语言重复但值相同）
+    pages/*.yaml       该语言的初始页面内容
+    data/*.yaml        该语言的初始数据集内容
 ```
 
 - 所有页面 `{% extends "_base.html" %}`。
-- `meta.yaml` 在管理员上传主题 ZIP 时解析进数据库（`Theme` 表）。
+- `meta.yaml` 在管理员上传主题 ZIP 时解析进数据库（`Theme` 表）。字段逐项说明见 [meta.yaml.md](meta.yaml.md)。其中 `languages` 字段（如 `languages: [en, zh, ja]`）声明本主题为哪些语言提供了 `i18n/<lang>/` 整套 seed。
+- `settings.yaml` 是主题自带的默认站点设置，位于 `i18n/<lang>/` 下（每语言一份），字段见 [settings.yaml.md](settings.yaml.md)。
+- `layouts/` `blocks/` `static/` `preview/` `translations.yaml` 是语言无关的皮肤，不进 `i18n/`（`translations.yaml` 一个文件含所有语言的 UI 文案，渲染时按当前语言取 `t.*`）。建站时系统按用户选的语言把 `i18n/<lang>/` 整套拷进 `sites/<id>/`，该语言即成为站点源语言（`settings.default_language`）。
 
 ## 二、渲染上下文（布局里能用的变量）
 
@@ -32,7 +39,8 @@ builder 渲染每页时注入：
 
 | 变量 | 是什么 | 例 |
 | --- | --- | --- |
-| `settings` | 该站 `settings.yaml`（用户填的内容） | `settings.title`、`settings.menu` |
+| `settings` | 该站 `settings.yaml`（用户填的内容） | `settings.title`、`settings.logo` |
+| `menu` | builder 把 `settings.menu` 的 `{type, target}` 解析后的导航（每项含 `url`、`active`） | `item.url`、`item.active` |
 | `theme` | 解析后的主题色令牌（已注入 `:root`） | `theme.accent` |
 | `page` | 当前页 | `page.modules`、`page.title`、`page.description` |
 | `page_key` | 当前页 key | `home`、`about` |
@@ -103,21 +111,19 @@ builder 渲染每页时注入：
 
 ## 五、读取用户设置
 
-直接从 `settings`（= 该站 `settings.yaml`，结构见 [../data-model.md](../data-model.md)）取：
+直接从 `settings`（= 该站 `settings.yaml`，结构见 [settings.yaml.md](settings.yaml.md)）取：
 
 ```jinja2
 {{ settings.title }}                          {# 站点名 #}
 {% if settings.logo %}<img src="{{ settings.logo }}">{% endif %}
 
-{# 导航：遍历 settings.menu（菜单项结构见 data-model.md） #}
-{% for item in settings.menu %}
-  <a href="{{ base_url }}/{{ lang }}{{ item.url }}">{{ item.label }}</a>
+{# 导航：menu 由 builder 从 settings.menu 的 {type, target} 解析而来，每项含 url 与 active #}
+{% for item in menu %}
+  <a href="{{ item.url }}" class="{{ 'active' if item.active }}">{{ item.label }}</a>
 {% endfor %}
-
-{# 社交 / 联系 #}
-{% if settings.social.wechat %}…{% endif %}
-{% if settings.contact.phone %}<a href="tel:{{ settings.contact.phone }}">…</a>{% endif %}
 ```
+
+> 联系方式 / 社交 / 备案号等**内容**不在 settings，由 block 承载——主题从 block 数据读，不从 settings 读。
 
 - 页眉 / 页脚变体：用户的选择存在 `settings.header.variant` / `settings.footer.variant`，布局按它渲染对应排版。
 - 界面固定文案（"菜单""上一页"等）用 `t.*`，不要写死中文，方便多语言。
@@ -125,5 +131,5 @@ builder 渲染每页时注入：
 ## 六、开发流程
 
 1. 以现有主题为起点（最完整的参考）。
-2. 写 `meta.yaml` → `layouts/` → `blocks/` → `static/css/main.css` → `seed_data/`。
+2. 写 `meta.yaml` → `layouts/` → `blocks/` → `static/css/main.css` → `i18n/<lang>/`（`meta.languages` 里每个语言一整套：`settings.yaml` + `pages/*.yaml` + `data/*.yaml`）。
 3. 本地放 `themes/<name>/` 调试；上线用管理员后台上传 ZIP。

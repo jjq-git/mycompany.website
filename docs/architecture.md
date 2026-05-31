@@ -61,7 +61,7 @@ app/
   core/              模型、路由、builder、主题加载、菜单、block、翻译
   templates/         后台页面（Flask template，≠ 主题）
   static/            后台 CSS / JS
-themes/<name>/       一套主题（meta.yaml + layouts/ + blocks/ + seed_data/ + static/）
+themes/<name>/       一套主题（meta.yaml + layouts/ + blocks/ + i18n/<lang>/ + static/，layouts/blocks/static 语言无关，i18n/<lang>/ 按语言分整套 seed：settings.yaml + pages + data）
 sites/<name>/        一个网站的全部（name = 子域名 slug，gitignored）
   *.yaml / pages/ …  源内容（设置 / 页面 / 数据集 / 翻译 / 资源）
   output/            该站生成的静态站（build 产物，导出即打包它）
@@ -80,6 +80,6 @@ instance/            SQLite 数据库（gitignored）
 - [data-model.md](data-model.md) — DB 表 + 磁盘 YAML 结构
 - [themes/](themes/) — 主题开发（结构 / CSS·JS / 调用 block / 读取设置）
 - [themes/blocks/](themes/blocks/) — Block 系统
-- [dashboard.md](dashboard.md) — 用户三栏后台
-- [build-and-export.md](build-and-export.md) — 静态生成与导出
+- [content.md](content.md) — 用户三栏后台
+- [publish.md](publish.md) — 静态生成与导出
 - [i18n.md](i18n.md) — 多语言与 AI 翻译

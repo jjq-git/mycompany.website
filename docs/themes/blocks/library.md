@@ -345,5 +345,5 @@
 | `data-style="bg-color"` | 任何需要背景色的区块                                                    |
 | `data-cols`             | logo 墙 / 团队 / 价格 / 画廊 / 资质 / 参数表（真阵列）                 |
 | `data-page-size`        | news / products 列表分页                                               |
-| `data-source`           | menu=`manual`（手动增删）；news/products 存在即数据驱动，店主在后台选数据集 |
+| `data-source`           | menu=`manual`（手动增删）；news/products 存在即数据驱动，用户在后台选数据集 |
 | `data-hideable`         | 除 Header / Footer / 文章正文 / 产品正文 / Contact 外的展示块          |

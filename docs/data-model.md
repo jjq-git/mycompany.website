@@ -14,7 +14,7 @@
 | `User` | 账号 | `id`、`email`(唯一)、`role`(user/admin)、`status`、`created_at`、`last_login_at` |
 | `LoginToken` | 邮箱魔法链接 | `id`、`user_id`、`token_hash`(SHA-256，唯一)、`expires_at`(15 分钟)、`used_at` |
 | `Site` | 站点登记 | `id`、`name`(唯一，= slug/子域名/目录名)、`owner_id`、`theme_name`、`created_at` |
-| `Theme` | 主题登记 | `id`、`name`(唯一)、`display_name`、`industry`、`languages`、`version`、`uploaded_at` |
+| `Theme` | 主题登记 | `id`、`name`(唯一)、`theme_name`、`industry`、`languages`、`version`、`uploaded_at` |
 
 要点：
 
@@ -27,43 +27,23 @@
 
 ```text
 sites/<name>/
-  settings.yaml        站点设置（主题色 / 菜单 / 语言 / 页眉页脚 / 社交…）
-  pages/               独立页面（index、about、contact…）
+  settings.yaml        站点设置，源语言（主题色 / 菜单 / 语言 / 页眉页脚 / 社交…）
+  pages/               独立页面，源语言（index、about、contact…）
     home.yaml
     about.yaml
-  data/                数据集（同构条目的列表）
+  data/                数据集，源语言（同构条目的列表）
     products.yaml
     posts.yaml
-  lang/<code>/         非默认语言的内容覆盖（pages/ data/ settings.yaml）
+  lang/<目标语言>/      AI 翻译产出（pages/ data/ settings.yaml）
   assets/              上传的图片（WebP）与文件
   output/              构建产物（静态站，导出即打包它；非源）
 ```
 
-默认语言用根目录文件；其它语言用 `lang/<code>/` 下的同名文件覆盖，缺失字段回退默认语言。
+根目录的 `settings.yaml` / `pages/` / `data/` 是**源语言**内容 —— 用户建站时选的、用来填真实内容的语言（`settings.default_language` 记录它），不固定为某种语言。源语言内容由建站时把所选主题 `themes/<name>/i18n/<源语言>/` 整套拷到 `sites/<name>/` 而来，再由用户用母语填真实内容。`lang/<目标语言>/` 是把源语言逐篇 AI 翻译成目标语言的产出；其下同名文件覆盖源语言，缺失字段回退源语言。
 
 ### settings.yaml
 
-站点级配置。示例：
-
-```yaml
-title: 灯特科技                # 站点显示名
-slogan: 专业静音仓制造商
-favicon: /assets/favicon.webp
-logo: /assets/logo.webp
-theme:                        # 主题色令牌（主题默认值可覆盖）
-  color-primary: "#067a7a"
-  color-secondary: "#f97316"
-  font-sans: "Inter, 'Noto Sans SC', sans-serif"
-languages: [zh-CN, en]        # 启用的语言（须在主题支持范围内）
-default_language: zh-CN
-menu:                         # 导航，详见 themes/README.md
-  - {label: 首页, type: home}
-  - {label: 产品, type: list, target: products}
-  - {label: 关于我们, type: page, target: about}
-header: {variant: ...}        # 选用的页眉变体
-footer: {variant: ...}        # 选用的页脚变体
-social: {wechat: ..., phone: ...}
-```
+站点级配置（站名 / 配色 / 菜单 / 语言 / 页眉页脚 / 社交）。字段与示例见 [themes/settings.yaml.md](themes/settings.yaml.md)。
 
 ### pages/（页面）
 
@@ -98,7 +78,7 @@ modules:
   ...
 ```
 
-一个站点有哪些数据集，由所选主题的 `meta.yaml` 决定（如产品、博客、案例）。
+一个站点有哪些数据集，由所选主题 `i18n/<lang>/data/` 提供的整套 seed 决定（如产品、博客、案例）。
 
 ### 内容模型：页面 / 数据集 / 分类
 

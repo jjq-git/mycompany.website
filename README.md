@@ -17,7 +17,7 @@ app/                  Flask 应用
   core/               模型、路由、生成器、模板加载
   templates/          Flask 后台模板（不是站点模板）
   static/
-site_templates/       站点模板（git 管理，每套一个目录）
+themes/               站点模板（git 管理，每套一个目录）
 sites/                店主数据（每站一个目录，gitignored）
 output/               生成的静态文件（gitignored）
 docs/                 设计文档
@@ -31,7 +31,7 @@ instance/             SQLite 数据库（gitignored）
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
-# 2. 扫描模板（同步 site_templates/ 到数据库）
+# 2. 扫描模板（同步 themes/ 到数据库）
 .venv/bin/flask --app run scan-templates
 
 # 3. 创建测试用户和站点
@@ -51,11 +51,12 @@ ls sites/1/
 
 | 文档 | 说明 |
 | --- | --- |
+| [docs/README.md](docs/README.md) | 文档索引（从这里开始） |
 | [docs/architecture.md](docs/architecture.md) | 整体架构、技术决策 |
-| [docs/database.md](docs/database.md) | 数据库表设计 |
+| [docs/data-model.md](docs/data-model.md) | 数据库表 + 磁盘 YAML 结构 |
 | [docs/infrastructure.md](docs/infrastructure.md) | CDN、SSL 自动化 |
 | [docs/domains.md](docs/domains.md) | 子域、URL 路径、预览、自定义域名 |
-| [docs/templates.md](docs/templates.md) | 模板系统、块、数据集 |
+| [docs/themes/README.md](docs/themes/README.md) | 主题开发（目录结构、布局、block） |
 | [docs/content.md](docs/content.md) | 店主后台（内容管理界面） |
 | [docs/publish.md](docs/publish.md) | 发布、输出结构、字体优化 |
 | [docs/seo.md](docs/seo.md) | SEO + AI 检索（sitemap、llms.txt 等） |
