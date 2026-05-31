@@ -38,7 +38,7 @@
 
 > 小企业网站典型规模：< 100 MB（不含视频）。
 > 即使全部资源按语言复制 3 份，也只是 ¥几分钱/月的储存成本。
-> **简单 > 优化**（详见 [CLAUDE.md](../CLAUDE.md) 信念 6）。
+> **简单 > 优化**（详见 [CLAUDE.md](../../CLAUDE.md) 信念 6）。
 
 ## 二、发布的完整流程
 
@@ -124,7 +124,7 @@
 
 ## 五、CDN
 
-MVP 阶段使用**阿里云 OSS + CDN**（详见 [infrastructure.md](infrastructure.md)）。
+MVP 阶段使用**阿里云 OSS + CDN**（详见 [infrastructure.md](../infrastructure.md)）。
 不做多 CDN 抽象层 —— 复杂度提前透支。
 
 将来真有跨地域客户需求，可加 Cloudflare 作为可选 CDN（数据库 `sites.cdn_provider` 字段已留好）。
@@ -174,7 +174,7 @@ MVP 阶段使用**阿里云 OSS + CDN**（详见 [infrastructure.md](infrastruct
 
 ## 七、自定义域名
 
-完整流程（API 自动化 + SSL 自动续期 + 错误重试）见 [infrastructure.md](infrastructure.md)。
+完整流程（API 自动化 + SSL 自动续期 + 错误重试）见 [infrastructure.md](../infrastructure.md)。
 简要流程：
 
 - 用户在设置里输入自己的域名

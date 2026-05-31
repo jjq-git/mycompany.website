@@ -38,7 +38,7 @@ com-a.mycompany.website/                语言选择首页（hreflang + 即时 J
 
 - 不在根路径直接渲染任何语言版本，**所有内容都在 `/en/`、`/zh/` 之类的子路径里**
 - 这样切语言只是路径替换，简单直接
-- 根路径生成一个"语言选择首页"，含 `hreflang` 标签 + JS 即时跳转 + `<meta refresh>` 兜底 + 给爬虫看的可读链接（详见 [seo.md](seo.md)）。**不要用纯 JS 跳转**，否则不跑 JS 的 LLM 爬虫拿到空页面
+- 根路径生成一个"语言选择首页"，含 `hreflang` 标签 + JS 即时跳转 + `<meta refresh>` 兜底 + 给爬虫看的可读链接（详见 [seo.md](site/seo.md)）。**不要用纯 JS 跳转**，否则不跑 JS 的 LLM 爬虫拿到空页面
 
 文档站同规则：
 
@@ -55,7 +55,7 @@ design.mycompany.website/               Flask SSR 多页应用，语言不进路
 ```
 
 后台是动态应用而不是静态发布产物，路径参数已经留给业务逻辑（路由、站点 ID）。
-语言不用路径前缀，按用户偏好（`User.preferred_lang`）+ 浏览器 `Accept-Language` 决定，详见 [admin-i18n.md](admin-i18n.md)。
+语言不用路径前缀，按用户偏好（`User.preferred_lang`）+ 浏览器 `Accept-Language` 决定，详见 [admin-i18n.md](ui_dashboard/admin-i18n.md)。
 
 ## 四、预览 URL
 

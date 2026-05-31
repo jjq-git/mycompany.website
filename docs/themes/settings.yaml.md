@@ -68,8 +68,8 @@ menu:
 | `default_language`  | 源语言 = 用户建站时选的语言（不固定某种语言）             |
 | `menu`              | 导航菜单（项结构见下）                                     |
 | `header` / `footer` | 选用的页眉 / 页脚变体                                      |
-| `custom_css`        | 全站自定义 CSS，注入每页末尾（[publish.md](../publish.md) 口子 3） |
-| `head_html`         | 注入 `<head>` 的代码，百度统计 / 客服等（[publish.md](../publish.md) 口子 2） |
+| `custom_css`        | 全站自定义 CSS，注入每页末尾（[publish.md](../site/publish.md) 口子 3） |
+| `head_html`         | 注入 `<head>` 的代码，百度统计 / 客服等（[publish.md](../site/publish.md) 口子 2） |
 
 ## 菜单项结构
 

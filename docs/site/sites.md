@@ -2,7 +2,7 @@
 
 数据分两层：
 
-- **数据库** —— 平台级元数据（账号、站点 / 主题登记、登录 token），共 4 张表。本文不展开，见 [database.md](database.md)。
+- **数据库** —— 平台级元数据（账号、站点 / 主题登记、登录 token），共 4 张表。本文不展开，见 [database.md](../database.md)。
 - **磁盘 `sites/<name>/`** —— 一个网站的全部内容（设置 / 页面 / 数据集 / 翻译 / 资源），纯 YAML + 文件，是内容的唯一真相源。**本文讲它。**
 
 > 网站正文内容**不进数据库**，全部存磁盘 YAML。
@@ -31,7 +31,7 @@ sites/<name>/
 
 ### settings.yaml
 
-站点级配置（站名 / 配色 / 菜单 / 语言 / 页眉页脚 / 社交）。字段与示例见 [themes/settings.yaml.md](themes/settings.yaml.md)。
+站点级配置（站名 / 配色 / 菜单 / 语言 / 页眉页脚 / 社交）。字段与示例见 [themes/settings.yaml.md](../themes/settings.yaml.md)。
 
 ### pages/（页面）
 
@@ -45,7 +45,7 @@ modules:
   - {type: product_grid, data: {target: products, limit: 6}}
 ```
 
-模块的字段与渲染见 [themes/blocks/](themes/blocks/)。
+模块的字段与渲染见 [themes/blocks/](../themes/blocks/)。
 
 ### data/（数据集）
 

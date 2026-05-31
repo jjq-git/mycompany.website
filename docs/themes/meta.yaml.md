@@ -74,7 +74,7 @@ updated: 2026-05-31                     # 主题最后更新日期
 | 明暗 | 深色、浅色                     |
 | 气质 | 极简、大胆、雅致、科技感、温暖 |
 
-`tags` 的多语言显示走 **gettext**（和 description 不同，见下节对比）：原值用中文（`深色`），后台按界面语言翻成英文（`Dark`），走 Flask-Babel，和后台界面多语言同一套机制（详见 [../admin-i18n.md](../admin-i18n.md)）。meta.yaml 里只写中文标签，不写翻译。
+`tags` 的多语言显示走 **gettext**（和 description 不同，见下节对比）：原值用中文（`深色`），后台按界面语言翻成英文（`Dark`），走 Flask-Babel，和后台界面多语言同一套机制（详见 [后台界面多语言](../ui_dashboard/admin-i18n.md)）。meta.yaml 里只写中文标签，不写翻译。
 
 ## 三、description 多语言（内联 zh/en）
 

@@ -1,6 +1,6 @@
 # 用户后台（内容管理）
 
-> 主题由开发者 + AI 用代码制作，详见 [themes/README.md](themes/README.md) 和 [architecture.md](architecture.md)。
+> 主题由开发者 + AI 用代码制作，详见 [themes/README.md](../themes/README.md) 和 [architecture.md](../architecture.md)。
 > 本文档只讲用户用来管理网站内容的界面。
 
 ## 一、设计原则
@@ -140,7 +140,7 @@ en 成为该站源语言（settings.default_language = en）
 
 总有用户会问："能不能改一下这个按钮颜色 / 加一段公众号二维码 / 加百度统计代码"。
 
-我们提供四个明确的口子（详见 [publish.md](publish.md)）：
+我们提供四个明确的口子（详见 [publish.md](../site/publish.md)）：
 
 1. **自定义 HTML 块** —— 在任何页面加一段自己的代码
 2. **全站 head 注入** —— 加百度统计、客服系统等脚本
