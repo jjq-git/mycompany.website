@@ -118,7 +118,7 @@ erDiagram
 
 ## 二、后期表（暂未实现）
 
-自定义域名 / SSL 自动化上线后会增加云资源自动化相关的表（`domains`、`provisioning_jobs` 等），属基础设施层，定义与用途见 [infrastructure.md](infrastructure.md)。MVP 阶段不建。
+自定义域名 / SSL 自动化上线后会增加云资源自动化相关的表（`domains`、`provisioning_jobs` 等），属基础设施层，后期再设计。MVP 阶段不建。
 
 ## 三、代码现状（与本文目标的差异）
 

@@ -16,7 +16,6 @@ mycompany.website 的设计文档。
 | [database.md](database.md)                 | 数据库表（平台级元数据，4 张表）      | 后端          |
 | [sites.md](site/sites.md)                       | 站点源内容（settings / pages / data） | 后端          |
 | [output.md](site/output.md)                     | 生成的静态站（目录 / 页面 URL / 渲染策略） | 后端          |
-| [infrastructure.md](infrastructure.md)     | CDN、SSL 自动化                       | 后端 / 运维   |
 | [domains.md](domains.md)                   | 子域分配、URL 路径、预览、自定义域名  | 后端 / 运维   |
 | [themes/README.md](themes/README.md)       | 主题开发（目录结构、布局、block）     | 后端 / 设计师 |
 | [themes/meta.yaml.md](themes/meta.yaml.md) | 主题 `meta.yaml` 字段说明             | 后端 / 设计师 |

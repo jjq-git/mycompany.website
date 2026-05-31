@@ -95,7 +95,6 @@ ls sites/1/
 | [docs/database.md](docs/database.md)             | 数据库表（平台级元数据）                       |
 | [docs/site/sites.md](docs/site/sites.md)                   | 站点源内容（settings / pages / data）          |
 | [docs/site/output.md](docs/site/output.md)                 | 生成的静态站（目录 / 页面 URL / 渲染策略）     |
-| [docs/infrastructure.md](docs/infrastructure.md) | CDN、SSL 自动化                                |
 | [docs/domains.md](docs/domains.md)               | 子域、URL 路径、预览、自定义域名               |
 | [docs/themes/README.md](docs/themes/README.md)   | 主题开发（目录结构、布局、block）              |
 | [docs/ui_dashboard/content.md](docs/ui_dashboard/content.md)               | 店主后台（内容管理界面）                       |

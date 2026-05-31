@@ -85,7 +85,7 @@ com-a.mycompany.website/_preview/<token>/zh/     预览的中文版
 - **工具**：`acme.sh` 或 `certbot` + 阿里云 DNS API 插件
 - **续期**：90 天周期，自动续
 
-详见 [infrastructure.md](infrastructure.md)。
+完整的 API 自动化 / 证书续期链路属后期，暂未单独成文。
 
 ## 六、自定义域名（Phase 2 之后）
 
