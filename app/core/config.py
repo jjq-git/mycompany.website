@@ -26,7 +26,7 @@ def load_config(override=None):
         # 项目目录
         'ROOT_DIR': str(ROOT),
         'SITES_DIR': str(ROOT / 'sites'),
-        'TEMPLATES_DIR': str(ROOT / 'site_templates'),
+        'TEMPLATES_DIR': str(ROOT / 'themes'),
         'UPLOADS_DIR': str(ROOT / 'uploads'),
         'OUTPUT_DIR': str(ROOT / 'output'),
 

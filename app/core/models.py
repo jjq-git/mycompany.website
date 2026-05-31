@@ -43,7 +43,7 @@ class LoginToken(db.Model):
 
 
 class Template(db.Model):
-    """模板缓存. 真正的源在 site_templates/<name>/, 启动时扫描同步."""
+    """模板缓存. 真正的源在 themes/<name>/, 启动时扫描同步."""
     __tablename__ = 'templates'
 
     id = db.Column(db.Integer, primary_key=True)

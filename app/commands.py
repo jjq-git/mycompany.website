@@ -30,10 +30,10 @@ def init_app(app):
 @click.command('scan-templates')
 @with_appcontext
 def scan_templates_cmd():
-    """扫描 site_templates/ 同步到数据库."""
+    """扫描 themes/ 同步到数据库."""
     templates = scan_templates()
     if not templates:
-        click.echo('未找到任何模板。请确认 site_templates/<name>/meta.yaml 存在。')
+        click.echo('未找到任何模板。请确认 themes/<name>/meta.yaml 存在。')
         return
     click.echo(f'同步了 {len(templates)} 个模板:')
     for t in templates:

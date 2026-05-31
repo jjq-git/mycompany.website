@@ -1,6 +1,6 @@
 """静态站点生成器.
 
-读取 sites/<id>/*.yaml + site_templates/<name>/templates/*.html,
+读取 sites/<id>/*.yaml + themes/<name>/templates/*.html,
 渲染输出到 output/<id>/.
 """
 import shutil
