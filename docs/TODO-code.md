@@ -22,6 +22,17 @@
 - [ ] `copy_seed_data()` 现在是 `shutil.copytree` 整个 `seed_data/`（[app/core/site_storage.py](../app/core/site_storage.py)）。改成：按用户选的语言，把 `themes/<name>/i18n/<lang>/` 整套（settings.yaml + pages/data）拷进 `sites/<id>/`
 - [ ] 现有主题 `themes/tech-product/` 的实际文件要把 `seed_data/` 重组成 `i18n/<lang>/`（每语言一份，含各自的 settings.yaml；文件搬移，不在"只改文档"范围，留待一起做）
 
+## 主题表字段补全（与 database.md 的 ER 图对齐）
+
+[database.md](database.md) 的 ER 图把主题表定为目标 schema，代码 `Template` 待补：
+
+- [ ] 加 `languages`（数组）—— 主题提供整套 seed 的语言（[meta.yaml.md](themes/meta.yaml.md) §五）
+- [ ] 加 `level`（int，会员门槛）、`tags`（数组，受控词表）、`author`
+- [ ] `industry` 由单值 `String(50)` 改为数组（JSON 列）
+- [ ] `description` 改多语言（zh / en，JSON）；数组 / 多语言字段统一用 JSON 列
+- [ ] `cover_image` 列与「约定路径 `preview/cover.webp`」二选一（meta.yaml.md 倾向约定路径，可去列）
+- [ ] `current_version` 命名与 database.md 的 `version` 对齐
+
 ## 其他
 
 （暂无）

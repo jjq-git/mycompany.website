@@ -14,7 +14,7 @@ docs.mycompany.website                  平台文档站（这个目录的内容�
 design.mycompany.website                用户后台（在线设计 / 编辑器）
 ```
 
-`docs` / `design` / `www` / `api` / `admin` / `app` / `cdn` / `assets` / `mail` / `blog` / `status` / `help` / `about` 等都是**保留子域**，不能被用户注册成 slug（`Site.name` 见 [database.md](database.md)；保留字清单 `SLUG_RESERVED` 见 [app/core/models.py](../app/core/models.py)）。
+`docs` / `design` / `www` / `api` / `admin` / `app` / `cdn` / `assets` / `mail` / `blog` / `status` / `help` / `about` 等都是**保留子域**，不能被用户注册成 slug（`Site.slug` 见 [database.md](database.md)；保留字清单 `SLUG_RESERVED` 见 [app/core/models.py](../app/core/models.py)）。
 
 ## 二、用户 slug 规则
 
