@@ -47,12 +47,12 @@ Cloudflare R2     800ms     2.5s     1.2s
 
 20-50 倍差距。给做国内生意的小企业用 = 砸口碑。
 
-### 远期：可选 Cloudflare 作为高级版
+### 远期：可选 Cloudflare
 
 数据库 `sites.cdn_provider` 字段已留好：
 
 - 默认 `aliyun`（国内客户）
-- 高级版 `cloudflare`（出口贸易客户）
+- 可选 `cloudflare`（出口贸易客户）
 
 不要 MVP 就做多 CDN 抽象层 —— 复杂度提前透支。
 真有跨地域需求时再加。
@@ -74,7 +74,7 @@ Cloudflare R2     800ms     2.5s     1.2s
 ```text
 MVP:        共享桶 + 路径前缀（site.bucket_path_prefix = "youngku/"）
               ↓
-Phase 2:    高级版可选独立桶（卖点：完全自主可控）
+Phase 2:    可选独立桶（完全自主可控）
               ↓
 Phase 3:    BYOC（Bring Your Own Cloud）—— 客户用自己的云账号
 ```
@@ -444,7 +444,7 @@ T+30:   触发 cleanup provisioning_jobs:
 |---|---|
 | **M5（MVP 发布）** | 共享桶 + 平台子域名（slug.mycompany.website） + 平台域名的 SSL（一次性配） |
 | **M6（自定义域名）** | 域名 API + 阿里云免费 SSL 自动签 + 续期任务 |
-| **Phase 2** | 高级版可选独立桶 |
+| **Phase 2** | 可选独立桶 |
 | **Phase 3** | 多 CDN 支持（加 Cloudflare 给海外客户） |
 
 每阶段对应的 `provisioning_jobs` job_type 增量加。

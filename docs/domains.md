@@ -7,7 +7,7 @@
 ```text
 mycompany.website                       平台介绍站（落地页）
 
-<slug>.mycompany.website                店主免费子域名（自动分配）
+<slug>.mycompany.website                店主子域名（自动分配）
                                         例: com-a.mycompany.website
 
 docs.mycompany.website                  平台文档站（这个目录的内容）
@@ -88,7 +88,7 @@ com-a.mycompany.website/_preview/<token>/zh/     预览的中文版
 
 ## 六、自定义域名（Phase 2 之后）
 
-付费用户带自己的域名（例：`com-a.com` 直接指向我们的 CDN）：
+店主带自己的域名（例：`com-a.com` 直接指向我们的 CDN）：
 
 - 店主在后台填入自己的域名
 - 店主在自己的 DNS 后台加 CNAME 指向 `com-a.mycompany.website`

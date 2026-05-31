@@ -8,7 +8,6 @@
 - 数据库：SQLite（开发）/ PostgreSQL（部署）
 - 模板引擎：Jinja2
 - 静态资源：字体子集化（fonttools）、图片处理（Pillow）
-- 部署：阿里云 OSS + CDN
 - 登录：邮箱魔法链接
 
 ## 仓库结构

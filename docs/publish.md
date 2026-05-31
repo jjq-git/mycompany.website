@@ -214,16 +214,11 @@ sites/<id>/data/products.yaml （含全部字段）
 MVP 阶段使用**阿里云 OSS + CDN**（详见 [infrastructure.md](infrastructure.md)）。
 不做多 CDN 抽象层 —— 复杂度提前透支。
 
-将来真有跨地域客户需求，加 Cloudflare 作为高级版选项（数据库 `sites.cdn_provider` 字段已留好）。
+将来真有跨地域客户需求，可加 Cloudflare 作为可选 CDN（数据库 `sites.cdn_provider` 字段已留好）。
 
 ## 八、四个自定义口子
 
 我们不让店主改 HTML / CSS，但开放四个明确的口子，满足"我想动一下"的需求。
-
-> 哪些档位能用：
->
-> - 自定义 HTML 块、整站 ZIP 导出 → 全档位
-> - 全站 head 注入、全站自定义 CSS → 高级版（详见 [vision.md](vision.md) 商业模式）
 
 ### 口子 1：自定义 HTML 块
 
