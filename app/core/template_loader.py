@@ -1,4 +1,4 @@
-"""扫描 site_templates/ 目录, 同步元信息到数据库.
+"""扫描 themes/ 目录, 同步元信息到数据库.
 
 每个模板必须有 meta.yaml, 字段:
     display_name: "制造业-标准版"
@@ -18,7 +18,7 @@ from .models import Template
 
 
 def scan_templates():
-    """扫描 site_templates/, 把每个含 meta.yaml 的子目录登记到数据库.
+    """扫描 themes/, 把每个含 meta.yaml 的子目录登记到数据库.
 
     返回: 同步后所有 Template 实例的列表.
     """

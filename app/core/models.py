@@ -1,4 +1,4 @@
-"""平台级数据模型. 见 docs/database.md.
+"""平台级数据模型. 见 docs/dashboard/database.md.
 
 只存平台级数据 (账号、订阅、域名、发布历史等).
 店主网站的内容在 sites/<id>/*.yaml.
@@ -43,7 +43,7 @@ class LoginToken(db.Model):
 
 
 class Template(db.Model):
-    """模板缓存. 真正的源在 site_templates/<name>/, 启动时扫描同步."""
+    """模板缓存. 真正的源在 themes/<name>/, 启动时扫描同步."""
     __tablename__ = 'templates'
 
     id = db.Column(db.Integer, primary_key=True)

@@ -1,10 +1,10 @@
 # SEO 与 AI 检索
 
-小企业网站的搜索流量很关键 —— 模板要默认产出**搜索引擎友好** + **大模型友好**的产物，店主不用懂 SEO 也能拿到正确的输出。
+使用 AI 来生成 SEO 需要的内容，无需用户逐个完善。
 
 ## 一、整体策略：默认全部做对
 
-店主不该看到任何"SEO 设置"开关。模板和发布器要做到：
+用户不该看到任何"SEO 设置"开关。主题和发布器要做到：
 
 - 每个页面有 `<title>` `<meta description>` `<link rel="canonical">`
 - 每个页面有 OG / Twitter 卡片标签（社交分享好看）
@@ -15,7 +15,7 @@
 - 静态 HTML 直接含正文（不依赖 JS 渲染），LLM 爬虫无 JS 也能拿到完整内容
 - 首屏 < 1 秒（影响 Core Web Vitals 排名）
 
-这些不是"加分项"，是模板的及格线。
+这些不是"加分项"，是主题的及格线。
 
 ## 二、页面级 meta
 
@@ -47,12 +47,12 @@
 
 | 字段 | 来源 |
 | --- | --- |
-| `page.title` | 页面 yaml 的 `title`，没填就用模板默认（如 "About - {company}"）|
+| `page.title` | 页面 yaml 的 `title`，没填就用主题默认（如 "About - {company}"）|
 | `page.description` | 页面 yaml 的 `description`，没填就用 `settings.company.tagline` |
 | `og_image_url` | 页面 yaml 的 `og_image`，没填就用 `settings.company.default_og_image` |
 | `canonical_url` | 发布时根据站点域名 + 路径自动算出 |
 
-店主只填业务字段（标题、简介、封面图），SEO 标签由模板组合。
+用户只填业务字段（标题、简介、封面图），SEO 标签由主题组合。
 
 ## 三、站点级文件
 
@@ -116,9 +116,9 @@ Sitemap: https://com-a.mycompany.website/sitemap.xml
 
 **关于 AI 爬虫为什么显式放开**：
 
-AI 模型本身不会"记住"小公司网站（小站很难进入训练集）。但 ChatGPT / Claude / Perplexity / Gemini 等在用户提问时会**实时联网检索**——能不能被检索到，取决于这些 bot 能不能爬。
+AI 模型本身不会"记住"小公司网站（小站很难进入训练集）。但 ChatGPT / Claude / Perplexity / Gemini 等在有人提问时会**实时联网检索**——能不能被检索到，取决于这些 bot 能不能爬。
 
-很多公司因版权焦虑一刀切屏蔽 AI 爬虫，结果用户问相关问题时 AI 永远找不到他们。我们模板默认全部 Allow，让小企业最大化曝光。需要屏蔽的店主可以在后台单独关。
+很多公司因版权焦虑一刀切屏蔽 AI 爬虫，结果有人问相关问题时 AI 永远找不到他们。我们主题默认全部 Allow，让小企业最大化曝光。需要屏蔽的用户可以在后台单独关。
 
 `_preview/` 路径对所有爬虫屏蔽，避免泄漏未发布内容。
 
@@ -143,11 +143,11 @@ AI 模型本身不会"记住"小公司网站（小站很难进入训练集）。
 - [How we built X](https://com-a.mycompany.website/en/blog/x): 摘要
 ```
 
-发布器从 `settings.yaml` + 各 dataset 自动汇总，无需店主填写。
+发布器从 `settings.yaml` + 各 dataset 自动汇总，无需用户填写。
 
 ## 四、结构化数据（JSON-LD）
 
-放在每页 `</body>` 前。模板按页面类型选用：
+放在每页 `</body>` 前。主题按页面类型选用：
 
 | 页面类型 | Schema |
 | --- | --- |
@@ -172,35 +172,35 @@ AI 模型本身不会"记住"小公司网站（小站很难进入训练集）。
 </script>
 ```
 
-字段都是模板从 yaml 拿，不要店主写 JSON。
+字段都是主题从 yaml 拿，不要用户写 JSON。
 
 ## 五、根域语言选择首页（关键 SEO 点）
 
 根路径 `/` 必须返回**真实可读 HTML**，含两个语言版本的链接，别只放 JS 跳转 —— 大多数 LLM 爬虫（GPTBot / ClaudeBot / PerplexityBot）不跑 JS，纯 JS 跳转的根页对它们来说是空页面。
 
-详见 [domains.md 第三节](domains.md)。
+详见 [domains.md 第三节](../cloud/domains.md)。
 
 ## 六、性能指标（也是排名因素）
 
 Google Core Web Vitals 直接进搜索排名：
 
-| 指标 | 目标 | 模板怎么保证 |
+| 指标 | 目标 | 主题怎么保证 |
 | --- | --- | --- |
 | LCP（最大内容绘制） | < 2.5s | 字体子集化、首屏图片预加载、HTML 内联关键 CSS |
 | CLS（布局偏移） | < 0.1 | 图片必须带 `width` `height`，避免后加载推动布局 |
-| INP（交互响应） | < 200ms | 模板 JS 极少（`< 50KB`），不引大框架 |
+| INP（交互响应） | < 200ms | 主题 JS 极少（`< 50KB`），不引大框架 |
 
 详见 [publish.md](publish.md) 的字体 / 图片优化章节。
 
-## 七、店主不用做的事 vs 应该填的内容
+## 七、用户不用做的事 vs 应该填的内容
 
-**店主不用做：** 写 `<title>`、写 sitemap、配 robots、写 JSON-LD、改 hreflang。
+**用户不用做：** 写 `<title>`、写 sitemap、配 robots、写 JSON-LD、改 hreflang。
 
-**店主应该填（模板表单引导）：**
+**用户应该填（主题表单引导）：**
 
 - 公司名、一句话简介（用作很多页的 fallback description）
 - 默认 OG 封面图（社交分享时用）
 - 每个页面 / 产品 / 文章的标题 + 简介 + 封面图
 - 图片的 alt 文本（无障碍 + SEO）
 
-模板表单要把这些字段标成"建议填写"，但不强制。
+主题表单要把这些字段标成"建议填写"，但不强制。

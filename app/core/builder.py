@@ -1,6 +1,6 @@
 """静态站点生成器.
 
-读取 sites/<id>/*.yaml + site_templates/<name>/templates/*.html,
+读取 sites/<id>/*.yaml + themes/<name>/templates/*.html,
 渲染输出到 output/<id>/.
 """
 import shutil
@@ -59,7 +59,7 @@ def build_site(site_id, base_url=''):
     tpl_root, tpl_html_dir, tpl_static_dir = _template_paths(site.template_name)
     meta = _load_yaml(tpl_root / 'meta.yaml')
     # 模板版本对比: 站点固定的版本 vs 磁盘上模板当前版本
-    # 不一致只警告, 不阻塞 — 真要冻结老版本时再做版本目录 (见 docs/templates.md 第九节)
+    # 不一致只警告, 不阻塞 — 真要冻结老版本时再做版本目录 (见 docs/site/publish.md 发布历史与回滚)
     current_version = meta.get('version')
     if site.template_version and current_version and site.template_version != current_version:
         current_app.logger.warning(
