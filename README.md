@@ -92,14 +92,9 @@ ls sites/1/
 | ------------------------------------------------ | ---------------------------------------------- |
 | [docs/README.md](docs/README.md)                 | 文档索引（从这里开始）                         |
 | [docs/architecture.md](docs/architecture.md)     | 整体架构、技术决策                             |
-| [docs/dashboard/database.md](docs/dashboard/database.md)             | 数据库表（平台级元数据）                       |
-| [docs/site/sites.md](docs/site/sites.md)                   | 站点源内容（settings / pages / data）          |
-| [docs/site/output.md](docs/site/output.md)                 | 生成的静态站（目录 / 页面 URL / 渲染策略）     |
-| [docs/cloud/domains.md](docs/cloud/domains.md)               | 子域、URL 路径、预览、自定义域名               |
-| [docs/themes/README.md](docs/themes/README.md)   | 主题开发（目录结构、布局、block）              |
-| [docs/dashboard/content.md](docs/dashboard/content.md)               | 店主后台（内容管理界面）                       |
-| [docs/site/publish.md](docs/site/publish.md)               | 发布、优化、自定义口子                         |
-| [docs/site/seo.md](docs/site/seo.md)                       | SEO + AI 检索（sitemap、llms.txt 等）          |
-| [docs/site/i18n.md](docs/site/i18n.md)                     | 多语言 + AI 翻译                               |
+| [docs/site/](docs/site/README.md) | 站点：源内容 → 产物 → 发布 → SEO → 多语言 |
+| [docs/dashboard/](docs/dashboard/README.md) | 后台 UI + 数据层（内容管理、后台多语言、数据库） |
+| [docs/cloud/](docs/cloud/README.md) | 托管设施（子域、自定义域名） |
+| [docs/themes/](docs/themes/README.md) | 主题开发（布局 / block / meta / settings） |
 
 给 Claude 的工作指引：[CLAUDE.md](CLAUDE.md)

@@ -77,11 +77,7 @@ instance/            SQLite 数据库（gitignored）
 
 ## 子系统文档
 
-- [database.md](dashboard/database.md) — 数据库表（平台级元数据）
-- [sites.md](site/sites.md) — 站点源内容（settings / pages / data）
-- [output.md](site/output.md) — 生成的静态站（目录 / URL / 渲染）
-- [themes/](themes/) — 主题开发（结构 / CSS·JS / 调用 block / 读取设置）
-- [themes/blocks/](themes/blocks/) — Block 系统
-- [content.md](dashboard/content.md) — 用户三栏后台
-- [publish.md](site/publish.md) — 发布、优化、自定义口子
-- [i18n.md](site/i18n.md) — 多语言与 AI 翻译
+- [site/](site/README.md) — 站点：源内容 → 产物 → 发布 → SEO → 多语言
+- [dashboard/](dashboard/README.md) — 后台 UI + 数据层（内容管理、后台多语言、数据库）
+- [cloud/](cloud/README.md) — 托管设施（子域、自定义域名、CDN / SSL）
+- [themes/](themes/README.md) — 主题开发（布局 / block / meta / settings）
