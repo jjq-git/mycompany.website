@@ -51,7 +51,7 @@ flowchart TD
 - **数据库 = 平台级元数据**：账号、站点登记、主题登记、登录 token。**不存网站内容。**
 - **磁盘 `sites/<name>/` = 网站内容**：设置、页面、数据集、翻译、资源，全是 YAML + 文件，是内容的唯一真相源；构建产物放同目录的 `output/`。
 
-`name` = 创建时选定的子域名 slug。导出的静态站 = `sites/<name>/output/`，可直接打包带走。字段细节见 [database.md](database.md)（DB 表）与 [data-model.md](data-model.md)（磁盘结构）。
+`name` = 创建时选定的子域名 slug。导出的静态站 = `sites/<name>/output/`，可直接打包带走。字段细节见 [database.md](database.md)（DB 表）与 [sites.md](sites.md)（站点磁盘内容）。
 
 ## 目录结构
 
@@ -78,7 +78,7 @@ instance/            SQLite 数据库（gitignored）
 ## 子系统文档
 
 - [database.md](database.md) — 数据库表（平台级元数据）
-- [data-model.md](data-model.md) — 磁盘 YAML 结构（网站内容模型）
+- [sites.md](sites.md) — 站点磁盘内容（settings / pages / data / 输出）
 - [themes/](themes/) — 主题开发（结构 / CSS·JS / 调用 block / 读取设置）
 - [themes/blocks/](themes/blocks/) — Block 系统
 - [content.md](content.md) — 用户三栏后台

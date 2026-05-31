@@ -91,7 +91,8 @@ ls sites/1/
 | ------------------------------------------------ | ------------------------------------- |
 | [docs/README.md](docs/README.md)                 | 文档索引（从这里开始）                |
 | [docs/architecture.md](docs/architecture.md)     | 整体架构、技术决策                    |
-| [docs/data-model.md](docs/data-model.md)         | 数据库表 + 磁盘 YAML 结构             |
+| [docs/database.md](docs/database.md)             | 数据库表（平台级元数据）              |
+| [docs/sites.md](docs/sites.md)                   | 站点磁盘内容（settings / pages / data / 输出） |
 | [docs/infrastructure.md](docs/infrastructure.md) | CDN、SSL 自动化                       |
 | [docs/domains.md](docs/domains.md)               | 子域、URL 路径、预览、自定义域名      |
 | [docs/themes/README.md](docs/themes/README.md)   | 主题开发（目录结构、布局、block）     |
