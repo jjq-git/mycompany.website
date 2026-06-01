@@ -543,7 +543,7 @@ modules:
 
 ## 十二、续作清单（下次照此继续）
 
-> **已转 9/14 个 block**：section_title, text_content, feature_grid, stat_counter, process_steps, logo_cloud, highlight_card（见「十四」）、data_grid, product_grid（数据集驱动，见「十五」）。**其余 4 个（hero_banner / item_detail / contact_info / contact_form）按架构边界保留 Jinja2**（见「十五·乙」）。开关 `ENABLE_DATA_ATTR_BLOCKS` 默认关，开发验证时在 config 或环境变量 `ENABLE_DATA_ATTR_BLOCKS=1` 打开。
+> **已转 9/14 个 block**：section_title, text_content, feature_grid, stat_counter, process_steps, logo_cloud, highlight_card（见「十四」）、data_grid, product_grid（数据集驱动，见「十五」）。**其余 4 个（hero_banner / item_detail / contact_info / contact_form）按架构边界保留 Jinja2**（见「十五·乙」）。**开关 `ENABLE_DATA_ATTR_BLOCKS` 现默认开**（2026-06-01，P1 完成后；设 `=0` 回退旧 Jinja2，需本地 .bak）。现有模块编辑器已统一走 schema 表单（见「十六」）。
 
 ### 当前状态速览
 
@@ -628,7 +628,7 @@ modules:
 - 浏览器（Playwright，真实 Chromium）：登录→开面板→新增 feature_grid→「+添加条目」×2→icon 下拉选值+填字段→删第 2 条+重排→再添加→提交，13/13 通过；真实"浏览器提交→后端通用解析→YAML"闭环成立，features 数组正确落库。
 
 **仍待做（承接 P1/P2/P3）：**
-- P1：已有模块统一走 schema 表单（删 6 个 Jinja2 elif + addFeature/addStat/addLogo/addStep 等硬编码 JS + 单数命名硬编码分支），与 Phase 6 合并。
+- ~~P1：已有模块统一走 schema 表单~~ ✅ 已完成（2026-06-01，见「十六」）：现有 data-* 模块用 JS 挂载 schema 表单回填，开关默认改 True。旧硬编码 Jinja2 elif 分支 + addFeature/addStat 等 JS 已成死代码（被拦截），实际删除留待后续纯清理。
 - P2：`highlight_card`/`data_grid`/`product_grid` 已转（见「十四」「十五」）；`hero_banner`/`item_detail`/`contact_info`/`contact_form` 评估后保留 Jinja2（见「十五·乙」）。
 - 编辑器侧 list 条目暂为 URL 文本输入（image 子字段未接文件上传 UI，后端已可兜 `_file`，按需补前端）。
 
@@ -696,3 +696,28 @@ modules:
 ### 丙、本次改动文件清单（甲）
 
 `block_parser.py`（href_template/fallback 字段）、`block_renderer.py`（href 模板化/fallback/标量项/page_size/静态链接补扫）、`builder.py`（context vars）、`panel_page_edit.html`（数据集下拉）、`blocks/{data_grid,product_grid}/template.html`（+ `.jinja2.bak` 备份）、`static/css/main.css`（`.dg-card-image img`）、`scripts/test_dataset_blocks.py`（新增）。
+
+---
+
+## 十六、P1：现有模块统一 schema 表单 + 开关默认开（2026-06-01）
+
+转完 9 个 block 后，让这些 block 的**现有模块**（已存在于页面里的）也走 schema 表单，并把总开关默认改 True。
+
+**为什么必须做：** 现有模块此前走旧 Jinja2 服务端编辑器分支，写的是旧键名（如 section_title 的 `text_align`）；而 data-* 渲染器读新键名（`style_text-align`）。开关关时渲染走 .jinja2.bak（旧键名一致）没问题，但开关开后两者不一致 → 必须先统一编辑器再翻开关。
+
+**做法（JS 挂载，不删旧分支）：**
+| 改动 | 文件 | 说明 |
+|---|---|---|
+| 传 data-* 类型集合 | `panel_page_edit.html` | `{% set data_attr_types = blocks | selectattr('is_data_attr') | map(attribute='name') | list %}` |
+| 拦截分支 | `panel_page_edit.html` | 模块 desktop 编辑区 if/elif 链最前加 `{% if module.type in data_attr_types %}` → 渲染内容/样式两个**空挂载点** + `mdata | tojson`；旧的 9 个 elif 分支被拦截成死代码（留待纯清理删） |
+| JS 挂载 | `panel_page_edit.html` `initSchemaMounts()` | 面板加载时遍历挂载点，用 `generateSchemaForm`/`generateSchemaStyleForm` + mdata 回填；幂等（`data-mounted` 守卫），语言切换重载也安全 |
+| 开关默认开 | `config.py` | `os.environ.get('ENABLE_DATA_ATTR_BLOCKS','1') != '0'`；设 `=0` 回退 |
+
+**效果：** 已转 9 个 block 的新增 + 现有模块走同一套 schema 表单（存 data-* 渲染器读的新键名）；未转的 4 个块不在 `data_attr_types`，仍走各自旧 Jinja2 编辑器；开关开后 data-* 块走渲染器、Jinja2 块走 Jinja2，共存。
+
+**验证：**
+- Playwright 11/11：测试页含现有 section_title + feature_grid 模块 → 挂载点被现有数据回填（tag/title、features 两条 功能一/功能二）、无旧 `text_align` 字段、改 title 提交后存新键名（`style_text-align` 保留、features 完整）。
+- 默认开关（不设 env）全站构建：en/home 上 hl-feature / service-card-title / dg-list（data-*）与 hero-banner-slide（Jinja2）共存，零 data-* 残留。
+- roundtrip 48 / editor 37 / dataset 16 全过；compat（显式设开关关）仍仅 home 既存空白差异。
+
+**仍待（纯清理，非功能）：** 删 `panel_page_edit.html` 里被拦截的 9 个死 elif 分支 + `addFeature/addStat/addLogo/addStep/addHeroSlide` 等已无用 JS + meta.yaml 的 `fields` 键。这些是死代码清理，不影响功能，按需做。

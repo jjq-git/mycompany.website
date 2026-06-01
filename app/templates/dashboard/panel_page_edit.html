@@ -91,6 +91,9 @@
     {% for blk in blocks %}
       {% set _ = display_names.update({blk.name: blk.display_name}) %}
     {% endfor %}
+    {# 已转 data-* 的 block 类型：现有模块的编辑器也走 schema 表单（JS 挂载），
+       而非旧硬编码 Jinja2 分支——保证存的是 data-* 渲染器读的新键名 #}
+    {% set data_attr_types = blocks | selectattr('is_data_attr') | map(attribute='name') | list %}
     <div id="selectedModules">
       {% for module in page.modules %}
       {% set i = loop.index0 %}
@@ -115,7 +118,16 @@
           {% set mdata_mobile = resp.get('mobile', {}) %}
 
           <div class="device-config device-desktop">
-{% if module.type == 'hero_banner' %}
+{% if module.type in data_attr_types %}
+            {# data-* 块：现有模块也用 schema 表单（JS 用下方 mdata 填充内容/样式两个挂载点）#}
+            <div class="d-flex mb-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="switchContentStyleTab(this, 'content')">内容</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="switchContentStyleTab(this, 'style')">样式</button>
+            </div>
+            <div class="content-style-panel panel-content schema-mount" data-mount="content" data-module-index="{{ i }}"></div>
+            <div class="content-style-panel panel-style schema-mount" data-mount="style" data-module-index="{{ i }}" style="display:none"></div>
+            <script type="application/json" class="schema-mount-data" data-module-index="{{ i }}">{{ mdata | tojson }}</script>
+{% elif module.type == 'hero_banner' %}
             <div class="d-flex mb-2">
               <button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="switchContentStyleTab(this, 'content')">内容</button>
               <button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="switchContentStyleTab(this, 'style')">样式</button>
@@ -3449,6 +3461,30 @@ document.addEventListener('paste', function(e) {
   }).join('');
   document.execCommand('insertHTML', false, html);
 });
+
+/* ===== 现有 data-* 模块的 schema 表单挂载 =====
+   服务端给 data-* 块的现有模块渲染了空的 content/style 挂载点 + mdata JSON，
+   这里用 generateSchemaForm/generateSchemaStyleForm 按 mdata 填充——使现有模块
+   与新增模块走同一套 schema 表单（存 data-* 渲染器读的新键名）。幂等，可重复调用。 */
+function initSchemaMounts() {
+  document.querySelectorAll('.schema-mount[data-mount="content"]').forEach(function(mount) {
+    if (mount.dataset.mounted) return;
+    var idx = mount.dataset.moduleIndex;
+    var typeEl = document.querySelector('[name="module_' + idx + '_type"]');
+    if (!typeEl) return;
+    var meta = findBlockMeta(typeEl.value);
+    if (!meta.is_data_attr || !meta.schema) return;
+    var mdata = {};
+    var dataEl = document.querySelector('.schema-mount-data[data-module-index="' + idx + '"]');
+    if (dataEl) { try { mdata = JSON.parse(dataEl.textContent || '{}') || {}; } catch (e) { mdata = {}; } }
+    var prefix = 'module_' + idx + '_data_';
+    mount.innerHTML = generateSchemaForm(prefix, meta.schema, mdata, function() { return ''; });
+    var styleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"]');
+    if (styleMount) styleMount.innerHTML = generateSchemaStyleForm(prefix, meta.schema, mdata);
+    mount.dataset.mounted = '1';
+  });
+}
+initSchemaMounts();
 </script>
 
 {# AI 翻译脚本 — 翻译后暂存到 sessionStorage，切换语言标签后自动恢复 #}
