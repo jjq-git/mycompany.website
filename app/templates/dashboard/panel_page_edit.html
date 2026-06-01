@@ -1029,9 +1029,8 @@
                 <div class="border rounded p-2 mb-2 list-item collapsed" data-item-index="{{ loop.index0 }}">
                   <div class="d-flex justify-content-between align-items-center mb-2 list-item-header" style="cursor:pointer; user-select:none;" onclick="this.closest('.list-item').classList.toggle('collapsed')"><span class="small fw-semibold">Logo {{ loop.index }}</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest('.list-item').remove();reindexLogoItems({{ i | int }})">删除</button></div>
                   <div class="list-item-body">
-                    <div class="mb-2"><label class="form-label small mb-1 text-muted">Logo 图片</label><input type="hidden" name="module_{{ i }}_logo_{{ loop.index0 }}_image" value="{{ logo.get('image', '') }}"><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor='#94a3b8';this.style.background='#f1f5f9'" onmouseleave="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="module_{{ i }}_logo_{{ loop.index0 }}_image_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>{% set logo_url = logo.get('image', '') %}{% if logo_url %}<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all">{{ logo_url }}</div>{% else %}<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div>{% endif %}<div class="mt-2 module-image-preview"{% if not logo_url %} style="display:none"{% endif %}><div style="position:relative;display:inline-block"><img src="{% if logo_url %}{{ logo_url }}{% endif %}" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display='none'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div></div>
-                    <div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">品牌名称</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_logo_{{ loop.index0 }}_name" value="{{ logo.get('name', '') }}"></div>
-                    <div class="col-6"><label class="form-label small mb-1 text-muted">链接</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_logo_{{ loop.index0 }}_link" value="{{ logo.get('link', '') }}"></div></div>
+                    <div class="mb-2"><label class="form-label small mb-1 text-muted">Logo 图片</label><input type="hidden" name="module_{{ i }}_logo_{{ loop.index0 }}_logo" value="{{ logo.get('logo', '') }}"><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor='#94a3b8';this.style.background='#f1f5f9'" onmouseleave="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="module_{{ i }}_logo_{{ loop.index0 }}_logo_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>{% set logo_url = logo.get('logo', '') %}{% if logo_url %}<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all">{{ logo_url }}</div>{% else %}<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div>{% endif %}<div class="mt-2 module-image-preview"{% if not logo_url %} style="display:none"{% endif %}><div style="position:relative;display:inline-block"><img src="{% if logo_url %}{{ logo_url }}{% endif %}" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display='none'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div></div>
+                    <div class="row g-2"><div class="col-12"><label class="form-label small mb-1 text-muted">链接 <span class="text-muted" style="font-weight:normal;">（可选，点击 Logo 跳转）</span></label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_logo_{{ loop.index0 }}_link" value="{{ logo.get('link', '') }}"></div></div>
                   </div>
                 </div>
                 {% endfor %}
@@ -1573,11 +1572,14 @@
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
+<script type="application/json" id="iconListJson">{{ icon_list | default([]) | tojson }}</script>
 <script>
 var blockLibrary = JSON.parse(document.getElementById('blockLibraryJson').textContent || '[]');
 var datasetNames = JSON.parse(document.getElementById('datasetNamesJson').textContent || '[]');
 // data-* 样式注册表：token → {label, control, options}，供 schema 表单生成样式控件
 var styleRegistry = JSON.parse((document.getElementById('styleRegistryJson') || {}).textContent || '{}');
+// data-* 图标注册表的全部图标名，供 icon 字段生成下拉选择器
+var iconList = JSON.parse((document.getElementById('iconListJson') || {}).textContent || '[]');
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>'"]/g, function(ch) {
@@ -1607,8 +1609,11 @@ function _schemaFieldHtml(prefix, field, mdata) {
     html += '<textarea class="form-control form-control-sm" name="' + _schemaEsc(name) + '" rows="4" placeholder="' + _schemaEsc(label + hint) + '">' + _schemaEsc(val) + '</textarea>';
   } else if (field.type === 'image' || field.type === 'video' || field.type === 'embed' || field.type === 'audio') {
     html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="' + _schemaEsc(field.type) + ' URL">';
+  } else if (field.type === 'icon') {
+    // icon → 下拉选择器（图标名来自 icon_registry，渲染时查表注入 SVG）
+    html += '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">' + _schemaIconOptions(val) + '</select>';
   } else {
-    // text / icon / 其他叶子 → 单行输入
+    // text / 其他叶子 → 单行输入
     html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '">';
   }
   html += '</div>';
@@ -1628,9 +1633,12 @@ function generateSchemaForm(prefix, schema, mdata, vTFn) {
   mdata = mdata || {};
   var html = '';
   (schema.fields || []).forEach(function(field) {
-    // group/list/grid 等结构类型暂不在简单 block 出现（Phase 3+ 再支持），这里只处理叶子
-    if (field.type === 'group' || field.type === 'list' || field.type === 'grid') {
-      html += '<div class="small text-muted mb-2">（' + _schemaEsc(field.name) + '：列表/复合字段，编辑器暂不支持，Phase 3+ 支持）</div>';
+    if (field.type === 'list' || field.type === 'grid') {
+      // 可重复列表/栅格 → 条目编辑器（增删条目 + 子字段子表单）
+      html += _schemaListEditor(prefix, field, mdata);
+    } else if (field.type === 'group') {
+      // 非重复复合字段：暂不在已转 block 出现，留待后续（highlight_card/item_detail）
+      html += '<div class="small text-muted mb-2">（' + _schemaEsc(field.name) + '：复合字段，编辑器暂不支持）</div>';
     } else {
       html += _schemaFieldHtml(prefix, field, mdata);
     }
@@ -1688,6 +1696,119 @@ function generateSchemaStyleForm(prefix, schema, mdata) {
     html += '</div>';
   });
   return html || '<div class="small text-muted">该模块无可调样式</div>';
+}
+
+/* icon 字段下拉 options（图标名来自 iconList） */
+function _schemaIconOptions(selected) {
+  var html = '<option value="">（无图标）</option>';
+  (iconList || []).forEach(function(name) {
+    html += '<option value="' + _schemaEsc(name) + '"' + (String(selected) === String(name) ? ' selected' : '') + '>' + _schemaEsc(name) + '</option>';
+  });
+  return html;
+}
+
+/* ===== list/grid 条目编辑器（schema 驱动，增删条目）=====
+   条目字段命名：<base><listName>_<itemIdx>_<subField>，外加隐藏 <base><listName>_count。
+   base = prefix 去掉末尾 'data_'（prefix=module_<idx>_data_ → base=module_<idx>_）。
+   与后端 _parse_modules_form 的通用 list 解析规则一一对应。 */
+function _schemaListEditor(prefix, field, mdata) {
+  // 数据集驱动的 list（声明了 data-source）→ 不手动增删，改为数据集选择/只读提示
+  if (field.source != null) {
+    return _schemaDatasetField(prefix, field, mdata);
+  }
+  var base = prefix.replace(/data_$/, '');
+  var listName = field.name;
+  var items = (mdata && Array.isArray(mdata[listName])) ? mdata[listName] : [];
+  var children = field.children || [];
+  var html = '<div class="schema-list-editor mb-2" data-list-base="' + _schemaEsc(base) +
+    '" data-list-name="' + _schemaEsc(listName) +
+    '" data-children="' + _schemaEsc(JSON.stringify(children)) + '">';
+  html += '<div class="d-flex justify-content-between align-items-center mb-2">' +
+    '<div class="small fw-semibold text-primary">' + _schemaEsc(listName) + '</div>' +
+    '<button type="button" class="btn btn-sm btn-outline-primary" onclick="schemaListAdd(this)">+ 添加条目</button></div>';
+  html += '<input type="hidden" class="schema-list-count" name="' + _schemaEsc(base + listName + '_count') + '" value="' + items.length + '">';
+  html += '<div class="schema-list-items">';
+  items.forEach(function(itemData, j) {
+    html += _schemaListItemHtml(base, listName, j, children, itemData);
+  });
+  html += '</div></div>';
+  return html;
+}
+
+/* 数据集驱动 list 的编辑控件：
+   - source 具名（如 products）：固定数据集，只读提示
+   - source 空串：店主选数据集（存到 data.dataset，与 data-source="" 渲染端对齐） */
+function _schemaDatasetField(prefix, field, mdata) {
+  if (field.source) {
+    return '<div class="small text-muted mb-2">「' + _schemaEsc(field.name) +
+      '」内容来自 <b>' + _schemaEsc(field.source) + '</b> 数据集，自动展示，无需手动编辑。</div>';
+  }
+  var name = prefix + 'dataset';
+  var val = (mdata && mdata.dataset != null) ? mdata.dataset : '';
+  var html = '<div class="mb-2"><label class="form-label small mb-1 text-muted">数据来源（' +
+    _schemaEsc(field.name) + '）</label>' +
+    '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">' +
+    '<option value="">请选择数据集</option>';
+  (datasetNames || []).forEach(function(ds) {
+    html += '<option value="' + _schemaEsc(ds.target) + '"' +
+      (String(val) === String(ds.target) ? ' selected' : '') + '>' +
+      _schemaEsc(ds.label || ds.target) + '</option>';
+  });
+  html += '</select></div>';
+  return html;
+}
+
+/* 单个条目卡片：遍历 children 渲染子字段子表单 */
+function _schemaListItemHtml(base, listName, j, children, itemData) {
+  itemData = itemData || {};
+  var itemPrefix = base + listName + '_' + j + '_';
+  var inner = '';
+  (children || []).forEach(function(child) {
+    inner += _schemaFieldHtml(itemPrefix, child, itemData);
+  });
+  return '<div class="border rounded p-2 mb-2 schema-list-item" data-item-index="' + j + '">' +
+    '<div class="d-flex justify-content-between align-items-center mb-2" style="cursor:pointer;user-select:none" onclick="this.closest(\'.schema-list-item\').classList.toggle(\'collapsed\')">' +
+    '<span class="small fw-semibold">条目 ' + (j + 1) + '</span>' +
+    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();schemaListRemove(this)">删除</button></div>' +
+    '<div class="schema-list-item-body">' + inner + '</div></div>';
+}
+
+function schemaListAdd(btn) {
+  var editor = btn.closest('.schema-list-editor');
+  if (!editor) return;
+  var base = editor.dataset.listBase;
+  var listName = editor.dataset.listName;
+  var children = JSON.parse(editor.dataset.children || '[]');
+  var list = editor.querySelector('.schema-list-items');
+  var j = list.querySelectorAll('.schema-list-item').length;
+  list.insertAdjacentHTML('beforeend', _schemaListItemHtml(base, listName, j, children, {}));
+  editor.querySelector('.schema-list-count').value = list.querySelectorAll('.schema-list-item').length;
+}
+
+function schemaListRemove(btn) {
+  var editor = btn.closest('.schema-list-editor');
+  if (!editor) return;
+  btn.closest('.schema-list-item').remove();
+  _schemaListReindex(editor);
+}
+
+/* 删除条目后重排 index + 重命名子字段 name */
+function _schemaListReindex(editor) {
+  var base = editor.dataset.listBase;
+  var listName = editor.dataset.listName;
+  var prefixStr = base + listName + '_';
+  var esc = prefixStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  var re = new RegExp('^(' + esc + ')\\d+_');
+  var items = editor.querySelectorAll('.schema-list-item');
+  editor.querySelector('.schema-list-count').value = items.length;
+  items.forEach(function(item, idx) {
+    item.dataset.itemIndex = idx;
+    var label = item.querySelector('.small.fw-semibold');
+    if (label) label.textContent = '条目 ' + (idx + 1);
+    item.querySelectorAll('[name]').forEach(function(el) {
+      el.name = el.name.replace(re, '$1' + idx + '_');
+    });
+  });
 }
 
 function findBlockMeta(type) {

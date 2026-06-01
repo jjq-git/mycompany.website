@@ -1,60 +1,21 @@
-{# 图文模块 #}
-{% set md = module.data if module.data else {} %}
-{% set has_title = md.get('title', '') | string | length > 0 %}
-
-{% if has_title %}
-{% set section_bg = md.get('section_bg', '') %}
-{% set outer_w = md.get('outer_width', '') or settings.get('layout', {}).get('global_width', '') %}
-{% set inner_w = md.get('inner_width', '') %}
-{% set border_radius = md.get('border_radius', '') %}
-{% set margin_top = md.get('margin_top', '') %}
-{% set margin_bottom = md.get('margin_bottom', '') %}
-{% set padding_top = md.get('padding_top', '') %}
-{% set padding_bottom = md.get('padding_bottom', '') %}
-{% set padding_left = md.get('padding_left', '') %}
-{% set padding_right = md.get('padding_right', '') %}
-{% set text_bg = md.get('text_bg', '') %}
-{% set text_color = md.get('text_color', '') %}
-{% set tag_bg = md.get('tag_bg', '') %}
-{% set tag_color = md.get('tag_color', '') %}
-{% set btn_bg = md.get('btn_bg', '') %}
-{% set btn_color = md.get('btn_color', '') %}
-{% set img_pos = md.get('image_position', 'left') %}
-
-{% set section_style = [] %}
-{% if section_bg %}{% set _ = section_style.append('background: ' ~ section_bg) %}{% endif %}
-{% if margin_top is not none and margin_top != '' %}{% set _ = section_style.append('margin-top: ' ~ margin_top) %}{% endif %}
-{% if margin_bottom is not none and margin_bottom != '' %}{% set _ = section_style.append('margin-bottom: ' ~ margin_bottom) %}{% endif %}
-{% if padding_top is not none and padding_top != '' %}{% set _ = section_style.append('padding-top: ' ~ padding_top) %}{% endif %}
-{% if padding_bottom is not none and padding_bottom != '' %}{% set _ = section_style.append('padding-bottom: ' ~ padding_bottom) %}{% endif %}
-{% if padding_left is not none and padding_left != '' %}{% set _ = section_style.append('padding-left: ' ~ padding_left) %}{% endif %}
-{% if padding_right is not none and padding_right != '' %}{% set _ = section_style.append('padding-right: ' ~ padding_right) %}{% endif %}
-
-{% if outer_w is not none and outer_w != '' %}{% set _ = section_style.append('max-width: ' ~ outer_w ~ '; margin-left: auto; margin-right: auto') %}{% endif %}
-
-<section class="section" style="{{ section_style | join('; ') }}">
-  <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
-    <div class="hl-grid {% if img_pos == 'right' %}hl-grid--reverse{% endif %}"{% if border_radius is not none and border_radius != '' %} style="border-radius: {{ border_radius }};"{% endif %}>
+<section data-name="highlight_card" data-type="group" data-hideable data-style="dir" class="section">
+  <div class="container">
+    <div class="hl-grid">
       <div class="hl-image">
-        {% if md.image %}<img src="{{ md.image }}" alt="{{ md.title }}" loading="lazy">{% endif %}
+        <img data-name="image" data-type="image" src="" alt="" loading="lazy">
       </div>
-      <div class="hl-text" style="{% if text_bg %}background: {{ text_bg }};{% endif %}{% if text_color %}color: {{ text_color }};{% endif %}padding: 2rem;">
-        {% if md.tag %}<span class="hl-tag" style="{% if tag_bg %}background: {{ tag_bg }};{% endif %}{% if tag_color %}color: {{ tag_color }};{% endif %}">{{ md.tag }}</span>{% endif %}
-        <h3 class="hl-title" style="{% if text_color %}color: {{ text_color }};{% endif %}">{{ md.title }}</h3>
-        <p class="hl-desc" style="{% if text_color %}color: {{ text_color }}; opacity: 0.8;{% endif %}">{{ md.desc }}</p>
-        {% if md.features %}
-        <ul class="hl-features" style="{% if text_color %}color: {{ text_color }};{% endif %}">
-          {% for feat in md.features %}<li>✓ {{ feat['text'] | default(feat) }}</li>{% endfor %}
+      <div class="hl-text">
+        <span data-name="tag" data-type="text" class="hl-tag">明星产品</span>
+        <h3 data-name="title" data-type="text" class="hl-title">图文模块标题</h3>
+        <p data-name="desc" data-type="textarea" class="hl-desc">这里是图文模块的描述文字，介绍产品或服务的核心卖点。</p>
+        <ul data-name="features" data-type="list" class="hl-features">
+          <li data-name="text" data-type="text" class="hl-feature">功能点文字</li>
         </ul>
-        {% endif %}
-        {% if md.primaryBtn or md.secondaryBtn %}
         <div class="hl-actions">
-          {% if md.primaryLink and md.primaryBtn %}<a href="{{ md.primaryLink }}" {% if md.primaryLinkTarget == '_blank' %}target="_blank"{% endif %} class="hl-btn hl-btn--primary" style="{% if btn_bg %}background: {{ btn_bg }};{% endif %}{% if btn_color %}color: {{ btn_color }};{% endif %}">{{ md.primaryBtn }}</a>{% endif %}
-          {% if md.secondaryLink and md.secondaryBtn %}<a href="{{ md.secondaryLink }}" class="hl-btn hl-btn--secondary" style="{% if btn_color %}color: {{ btn_color }}; border-color: {{ btn_color }};{% endif %}">{{ md.secondaryBtn }}</a>{% endif %}
+          <a data-name="primaryBtn" data-type="text" data-href="primaryLink" class="hl-btn hl-btn--primary">了解更多</a>
+          <a data-name="secondaryBtn" data-type="text" data-href="secondaryLink" class="hl-btn hl-btn--secondary">联系我们</a>
         </div>
-        {% endif %}
       </div>
     </div>
   </div>
 </section>
-{% endif %}

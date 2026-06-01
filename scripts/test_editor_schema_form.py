@@ -95,6 +95,81 @@ with app.app_context():
     check('btn 链接注入', 'href="/contact"' in out)
     check('无 data-* 残留', 'data-name' not in out and 'data-type' not in out)
 
+# ---- 4. POST list/grid block（通用条目命名 → YAML → 渲染）----
+print('\n=== 4. 保存 list/grid block（schema 条目编辑器 → YAML）===')
+# feature_grid（group 项，2 条）+ logo_cloud（leaf 项，1 条），用通用复数命名
+form2 = {
+    'module_count': '2',
+    # --- feature_grid ---
+    'module_0_type': 'feature_grid',
+    'module_0_order': '1',
+    'module_0_variant': 'default',
+    'module_0_data_heading': '功能特色',
+    'module_0_data_style_cols': '3',
+    'module_0_features_count': '2',
+    'module_0_features_0_icon': 'circuit',
+    'module_0_features_0_title': '定制开发',
+    'module_0_features_0_desc': '硬件软件一站式',
+    'module_0_features_1_icon': 'shield',
+    'module_0_features_1_title': '品质保障',
+    'module_0_features_1_desc': '72 小时老化测试',
+    # --- logo_cloud（leaf 项：logo 图片 + link）---
+    'module_1_type': 'logo_cloud',
+    'module_1_order': '2',
+    'module_1_variant': 'default',
+    'module_1_logos_count': '1',
+    'module_1_logos_0_logo': '/assets/uploads/brand.webp',
+    'module_1_logos_0_link': '/partners',
+}
+resp4 = client.post('/_panel/_schematest?site=1', data=form2)
+check('POST list block 返回 2xx/3xx', resp4.status_code in (200, 302), f'实际 {resp4.status_code}')
+
+with app.app_context():
+    saved = read_yaml(1, 'pages/_schematest.yaml') or {}
+    mods = {m.get('type'): m for m in saved.get('modules', [])}
+    fg = mods.get('feature_grid')
+    lc = mods.get('logo_cloud')
+    check('feature_grid 已保存', fg is not None)
+    if fg:
+        fd = fg.get('data', {})
+        feats = fd.get('features')
+        check('features 还原为 2 条数组', isinstance(feats, list) and len(feats) == 2, repr(feats))
+        if isinstance(feats, list) and len(feats) == 2:
+            check('feature[0] 子字段正确',
+                  feats[0].get('icon') == 'circuit' and feats[0].get('title') == '定制开发'
+                  and feats[0].get('desc') == '硬件软件一站式', repr(feats[0]))
+            check('feature[1] 子字段正确',
+                  feats[1].get('icon') == 'shield' and feats[1].get('title') == '品质保障', repr(feats[1]))
+        check('feature_grid 顶层 heading 保留', fd.get('heading') == '功能特色', repr(fd.get('heading')))
+        check('feature_grid style_cols 保留', str(fd.get('style_cols')) == '3', repr(fd.get('style_cols')))
+    check('logo_cloud 已保存', lc is not None)
+    if lc:
+        logos = lc.get('data', {}).get('logos')
+        check('logos 还原为 1 条数组', isinstance(logos, list) and len(logos) == 1, repr(logos))
+        if isinstance(logos, list) and logos:
+            check('logo 键名对齐 renderer（logo/link）',
+                  logos[0].get('logo') == '/assets/uploads/brand.webp' and logos[0].get('link') == '/partners',
+                  repr(logos[0]))
+
+# ---- 5. list/grid 数据渲染闭环 ----
+print('\n=== 5. list/grid 数据渲染确认 ===')
+with app.app_context():
+    from app.core import block_parser as bp2, block_renderer as br2
+    tdir = Path(app.config['TEMPLATES_DIR']) / 'dengtec' / 'blocks'
+    if fg:
+        fhtml = (tdir / 'feature_grid' / 'template.html').read_text(encoding='utf-8')
+        fout = br2.render(fhtml, bp2.parse(fhtml), fg.get('data', {}))
+        check('feature_grid 渲染含两张卡片标题', '定制开发' in fout and '品质保障' in fout)
+        check('feature_grid 渲染注入图标 SVG', '<svg' in fout)
+        check('feature_grid 渲染列数样式', '--cols: 3' in fout)
+        check('feature_grid 无 data-* 残留', 'data-name' not in fout and 'data-type' not in fout)
+    if lc:
+        lhtml = (tdir / 'logo_cloud' / 'template.html').read_text(encoding='utf-8')
+        lout = br2.render(lhtml, bp2.parse(lhtml), lc.get('data', {}))
+        check('logo_cloud 渲染含图片 src', '/assets/uploads/brand.webp' in lout)
+        check('logo_cloud 渲染含链接 href', 'href="/partners"' in lout)
+        check('logo_cloud 无 data-* 残留', 'data-name' not in lout)
+
 # ---- 清理测试污染 ----
 test_file = Path(app.config['SITES_DIR']) / '1' / 'pages' / '_schematest.yaml'
 if test_file.exists():

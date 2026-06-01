@@ -71,6 +71,8 @@ class FieldDef:
     default_text: str = ''         # 标签内默认文字（叶子文本类型用）
     default_src: str = ''          # 默认 src（媒体类型用）
     href_field: str = ''           # data-href 对应的字段名（空串=不可点）
+    href_template: str = ''        # data-href-template：含 {占位符} 的链接模板（数据集项用）
+    fallback: list = field(default_factory=list)  # data-fallback：本字段空时依次回退的备选 key
     hideable: bool = False         # 是否有 data-hideable
     style_tokens: list = field(default_factory=list)  # data-style 声明的合法 token
     source: str = None             # data-source 值（list/grid 用；None=未声明=手动）
@@ -200,6 +202,19 @@ def _int_or_none(raw):
         return None
 
 
+def _item_children(item):
+    """解析 list/grid 项模板的可编辑子字段（供编辑器生成条目子表单）。
+
+    两种项形态：
+    - 项根是 group（如 feature 卡片）：取其带 data-name 的直接子元素为子字段
+    - 项根本身就是 leaf（如 logo 墙的 <img data-name="logo">）：项根自己即唯一子字段，
+      渲染器走 _inject_root_leaf 不读 children，这里把它暴露出来纯粹是给编辑器用
+    """
+    if item.attrs.get('data-type', '') in LEAF_TYPES:
+        return [_build_field(item)]
+    return [_build_field(child) for child in _direct_named_children(item)]
+
+
 def _build_field(node):
     """把一个带 data-name 的 _Node 转成 FieldDef，递归处理子字段。"""
     attrs = node.attrs
@@ -209,6 +224,8 @@ def _build_field(node):
         type=dtype,
         tag=node.tag,
         href_field=attrs.get('data-href', '') or '',
+        href_template=attrs.get('data-href-template', '') or '',
+        fallback=[k.strip() for k in (attrs.get('data-fallback') or '').split(',') if k.strip()],
         hideable='data-hideable' in attrs,
         style_tokens=[
             t for t in style_registry.parse_style_tokens(attrs.get('data-style', ''))
@@ -244,8 +261,7 @@ def _build_field(node):
             item = items[0]
             fd.item_template_html = _serialize(item)
             # 项模板内部的字段也解析出来（编辑器要用）
-            for child in _direct_named_children(item):
-                fd.children.append(_build_field(child))
+            fd.children.extend(_item_children(item))
         return fd
 
     # 未知/未声明 type 的带名元素：当文本叶子兜底
@@ -289,8 +305,7 @@ def parse(html):
         if items:
             item = items[0]
             schema.item_template_html = _serialize(item)
-            for child in _direct_named_children(item):
-                schema.fields.append(_build_field(child))
+            schema.fields.extend(_item_children(item))
     else:
         # group 或其他：直接子字段
         for child in _direct_named_children(root):

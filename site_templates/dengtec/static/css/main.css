@@ -4884,15 +4884,21 @@ h6 { font-size: var(--font-size-md); }
    图文模块 (highlight_card → hl-*)
    ============================================ */
 .hl-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* data-* 版用 flex + --dir（图左文右 row / 图右文左 row-reverse），变量从 section 继承 */
+  display: flex;
+  flex-direction: var(--dir, row);
   align-items: stretch;
   gap: 0;
   border-radius: var(--radius-lg, 12px);
   overflow: hidden;
   box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.08));
 }
+.hl-grid > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
 
+/* 旧 Jinja2（template.jinja2.bak，flag off）仍用 .hl-grid--reverse 控制图右文左 */
 .hl-grid--reverse {
   direction: rtl;
 }
@@ -4918,6 +4924,7 @@ h6 { font-size: var(--font-size-md); }
   flex-direction: column;
   justify-content: center;
   gap: 1rem;
+  padding: 2rem;
 }
 
 .hl-tag {
@@ -4960,6 +4967,13 @@ h6 { font-size: var(--font-size-md); }
 .hl-features li {
   font-size: 0.9rem;
   line-height: 1.5;
+}
+/* data-* 版的 ✓ 由 CSS 提供（旧 Jinja2 在文本里硬写 ✓，两者并存不冲突：
+   .bak 输出已含 ✓ 文本，此处 ::before 仅作用于 data-* 输出的纯文本 li） */
+.hl-features li.hl-feature::before {
+  content: "✓ ";
+  color: var(--color-primary, #067a7a);
+  font-weight: 700;
 }
 
 .hl-actions {
@@ -5006,7 +5020,8 @@ h6 { font-size: var(--font-size-md); }
 
 @media (max-width: 768px) {
   .hl-grid {
-    grid-template-columns: 1fr;
+    /* 移动端图在上文在下，覆盖 --dir（data-*）与 rtl（.bak）*/
+    flex-direction: column;
   }
   .hl-grid--reverse {
     direction: ltr;
@@ -5079,6 +5094,15 @@ h6 { font-size: var(--font-size-md); }
 
 .dg-card-placeholder {
   color: var(--color-text-light, #94a3b8);
+}
+
+/* data-* 版用 <img> 代替背景图（旧 Jinja2 用 background-image）：填满图片区 */
+.dg-card-image img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .dg-card-category {

@@ -1698,6 +1698,7 @@ def page_panel(page_key):
         page.setdefault('modules', [])
         _merge_block_defaults(page.get('modules'), blocks)
         from .style_registry import STYLE_REGISTRY
+        from .icon_registry import icon_names
         return _render('dashboard/panel_page_edit.html',
                        user=user, site=site,
                        page_key=page_key, page=page,
@@ -1705,6 +1706,7 @@ def page_panel(page_key):
                        is_list_page=is_list_page,
                        all_list_datasets=all_list_datasets,
                        style_registry=STYLE_REGISTRY,
+                       icon_list=icon_names(),
                        current_lang=lang, languages=languages, default_lang=default_lang,
                        active=page_key)
 
@@ -1713,12 +1715,16 @@ def page_panel(page_key):
     write_yaml(site.id, f'pages/{page_key}.yaml', new_page, lang=storage_lang)
     blocks = _get_available_blocks(site.template_name)
     _merge_block_defaults(new_page.get('modules'), blocks)
+    from .style_registry import STYLE_REGISTRY
+    from .icon_registry import icon_names
     return _render('dashboard/panel_page_edit.html',
                    user=user, site=site,
                    page_key=page_key, page=new_page,
                    blocks=blocks, is_modules_format=True,
                    is_list_page=is_list_page,
                    all_list_datasets=all_list_datasets,
+                   style_registry=STYLE_REGISTRY,
+                   icon_list=icon_names(),
                    current_lang=lang, languages=languages, default_lang=default_lang,
                    active=page_key)
 
@@ -1805,6 +1811,17 @@ def _parse_modules_form(form, existing_modules=None):
     except (ValueError, TypeError):
         pass
 
+    # data-* 声明式 block 的 schema 表（按类型）：供下方通用 list/grid 条目解析。
+    # 取不到（无站点上下文/扫描失败）则留空，回落到各 block 的硬编码解析分支。
+    schema_by_type = {}
+    try:
+        _tpl_name = _current_context()[1].template_name
+        for b in _get_available_blocks(_tpl_name):
+            if b.get('is_data_attr') and b.get('schema') is not None:
+                schema_by_type[b['name']] = b['schema']
+    except Exception:
+        schema_by_type = {}
+
     modules = []
     for i in range(count):
         idx = f'module_{i}'
@@ -1833,6 +1850,48 @@ def _parse_modules_form(form, existing_modules=None):
                     data[field] = _parse_value(form.get(key, ''))
 
         from flask import request
+
+        # ===== 通用 data-* list/grid 条目解析 =====
+        # 若该模块是 data-* 声明式且 schema 含 list/grid 字段，按 schema 通用还原：
+        #   module_<i>_<listName>_count + module_<i>_<listName>_<j>_<subField>
+        # → data[listName] = [{subField: val, ...}, ...]
+        # 命中的 listName 记入 handled_lists，跳过后面对应的硬编码分支（避免重复解析）。
+        # 现有模块走旧 Jinja2 编辑器用单数命名（feature_count 等），count_key 不存在 →
+        # 不命中，仍由硬编码分支处理，两套互不干扰。
+        handled_lists = set()
+        _schema = schema_by_type.get(m_type)
+        if _schema is not None:
+            for lf in _schema.fields:
+                if lf.type not in ('list', 'grid'):
+                    continue
+                list_name = lf.name
+                count_key = f'{idx}_{list_name}_count'
+                if count_key not in form:
+                    continue  # 表单未表达该 list（如现有模块的旧式编辑器）
+                try:
+                    item_n = int(form.get(count_key, '0') or '0')
+                except (ValueError, TypeError):
+                    item_n = 0
+                # 子字段名 + data-href 字段名（leaf 项如 logo：name=logo, href=link）
+                sub_specs = [(c.name, c.href_field) for c in lf.children]
+                items = []
+                for j in range(item_n):
+                    item_prefix = f'{idx}_{list_name}_{j}_'
+                    entry = {}
+                    for sub_name, href_field in sub_specs:
+                        val = _parse_value(form.get(f'{item_prefix}{sub_name}', ''))
+                        if val not in (None, ''):
+                            entry[sub_name] = val
+                        if href_field:
+                            hval = _parse_value(form.get(f'{item_prefix}{href_field}', ''))
+                            if hval not in (None, ''):
+                                entry[href_field] = hval
+                    if entry:  # 跳过完全空白的条目
+                        items.append(entry)
+                data[list_name] = items
+                form_fields_for_module.add(list_name)  # 防止"已有数据保留"覆盖
+                handled_lists.add(list_name)
+
         if m_type == 'hero_banner':
             slide_count = 0
             try:
@@ -1944,7 +2003,7 @@ def _parse_modules_form(form, existing_modules=None):
             else:
                 data.pop('specs', None)
 
-        if m_type == 'feature_grid':
+        if m_type == 'feature_grid' and 'features' not in handled_lists:
             feature_count = 0
             try:
                 feature_count = int(form.get(f'{idx}_feature_count', '0'))
@@ -1974,7 +2033,7 @@ def _parse_modules_form(form, existing_modules=None):
                         data['features'] = parsed_features
 
         # 解析 stat_counter 的统计项列表
-        if m_type == 'stat_counter':
+        if m_type == 'stat_counter' and 'stats' not in handled_lists:
             stat_count = 0
             try:
                 stat_count = int(form.get(f'{idx}_stat_count', '0'))
@@ -1994,7 +2053,7 @@ def _parse_modules_form(form, existing_modules=None):
                 data['stats'] = stats
 
         # 解析 logo_cloud 的 Logo 列表
-        if m_type == 'logo_cloud':
+        if m_type == 'logo_cloud' and 'logos' not in handled_lists:
             logo_count = 0
             try:
                 logo_count = int(form.get(f'{idx}_logo_count', '0'))
@@ -2004,27 +2063,28 @@ def _parse_modules_form(form, existing_modules=None):
             for li in range(logo_count):
                 prefix = f'{idx}_logo_{li}_'
                 item = {}
-                for field in ('image', 'name', 'link'):
+                # 键名对齐 data-* 模板：图片存 logo、链接存 link（renderer 读这两个 key）
+                for field in ('logo', 'link'):
                     value = form.get(f'{prefix}{field}', '').strip()
                     if value:
                         item[field] = value
-                upload = request.files.get(f'{prefix}image_file')
+                upload = request.files.get(f'{prefix}logo_file')
                 if upload and upload.filename:
                     try:
-                        item['image'] = _save_uploaded_image(
+                        item['logo'] = _save_uploaded_image(
                             _current_context()[1].id,
                             upload,
                             prefix=f'logo-{li + 1}',
                         )
                     except Exception as exc:
                         current_app.logger.warning('Logo 图片上传失败: %s', exc)
-                if item.get('image') or item.get('name'):
+                if item.get('logo'):
                     logos.append(item)
             if logos:
                 data['logos'] = logos
 
         # 解析 process_steps 的步骤列表
-        if m_type == 'process_steps':
+        if m_type == 'process_steps' and 'steps' not in handled_lists:
             step_count = 0
             try:
                 step_count = int(form.get(f'{idx}_step_count', '0'))

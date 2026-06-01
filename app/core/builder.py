@@ -83,7 +83,15 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
         # 新路径：开关开 + 是 data-* 声明式
         if enable_data_attr and schema is not None:
             data_dict = module.get('data') if isinstance(module.get('data'), dict) else {}
-            context = {'all_datasets': jinja_ctx.get('all_datasets', {})}
+            context = {
+                'all_datasets': jinja_ctx.get('all_datasets', {}),
+                # data-href-template 用：站内链接前缀（base_url/lang/current_path）
+                'vars': {
+                    'base_url': jinja_ctx.get('base_url', '') or '',
+                    'lang': jinja_ctx.get('lang', '') or '',
+                    'current_path': jinja_ctx.get('current_path', '') or '',
+                },
+            }
             try:
                 out = block_renderer.render(html, schema, data_dict, context)
                 return Markup(out)

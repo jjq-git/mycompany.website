@@ -1,160 +1,23 @@
-{# 数据网格 — 通用数据列表模块 #}
-{% if module.data %}
-{% set md = module.data if module.data else {} %}
-{% set dataset_key = md.get('dataset', 'portfolio') %}
-{% if all_datasets is defined and dataset_key in all_datasets %}
-  {% set ds_data = all_datasets[dataset_key] %}
-  {% if ds_data is mapping and 'items' in ds_data %}
-    {% set items = ds_data['items'] %}
-  {% elif ds_data is iterable and ds_data is not string %}
-    {% set items = ds_data %}
-  {% else %}
-    {% set items = [] %}
-  {% endif %}
-{% else %}
-  {% set items = products if dataset_key == 'products' else portfolio if dataset_key == 'portfolio' else posts if dataset_key == 'posts' else [] %}
-{% endif %}
-{% if items %}
-{% set filter_category = md.get('category', '') %}
-{% set filtered_items = items %}
-{% if filter_category %}
-  {% set _tmp = [] %}
-  {% for _it in items %}
-    {% if _it.category | default('') | string == filter_category | string %}
-      {% set _ = _tmp.append(_it) %}
-    {% endif %}
-  {% endfor %}
-  {% set filtered_items = _tmp %}
-{% endif %}
-{% if filtered_items %}
-{% set per_page = md.get('items_per_page', 6) | int %}
-{% set card_layout = md.get('card_layout', 'image_top') %}
-{% set section_bg = md.get('section_bg', '') %}
-{% set outer_w = md.get('outer_width', '') or settings.get('layout', {}).get('global_width', '') %}
-{% set inner_w = md.get('inner_width', '') %}
-{% set columns = md.get('columns') | int or 3 %}
-{% set show_pagination = md.get('show_pagination', true) not in (false, 'false', 'False', '') %}
-{% set pagination_style = md.get('pagination_style', 'load_more') %}
-{% set display_items = filtered_items %}
-{% set total = display_items | length %}
-{% set is_products = dataset_key == 'products' %}
-{% set is_posts = dataset_key == 'posts' %}
-{% set is_portfolio = dataset_key == 'portfolio' %}
-{% set block_id = 'dg-' ~ module.order | default(0) %}
-
-{% set mg_top = md.get('margin_top', '') %}{% set mg_right = md.get('margin_right', '') %}{% set mg_bottom = md.get('margin_bottom', '') %}{% set mg_left = md.get('margin_left', '') %}{% set has_margin = mg_top or mg_right or mg_bottom or mg_left %}
-{% set pd_top = md.get('padding_top', '') %}{% set pd_right = md.get('padding_right', '') %}{% set pd_bottom = md.get('padding_bottom', '') %}{% set pd_left = md.get('padding_left', '') %}{% set has_padding = pd_top or pd_right or pd_bottom or pd_left %}
-<section class="section"{% if section_bg or has_margin or has_padding or outer_w %} style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}{% if pd_top %}padding-top: {{ pd_top }};{% endif %}{% if pd_right %}padding-right: {{ pd_right }};{% endif %}{% if pd_bottom %}padding-bottom: {{ pd_bottom }};{% endif %}{% if pd_left %}padding-left: {{ pd_left }};{% endif %}{% if mg_top %}margin-top: {{ mg_top }};{% endif %}{% if mg_right %}margin-right: {{ mg_right }};{% endif %}{% if mg_bottom %}margin-bottom: {{ mg_bottom }};{% endif %}{% if mg_left %}margin-left: {{ mg_left }};{% endif %}"{% endif %}>
-  <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
-    {% if md.title %}
+<section data-name="data_grid" data-type="group" data-hideable class="section">
+  <div class="container">
     <div class="section-header">
-      <h2 class="section-title">{{ md.title }}</h2>
+      <h2 data-name="title" data-type="text" class="section-title">数据列表</h2>
     </div>
-    {% endif %}
-
-    <div id="{{ block_id }}-list" class="dg-list {% if card_layout == 'image_left' %}dg-list--horizontal{% endif %}"
-         style="grid-template-columns: repeat({{ columns }}, 1fr);">
-      {% for item in display_items %}
-      <a href="{{ base_url }}/{{ lang }}{{ current_path }}{{ item.slug }}/"
-         class="dg-card {% if loop.index0 >= per_page %}dg-card--hidden{% endif %}{% if card_layout == 'image_left' %} dg-card--horizontal{% endif %}">
-        <div class="dg-card-image"{% if item.cover or item.image %} style="background-image: url('{{ item.cover | default(item.image) }}')"{% endif %}>
-          {% if not (item.cover or item.image) %}<div class="dg-card-placeholder">{{ '📦' if is_products else '📷' }}</div>{% endif %}
-          {% if is_products and item.category %}<span class="dg-card-category">{{ item.category }}</span>{% endif %}
+    <div data-name="items" data-type="list" data-source="" class="dg-list">
+      <a data-name="item" data-type="group" data-href-template="{base_url}/{lang}{current_path}{slug}/" class="dg-card">
+        <div class="dg-card-image">
+          <img data-name="cover" data-type="image" src="" alt="" loading="lazy">
+          <span data-name="category" data-type="text" class="dg-card-category">分类</span>
         </div>
         <div class="dg-card-body">
-          <h3 class="dg-card-title">{{ item.title | default(item.name) }}</h3>
-          {% if item.date %}<div class="dg-card-date">{{ item.date }}</div>{% endif %}
-          {% if is_products and (item.summary or item.description) %}<p class="dg-card-desc">{{ item.summary | default(item.description | truncate(80)) }}</p>{% endif %}
-          {% if is_posts and item.excerpt %}<p class="dg-card-desc">{{ item.excerpt | truncate(60) }}</p>{% endif %}
-          {% if not is_products and not is_posts %}{% set desc = item.description or item.summary or item.excerpt or '' %}{% if desc %}<p class="dg-card-desc">{{ desc | truncate(80) }}</p>{% endif %}{% endif %}
-          {% if item.tags %}
-          <div class="dg-card-tags">
-            {% for tag in (item.tags if item.tags is iterable and item.tags is not string else item.tags.split(','))[:5] %}
-            <span class="dg-card-tag">{{ tag | trim }}</span>
-            {% endfor %}
+          <h3 data-name="title" data-fallback="name" data-type="text" class="dg-card-title">标题</h3>
+          <div data-name="date" data-type="text" class="dg-card-date">日期</div>
+          <p data-name="summary" data-fallback="excerpt,description" data-type="text" class="dg-card-desc">简介</p>
+          <div data-name="tags" data-type="list" class="dg-card-tags">
+            <span data-name="tag" data-type="text" class="dg-card-tag">标签</span>
           </div>
-          {% endif %}
         </div>
       </a>
-      {% endfor %}
     </div>
-
-    {% if show_pagination and total > per_page %}
-    {% set total_pages = (total / per_page) | round(0, 'ceil') | int %}
-    <div id="{{ block_id }}-pager" class="dg-pager dg-pager--{{ md.get('pager_align', 'center') }}" style="margin-top: 1.5rem;">
-      {% if pagination_style == 'page_numbers' %}
-      {# 页码导航：显示页码按钮 #}
-      <div class="dg-page-numbers">
-        {% for p in range(1, total_pages + 1) %}
-        <button class="dg-page-btn {% if p == 1 %}active{% endif %}"
-                data-block-id="{{ block_id }}"
-                data-page="{{ p }}" data-per-page="{{ per_page }}"
-                onclick="goToDataGridPage(this, {{ p }})">{{ p }}</button>
-        {% endfor %}
-      </div>
-      {% else %}
-      {# 默认：加载更多按钮 #}
-      <button class="btn btn-outline-primary dg-load-more" data-block-id="{{ block_id }}"
-              data-page="1" data-per-page="{{ per_page }}" data-total="{{ total }}"
-              onclick="loadMoreDataGrid(this)">
-        {{ t.actions.loadMore | default('加载更多') }} <span class="dg-remaining">({{ total - per_page }} {{ t.products.itemsUnit | default('项') }})</span>
-      </button>
-      {% endif %}
-    </div>
-    {% endif %}
-
   </div>
 </section>
-{% endif %}
-{% endif %}
-{% endif %}
-
-<script>
-function loadMoreDataGrid(btn) {
-  var blockId = btn.dataset.blockId;
-  var page = parseInt(btn.dataset.page, 10) || 1;
-  var perPage = parseInt(btn.dataset.perPage, 10) || 6;
-  var total = parseInt(btn.dataset.total, 10) || 0;
-  var list = document.getElementById(blockId + '-list');
-  if (!list) return;
-  var hiddenCards = list.querySelectorAll('.dg-card--hidden');
-  var nextCount = Math.min(perPage, hiddenCards.length);
-  for (var i = 0; i < nextCount; i++) {
-    hiddenCards[i].classList.remove('dg-card--hidden');
-  }
-  var remaining = hiddenCards.length - nextCount;
-  if (remaining <= 0) {
-    btn.style.display = 'none';
-  } else {
-    btn.dataset.page = page + 1;
-    var span = btn.querySelector('.dg-remaining');
-    var unit = '{{ t.products.itemsUnit | default('项') }}';
-    if (span) span.textContent = '(' + remaining + ' ' + unit + ')';
-  }
-}
-
-// 页码导航：跳转到指定页
-function goToDataGridPage(btn, targetPage) {
-  var blockId = btn.dataset.blockId;
-  var perPage = parseInt(btn.dataset.perPage, 10) || 6;
-  var list = document.getElementById(blockId + '-list');
-  if (!list) return;
-  var cards = list.querySelectorAll('.dg-card');
-  var startIdx = (targetPage - 1) * perPage;
-  var endIdx = startIdx + perPage;
-  cards.forEach(function(card, i) {
-    if (i >= startIdx && i < endIdx) {
-      card.classList.remove('dg-card--hidden');
-    } else {
-      card.classList.add('dg-card--hidden');
-    }
-  });
-  // 更新激活按钮样式
-  var pager = document.getElementById(blockId + '-pager');
-  if (pager) {
-    pager.querySelectorAll('.dg-page-btn').forEach(function(b, i) {
-      b.classList.toggle('active', i + 1 === targetPage);
-    });
-  }
-}
-</script>

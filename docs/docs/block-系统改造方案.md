@@ -530,10 +530,10 @@ modules:
 
 **已验证（端到端构建）**：home 页 feature_grid（3 卡片+图标）、about 页 stat_counter（4 卡片+数字+动画 script 完整保留）正确渲染，无 schema data-* 残留。种子数据 stat_counter 字段对齐（title/subtitle→heading/subheading，columns→style_cols）。全套回归 48+20 项通过。
 
-**仍待做（Phase 3 编辑器侧）：**
-- 前端 schema 表单的 **list 增删条目编辑器** + **icon 下拉选择器**（现 generateSchemaForm 对 list 字段只显示占位提示）
-- 后端 `_parse_modules_form` 的 **data-* list 通用解析**（现仍按 block 类型硬编码解析 features/stats/slides，需改为按 schema 通用还原 `module_<idx>_<list>_<i>_<field>`）
-- 已转 6/14 个 block（section_title, text_content, feature_grid, stat_counter, process_steps, logo_cloud）
+**仍待做（Phase 3 编辑器侧）：** ✅ 已于 2026-06-01 完成，见「十三」。
+- ~~前端 schema 表单的 list 增删条目编辑器 + icon 下拉选择器~~ → 已实现
+- ~~后端 `_parse_modules_form` 的 data-* list 通用解析~~ → 已实现（通用复数命名 + 跳过硬编码分支）
+- 已转 9/14 个 block（section_title, text_content, feature_grid, stat_counter, process_steps, logo_cloud, highlight_card, data_grid, product_grid）；其余 4 个按架构边界保留 Jinja2（见「十五」）
 
 **测试现状：** `test_block_roundtrip.py` 48 项（含交错文本/charref/XSS/href/空列表安全回归）、section_title/text_content 端到端、向后兼容、单语言分支均通过。
 
@@ -543,7 +543,7 @@ modules:
 
 ## 十二、续作清单（下次照此继续）
 
-> 截至 2026-05-29 的进度快照与待办。**已转 6/14 个 block**：section_title, text_content, feature_grid, stat_counter, process_steps, logo_cloud。开关 `ENABLE_DATA_ATTR_BLOCKS` 默认关，开发验证时在 config 或环境变量 `ENABLE_DATA_ATTR_BLOCKS=1` 打开。
+> **已转 9/14 个 block**：section_title, text_content, feature_grid, stat_counter, process_steps, logo_cloud, highlight_card（见「十四」）、data_grid, product_grid（数据集驱动，见「十五」）。**其余 4 个（hero_banner / item_detail / contact_info / contact_form）按架构边界保留 Jinja2**（见「十五·乙」）。开关 `ENABLE_DATA_ATTR_BLOCKS` 默认关，开发验证时在 config 或环境变量 `ENABLE_DATA_ATTR_BLOCKS=1` 打开。
 
 ### 当前状态速览
 
@@ -551,15 +551,15 @@ modules:
 |------|------|
 | 渲染引擎（parser/renderer/style_registry/icon_registry） | ✅ 稳定，覆盖 text/textarea/richtext/image/video/embed/icon/group/list/grid + data-style/href/hideable/source + CDATA script + 业务 data-* 保留 |
 | builder 双路径 | ✅ 开关关回退 .jinja2.bak，开关开走 renderer |
-| 编辑器表单（新增模块） | 🟡 叶子字段（text/richtext/image/icon-当文本）+ data-style + 显隐开关已通；**list/grid 增删条目未做**（只显占位提示） |
-| 编辑器表单（已有模块） | 🟡 仍走旧 Jinja2 服务端分支（有 elif 保底，功能一致） |
-| 后端 list 解析 | 🔴 仍按 block 类型**硬编码**（feature_count/stat_count/...），未通用化 |
+| 编辑器表单（新增模块） | ✅ 叶子字段 + data-style + 显隐开关 + **list/grid 增删条目编辑器**（icon 下拉、增删/重排）已通（2026-06-01） |
+| 编辑器表单（已有模块） | 🟡 仍走旧 Jinja2 服务端分支（feature/stat/step 键名与 renderer 一致；logo_cloud 键名已对齐 {logo,link}）；统一到 schema 表单仍属 P1/Phase 6 |
+| 后端 list 解析 | ✅ 通用 data-* list 解析（`module_<i>_<listName>_count` + 子字段），命中即跳过对应硬编码分支；旧 Jinja2 单数命名仍由硬编码分支兜底，两套不冲突 |
 
 ### 待办（按优先级）
 
-**P0 — 完成 Phase 3 编辑器闭环（让店主能在后台增删 list 条目）**
+**P0 — 完成 Phase 3 编辑器闭环（让店主能在后台增删 list 条目）** ✅ 已完成（2026-06-01，见「十三」）
 
-现状：feature_grid/stat_counter/process_steps/logo_cloud 渲染没问题，但后台**无法增删卡片/条目**——这 4 个 block 在编辑器里是"半残"。要两端配合：
+现状（已解决）：feature_grid/stat_counter/process_steps/logo_cloud 渲染没问题，但后台**无法增删卡片/条目**——这 4 个 block 在编辑器里是"半残"。要两端配合：
 
 1. **前端**（`app/templates/dashboard/panel_page_edit.html`，约 1631 行 `generateSchemaForm` 里 `field.type === 'list'/'grid'` 分支，现在只输出占位提示）：
    - 写一个 list 条目编辑器：渲染已有条目 + "添加条目"/"删除条目"按钮；每条目用 `field.children`（schema 里的项字段）渲染子表单。
@@ -577,7 +577,7 @@ modules:
 现在已有模块用旧 Jinja2 分支（`panel_page_edit.html` 的 14 个 `{% elif module.type %}`）。已转的 6 个 block 可以让服务端渲染也走 schema 占位 + JS 初始化填充，删掉对应 Jinja2 分支。**与 Phase 6 清理合并做**。
 
 **P2 — 继续转剩余 block（按难度排序）**
-未转 8 个：`highlight_card`（group，类似已转的，最简单）、`item_detail`（嵌套 list：images+specs，需 renderer 支持嵌套 list——目前规范说不支持嵌套，要评估）、`contact_form`（表单字段特殊）、`data_grid`/`product_grid`（**Phase 4 数据集驱动**，data-source 机制 renderer 已支持但未接真实 block）、`contact_info`（数据来自 settings.contact，需 renderer 加"从 settings 取数"能力）、`hero_banner`（轮播 JS + list/dict 双数据形态）。`item_data` 不转（是数据集条目编辑器，非页面 block）。
+~~`highlight_card`~~ 已转（2026-06-01，见「十四」）。未转 7 个：`item_detail`（嵌套 list：images+specs，需 renderer 支持嵌套 list——目前规范说不支持嵌套，要评估）、`contact_form`（表单字段特殊）、`data_grid`/`product_grid`（**Phase 4 数据集驱动**，data-source 机制 renderer 已支持但未接真实 block）、`contact_info`（数据来自 settings.contact，需 renderer 加"从 settings 取数"能力）、`hero_banner`（轮播 JS + list/dict 双数据形态）。`item_data` 不转（是数据集条目编辑器，非页面 block）。
 
 **P3 — Phase 6 清理**
 删 `admin_modules.js` + `panel_page_edit.html` + `page_home.html` 的硬编码分支；删 meta.yaml 的 fields 键；删 `.jinja2.bak`；开关默认改 True。
@@ -597,6 +597,102 @@ modules:
 | `app/core/icon_registry.py` | 图标名→SVG（46 个） |
 | `app/core/builder.py` | `_make_render_block`/`_load_block_for_render` 双路径 + `_SCHEMA_CACHE` |
 | `app/core/template_loader.py` | `scan_blocks` 附加 is_data_attr/schema |
-| `app/core/routes.py` | `_parse_modules_form`（~1810，表单→module.data，**待通用化 list**）、`page_panel`（~1626，下发 blocks/style_registry） |
-| `app/templates/dashboard/panel_page_edit.html` | `generateSchemaForm`/`generateSchemaStyleForm`（~1588 前）、`addModule`（~1990，is_data_attr 拦截在 ~2024） |
+| `app/core/routes.py` | `_parse_modules_form`（通用 data-* list 解析 + 硬编码兜底）、`page_panel`（下发 blocks/style_registry/icon_list） |
+| `app/templates/dashboard/panel_page_edit.html` | `generateSchemaForm`/`generateSchemaStyleForm`/`_schemaListEditor`/`schemaListAdd`/`_schemaListReindex`、`addModule`（is_data_attr 拦截） |
 | `site_templates/dengtec/blocks/<name>/template.html` | data-* 模板；旧版备份 `template.jinja2.bak` |
+
+---
+
+## 十三、Phase 3 编辑器闭环实施记录（2026-06-01）
+
+落地「十二」的 **P0**：让店主在后台**增删 list/grid 条目**，并把后端解析通用化。改 4 文件、+259 行。
+
+**改动：**
+
+| 文件 | 改动 |
+|------|------|
+| `block_parser.py` | 新增 `_item_children()`：list/grid 项模板根是 **leaf**（如 logo 墙 `<img data-name="logo" data-href="link">`）时，把该 leaf 暴露为单个 child（name=logo, type=image, href_field=link）。group 项行为不变。纯增量，渲染器不受影响（leaf 项仍走 `_inject_root_leaf`） |
+| `routes.py` `_parse_modules_form` | 新增**通用 data-\* list/grid 解析**：按 schema 还原 `module_<i>_<listName>_count` + `module_<i>_<listName>_<j>_<subField>` → `data[listName]=[{...}]`，data-href 子字段（logo→link）一并还原；命中的 listName 跳过对应硬编码分支。`schema_by_type` 由 `_current_context()` 取模板 schema |
+| `routes.py` `page_panel` | 下发 `icon_list=icon_names()`（顺带补上新页分支漏传的 `style_registry`） |
+| `panel_page_edit.html` | `generateSchemaForm` 的 list/grid 分支由占位提示改为 `_schemaListEditor`（增删条目 + 子字段子表单 + 重排重命名）；`_schemaFieldHtml` 的 icon 字段改为**下拉选择器**（`iconList` 来自 `iconListJson`）；新增 `_schemaIconOptions`/`_schemaListEditor`/`_schemaListItemHtml`/`schemaListAdd`/`schemaListRemove`/`_schemaListReindex` |
+| logo_cloud 旧 Jinja2 编辑器 + 硬编码 parser | 键名 `{image,name,link}` → `{logo,link}`，对齐 data-\* renderer（否则新增的 logo_cloud 重载后用旧编辑器编辑会丢图） |
+| `scripts/test_editor_schema_form.py` | +17 项：POST feature_grid（group 项×2）+ logo_cloud（leaf 项×1）通用命名 → 验证 YAML 还原 + 渲染闭环（icon SVG、列数、href、无 data-\* 残留） |
+
+**命名契约（前后端对齐）：** 条目子字段 `module_<i>_<listName>_<j>_<subField>` + 隐藏 `module_<i>_<listName>_count`，listName = list 字段的 data-name（复数，如 features/stats/steps/logos）。**与旧 Jinja2 编辑器的单数命名（feature_count 等）不同**，故现有模块的旧编辑器仍由硬编码分支兜底，两套互不冲突。
+
+**双系统现状（这 4 个 block）：** 新增模块走 schema 条目编辑器（复数命名→通用解析）；已有模块仍走旧 Jinja2 编辑器（单数命名→硬编码分支）。同一份 `data[listName]` 键一致，故"新增→保存→重载"数据不丢，仅编辑器 UI 在重载后从 schema 表单切回 Jinja2（功能等价）。**统一到 schema 表单属 P1，留待 Phase 6 清理**。
+
+**验证：**
+- 单测：`test_block_roundtrip` 48/48、`test_editor_schema_form` 37/37（含新增 17 项）、`test_section_title`/`test_e2e_section_title`/`test_render_block_compat` 均通过（compat 的 home 页 1 处空白差异为改前既存，与本次无关）。
+- 构建：flag ON 全站 `build_site(1)`，en/home 的 feature_grid（3 卡片+图标 SVG）、en/about 的 stat_counter（数字+标签+动画 script）正确渲染，全站零 data-\* 残留。
+- 浏览器（Playwright，真实 Chromium）：登录→开面板→新增 feature_grid→「+添加条目」×2→icon 下拉选值+填字段→删第 2 条+重排→再添加→提交，13/13 通过；真实"浏览器提交→后端通用解析→YAML"闭环成立，features 数组正确落库。
+
+**仍待做（承接 P1/P2/P3）：**
+- P1：已有模块统一走 schema 表单（删 6 个 Jinja2 elif + addFeature/addStat/addLogo/addStep 等硬编码 JS + 单数命名硬编码分支），与 Phase 6 合并。
+- P2：`highlight_card`/`data_grid`/`product_grid` 已转（见「十四」「十五」）；`hero_banner`/`item_detail`/`contact_info`/`contact_form` 评估后保留 Jinja2（见「十五·乙」）。
+- 编辑器侧 list 条目暂为 URL 文本输入（image 子字段未接文件上传 UI，后端已可兜 `_file`，按需补前端）。
+
+---
+
+## 十四、highlight_card 转 data-*（2026-06-01，P2 第 1 个）
+
+承接 P2，转第 7 个 block。group 根 + 1 个叶子文本 list（features）+ 2 个带 data-href 的按钮，是检验「十三」list 条目编辑器（叶子项 + href）的好样本。
+
+**改动文件：**
+
+| 文件 | 改动 |
+|------|------|
+| `blocks/highlight_card/template.html` | 旧 Jinja2（27 个 `{% set %}` + 大量内联 style）→ 纯 data-* 声明式：root `group data-hideable data-style="dir"`；字段 image/tag/title/desc(textarea)/**features(list，项=叶子 `<li data-name="text">`)**/primaryBtn(href=primaryLink)/secondaryBtn(href=secondaryLink)。旧版备份 `template.jinja2.bak` |
+| `static/css/main.css` | `.hl-grid` 由 `grid` 改 **flex + `flex-direction: var(--dir, row)`**（变量从 section 继承）；`.hl-features li.hl-feature::before` 提供 ✓（仅作用 data-* 输出，旧 .bak 文本里硬写的 ✓ 不受影响）；`.hl-text` 收回 `padding: 2rem`；移动端 `flex-direction: column`。保留 `.hl-grid--reverse`（flag off 的 .bak 仍用） |
+| `seed_data/pages/home.yaml`、`about.yaml` | `image_position: left/right` → `style_dir: row / row-reverse`（对齐 data-style token） |
+
+**简化（对齐方案 4.4）：** 丢弃旧 meta 的像素级微调字段（section_bg/各 padding/各 color/border_radius 等，回到 CSS 控制），只保留 `dir` 一个结构性样式 token。meta.yaml 的旧 `fields` 暂留（同其它已转 block，Phase 6 统一清）。
+
+**验证：**
+- 解析：schema = group + 7 字段，features list 的项为叶子 `text`（children=[text]）。
+- 渲染（直接 + builder 全链路）：en/home highlight_card 正确出 hl-feature(✓)、`--dir: row`、按钮 href，空图/空副按钮自动 hidden，零 data-\* 残留；compat 仍仅 home 既存空白差异（.bak 未动）。
+- 浏览器（Playwright，真实 Chromium）7/7：新增 highlight_card → desc 为 textarea、primaryBtn 自动生成 primaryLink 链接输入、features 条目编辑器增删 → 提交，YAML 还原 `features:[{text},{text}]` + primaryBtn/primaryLink，渲染闭环正确。
+
+> 注：`.jinja2.bak` 被 .gitignore（全部已转 block 皆如此，属既有约定）——flag off 回退依赖本地 .bak，生产应以 `ENABLE_DATA_ATTR_BLOCKS=1` 运行。此为既存事项，非本次引入。
+
+---
+
+## 十五、Phase 4 数据集驱动 + 架构边界（2026-06-01）
+
+### 甲、data_grid / product_grid 转 data-*（Phase 4）
+
+转这两个数据集驱动 block，为此给渲染器补了一套通用能力（不写任何 block 专属逻辑）：
+
+| 新增渲染器能力 | 文件 | 说明 |
+|---|---|---|
+| `data-href-template` | `block_renderer.py` `_inject_href`/`_fill_template` | 含 `{占位符}` 的链接模板，从 `context['vars']`（base_url/lang/current_path）+ 当前项字段填充；占位符无值则跳过（不完整链接）。过 scheme 白名单。|
+| `data-fallback` | `block_parser.py` + `_field_value` | 字段空时依次回退备选 key：title←name、desc←summary/excerpt/description——解决各数据集字段名不一致 |
+| 标量列表项 | `_inject_root_leaf`/`_expand_list` | list 项是字符串（如 tags）时值即本身，不再要求 dict |
+| `data-page-size` 上限 | `_expand_list` | 数据集列表最多展示 N 条（product_grid max 6）|
+| 静态 href 模板补扫 | `_fill_static_href_templates` | "查看全部"等仅依赖上下文变量的链接，全树补扫填充 |
+| 渲染上下文扩展 | `builder.py` `_make_render_block` | context 加 `vars`={base_url, lang, current_path} |
+| 编辑器数据集下拉 | `panel_page_edit.html` `_schemaDatasetField` | list 字段有 `data-source` → 不手动增删：具名（products）只读提示、空串给数据集下拉（存 `data.dataset`）|
+
+**模板写法：** 复用现成 `.dg-card` 视觉（加一条 `.dg-card-image img` 规则替代旧背景图）。
+- `product_grid`：`data-source="products"` 固定 + `data-page-size="6"` + 每项 `data-href-template="{base_url}/{lang}/products/{slug}/"` + 末尾"查看全部"静态模板链接。
+- `data_grid`：`data-source=""`（店主选 dataset）+ 每项 `data-href-template="{base_url}/{lang}{current_path}{slug}/"`；title `data-fallback="name"`、desc `data-fallback="excerpt,description"`、tags 标量列表、category/date 空值自动隐藏。简化丢弃：分页（数据集均 ≤6 条，全展示）、category 过滤、card_layout、columns 微调。
+
+**验证：** 新增 `scripts/test_dataset_blocks.py` 16/16（用真实 seed 数据集渲染 product_grid 5 卡 / data_grid portfolio 6 卡 / posts 4 卡，校验 href 模板、fallback、标量 tags、page_size、空数据集隐藏、零 data-\* 残留）；roundtrip 48 / editor 37 全过；flag ON 全站构建零残留。
+> 注：site 1 无数据集数据，故其页面 data_grid 渲染为空属正常（无数据→空），非回归。
+
+### 乙、保留 Jinja2 的 4 个 block（架构边界，**不转 data-***）
+
+落地中确认：data-* 声明式模型适合**内容块**（text/image/list/数据集），不适合下列**交互/设置/表单逻辑**块。强转要么丢功能、要么堆 block 专属渲染器特性（违背"通用"初衷）。按方案「四·4.5 / 六」对 Header/Footer 的同一判断，这 4 个保留 Jinja2：
+
+| block | 不转原因（结构性/语义性硬伤）|
+|---|---|
+| **hero_banner** | ① video/image 按 `item.type` 条件渲染**不同元素**；② 圆点导航是对 slides 数组的**第二次遍历**——data-* 一个 list 只能在一处展开。轮播 JS + 每帧媒体上传/视频。|
+| **item_detail** | 同一个 images 数组要**同时**做主图 + 缩略图列表（一处展开装不下）；放大镜 + 缩略图切换 JS 依赖随机 block_id。|
+| **contact_info** | 5 张固定卡（写死 SVG 图标 + 标签）数据来自 `settings.contact`（非 module.data）；每卡独立 show 开关（data-* 的 hideable 是整块级，非逐卡）。|
+| **contact_form** | 带 show_name/email/phone/company/message 开关的**固定表单输入**，不是用户内容字段。|
+
+> `item_data` 同样不转（数据集条目编辑器，非页面 block）。故 data-* 化的合理终点是 **9 个内容/数据集块**，而非 14/14。若将来确需转这 4 个，应作为独立专题（每个先建对应渲染器能力：条件元素 / 一数组多处展开 / settings 取数 / 逐卡 hideable），不混在通用迁移里。
+
+### 丙、本次改动文件清单（甲）
+
+`block_parser.py`（href_template/fallback 字段）、`block_renderer.py`（href 模板化/fallback/标量项/page_size/静态链接补扫）、`builder.py`（context vars）、`panel_page_edit.html`（数据集下拉）、`blocks/{data_grid,product_grid}/template.html`（+ `.jinja2.bak` 备份）、`static/css/main.css`（`.dg-card-image img`）、`scripts/test_dataset_blocks.py`（新增）。

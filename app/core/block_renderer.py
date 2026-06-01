@@ -50,9 +50,42 @@ def _hide(node):
 # schema 声明用的 data-* 属性（渲染后清理掉）。其余 data-*（如 data-target、
 # data-index 等给前端 JS 用的业务属性）保留，否则会破坏 block 内嵌脚本（如数字动画）。
 _SCHEMA_DATA_ATTRS = {
-    'data-name', 'data-type', 'data-href', 'data-style', 'data-hideable',
-    'data-source', 'data-page-size', 'data-cols',
+    'data-name', 'data-type', 'data-href', 'data-href-template', 'data-fallback',
+    'data-style', 'data-hideable', 'data-source', 'data-page-size', 'data-cols',
 }
+
+
+def _field_value(field_def, data_dict):
+    """取字段值：本字段名空时按 data-fallback 依次回退（如 title←name、desc←summary/excerpt）。"""
+    val = data_dict.get(field_def.name)
+    if val in (None, ''):
+        for key in field_def.fallback:
+            alt = data_dict.get(key)
+            if alt not in (None, ''):
+                return alt
+    return val
+
+# data-href-template 的 {占位符} 语法：从 context['vars'] + 当前项数据填充
+_TEMPLATE_RE = re.compile(r'\{([a-zA-Z0-9_]+)\}')
+
+
+def _fill_template(tmpl, values):
+    """填充 {key} 占位符。任一占位符在 values 中无对应（None）→ 返回 None（视为不完整链接）。
+
+    base_url 等上下文变量即使为空串也算"有值"（合法的相对路径前缀）；只有键完全
+    缺失（数据集项没有 slug 等）才判为不完整。
+    """
+    missing = []
+
+    def repl(m):
+        v = values.get(m.group(1))
+        if v is None:
+            missing.append(m.group(1))
+            return ''
+        return str(v)
+
+    out = _TEMPLATE_RE.sub(repl, tmpl)
+    return None if missing else out
 
 
 def _strip_data_attrs(node):
@@ -114,8 +147,24 @@ def _inject_leaf(node, field_def, value):
     return has_content
 
 
-def _inject_href(node, href_field, data_dict):
-    """处理 data-href：值经 scheme 校验后注入 href，空/不安全则跳过（不隐藏，仅不可点）。"""
+def _inject_href(node, data_dict, context=None):
+    """处理 data-href / data-href-template，注入 href（空/不安全则跳过，不隐藏仅不可点）。
+
+    - data-href-template：含 {占位符} 的链接模板，从 context['vars']（base_url/lang/
+      current_path 等）+ 当前项 data_dict 填充，再过 scheme 校验。优先于 data-href。
+    - data-href：值是数据字段名，从 data_dict 取该字段值作 href。
+    """
+    data_dict = data_dict or {}
+    tmpl = node.attrs.get('data-href-template')
+    if tmpl:
+        merged = {**((context or {}).get('vars') or {}), **data_dict}
+        filled = _fill_template(tmpl, merged)
+        if filled:
+            safe = _safe_href(filled)
+            if safe:
+                node.attrs['href'] = safe
+        return
+    href_field = node.attrs.get('data-href')
     if not href_field:
         return
     href_val = data_dict.get(href_field)
@@ -128,11 +177,11 @@ def _inject_href(node, href_field, data_dict):
 def _process_field(node, field_def, data_dict, context):
     """处理单个字段节点（叶子 / group / list / grid），就地修改 node。"""
     dtype = field_def.type
-    value = data_dict.get(field_def.name)
+    value = _field_value(field_def, data_dict)
 
     if dtype in bp.LEAF_TYPES:
         has_content = _inject_leaf(node, field_def, value)
-        _inject_href(node, field_def.href_field, data_dict)
+        _inject_href(node, data_dict, context)
         if not has_content:
             _hide(node)  # 叶子空值自动隐藏
         return
@@ -141,7 +190,7 @@ def _process_field(node, field_def, data_dict, context):
         # group 的数据是一个 dict；子字段递归注入
         sub = value if isinstance(value, dict) else data_dict
         _inject_into_children(node, field_def.children, sub, context)
-        _inject_href(node, field_def.href_field, data_dict)
+        _inject_href(node, sub, context)
         return
 
     if dtype in bp.LIST_TYPES:
@@ -201,6 +250,9 @@ def _expand_list(node, field_def, data_dict, context):
     数据为空且容器内无其他杂项（标题等）→ 整个容器加 hidden（对齐规范"空数组隐藏"）。
     """
     items = _resolve_list_items(field_def, data_dict, context)
+    # data-page-size：作为"最多展示条数"上限（数据集驱动如 product_grid 的 max_items）
+    if field_def.page_size:
+        items = items[:field_def.page_size]
 
     if not field_def.item_template_html:
         node.nodes = []
@@ -209,7 +261,6 @@ def _expand_list(node, field_def, data_dict, context):
 
     new_items = []
     for item in items:
-        item_data = item if isinstance(item, dict) else {}
         # 把项模板 HTML 解析成独立节点树（每条一份）
         b = bp._DomBuilder()
         b.feed(field_def.item_template_html)
@@ -219,11 +270,13 @@ def _expand_list(node, field_def, data_dict, context):
             continue
         item_type = item_node.attrs.get('data-type', '')
         if item_type == 'group':
+            item_data = item if isinstance(item, dict) else {}
             _inject_into_children(item_node, field_def.children, item_data, context)
-            _inject_href(item_node, item_node.attrs.get('data-href', ''), item_data)
+            _inject_href(item_node, item_data, context)
         else:
-            # 项模板根直接是叶子（如 logo 墙的 img）
-            _inject_root_leaf(item_node, item_data)
+            # 项模板根直接是叶子：item 可能是 dict（logo 墙 {logo,link}）
+            # 或标量（tags 这类字符串列表，值即本身）
+            _inject_root_leaf(item_node, item, context)
         new_items.append(item_node)
 
     # 用展开后的多项替换"项模板那一项"，保留容器内的杂项（标题等）和文本节点（空白）
@@ -234,14 +287,19 @@ def _expand_list(node, field_def, data_dict, context):
         _hide(node)
 
 
-def _inject_root_leaf(node, data_dict):
-    """项模板根直接是叶子元素（如 logo 墙的 img）时，按自己的 data-name 注入。"""
+def _inject_root_leaf(node, item, context=None):
+    """项模板根直接是叶子元素时按自己的 data-name 注入。
+
+    item 为 dict（如 logo 墙 {logo,link}）→ 取 item[name]；
+    item 为标量（如 tags 的字符串列表）→ 值即标量本身。
+    """
     name = node.attrs.get('data-name')
     dtype = node.attrs.get('data-type', '')
     fd = bp.FieldDef(name=name, type=dtype, tag=node.tag,
                      href_field=node.attrs.get('data-href', '') or '')
-    has = _inject_leaf(node, fd, data_dict.get(name))
-    _inject_href(node, fd.href_field, data_dict)
+    value = item.get(name) if isinstance(item, dict) else item
+    has = _inject_leaf(node, fd, value)
+    _inject_href(node, item if isinstance(item, dict) else {}, context)
     if not has:
         _hide(node)
 
@@ -344,8 +402,8 @@ def render(block_html, schema, data_dict, context=None):
         _inject_into_children(root, schema.fields, data_dict, context)
 
     # 根元素自身的 href
-    if schema.href_field:
-        _inject_href(root, schema.href_field, data_dict)
+    if schema.href_field or root.attrs.get('data-href-template'):
+        _inject_href(root, data_dict, context)
 
     # 3. 显隐处理：data-hideable + 隐藏标记
     # _hidden 可能是布尔 True 或字符串 'true'（表单存的是字符串布尔，
@@ -357,10 +415,31 @@ def render(block_html, schema, data_dict, context=None):
     if schema.style_tokens:
         _apply_style(root, schema.style_tokens, data_dict)
 
+    # 4.5 全树补扫静态 href 模板（"查看全部"等仅依赖 base_url/lang 的链接）；
+    # 依赖项字段的链接（含 {slug} 等）已在列表展开时填好，这里因占位无值而跳过，不会被覆盖
+    _fill_static_href_templates(root, context)
+
     # 5. 清理 data-*
     _strip_data_attrs(root)
 
     return bp._serialize(root)
+
+
+def _fill_static_href_templates(node, context):
+    """全树补扫 data-href-template：填充仅依赖上下文变量的静态链接（如"查看全部"）。
+
+    已有 href（项字段链接已填）的元素跳过；模板里有上下文之外的占位符（如 {slug}）
+    时 _fill_template 返回 None 而跳过——故只会命中纯上下文链接。
+    """
+    tmpl = node.attrs.get('data-href-template')
+    if tmpl and 'href' not in node.attrs:
+        filled = _fill_template(tmpl, (context or {}).get('vars') or {})
+        if filled:
+            safe = _safe_href(filled)
+            if safe:
+                node.attrs['href'] = safe
+    for child in node.children:
+        _fill_static_href_templates(child, context)
 
 
 def _schema_as_field(schema):
