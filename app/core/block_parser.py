@@ -93,6 +93,7 @@ class BlockSchema:
     source: str = None
     page_size: int = None
     cols: int = None
+    from_source: str = None            # data-from：数据来源路径（如 "settings:contact"）
     fields: list = field(default_factory=list)         # 顶层字段列表
     item_template_html: str = None                     # 根是 list/grid 时的项模板
     href_field: str = ''                               # 根元素若可点
@@ -292,6 +293,7 @@ def parse(html):
             t for t in style_registry.parse_style_tokens(attrs.get('data-style', ''))
             if style_registry.get_style_def(t)
         ],
+        from_source=attrs.get('data-from', None) or None,
     )
 
     root_type = schema.root_type

@@ -85,6 +85,8 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
             data_dict = module.get('data') if isinstance(module.get('data'), dict) else {}
             context = {
                 'all_datasets': jinja_ctx.get('all_datasets', {}),
+                # data-from 用：settings（含 contact 等全局配置）
+                'settings': jinja_ctx.get('settings', {}),
                 # data-href-template 用：站内链接前缀（base_url/lang/current_path）
                 'vars': {
                     'base_url': jinja_ctx.get('base_url', '') or '',

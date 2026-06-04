@@ -52,6 +52,7 @@ def _hide(node):
 _SCHEMA_DATA_ATTRS = {
     'data-name', 'data-type', 'data-href', 'data-href-template', 'data-fallback',
     'data-style', 'data-hideable', 'data-source', 'data-page-size', 'data-cols',
+    'data-from',
 }
 
 
@@ -325,6 +326,42 @@ def _replace_item_slot(nodes, new_items):
     return result
 
 
+def _apply_element_visibility(node, data_dict):
+    """递归处理元素级 data-hideable：每个带 data-name 且有 data-hideable 的元素，
+    检查 data_dict 中的 _hidden_<name> 标记，为 true 则加 hidden 属性。"""
+    for child in node.children:
+        name = child.attrs.get('data-name')
+        if name and 'data-hideable' in child.attrs:
+            if _is_truthy(data_dict.get(f'_hidden_{name}')):
+                _hide(child)
+        _apply_element_visibility(child, data_dict)
+
+
+def _resolve_from_source(schema, context):
+    """解析 data-from 路径（如 "settings:contact"），从 context 取对应数据。
+
+    格式：<context_key>:<sub_path> —— 冒号前是 context 的一级键，冒号后是
+    该键下的子路径。如 "settings:contact" → context['settings']['contact']。
+    解析失败（键缺失或中间为 None）返回空 dict。
+    """
+    raw = schema.from_source
+    if not raw:
+        return {}
+    parts = raw.split(':', 1)
+    if len(parts) != 2:
+        return {}
+    root_key, sub_path = parts
+    node = (context or {}).get(root_key)
+    if not isinstance(node, dict):
+        return {}
+    # 子路径可能嵌套，如 "company.address"（预留，当前只用一层）
+    for segment in sub_path.split('.'):
+        node = node.get(segment)
+        if not isinstance(node, dict):
+            return {}
+    return node
+
+
 def _apply_style(node, style_tokens, data_dict):
     """管线第 4 步：把用户选的样式值写进 style 的 CSS 变量。
 
@@ -386,6 +423,15 @@ def render(block_html, schema, data_dict, context=None):
     data_dict = data_dict or {}
     context = context or {}
 
+    # 0. data-from：若 schema 声明了数据来源（如 settings:contact），
+    # 从 context 取对应数据作为基底，module.data 中的值可覆盖（开店者手动调）
+    from_data = _resolve_from_source(schema, context)
+    if from_data:
+        # from_data 作底，data_dict 的值优先
+        merged = dict(from_data)
+        merged.update(data_dict)
+        data_dict = merged
+
     # 重新解析成可变节点树（不污染传入的 schema）
     b = bp._DomBuilder()
     b.feed(block_html)
@@ -406,10 +452,11 @@ def render(block_html, schema, data_dict, context=None):
         _inject_href(root, data_dict, context)
 
     # 3. 显隐处理：data-hideable + 隐藏标记
-    # _hidden 可能是布尔 True 或字符串 'true'（表单存的是字符串布尔，
-    # 注意字符串 'false' 也是真值，必须显式判断而非裸真值）
+    # 整块隐藏（根级 data-hideable）
     if schema.hideable and _is_truthy(data_dict.get('_hidden')):
         _hide(root)
+    # 元素级隐藏：遍历所有带 data-hideable 的子元素，检查 _hidden_<name> 标记
+    _apply_element_visibility(root, data_dict)
 
     # 4. 样式注入
     if schema.style_tokens:

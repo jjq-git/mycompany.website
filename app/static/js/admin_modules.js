@@ -67,8 +67,16 @@
 
   function renderField(prefix, field, value, placeholder) {
     var key = field.key, type = (field.type || 'text').toLowerCase(), html = '';
+    var isImage = /(image|cover|background|media|photo|logo)/i.test(key);
     html += '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + esc(field.label || key) + '</label>';
-    if (type === 'textarea') {
+    if (isImage) {
+      // 图片字段：URL 输入框 + 上传 UI + 预览
+      html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '" oninput="updateImagePreview(this)">';
+      html += '<label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="' + prefix + key + '_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label>';
+      html += '<div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>';
+      html += '<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div>';
+      html += '<div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div>';
+    } else if (type === 'textarea') {
       html += '<textarea class="form-control form-control-sm" rows="4" name="' + prefix + key + '" placeholder="' + esc(placeholder || '') + '">' + esc(value || '') + '</textarea>';
     } else if (type === 'select') {
       html += '<select class="form-select form-select-sm" name="' + prefix + key + '"><option value="">请选择</option>';
@@ -83,12 +91,75 @@
     } else {
       html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '">';
     }
-    if (/(image|cover|background|media|photo|logo)/i.test(key)) {
-      html += '<input type="file" class="form-control form-control-sm mt-1" name="' + prefix + key + '_file" accept="image/*">';
-      html += '<div class="form-text">可上传图片；视频请填写 URL。</div>';
-    }
     return html + '</div>';
   }
+
+  // 图片上传：选择文件后本地预览（全局函数，供动态生成的 onchange 调用）
+  window.handleModuleImageUpload = function(fileInput) {
+    var file = fileInput.files[0];
+    var container = fileInput.closest('.hero-slide-body') || fileInput.closest('.mb-2');
+    var preview = container ? container.querySelector('.module-image-preview') : null;
+    var img = preview ? preview.querySelector('img') : null;
+    var urlText = container ? container.querySelector('.module-image-url-text') : null;
+    if (!file || !preview || !img) return;
+    if (file.type.startsWith('image/')) {
+      img.src = URL.createObjectURL(file);
+      preview.style.display = '';
+    }
+    if (urlText) { urlText.textContent = file.name; urlText.style.display = ''; }
+    img.onerror = function() { preview.style.display = 'none'; };
+  };
+
+  // 图片预览：点击放大
+  window.enlargeImage = function(img) {
+    var src = img.src;
+    if (!src) return;
+    var overlay = document.getElementById('imgLightbox');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'imgLightbox';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:pointer';
+      overlay.onclick = function() { overlay.style.display = 'none'; };
+      var lbImg = document.createElement('img');
+      lbImg.style.cssText = 'max-width:95vw;max-height:95vh;border-radius:6px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
+      overlay.appendChild(lbImg);
+      document.body.appendChild(overlay);
+    }
+    overlay.querySelector('img').src = src;
+    overlay.style.display = 'flex';
+  };
+
+  // 图片预览：删除按钮清除图片
+  window.clearModuleImage = function(btn) {
+    var container = btn.closest('.hero-slide-body') || btn.closest('.mb-2');
+    if (!container) return;
+    var urlInput = container.querySelector('input[type="hidden"]') || container.querySelector('input[type="text"]');
+    var fileInput = container.querySelector('input[type="file"]');
+    var urlText = container.querySelector('.module-image-url-text');
+    var preview = container.querySelector('.module-image-preview');
+    var img = preview ? preview.querySelector('img') : null;
+    if (urlInput) urlInput.value = '';
+    if (fileInput) fileInput.value = '';
+    if (urlText) { urlText.textContent = ''; urlText.style.display = 'none'; }
+    if (img) img.src = '';
+    if (preview) preview.style.display = 'none';
+  };
+
+  // 图片预览：URL 输入框变化时更新预览
+  window.updateImagePreview = function(urlInput) {
+    var container = urlInput.closest('.hero-slide-body') || urlInput.closest('.mb-2');
+    var preview = container ? container.querySelector('.module-image-preview') : null;
+    var img = preview ? preview.querySelector('img') : null;
+    if (!preview || !img) return;
+    var url = urlInput.value.trim();
+    if (url) {
+      img.src = url;
+      preview.style.display = '';
+    } else {
+      preview.style.display = 'none';
+      img.src = '';
+    }
+  };
 
   /* ====== 对外暴露 ====== */
   window._cn = cn;

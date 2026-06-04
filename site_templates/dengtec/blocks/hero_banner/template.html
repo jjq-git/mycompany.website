@@ -1,141 +1,65 @@
-{# Hero Banner 模块 - 全屏轮播 #}
-{% if module.data %}
-{% if module.data is not mapping and module.data is iterable and module.data is not string %}
-  {% set items = module.data %}
-{% else %}
-  {% set _has_title = module.data.get('title') if module.data is mapping else (module.data.title | default('')) %}
-  {% set _has_media = module.data.get('media') if module.data is mapping else (module.data.media | default('')) %}
-  {% set items = module.data.slides if module.data.get('slides') and module.data.slides is iterable and module.data.slides is not string else ([module.data] if _has_title or _has_media else []) %}
-{% endif %}
-{% if items %}
-
-{# === 配置提取 === #}
-{% set section_bg = module.data.get('section_bg', '') if module.data is mapping else '' %}
-{% set hero_h = module.data.get('hero_height', '') if module.data is mapping else '' %}
-{% set hero_w = module.data.get('hero_width', '') if module.data is mapping else '' %}
-{% set align = module.data.get('banner_align', '') if module.data is mapping else '' %}
-{% set content_w = module.data.get('content_width', '') if module.data is mapping else '' %}
-{% set outer_w = hero_w or (module.data.get('outer_width', '') if module.data is mapping else '') or settings.get('layout', {}).get('global_width', '') %}
-{% set inner_w = module.data.get('inner_width', '') if module.data is mapping else '' %}
-{% set title_font_size = module.data.get('title_font_size', '') if module.data is mapping else '' %}
-{% set title_color = module.data.get('title_color', '') if module.data is mapping else '' %}
-{% set subtitle_font_size = module.data.get('subtitle_font_size', '') if module.data is mapping else '' %}
-{% set subtitle_color = module.data.get('subtitle_color', '') if module.data is mapping else '' %}
-{% set btn_font_size = module.data.get('btn_font_size', '') if module.data is mapping else '' %}
-{% set btn_text_color = module.data.get('btn_text_color', '') if module.data is mapping else '' %}
-{% set btn_bg = module.data.get('btn_bg', '') if module.data is mapping else '' %}
-{# === 内容区排版 === #}
-{% set content_style_parts = [] %}
-{% if align == 'left' %}
-  {% set _ = content_style_parts.append('left: 5%; transform: translateY(-50%); text-align: left;') %}
-{% elif align == 'right' %}
-  {% set _ = content_style_parts.append('left: auto; right: 5%; transform: translateY(-50%); text-align: right;') %}
-{% elif align == 'center' %}
-  {% set _ = content_style_parts.append('left: 50%; transform: translate(-50%, -50%); text-align: center;') %}
-{% endif %}
-{% if content_w or inner_w %}{% set _ = content_style_parts.append('max-width: ' ~ (content_w or inner_w) ~ ';') %}{% endif %}
-
-{# === 副标题与按钮区对齐样式（覆盖 CSS 中的居中规则） === #}
-{% set subtitle_style_parts = [] %}
-{% if subtitle_font_size %}{% set _ = subtitle_style_parts.append('font-size: ' ~ subtitle_font_size ~ ';') %}{% endif %}
-{% if subtitle_color %}{% set _ = subtitle_style_parts.append('color: ' ~ subtitle_color ~ ';') %}{% endif %}
-{% if align == 'left' %}{% set _ = subtitle_style_parts.append('margin-left: 0; margin-right: auto;') %}{% endif %}
-{% if align == 'right' %}{% set _ = subtitle_style_parts.append('margin-left: auto; margin-right: 0;') %}{% endif %}
-
-{% set actions_style_parts = [] %}
-{% if align == 'left' %}{% set _ = actions_style_parts.append('justify-content: flex-start;') %}{% endif %}
-{% if align == 'right' %}{% set _ = actions_style_parts.append('justify-content: flex-end;') %}{% endif %}
-
-{% set pd_top = module.data.get('padding_top', '') if module.data is mapping else '' %}
-{% set pd_right = module.data.get('padding_right', '') if module.data is mapping else '' %}
-{% set pd_bottom = module.data.get('padding_bottom', '') if module.data is mapping else '' %}
-{% set pd_left = module.data.get('padding_left', '') if module.data is mapping else '' %}
-
-{# === Section 样式拼接 === #}
-{% set style_parts = [] %}
-{% if hero_h %}{% set _ = style_parts.append('height: ' ~ hero_h ~ ';') %}{% endif %}
-{% if section_bg %}{% set _ = style_parts.append('background: ' ~ section_bg ~ ';') %}{% endif %}
-{% if outer_w %}{% set _ = style_parts.append('max-width: ' ~ outer_w ~ '; margin-left: auto; margin-right: auto;') %}{% endif %}
-{% if pd_top %}{% set _ = style_parts.append('padding-top: ' ~ pd_top ~ ';') %}{% endif %}
-{% if pd_right %}{% set _ = style_parts.append('padding-right: ' ~ pd_right ~ ';') %}{% endif %}
-{% if pd_bottom %}{% set _ = style_parts.append('padding-bottom: ' ~ pd_bottom ~ ';') %}{% endif %}
-{% if pd_left %}{% set _ = style_parts.append('padding-left: ' ~ pd_left ~ ';') %}{% endif %}
-
-<section class="section hero-banner" id="heroBanner"{% if style_parts %} style="{{ style_parts | join(' ') }}"{% endif %}>
-  <div class="container" style="height: 100%; max-width: none;">
-    <div class="hero-banner-slides">
-      {% for item in items %}
-      <div class="hero-banner-slide{% if loop.first %} active{% endif %}" data-index="{{ loop.index0 }}">
+<!-- Hero Banner 模块 - 全屏轮播（data-* 声明式） -->
+<section data-name="hero_banner" data-type="group" data-hideable class="section hero-banner">
+  <div class="container" style="height:100%;max-width:none">
+    <div data-name="slides" data-type="list" class="hero-banner-slides">
+      <div data-name="slide" data-type="group" class="hero-banner-slide">
         <div class="hero-banner-media">
-          {% set _media_src = item.get('media', '') if item is mapping else (item.media | default('')) %}
-          {% if item.type == 'video' %}
-          <video class="hero-banner-video" src="{{ _media_src if _media_src.startswith('http') else base_url ~ _media_src }}" autoplay muted loop playsinline preload="none"></video>
-          {% else %}
-          <div class="hero-banner-image" style="background-image: url('{{ _media_src if _media_src.startswith('http') else base_url ~ _media_src }}')"></div>
-          {% endif %}
+          <img data-name="image" data-type="image" src="" alt="" loading="lazy" class="hero-banner-image">
+          <video data-name="video" data-type="video" src="" autoplay muted loop playsinline preload="none" class="hero-banner-video"></video>
         </div>
-        {% set overlay_enabled = module.data.get('overlay_enabled', 'true') if module.data is mapping else 'true' %}
-        {% if overlay_enabled != 'false' %}
         <div class="hero-banner-overlay"></div>
-        {% endif %}
-        <div class="hero-banner-content"{% if content_style_parts %} style="{{ content_style_parts | join(' ') }}"{% endif %}>
-          {% if item.title %}<h1 class="hero-banner-title"{% if title_font_size or title_color %} style="{% if title_font_size %}font-size: {{ title_font_size }};{% endif %}{% if title_color %}color: {{ title_color }};{% endif %}"{% endif %}>{{ item.title }}</h1>{% endif %}
-          {% if item.subtitle %}<p class="hero-banner-subtitle"{% if subtitle_style_parts %} style="{{ subtitle_style_parts | join(' ') }}"{% endif %}>{{ item.subtitle }}</p>{% endif %}
-          <div class="hero-banner-actions"{% if actions_style_parts %} style="{{ actions_style_parts | join(' ') }}"{% endif %}>
-            {% if item.primaryBtn %}
-            <a href="{{ item.primaryBtnLink }}" {% if item.primaryBtnLinkTarget == '_blank' %}target="_blank"{% endif %} class="btn btn-primary btn-lg"{% if btn_font_size or btn_text_color or btn_bg %} style="{% if btn_font_size %}font-size: {{ btn_font_size }};{% endif %}{% if btn_text_color %}color: {{ btn_text_color }};{% endif %}{% if btn_bg %}background-color: {{ btn_bg }}; border-color: {{ btn_bg }};{% endif %}"{% endif %}>{{ item.primaryBtn }}</a>
-            {% endif %}
-            {% if item.secondaryBtn %}
-            <a href="{{ item.secondaryBtnLink }}" class="btn btn-secondary btn-lg">{{ item.secondaryBtn }}</a>
-            {% endif %}
+        <div class="hero-banner-content">
+          <h1 data-name="title" data-type="text" class="hero-banner-title"></h1>
+          <p data-name="subtitle" data-type="text" class="hero-banner-subtitle"></p>
+          <div class="hero-banner-actions">
+            <a data-name="primaryBtn" data-type="text" data-href="primaryLink" class="btn btn-primary btn-lg"></a>
+            <a data-name="secondaryBtn" data-type="text" data-href="secondaryLink" class="btn btn-secondary btn-lg"></a>
           </div>
         </div>
       </div>
-      {% endfor %}
     </div>
   </div>
-
-  {% if items|length > 1 %}
-  <div class="hero-banner-dots">
-    {% for item in items %}
-    <button class="hero-banner-dot{% if loop.first %} active{% endif %}" data-slide="{{ loop.index0 }}" aria-label="Slide {{ loop.index }}"></button>
-    {% endfor %}
-  </div>
+  <div class="hero-banner-dots"></div>
   <button class="hero-banner-nav hero-banner-nav-prev" aria-label="Previous">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
   </button>
   <button class="hero-banner-nav hero-banner-nav-next" aria-label="Next">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
   </button>
-  {% endif %}
+  <script>
+    (function() {
+      var section = document.currentScript.parentElement;
+      var slides = section.querySelectorAll('.hero-banner-slide');
+      var dotsContainer = section.querySelector('.hero-banner-dots');
+      var prevBtn = section.querySelector('.hero-banner-nav-prev');
+      var nextBtn = section.querySelector('.hero-banner-nav-next');
+      var current = 0;
+      var total = slides.length;
+      if (!total) return;
+      /* 动态创建圆点导航（原 Jinja2 服务端生成） */
+      for (var i = 0; i < total; i++) {
+        var dot = document.createElement('button');
+        dot.className = 'hero-banner-dot';
+        dot.setAttribute('data-slide', i);
+        dot.setAttribute('aria-label', 'Slide ' + (i + 1));
+        dotsContainer.appendChild(dot);
+      }
+      if (total === 1) { slides[0].classList.add('active'); return; }
+      function showSlide(index) {
+        slides.forEach(function(s, i) { s.classList.toggle('active', i === index); });
+        var dots = dotsContainer.querySelectorAll('.hero-banner-dot');
+        dots.forEach(function(d, i) { d.classList.toggle('active', i === index); });
+        current = index;
+      }
+      showSlide(0);
+      function next() { showSlide((current + 1) % total); }
+      function prev() { showSlide((current - 1 + total) % total); }
+      if (prevBtn) prevBtn.addEventListener('click', prev);
+      if (nextBtn) nextBtn.addEventListener('click', next);
+      dotsContainer.querySelectorAll('.hero-banner-dot').forEach(function(dot) {
+        dot.addEventListener('click', function() { showSlide(parseInt(dot.getAttribute('data-slide'))); });
+      });
+      setInterval(next, 8000);
+    })();
+  </script>
 </section>
-
-<script>
-(function() {
-  var banner = document.getElementById('heroBanner');
-  if (!banner) return;
-  var slides = banner.querySelectorAll('.hero-banner-slide');
-  var dots = banner.querySelectorAll('.hero-banner-dot');
-  var prevBtn = banner.querySelector('.hero-banner-nav-prev');
-  var nextBtn = banner.querySelector('.hero-banner-nav-next');
-  var current = 0;
-  var total = slides.length;
-  if (total <= 1) return;
-
-  function showSlide(index) {
-    slides.forEach(function(s, i) { s.classList.toggle('active', i === index); });
-    dots.forEach(function(d, i) { d.classList.toggle('active', i === index); });
-    current = index;
-  }
-  function next() { showSlide((current + 1) % total); }
-  function prev() { showSlide((current - 1 + total) % total); }
-  if (prevBtn) prevBtn.addEventListener('click', prev);
-  if (nextBtn) nextBtn.addEventListener('click', next);
-  dots.forEach(function(dot) {
-    dot.addEventListener('click', function() { showSlide(parseInt(dot.getAttribute('data-slide'))); });
-  });
-  setInterval(next, 8000);
-})();
-</script>
-{% endif %}
-{% endif %}

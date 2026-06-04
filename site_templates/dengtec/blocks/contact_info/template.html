@@ -1,62 +1,41 @@
-{# 联系方式 — 自动读取 settings.contact 展示 #}
-{% set md = module.data if module.data else {} %}
-{% set contact = settings.contact | default({}) %}
-{% if contact.phone or contact.email or contact.address %}
-{% set section_bg = md.get('section_bg', '') %}
-{% set outer_w = md.get('outer_width', '') or settings.get('layout', {}).get('global_width', '') %}
-{% set inner_w = md.get('inner_width', '') %}
-{% set pd_top = md.get('padding_top', '') %}{% set pd_right = md.get('padding_right', '') %}{% set pd_bottom = md.get('padding_bottom', '') %}{% set pd_left = md.get('padding_left', '') %}{% set has_padding = pd_top or pd_right or pd_bottom or pd_left %}
-{% set show_phone = md.get('show_phone', 'true') == 'true' %}
-{% set show_mobile = md.get('show_mobile', 'true') == 'true' %}
-{% set show_email = md.get('show_email', 'true') == 'true' %}
-{% set show_address = md.get('show_address', 'true') == 'true' %}
-{% set show_hours = md.get('show_business_hours', 'false') == 'true' %}
-
-<section class="section"{% if section_bg or outer_w or has_padding %} style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}{% if pd_top %}padding-top: {{ pd_top }};{% endif %}{% if pd_right %}padding-right: {{ pd_right }};{% endif %}{% if pd_bottom %}padding-bottom: {{ pd_bottom }};{% endif %}{% if pd_left %}padding-left: {{ pd_left }};{% endif %}"{% endif %}>
-  <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;">
-    {% if md.title %}
+<!-- 联系方式模块 - 数据来自网站设置（data-* 声明式） -->
+<section data-name="contact_info" data-type="group" data-hideable data-from="settings:contact">
+  <div class="container" style="max-width:none;margin:0 auto">
     <div class="section-header">
-      <h2 class="section-title">{{ md.title }}</h2>
-      {% if md.subtitle %}<p class="section-description">{{ md.subtitle }}</p>{% endif %}
+      <h2 data-name="title" data-type="text" class="section-title"></h2>
+      <p data-name="subtitle" data-type="text" class="section-description"></p>
     </div>
-    {% endif %}
     <div class="ci-grid">
-      {% if show_phone and contact.phone %}
-      <div class="ci-card">
+      <!-- 电话 -->
+      <div data-name="phone_card" data-type="group" data-hideable class="ci-card">
         <div class="ci-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></div>
         <div class="ci-label">电话</div>
-        <a href="tel:{{ contact.phone }}" class="ci-value">{{ contact.phone }}</a>
+        <a data-name="phone" data-type="text" data-href-template="tel:{phone}" class="ci-value"></a>
       </div>
-      {% endif %}
-      {% if show_mobile and contact.mobile %}
-      <div class="ci-card">
+      <!-- 手机 -->
+      <div data-name="mobile_card" data-type="group" data-hideable class="ci-card">
         <div class="ci-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
         <div class="ci-label">手机</div>
-        <a href="tel:{{ contact.mobile }}" class="ci-value">{{ contact.mobile }}</a>
+        <a data-name="mobile" data-type="text" data-href-template="tel:{mobile}" class="ci-value"></a>
       </div>
-      {% endif %}
-      {% if show_email and contact.email %}
-      <div class="ci-card">
+      <!-- 邮箱 -->
+      <div data-name="email_card" data-type="group" data-hideable class="ci-card">
         <div class="ci-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
         <div class="ci-label">邮箱</div>
-        <a href="mailto:{{ contact.email }}" class="ci-value">{{ contact.email }}</a>
+        <a data-name="email" data-type="text" data-href-template="mailto:{email}" class="ci-value"></a>
       </div>
-      {% endif %}
-      {% if show_address and contact.address %}
-      <div class="ci-card">
+      <!-- 地址 -->
+      <div data-name="address_card" data-type="group" data-hideable class="ci-card">
         <div class="ci-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
         <div class="ci-label">地址</div>
-        <div class="ci-value">{{ contact.address }}</div>
+        <div data-name="address" data-type="text" class="ci-value"></div>
       </div>
-      {% endif %}
-      {% if show_hours and contact.business_hours %}
-      <div class="ci-card">
+      <!-- 营业时间 -->
+      <div data-name="hours_card" data-type="group" data-hideable class="ci-card">
         <div class="ci-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
         <div class="ci-label">营业时间</div>
-        <div class="ci-value">{{ contact.business_hours }}{% if contact.weekend %}<br><small>{{ contact.weekend }}</small>{% endif %}</div>
+        <div data-name="business_hours" data-type="text" class="ci-value"></div>
       </div>
-      {% endif %}
     </div>
   </div>
 </section>
-{% endif %}

@@ -4,6 +4,9 @@
    Reference: JLCPCB minimalist style
    ============================================ */
 
+/* 确保 hidden 属性一定生效（.btn 等组件的 display 值不会覆盖） */
+[hidden] { display: none !important; }
+
 /* === CSS Design Tokens === */
 :root {
   /* Colors - Primary */
@@ -420,6 +423,13 @@ h6 { font-size: var(--font-size-md); }
   background-color: rgba(255, 255, 255, 1);
   border-bottom-color: var(--color-border);
   box-shadow: var(--shadow-sm);
+}
+@media(max-width:1440px){
+  .site-header .header-main .container {
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+
+  }
 }
 
 .header-utility {
@@ -1616,12 +1626,14 @@ h6 { font-size: var(--font-size-md); }
   object-fit: cover;
 }
 
-.hero-banner-image {
+.hero-banner-image,
+.hero-banner-media img {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  object-fit: cover;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

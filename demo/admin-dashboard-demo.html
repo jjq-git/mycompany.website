@@ -209,6 +209,12 @@
     }
 
     /* 头部站点选择器 — 比普通按钮更突出 */
+    .header-site-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .header-site-btn {
       font-weight: 600;
       color: #334155;
@@ -217,6 +223,11 @@
       max-width: 200px;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .header-lang-btn {
+      font-weight: 500;
+      font-size: 12px;
     }
 
     .header-site-btn:hover {
@@ -2094,33 +2105,27 @@
 
       <div class="header-divider"></div>
 
-      <div class="dropdown">
-        <button class="header-btn header-site-btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
-          data-bs-auto-close="outside" aria-expanded="false">
-          演示站点
-        </button>
-        <ul class="dropdown-menu" style="min-width:200px">
-          <li class="dropdown-submenu">
-            <a class="dropdown-item active submenu-toggle" href="#">
-              演示站点 <span class="text-muted small" style="font-size:11px">/demo</span>
-              <span class="submenu-arrow"></span>
-            </a>
-            <div class="dropdown-submenu-menu" style="display:none">
-              <a class="dropdown-item" href="#" style="padding-left:28px;font-size:12px">中文 (zh)</a>
-              <a class="dropdown-item" href="#" style="padding-left:28px;font-size:12px">English (en)</a>
-            </div>
-          </li>
-          <li class="dropdown-submenu">
-            <a class="dropdown-item submenu-toggle" href="#">
-              另一个站点 <span class="text-muted small" style="font-size:11px">/other</span>
-              <span class="submenu-arrow"></span>
-            </a>
-            <div class="dropdown-submenu-menu" style="display:none">
-              <a class="dropdown-item" href="#" style="padding-left:28px;font-size:12px">中文 (zh)</a>
-              <a class="dropdown-item" href="#" style="padding-left:28px;font-size:12px">English (en)</a>
-            </div>
-          </li>
-        </ul>
+      <div class="header-site-group">
+        <div class="dropdown">
+          <button class="header-btn header-site-btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+            data-bs-auto-close="outside" aria-expanded="false" id="headerSiteBtn">
+            演示站点
+          </button>
+          <ul class="dropdown-menu" style="min-width:200px" id="siteDropdown">
+            <li><a class="dropdown-item active" href="#" data-site="demo" data-site-name="演示站点" onclick="selectSite(this)">演示站点 <span class="text-muted small" style="font-size:11px">/demo</span></a></li>
+            <li><a class="dropdown-item" href="#" data-site="other" data-site-name="另一个站点" onclick="selectSite(this)">另一个站点 <span class="text-muted small" style="font-size:11px">/other</span></a></li>
+          </ul>
+        </div>
+        <div class="dropdown" id="siteLangDropdown" style="display:none">
+          <button class="header-btn header-site-btn header-lang-btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+            data-bs-auto-close="outside" aria-expanded="false" id="headerLangBtn">
+            中文 (zh)
+          </button>
+          <ul class="dropdown-menu" style="min-width:180px" id="langDropdown">
+            <li><a class="dropdown-item active" href="#" data-lang="zh" onclick="selectLang(this)">中文 (zh)</a></li>
+            <li><a class="dropdown-item" href="#" data-lang="en" onclick="selectLang(this)">English (en)</a></li>
+          </ul>
+        </div>
       </div>
 
       <a class="header-btn" href="javascript:void(0)" onclick="demoToast('模板库')">
@@ -3071,20 +3076,49 @@ p.subtitle{color:#64748b;margin-bottom:32px;font-size:1.1rem}
       if (chevron) chevron.textContent = isOpen ? '▶' : '▼';
     }
 
-    // ---- 站点下拉子菜单展开/折叠 ----
-    document.addEventListener('click', function (e) {
-      var toggle = e.target.closest('.submenu-toggle');
-      if (!toggle) return;
-      e.preventDefault();
-      e.stopPropagation();
-      var submenu = toggle.closest('.dropdown-submenu');
-      if (!submenu) return;
-      var menu = submenu.querySelector('.dropdown-submenu-menu');
-      if (!menu) return;
-      var isOpen = menu.style.display === 'block';
-      menu.style.display = isOpen ? 'none' : 'block';
-      toggle.classList.toggle('open', !isOpen);
-    });
+    // ---- 站点切换：选中一级后在右侧显示二级语言下拉 ----
+    var siteData = {
+      demo: { langs: ['中文 (zh)', 'English (en)'] },
+      other: { langs: ['中文 (zh)', 'English (en)'] }
+    };
+
+    function selectSite(el) {
+      var site = el.dataset.site;
+      var siteName = el.dataset.siteName;
+      // 更新一级按钮文字
+      var siteBtn = document.getElementById('headerSiteBtn');
+      if (siteBtn) siteBtn.textContent = siteName;
+      // 更新一级菜单 active
+      document.querySelectorAll('#siteDropdown .dropdown-item').forEach(function (i) { i.classList.remove('active'); });
+      el.classList.add('active');
+      // 关闭一级下拉
+      var siteDropdown = bootstrap.Dropdown.getInstance(siteBtn);
+      if (siteDropdown) siteDropdown.hide();
+      // 显示二级下拉并重建菜单项
+      var langDropdown = document.getElementById('siteLangDropdown');
+      if (langDropdown) langDropdown.style.display = 'block';
+      var langMenu = document.getElementById('langDropdown');
+      if (langMenu && siteData[site]) {
+        var html = '';
+        siteData[site].langs.forEach(function (lang, idx) {
+          html += '<li><a class="dropdown-item' + (idx === 0 ? ' active' : '') + '" href="#" data-lang="' + lang + '" onclick="selectLang(this)">' + lang + '</a></li>';
+        });
+        langMenu.innerHTML = html;
+        var langBtn = document.getElementById('headerLangBtn');
+        if (langBtn) langBtn.textContent = siteData[site].langs[0];
+      }
+    }
+
+    function selectLang(el) {
+      var lang = el.dataset.lang || el.textContent.trim();
+      document.querySelectorAll('#langDropdown .dropdown-item').forEach(function (i) { i.classList.remove('active'); });
+      el.classList.add('active');
+      var langBtn = document.getElementById('headerLangBtn');
+      if (langBtn) langBtn.textContent = lang;
+      // 关闭二级下拉
+      var langDropdown = bootstrap.Dropdown.getInstance(langBtn);
+      if (langDropdown) langDropdown.hide();
+    }
 
     // ---- 预览标签栏 ----
     var previewTabs = [];

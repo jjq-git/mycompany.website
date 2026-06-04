@@ -1,240 +1,57 @@
-{# 联系表单 — 访客在线留言 + 可选嵌入地图（高德/Google） #}
-{% set md = module.data if module.data else {} %}
-{% set section_bg = md.get('section_bg', '') %}
-{% set outer_w = md.get('outer_width', '') or settings.get('layout', {}).get('global_width', '') %}
-{% set inner_w = md.get('inner_width', '') %}
-{% set form_action = md.get('form_action', '') %}
-{% set submit_text = md.get('submit_text', '') or '发送留言' %}
-{% set show_form = md.get('show_form', 'true') == 'true' %}
-{% set show_name = md.get('show_name', 'true') == 'true' %}
-{% set show_email = md.get('show_email', 'true') == 'true' %}
-{% set show_phone = md.get('show_phone', 'true') == 'true' %}
-{% set show_company = md.get('show_company', 'false') == 'true' %}
-{% set show_message = md.get('show_message', 'true') == 'true' %}
-{% set show_map = md.get('show_map', 'false') == 'true' %}
-{% set map_src = md.get('map_src', '') %}
-{% set layout = md.get('layout', 'form_left') %}
-{% set map_ratio = md.get('map_width_ratio', '40') | int %}
-{% set form_ratio = 100 - map_ratio %}
-{% set title_size = md.get('title_size', '') %}
-{% set input_height = md.get('input_height', '') %}
-{% set field_gap = md.get('field_gap', '') %}
-{% set label_style = md.get('label_style', 'top') %}
-{% set form_bg = md.get('form_bg', '') %}
-{% set input_bg = md.get('input_bg', '') %}
-{% set input_border = md.get('input_border', '') %}
-{% set text_color = md.get('text_color', '') %}
-{% set input_radius = md.get('input_radius', '') %}
-{% set form_radius = md.get('form_radius', '') %}
-{% set btn_bg = md.get('btn_bg', '') %}
-{% set btn_color = md.get('btn_color', '') %}
-{% set btn_size = md.get('btn_size', '') %}
-{% set btn_radius = md.get('btn_radius', '') %}
-{% set btn_align = md.get('btn_align', 'left') %}
-{% set bpd_top = md.get('btn_padding_top', '') %}{% set bpd_right = md.get('btn_padding_right', '') %}{% set bpd_bottom = md.get('btn_padding_bottom', '') %}{% set bpd_left = md.get('btn_padding_left', '') %}
-{% set bmg_top = md.get('btn_margin_top', '') %}{% set bmg_right = md.get('btn_margin_right', '') %}{% set bmg_bottom = md.get('btn_margin_bottom', '') %}{% set bmg_left = md.get('btn_margin_left', '') %}
-
-{% set mg_top = md.get('margin_top', '') %}{% set mg_right = md.get('margin_right', '') %}{% set mg_bottom = md.get('margin_bottom', '') %}{% set mg_left = md.get('margin_left', '') %}
-{% set pd_top = md.get('padding_top', '') %}{% set pd_right = md.get('padding_right', '') %}{% set pd_bottom = md.get('padding_bottom', '') %}{% set pd_left = md.get('padding_left', '') %}
-
-{% set fm_top = md.get('form_margin_top', '') %}{% set fm_right = md.get('form_margin_right', '') %}{% set fm_bottom = md.get('form_margin_bottom', '') %}{% set fm_left = md.get('form_margin_left', '') %}
-{% set fp_top = md.get('form_padding_top', '') %}{% set fp_right = md.get('form_padding_right', '') %}{% set fp_bottom = md.get('form_padding_bottom', '') %}{% set fp_left = md.get('form_padding_left', '') %}
-
-{% set map_h = md.get('map_height', '') %}
-{% set map_radius = md.get('map_radius', '') %}
-{% set mm_top = md.get('map_margin_top', '') %}{% set mm_right = md.get('map_margin_right', '') %}{% set mm_bottom = md.get('map_margin_bottom', '') %}{% set mm_left = md.get('map_margin_left', '') %}
-{% set mp_top = md.get('map_padding_top', '') %}{% set mp_right = md.get('map_padding_right', '') %}{% set mp_bottom = md.get('map_padding_bottom', '') %}{% set mp_left = md.get('map_padding_left', '') %}
-
-{% set section_styles = [] %}
-{% if outer_w %}{% set _ = section_styles.append('max-width: ' ~ outer_w ~ '; margin-left: auto; margin-right: auto') %}{% endif %}
-{% if section_bg %}{% set _ = section_styles.append('background: ' ~ section_bg) %}{% endif %}
-{% if mg_top %}{% set _ = section_styles.append('margin-top: ' ~ mg_top) %}{% endif %}
-{% if mg_right %}{% set _ = section_styles.append('margin-right: ' ~ mg_right) %}{% endif %}
-{% if mg_bottom %}{% set _ = section_styles.append('margin-bottom: ' ~ mg_bottom) %}{% endif %}
-{% if mg_left %}{% set _ = section_styles.append('margin-left: ' ~ mg_left) %}{% endif %}
-
-	{# 内层容器样式（内边距放 container 上，始终可见） #}
-	{% set container_styles = [] %}
-	{% if pd_top %}{% set _ = container_styles.append("padding-top: " ~ pd_top) %}{% endif %}
-	{% if pd_right %}{% set _ = container_styles.append("padding-right: " ~ pd_right) %}{% endif %}
-	{% if pd_bottom %}{% set _ = container_styles.append("padding-bottom: " ~ pd_bottom) %}{% endif %}
-	{% if pd_left %}{% set _ = container_styles.append("padding-left: " ~ pd_left) %}{% endif %}
-
-	{# 表单内层容器（仅背景色） #}
-	{% set form_inner_styles = [] %}
-	{% if form_bg %}{% set _ = form_inner_styles.append("background: " ~ form_bg) %}{% endif %}
-{% if form_radius %}{% set _ = form_inner_styles.append('border-radius: ' ~ form_radius) %}{% endif %}
-{% if fp_top %}{% set _ = form_inner_styles.append("padding-top: " ~ fp_top) %}{% endif %}
-{% if fp_right %}{% set _ = form_inner_styles.append("padding-right: " ~ fp_right) %}{% endif %}
-{% if fp_bottom %}{% set _ = form_inner_styles.append("padding-bottom: " ~ fp_bottom) %}{% endif %}
-{% if fp_left %}{% set _ = form_inner_styles.append("padding-left: " ~ fp_left) %}{% endif %}
-
-{# 表单自身样式（gap + margin） #}
-{% set form_self_styles = [] %}
-{% if field_gap %}{% set _ = form_self_styles.append('gap: ' ~ field_gap) %}{% endif %}
-{% if fm_top %}{% set _ = form_self_styles.append('margin-top: ' ~ fm_top) %}{% endif %}
-{% if fm_right %}{% set _ = form_self_styles.append('margin-right: ' ~ fm_right) %}{% endif %}
-{% if fm_bottom %}{% set _ = form_self_styles.append('margin-bottom: ' ~ fm_bottom) %}{% endif %}
-{% if fm_left %}{% set _ = form_self_styles.append('margin-left: ' ~ fm_left) %}{% endif %}
-
-{% set input_styles = [] %}
-{% if input_height %}{% set _ = input_styles.append('height: ' ~ input_height) %}{% endif %}
-{% if input_bg %}{% set _ = input_styles.append('background: ' ~ input_bg) %}{% endif %}
-{% if input_border %}{% set _ = input_styles.append('border-color: ' ~ input_border) %}{% endif %}
-{% if input_radius %}{% set _ = input_styles.append('border-radius: ' ~ input_radius) %}{% endif %}
-{% if text_color %}{% set _ = input_styles.append('color: ' ~ text_color) %}{% endif %}
-
-{% set actions_styles = [] %}
-{% if btn_align == 'center' %}{% set _ = actions_styles.append('text-align: center') %}{% elif btn_align == 'right' %}{% set _ = actions_styles.append('text-align: right') %}{% endif %}
-{% set btn_styles = [] %}
-{% if btn_bg %}{% set _ = btn_styles.append('background: ' ~ btn_bg) %}{% endif %}
-{% if btn_color %}{% set _ = btn_styles.append('color: ' ~ btn_color) %}{% endif %}
-{% if btn_size %}{% set _ = btn_styles.append('font-size: ' ~ btn_size) %}{% endif %}
-{% if btn_radius %}{% set _ = btn_styles.append('border-radius: ' ~ btn_radius) %}{% endif %}
-{% if bpd_top %}{% set _ = btn_styles.append('padding-top: ' ~ bpd_top) %}{% endif %}
-{% if bpd_right %}{% set _ = btn_styles.append('padding-right: ' ~ bpd_right) %}{% endif %}
-{% if bpd_bottom %}{% set _ = btn_styles.append('padding-bottom: ' ~ bpd_bottom) %}{% endif %}
-{% if bpd_left %}{% set _ = btn_styles.append('padding-left: ' ~ bpd_left) %}{% endif %}
-{% if bmg_top %}{% set _ = btn_styles.append('margin-top: ' ~ bmg_top) %}{% endif %}
-{% if bmg_right %}{% set _ = btn_styles.append('margin-right: ' ~ bmg_right) %}{% endif %}
-{% if bmg_bottom %}{% set _ = btn_styles.append('margin-bottom: ' ~ bmg_bottom) %}{% endif %}
-{% if bmg_left %}{% set _ = btn_styles.append('margin-left: ' ~ bmg_left) %}{% endif %}
-
-{# 地图栏样式 #}
-{% set map_col_styles = [] %}
-{% if mm_top %}{% set _ = map_col_styles.append('margin-top: ' ~ mm_top) %}{% endif %}
-{% if mm_right %}{% set _ = map_col_styles.append('margin-right: ' ~ mm_right) %}{% endif %}
-{% if mm_bottom %}{% set _ = map_col_styles.append('margin-bottom: ' ~ mm_bottom) %}{% endif %}
-{% if mm_left %}{% set _ = map_col_styles.append('margin-left: ' ~ mm_left) %}{% endif %}
-{% if mp_top %}{% set _ = map_col_styles.append('padding-top: ' ~ mp_top) %}{% endif %}
-{% if mp_right %}{% set _ = map_col_styles.append('padding-right: ' ~ mp_right) %}{% endif %}
-{% if mp_bottom %}{% set _ = map_col_styles.append('padding-bottom: ' ~ mp_bottom) %}{% endif %}
-{% if mp_left %}{% set _ = map_col_styles.append('padding-left: ' ~ mp_left) %}{% endif %}
-
-{% set map_iframe_styles = [] %}
-{% if map_h %}{% set _ = map_iframe_styles.append('height: ' ~ map_h) %}{% endif %}
-{% if map_radius %}{% set _ = map_iframe_styles.append('border-radius: ' ~ map_radius) %}{% endif %}
-
-{# 标签左排时 field 样式 #}
-{% set label_left = label_style == 'left' %}
-{% set label_hidden = label_style == 'hidden' %}
-
-{% set has_form = show_form and (show_name or show_email or show_phone or show_company or show_message) %}
-{% set has_map = show_map and map_src %}
-{% if has_form or has_map %}
-<section class="section"{% if section_styles %} style="{{ section_styles | join('; ') }}"{% endif %}>
-  <div class="container" style="max-width: {{ inner_w or 'none' }}; margin: 0 auto;{% if container_styles %} {{ container_styles | join('; ') }}{% endif %}">
-    {% if md.title %}
+<!-- 联系表单模块 - 访客在线留言 + 可选嵌入地图（data-* 声明式） -->
+<section data-name="contact_form" data-type="group" data-hideable class="section">
+  <div class="container" style="max-width:none;margin:0 auto">
     <div class="section-header">
-      <h2 class="section-title"{% if text_color %} style="color: {{ text_color }}"{% endif %}>{{ md.title }}</h2>
-      {% if md.subtitle %}<p class="section-description">{{ md.subtitle }}</p>{% endif %}
+      <h2 data-name="title" data-type="text" class="section-title"></h2>
+      <p data-name="subtitle" data-type="text" class="section-description"></p>
     </div>
-    {% endif %}
-
-    {% if has_map and has_form %}
-    {# === 双栏：表单 + 地图 === #}
-    <div class="cf-layout{% if layout == 'form_right' %} cf-layout--reverse{% endif %}">
-      <div class="cf-form-col" style="flex: 0 0 calc({{ form_ratio }}% - 1rem)">
-        {% if has_form %}
-        <form class="cf-form{% if label_left %} cf-form--label-left{% endif %}" action="{{ form_action or '#' }}" method="POST"{% if form_self_styles %} style="{{ form_self_styles | join('; ') }}"{% endif %}>
-          {% if form_inner_styles %}<div class="cf-form-inner" style="{{ form_inner_styles | join('; ') }}">{% endif %}
-          {% include 'dengtec/blocks/contact_form/_fields.html' ignore missing %}
-          {% if show_name %}
-          <div class="cf-field{% if label_left %} cf-field--row{% endif %}">
-            {% if not label_hidden %}<label class="cf-label"{% if title_size or text_color %} style="{% if title_size %}font-size: {{ title_size }};{% endif %}{% if text_color %}color: {{ text_color }}{% endif %}"{% endif %}>姓名</label>{% endif %}
-            <input type="text" name="name" class="cf-input" required placeholder="请输入您的姓名"{% if input_styles %} style="{{ input_styles | join('; ') }}"{% endif %}>
+    <!-- 表单 action URL 由 JS 读取并注入到 form.action -->
+    <span class="js-form-action" data-name="form_action" data-type="text" style="display:none"></span>
+    <div class="cf-layout">
+      <!-- 表单列（可独立隐藏） -->
+      <div data-name="form_panel" data-type="group" data-hideable class="cf-form-col">
+        <form class="cf-form" method="POST">
+          <div data-name="name_field" data-type="group" data-hideable class="cf-field">
+            <label class="cf-label">姓名</label>
+            <input type="text" name="name" class="cf-input" required placeholder="请输入您的姓名">
           </div>
-          {% endif %}
-          {% if show_email %}
-          <div class="cf-field{% if label_left %} cf-field--row{% endif %}">
-            {% if not label_hidden %}<label class="cf-label"{% if title_size or text_color %} style="{% if title_size %}font-size: {{ title_size }};{% endif %}{% if text_color %}color: {{ text_color }}{% endif %}"{% endif %}>邮箱</label>{% endif %}
-            <input type="email" name="email" class="cf-input" required placeholder="请输入您的邮箱"{% if input_styles %} style="{{ input_styles | join('; ') }}"{% endif %}>
+          <div data-name="email_field" data-type="group" data-hideable class="cf-field">
+            <label class="cf-label">邮箱</label>
+            <input type="email" name="email" class="cf-input" required placeholder="请输入您的邮箱">
           </div>
-          {% endif %}
-          {% if show_phone %}
-          <div class="cf-field{% if label_left %} cf-field--row{% endif %}">
-            {% if not label_hidden %}<label class="cf-label"{% if title_size or text_color %} style="{% if title_size %}font-size: {{ title_size }};{% endif %}{% if text_color %}color: {{ text_color }}{% endif %}"{% endif %}>电话</label>{% endif %}
-            <input type="tel" name="phone" class="cf-input" placeholder="请输入您的电话（可选）"{% if input_styles %} style="{{ input_styles | join('; ') }}"{% endif %}>
+          <div data-name="phone_field" data-type="group" data-hideable class="cf-field">
+            <label class="cf-label">电话</label>
+            <input type="tel" name="phone" class="cf-input" placeholder="请输入您的电话（可选）">
           </div>
-          {% endif %}
-          {% if show_company %}
-          <div class="cf-field{% if label_left %} cf-field--row{% endif %}">
-            {% if not label_hidden %}<label class="cf-label"{% if title_size or text_color %} style="{% if title_size %}font-size: {{ title_size }};{% endif %}{% if text_color %}color: {{ text_color }}{% endif %}"{% endif %}>公司</label>{% endif %}
-            <input type="text" name="company" class="cf-input" placeholder="请输入您的公司名称（可选）"{% if input_styles %} style="{{ input_styles | join('; ') }}"{% endif %}>
+          <div data-name="company_field" data-type="group" data-hideable class="cf-field">
+            <label class="cf-label">公司</label>
+            <input type="text" name="company" class="cf-input" placeholder="请输入您的公司名称（可选）">
           </div>
-          {% endif %}
-          {% if show_message %}
-          <div class="cf-field{% if label_left %} cf-field--row{% endif %}">
-            {% if not label_hidden %}<label class="cf-label"{% if title_size or text_color %} style="{% if title_size %}font-size: {{ title_size }};{% endif %}{% if text_color %}color: {{ text_color }}{% endif %}"{% endif %}>留言</label>{% endif %}
-            <textarea name="message" class="cf-input cf-textarea" rows="4" required placeholder="请输入您的留言内容"{% if input_styles %} style="{{ input_styles | join('; ') }}"{% endif %}></textarea>
+          <div data-name="message_field" data-type="group" data-hideable class="cf-field">
+            <label class="cf-label">留言</label>
+            <textarea name="message" class="cf-input cf-textarea" rows="4" required placeholder="请输入您的留言内容"></textarea>
           </div>
-          {% endif %}
-          <div class="cf-actions"{% if actions_styles %} style="{{ actions_styles | join('; ') }}"{% endif %}>
-            <button type="submit" class="cf-btn"{% if btn_styles %} style="{{ btn_styles | join('; ') }}"{% endif %}>{{ submit_text }}</button>
+          <div class="cf-actions">
+            <button type="submit" class="cf-btn">发送留言</button>
           </div>
-          {% if form_inner_styles %}</div>{% endif %}
         </form>
-        {% endif %}
       </div>
-      <div class="cf-map-col" style="flex: 0 0 calc({{ map_ratio }}% - 1rem){% if map_col_styles %}; {{ map_col_styles | join('; ') }}{% endif %}">
-        <iframe class="cf-map-iframe"
-                src="{{ map_src }}"
-                allowfullscreen="" loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"
-                {% if map_iframe_styles %} style="{{ map_iframe_styles | join('; ') }}"{% endif %}></iframe>
+      <!-- 地图列（可独立隐藏） -->
+      <div data-name="map_panel" data-type="group" data-hideable class="cf-map-col">
+        <iframe data-name="map_src" data-type="embed" src="" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" class="cf-map-iframe"></iframe>
       </div>
     </div>
-    {% elif has_map %}
-    {# === 单栏：仅地图 === #}
-    <div class="cf-map-only"{% if map_col_styles %} style="{{ map_col_styles | join('; ') }}"{% endif %}>
-      <iframe class="cf-map-iframe"
-              src="{{ map_src }}"
-              allowfullscreen="" loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-              {% if map_iframe_styles %} style="{{ map_iframe_styles | join('; ') }}"{% endif %}></iframe>
-    </div>
-    {% else %}
-    {# === 单栏：仅表单 === #}
-    {% if has_form %}
-    <form class="cf-form{% if label_left %} cf-form--label-left{% endif %}" action="{{ form_action or '#' }}" method="POST"{% if form_self_styles %} style="{{ form_self_styles | join('; ') }}"{% endif %}>
-      {% if form_inner_styles %}<div class="cf-form-inner" style="{{ form_inner_styles | join('; ') }}">{% endif %}
-      {% if show_name %}
-      <div class="cf-field{% if label_left %} cf-field--row{% endif %}">
-        {% if not label_hidden %}<label class="cf-label"{% if title_size or text_color %} style="{% if title_size %}font-size: {{ title_size }};{% endif %}{% if text_color %}color: {{ text_color }}{% endif %}"{% endif %}>姓名</label>{% endif %}
-        <input type="text" name="name" class="cf-input" required placeholder="请输入您的姓名"{% if input_styles %} style="{{ input_styles | join('; ') }}"{% endif %}>
-      </div>
-      {% endif %}
-      {% if show_email %}
-      <div class="cf-field{% if label_left %} cf-field--row{% endif %}">
-        {% if not label_hidden %}<label class="cf-label"{% if title_size or text_color %} style="{% if title_size %}font-size: {{ title_size }};{% endif %}{% if text_color %}color: {{ text_color }}{% endif %}"{% endif %}>邮箱</label>{% endif %}
-        <input type="email" name="email" class="cf-input" required placeholder="请输入您的邮箱"{% if input_styles %} style="{{ input_styles | join('; ') }}"{% endif %}>
-      </div>
-      {% endif %}
-      {% if show_phone %}
-      <div class="cf-field{% if label_left %} cf-field--row{% endif %}">
-        {% if not label_hidden %}<label class="cf-label"{% if title_size or text_color %} style="{% if title_size %}font-size: {{ title_size }};{% endif %}{% if text_color %}color: {{ text_color }}{% endif %}"{% endif %}>电话</label>{% endif %}
-        <input type="tel" name="phone" class="cf-input" placeholder="请输入您的电话（可选）"{% if input_styles %} style="{{ input_styles | join('; ') }}"{% endif %}>
-      </div>
-      {% endif %}
-      {% if show_company %}
-      <div class="cf-field{% if label_left %} cf-field--row{% endif %}">
-        {% if not label_hidden %}<label class="cf-label"{% if title_size or text_color %} style="{% if title_size %}font-size: {{ title_size }};{% endif %}{% if text_color %}color: {{ text_color }}{% endif %}"{% endif %}>公司</label>{% endif %}
-        <input type="text" name="company" class="cf-input" placeholder="请输入您的公司名称（可选）"{% if input_styles %} style="{{ input_styles | join('; ') }}"{% endif %}>
-      </div>
-      {% endif %}
-      {% if show_message %}
-      <div class="cf-field{% if label_left %} cf-field--row{% endif %}">
-        {% if not label_hidden %}<label class="cf-label"{% if title_size or text_color %} style="{% if title_size %}font-size: {{ title_size }};{% endif %}{% if text_color %}color: {{ text_color }}{% endif %}"{% endif %}>留言</label>{% endif %}
-        <textarea name="message" class="cf-input cf-textarea" rows="4" required placeholder="请输入您的留言内容"{% if input_styles %} style="{{ input_styles | join('; ') }}"{% endif %}></textarea>
-      </div>
-      {% endif %}
-      <div class="cf-actions"{% if actions_styles %} style="{{ actions_styles | join('; ') }}"{% endif %}>
-        <button type="submit" class="cf-btn"{% if btn_styles %} style="{{ btn_styles | join('; ') }}"{% endif %}>{{ submit_text }}</button>
-      </div>
-      {% if form_inner_styles %}</div>{% endif %}
-    </form>
-    {% endif %}
-    {% endif %}
   </div>
+  <script>
+    (function() {
+      var section = document.currentScript.parentElement;
+      /* 表单 action URL 从隐藏 span 读取并注入 form.action */
+      var actionEl = section.querySelector('.js-form-action');
+      var form = section.querySelector('.cf-form');
+      if (actionEl && form) {
+        var v = (actionEl.textContent || '').trim();
+        if (v) form.action = v;
+      }
+    })();
+  </script>
 </section>
-{% endif %}

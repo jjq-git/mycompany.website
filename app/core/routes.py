@@ -1872,14 +1872,29 @@ def _parse_modules_form(form, existing_modules=None):
                     item_n = int(form.get(count_key, '0') or '0')
                 except (ValueError, TypeError):
                     item_n = 0
-                # 子字段名 + data-href 字段名（leaf 项如 logo：name=logo, href=link）
-                sub_specs = [(c.name, c.href_field) for c in lf.children]
+                # 子字段名 + 类型 + data-href 字段名
+                sub_specs = [(c.name, c.type, c.href_field) for c in lf.children]
                 items = []
                 for j in range(item_n):
                     item_prefix = f'{idx}_{list_name}_{j}_'
                     entry = {}
-                    for sub_name, href_field in sub_specs:
-                        val = _parse_value(form.get(f'{item_prefix}{sub_name}', ''))
+                    for sub_name, sub_type, href_field in sub_specs:
+                        # 图片/视频字段：优先处理文件上传，否则取 URL 文本值
+                        if sub_type in ('image', 'video'):
+                            upload = request.files.get(f'{item_prefix}{sub_name}_file')
+                            if upload and upload.filename:
+                                try:
+                                    val = _save_uploaded_media(
+                                        _current_context()[1].id, upload,
+                                        prefix=f'{m_type}-{sub_name}-{j + 1}'
+                                    )
+                                except Exception as exc:
+                                    current_app.logger.warning('上传失败: %s', exc)
+                                    val = _parse_value(form.get(f'{item_prefix}{sub_name}', ''))
+                            else:
+                                val = _parse_value(form.get(f'{item_prefix}{sub_name}', ''))
+                        else:
+                            val = _parse_value(form.get(f'{item_prefix}{sub_name}', ''))
                         if val not in (None, ''):
                             entry[sub_name] = val
                         if href_field:
@@ -1891,6 +1906,24 @@ def _parse_modules_form(form, existing_modules=None):
                 data[list_name] = items
                 form_fields_for_module.add(list_name)  # 防止"已有数据保留"覆盖
                 handled_lists.add(list_name)
+
+        # 通用 data-* 顶层 image/video 字段：处理文件上传（list 内字段已在上面处理）
+        if _schema is not None:
+            for lf in _schema.fields:
+                if lf.type in ('list', 'grid', 'group'):
+                    continue
+                if lf.type not in ('image', 'video'):
+                    continue
+                field_name = lf.name
+                upload = request.files.get(f'{idx}_data_{field_name}_file')
+                if upload and upload.filename:
+                    try:
+                        data[field_name] = _save_uploaded_media(
+                            _current_context()[1].id, upload,
+                            prefix=f'{m_type}-{field_name}'
+                        )
+                    except Exception as exc:
+                        current_app.logger.warning('上传失败 %s: %s', field_name, exc)
 
         if m_type == 'hero_banner':
             slide_count = 0
