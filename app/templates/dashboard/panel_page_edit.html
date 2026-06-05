@@ -47,34 +47,30 @@
   </button>
 </div>
 
-{# ---- 可用模块弹框 ---- #}
+{# ---- 可用模块弹框（左右分栏：左侧类型列表 + 右侧变体预览） ---- #}
 <div class="modal fade" id="blockPalettePageModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-xl">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">可用模块</h5>
+      <div class="modal-header py-2">
+        <h5 class="modal-title">添加模块</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body">
-        <div class="row g-3">
-          {% for blk in blocks if blk.name not in ('product_grid', 'item_data') %}
-          <div class="col-6">
-            <div class="block-palette-card card p-3"
-                 data-block-name="{{ blk.name }}"
-                 data-block-variant="{{ blk.variants[0].key if blk.variants else 'default' }}">
-              <div class="d-flex align-items-start gap-3">
-                <div class="block-palette-icon flex-shrink-0">
-                  {{ block_icon(blk.name) }}
-                </div>
-                <div class="min-w-0">
-                  <div class="fw-semibold small mb-1">{{ blk.display_name }}</div>
-                  <div class="text-muted" style="font-size:11px;line-height:1.4">{{ blk.description }}</div>
-                </div>
-              </div>
+      <div class="modal-body p-0">
+        <div class="block-modal-layout" id="blockModalLayout">
+          <!-- 左侧: 模块类型列表（JS 动态填充） -->
+          <div class="block-list-panel" id="blockListPanel"></div>
+          <!-- 右侧: 变体预览网格 -->
+          <div class="variant-preview-panel" id="variantPanel">
+            <div class="variant-empty-hint">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <span>从左侧选择一个模块类型</span>
             </div>
           </div>
-          {% endfor %}
         </div>
+      </div>
+      <div class="modal-footer py-2">
+        <span class="text-muted me-auto" style="font-size:11px" id="variantConfirmHint"></span>
+        <button type="button" class="btn btn-primary btn-sm" id="confirmAddBtn" disabled onclick="confirmAddModule()">确认添加</button>
       </div>
     </div>
   </div>
@@ -109,6 +105,7 @@
           </div>
         </div>
         <input type="hidden" name="module_{{ i }}_type" value="{{ module.type }}">
+        <input type="hidden" name="module_{{ i }}_variant" value="{{ module.variant | default('default') }}">
         <input type="hidden" name="module_{{ i }}_order" value="{{ module.order | default(i + 1) }}">
 
         <div class="module-config p-2 border-top" style="display:none">
@@ -265,11 +262,26 @@ function _schemaEsc(s) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// 字段名 → 中文显示名（后续迁移到模板 data-label 属性 + block_parser 透传）
+var FIELD_LABEL_MAP = {
+  'form_panel':    '表单',
+  'map_panel':     '地图',
+  'name_field':    '姓名',
+  'email_field':   '邮箱',
+  'phone_field':   '电话',
+  'company_field': '公司',
+  'message_field': '留言',
+  'map_src':       '地图链接'
+};
+function _schemaLabel(field) {
+  return FIELD_LABEL_MAP[field.name] || field.label || field.name;
+}
+
 /* 单个内容字段 → 编辑控件 */
 function _schemaFieldHtml(prefix, field, mdata) {
   var name = prefix + field.name;
   var val = (mdata && mdata[field.name] != null) ? mdata[field.name] : '';
-  var label = field.name;  // schema 无中文 label，用字段名（后续可在 meta 补 label 映射）
+  var label = _schemaLabel(field);
   var html = '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + _schemaEsc(label) + '</label>';
 
   if (field.type === 'textarea' || field.type === 'richtext') {
@@ -339,8 +351,7 @@ function generateSchemaForm(prefix, schema, mdata, vTFn) {
       // 可重复列表/栅格 → 条目编辑器（增删条目 + 子字段子表单）
       html += _schemaListEditor(prefix, field, mdata);
     } else if (field.type === 'group') {
-      // 非重复复合字段：暂不在已转 block 出现，留待后续（highlight_card/item_detail）
-      html += '<div class="small text-muted mb-2">（' + _schemaEsc(field.name) + '：复合字段，编辑器暂不支持）</div>';
+      html += _schemaGroupHtml(prefix, field, mdata);
     } else {
       html += _schemaFieldHtml(prefix, field, mdata);
     }
@@ -364,6 +375,74 @@ function _schemaHideToggle(name, label, hiddenVal) {
     '<label class="form-check-label small">' + _schemaEsc(label) + '</label>' +
     '<input type="hidden" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(hiddenVal) + '">' +
     '</div>';
+}
+
+/* group 复合字段：递归渲染 children，子字段平铺在同一 data 层级（与渲染器 _process_field 对齐）
+   有子字段的 group → 区块标题（subtitle 同款 label）+ 眼睛图标 + 底部分隔线
+   无子字段的 group → 紧凑行内项（供外层 flex-wrap 容器使用） */
+function _schemaGroupHtml(prefix, field, mdata) {
+  mdata = mdata || {};
+  var label = _schemaLabel(field);
+  var hasChildren = field.children && field.children.length > 0;
+  var html = '';
+
+  // 生成眼睛图标 + 隐藏域
+  // hiddenVal='true'=内容隐藏→填充灰眼 / 'false'=内容可见→线框睁眼
+  function _eyeBtn(hiddenKey, hiddenVal) {
+    var isHidden = (hiddenVal === 'true');
+    var svg = isHidden ? EYE_OFF_SVG : EYE_OPEN_SVG;
+    var tip = isHidden ? '点击显示' : '点击隐藏';
+    var dv = isHidden ? 'true' : 'false';
+    return '<button type="button" class="eye-toggle-btn" data-visible="' + dv + '" onclick="toggleVisibilityEye(this)" title="' + tip + '">' + svg + '</button>' +
+      '<input type="hidden" name="' + _schemaEsc(prefix + hiddenKey) + '" value="' + _schemaEsc(hiddenVal) + '">';
+  }
+
+  if (hasChildren) {
+    // 有子字段：区块标题行（form-label 风格 + 眼睛图标）
+    if (field.hideable) {
+      var hiddenKey = '_hidden_' + field.name;
+      var hiddenVal = (mdata && mdata[hiddenKey] != null) ? String(mdata[hiddenKey]) : '';
+      html += '<div class="mb-2 pb-2" style="border-bottom:1px solid #e2e8f0">' +
+        '<div class="d-flex align-items-center justify-content-between">' +
+        '<label class="form-label small mb-0 text-muted">' + _schemaEsc(label) + '</label>' +
+        '<div>' + _eyeBtn(hiddenKey, hiddenVal) + '</div>' +
+        '</div></div>';
+    }
+
+    // 子字段全是无子的 hideable group → flex-wrap 行内排列
+    var allLeafGroups = field.children.every(function(c) {
+      return c.type === 'group' && (!c.children || !c.children.length);
+    });
+    if (allLeafGroups) {
+      html += '<div class="d-flex flex-wrap gap-2 ps-3 mb-2">';
+      field.children.forEach(function(child) {
+        html += _schemaGroupHtml(prefix, child, mdata);
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="ps-3 mb-2">';
+      field.children.forEach(function(child) {
+        if (child.type === 'group') {
+          html += _schemaGroupHtml(prefix, child, mdata);
+        } else if (child.type === 'list' || child.type === 'grid') {
+          html += _schemaListEditor(prefix, child, mdata);
+        } else {
+          html += _schemaFieldHtml(prefix, child, mdata);
+        }
+      });
+      html += '</div>';
+    }
+  } else if (field.hideable) {
+    // 无子字段的 hideable group：紧凑行内项
+    var hiddenKey = '_hidden_' + field.name;
+    var hiddenVal = (mdata && mdata[hiddenKey] != null) ? String(mdata[hiddenKey]) : '';
+    html += '<div class="d-flex align-items-center gap-1" style="white-space:nowrap">' +
+      '<span class="small">' + _schemaEsc(label) + '</span>' +
+      _eyeBtn(hiddenKey, hiddenVal) +
+      '</div>';
+  }
+
+  return html;
 }
 
 /* 样式面板：遍历 schema.style_tokens 查 styleRegistry 生成控件 */
@@ -864,14 +943,6 @@ function reindexStepItems(moduleIndex) {
   var items = document.querySelectorAll('.module-item');
   if (items.length) { items[0].classList.add('expanded'); items[0].querySelector('.module-config').style.display = 'block'; }
   // 点击事件由模板中 .module-header 的 onclick 统一处理，此处不再重复绑定
-  document.querySelectorAll('.block-palette-card[data-block-name]').forEach(function(card){
-    card.addEventListener('click', function(){
-      addModule(card.dataset.blockName, card.dataset.blockVariant || 'default');
-      // 关闭弹框
-      var modalEl = document.getElementById('blockPalettePageModal');
-      if (modalEl) { var modal = bootstrap.Modal.getInstance(modalEl); if (modal) modal.hide(); }
-    });
-  });
   document.querySelectorAll('.remove-module-btn').forEach(function(btn){
     btn.addEventListener('click', function(event){
       event.stopPropagation();
@@ -920,6 +991,185 @@ function reindexStepItems(moduleIndex) {
     });
   });
 })();
+
+/* ===== 添加模块弹框：左右分栏 + 变体预览 ===== */
+var selectedBlockType = null;
+var selectedVariantKey = null;
+
+// 变体缩略图映射：根据 block type + variant key 生成迷你几何示意图
+function buildVariantThumb(blockType, variantKey) {
+  var builders = {
+    hero_banner: {
+      text_overlay: function(){ return '<div class="mini-hero-text-overlay"><div class="mini-title"></div><div class="mini-sub"></div><div class="mini-btn"></div></div>'; },
+      text_below_slide: function(){ return '<div class="mini-hero-text-below"><div class="mini-img"></div><div class="mini-caption"><div class="mini-line" style="width:60%;height:4px"></div><div class="mini-line" style="width:40%;height:3px"></div></div></div>'; },
+      fullscreen: function(){ return '<div class="mini-hero-fullscreen"><div class="mini-line" style="width:55%;height:7px"></div><div class="mini-line" style="width:35%;height:4px"></div><div class="mini-line" style="width:25%;height:5px;background:#0d9488;margin-top:4px"></div></div>'; },
+      split_media: function(){ return '<div class="mini-hero-split"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:60%;height:5px"></div><div class="mini-line" style="width:40%;height:3px"></div><div class="mini-line" style="width:30%;height:4px;background:#0d9488;margin-top:2px"></div></div></div>'; }
+    },
+    section_title: {
+      default: function(){ return '<div class="mini-section-title"><div class="mini-tag"></div><div class="mini-title-line"></div><div class="mini-desc"></div></div>'; }
+    },
+    text_content: {
+      default: function(){ return '<div class="mini-text-block"><div class="mini-w80"></div><div class="mini-w90"></div><div class="mini-w80"></div><div class="mini-w70"></div><div class="mini-w60"></div></div>'; },
+      narrow: function(){ return '<div class="mini-text-narrow"><div class="mini-w80"></div><div class="mini-w70"></div><div class="mini-w80"></div><div class="mini-w60"></div><div class="mini-w70"></div></div>'; }
+    },
+    highlight_card: {
+      media_left: function(){ return '<div class="mini-card-horizontal"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:80%;height:5px"></div><div class="mini-line" style="width:90%;height:3px"></div><div class="mini-line" style="width:70%;height:3px"></div></div></div>'; },
+      media_right: function(){ return '<div class="mini-card-flip"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:80%;height:5px"></div><div class="mini-line" style="width:90%;height:3px"></div><div class="mini-line" style="width:70%;height:3px"></div></div></div>'; },
+      stack: function(){ return '<div class="mini-card-stack"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:70%;height:4px"></div><div class="mini-line" style="width:90%;height:3px"></div></div></div>'; },
+      bento: function(){ return '<div class="mini-bento"><div class="mini-cell"></div><div class="mini-cell"></div><div class="mini-cell"></div><div class="mini-cell"></div></div>'; }
+    },
+    data_grid: {
+      grid_3: function(){ return '<div class="mini-grid"><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div></div>'; }
+    },
+    feature_grid: {
+      grid_3: function(){ return '<div class="mini-grid"><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div></div>'; },
+      grid_4: function(){ return '<div class="mini-grid"><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div></div>'; }
+    },
+    stat_counter: {
+      grid_3: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-stat"><div class="mini-num"></div><div class="mini-label"></div></div>'; return '<div class="mini-stat-grid">'+h+'</div>'; },
+      grid_4: function(){ var h=''; for(var i=0;i<4;i++) h+='<div class="mini-stat"><div class="mini-num"></div><div class="mini-label"></div></div>'; return '<div class="mini-stat-grid">'+h+'</div>'; },
+      grid_6: function(){ var h=''; for(var i=0;i<6;i++) h+='<div class="mini-stat"><div class="mini-num"></div><div class="mini-label"></div></div>'; return '<div class="mini-stat-grid">'+h+'</div>'; }
+    },
+    contact_info: {
+      cards: function(){ return '<div class="mini-grid"><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div></div>'; },
+      list: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-thumb"></div><div class="mini-line"></div></div>'; return '<div class="mini-list-v">'+h+'</div>'; }
+    },
+    process_steps: {
+      horizontal: function(){ var h=''; for(var i=0;i<4;i++) h+='<div class="mini-step"><div class="mini-dot"></div><div class="mini-line"></div></div>'; return '<div class="mini-steps-h">'+h+'</div>'; },
+      vertical: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-num"></div><div class="mini-line"></div></div>'; return '<div class="mini-steps-v">'+h+'</div>'; },
+      numbered: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-num"></div><div class="mini-line"></div></div>'; return '<div class="mini-steps-numbered">'+h+'</div>'; }
+    },
+    logo_cloud: {
+      grid_4: function(){ var h=''; for(var i=0;i<4;i++) h+='<div class="mini-logo"></div>'; return '<div class="mini-logo-grid">'+h+'</div>'; },
+      grid_5: function(){ var h=''; for(var i=0;i<5;i++) h+='<div class="mini-logo"></div>'; return '<div class="mini-logo-grid">'+h+'</div>'; },
+      grid_6: function(){ var h=''; for(var i=0;i<6;i++) h+='<div class="mini-logo"></div>'; return '<div class="mini-logo-grid">'+h+'</div>'; }
+    },
+    contact_form: {
+      default: function(){ return '<div class="mini-form"><div class="mini-field"></div><div class="mini-field"></div><div class="mini-field" style="height:10px"></div><div class="mini-btn"></div></div>'; },
+      compact: function(){ return '<div class="mini-form" style="padding:14px 30px"><div class="mini-field"></div><div class="mini-field"></div><div class="mini-btn"></div></div>'; }
+    }
+  };
+  var blockBuilders = builders[blockType];
+  if (blockBuilders && blockBuilders[variantKey]) return blockBuilders[variantKey]();
+  // 通用降级: 根据变体名中的关键词推断缩略图
+  if (/grid|网格|列/.test(variantKey)) {
+    var n = parseInt(variantKey.match(/\d+/)) || 3;
+    var cols = ''; for(var i=0;i<n;i++) cols += '<div class="mini-col"></div>';
+    return '<div class="mini-grid">'+cols+'</div>';
+  }
+  if (/list|列表/.test(variantKey)) {
+    var rows = ''; for(var i=0;i<3;i++) rows += '<div class="mini-row"><div class="mini-thumb"></div><div class="mini-line"></div></div>';
+    return '<div class="mini-list-v">'+rows+'</div>';
+  }
+  return '<div class="mini-section-title"><div class="mini-tag"></div><div class="mini-title-line"></div><div class="mini-desc"></div></div>';
+}
+
+// 构建弹框数据：从 blockLibrary 提取（排除内部 block）
+function buildPaletteData() {
+  return (blockLibrary || []).filter(function(b) {
+    return b.name !== 'product_grid' && b.name !== 'item_data';
+  }).map(function(b) {
+    return {
+      type: b.name,
+      name: b.display_name || b.name,
+      variants: (b.variants && b.variants.length) ? b.variants : [{key: 'default', label: '默认'}]
+    };
+  });
+}
+
+// 弹框打开时初始化
+var paletteModalEl = document.getElementById('blockPalettePageModal');
+if (paletteModalEl) {
+  paletteModalEl.addEventListener('show.bs.modal', function() {
+    initBlockPalette();
+    resetConfirmBtn();
+  });
+}
+
+function resetConfirmBtn() {
+  selectedBlockType = null;
+  selectedVariantKey = null;
+  var btn = document.getElementById('confirmAddBtn');
+  if (btn) btn.disabled = true;
+  var hint = document.getElementById('variantConfirmHint');
+  if (hint) hint.textContent = '';
+}
+
+function initBlockPalette() {
+  var listPanel = document.getElementById('blockListPanel');
+  if (!listPanel || listPanel.children.length > 0) return;
+  var paletteData = buildPaletteData();
+  var html = '';
+  paletteData.forEach(function(blk) {
+    var vcount = blk.variants.length;
+    html += '<div class="block-list-item" data-block-type="' + blk.type + '" onclick="selectBlockType(\'' + blk.type + '\')">';
+    html += '<div class="block-list-icon">' + getBlockIconHTML(blk.type) + '</div>';
+    html += '<div class="block-list-text"><div class="block-list-name">' + blk.name + '</div><div class="block-list-count">' + vcount + ' 种排版</div></div>';
+    html += '</div>';
+  });
+  listPanel.innerHTML = html;
+}
+
+function selectBlockType(blockType) {
+  selectedBlockType = blockType;
+  selectedVariantKey = null;
+  resetConfirmBtn();
+  selectedBlockType = blockType;
+
+  // 左侧列表 active 态
+  document.querySelectorAll('#blockListPanel .block-list-item').forEach(function(item) {
+    item.classList.toggle('active', item.dataset.blockType === blockType);
+  });
+
+  // 查找数据
+  var paletteData = buildPaletteData();
+  var blk = paletteData.find(function(b) { return b.type === blockType; });
+  if (!blk) return;
+
+  // 渲染右侧变体预览
+  var panel = document.getElementById('variantPanel');
+  var html = '<div class="variant-section-title">' + blk.name + ' — ' + blk.variants.length + ' 种排版变体</div>';
+  html += '<div class="variant-preview-grid">';
+  blk.variants.forEach(function(v) {
+    html += '<div class="variant-preview-card" data-block-type="' + blk.type + '" data-variant="' + v.key + '" onclick="selectVariant(this, \'' + blk.type + '\', \'' + v.key + '\')">';
+    html += '<div class="variant-preview-thumb">' + buildVariantThumb(blk.type, v.key) + '</div>';
+    html += '<div class="variant-preview-label">' + v.label + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  panel.innerHTML = html;
+}
+
+function selectVariant(card, blockType, variantKey) {
+  // 视觉选中态
+  document.querySelectorAll('#variantPanel .variant-preview-card').forEach(function(c) {
+    c.classList.remove('selected');
+  });
+  card.classList.add('selected');
+  selectedBlockType = blockType;
+  selectedVariantKey = variantKey;
+
+  // 启用确认按钮 + 显示提示文字
+  var paletteData = buildPaletteData();
+  var blk = paletteData.find(function(b) { return b.type === blockType; });
+  var vlabel = variantKey;
+  if (blk) {
+    var v = blk.variants.find(function(x) { return x.key === variantKey; });
+    if (v) vlabel = v.label;
+  }
+  var btn = document.getElementById('confirmAddBtn');
+  if (btn) btn.disabled = false;
+  var hint = document.getElementById('variantConfirmHint');
+  if (hint) hint.textContent = '已选: ' + (blk ? blk.name : blockType) + ' / ' + vlabel;
+}
+
+function confirmAddModule() {
+  if (!selectedBlockType || !selectedVariantKey) return;
+  addModule(selectedBlockType, selectedVariantKey);
+  // 关闭弹框
+  var modal = bootstrap.Modal.getInstance(document.getElementById('blockPalettePageModal'));
+  if (modal) modal.hide();
+}
 
 function switchContentStyleTab(btn, tabName) {
   var item = btn.closest('.module-item');
@@ -1830,6 +2080,7 @@ function addModule(type, variant) {
 	      '</div>' +
     '</div>' +
     '<input type="hidden" name="module_' + idx + '_type" value="' + type + '">' +
+    '<input type="hidden" name="module_' + idx + '_variant" value="' + (variant || 'default') + '">' +
     '<input type="hidden" name="module_' + idx + '_order" value="' + (idx + 1) + '">' +
     '<div class="module-config p-2 border-top" style="display:block">' +
       '<div class="device-config device-desktop">' +
@@ -1906,9 +2157,9 @@ function selectModuleInPreview(moduleIndex) {
 }
 
 
-// 联系方式模块显隐眼睛图标切换
-var EYE_OPEN_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-var EYE_OFF_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72 1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+// 显隐眼睛图标：睁眼=可见(点击隐藏)，闭眼=隐藏(点击显示)
+var EYE_OPEN_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="9.5" ry="6.5"/><circle cx="12" cy="12" r="3"/></svg>';
+var EYE_OFF_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="9.5" ry="6.5" fill="#94a3b8" stroke="#94a3b8" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" fill="#fff" stroke="none"/></svg>';
 
 function toggleVisibilityEye(btn) {
   var isVisible = btn.getAttribute('data-visible') === 'true';
@@ -1917,9 +2168,9 @@ function toggleVisibilityEye(btn) {
   // 更新隐藏 input
   var hiddenInput = btn.parentElement.querySelector('input[type="hidden"]');
   if (hiddenInput) hiddenInput.value = newVisible ? 'true' : 'false';
-  // 更新图标和提示
-  btn.innerHTML = newVisible ? EYE_OPEN_SVG : EYE_OFF_SVG;
-  btn.title = newVisible ? '点击隐藏' : '点击显示';
+  // 更新图标：newVisible=true → 内容刚被隐藏 → 填充灰眼
+  btn.innerHTML = newVisible ? EYE_OFF_SVG : EYE_OPEN_SVG;
+  btn.title = newVisible ? '点击显示' : '点击隐藏';
 }
 
 function removeModule(idx) {

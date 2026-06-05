@@ -1,12 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{% block title %}{{ site.slug if site else '' }}{% endblock %} — {{ platform_domain }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260605">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260605b">
   <style>
     :root {
       --bs-primary: {{ admin_primary }};
@@ -30,6 +31,7 @@
       --theme-btn-active-bg: {{ admin_primary_active }};
       --theme-btn-active-border-color: {{ admin_primary_active }};
     }
+
     .btn-primary {
       --bs-btn-bg: var(--theme-btn-bg);
       --bs-btn-border-color: var(--theme-btn-border-color);
@@ -40,6 +42,7 @@
       --bs-btn-disabled-bg: var(--theme-btn-bg);
       --bs-btn-disabled-border-color: var(--theme-btn-border-color);
     }
+
     .btn-outline-primary {
       --bs-btn-color: var(--theme-btn-bg);
       --bs-btn-border-color: var(--theme-btn-border-color);
@@ -50,1351 +53,1552 @@
       --bs-btn-disabled-color: var(--theme-btn-bg);
       --bs-btn-disabled-border-color: var(--theme-btn-border-color);
     }
+
     .bg-primary {
       --bs-bg-opacity: 1;
       background-color: rgba(var(--bs-primary-rgb), var(--bs-bg-opacity)) !important;
     }
-    .text-primary { color: var(--bs-primary) !important; }
-    .border-primary { border-color: var(--bs-primary) !important; }
+
+    .text-primary {
+      color: var(--bs-primary) !important;
+    }
+
+    .border-primary {
+      border-color: var(--bs-primary) !important;
+    }
+
     .text-bg-primary {
       color: #fff !important;
       background-color: var(--bs-primary) !important;
     }
   </style>
 </head>
+
 <body class="d-flex flex-column vh-100">
 
-<header class="admin-header">
-  <div class="d-flex align-items-center h-100 px-3 gap-2">
+  <header class="admin-header">
+    <div class="d-flex align-items-center h-100 px-3 gap-2">
 
-    <a href="{{ url_for('core.overview') }}" class="d-flex align-items-center gap-2 text-decoration-none">
-      {# 内联 SVG logo — 不依赖外部文件，确保始终显示 #}
-      <svg class="admin-logo" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="28" height="28" rx="6" fill="var(--bs-primary)"/>
-        <rect x="5" y="7" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95"/>
-        <rect x="16" y="7" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95"/>
-        <rect x="5" y="16" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95"/>
-        <rect x="16" y="16" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95"/>
-      </svg>
-      <span class="admin-brand">{{ platform_domain }}</span>
-    </a>
-
-    <div class="header-divider"></div>
-
-    <div class="dropdown">
-      <button class="header-btn header-site-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        {{ site.slug if site else '未选择' }}
-      </button>
-      <ul class="dropdown-menu">
-        {% for opt in available_sites | default([]) %}
-        <li><a class="dropdown-item {% if site and opt.id == site.id %}active{% endif %}" href="{{ request.path }}?site={{ opt.id }}">{{ opt.name or opt.slug }} <span class="text-muted small">/{{ opt.slug }}</span></a></li>
-        {% endfor %}
-      </ul>
-    </div>
-
-    <a class="header-btn" href="javascript:void(0)" onclick="openTemplatesPanel()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      新建站点
-    </a>
-
-    <div class="flex-grow-1"></div>
-
-    <div class="nav-mode-swatches" aria-label="侧栏颜色">
-      <button class="nav-mode-swatch active" data-mode="dark" type="button" title="深色侧栏" onclick="setNavTheme('dark')" style="background:var(--theme-primary)"></button>
-      <button class="nav-mode-swatch" data-mode="light" type="button" title="浅色侧栏" onclick="setNavTheme('light')" style="background:#f8fafc;border:1px solid #d1d5db"></button>
-      <button class="nav-mode-swatch" data-mode="white" type="button" title="白色侧栏" onclick="setNavTheme('white')" style="background:#ffffff;border:1px solid #d1d5db"></button>
-    </div>
-
-    <div class="theme-swatches" id="themeSwatches" aria-label="主题色">
-      <button class="theme-swatch" data-color="#263544" type="button" style="background:#263544" title="深灰蓝" onclick="setThemeColor('#263544')"></button>
-      <button class="theme-swatch" data-color="#2563eb" type="button" style="background:#2563eb" title="经典蓝" onclick="setThemeColor('#2563eb')"></button>
-      <button class="theme-swatch" data-color="#4f46e5" type="button" style="background:#4f46e5" title="靛蓝" onclick="setThemeColor('#4f46e5')"></button>
-      <button class="theme-swatch" data-color="#0d9488" type="button" style="background:#0d9488" title="青绿" onclick="setThemeColor('#0d9488')"></button>
-      <button class="theme-swatch" data-color="#0284c7" type="button" style="background:#0284c7" title="天蓝" onclick="setThemeColor('#0284c7')"></button>
-      <button class="theme-swatch" data-color="#7c3aed" type="button" style="background:#7c3aed" title="紫罗兰" onclick="setThemeColor('#7c3aed')"></button>
-      <button class="theme-swatch" data-color="#059669" type="button" style="background:#059669" title="翠绿" onclick="setThemeColor('#059669')"></button>
-      <button class="theme-swatch" data-color="#dc2626" type="button" style="background:#dc2626" title="赤红" onclick="setThemeColor('#dc2626')"></button>
-      <button class="theme-swatch" data-color="#d97706" type="button" style="background:#d97706" title="琥珀" onclick="setThemeColor('#d97706')"></button>
-      <button class="theme-swatch" data-color="#6366f1" type="button" style="background:#6366f1" title="柔靛" onclick="setThemeColor('#6366f1')"></button>
-      <label class="theme-custom-btn" title="自定义颜色">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 2a10 10 0 0 0 0 20"/>
+      <a href="{{ url_for('core.overview') }}" class="d-flex align-items-center gap-2 text-decoration-none">
+        {# 内联 SVG logo — 不依赖外部文件，确保始终显示 #}
+        <svg class="admin-logo" width="28" height="28" viewBox="0 0 28 28" fill="none"
+          xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="28" rx="6" fill="var(--bs-primary)" />
+          <rect x="5" y="7" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95" />
+          <rect x="16" y="7" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95" />
+          <rect x="5" y="16" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95" />
+          <rect x="16" y="16" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95" />
         </svg>
-        <input type="color" class="theme-color-input" value="{{ admin_primary }}" onchange="setThemeColor(this.value)">
-      </label>
-    </div>
-
-    {% if site %}
-    <a class="header-btn" href="{{ url_for('core.preview_site', site_id=site.id) }}" target="_blank" title="在新窗口中打开站点预览">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      预览
-    </a>
-    <a class="header-btn" href="{{ url_for('core.export_zip') }}">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      导出
-    </a>
-    <a class="header-btn header-btn-primary" href="javascript:doPublish()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-      发布
-    </a>
-
-    <div class="header-divider"></div>
-    {% endif %}
-
-    <form method="post" action="{{ url_for('core.logout') }}" style="display:inline">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="header-btn" type="submit">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        退出
-      </button>
-    </form>
-
-    <div class="admin-avatar" title="{{ user.email if user else '' }}">
-      {{ (user.email[:1].upper() if user else '?') }}
-    </div>
-  </div>
-</header>
-
-<div class="d-flex flex-grow-1 overflow-hidden position-relative">
-  <nav class="flex-shrink-0 overflow-auto" id="leftNav">
-    {# 站点信息区 #}
-    <div class="left-nav-site-info px-3 py-2">
-      <div class="site-label">我的网站</div>
-      <div class="site-name">{{ site.name or site.slug if site else '未选择站点' }}</div>
-    </div>
-
-    <div class="d-flex flex-column">
-      {# ---- 站点 ---- #}
-      <div class="left-nav-section-title">站点</div>
-      <a class="left-nav-item {% if active == 'templates' %}active{% endif %}" href="{{ url_for('core.templates_gallery') }}" data-panel="templates" title="模板库">
-        <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        模板库
+        <span class="admin-brand">{{ platform_domain }}</span>
       </a>
 
+      <div class="header-divider"></div>
+
+      <div class="dropdown">
+        <button class="header-btn header-site-btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+          aria-expanded="false">
+          {{ site.slug if site else '未选择' }}
+        </button>
+        <ul class="dropdown-menu">
+          {% for opt in available_sites | default([]) %}
+          <li><a class="dropdown-item {% if site and opt.id == site.id %}active{% endif %}"
+              href="{{ request.path }}?site={{ opt.id }}">{{ opt.name or opt.slug }} <span class="text-muted small">/{{
+                opt.slug }}</span></a></li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <a class="header-btn" href="javascript:void(0)" onclick="openTemplatesPanel()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        新建站点
+      </a>
+
+      <div class="flex-grow-1"></div>
+
+      <div class="nav-mode-swatches" aria-label="侧栏颜色">
+        <button class="nav-mode-swatch active" data-mode="dark" type="button" title="深色侧栏" onclick="setNavTheme('dark')"
+          style="background:var(--theme-primary)"></button>
+        <button class="nav-mode-swatch" data-mode="light" type="button" title="浅色侧栏" onclick="setNavTheme('light')"
+          style="background:#f8fafc;border:1px solid #d1d5db"></button>
+        <button class="nav-mode-swatch" data-mode="white" type="button" title="白色侧栏" onclick="setNavTheme('white')"
+          style="background:#ffffff;border:1px solid #d1d5db"></button>
+      </div>
+
+      <div class="theme-swatches" id="themeSwatches" aria-label="主题色">
+        <button class="theme-swatch" data-color="#263544" type="button" style="background:#263544" title="深灰蓝"
+          onclick="setThemeColor('#263544')"></button>
+        <button class="theme-swatch" data-color="#2563eb" type="button" style="background:#2563eb" title="经典蓝"
+          onclick="setThemeColor('#2563eb')"></button>
+        <button class="theme-swatch" data-color="#4f46e5" type="button" style="background:#4f46e5" title="靛蓝"
+          onclick="setThemeColor('#4f46e5')"></button>
+        <button class="theme-swatch" data-color="#0d9488" type="button" style="background:#0d9488" title="青绿"
+          onclick="setThemeColor('#0d9488')"></button>
+        <button class="theme-swatch" data-color="#0284c7" type="button" style="background:#0284c7" title="天蓝"
+          onclick="setThemeColor('#0284c7')"></button>
+        <button class="theme-swatch" data-color="#7c3aed" type="button" style="background:#7c3aed" title="紫罗兰"
+          onclick="setThemeColor('#7c3aed')"></button>
+        <button class="theme-swatch" data-color="#059669" type="button" style="background:#059669" title="翠绿"
+          onclick="setThemeColor('#059669')"></button>
+        <button class="theme-swatch" data-color="#dc2626" type="button" style="background:#dc2626" title="赤红"
+          onclick="setThemeColor('#dc2626')"></button>
+        <button class="theme-swatch" data-color="#d97706" type="button" style="background:#d97706" title="琥珀"
+          onclick="setThemeColor('#d97706')"></button>
+        <button class="theme-swatch" data-color="#6366f1" type="button" style="background:#6366f1" title="柔靛"
+          onclick="setThemeColor('#6366f1')"></button>
+        <label class="theme-custom-btn" title="自定义颜色">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 2a10 10 0 0 0 0 20" />
+          </svg>
+          <input type="color" class="theme-color-input" value="{{ admin_primary }}"
+            onchange="setThemeColor(this.value)">
+        </label>
+      </div>
+
       {% if site %}
-      {# ---- 设置 ---- #}
-      <div class="left-nav-section-title">设置</div>
-      <div class="left-nav-group" data-level="0">
-        <div class="left-nav-parent-row">
-          <span class="left-nav-item left-nav-parent-label flex-grow-1" title="网站设置">
-            <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            网站设置
-          </span>
-          <button class="left-nav-chevron-btn" type="button" onclick="toggleLeftSubmenu(this)" title="展开/折叠子菜单">
-            <span class="left-nav-chevron">▶</span>
+      <a class="header-btn" href="{{ url_for('core.preview_site', site_id=site.id) }}" target="_blank"
+        title="在新窗口中打开站点预览">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        预览
+      </a>
+      <a class="header-btn" href="{{ url_for('core.export_zip') }}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        导出
+      </a>
+      <a class="header-btn header-btn-primary" href="javascript:doPublish()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="17 1 21 5 17 9" />
+          <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+          <polyline points="7 23 3 19 7 15" />
+          <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+        </svg>
+        发布
+      </a>
+
+      <div class="header-divider"></div>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('core.logout') }}" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="header-btn" type="submit">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          退出
+        </button>
+      </form>
+
+      <div class="admin-avatar" title="{{ user.email if user else '' }}">
+        {{ (user.email[:1].upper() if user else '?') }}
+      </div>
+    </div>
+  </header>
+
+  <div class="d-flex flex-grow-1 overflow-hidden position-relative">
+    <nav class="flex-shrink-0 overflow-auto" id="leftNav">
+      {# 站点信息区 #}
+      <div class="left-nav-site-info px-3 py-2">
+        <div class="site-label">我的网站</div>
+        <div class="site-name">{{ site.name or site.slug if site else '未选择站点' }}</div>
+      </div>
+
+      <div class="d-flex flex-column">
+        {# ---- 站点 ---- #}
+        <div class="left-nav-section-title">站点</div>
+        <a class="left-nav-item {% if active == 'templates' %}active{% endif %}"
+          href="{{ url_for('core.templates_gallery') }}" data-panel="templates" title="模板库">
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
+          模板库
+        </a>
+
+        {% if site %}
+        {# ---- 设置 ---- #}
+        <div class="left-nav-section-title">设置</div>
+        <div class="left-nav-group" data-level="0">
+          <div class="left-nav-parent-row">
+            <span class="left-nav-item left-nav-parent-label flex-grow-1" title="网站设置">
+              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+              网站设置
+            </span>
+            <button class="left-nav-chevron-btn" type="button" onclick="toggleLeftSubmenu(this)" title="展开/折叠子菜单">
+              <span class="left-nav-chevron">▶</span>
+            </button>
+          </div>
+          <div class="left-nav-submenu" style="display:none">
+            <a class="left-nav-item {% if active == 'overview' %}active{% endif %}"
+              href="{{ url_for('core.overview') }}" data-panel="overview" style="padding-left:32px" title="总览">
+              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+              </svg>
+              总览
+            </a>
+            <a class="left-nav-item {% if active == 'company' %}active{% endif %}" href="{{ url_for('core.company') }}"
+              data-panel="company" style="padding-left:32px" title="公司信息">
+              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+              公司信息
+            </a>
+            <a class="left-nav-item {% if active == 'theme' %}active{% endif %}" href="{{ url_for('core.theme_edit') }}"
+              data-panel="theme" style="padding-left:32px" title="主题颜色">
+              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 2a10 10 0 0 1 0 20" />
+                <path d="M2 12h20" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10" />
+                <path d="M12 2a15.3 15.3 0 0 0-4 10 15.3 15.3 0 0 0 4 10" />
+              </svg>
+              主题颜色
+            </a>
+            <a class="left-nav-item" href="#" data-panel="seo" style="padding-left:32px" title="SEO 优化">
+              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                <polyline points="7 11 9 9 11 11 15 7" />
+                <line x1="15" y1="12" x2="15" y2="7" />
+                <line x1="10" y1="7" x2="15" y2="7" />
+              </svg>
+              SEO 优化
+            </a>
+            <a class="left-nav-item {% if active == 'account' %}active{% endif %}" href="{{ url_for('core.account') }}"
+              data-panel="account" style="padding-left:32px" title="账号管理">
+              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              账号管理
+            </a>
+          </div>
+        </div>
+        <a class="left-nav-item {% if active == 'header' %}active{% endif %}" href="{{ url_for('core.header_edit') }}"
+          data-panel="header" title="网站头部">
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="8" rx="2" />
+            <line x1="6" y1="6" x2="6.01" y2="6" />
+            <line x1="10" y1="6" x2="10.01" y2="6" />
+            <line x1="14" y1="6" x2="14.01" y2="6" />
+          </svg>
+          网站头部
+        </a>
+        <a class="left-nav-item {% if active == 'menu' %}active{% endif %}" href="{{ url_for('core.menu_edit') }}"
+          data-panel="menu" title="菜单配置">
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+          菜单配置
+        </a>
+        <a class="left-nav-item {% if active == 'footer_variant' %}active{% endif %}"
+          href="{{ url_for('core.footer_variant_edit') }}" data-panel="footer_variant" title="网站底部">
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="16" width="20" height="6" rx="2" />
+            <line x1="6" y1="18" x2="6.01" y2="18" />
+            <line x1="10" y1="18" x2="10.01" y2="18" />
+          </svg>
+          网站底部
+        </a>
+
+        {# ---- 内容 ---- #}
+        <div class="left-nav-section-title">内容</div>
+        <a class="left-nav-item {% if active == 'pages_home' %}active{% endif %}" href="{{ url_for('core.page_home') }}"
+          data-panel="pages_home" data-preview-page="home" title="首页">
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          首页
+        </a>
+
+        {# ---- 菜单渲染 ---- #}
+        {% macro render_left_menu(items, level=0) %}
+        {% for item in items %}
+        {% if item.type != 'home' %}
+        {% set has_children = item.children | default([]) | length > 0 %}
+        {% if has_children %}
+        <div class="left-nav-group" data-level="{{ level }}">
+          <div class="left-nav-parent-row">
+            {% if item.type in ('list','page') %}
+            <a class="left-nav-item left-nav-parent-link flex-grow-1"
+              href="{{ url_for('core.page_panel', page_key=item.target or item.label) }}"
+              data-panel="{{ item.type }}_{{ item.target or item.label }}" data-preview-page="{{ item.url }}"
+              title="{{ item.label }}">
+              {% if item.type == 'list' %}
+              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6" />
+                <line x1="8" y1="12" x2="21" y2="12" />
+                <line x1="8" y1="18" x2="21" y2="18" />
+                <line x1="3" y1="6" x2="3.01" y2="6" />
+                <line x1="3" y1="12" x2="3.01" y2="12" />
+                <line x1="3" y1="18" x2="3.01" y2="18" />
+              </svg>
+              {% else %}
+              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              {% endif %}
+              {{ item.label }}
+              {% if item.type == 'list' %}
+              {% if item.target == 'products' %}<span class="nav-badge">{{ counts.products }}</span>
+              {% elif item.target == 'posts' %}<span class="nav-badge">{{ counts.posts }}</span>
+              {% endif %}
+              {% endif %}
+            </a>
+            {% elif item.type == 'link' %}
+            <a class="left-nav-item left-nav-parent-link flex-grow-1 external-link" href="{{ item.url | default('#') }}"
+              target="_blank" rel="noopener" title="{{ item.label }}">
+              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+              {{ item.label }}
+            </a>
+            {% else %}
+            {# group, home 或未定义类型：纯容器，只展开不跳转 #}
+            <span class="left-nav-item left-nav-parent-label flex-grow-1" title="{{ item.label }}">
+              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              </svg>
+              {{ item.label }}
+            </span>
+            {% endif %}
+            <button class="left-nav-chevron-btn" type="button" onclick="toggleLeftSubmenu(this)" title="展开/折叠子菜单">
+              <span class="left-nav-chevron">▶</span>
+            </button>
+          </div>
+          <div class="left-nav-submenu" style="display:none">
+            {{ render_left_menu(item.children, level + 1) }}
+          </div>
+        </div>
+        {% elif item.type == 'group' %}
+        {# 容器类型：无独立页面，仅作为分组标签显示 #}
+        <span class="left-nav-item left-nav-parent-label" style="padding-left: {{ 16 + level * 16 }}px;"
+          title="{{ item.label }}">
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+          </svg>
+          {{ item.label }}
+        </span>
+        {% elif item.type in ('list','page') %}
+        <a class="left-nav-item" href="{{ url_for('core.page_panel', page_key=item.target or item.label) }}"
+          data-panel="{{ item.type }}_{{ item.target or item.label }}" data-preview-page="{{ item.url }}"
+          style="padding-left: {{ 16 + level * 16 }}px;" title="{{ item.label }}">
+          {% if item.type == 'list' %}
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6" />
+            <line x1="8" y1="12" x2="21" y2="12" />
+            <line x1="8" y1="18" x2="21" y2="18" />
+            <line x1="3" y1="6" x2="3.01" y2="6" />
+            <line x1="3" y1="12" x2="3.01" y2="12" />
+            <line x1="3" y1="18" x2="3.01" y2="18" />
+          </svg>
+          {% else %}
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+          {% endif %}
+          {{ item.label }}
+          {% if item.type == 'list' %}
+          {% if item.target == 'products' %}<span class="nav-badge">{{ counts.products }}</span>
+          {% elif item.target == 'posts' %}<span class="nav-badge">{{ counts.posts }}</span>
+          {% endif %}
+          {% endif %}
+        </a>
+        {% else %}
+        <a class="left-nav-item external-link" href="{{ item.url | default('#') }}" target="_blank" rel="noopener"
+          style="padding-left: {{ 16 + level * 16 }}px;" title="{{ item.label }}">
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" />
+            <line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
+          {{ item.label }}
+        </a>
+        {% endif %}
+        {% endif %}
+        {% endfor %}
+        {% endmacro %}
+        {{ render_left_menu(left_menu_items) }}
+        {% endif %}
+
+      </div>
+    </nav>
+
+    {# 左侧栏拖拽分隔条 #}
+    <div class="resizer-handle" id="leftNavResizer" title="拖拽调整宽度"></div>
+
+    <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="收起/展开侧栏">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6" />
+      </svg>
+    </button>
+
+    {# 中栏：预览 #}
+    <section class="flex-grow-1 d-flex flex-column overflow-hidden bg-light">
+      <div class="preview-tab-bar" id="previewTabBar"></div>
+      <div class="preview-url-bar" id="previewUrlBar">
+        <svg class="url-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+        <span class="url-text" id="previewUrlText">{{ url_for('core.preview_site', site_id=site.id) if site else
+          'about:blank' }}</span>
+        <div class="flex-grow-1"></div>
+        <div class="d-flex align-items-center gap-1">
+          <button class="btn btn-sm btn-outline-secondary active preview-device-btn" data-device="desktop"
+            onclick="switchDevice('desktop')" title="电脑">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="16" rx="2" ry="2" />
+              <line x1="8" y1="21" x2="16" y2="21" />
+              <line x1="12" y1="19" x2="12" y2="21" />
+            </svg>
+          </button>
+          <button class="btn btn-sm btn-outline-secondary preview-device-btn" data-device="tablet"
+            onclick="switchDevice('tablet')" title="平板">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="1" width="18" height="20" rx="2" ry="2" />
+              <line x1="12" y1="19" x2="12" y2="19" />
+            </svg>
+          </button>
+          <button class="btn btn-sm btn-outline-secondary preview-device-btn" data-device="mobile"
+            onclick="switchDevice('mobile')" title="手机">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="8" y="1" width="13" height="20" rx="2" ry="2" />
+              <line x1="12" y1="19" x2="12" y2="19" />
+            </svg>
+          </button>
+          <button class="btn btn-sm btn-outline-secondary preview-toolbar-btn" onclick="refreshPreview()" title="刷新预览">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+            </svg>
+          </button>
+          <button id="reopenPanelBtn" class="btn btn-sm btn-outline-secondary preview-toolbar-btn" style="display:none;"
+            onclick="toggleRightPanel()" title="打开属性面板">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="3" width="13" height="18" rx="2" ry="2" />
+              <polyline points="9 3 3 21 15 3" />
+            </svg>
           </button>
         </div>
-        <div class="left-nav-submenu" style="display:none">
-          <a class="left-nav-item {% if active == 'overview' %}active{% endif %}" href="{{ url_for('core.overview') }}" data-panel="overview" style="padding-left:32px" title="总览">
-            <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            总览
-          </a>
-          <a class="left-nav-item {% if active == 'company' %}active{% endif %}" href="{{ url_for('core.company') }}" data-panel="company" style="padding-left:32px" title="公司信息">
-            <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            公司信息
-          </a>
-          <a class="left-nav-item {% if active == 'theme' %}active{% endif %}" href="{{ url_for('core.theme_edit') }}" data-panel="theme" style="padding-left:32px" title="主题颜色">
-            <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/><path d="M12 2a15.3 15.3 0 0 0-4 10 15.3 15.3 0 0 0 4 10"/></svg>
-            主题颜色
-          </a>
-          <a class="left-nav-item" href="#" data-panel="seo" style="padding-left:32px" title="SEO 优化">
-            <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><polyline points="7 11 9 9 11 11 15 7"/><line x1="15" y1="12" x2="15" y2="7"/><line x1="10" y1="7" x2="15" y2="7"/></svg>
-            SEO 优化
-          </a>
-          <a class="left-nav-item {% if active == 'account' %}active{% endif %}" href="{{ url_for('core.account') }}" data-panel="account" style="padding-left:32px" title="账号管理">
-            <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            账号管理
-          </a>
+      </div>
+      <div class="flex-grow-1 overflow-auto d-flex justify-content-center" style="background:#e8eaed">
+        {% if site %}
+        <iframe class="border-0 bg-white shadow preview-frame desktop" id="previewFrame"
+          src="{{ url_for('core.preview_site', site_id=site.id) if site else 'about:blank' }}"
+          data-preview-url="{{ url_for('core.preview_site', site_id=site.id) if site else 'about:blank' }}">
+        </iframe>
+        {% else %}
+        <div class="d-flex flex-column align-items-center justify-content-center text-center w-100"
+          style="min-height: 400px;">
+          <div class="mb-3" style="color: #94a3b8;">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+              <line x1="8" y1="21" x2="16" y2="21" />
+              <line x1="12" y1="17" x2="12" y2="21" />
+            </svg>
+          </div>
+          <h5 class="text-muted mb-2">尚未创建站点</h5>
+          <p class="text-muted small mb-3">在左侧 <strong>模板库</strong> 中选择一个模板来新建站点</p>
         </div>
-      </div>
-      <a class="left-nav-item {% if active == 'header' %}active{% endif %}" href="{{ url_for('core.header_edit') }}" data-panel="header" title="网站头部">
-        <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="10" y1="6" x2="10.01" y2="6"/><line x1="14" y1="6" x2="14.01" y2="6"/></svg>
-        网站头部
-      </a>
-      <a class="left-nav-item {% if active == 'menu' %}active{% endif %}" href="{{ url_for('core.menu_edit') }}" data-panel="menu" title="菜单配置">
-        <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        菜单配置
-      </a>
-      <a class="left-nav-item {% if active == 'footer_variant' %}active{% endif %}" href="{{ url_for('core.footer_variant_edit') }}" data-panel="footer_variant" title="网站底部">
-        <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="16" width="20" height="6" rx="2"/><line x1="6" y1="18" x2="6.01" y2="18"/><line x1="10" y1="18" x2="10.01" y2="18"/></svg>
-        网站底部
-      </a>
-
-      {# ---- 内容 ---- #}
-      <div class="left-nav-section-title">内容</div>
-      <a class="left-nav-item {% if active == 'pages_home' %}active{% endif %}" href="{{ url_for('core.page_home') }}" data-panel="pages_home" data-preview-page="home" title="首页">
-        <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        首页
-      </a>
-
-      {# ---- 菜单渲染 ---- #}
-      {% macro render_left_menu(items, level=0) %}
-        {% for item in items %}
-          {% if item.type != 'home' %}
-            {% set has_children = item.children | default([]) | length > 0 %}
-            {% if has_children %}
-              <div class="left-nav-group" data-level="{{ level }}">
-                <div class="left-nav-parent-row">
-                  {% if item.type in ('list','page') %}
-                  <a class="left-nav-item left-nav-parent-link flex-grow-1"
-                     href="{{ url_for('core.page_panel', page_key=item.target or item.label) }}"
-                     data-panel="{{ item.type }}_{{ item.target or item.label }}"
-                     data-preview-page="{{ item.url }}"
-                     title="{{ item.label }}">
-                     {% if item.type == 'list' %}
-                       <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                     {% else %}
-                       <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                     {% endif %}
-                     {{ item.label }}
-                     {% if item.type == 'list' %}
-                       {% if item.target == 'products' %}<span class="nav-badge">{{ counts.products }}</span>
-                       {% elif item.target == 'posts' %}<span class="nav-badge">{{ counts.posts }}</span>
-                       {% endif %}
-                     {% endif %}
-                  </a>
-                  {% elif item.type == 'link' %}
-                  <a class="left-nav-item left-nav-parent-link flex-grow-1 external-link"
-                     href="{{ item.url | default('#') }}"
-                     target="_blank" rel="noopener"
-                     title="{{ item.label }}">
-                     <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                     {{ item.label }}
-                  </a>
-                  {% else %}
-                  {# group, home 或未定义类型：纯容器，只展开不跳转 #}
-                  <span class="left-nav-item left-nav-parent-label flex-grow-1" title="{{ item.label }}">
-                     <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                     {{ item.label }}
-                  </span>
-                  {% endif %}
-                  <button class="left-nav-chevron-btn" type="button" onclick="toggleLeftSubmenu(this)" title="展开/折叠子菜单">
-                    <span class="left-nav-chevron">▶</span>
-                  </button>
-                </div>
-                <div class="left-nav-submenu" style="display:none">
-                  {{ render_left_menu(item.children, level + 1) }}
-                </div>
-              </div>
-            {% elif item.type == 'group' %}
-              {# 容器类型：无独立页面，仅作为分组标签显示 #}
-              <span class="left-nav-item left-nav-parent-label"
-                 style="padding-left: {{ 16 + level * 16 }}px;"
-                 title="{{ item.label }}">
-                 <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                 {{ item.label }}
-              </span>
-            {% elif item.type in ('list','page') %}
-              <a class="left-nav-item"
-                 href="{{ url_for('core.page_panel', page_key=item.target or item.label) }}"
-                 data-panel="{{ item.type }}_{{ item.target or item.label }}"
-                 data-preview-page="{{ item.url }}"
-                 style="padding-left: {{ 16 + level * 16 }}px;"
-                 title="{{ item.label }}">
-                 {% if item.type == 'list' %}
-                   <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                 {% else %}
-                   <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                 {% endif %}
-                 {{ item.label }}
-                 {% if item.type == 'list' %}
-                   {% if item.target == 'products' %}<span class="nav-badge">{{ counts.products }}</span>
-                   {% elif item.target == 'posts' %}<span class="nav-badge">{{ counts.posts }}</span>
-                   {% endif %}
-                 {% endif %}
-              </a>
-            {% else %}
-              <a class="left-nav-item external-link"
-                 href="{{ item.url | default('#') }}"
-                 target="_blank" rel="noopener"
-                 style="padding-left: {{ 16 + level * 16 }}px;"
-                 title="{{ item.label }}">
-                 <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                 {{ item.label }}
-              </a>
-            {% endif %}
-          {% endif %}
-        {% endfor %}
-      {% endmacro %}
-      {{ render_left_menu(left_menu_items) }}
-      {% endif %}
-
-    </div>
-  </nav>
-
-  {# 左侧栏拖拽分隔条 #}
-  <div class="resizer-handle" id="leftNavResizer" title="拖拽调整宽度"></div>
-
-  <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="收起/展开侧栏">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="15 18 9 12 15 6"/>
-    </svg>
-  </button>
-
-  {# 中栏：预览 #}
-  <section class="flex-grow-1 d-flex flex-column overflow-hidden bg-light">
-    <div class="preview-tab-bar" id="previewTabBar"></div>
-    <div class="preview-url-bar" id="previewUrlBar">
-      <svg class="url-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-      </svg>
-      <span class="url-text" id="previewUrlText">{{ url_for('core.preview_site', site_id=site.id) if site else 'about:blank' }}</span>
-      <div class="flex-grow-1"></div>
-      <div class="d-flex align-items-center gap-1">
-        <button class="btn btn-sm btn-outline-secondary active preview-device-btn" data-device="desktop" onclick="switchDevice('desktop')" title="电脑">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="16" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="19" x2="12" y2="21"/></svg>
-        </button>
-        <button class="btn btn-sm btn-outline-secondary preview-device-btn" data-device="tablet" onclick="switchDevice('tablet')" title="平板">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="1" width="18" height="20" rx="2" ry="2"/><line x1="12" y1="19" x2="12" y2="19"/></svg>
-        </button>
-        <button class="btn btn-sm btn-outline-secondary preview-device-btn" data-device="mobile" onclick="switchDevice('mobile')" title="手机">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="1" width="13" height="20" rx="2" ry="2"/><line x1="12" y1="19" x2="12" y2="19"/></svg>
-        </button>
-        <button class="btn btn-sm btn-outline-secondary preview-toolbar-btn" onclick="refreshPreview()" title="刷新预览">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-        </button>
-        <button id="reopenPanelBtn" class="btn btn-sm btn-outline-secondary preview-toolbar-btn" style="display:none;" onclick="toggleRightPanel()" title="打开属性面板">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="13" height="18" rx="2" ry="2"/><polyline points="9 3 3 21 15 3"/></svg>
-        </button>
-      </div>
-    </div>
-    <div class="flex-grow-1 overflow-auto d-flex justify-content-center" style="background:#e8eaed">
-      {% if site %}
-      <iframe class="border-0 bg-white shadow rounded preview-frame desktop" id="previewFrame"
-              src="{{ url_for('core.preview_site', site_id=site.id) if site else 'about:blank' }}"
-              data-preview-url="{{ url_for('core.preview_site', site_id=site.id) if site else 'about:blank' }}">
-      </iframe>
-      {% else %}
-      <div class="d-flex flex-column align-items-center justify-content-center text-center w-100" style="min-height: 400px;">
-        <div class="mb-3" style="color: #94a3b8;">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        </div>
-        <h5 class="text-muted mb-2">尚未创建站点</h5>
-        <p class="text-muted small mb-3">在左侧 <strong>模板库</strong> 中选择一个模板来新建站点</p>
-      </div>
-      {% endif %}
-    </div>
-  </section>
-
-  {# 拖拽分隔条 #}
-  <div class="resizer-handle" id="panelResizer" title="拖拽调整宽度"></div>
-
-  {# 折叠按钮 — 独立 wrapper，不受面板/分隔条 overflow 影响 #}
-  <div class="panel-collapse-anchor">
-    <button class="panel-collapse-btn" id="panelCollapseBtn" onclick="togglePanelCollapse()" title="收起面板">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-    </button>
-  </div>
-
-  {# 右栏：属性面板 #}
-  <aside class="right-panel bg-white border-start flex-shrink-0 d-flex flex-column" style="width:280px" id="rightPanel">
-    <div class="right-panel-header d-flex align-items-center justify-content-between flex-shrink-0">
-      <div class="d-flex align-items-center gap-2">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span class="fw-semibold small" id="rightPanelTitle">属性</span>
-      </div>
-    </div>
-    <div class="right-panel-body flex-grow-1 overflow-auto" id="rightPanelBody">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category if category in ['success','danger','warning','info'] else 'info' }} py-2 mb-3">{{ message }}</div>
-          {% endfor %}
         {% endif %}
-      {% endwith %}
-      {% block content %}
+      </div>
+    </section>
+
+    {# 拖拽分隔条 #}
+    <div class="resizer-handle" id="panelResizer" title="拖拽调整宽度"></div>
+
+    {# 折叠按钮 — 独立 wrapper，不受面板/分隔条 overflow 影响 #}
+    <div class="panel-collapse-anchor">
+      <button class="panel-collapse-btn" id="panelCollapseBtn" onclick="togglePanelCollapse()" title="收起面板">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+    </div>
+
+    {# 右栏：属性面板 #}
+    <aside class="right-panel bg-white border-start flex-shrink-0 d-flex flex-column" style="width:280px"
+      id="rightPanel">
+      <div class="right-panel-header d-flex align-items-center justify-content-between flex-shrink-0">
+        <div class="d-flex align-items-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" class="text-muted">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          <span class="fw-semibold small" id="rightPanelTitle">属性</span>
+        </div>
+      </div>
+      <div class="right-panel-body flex-grow-1 overflow-auto" id="rightPanelBody">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div
+          class="alert alert-{{ category if category in ['success','danger','warning','info'] else 'info' }} py-2 mb-3">
+          {{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        {% block content %}
         <div class="panel-empty-state">
           <div class="panel-empty-icon">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a3 3 0 0 0 6 0V4"/></svg>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 10 20 15 15 20" />
+              <path d="M4 4v7a3 3 0 0 0 6 0V4" />
+            </svg>
           </div>
           <p class="text-muted small">← 在左侧选择一项开始编辑</p>
         </div>
-      {% endblock %}
-    </div>
-    <div class="right-panel-footer flex-shrink-0" id="rightPanelFooter" style="display:none;"></div>
-  </aside>
-</div>
-
-{# 拖拽遮罩 — iframe 失焦时用 #}
-<div id="dragOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:transparent;cursor:col-resize;"></div>
-
-{% macro render_preview_page_items(items) %}
-  {% for item in items %}
-    {% if item.type in ('home','page','list') %}
-    <button type="button" class="page-tree-item"
-            data-title="{{ item.label }}"
-            data-path="{{ item.url or '/' }}"
-            onclick="selectPreviewPage(this)">
-      <span class="page-tree-item-title">{{ item.label }}</span>
-      <span class="page-tree-item-path">{{ item.url or '/' }}</span>
-    </button>
-    {% endif %}
-    {% if item.children %}
-      {{ render_preview_page_items(item.children) }}
-    {% endif %}
-  {% endfor %}
-{% endmacro %}
-
-<div class="modal fade page-tree-modal" id="pageTreeModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-md">
-    <div class="modal-content">
-      <div class="modal-header py-2">
-        <h6 class="modal-title mb-0">选择预览页面</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+        {% endblock %}
       </div>
-      <div class="modal-body">
-        <input class="form-control form-control-sm mb-2" id="pageTreeSearch" type="search" placeholder="搜索页面" oninput="filterPageTree()">
-        <div class="page-tree-list" id="pageTreeList">
-          {% if site %}
+      <div class="right-panel-footer flex-shrink-0" id="rightPanelFooter" style="display:none;"></div>
+    </aside>
+  </div>
+
+  {# 拖拽遮罩 — iframe 失焦时用 #}
+  <div id="dragOverlay"
+    style="display:none;position:fixed;inset:0;z-index:9999;background:transparent;cursor:col-resize;"></div>
+
+  {% macro render_preview_page_items(items) %}
+  {% for item in items %}
+  {% if item.type in ('home','page','list') %}
+  <button type="button" class="page-tree-item" data-title="{{ item.label }}" data-path="{{ item.url or '/' }}"
+    onclick="selectPreviewPage(this)">
+    <span class="page-tree-item-title">{{ item.label }}</span>
+    <span class="page-tree-item-path">{{ item.url or '/' }}</span>
+  </button>
+  {% endif %}
+  {% if item.children %}
+  {{ render_preview_page_items(item.children) }}
+  {% endif %}
+  {% endfor %}
+  {% endmacro %}
+
+  <div class="modal fade page-tree-modal" id="pageTreeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+      <div class="modal-content">
+        <div class="modal-header py-2">
+          <h6 class="modal-title mb-0">选择预览页面</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+        </div>
+        <div class="modal-body">
+          <input class="form-control form-control-sm mb-2" id="pageTreeSearch" type="search" placeholder="搜索页面"
+            oninput="filterPageTree()">
+          <div class="page-tree-list" id="pageTreeList">
+            {% if site %}
             {{ render_preview_page_items(left_menu_items) }}
-          {% else %}
+            {% else %}
             <div class="text-muted small py-3 text-center">暂无可预览页面</div>
-          {% endif %}
+            {% endif %}
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-{# 所有 list 类型菜单项的 target，供 pageKeyFromPreviewPath 区分详情页 slug #}
-<script>window._datasetKeys = [{% for ds in all_list_datasets %}'{{ ds.target }}'{% if not loop.last %},{% endif %}{% endfor %}];</script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"></script>
-<script>
-// 全局 fetch 包装：自动给同源的非 GET 请求带上 X-CSRFToken（Flask-WTF 校验用）。
-// 表单内的 csrf hidden input 仍然有效，这层主要照顾 fetch+JSON / fetch+无 body 的调用。
-(function () {
-  var meta = document.querySelector('meta[name="csrf-token"]');
-  var token = meta ? meta.getAttribute('content') : '';
-  if (!token) return;
-  var origFetch = window.fetch;
-  window.fetch = function (input, init) {
-    init = init || {};
-    var method = (init.method || (typeof input === 'object' && input.method) || 'GET').toUpperCase();
-    if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
-      init.headers = new Headers(init.headers || {});
-      if (!init.headers.has('X-CSRFToken')) init.headers.set('X-CSRFToken', token);
-    }
-    return origFetch.call(this, input, init);
-  };
-})();
-
-function normalizeThemeHex(value) {
-  var hex = String(value || '').trim();
-  if (/^#[0-9a-fA-F]{6}$/.test(hex)) return hex.toLowerCase();
-  if (/^#[0-9a-fA-F]{3}$/.test(hex)) {
-    return ('#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3]).toLowerCase();
-  }
-  return '{{ admin_primary }}'.toLowerCase();
-}
-
-function setThemeColor(hex, options) {
-  options = options || {};
-  hex = normalizeThemeHex(hex);
-  var r = parseInt(hex.slice(1, 3), 16);
-  var g = parseInt(hex.slice(3, 5), 16);
-  var b = parseInt(hex.slice(5, 7), 16);
-  var toHex = function(v) { return ('0' + Math.max(0, Math.min(255, v)).toString(16)).slice(-2); };
-  var hover = '#' + toHex(Math.round(r * 0.9)) + toHex(Math.round(g * 0.9)) + toHex(Math.round(b * 0.9));
-  var active = '#' + toHex(Math.round(r * 0.8)) + toHex(Math.round(g * 0.8)) + toHex(Math.round(b * 0.8));
-  var textEmphasis = '#' + toHex(Math.round(r * 0.85)) + toHex(Math.round(g * 0.85)) + toHex(Math.round(b * 0.85));
-  var rgb = r + ', ' + g + ', ' + b;
-  var root = document.documentElement;
-
-  root.style.setProperty('--theme-primary', hex);
-  root.style.setProperty('--theme-primary-hover', textEmphasis);
-  root.style.setProperty('--theme-primary-active', active);
-  root.style.setProperty('--theme-primary-rgb', rgb);
-  root.style.setProperty('--theme-btn-bg', hex);
-  root.style.setProperty('--theme-btn-border-color', hex);
-  root.style.setProperty('--theme-btn-hover-bg', hover);
-  root.style.setProperty('--theme-btn-hover-border-color', hover);
-  root.style.setProperty('--theme-btn-active-bg', active);
-  root.style.setProperty('--theme-btn-active-border-color', active);
-  root.style.setProperty('--bs-primary', hex);
-  root.style.setProperty('--bs-primary-rgb', rgb);
-  root.style.setProperty('--bs-primary-bg', hex);
-  root.style.setProperty('--bs-primary-text-emphasis', textEmphasis);
-  root.style.setProperty('--bs-link-color', hex);
-  root.style.setProperty('--bs-link-color-rgb', rgb);
-  root.style.setProperty('--bs-link-hover-color', textEmphasis);
-  root.style.setProperty('--bs-link-hover-color-rgb', rgb);
-
-  document.querySelectorAll('.theme-swatch').forEach(function(sw) {
-    sw.classList.toggle('active', normalizeThemeHex(sw.dataset.color) === hex);
-  });
-  document.querySelectorAll('.theme-color-input').forEach(function(input) {
-    input.value = hex;
-  });
-  document.querySelectorAll('.nav-mode-swatch[data-mode="dark"]').forEach(function(sw) {
-    sw.style.background = 'var(--theme-primary)';
-  });
-  if (typeof renderPreviewTabs === 'function') renderPreviewTabs();
-  if (typeof updatePreviewCanvasTheme === 'function') updatePreviewCanvasTheme();
-  if (!options.skipStorage) {
-    try { localStorage.setItem('adminThemeColor', hex); } catch (e) {}
-  }
-}
-
-function setNavTheme(mode, options) {
-  options = options || {};
-  mode = ['dark', 'light', 'white'].indexOf(mode) >= 0 ? mode : 'dark';
-  var nav = document.getElementById('leftNav');
-  if (!nav) return;
-  nav.classList.remove('nav-light', 'nav-white');
-  if (mode === 'light') nav.classList.add('nav-light');
-  if (mode === 'white') nav.classList.add('nav-white');
-  document.querySelectorAll('.nav-mode-swatch').forEach(function(sw) {
-    sw.classList.toggle('active', sw.dataset.mode === mode);
-  });
-  if (!options.skipStorage) {
-    try { localStorage.setItem('adminNavTheme', mode); } catch (e) {}
-  }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  var themeColor = '{{ admin_primary }}';
-  var navTheme = 'dark';
-  try {
-    themeColor = localStorage.getItem('adminThemeColor') || themeColor;
-    navTheme = localStorage.getItem('adminNavTheme') || navTheme;
-  } catch (e) {}
-  setThemeColor(themeColor, {skipStorage: true});
-  setNavTheme(navTheme, {skipStorage: true});
-});
-
-function openTemplatesPanel() {
-  document.querySelectorAll('.left-nav-item').forEach(el => el.classList.remove('active'));
-  var tplLink = document.querySelector('a.left-nav-item[data-panel="templates"]');
-  if (tplLink) tplLink.classList.add('active');
-  var panel = document.getElementById('rightPanel');
-  if (panel.classList.contains('d-none')) {
-    panel.classList.remove('d-none');
-    var reopenBtn = document.getElementById('reopenPanelBtn');
-    if (reopenBtn) reopenBtn.style.display = 'none';
-  }
-  var url = '{{ url_for("core.templates_gallery") }}?_fragment=1';
-  var siteParam = new URLSearchParams(window.location.search).get('site');
-  if (siteParam) url += '&site=' + encodeURIComponent(siteParam);
-  loadPanel(url);
-}
-
-// 面板拖拽
-(function(){
-  var handle = document.getElementById('panelResizer');
-  var panel = document.getElementById('rightPanel');
-  var overlay = document.getElementById('dragOverlay');
-  var frame = document.getElementById('previewFrame');
-  if (!handle || !panel) return;
-
-  var dragging = false, startX = 0, startWidth = 0;
-
-  function begin(e) {
-    e.preventDefault();
-    dragging = true;
-    startX = e.clientX;
-    startWidth = panel.offsetWidth;
-    handle.classList.add('dragging');
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-    overlay.style.display = 'block';
-  }
-
-  function move(e) {
-    if (!dragging) return;
-    var newWidth = startWidth + (startX - e.clientX);
-    panel.style.width = Math.max(240, Math.min(900, newWidth)) + 'px';
-  }
-
-  function end() {
-    if (!dragging) return;
-    dragging = false;
-    handle.classList.remove('dragging');
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-    overlay.style.display = 'none';
-  }
-
-  handle.addEventListener('mousedown', begin);
-  overlay.addEventListener('mousemove', move);
-  overlay.addEventListener('mouseup', end);
-  overlay.addEventListener('mouseleave', end);
-})();
-
-// 左侧栏拖拽
-(function(){
-  var handle = document.getElementById('leftNavResizer');
-  var leftNav = document.getElementById('leftNav');
-  var toggleBtn = document.getElementById('sidebarToggleBtn');
-  var overlay = document.getElementById('dragOverlay');
-  if (!handle || !leftNav) return;
-
-  var THRESHOLD = 140;   // 低于此宽度 → 收缩态，高于 → 展开态
-
-  var dragging = false, startX = 0, startWidth = 0;
-
-  // 切换按钮图标（不碰 localStorage，move 期间只是视觉预览）
-  function setBtnAppearance(collapsed) {
-    if (!toggleBtn) return;
-    if (collapsed) {
-      toggleBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
-      toggleBtn.title = '展开侧栏';
-    } else {
-      toggleBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
-      toggleBtn.title = '收起侧栏';
-    }
-  }
-
-  function begin(e) {
-    e.preventDefault();
-    dragging = true;
-    startX = e.clientX;
-    startWidth = leftNav.offsetWidth;
-    handle.classList.add('dragging');
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-    overlay.style.display = 'block';
-  }
-
-  function move(e) {
-    if (!dragging) return;
-    var newWidth = startWidth + (e.clientX - startX);
-    var w = Math.max(60, Math.min(480, newWidth));
-    // 用 setProperty + important 才能覆盖 CSS 中 #leftNav 的 !important
-    leftNav.style.setProperty('width', w + 'px', 'important');
-    leftNav.style.setProperty('min-width', w + 'px', 'important');
-    leftNav.style.transition = 'none';
-    if (toggleBtn) {
-      toggleBtn.style.left = (w - 12) + 'px';
-      toggleBtn.style.transition = 'none';
-    }
-    // 跨越阈值时切换收缩/展开外观
-    if (w < THRESHOLD && !leftNav.classList.contains('left-nav-collapsed')) {
-      leftNav.classList.add('left-nav-collapsed');
-      setBtnAppearance(true);
-    } else if (w >= THRESHOLD && leftNav.classList.contains('left-nav-collapsed')) {
-      leftNav.classList.remove('left-nav-collapsed');
-      setBtnAppearance(false);
-    }
-  }
-
-  function end() {
-    if (!dragging) return;
-    dragging = false;
-    handle.classList.remove('dragging');
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-    overlay.style.display = 'none';
-    leftNav.style.transition = '';
-    if (toggleBtn) toggleBtn.style.transition = '';
-
-    var finalWidth = leftNav.offsetWidth;
-    if (finalWidth < THRESHOLD) {
-      // 吸附到收缩态：清除 inline 样式让 CSS class 接管 60px
-      leftNav.style.removeProperty('width');
-      leftNav.style.removeProperty('min-width');
-      if (toggleBtn) toggleBtn.style.removeProperty('left');
-      leftNav.classList.add('left-nav-collapsed');
-      setBtnAppearance(true);
-      window._sidebarCustomWidth = null;
-      if (window._sidebarSetCollapsed) window._sidebarSetCollapsed(true);
-    } else {
-      // 展开态：保留拖拽宽度
-      leftNav.classList.remove('left-nav-collapsed');
-      setBtnAppearance(false);
-      window._sidebarCustomWidth = finalWidth;
-      if (window._sidebarSetCollapsed) window._sidebarSetCollapsed(false);
-    }
-  }
-
-  handle.addEventListener('mousedown', begin);
-  overlay.addEventListener('mousemove', move);
-  overlay.addEventListener('mouseup', end);
-  overlay.addEventListener('mouseleave', end);
-})();
-
-function toggleRightPanel() {
-  var panel = document.getElementById('rightPanel');
-  var reopenBtn = document.getElementById('reopenPanelBtn');
-  var collapseBtn = document.getElementById('panelCollapseBtn');
-  if (panel.classList.contains('d-none')) {
-    panel.classList.remove('d-none');
-    // 如果之前是折叠状态，恢复宽度
-    if (panel.classList.contains('panel-collapsed')) {
-      panel.classList.remove('panel-collapsed');
-      panel.style.width = (panel.dataset.savedWidth || '280') + 'px';
-    }
-    if (reopenBtn) reopenBtn.style.display = 'none';
-    if (collapseBtn) {
-      collapseBtn.style.display = '';
-      collapseBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
-      collapseBtn.title = '收起面板';
-    }
-  } else {
-    panel.classList.add('d-none');
-    if (reopenBtn) reopenBtn.style.display = '';
-    if (collapseBtn) collapseBtn.style.display = 'none';
-  }
-}
-
-// 点击折叠按钮收起/展开属性面板
-function togglePanelCollapse() {
-  var panel = document.getElementById('rightPanel');
-  var btn = document.getElementById('panelCollapseBtn');
-  if (!panel) return;
-
-  if (panel.classList.contains('panel-collapsed')) {
-    // 展开：恢复之前保存的宽度
-    var savedWidth = panel.dataset.savedWidth || '280';
-    panel.style.width = savedWidth + 'px';
-    panel.classList.remove('panel-collapsed');
-    if (btn) {
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
-      btn.title = '收起面板';
-    }
-  } else {
-    // 收起：保存当前宽度，CSS 会缩至 5px 仅露出按钮
-    panel.dataset.savedWidth = panel.offsetWidth;
-    panel.classList.add('panel-collapsed');
-    if (btn) {
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
-      btn.title = '展开面板';
-    }
-  }
-}
-
-function switchDevice(device) {
-  document.querySelectorAll('.preview-device-btn').forEach(b => b.classList.remove('active'));
-  var btn = document.querySelector('[data-device="' + device + '"]');
-  if (btn) btn.classList.add('active');
-  var frame = document.getElementById('previewFrame');
-  if (!frame) return;
-  frame.classList.remove('desktop','tablet','mobile');
-  frame.classList.add(device);
-}
-
-function refreshPreview() {
-  var f = document.getElementById('previewFrame');
-  if (!f) return;
-  var previewUrl = f.dataset.previewUrl || f.src;
-  updatePreviewUrlBar(previewUrl);
-  var siteParam = new URLSearchParams(window.location.search).get('site');
-  var buildUrl = '/build?_fragment=1';
-  if (siteParam) buildUrl += '&site=' + encodeURIComponent(siteParam);
-  fetch(buildUrl, {method:'POST'})
-    .then(r => r.json()).catch(() => ({ok: true}))
-    .then(() => { f.src = previewUrl + (previewUrl.includes('?') ? '&' : '?') + '_=' + Date.now(); });
-}
-
-var previewTabs = [];
-var activeTabKey = null;
-
-function escapeHtml(value) {
-  return String(value || '').replace(/[&<>"']/g, function(ch) {
-    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];
-  });
-}
-
-function updatePreviewUrlBar(url) {
-  var text = document.getElementById('previewUrlText');
-  if (text) text.textContent = url || 'about:blank';
-}
-
-function renderPreviewTabs() {
-  var bar = document.getElementById('previewTabBar');
-  if (!bar) return;
-  var html = '';
-  var primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim() || '#067a7a';
-  previewTabs.forEach(function(tab) {
-    var activeClass = tab.key === activeTabKey ? ' active' : '';
-    html += '<div class="preview-tab' + activeClass + '" onclick="switchPreviewTab(' + JSON.stringify(tab.key).replace(/"/g, '&quot;') + ')">';
-    html += '<span class="tab-favicon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="' + (tab.key === 'home' ? primaryColor : '#94a3b8') + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/><path d="M12 2a15.3 15.3 0 0 0-4 10 15.3 15.3 0 0 0 4 10"/></svg></span>';
-    html += '<span class="tab-title">' + escapeHtml(tab.title) + '</span>';
-    if (previewTabs.length > 1) {
-      html += '<button class="tab-close" type="button" onclick="event.stopPropagation(); closePreviewTab(' + JSON.stringify(tab.key).replace(/"/g, '&quot;') + ')">×</button>';
-    }
-    html += '</div>';
-  });
-  html += '<button class="preview-tab-add" type="button" title="新建标签" data-bs-toggle="modal" data-bs-target="#pageTreeModal">+</button>';
-  bar.innerHTML = html;
-}
-
-function openPreviewTab(key, title, url, skipFrameUpdate) {
-  key = key || 'home';
-  title = title || key;
-  url = url || 'about:blank';
-  var tab = previewTabs.find(function(item) { return item.key === key; });
-  if (!tab) {
-    tab = {key: key, title: title, url: url};
-    previewTabs.push(tab);
-  } else {
-    tab.title = title;
-    tab.url = url;
-  }
-  activeTabKey = key;
-  renderPreviewTabs();
-  updatePreviewUrlBar(url);
-  var frame = document.getElementById('previewFrame');
-  if (frame) {
-    frame.dataset.previewUrl = url;
-    if (!skipFrameUpdate) frame.src = url;
-  }
-}
-
-function switchPreviewTab(key) {
-  var tab = previewTabs.find(function(item) { return item.key === key; });
-  if (!tab) return;
-  openPreviewTab(tab.key, tab.title, tab.url);
-}
-
-function closePreviewTab(key) {
-  if (previewTabs.length <= 1) return;
-  var idx = previewTabs.findIndex(function(item) { return item.key === key; });
-  if (idx === -1) return;
-  previewTabs.splice(idx, 1);
-  var next = previewTabs[Math.min(idx, previewTabs.length - 1)];
-  openPreviewTab(next.key, next.title, next.url);
-}
-
-function selectPreviewPage(item) {
-  if (!item) return;
-  var title = item.dataset.title || item.textContent.trim() || '预览';
-  var path = item.dataset.path || '/';
-  var url = previewUrlForPage(path);
-  var key = (path === '/' ? 'home' : String(path).replace(/^\/+|\/+$/g, '') || 'home');
-  openPreviewTab(key, title, url);
-  var modalEl = document.getElementById('pageTreeModal');
-  if (modalEl && window.bootstrap) {
-    var modal = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
-    if (modal) modal.hide();
-  }
-}
-
-function filterPageTree() {
-  var input = document.getElementById('pageTreeSearch');
-  var q = ((input && input.value) || '').toLowerCase();
-  document.querySelectorAll('#pageTreeList .page-tree-item').forEach(function(item) {
-    var title = (item.dataset.title || '').toLowerCase();
-    var path = (item.dataset.path || '').toLowerCase();
-    item.style.display = (!q || title.indexOf(q) !== -1 || path.indexOf(q) !== -1) ? '' : 'none';
-  });
-}
-
-function loadPanel(url) {
-  var body = document.getElementById('rightPanelBody');
-  var footer = document.getElementById('rightPanelFooter');
-  body.innerHTML = '<div class="p-3 text-muted text-center py-5"><div class="spinner-border spinner-border-sm me-2"></div>加载中...</div>';
-  if (footer) footer.style.display = 'none';
-  return fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
-    .then(html => {
-      body.innerHTML = html;
-      runPanelScripts(body);
-      // 将保存按钮移到面板底部悬浮栏
-      var saveBar = body.querySelector('.panel-save-bar');
-      if (saveBar && footer) {
-        var form = saveBar.closest('form');
-        var btn = saveBar.querySelector('button[type="submit"]');
-        if (btn && form) {
-          if (!form.id) form.id = '_panelForm_' + Date.now();
-          btn.setAttribute('form', form.id);
+  {# 所有 list 类型菜单项的 target，供 pageKeyFromPreviewPath 区分详情页 slug #}
+  <script>window._datasetKeys = [{% for ds in all_list_datasets %}'{{ ds.target }}'{% if not loop.last %}, {% endif %} {% endfor %}];</script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"></script>
+  <script>
+    // 全局 fetch 包装：自动给同源的非 GET 请求带上 X-CSRFToken（Flask-WTF 校验用）。
+    // 表单内的 csrf hidden input 仍然有效，这层主要照顾 fetch+JSON / fetch+无 body 的调用。
+    (function () {
+      var meta = document.querySelector('meta[name="csrf-token"]');
+      var token = meta ? meta.getAttribute('content') : '';
+      if (!token) return;
+      var origFetch = window.fetch;
+      window.fetch = function (input, init) {
+        init = init || {};
+        var method = (init.method || (typeof input === 'object' && input.method) || 'GET').toUpperCase();
+        if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+          init.headers = new Headers(init.headers || {});
+          if (!init.headers.has('X-CSRFToken')) init.headers.set('X-CSRFToken', token);
         }
-        footer.innerHTML = '';
-        footer.appendChild(saveBar);
-        footer.style.display = '';
+        return origFetch.call(this, input, init);
+      };
+    })();
+
+    function normalizeThemeHex(value) {
+      var hex = String(value || '').trim();
+      if (/^#[0-9a-fA-F]{6}$/.test(hex)) return hex.toLowerCase();
+      if (/^#[0-9a-fA-F]{3}$/.test(hex)) {
+        return ('#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3]).toLowerCase();
       }
-    })
-    .catch(error => { body.innerHTML = '<div class="p-3 text-danger">加载失败</div>'; throw error; });
-}
-
-function runPanelScripts(container) {
-  container.querySelectorAll('script').forEach(oldScript => {
-    var script = document.createElement('script');
-    Array.from(oldScript.attributes).forEach(attr => script.setAttribute(attr.name, attr.value));
-    script.textContent = oldScript.textContent;
-    oldScript.replaceWith(script);
-  });
-  // 颜色选择器自动转换
-  if (typeof initColorPickers === 'function') initColorPickers(container);
-  // 单位选择器根据已保存的值自动匹配
-  initUnitPickers(container);
-}
-
-// 根据输入框的值（如 100%、2rem）反向匹配单位选择器的选中项
-function initUnitPickers(container) {
-  container.querySelectorAll('.input-group').forEach(function(group) {
-    var sel = group.querySelector('select');
-    if (!sel) return;
-    // 遍历所有文本输入框，找到第一个带单位的来推断
-    var inputs = group.querySelectorAll('input[type=text], input:not([type])');
-    var val = '', unit = '';
-    for (var j = 0; j < inputs.length; j++) {
-      val = inputs[j].value.trim();
-      if (!val) continue;
-      var m = val.match(/(px|rem|em|%|vw|vh|vmin|vmax)$/i);
-      if (m) { unit = m[1].toLowerCase(); break; }
+      return '{{ admin_primary }}'.toLowerCase();
     }
-    if (!unit) return;
-    // 检查 select 中是否有匹配的 option，有则选中
-    var found = false;
-    for (var i = 0; i < sel.options.length; i++) {
-      if (sel.options[i].value.toLowerCase() === unit) {
-        sel.selectedIndex = i;
-        found = true;
-        break;
+
+    function setThemeColor(hex, options) {
+      options = options || {};
+      hex = normalizeThemeHex(hex);
+      var r = parseInt(hex.slice(1, 3), 16);
+      var g = parseInt(hex.slice(3, 5), 16);
+      var b = parseInt(hex.slice(5, 7), 16);
+      var toHex = function (v) { return ('0' + Math.max(0, Math.min(255, v)).toString(16)).slice(-2); };
+      var hover = '#' + toHex(Math.round(r * 0.9)) + toHex(Math.round(g * 0.9)) + toHex(Math.round(b * 0.9));
+      var active = '#' + toHex(Math.round(r * 0.8)) + toHex(Math.round(g * 0.8)) + toHex(Math.round(b * 0.8));
+      var textEmphasis = '#' + toHex(Math.round(r * 0.85)) + toHex(Math.round(g * 0.85)) + toHex(Math.round(b * 0.85));
+      var rgb = r + ', ' + g + ', ' + b;
+      var root = document.documentElement;
+
+      root.style.setProperty('--theme-primary', hex);
+      root.style.setProperty('--theme-primary-hover', textEmphasis);
+      root.style.setProperty('--theme-primary-active', active);
+      root.style.setProperty('--theme-primary-rgb', rgb);
+      root.style.setProperty('--theme-btn-bg', hex);
+      root.style.setProperty('--theme-btn-border-color', hex);
+      root.style.setProperty('--theme-btn-hover-bg', hover);
+      root.style.setProperty('--theme-btn-hover-border-color', hover);
+      root.style.setProperty('--theme-btn-active-bg', active);
+      root.style.setProperty('--theme-btn-active-border-color', active);
+      root.style.setProperty('--bs-primary', hex);
+      root.style.setProperty('--bs-primary-rgb', rgb);
+      root.style.setProperty('--bs-primary-bg', hex);
+      root.style.setProperty('--bs-primary-text-emphasis', textEmphasis);
+      root.style.setProperty('--bs-link-color', hex);
+      root.style.setProperty('--bs-link-color-rgb', rgb);
+      root.style.setProperty('--bs-link-hover-color', textEmphasis);
+      root.style.setProperty('--bs-link-hover-color-rgb', rgb);
+
+      document.querySelectorAll('.theme-swatch').forEach(function (sw) {
+        sw.classList.toggle('active', normalizeThemeHex(sw.dataset.color) === hex);
+      });
+      document.querySelectorAll('.theme-color-input').forEach(function (input) {
+        input.value = hex;
+      });
+      document.querySelectorAll('.nav-mode-swatch[data-mode="dark"]').forEach(function (sw) {
+        sw.style.background = 'var(--theme-primary)';
+      });
+      if (typeof renderPreviewTabs === 'function') renderPreviewTabs();
+      if (typeof updatePreviewCanvasTheme === 'function') updatePreviewCanvasTheme();
+      if (!options.skipStorage) {
+        try { localStorage.setItem('adminThemeColor', hex); } catch (e) { }
       }
     }
-    // 如果 unit 不在 select 的选项中，添加一个临时 option（避免丢失单位信息）
-    if (!found && unit) {
-      var opt = document.createElement('option');
-      opt.value = unit;
-      opt.textContent = unit;
-      opt.selected = true;
-      sel.insertBefore(opt, sel.firstChild);
-    }
-  });
-}
 
-// 表单提交前自动给裸数字补上当前选择的单位（解决默认单位为 — 时输入纯数字无效的问题）
-function normalizeUnitInputs(form) {
-  form.querySelectorAll('.input-group').forEach(function(group) {
-    var sel = group.querySelector('select');
-    if (!sel) return;
-    var unit = sel.value || 'px';
-    group.querySelectorAll('input[type=text], input:not([type])').forEach(function(inp) {
-      var v = inp.value.trim();
-      if (v && /^\d+(\.\d+)?$/.test(v)) inp.value = v + unit;
-    });
-  });
-}
-
-document.getElementById('rightPanelBody').addEventListener('submit', function(e) {
-  var form = e.target.closest('form');
-  if (!form) return;
-  if (form.dataset.ajaxHandled === '1' || e.defaultPrevented) return;
-  e.preventDefault();
-  normalizeUnitInputs(form);
-  var body = document.getElementById('rightPanelBody');
-  var footer = document.getElementById('rightPanelFooter');
-  body.innerHTML = '<div class="p-3 text-muted text-center py-5"><div class="spinner-border spinner-border-sm me-2"></div>保存中...</div>';
-  if (footer) footer.style.display = 'none';
-  fetch(form.action || window.location.href, {method: 'POST', body: new FormData(form)})
-    .then(r => r.text())
-    .then(html => {
-      body.innerHTML = html;
-      runPanelScripts(body);
-      var saveBar = body.querySelector('.panel-save-bar');
-      if (saveBar && footer) {
-        var newForm = saveBar.closest('form');
-        var newBtn = saveBar.querySelector('button[type="submit"]');
-        if (newBtn && newForm) {
-          if (!newForm.id) newForm.id = '_panelForm_' + Date.now();
-          newBtn.setAttribute('form', newForm.id);
-        }
-        footer.innerHTML = '';
-        footer.appendChild(saveBar);
-        footer.style.display = '';
+    function setNavTheme(mode, options) {
+      options = options || {};
+      mode = ['dark', 'light', 'white'].indexOf(mode) >= 0 ? mode : 'dark';
+      var nav = document.getElementById('leftNav');
+      if (!nav) return;
+      nav.classList.remove('nav-light', 'nav-white');
+      if (mode === 'light') nav.classList.add('nav-light');
+      if (mode === 'white') nav.classList.add('nav-white');
+      document.querySelectorAll('.nav-mode-swatch').forEach(function (sw) {
+        sw.classList.toggle('active', sw.dataset.mode === mode);
+      });
+      if (!options.skipStorage) {
+        try { localStorage.setItem('adminNavTheme', mode); } catch (e) { }
       }
-      refreshPreview();
-    })
-    .catch(err => { body.innerHTML = '<div class="p-3 text-danger">保存失败</div>'; });
-});
-
-document.getElementById('leftNav').addEventListener('click', function(e) {
-  // 侧栏收缩态下点击有子菜单的父项 → 先展开侧栏，不阻止默认行为
-  var parentRow = e.target.closest('.left-nav-parent-row');
-  if (parentRow && document.getElementById('leftNav').classList.contains('left-nav-collapsed')) {
-    window._sidebarExpand && window._sidebarExpand();
-    // 展开后再自动展开该父项的子菜单
-    setTimeout(function() {
-      var chevron = parentRow.querySelector('.left-nav-chevron-btn');
-      if (chevron) toggleLeftSubmenu(chevron);
-    }, 250);
-  }
-
-  var link = e.target.closest('a.left-nav-item');
-  if (!link) return;
-  e.preventDefault();
-  document.querySelectorAll('.left-nav-item').forEach(el => el.classList.remove('active'));
-  link.classList.add('active');
-  var href = link.getAttribute('href');
-  if (href && href !== '#') {
-    var params = new URLSearchParams(window.location.search);
-    var siteParam = params.get('site');
-    var langParam = params.get('lang');
-    var qs = siteParam ? '&site=' + siteParam : '';
-    if (langParam) qs += '&lang=' + encodeURIComponent(langParam);
-    loadPanel(href + '?_fragment=1' + qs);
-  }
-  var previewPage = link.dataset.previewPage;
-  if (previewPage) {
-    var previewUrl = previewUrlForPage(previewPage);
-    var title = link.getAttribute('title') || link.textContent.trim() || '预览';
-    openPreviewTab((previewPage === '/' ? 'home' : String(previewPage).replace(/^\/+|\/+$/g, '') || 'home'), title, previewUrl, true);
-    refreshPreview();
-  }
-});
-
-function previewUrlForPage(pageKey) {
-  var siteId = '{{ site.id if site else "" }}';
-  if (!siteId) return 'about:blank';
-  var lang = currentPreviewLanguage();
-  var page = (!pageKey || pageKey === 'home' || pageKey === '/') ? '' : String(pageKey).replace(/^\/+|\/+$/g, '') + '/';
-  return '/preview/' + siteId + '/' + (lang ? lang + '/' : '') + page + 'index.html';
-}
-
-(function initPreviewTabs() {
-  var frame = document.getElementById('previewFrame');
-  var initialUrl = previewUrlForPage('/');
-  if (frame) frame.dataset.previewUrl = initialUrl;
-  openPreviewTab('home', '首页', initialUrl, true);
-})();
-
-function currentPreviewLanguage() {
-  var frame = document.getElementById('previewFrame');
-  var path = '';
-  try { path = frame.contentWindow.location.pathname; } catch (e) { path = frame.src || ''; }
-  var match = path.match(/\/preview\/\d+\/(zh-CN|zh-TW|en)(?:\/|$)/);
-  return match ? match[1] : '';
-}
-
-function doPublish() {
-  if (confirm('确认发布站点？')) {
-    var siteParam = new URLSearchParams(window.location.search).get('site');
-    var buildUrl = '/build?_fragment=1';
-    if (siteParam) buildUrl += '&site=' + encodeURIComponent(siteParam);
-    fetch(buildUrl, {method:'POST'})
-      .then(r => r.json()).then(data => { alert(data.ok ? '发布完成' : '发布失败'); refreshPreview(); });
-  }
-}
-
-function pageKeyFromPreviewPath(pathname) {
-  var cleaned = pathname.replace(/^\/preview\/\d+/, '').replace(/^\/(zh-CN|zh-TW|en)/, '').replace(/\/index\.html$/, '').replace(/\/$/, '');
-  if (!cleaned || cleaned === '/') return 'home';
-  var parts = cleaned.split('/').filter(Boolean);
-  var last = parts[parts.length - 1];
-  // 详情页特征: 最后一段是数据条目 slug (不在数据集 key 列表中),
-  // 且倒数第二段是已知的数据集 key → 返回倒数第二段作为 page_key
-  if (window._datasetKeys && window._datasetKeys.length && parts.length >= 2) {
-    if (window._datasetKeys.indexOf(last) === -1) {
-      var secondLast = parts[parts.length - 2];
-      if (window._datasetKeys.indexOf(secondLast) !== -1) return secondLast;
     }
-  }
-  return last || 'home';
-}
 
-function selectModuleInPanel(index, pageKey) {
-  var body = document.getElementById('rightPanelBody');
-  var targetPageKey = pageKey || currentPanelPageKey() || 'home';
-  if (currentPanelPageKey() !== targetPageKey) {
-    var params = new URLSearchParams(window.location.search);
-    var siteParam = params.get('site');
-    var langParam = params.get('lang');
-    var joiner = siteParam ? '&site=' + siteParam : '';
-    if (langParam) joiner += '&lang=' + encodeURIComponent(langParam);
-    return loadPanel('/_panel/' + targetPageKey + '?_fragment=1' + joiner)
-      .then(() => selectModuleInPanel(index, targetPageKey));
-  }
-  // 折叠所有模块，再展开目标（手风琴）
-  body.querySelectorAll('.module-item').forEach(item => {
-    item.classList.remove('expanded', 'builder-selected-module');
-    var cfg = item.querySelector('.module-config');
-    if (cfg) cfg.style.display = 'none';
-  });
-  var item = body.querySelector('.module-item[data-module-index="' + index + '"]');
-  if (!item) return;
-  item.classList.add('expanded', 'builder-selected-module');
-  var cfg = item.querySelector('.module-config');
-  if (cfg) cfg.style.display = 'block';
-  // 恢复 active tab 对应的内容面板（toggleModuleAccordion 折叠时会把所有 panel 设 display:none）
-  var activeTab = item.querySelector('.content-style-tab.active');
-  var tabName = activeTab ? activeTab.dataset.tab : 'content';
-  var panel = item.querySelector('.panel-' + tabName);
-  if (panel) panel.style.display = '';
-  item.scrollIntoView({behavior: 'smooth', block: 'center'});
-}
-
-function currentPanelPageKey() {
-  var form = document.querySelector('#rightPanelBody #modulesForm[data-page-key], #rightPanelBody #datasetEditForm[data-page-key]');
-  return form ? form.dataset.pageKey : '';
-}
-
-function installPreviewCanvasHandlers() {
-  var frame = document.getElementById('previewFrame');
-  if (!frame) return;
-  var doc;
-  try { doc = frame.contentDocument || frame.contentWindow.document; } catch (e) { return; }
-  if (!doc || !doc.head) return;
-
-  var style = doc.getElementById('builderCanvasThemeStyle');
-  if (!style) {
-    style = doc.createElement('style');
-    style.id = 'builderCanvasThemeStyle';
-    doc.head.appendChild(style);
-  }
-  style.textContent = builderCanvasThemeCss();
-
-  if (doc.__builderCanvasReady) return;
-  doc.__builderCanvasReady = true;
-
-  doc.addEventListener('click', function(event) {
-    var target = event.target;
-    if (!target || !target.closest) return;
-    var moduleEl = target.closest('.builder-module[data-builder-module-index]');
-    var regionEl = target.closest('.builder-region[data-builder-region]');
-    if (!moduleEl && !regionEl) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-    doc.querySelectorAll('.builder-module.builder-canvas-selected,.builder-region.builder-canvas-selected').forEach(function(el) {
-      el.classList.remove('builder-canvas-selected');
+    document.addEventListener('DOMContentLoaded', function () {
+      var themeColor = '{{ admin_primary }}';
+      var navTheme = 'dark';
+      try {
+        themeColor = localStorage.getItem('adminThemeColor') || themeColor;
+        navTheme = localStorage.getItem('adminNavTheme') || navTheme;
+      } catch (e) { }
+      setThemeColor(themeColor, { skipStorage: true });
+      setNavTheme(navTheme, { skipStorage: true });
     });
 
-    if (moduleEl) {
-      moduleEl.classList.add('builder-canvas-selected');
-      selectModuleInPanel(moduleEl.dataset.builderModuleIndex, pageKeyFromPreviewPath(frame.contentWindow.location.pathname));
-      return;
+    function openTemplatesPanel() {
+      document.querySelectorAll('.left-nav-item').forEach(el => el.classList.remove('active'));
+      var tplLink = document.querySelector('a.left-nav-item[data-panel="templates"]');
+      if (tplLink) tplLink.classList.add('active');
+      var panel = document.getElementById('rightPanel');
+      if (panel.classList.contains('d-none')) {
+        panel.classList.remove('d-none');
+        var reopenBtn = document.getElementById('reopenPanelBtn');
+        if (reopenBtn) reopenBtn.style.display = 'none';
+      }
+      var url = '{{ url_for("core.templates_gallery") }}?_fragment=1';
+      var siteParam = new URLSearchParams(window.location.search).get('site');
+      if (siteParam) url += '&site=' + encodeURIComponent(siteParam);
+      loadPanel(url);
     }
 
-    regionEl.classList.add('builder-canvas-selected');
-    var siteParam = new URLSearchParams(window.location.search).get('site');
-    var url = (regionEl.dataset.builderRegion === 'header' ? '/settings/header' : '/settings/footer_variant') + '?_fragment=1';
-    if (siteParam) url += '&site=' + encodeURIComponent(siteParam);
-    loadPanel(url);
-  }, true);
-}
+    // 面板拖拽
+    (function () {
+      var handle = document.getElementById('panelResizer');
+      var panel = document.getElementById('rightPanel');
+      var overlay = document.getElementById('dragOverlay');
+      var frame = document.getElementById('previewFrame');
+      if (!handle || !panel) return;
 
-function toggleLeftSubmenu(button) {
-  var group = button.closest('.left-nav-group');
-  if (!group) return;
-  var submenu = group.querySelector('.left-nav-submenu');
-  var chevron = button.querySelector('.left-nav-chevron');
-  if (!submenu) return;
-  var isOpen = submenu.style.display === 'block';
-  submenu.style.display = isOpen ? 'none' : 'block';
-  if (chevron) chevron.textContent = isOpen ? '▶' : '▼';
-}
+      var dragging = false, startX = 0, startWidth = 0;
 
-function openDatasetPanel(datasetKey) {
-  var params = new URLSearchParams(window.location.search);
-  var siteParam = params.get('site');
-  var langParam = params.get('lang');
-  var url = '/_dataset/' + encodeURIComponent(datasetKey) + '?_fragment=1';
-  if (siteParam) url += '&site=' + encodeURIComponent(siteParam);
-  if (langParam) url += '&lang=' + encodeURIComponent(langParam);
-  loadPanel(url);
-}
+      function begin(e) {
+        e.preventDefault();
+        dragging = true;
+        startX = e.clientX;
+        startWidth = panel.offsetWidth;
+        handle.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        overlay.style.display = 'block';
+      }
 
-// 切换面板语言并同步预览 iframe
-function switchPanelLang(url, langCode) {
-  // 在加载新面板内容前，保存当前预览页面路径
-  var f = document.getElementById('previewFrame');
-  var previewPath = '';
-  if (f) {
-    var src = f.src || '';
-    // 从 iframe src 中提取页面路径: /preview/<id>/<lang>/<page>/index.html → page/
-    var m = src.match(/\/preview\/\d+\/(?:zh-CN|zh-TW|en)?\/?(.*?)index\.html/);
-    if (m && m[1]) previewPath = m[1]; // e.g. 'about/' or ''
-  }
+      function move(e) {
+        if (!dragging) return;
+        var newWidth = startWidth + (startX - e.clientX);
+        panel.style.width = Math.max(240, Math.min(900, newWidth)) + 'px';
+      }
 
-  loadPanel(url).then(function() {
-    var frame = document.getElementById('previewFrame');
-    if (!frame) return;
-    var siteParam = new URLSearchParams(window.location.search).get('site') || '{{ site.id if site else "" }}';
-    var newUrl = '/preview/' + siteParam + '/' + langCode + '/' + (previewPath || '') + 'index.html';
-    frame.dataset.previewUrl = newUrl;
-    // 先触发构建，确保多语言菜单等内容已生成
-    var buildUrl = '/build?_fragment=1';
-    if (siteParam) buildUrl += '&site=' + encodeURIComponent(siteParam);
-    fetch(buildUrl, {method:'POST'})
-      .then(function(r){ return r.json(); }).catch(function(){ return {ok: true}; })
-      .then(function(){ frame.src = newUrl + '?_=' + Date.now(); });
-  });
-}
+      function end() {
+        if (!dragging) return;
+        dragging = false;
+        handle.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        overlay.style.display = 'none';
+      }
 
-function builderCanvasThemeCss() {
-  var primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim() || '#067a7a';
-  var glowColor = previewGlowColor(primaryColor);
-  return '.builder-module{position:relative;cursor:pointer}.builder-region{cursor:pointer}.builder-module:hover::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 2px ' + primaryColor + ',inset 0 0 15px ' + glowColor + ';}.builder-region:hover{box-shadow:inset 0 0 0 2px ' + primaryColor + ',inset 0 0 15px ' + glowColor + ';}.site-header.builder-region:hover{box-shadow:none;}.site-header.builder-region:hover::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 2px ' + primaryColor + ',inset 0 0 15px ' + glowColor + ';}.builder-module.builder-canvas-selected::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 2px ' + primaryColor + ',inset 0 0 15px ' + glowColor + ';}.builder-region.builder-canvas-selected{box-shadow:inset 0 0 0 2px ' + primaryColor + ',inset 0 0 15px ' + glowColor + ';}';
-}
+      handle.addEventListener('mousedown', begin);
+      overlay.addEventListener('mousemove', move);
+      overlay.addEventListener('mouseup', end);
+      overlay.addEventListener('mouseleave', end);
+    })();
 
-function previewGlowColor(color) {
-  if (/^#[0-9a-fA-F]{6}$/.test(color)) return color + '70';
-  var rgb = color.match(/^rgb\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)$/);
-  if (rgb) return 'rgba(' + rgb[1] + ',' + rgb[2] + ',' + rgb[3] + ',.44)';
-  return 'rgba(6,122,122,.44)';
-}
+    // 左侧栏拖拽
+    (function () {
+      var handle = document.getElementById('leftNavResizer');
+      var leftNav = document.getElementById('leftNav');
+      var toggleBtn = document.getElementById('sidebarToggleBtn');
+      var overlay = document.getElementById('dragOverlay');
+      if (!handle || !leftNav) return;
 
-function updatePreviewCanvasTheme() {
-  var frame = document.getElementById('previewFrame');
-  if (!frame) return;
-  var doc;
-  try { doc = frame.contentDocument || frame.contentWindow.document; } catch (e) { return; }
-  if (!doc) return;
-  var style = doc.getElementById('builderCanvasThemeStyle');
-  if (style) style.textContent = builderCanvasThemeCss();
-}
+      var THRESHOLD = 140;   // 低于此宽度 → 收缩态，高于 → 展开态
 
-function schedulePreviewCanvasInstall() {
-  installPreviewCanvasHandlers();
-  setTimeout(installPreviewCanvasHandlers, 80);
-  setTimeout(installPreviewCanvasHandlers, 300);
-}
+      var dragging = false, startX = 0, startWidth = 0;
 
-var previewFrameEl = document.getElementById('previewFrame');
-if (previewFrameEl) {
-  previewFrameEl.addEventListener('load', schedulePreviewCanvasInstall);
-  schedulePreviewCanvasInstall();
-}
+      // 切换按钮图标（不碰 localStorage，move 期间只是视觉预览）
+      function setBtnAppearance(collapsed) {
+        if (!toggleBtn) return;
+        if (collapsed) {
+          toggleBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+          toggleBtn.title = '展开侧栏';
+        } else {
+          toggleBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+          toggleBtn.title = '收起侧栏';
+        }
+      }
 
-// ---- 侧栏收缩/展开 + hover 弹出标签 ----
-(function(){
-  var STORAGE_KEY = 'admin_sidebar_collapsed';
-  var nav = document.getElementById('leftNav');
-  var btn = document.getElementById('sidebarToggleBtn');
-  if (!nav || !btn) return;
+      function begin(e) {
+        e.preventDefault();
+        dragging = true;
+        startX = e.clientX;
+        startWidth = leftNav.offsetWidth;
+        handle.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        overlay.style.display = 'block';
+      }
 
-  var collapsed = localStorage.getItem(STORAGE_KEY) === '1';
+      function move(e) {
+        if (!dragging) return;
+        var newWidth = startWidth + (e.clientX - startX);
+        var w = Math.max(60, Math.min(480, newWidth));
+        // 用 setProperty + important 才能覆盖 CSS 中 #leftNav 的 !important
+        leftNav.style.setProperty('width', w + 'px', 'important');
+        leftNav.style.setProperty('min-width', w + 'px', 'important');
+        leftNav.style.transition = 'none';
+        if (toggleBtn) {
+          toggleBtn.style.left = (w - 12) + 'px';
+          toggleBtn.style.transition = 'none';
+        }
+        // 跨越阈值时切换收缩/展开外观
+        if (w < THRESHOLD && !leftNav.classList.contains('left-nav-collapsed')) {
+          leftNav.classList.add('left-nav-collapsed');
+          setBtnAppearance(true);
+        } else if (w >= THRESHOLD && leftNav.classList.contains('left-nav-collapsed')) {
+          leftNav.classList.remove('left-nav-collapsed');
+          setBtnAppearance(false);
+        }
+      }
 
-  // 创建浮动 tooltip，挂到 body 上避免被 overflow 裁剪
-  var tooltip = document.createElement('div');
-  tooltip.id = 'leftNavTooltip';
-  tooltip.style.cssText = 'position:fixed;pointer-events:none;z-index:10000;padding:6px 12px;background:#0f172a;color:#f1f5f9;font-size:12px;font-weight:500;line-height:1.4;border-radius:6px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:0;visibility:hidden;transition:opacity 0.12s,visibility 0.12s;';
-  document.body.appendChild(tooltip);
+      function end() {
+        if (!dragging) return;
+        dragging = false;
+        handle.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        overlay.style.display = 'none';
+        leftNav.style.transition = '';
+        if (toggleBtn) toggleBtn.style.transition = '';
 
-  var tooltipTimer = null;
+        var finalWidth = leftNav.offsetWidth;
+        if (finalWidth < THRESHOLD) {
+          // 吸附到收缩态：清除 inline 样式让 CSS class 接管 60px
+          leftNav.style.removeProperty('width');
+          leftNav.style.removeProperty('min-width');
+          if (toggleBtn) toggleBtn.style.removeProperty('left');
+          leftNav.classList.add('left-nav-collapsed');
+          setBtnAppearance(true);
+          window._sidebarCustomWidth = null;
+          if (window._sidebarSetCollapsed) window._sidebarSetCollapsed(true);
+        } else {
+          // 展开态：保留拖拽宽度
+          leftNav.classList.remove('left-nav-collapsed');
+          setBtnAppearance(false);
+          window._sidebarCustomWidth = finalWidth;
+          if (window._sidebarSetCollapsed) window._sidebarSetCollapsed(false);
+        }
+      }
 
-  function showTooltip(item) {
-    if (!collapsed) return;
-    var title = item.getAttribute('title');
-    if (!title) return;
-    var rect = item.getBoundingClientRect();
-    tooltip.textContent = title;
-    tooltip.style.left = (rect.right + 10) + 'px';
-    tooltip.style.top = (rect.top + rect.height / 2) + 'px';
-    tooltip.style.transform = 'translateY(-50%)';
-    tooltip.style.opacity = '1';
-    tooltip.style.visibility = 'visible';
-  }
+      handle.addEventListener('mousedown', begin);
+      overlay.addEventListener('mousemove', move);
+      overlay.addEventListener('mouseup', end);
+      overlay.addEventListener('mouseleave', end);
+    })();
 
-  function hideTooltip() {
-    tooltip.style.opacity = '0';
-    tooltip.style.visibility = 'hidden';
-  }
-
-  nav.addEventListener('mouseover', function(e) {
-    if (!collapsed) return;
-    var item = e.target.closest('.left-nav-item');
-    if (!item) { hideTooltip(); return; }
-    clearTimeout(tooltipTimer);
-    tooltipTimer = setTimeout(function(){ showTooltip(item); }, 200);
-  });
-
-  nav.addEventListener('mouseout', function(e) {
-    clearTimeout(tooltipTimer);
-    var item = e.target.closest('.left-nav-item');
-    if (item && !item.contains(e.relatedTarget)) hideTooltip();
-  });
-
-  function applyState() {
-    // 清除拖拽设置的 inline 样式，让 CSS class 控制宽度
-    nav.style.removeProperty('width');
-    nav.style.removeProperty('min-width');
-    btn.style.removeProperty('left');
-    btn.style.removeProperty('transition');
-    if (collapsed) {
-      nav.classList.add('left-nav-collapsed');
-      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
-      btn.title = '展开侧栏';
-    } else {
-      nav.classList.remove('left-nav-collapsed');
-      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
-      btn.title = '收起侧栏';
-      hideTooltip();
-      // 恢复拖拽设置的自定义宽度
-      if (window._sidebarCustomWidth) {
-        nav.style.setProperty('width', window._sidebarCustomWidth + 'px', 'important');
-        nav.style.setProperty('min-width', window._sidebarCustomWidth + 'px', 'important');
-        btn.style.left = (window._sidebarCustomWidth - 12) + 'px';
+    function toggleRightPanel() {
+      var panel = document.getElementById('rightPanel');
+      var reopenBtn = document.getElementById('reopenPanelBtn');
+      var collapseBtn = document.getElementById('panelCollapseBtn');
+      if (panel.classList.contains('d-none')) {
+        panel.classList.remove('d-none');
+        // 如果之前是折叠状态，恢复宽度
+        if (panel.classList.contains('panel-collapsed')) {
+          panel.classList.remove('panel-collapsed');
+          panel.style.width = (panel.dataset.savedWidth || '280') + 'px';
+        }
+        if (reopenBtn) reopenBtn.style.display = 'none';
+        if (collapseBtn) {
+          collapseBtn.style.display = '';
+          collapseBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+          collapseBtn.title = '收起面板';
+        }
+      } else {
+        panel.classList.add('d-none');
+        if (reopenBtn) reopenBtn.style.display = '';
+        if (collapseBtn) collapseBtn.style.display = 'none';
       }
     }
-  }
 
-  btn.addEventListener('click', function() {
-    collapsed = !collapsed;
-    localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0');
-    applyState();
-  });
+    // 点击折叠按钮收起/展开属性面板
+    function togglePanelCollapse() {
+      var panel = document.getElementById('rightPanel');
+      var btn = document.getElementById('panelCollapseBtn');
+      if (!panel) return;
 
-  // 暴露给拖拽模块同步内部 collapsed 状态
-  window._sidebarSetCollapsed = function(val) {
-    collapsed = val;
-    localStorage.setItem(STORAGE_KEY, val ? '1' : '0');
-  };
-  window._sidebarIsCollapsed = function() { return collapsed; };
+      if (panel.classList.contains('panel-collapsed')) {
+        // 展开：恢复之前保存的宽度
+        var savedWidth = panel.dataset.savedWidth || '280';
+        panel.style.width = savedWidth + 'px';
+        panel.classList.remove('panel-collapsed');
+        if (btn) {
+          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+          btn.title = '收起面板';
+        }
+      } else {
+        // 收起：保存当前宽度，CSS 会缩至 5px 仅露出按钮
+        panel.dataset.savedWidth = panel.offsetWidth;
+        panel.classList.add('panel-collapsed');
+        if (btn) {
+          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+          btn.title = '展开面板';
+        }
+      }
+    }
 
-  // 暴露 toggle 方法给 click 处理器使用
-  window._sidebarExpand = function() {
-    if (collapsed) {
-      collapsed = false;
-      localStorage.setItem(STORAGE_KEY, '0');
+    function switchDevice(device) {
+      document.querySelectorAll('.preview-device-btn').forEach(b => b.classList.remove('active'));
+      var btn = document.querySelector('[data-device="' + device + '"]');
+      if (btn) btn.classList.add('active');
+      var frame = document.getElementById('previewFrame');
+      if (!frame) return;
+      frame.classList.remove('desktop', 'tablet', 'mobile');
+      frame.classList.add(device);
+    }
+
+    function refreshPreview() {
+      var f = document.getElementById('previewFrame');
+      if (!f) return;
+      var previewUrl = f.dataset.previewUrl || f.src;
+      updatePreviewUrlBar(previewUrl);
+      var siteParam = new URLSearchParams(window.location.search).get('site');
+      var buildUrl = '/build?_fragment=1';
+      if (siteParam) buildUrl += '&site=' + encodeURIComponent(siteParam);
+      fetch(buildUrl, { method: 'POST' })
+        .then(r => r.json()).catch(() => ({ ok: true }))
+        .then(() => { f.src = previewUrl + (previewUrl.includes('?') ? '&' : '?') + '_=' + Date.now(); });
+    }
+
+    var previewTabs = [];
+    var activeTabKey = null;
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, function (ch) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+      });
+    }
+
+    function updatePreviewUrlBar(url) {
+      var text = document.getElementById('previewUrlText');
+      if (text) text.textContent = url || 'about:blank';
+    }
+
+    function renderPreviewTabs() {
+      var bar = document.getElementById('previewTabBar');
+      if (!bar) return;
+      var html = '';
+      var primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim() || '#067a7a';
+      previewTabs.forEach(function (tab) {
+        var activeClass = tab.key === activeTabKey ? ' active' : '';
+        html += '<div class="preview-tab' + activeClass + '" onclick="switchPreviewTab(' + JSON.stringify(tab.key).replace(/"/g, '&quot;') + ')">';
+        html += '<span class="tab-favicon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="' + (tab.key === 'home' ? primaryColor : '#94a3b8') + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/><path d="M12 2a15.3 15.3 0 0 0-4 10 15.3 15.3 0 0 0 4 10"/></svg></span>';
+        html += '<span class="tab-title">' + escapeHtml(tab.title) + '</span>';
+        if (previewTabs.length > 1) {
+          html += '<button class="tab-close" type="button" onclick="event.stopPropagation(); closePreviewTab(' + JSON.stringify(tab.key).replace(/"/g, '&quot;') + ')">×</button>';
+        }
+        html += '</div>';
+      });
+      html += '<button class="preview-tab-add" type="button" title="新建标签" data-bs-toggle="modal" data-bs-target="#pageTreeModal">+</button>';
+      bar.innerHTML = html;
+    }
+
+    function openPreviewTab(key, title, url, skipFrameUpdate) {
+      key = key || 'home';
+      title = title || key;
+      url = url || 'about:blank';
+      var tab = previewTabs.find(function (item) { return item.key === key; });
+      if (!tab) {
+        tab = { key: key, title: title, url: url };
+        previewTabs.push(tab);
+      } else {
+        tab.title = title;
+        tab.url = url;
+      }
+      activeTabKey = key;
+      renderPreviewTabs();
+      updatePreviewUrlBar(url);
+      var frame = document.getElementById('previewFrame');
+      if (frame) {
+        frame.dataset.previewUrl = url;
+        if (!skipFrameUpdate) frame.src = url;
+      }
+    }
+
+    function switchPreviewTab(key) {
+      var tab = previewTabs.find(function (item) { return item.key === key; });
+      if (!tab) return;
+      openPreviewTab(tab.key, tab.title, tab.url);
+    }
+
+    function closePreviewTab(key) {
+      if (previewTabs.length <= 1) return;
+      var idx = previewTabs.findIndex(function (item) { return item.key === key; });
+      if (idx === -1) return;
+      previewTabs.splice(idx, 1);
+      var next = previewTabs[Math.min(idx, previewTabs.length - 1)];
+      openPreviewTab(next.key, next.title, next.url);
+    }
+
+    function selectPreviewPage(item) {
+      if (!item) return;
+      var title = item.dataset.title || item.textContent.trim() || '预览';
+      var path = item.dataset.path || '/';
+      var url = previewUrlForPage(path);
+      var key = (path === '/' ? 'home' : String(path).replace(/^\/+|\/+$/g, '') || 'home');
+      openPreviewTab(key, title, url);
+      var modalEl = document.getElementById('pageTreeModal');
+      if (modalEl && window.bootstrap) {
+        var modal = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+        if (modal) modal.hide();
+      }
+    }
+
+    function filterPageTree() {
+      var input = document.getElementById('pageTreeSearch');
+      var q = ((input && input.value) || '').toLowerCase();
+      document.querySelectorAll('#pageTreeList .page-tree-item').forEach(function (item) {
+        var title = (item.dataset.title || '').toLowerCase();
+        var path = (item.dataset.path || '').toLowerCase();
+        item.style.display = (!q || title.indexOf(q) !== -1 || path.indexOf(q) !== -1) ? '' : 'none';
+      });
+    }
+
+    function loadPanel(url) {
+      var body = document.getElementById('rightPanelBody');
+      var footer = document.getElementById('rightPanelFooter');
+      body.innerHTML = '<div class="p-3 text-muted text-center py-5"><div class="spinner-border spinner-border-sm me-2"></div>加载中...</div>';
+      if (footer) footer.style.display = 'none';
+      return fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+        .then(html => {
+          body.innerHTML = html;
+          runPanelScripts(body);
+          // 将保存按钮移到面板底部悬浮栏
+          var saveBar = body.querySelector('.panel-save-bar');
+          if (saveBar && footer) {
+            var form = saveBar.closest('form');
+            var btn = saveBar.querySelector('button[type="submit"]');
+            if (btn && form) {
+              if (!form.id) form.id = '_panelForm_' + Date.now();
+              btn.setAttribute('form', form.id);
+            }
+            footer.innerHTML = '';
+            footer.appendChild(saveBar);
+            footer.style.display = '';
+          }
+        })
+        .catch(error => { body.innerHTML = '<div class="p-3 text-danger">加载失败</div>'; throw error; });
+    }
+
+    function runPanelScripts(container) {
+      container.querySelectorAll('script').forEach(oldScript => {
+        var script = document.createElement('script');
+        Array.from(oldScript.attributes).forEach(attr => script.setAttribute(attr.name, attr.value));
+        script.textContent = oldScript.textContent;
+        oldScript.replaceWith(script);
+      });
+      // 颜色选择器自动转换
+      if (typeof initColorPickers === 'function') initColorPickers(container);
+      // 单位选择器根据已保存的值自动匹配
+      initUnitPickers(container);
+    }
+
+    // 根据输入框的值（如 100%、2rem）反向匹配单位选择器的选中项
+    function initUnitPickers(container) {
+      container.querySelectorAll('.input-group').forEach(function (group) {
+        var sel = group.querySelector('select');
+        if (!sel) return;
+        // 遍历所有文本输入框，找到第一个带单位的来推断
+        var inputs = group.querySelectorAll('input[type=text], input:not([type])');
+        var val = '', unit = '';
+        for (var j = 0; j < inputs.length; j++) {
+          val = inputs[j].value.trim();
+          if (!val) continue;
+          var m = val.match(/(px|rem|em|%|vw|vh|vmin|vmax)$/i);
+          if (m) { unit = m[1].toLowerCase(); break; }
+        }
+        if (!unit) return;
+        // 检查 select 中是否有匹配的 option，有则选中
+        var found = false;
+        for (var i = 0; i < sel.options.length; i++) {
+          if (sel.options[i].value.toLowerCase() === unit) {
+            sel.selectedIndex = i;
+            found = true;
+            break;
+          }
+        }
+        // 如果 unit 不在 select 的选项中，添加一个临时 option（避免丢失单位信息）
+        if (!found && unit) {
+          var opt = document.createElement('option');
+          opt.value = unit;
+          opt.textContent = unit;
+          opt.selected = true;
+          sel.insertBefore(opt, sel.firstChild);
+        }
+      });
+    }
+
+    // 表单提交前自动给裸数字补上当前选择的单位（解决默认单位为 — 时输入纯数字无效的问题）
+    function normalizeUnitInputs(form) {
+      form.querySelectorAll('.input-group').forEach(function (group) {
+        var sel = group.querySelector('select');
+        if (!sel) return;
+        var unit = sel.value || 'px';
+        group.querySelectorAll('input[type=text], input:not([type])').forEach(function (inp) {
+          var v = inp.value.trim();
+          if (v && /^\d+(\.\d+)?$/.test(v)) inp.value = v + unit;
+        });
+      });
+    }
+
+    document.getElementById('rightPanelBody').addEventListener('submit', function (e) {
+      var form = e.target.closest('form');
+      if (!form) return;
+      if (form.dataset.ajaxHandled === '1' || e.defaultPrevented) return;
+      e.preventDefault();
+      normalizeUnitInputs(form);
+      var body = document.getElementById('rightPanelBody');
+      var footer = document.getElementById('rightPanelFooter');
+      body.innerHTML = '<div class="p-3 text-muted text-center py-5"><div class="spinner-border spinner-border-sm me-2"></div>保存中...</div>';
+      if (footer) footer.style.display = 'none';
+      fetch(form.action || window.location.href, { method: 'POST', body: new FormData(form) })
+        .then(r => r.text())
+        .then(html => {
+          body.innerHTML = html;
+          runPanelScripts(body);
+          var saveBar = body.querySelector('.panel-save-bar');
+          if (saveBar && footer) {
+            var newForm = saveBar.closest('form');
+            var newBtn = saveBar.querySelector('button[type="submit"]');
+            if (newBtn && newForm) {
+              if (!newForm.id) newForm.id = '_panelForm_' + Date.now();
+              newBtn.setAttribute('form', newForm.id);
+            }
+            footer.innerHTML = '';
+            footer.appendChild(saveBar);
+            footer.style.display = '';
+          }
+          refreshPreview();
+        })
+        .catch(err => { body.innerHTML = '<div class="p-3 text-danger">保存失败</div>'; });
+    });
+
+    document.getElementById('leftNav').addEventListener('click', function (e) {
+      // 侧栏收缩态下点击有子菜单的父项 → 先展开侧栏，不阻止默认行为
+      var parentRow = e.target.closest('.left-nav-parent-row');
+      if (parentRow && document.getElementById('leftNav').classList.contains('left-nav-collapsed')) {
+        window._sidebarExpand && window._sidebarExpand();
+        // 展开后再自动展开该父项的子菜单
+        setTimeout(function () {
+          var chevron = parentRow.querySelector('.left-nav-chevron-btn');
+          if (chevron) toggleLeftSubmenu(chevron);
+        }, 250);
+      }
+
+      var link = e.target.closest('a.left-nav-item');
+      if (!link) return;
+      e.preventDefault();
+      document.querySelectorAll('.left-nav-item').forEach(el => el.classList.remove('active'));
+      link.classList.add('active');
+      var href = link.getAttribute('href');
+      if (href && href !== '#') {
+        var params = new URLSearchParams(window.location.search);
+        var siteParam = params.get('site');
+        var langParam = params.get('lang');
+        var qs = siteParam ? '&site=' + siteParam : '';
+        if (langParam) qs += '&lang=' + encodeURIComponent(langParam);
+        loadPanel(href + '?_fragment=1' + qs);
+      }
+      var previewPage = link.dataset.previewPage;
+      if (previewPage) {
+        var previewUrl = previewUrlForPage(previewPage);
+        var title = link.getAttribute('title') || link.textContent.trim() || '预览';
+        openPreviewTab((previewPage === '/' ? 'home' : String(previewPage).replace(/^\/+|\/+$/g, '') || 'home'), title, previewUrl, true);
+        refreshPreview();
+      }
+    });
+
+    function previewUrlForPage(pageKey) {
+      var siteId = '{{ site.id if site else "" }}';
+      if (!siteId) return 'about:blank';
+      var lang = currentPreviewLanguage();
+      var page = (!pageKey || pageKey === 'home' || pageKey === '/') ? '' : String(pageKey).replace(/^\/+|\/+$/g, '') + '/';
+      return '/preview/' + siteId + '/' + (lang ? lang + '/' : '') + page + 'index.html';
+    }
+
+    (function initPreviewTabs() {
+      var frame = document.getElementById('previewFrame');
+      var initialUrl = previewUrlForPage('/');
+      if (frame) frame.dataset.previewUrl = initialUrl;
+      openPreviewTab('home', '首页', initialUrl, true);
+    })();
+
+    function currentPreviewLanguage() {
+      var frame = document.getElementById('previewFrame');
+      var path = '';
+      try { path = frame.contentWindow.location.pathname; } catch (e) { path = frame.src || ''; }
+      var match = path.match(/\/preview\/\d+\/(zh-CN|zh-TW|en)(?:\/|$)/);
+      return match ? match[1] : '';
+    }
+
+    function doPublish() {
+      if (confirm('确认发布站点？')) {
+        var siteParam = new URLSearchParams(window.location.search).get('site');
+        var buildUrl = '/build?_fragment=1';
+        if (siteParam) buildUrl += '&site=' + encodeURIComponent(siteParam);
+        fetch(buildUrl, { method: 'POST' })
+          .then(r => r.json()).then(data => { alert(data.ok ? '发布完成' : '发布失败'); refreshPreview(); });
+      }
+    }
+
+    function pageKeyFromPreviewPath(pathname) {
+      var cleaned = pathname.replace(/^\/preview\/\d+/, '').replace(/^\/(zh-CN|zh-TW|en)/, '').replace(/\/index\.html$/, '').replace(/\/$/, '');
+      if (!cleaned || cleaned === '/') return 'home';
+      var parts = cleaned.split('/').filter(Boolean);
+      var last = parts[parts.length - 1];
+      // 详情页特征: 最后一段是数据条目 slug (不在数据集 key 列表中),
+      // 且倒数第二段是已知的数据集 key → 返回倒数第二段作为 page_key
+      if (window._datasetKeys && window._datasetKeys.length && parts.length >= 2) {
+        if (window._datasetKeys.indexOf(last) === -1) {
+          var secondLast = parts[parts.length - 2];
+          if (window._datasetKeys.indexOf(secondLast) !== -1) return secondLast;
+        }
+      }
+      return last || 'home';
+    }
+
+    function selectModuleInPanel(index, pageKey) {
+      var body = document.getElementById('rightPanelBody');
+      var targetPageKey = pageKey || currentPanelPageKey() || 'home';
+      if (currentPanelPageKey() !== targetPageKey) {
+        var params = new URLSearchParams(window.location.search);
+        var siteParam = params.get('site');
+        var langParam = params.get('lang');
+        var joiner = siteParam ? '&site=' + siteParam : '';
+        if (langParam) joiner += '&lang=' + encodeURIComponent(langParam);
+        return loadPanel('/_panel/' + targetPageKey + '?_fragment=1' + joiner)
+          .then(() => selectModuleInPanel(index, targetPageKey));
+      }
+      // 折叠所有模块，再展开目标（手风琴）
+      body.querySelectorAll('.module-item').forEach(item => {
+        item.classList.remove('expanded', 'builder-selected-module');
+        var cfg = item.querySelector('.module-config');
+        if (cfg) cfg.style.display = 'none';
+      });
+      var item = body.querySelector('.module-item[data-module-index="' + index + '"]');
+      if (!item) return;
+      item.classList.add('expanded', 'builder-selected-module');
+      var cfg = item.querySelector('.module-config');
+      if (cfg) cfg.style.display = 'block';
+      // 恢复 active tab 对应的内容面板（toggleModuleAccordion 折叠时会把所有 panel 设 display:none）
+      var activeTab = item.querySelector('.content-style-tab.active');
+      var tabName = activeTab ? activeTab.dataset.tab : 'content';
+      var panel = item.querySelector('.panel-' + tabName);
+      if (panel) panel.style.display = '';
+      item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function currentPanelPageKey() {
+      var form = document.querySelector('#rightPanelBody #modulesForm[data-page-key], #rightPanelBody #datasetEditForm[data-page-key]');
+      return form ? form.dataset.pageKey : '';
+    }
+
+    function installPreviewCanvasHandlers() {
+      var frame = document.getElementById('previewFrame');
+      if (!frame) return;
+      var doc;
+      try { doc = frame.contentDocument || frame.contentWindow.document; } catch (e) { return; }
+      if (!doc || !doc.head) return;
+
+      var style = doc.getElementById('builderCanvasThemeStyle');
+      if (!style) {
+        style = doc.createElement('style');
+        style.id = 'builderCanvasThemeStyle';
+        doc.head.appendChild(style);
+      }
+      style.textContent = builderCanvasThemeCss();
+
+      if (doc.__builderCanvasReady) return;
+      doc.__builderCanvasReady = true;
+
+      doc.addEventListener('click', function (event) {
+        var target = event.target;
+        if (!target || !target.closest) return;
+        var moduleEl = target.closest('.builder-module[data-builder-module-index]');
+        var regionEl = target.closest('.builder-region[data-builder-region]');
+        if (!moduleEl && !regionEl) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        doc.querySelectorAll('.builder-module.builder-canvas-selected,.builder-region.builder-canvas-selected').forEach(function (el) {
+          el.classList.remove('builder-canvas-selected');
+        });
+
+        if (moduleEl) {
+          moduleEl.classList.add('builder-canvas-selected');
+          selectModuleInPanel(moduleEl.dataset.builderModuleIndex, pageKeyFromPreviewPath(frame.contentWindow.location.pathname));
+          return;
+        }
+
+        regionEl.classList.add('builder-canvas-selected');
+        var siteParam = new URLSearchParams(window.location.search).get('site');
+        var url = (regionEl.dataset.builderRegion === 'header' ? '/settings/header' : '/settings/footer_variant') + '?_fragment=1';
+        if (siteParam) url += '&site=' + encodeURIComponent(siteParam);
+        loadPanel(url);
+      }, true);
+    }
+
+    function toggleLeftSubmenu(button) {
+      var group = button.closest('.left-nav-group');
+      if (!group) return;
+      var submenu = group.querySelector('.left-nav-submenu');
+      var chevron = button.querySelector('.left-nav-chevron');
+      if (!submenu) return;
+      var isOpen = submenu.style.display === 'block';
+      submenu.style.display = isOpen ? 'none' : 'block';
+      if (chevron) chevron.textContent = isOpen ? '▶' : '▼';
+    }
+
+    function openDatasetPanel(datasetKey) {
+      var params = new URLSearchParams(window.location.search);
+      var siteParam = params.get('site');
+      var langParam = params.get('lang');
+      var url = '/_dataset/' + encodeURIComponent(datasetKey) + '?_fragment=1';
+      if (siteParam) url += '&site=' + encodeURIComponent(siteParam);
+      if (langParam) url += '&lang=' + encodeURIComponent(langParam);
+      loadPanel(url);
+    }
+
+    // 切换面板语言并同步预览 iframe
+    function switchPanelLang(url, langCode) {
+      // 在加载新面板内容前，保存当前预览页面路径
+      var f = document.getElementById('previewFrame');
+      var previewPath = '';
+      if (f) {
+        var src = f.src || '';
+        // 从 iframe src 中提取页面路径: /preview/<id>/<lang>/<page>/index.html → page/
+        var m = src.match(/\/preview\/\d+\/(?:zh-CN|zh-TW|en)?\/?(.*?)index\.html/);
+        if (m && m[1]) previewPath = m[1]; // e.g. 'about/' or ''
+      }
+
+      loadPanel(url).then(function () {
+        var frame = document.getElementById('previewFrame');
+        if (!frame) return;
+        var siteParam = new URLSearchParams(window.location.search).get('site') || '{{ site.id if site else "" }}';
+        var newUrl = '/preview/' + siteParam + '/' + langCode + '/' + (previewPath || '') + 'index.html';
+        frame.dataset.previewUrl = newUrl;
+        // 先触发构建，确保多语言菜单等内容已生成
+        var buildUrl = '/build?_fragment=1';
+        if (siteParam) buildUrl += '&site=' + encodeURIComponent(siteParam);
+        fetch(buildUrl, { method: 'POST' })
+          .then(function (r) { return r.json(); }).catch(function () { return { ok: true }; })
+          .then(function () { frame.src = newUrl + '?_=' + Date.now(); });
+      });
+    }
+
+    function builderCanvasThemeCss() {
+      var primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim() || '#067a7a';
+      var glowColor = previewGlowColor(primaryColor);
+      return '.builder-module{position:relative;cursor:pointer}.builder-region{cursor:pointer}.builder-module:hover::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 2px ' + primaryColor + ',inset 0 0 15px ' + glowColor + ';}.builder-region:hover{box-shadow:inset 0 0 0 2px ' + primaryColor + ',inset 0 0 15px ' + glowColor + ';}.site-header.builder-region:hover{box-shadow:none;}.site-header.builder-region:hover::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 2px ' + primaryColor + ',inset 0 0 15px ' + glowColor + ';}.builder-module.builder-canvas-selected::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 2px ' + primaryColor + ',inset 0 0 15px ' + glowColor + ';}.builder-region.builder-canvas-selected{box-shadow:inset 0 0 0 2px ' + primaryColor + ',inset 0 0 15px ' + glowColor + ';}';
+    }
+
+    function previewGlowColor(color) {
+      if (/^#[0-9a-fA-F]{6}$/.test(color)) return color + '70';
+      var rgb = color.match(/^rgb\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)$/);
+      if (rgb) return 'rgba(' + rgb[1] + ',' + rgb[2] + ',' + rgb[3] + ',.44)';
+      return 'rgba(6,122,122,.44)';
+    }
+
+    function updatePreviewCanvasTheme() {
+      var frame = document.getElementById('previewFrame');
+      if (!frame) return;
+      var doc;
+      try { doc = frame.contentDocument || frame.contentWindow.document; } catch (e) { return; }
+      if (!doc) return;
+      var style = doc.getElementById('builderCanvasThemeStyle');
+      if (style) style.textContent = builderCanvasThemeCss();
+    }
+
+    function schedulePreviewCanvasInstall() {
+      installPreviewCanvasHandlers();
+      setTimeout(installPreviewCanvasHandlers, 80);
+      setTimeout(installPreviewCanvasHandlers, 300);
+    }
+
+    var previewFrameEl = document.getElementById('previewFrame');
+    if (previewFrameEl) {
+      previewFrameEl.addEventListener('load', schedulePreviewCanvasInstall);
+      schedulePreviewCanvasInstall();
+    }
+
+    // ---- 侧栏收缩/展开 + hover 弹出标签 ----
+    (function () {
+      var STORAGE_KEY = 'admin_sidebar_collapsed';
+      var nav = document.getElementById('leftNav');
+      var btn = document.getElementById('sidebarToggleBtn');
+      if (!nav || !btn) return;
+
+      var collapsed = localStorage.getItem(STORAGE_KEY) === '1';
+
+      // 创建浮动 tooltip，挂到 body 上避免被 overflow 裁剪
+      var tooltip = document.createElement('div');
+      tooltip.id = 'leftNavTooltip';
+      tooltip.style.cssText = 'position:fixed;pointer-events:none;z-index:10000;padding:6px 12px;background:#0f172a;color:#f1f5f9;font-size:12px;font-weight:500;line-height:1.4;border-radius:6px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:0;visibility:hidden;transition:opacity 0.12s,visibility 0.12s;';
+      document.body.appendChild(tooltip);
+
+      var tooltipTimer = null;
+
+      function showTooltip(item) {
+        if (!collapsed) return;
+        var title = item.getAttribute('title');
+        if (!title) return;
+        var rect = item.getBoundingClientRect();
+        tooltip.textContent = title;
+        tooltip.style.left = (rect.right + 10) + 'px';
+        tooltip.style.top = (rect.top + rect.height / 2) + 'px';
+        tooltip.style.transform = 'translateY(-50%)';
+        tooltip.style.opacity = '1';
+        tooltip.style.visibility = 'visible';
+      }
+
+      function hideTooltip() {
+        tooltip.style.opacity = '0';
+        tooltip.style.visibility = 'hidden';
+      }
+
+      nav.addEventListener('mouseover', function (e) {
+        if (!collapsed) return;
+        var item = e.target.closest('.left-nav-item');
+        if (!item) { hideTooltip(); return; }
+        clearTimeout(tooltipTimer);
+        tooltipTimer = setTimeout(function () { showTooltip(item); }, 200);
+      });
+
+      nav.addEventListener('mouseout', function (e) {
+        clearTimeout(tooltipTimer);
+        var item = e.target.closest('.left-nav-item');
+        if (item && !item.contains(e.relatedTarget)) hideTooltip();
+      });
+
+      function applyState() {
+        // 清除拖拽设置的 inline 样式，让 CSS class 控制宽度
+        nav.style.removeProperty('width');
+        nav.style.removeProperty('min-width');
+        btn.style.removeProperty('left');
+        btn.style.removeProperty('transition');
+        if (collapsed) {
+          nav.classList.add('left-nav-collapsed');
+          btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+          btn.title = '展开侧栏';
+        } else {
+          nav.classList.remove('left-nav-collapsed');
+          btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+          btn.title = '收起侧栏';
+          hideTooltip();
+          // 恢复拖拽设置的自定义宽度
+          if (window._sidebarCustomWidth) {
+            nav.style.setProperty('width', window._sidebarCustomWidth + 'px', 'important');
+            nav.style.setProperty('min-width', window._sidebarCustomWidth + 'px', 'important');
+            btn.style.left = (window._sidebarCustomWidth - 12) + 'px';
+          }
+        }
+      }
+
+      btn.addEventListener('click', function () {
+        collapsed = !collapsed;
+        localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0');
+        applyState();
+      });
+
+      // 暴露给拖拽模块同步内部 collapsed 状态
+      window._sidebarSetCollapsed = function (val) {
+        collapsed = val;
+        localStorage.setItem(STORAGE_KEY, val ? '1' : '0');
+      };
+      window._sidebarIsCollapsed = function () { return collapsed; };
+
+      // 暴露 toggle 方法给 click 处理器使用
+      window._sidebarExpand = function () {
+        if (collapsed) {
+          collapsed = false;
+          localStorage.setItem(STORAGE_KEY, '0');
+          applyState();
+        }
+      };
+
       applyState();
+    })();
+  </script>
+
+  <style>
+    .module-item.builder-selected-module {
+      border-color: var(--bs-primary) !important;
+      box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), .18);
     }
-  };
+  </style>
 
-  applyState();
-})();
-</script>
+  {# 颜色选择器自动转换：将旧 type="color" 转为 .color-swatch 模式，未选择时显示对角交叉线 #}
+  <script>
+    function initColorPickers(container) {
+      container = container || document;
+      container.querySelectorAll('input.form-control-color[type="color"]').forEach(function (colorInput) {
+        // 已转换过的跳过
+        if (colorInput.closest('.color-swatch')) return;
 
-<style>
-.module-item.builder-selected-module {
-  border-color: var(--bs-primary) !important;
-  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), .18);
-}
-</style>
+        var group = colorInput.closest('.input-group');
+        if (!group) return;
 
-{# 颜色选择器自动转换：将旧 type="color" 转为 .color-swatch 模式，未选择时显示对角交叉线 #}
-<script>
-function initColorPickers(container) {
-  container = container || document;
-  container.querySelectorAll('input.form-control-color[type="color"]').forEach(function(colorInput) {
-    // 已转换过的跳过
-    if (colorInput.closest('.color-swatch')) return;
+        var textInput = group.querySelector('input[type=text]');
+        var hasValue = textInput && textInput.value.trim() !== '';
+        var color = hasValue ? textInput.value : '#ffffff';
 
-    var group = colorInput.closest('.input-group');
-    if (!group) return;
+        // 创建色块标签包裹隐藏的 color input
+        var swatch = document.createElement('label');
+        swatch.className = 'color-swatch' + (hasValue ? '' : ' color-empty');
+        swatch.style.background = color;
 
-    var textInput = group.querySelector('input[type=text]');
-    var hasValue = textInput && textInput.value.trim() !== '';
-    var color = hasValue ? textInput.value : '#ffffff';
+        // 隐藏原生颜色输入框
+        colorInput.classList.remove('form-control-color');
+        colorInput.style.cssText = 'position:absolute;top:-8px;left:-8px;width:calc(100%+16px);height:calc(100%+16px);opacity:0;cursor:pointer;border:none;padding:0;';
+        colorInput.setAttribute('oninput', "var p=this.parentElement;p.style.background=this.value;p.classList.remove('color-empty');var t=p.parentElement.querySelector('input[type=text]');if(t)t.value=this.value");
 
-    // 创建色块标签包裹隐藏的 color input
-    var swatch = document.createElement('label');
-    swatch.className = 'color-swatch' + (hasValue ? '' : ' color-empty');
-    swatch.style.background = color;
+        // 更新文本框
+        if (textInput) {
+          textInput.placeholder = '选择颜色';
+          textInput.setAttribute('oninput', "var g=this.parentElement;var c=g.querySelector('input[type=color]');var l=g.querySelector('.color-swatch');if(c)c.value=this.value;if(l){l.style.background=this.value;l.classList.remove('color-empty')}");
+        }
 
-    // 隐藏原生颜色输入框
-    colorInput.classList.remove('form-control-color');
-    colorInput.style.cssText = 'position:absolute;top:-8px;left:-8px;width:calc(100%+16px);height:calc(100%+16px);opacity:0;cursor:pointer;border:none;padding:0;';
-    colorInput.setAttribute('oninput', "var p=this.parentElement;p.style.background=this.value;p.classList.remove('color-empty');var t=p.parentElement.querySelector('input[type=text]');if(t)t.value=this.value");
-
-    // 更新文本框
-    if (textInput) {
-      textInput.placeholder = '选择颜色';
-      textInput.setAttribute('oninput', "var g=this.parentElement;var c=g.querySelector('input[type=color]');var l=g.querySelector('.color-swatch');if(c)c.value=this.value;if(l){l.style.background=this.value;l.classList.remove('color-empty')}");
+        swatch.appendChild(colorInput);
+        group.insertBefore(swatch, group.firstChild);
+      });
     }
 
-    swatch.appendChild(colorInput);
-    group.insertBefore(swatch, group.firstChild);
-  });
-}
+    document.addEventListener('DOMContentLoaded', function () {
+      initColorPickers();
+    });
+  </script>
 
-document.addEventListener('DOMContentLoaded', function() {
-  initColorPickers();
-});
-</script>
-
-{% block scripts %}{% endblock %}
+  {% block scripts %}{% endblock %}
 </body>
+
 </html>
