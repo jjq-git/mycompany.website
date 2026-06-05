@@ -22,7 +22,7 @@ class User(db.Model):
     status = db.Column(db.String(20), default='active', nullable=False)  # active / suspended / deleted
     role = db.Column(db.String(20), default='owner', nullable=False)  # owner / admin
     display_name = db.Column(db.String(80))
-    preferred_lang = db.Column(db.String(5), default='zh', nullable=False)
+    preferred_lang = db.Column(db.String(5), default='zh-CN', nullable=False)
     last_login_at = db.Column(db.DateTime(timezone=True))
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
@@ -69,8 +69,8 @@ class Site(db.Model):
     folder_path = db.Column(db.String(500), nullable=False)  # sites/<id>/
     template_name = db.Column(db.String(100), db.ForeignKey('templates.name'), nullable=False)
     template_version = db.Column(db.String(50))
-    default_language = db.Column(db.String(5), default='zh', nullable=False)
-    enabled_languages = db.Column(db.JSON, default=lambda: ['zh'])
+    default_language = db.Column(db.String(5), default='zh-CN', nullable=False)
+    enabled_languages = db.Column(db.JSON, default=lambda: ['zh-CN'])
     storage_mode = db.Column(db.String(20), default='shared', nullable=False)  # shared / dedicated
     bucket_name = db.Column(db.String(100))
     bucket_path_prefix = db.Column(db.String(100))

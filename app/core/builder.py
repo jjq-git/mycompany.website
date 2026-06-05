@@ -535,7 +535,7 @@ def build_template_preview(template_name, base_url=''):
     else:
         common = {
             'settings': settings, 'theme': theme,
-            'year': year, 'lang': 'zh',
+            'year': year, 'lang': 'zh-CN',
             'base_url': base_url.rstrip('/'),
             't': {}, 'languages': [],
             'products_categories': products_categories,

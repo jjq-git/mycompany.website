@@ -282,7 +282,7 @@ def inject_context():
         default_lang = (
             site.default_language
             or ctx['template_meta'].get('default_language')
-            or (admin_languages[0].get('code') if admin_languages else 'zh')
+            or (admin_languages[0].get('code') if admin_languages else 'zh-CN')
         )
         current_lang = request.args.get('lang', '').strip() or default_lang
         valid_codes = {l.get('code') for l in admin_languages}
@@ -571,11 +571,14 @@ def company():
 def products():
     from flask import request
     user, site = _current_context()
-    products = datasets.load(site.id, 'products')
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    products = datasets.load(site.id, 'products', lang=storage_lang)
     if request.args.get('_fragment'):
         return render_template('dashboard/panel_data_list.html',
                                user=user, site=site,
-                               dataset_key='products', items=products)
+                               dataset_key='products', items=products,
+                               current_lang=lang, languages=languages, default_lang=default_lang)
     return render_template('dashboard/products.html',
                            user=user, site=site, products=products, active='products')
 
@@ -584,29 +587,35 @@ def products():
 def product_new():
     from flask import redirect, url_for
     _, site = _current_context()
-    n = len(datasets.load(site.id, 'products')) + 1
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    n = len(datasets.load(site.id, 'products', lang=storage_lang)) + 1
     new_id = datasets.add(site.id, 'products', {
         'name': '新产品', 'slug': f'product-{n}',
         'summary': '', 'description': '', 'cover': '', 'category': '',
         'price': '', 'specs': {},
-    })
-    return redirect(url_for('core.product_edit', product_id=new_id, site=site.id))
+    }, lang=storage_lang)
+    return redirect(url_for('core.product_edit', product_id=new_id, site=site.id, lang=lang))
 
 
 @bp.route('/products/<int:product_id>/delete', methods=['POST'])
 def product_delete(product_id):
     from flask import flash, redirect, url_for
     _, site = _current_context()
-    datasets.remove(site.id, 'products', product_id)
+    lang, _, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    datasets.remove(site.id, 'products', product_id, lang=storage_lang)
     flash('已删除')
-    return redirect(url_for('core.products', site=site.id))
+    return redirect(url_for('core.products', site=site.id, lang=lang))
 
 
 @bp.route('/products/<int:product_id>/edit', methods=['GET', 'POST'])
 def product_edit(product_id):
     from flask import flash, redirect, request, url_for
     user, site = _current_context()
-    product = datasets.find(site.id, 'products', product_id)
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    product = datasets.find(site.id, 'products', product_id, lang=storage_lang)
     if not product:
         abort(404, f'产品不存在: id={product_id}')
 
@@ -622,9 +631,9 @@ def product_edit(product_id):
                 if k.strip():
                     specs[k.strip()] = v.strip()
         fields['specs'] = specs
-        datasets.update(site.id, 'products', product_id, fields)
+        datasets.update(site.id, 'products', product_id, fields, lang=storage_lang)
         flash('已保存')
-        return redirect(url_for('core.product_edit', product_id=product_id, site=site.id))
+        return redirect(url_for('core.product_edit', product_id=product_id, site=site.id, lang=lang))
 
     return render_template('dashboard/product_edit.html',
                            user=user, site=site, product=product, active='products')
@@ -636,11 +645,14 @@ def product_edit(product_id):
 def features():
     from flask import request
     user, site = _current_context()
-    items = datasets.load(site.id, 'features')
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    items = datasets.load(site.id, 'features', lang=storage_lang)
     if request.args.get('_fragment'):
         return render_template('dashboard/panel_data_list.html',
                                user=user, site=site,
-                               dataset_key='features', items=items)
+                               dataset_key='features', items=items,
+                               current_lang=lang, languages=languages, default_lang=default_lang)
     return render_template('dashboard/features.html',
                            user=user, site=site, items=items, active='features')
 
@@ -649,32 +661,38 @@ def features():
 def feature_new():
     from flask import redirect, url_for
     _, site = _current_context()
+    lang, _, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
     new_id = datasets.add(site.id, 'features',
-                          {'icon': '', 'title': '新功能', 'desc': ''})
-    return redirect(url_for('core.feature_edit', item_id=new_id, site=site.id))
+                          {'icon': '', 'title': '新功能', 'desc': ''}, lang=storage_lang)
+    return redirect(url_for('core.feature_edit', item_id=new_id, site=site.id, lang=lang))
 
 
 @bp.route('/features/<int:item_id>/delete', methods=['POST'])
 def feature_delete(item_id):
     from flask import flash, redirect, url_for
     _, site = _current_context()
-    datasets.remove(site.id, 'features', item_id)
+    lang, _, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    datasets.remove(site.id, 'features', item_id, lang=storage_lang)
     flash('已删除')
-    return redirect(url_for('core.features', site=site.id))
+    return redirect(url_for('core.features', site=site.id, lang=lang))
 
 
 @bp.route('/features/<int:item_id>/edit', methods=['GET', 'POST'])
 def feature_edit(item_id):
     from flask import flash, redirect, request, url_for
     user, site = _current_context()
-    item = datasets.find(site.id, 'features', item_id)
+    lang, _, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    item = datasets.find(site.id, 'features', item_id, lang=storage_lang)
     if not item:
         abort(404)
     if request.method == 'POST':
         fields = {f: request.form.get(f, '').strip() for f in ('icon', 'title', 'desc')}
-        datasets.update(site.id, 'features', item_id, fields)
+        datasets.update(site.id, 'features', item_id, fields, lang=storage_lang)
         flash('已保存')
-        return redirect(url_for('core.feature_edit', item_id=item_id, site=site.id))
+        return redirect(url_for('core.feature_edit', item_id=item_id, site=site.id, lang=lang))
     return render_template('dashboard/feature_edit.html',
                            user=user, site=site, item=item, active='features')
 
@@ -685,11 +703,14 @@ def feature_edit(item_id):
 def blog():
     from flask import request
     user, site = _current_context()
-    items = datasets.load(site.id, 'posts')
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    items = datasets.load(site.id, 'posts', lang=storage_lang)
     if request.args.get('_fragment'):
         return render_template('dashboard/panel_data_list.html',
                                user=user, site=site,
-                               dataset_key='posts', items=items)
+                               dataset_key='posts', items=items,
+                               current_lang=lang, languages=languages, default_lang=default_lang)
     return render_template('dashboard/blog.html',
                            user=user, site=site, items=items, active='blog')
 
@@ -699,37 +720,43 @@ def post_new():
     from flask import redirect, url_for
     from datetime import date as _date
     _, site = _current_context()
-    n = len(datasets.load(site.id, 'posts')) + 1
+    lang, _, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    n = len(datasets.load(site.id, 'posts', lang=storage_lang)) + 1
     new_id = datasets.add(site.id, 'posts', {
         'slug': f'post-{n}', 'title': '新文章', 'date': str(_date.today()),
         'cover': '', 'excerpt': '', 'body': '',
-    })
-    return redirect(url_for('core.post_edit', item_id=new_id, site=site.id))
+    }, lang=storage_lang)
+    return redirect(url_for('core.post_edit', item_id=new_id, site=site.id, lang=lang))
 
 
 @bp.route('/blog/<int:item_id>/delete', methods=['POST'])
 def post_delete(item_id):
     from flask import flash, redirect, url_for
     _, site = _current_context()
-    datasets.remove(site.id, 'posts', item_id)
+    lang, _, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    datasets.remove(site.id, 'posts', item_id, lang=storage_lang)
     flash('已删除')
-    return redirect(url_for('core.blog', site=site.id))
+    return redirect(url_for('core.blog', site=site.id, lang=lang))
 
 
 @bp.route('/blog/<int:item_id>/edit', methods=['GET', 'POST'])
 def post_edit(item_id):
     from flask import flash, redirect, request, url_for
     user, site = _current_context()
-    item = datasets.find(site.id, 'posts', item_id)
+    lang, _, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    item = datasets.find(site.id, 'posts', item_id, lang=storage_lang)
     if not item:
         abort(404)
     if request.method == 'POST':
         fields = {f: request.form.get(f, '').strip()
                   for f in ('title', 'slug', 'date', 'cover', 'excerpt', 'body')}
         fields['cover'] = _uploaded_image_or_form(site.id, 'cover', 'cover_file', 'post-cover')
-        datasets.update(site.id, 'posts', item_id, fields)
+        datasets.update(site.id, 'posts', item_id, fields, lang=storage_lang)
         flash('已保存')
-        return redirect(url_for('core.post_edit', item_id=item_id, site=site.id))
+        return redirect(url_for('core.post_edit', item_id=item_id, site=site.id, lang=lang))
     return render_template('dashboard/post_edit.html',
                            user=user, site=site, item=item, active='blog')
 
