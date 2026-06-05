@@ -94,18 +94,35 @@
 
       <div class="header-divider"></div>
 
-      <div class="dropdown">
-        <button class="header-btn header-site-btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
-          aria-expanded="false">
-          {{ site.slug if site else '未选择' }}
-        </button>
-        <ul class="dropdown-menu">
-          {% for opt in available_sites | default([]) %}
-          <li><a class="dropdown-item {% if site and opt.id == site.id %}active{% endif %}"
-              href="{{ request.path }}?site={{ opt.id }}">{{ opt.name or opt.slug }} <span class="text-muted small">/{{
-                opt.slug }}</span></a></li>
-          {% endfor %}
-        </ul>
+      <div class="header-site-group">
+        <div class="dropdown">
+          <button class="header-btn header-site-btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+            data-bs-auto-close="outside" aria-expanded="false" id="headerSiteBtn">
+            {{ site.name or site.slug if site else '未选择' }}
+          </button>
+          <ul class="dropdown-menu" id="siteDropdown">
+            {% for opt in available_sites | default([]) %}
+            <li><a class="dropdown-item {% if site and opt.id == site.id %}active{% endif %}"
+                href="{{ request.path }}?site={{ opt.id }}{% if current_lang %}&lang={{ current_lang }}{% endif %}">{{
+                opt.name or opt.slug }} <span class="text-muted small">/{{ opt.slug }}</span></a></li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% if admin_languages and admin_languages|length > 0 %}
+        <div class="dropdown" id="siteLangDropdown">
+          <button class="header-btn header-site-btn header-lang-btn dropdown-toggle" type="button"
+            data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" id="headerLangBtn">
+            {{ current_language_label }}
+          </button>
+          <ul class="dropdown-menu" id="langDropdown">
+            {% for lang in admin_languages %}
+            <li><a class="dropdown-item {% if lang.code == current_lang %}active{% endif %}"
+                href="{{ request.path }}?site={{ site.id if site else '' }}&lang={{ lang.code }}">{{ lang.name }} ({{
+                lang.code }})</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
       </div>
 
       <a class="header-btn" href="javascript:void(0)" onclick="openTemplatesPanel()">
@@ -215,8 +232,8 @@
     <nav class="flex-shrink-0 d-flex flex-column" id="leftNav">
       {# 站点信息区 #}
       <div class="left-nav-site-info px-3 py-2">
-        <div class="site-label">我的网站</div>
-        <div class="site-name">{{ site.name or site.slug if site else '未选择站点' }}</div>
+        <div class="site-label">{{ site.name or site.slug if site else '未选择' }}</div>
+        <div class="site-name">{{ current_language_label if current_language_label else '' }}</div>
       </div>
 
       <div class="flex-grow-1 overflow-auto left-nav-menu">
