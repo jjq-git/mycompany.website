@@ -355,8 +355,8 @@ h6 { font-size: var(--font-size-md); }
 
 .section-header {
   text-align: center;
-  margin-bottom: var(--spacing-3xl);
-  padding-bottom: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  /* padding-bottom: var(--spacing-xl); */
 }
 
 .section-title {
@@ -2886,6 +2886,17 @@ h6 { font-size: var(--font-size-md); }
   }
 }
 
+@media(max-width:1440px){
+  .container {
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+  .hero-banner .container {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
 /* === Responsive: Mobile (max-width: 768px) === */
 @media (max-width: 768px) {
   :root {
@@ -5050,9 +5061,10 @@ h6 { font-size: var(--font-size-md); }
    数据网格 (data_grid → dg-*)
    ============================================ */
 /* 上图下文布局（默认） */
+/* 列数由 data-style="cols" 注入的 --cols 控制，默认 3；窄屏由 media query 降级 */
 .dg-list {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(var(--cols, 3), 1fr);
   gap: var(--spacing-xl, 1.5rem);
 }
 
