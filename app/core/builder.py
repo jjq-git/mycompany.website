@@ -30,10 +30,6 @@ def _load_block_for_render(tpl_root, template_name, block_type, variant):
     返回 (html, schema)：schema 非 None → data-* 声明式；schema 为 None → 旧 Jinja2。
     找不到模板返回 (None, None)。
     """
-    cache_key = (str(tpl_root), block_type, variant)
-    if cache_key in _SCHEMA_CACHE:
-        return _SCHEMA_CACHE[cache_key]
-
     blocks_dir = tpl_root / 'blocks' / block_type
     # 与 _modules.html 的 include 列表一致：优先变体，回退默认 template.html
     candidates = []
@@ -42,8 +38,13 @@ def _load_block_for_render(tpl_root, template_name, block_type, variant):
     candidates.append(blocks_dir / 'template.html')
 
     html = None
+    source_path = None
     for path in candidates:
         if path.exists():
+            source_path = path
+            cache_key = (str(tpl_root), block_type, variant, str(path), path.stat().st_mtime_ns)
+            if cache_key in _SCHEMA_CACHE:
+                return _SCHEMA_CACHE[cache_key]
             html = path.read_text(encoding='utf-8')
             break
 
@@ -58,7 +59,8 @@ def _load_block_for_render(tpl_root, template_name, block_type, variant):
     else:
         result = (html, None)
 
-    _SCHEMA_CACHE[cache_key] = result
+    if source_path is not None:
+        _SCHEMA_CACHE[cache_key] = result
     return result
 
 

@@ -246,7 +246,15 @@ def inject_context():
         if site and user and user.role != 'admin' and site.owner_id != user.id:
             site = None
 
-    ctx = {'counts': {}, 'left_menu_items': [], 'template_meta': {}, 'available_sites': []}
+    ctx = {
+        'counts': {},
+        'left_menu_items': [],
+        'template_meta': {},
+        'available_sites': [],
+        'admin_languages': [],
+        'current_lang': '',
+        'current_language_label': '',
+    }
 
     if user:
         query = Site.query
@@ -264,6 +272,29 @@ def inject_context():
         meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
         if meta_path.exists():
             ctx['template_meta'] = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) or {}
+
+        # 后台顶部语言选择器：优先显示站点已启用语言，异常数据回退到主题语言/站点默认语言。
+        template_languages = ctx['template_meta'].get('languages') or []
+        enabled_codes = site.enabled_languages or [l.get('code') for l in template_languages if l.get('code')]
+        admin_languages = [l for l in template_languages if l.get('code') in enabled_codes]
+        if not admin_languages:
+            admin_languages = template_languages
+        default_lang = (
+            site.default_language
+            or ctx['template_meta'].get('default_language')
+            or (admin_languages[0].get('code') if admin_languages else 'zh')
+        )
+        current_lang = request.args.get('lang', '').strip() or default_lang
+        valid_codes = {l.get('code') for l in admin_languages}
+        if valid_codes and current_lang not in valid_codes:
+            current_lang = default_lang if default_lang in valid_codes else admin_languages[0].get('code')
+        if not admin_languages and current_lang:
+            admin_languages = [{'code': current_lang, 'name': current_lang}]
+        current_lang_opt = next((l for l in admin_languages if l.get('code') == current_lang), None)
+        current_label = (current_lang_opt or {}).get('name') or current_lang or '默认语言'
+        ctx['admin_languages'] = admin_languages
+        ctx['current_lang'] = current_lang
+        ctx['current_language_label'] = f"{current_label} ({current_lang})" if current_lang else current_label
 
         raw_menu = settings.get('menu') or ctx['template_meta'].get('default_menu', [])
         # 强制裁剪深度, 防御恶意 yaml 通过深嵌套触发递归栈溢出
@@ -1372,7 +1403,7 @@ def preview_or_build(site_id):
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
     lang_code = _default_lang_code(site)
     lang_index = out / lang_code / 'index.html'
-    if not lang_index.exists():
+    if request.args.get('_') or not lang_index.exists():
         build_site(site_id, base_url=f'/preview/{site_id}')
 
     # 查找默认语言子目录下的 index.html，跳过语言选择页
@@ -1390,10 +1421,11 @@ def preview(site_id, filepath='index.html'):
     """预览 output/<site_id>/ 下的静态文件，自动构建."""
     site = Site.query.get_or_404(site_id)
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
+    force_rebuild = bool(request.args.get('_'))
     if filepath == 'index.html':
         lang_code = _default_lang_code(site)
         lang_index = out / lang_code / 'index.html'
-        if not lang_index.exists():
+        if force_rebuild or not lang_index.exists():
             try:
                 build_site(site_id, base_url=f'/preview/{site_id}')
             except Exception:
@@ -1406,7 +1438,7 @@ def preview(site_id, filepath='index.html'):
     if full.is_dir():
         full = full / 'index.html'
         filepath = f'{filepath.rstrip("/")}/index.html'
-    if not full.exists():
+    if force_rebuild or not full.exists():
         try:
             build_site(site_id, base_url=f'/preview/{site_id}')
         except Exception:

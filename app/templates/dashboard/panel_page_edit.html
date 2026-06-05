@@ -42,7 +42,7 @@
 {% if is_modules_format %}
 {# ---- 添加模块按钮 ---- #}
 <div class="mb-3">
-  <button class="btn btn-outline-primary btn-sm w-100" type="button" data-bs-toggle="modal" data-bs-target="#blockPalettePageModal">
+  <button class="btn btn-outline-primary btn-sm w-100 panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPalettePageModal">
     + 添加模块
   </button>
 </div>
@@ -1345,6 +1345,7 @@ function addModule(type, variant) {
     specialEditor =
     '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle"></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label>' +
     '<div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
       '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'bold\',false,null);event.preventDefault()" title="加粗" style="font-size:12px;line-height:1"><b>B</b></button>' +
