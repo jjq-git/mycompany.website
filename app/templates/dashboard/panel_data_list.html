@@ -4,14 +4,14 @@
 
 {% if languages and languages|length > 1 %}
 {# 语言切换标签 — 切换当前编辑的语言版本 #}
-<div class="d-flex align-items-center gap-1 mb-2">
+<!-- <div class="d-flex align-items-center gap-1 mb-2">
   <span class="text-muted" style="font-size:11px;">编辑语言:</span>
   {% for l in languages %}
   <button onclick="switchPanelLang('/_dataset/{{ dataset_key }}{% if is_edit %}/{{ edit_item_id }}/edit{% endif %}?_fragment=1&site={{ site.id }}&lang={{ l.code }}', '{{ l.code }}')"
      class="badge border-0 lang-tab {% if current_lang == l.code %}bg-primary text-white{% else %}bg-light text-dark border{% endif %}"
      style="font-size:12px;padding:6px 12px;cursor:pointer;">{{ l.name }}</button>
   {% endfor %}
-</div>
+</div> -->
 {% endif %}
 <div class="d-flex align-items-center justify-content-between mb-2">
   <span class="fw-semibold">{{ dataset_key | title }}{% if is_edit %} · 编辑 #{{ edit_item_id }}{% endif %}</span>

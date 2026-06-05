@@ -553,7 +553,15 @@
     }
 
     .left-nav-chevron {
-      font-size: 8px;
+      width: 14px;
+      height: 14px;
+      display: inline-block;
+      transition: transform 0.2s ease;
+      color: inherit;
+      flex-shrink: 0;
+    }
+    .left-nav-chevron.open {
+      transform: rotate(90deg);
     }
 
     /* 父菜单行 */
@@ -925,12 +933,15 @@
 
     /* 子菜单箭头图标 */
     .left-nav-chevron {
-      font-size: 8px;
+      width: 14px;
+      height: 14px;
       display: inline-block;
-      transition: transform 0.15s ease;
+      transition: transform 0.2s ease;
       color: inherit;
       flex-shrink: 0;
-      line-height: 1;
+    }
+    .left-nav-chevron.open {
+      transform: rotate(90deg);
     }
 
     /* 预览 iframe */
@@ -2513,7 +2524,9 @@
               网站设置
             </span>
             <button class="left-nav-chevron-btn" type="button" onclick="toggleLeftSubmenu(this)" title="展开/折叠子菜单">
-              <span class="left-nav-chevron">▶</span>
+              <svg class="left-nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
             </button>
           </div>
           <div class="left-nav-submenu" style="display:none">
@@ -2626,7 +2639,9 @@
               <span class="nav-badge">12</span>
             </a>
             <button class="left-nav-chevron-btn" type="button" onclick="toggleLeftSubmenu(this)" title="展开/折叠子菜单">
-              <span class="left-nav-chevron">▶</span>
+              <svg class="left-nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
             </button>
           </div>
           <div class="left-nav-submenu" style="display:none">
@@ -2683,7 +2698,9 @@
               <span class="nav-badge">8</span>
             </a>
             <button class="left-nav-chevron-btn" type="button" onclick="toggleLeftSubmenu(this)" title="展开/折叠子菜单">
-              <span class="left-nav-chevron">▶</span>
+              <svg class="left-nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
             </button>
           </div>
           <div class="left-nav-submenu" style="display:none">
@@ -3274,7 +3291,7 @@ p.subtitle{color:#64748b;margin-bottom:32px;font-size:1.1rem}
       if (!submenu) return;
       var isOpen = submenu.style.display === 'block';
       submenu.style.display = isOpen ? 'none' : 'block';
-      if (chevron) chevron.textContent = isOpen ? '▶' : '▼';
+      if (chevron) chevron.classList.toggle('open', !isOpen);
     }
 
     // ---- 站点切换：选中一级后在右侧显示二级语言下拉 ----

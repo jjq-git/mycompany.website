@@ -267,8 +267,7 @@
   width: 240px !important;
   min-width: 240px;
   transition: width 0.2s ease, min-width 0.2s ease;
-  overflow-x: visible;
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
   z-index: 1;
 }
@@ -738,12 +737,15 @@
 
 /* 子菜单箭头图标 */
 .left-nav-chevron {
-  font-size: 8px;
+  width: 14px;
+  height: 14px;
   display: inline-block;
-  transition: transform 0.15s ease;
+  transition: transform 0.2s ease;
   color: inherit;
   flex-shrink: 0;
-  line-height: 1;
+}
+.left-nav-chevron.open {
+  transform: rotate(90deg);
 }
 
 /* 预览 iframe */
@@ -1278,6 +1280,49 @@
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
+/* 左侧菜单滚动条 */
+.left-nav-menu::-webkit-scrollbar {
+  width: 5px;
+}
+.left-nav-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+.left-nav-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+.left-nav-menu::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Firefox 滚动条 */
+.left-nav-menu {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* 浅色侧栏下的滚动条 */
+#leftNav.nav-light .left-nav-menu {
+  scrollbar-color: #cbd5e1 transparent;
+}
+#leftNav.nav-light .left-nav-menu::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+#leftNav.nav-light .left-nav-menu::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* 白色侧栏下的滚动条 */
+#leftNav.nav-white .left-nav-menu {
+  scrollbar-color: #cbd5e1 transparent;
+}
+#leftNav.nav-white .left-nav-menu::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+#leftNav.nav-white .left-nav-menu::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
 .right-panel-body::-webkit-scrollbar {
   width: 5px;
 }
@@ -1599,6 +1644,30 @@
 .module-action-btn.module-action-del:hover {
   color: #dc3545;
   background: #fef2f2;
+}
+
+/* 模块折叠箭头 */
+.module-chevron {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+}
+.module-item.expanded .module-chevron {
+  transform: rotate(90deg);
+}
+
+/* 轮播/功能卡片条目折叠 */
+.hero-slide-item.collapsed .hero-slide-body,
+.feature-item.collapsed .feature-item-body,
+.schema-list-item.collapsed .schema-list-item-body {
+  display: none;
+}
+.hero-slide-item:not(.collapsed) .hero-slide-chevron,
+.feature-item:not(.collapsed) .feature-chevron,
+.schema-list-item:not(.collapsed) .schema-list-chevron {
+  transform: rotate(90deg);
 }
 
 .template-pick-desc {

@@ -2,17 +2,17 @@
 {% from 'dashboard/_block_icons.html' import block_icon %}
 {% if languages and languages|length > 1 %}
 {# 语言切换标签 — 切换当前编辑的语言版本 #}
-<div class="d-flex align-items-center gap-1 mb-2">
+<!-- <div class="d-flex align-items-center gap-1 mb-2">
   <span class="text-muted" style="font-size:11px;">编辑语言:</span>
   {% for l in languages %}
   <button onclick="switchPanelLang('/_panel/{{ page_key }}?_fragment=1&site={{ site.id }}&lang={{ l.code }}', '{{ l.code }}')"
      class="badge border-0 lang-tab {% if current_lang == l.code %}bg-primary text-white{% else %}bg-light text-dark border{% endif %}"
      style="font-size:12px;padding:6px 12px;cursor:pointer;">{{ l.name }}</button>
   {% endfor %}
-</div>
+</div> -->
 {% endif %}
 <div class="d-flex align-items-center justify-content-between mb-2">
-  <span class="fw-semibold">{{ page_key | title }}</span>
+  <span class="fw-semibold">{{ page_display_name }}</span>
   <div class="d-flex gap-1">
     {% if is_list_page %}
     <button class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" onclick="openDatasetPanel('{{ page_key }}')" title="管理 {{ page_key }} 数据"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg> 数据</button>
@@ -97,11 +97,22 @@
       <div class="card mb-2 module-item" data-index="{{ i }}" data-module-index="{{ i }}">
         <div class="d-flex align-items-center justify-content-between p-2 module-header"
              onclick="toggleModuleAccordion(this.closest('.module-item'))">
-          <span class="small fw-semibold d-flex align-items-center gap-1">{{ block_icon(module.type) }} {{ mod_title }}</span>
+          <span class="small fw-semibold d-flex align-items-center gap-1">
+            <svg class="module-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+            {{ block_icon(module.type) }} {{ mod_title }}
+          </span>
           <div class="d-flex gap-1">
             <button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)">↑</button>
 	            <button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)">↓</button>
-	            <button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest('.module-item').remove();reindexModules()">✕</button>
+	            <button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch({{ i }})">⇄</button>
+	            <button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest('.module-item').remove();reindexModules()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
           </div>
         </div>
         <input type="hidden" name="module_{{ i }}_type" value="{{ module.type }}">
@@ -562,10 +573,10 @@ function _schemaListItemHtml(base, listName, j, children, itemData) {
   (children || []).forEach(function(child) {
     inner += _schemaFieldHtml(itemPrefix, child, itemData);
   });
-  return '<div class="border rounded p-2 mb-2 schema-list-item" data-item-index="' + j + '">' +
-    '<div class="d-flex justify-content-between align-items-center mb-2" style="cursor:pointer;user-select:none" onclick="this.closest(\'.schema-list-item\').classList.toggle(\'collapsed\')">' +
-    '<span class="small fw-semibold">条目 ' + (j + 1) + '</span>' +
-    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();schemaListRemove(this)">删除</button></div>' +
+  return '<div class="border rounded p-2 mb-2 schema-list-item collapsed" data-item-index="' + j + '">' +
+    '<div class="d-flex justify-content-between align-items-center mb-2 schema-list-item-header" style="cursor:pointer;user-select:none" onclick="this.closest(\'.schema-list-item\').classList.toggle(\'collapsed\')">' +
+    '<span class="small fw-semibold d-flex align-items-center"><svg class="schema-list-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>条目 ' + (j + 1) + '</span>' +
+    '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();schemaListRemove(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
     '<div class="schema-list-item-body">' + inner + '</div></div>';
 }
 
@@ -599,8 +610,12 @@ function _schemaListReindex(editor) {
   editor.querySelector('.schema-list-count').value = items.length;
   items.forEach(function(item, idx) {
     item.dataset.itemIndex = idx;
-    var label = item.querySelector('.small.fw-semibold');
-    if (label) label.textContent = '条目 ' + (idx + 1);
+    var label = item.querySelector('.schema-list-item-header .small.fw-semibold');
+    if (label) {
+      var chevronSvg = label.querySelector('svg');
+      label.textContent = '条目 ' + (idx + 1);
+      if (chevronSvg) label.insertBefore(chevronSvg, label.firstChild);
+    }
     item.querySelectorAll('[name]').forEach(function(el) {
       el.name = el.name.replace(re, '$1' + idx + '_');
     });
@@ -705,10 +720,10 @@ function renderHiddenControl(idx, device, label) {
 
 function heroSlideHtml(moduleIndex, slideIndex) {
   var p = 'module_' + moduleIndex + '_slide_' + slideIndex + '_';
-  return '<div class="border rounded p-2 mb-2 hero-slide-item" data-slide-index="' + slideIndex + '">' +
+  return '<div class="border rounded p-2 mb-2 hero-slide-item collapsed" data-slide-index="' + slideIndex + '">' +
     '<div class="d-flex justify-content-between align-items-center mb-2 hero-slide-header" style="cursor:pointer; user-select:none;" onclick="this.closest(\'.hero-slide-item\').classList.toggle(\'collapsed\')">' +
-    '<span class="small fw-semibold">▶ 媒体 ' + (slideIndex + 1) + '</span>' +
-    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); this.closest(\'.hero-slide-item\').remove(); reindexHeroSlides(' + moduleIndex + ')">删除</button></div>' +
+    '<span class="small fw-semibold d-flex align-items-center"><svg class="hero-slide-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>媒体 ' + (slideIndex + 1) + '</span>' +
+    '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation(); this.closest(\'.hero-slide-item\').remove(); reindexHeroSlides(' + moduleIndex + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
     '<div class="hero-slide-body">' +
     '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">媒体类型</label><select class="form-select form-select-sm" name="' + p + 'type"><option value="image">图片</option><option value="video">视频</option></select></div>' +
     '<div class="col-6"><label class="form-label small mb-1 text-muted">上传图片/视频</label><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片/视频<input type="file" name="' + p + 'file" accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP/MP4/WebM/OGG/MOV，最大 12MB</div></div></div>' +
@@ -739,8 +754,12 @@ function reindexHeroSlides(moduleIndex) {
   editor.querySelector('.hero-slide-count').value = items.length;
   items.forEach(function(item, idx) {
     item.dataset.slideIndex = idx;
-    var label = item.querySelector('.small.fw-semibold');
-    if (label) label.textContent = '▶ 媒体 ' + (idx + 1);
+    var label = item.querySelector('.hero-slide-header .small.fw-semibold');
+    if (label) {
+      var chevronSvg = label.querySelector('svg');
+      label.textContent = ' 媒体 ' + (idx + 1);
+      if (chevronSvg) label.insertBefore(chevronSvg, label.firstChild);
+    }
     item.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el) {
       el.name = el.name.replace(/module_\d+_slide_\d+_/, 'module_' + moduleIndex + '_slide_' + idx + '_');
     });
@@ -775,10 +794,10 @@ function featureItemHtml(moduleIndex, featureIndex) {
   icons.forEach(function(pair) {
     iconOptionsHtml += '<option value="' + escapeHtml(pair[0]) + '">' + escapeHtml(pair[1]) + '</option>';
   });
-  return '<div class="border rounded p-2 mb-2 feature-item" data-feature-index="' + featureIndex + '">' +
+  return '<div class="border rounded p-2 mb-2 feature-item collapsed" data-feature-index="' + featureIndex + '">' +
     '<div class="d-flex justify-content-between align-items-center mb-2 feature-item-header" style="cursor:pointer; user-select:none;" onclick="this.closest(\'.feature-item\').classList.toggle(\'collapsed\')">' +
-    '<span class="small fw-semibold">▶ 功能卡片 ' + (featureIndex + 1) + '</span>' +
-    '<div class="d-flex gap-1"><button type="button" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation();this.closest(\'.feature-item\').remove();reindexFeatureItems(' + moduleIndex + ')">删除</button></div>' +
+    '<span class="small fw-semibold d-flex align-items-center"><svg class="feature-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>功能卡片 ' + (featureIndex + 1) + '</span>' +
+    '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.feature-item\').remove();reindexFeatureItems(' + moduleIndex + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
     '</div>' +
     '<div class="feature-item-body">' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">图标</label><select class="form-select form-select-sm" name="' + p + 'icon">' + iconOptionsHtml + '</select></div>' +
@@ -804,8 +823,12 @@ function reindexFeatureItems(moduleIndex) {
   editor.querySelector('.feature-item-count').value = items.length;
   items.forEach(function(item, idx) {
     item.dataset.featureIndex = idx;
-    var label = item.querySelector('.small.fw-semibold');
-    if (label) label.textContent = '功能卡片 ' + (idx + 1);
+    var label = item.querySelector('.feature-item-header .small.fw-semibold');
+    if (label) {
+      var chevronSvg = label.querySelector('svg');
+      label.textContent = '功能卡片 ' + (idx + 1);
+      if (chevronSvg) label.insertBefore(chevronSvg, label.firstChild);
+    }
     item.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el) {
       el.name = el.name.replace(/module_\d+_feature_\d+_/, 'module_' + moduleIndex + '_feature_' + idx + '_');
     });
@@ -995,6 +1018,7 @@ function reindexStepItems(moduleIndex) {
 /* ===== 添加模块弹框：左右分栏 + 变体预览 ===== */
 var selectedBlockType = null;
 var selectedVariantKey = null;
+var switchTargetIndex = null;  // 换变体模式：非 null 表示正在为第几个模块换变体
 
 // 变体缩略图映射：根据 block type + variant key 生成迷你几何示意图
 function buildVariantThumb(blockType, variantKey) {
@@ -1080,9 +1104,39 @@ function buildPaletteData() {
 // 弹框打开时初始化
 var paletteModalEl = document.getElementById('blockPalettePageModal');
 if (paletteModalEl) {
+  // 弹框关闭时清理换变体状态
+  paletteModalEl.addEventListener('hidden.bs.modal', function() {
+    if (switchTargetIndex !== null) {
+      switchTargetIndex = null;
+      var t = document.querySelector('#blockPalettePageModal .modal-title');
+      if (t) t.textContent = '添加模块';
+    }
+  });
   paletteModalEl.addEventListener('show.bs.modal', function() {
     initBlockPalette();
     resetConfirmBtn();
+    // 换变体模式：预选当前模块的类型与变体
+    if (switchTargetIndex !== null) {
+      var item = document.querySelector('.module-item[data-index="' + switchTargetIndex + '"]');
+      if (item) {
+        var typeInput = item.querySelector('input[name$="_type"]');
+        var variantInput = item.querySelector('input[name$="_variant"]');
+        var curType = typeInput ? typeInput.value : '';
+        var curVariant = variantInput ? variantInput.value : 'default';
+        if (curType) {
+          selectBlockType(curType);
+          // 延迟选中变体卡片（等 selectBlockType 渲染完右侧面板）
+          setTimeout(function() {
+            var cards = document.querySelectorAll('#variantPanel .variant-preview-card');
+            cards.forEach(function(c) {
+              if (c.dataset.blockType === curType && c.dataset.variant === curVariant) {
+                selectVariant(c, curType, curVariant);
+              }
+            });
+          }, 80);
+        }
+      }
+    }
   });
 }
 
@@ -1163,9 +1217,41 @@ function selectVariant(card, blockType, variantKey) {
   if (hint) hint.textContent = '已选: ' + (blk ? blk.name : blockType) + ' / ' + vlabel;
 }
 
+// 打开弹框为已有模块更换变体（保留已编辑内容，仅更新 variant 隐藏字段）
+function openVariantSwitch(idx) {
+  switchTargetIndex = idx;
+  var item = document.querySelector('.module-item[data-index="' + idx + '"]');
+  if (!item) return;
+  var typeInput = item.querySelector('input[name$="_type"]');
+  var variantInput = item.querySelector('input[name$="_variant"]');
+  var currentType = typeInput ? typeInput.value : '';
+  var currentVariant = variantInput ? variantInput.value : 'default';
+
+  // 更新弹框标题
+  var title = document.querySelector('#blockPalettePageModal .modal-title');
+  if (title) title.textContent = '更换变体';
+
+  // 打开弹框（show.bs.modal 事件会自动调用 initBlockPalette + 预选逻辑）
+  var modal = new bootstrap.Modal(document.getElementById('blockPalettePageModal'));
+  modal.show();
+}
+
 function confirmAddModule() {
   if (!selectedBlockType || !selectedVariantKey) return;
-  addModule(selectedBlockType, selectedVariantKey);
+  // 切换模式：仅更新已有模块的 variant 字段，保留其他所有内容
+  if (switchTargetIndex !== null) {
+    var item = document.querySelector('.module-item[data-index="' + switchTargetIndex + '"]');
+    if (item) {
+      var variantInput = item.querySelector('input[name$="_variant"]');
+      if (variantInput) variantInput.value = selectedVariantKey || 'default';
+    }
+    switchTargetIndex = null;
+    // 恢复弹框标题
+    var title = document.querySelector('#blockPalettePageModal .modal-title');
+    if (title) title.textContent = '添加模块';
+  } else {
+    addModule(selectedBlockType, selectedVariantKey);
+  }
   // 关闭弹框
   var modal = bootstrap.Modal.getInstance(document.getElementById('blockPalettePageModal'));
   if (modal) modal.hide();
@@ -2076,6 +2162,7 @@ function addModule(type, variant) {
       '<div class="d-flex gap-1">' +
 	        '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)">↑</button>' +
 	        '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)">↓</button>' +
+	        '<button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch(' + idx + ')">⇄</button>' +
 	        '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();reindexModules()">✕</button>' +
 	      '</div>' +
     '</div>' +

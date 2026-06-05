@@ -197,7 +197,9 @@ HTML = rf'''<!DOCTYPE html>
             <span class="nav-badge">12</span>
           </a>
           <button class="left-nav-chevron-btn" type="button" onclick="toggleLeftSubmenu(this)" title="展开/折叠子菜单">
-            <span class="left-nav-chevron">▶</span>
+            <svg class="left-nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
           </button>
         </div>
         <div class="left-nav-submenu" style="display:none">
@@ -227,7 +229,9 @@ HTML = rf'''<!DOCTYPE html>
             <span class="nav-badge">8</span>
           </a>
           <button class="left-nav-chevron-btn" type="button" onclick="toggleLeftSubmenu(this)" title="展开/折叠子菜单">
-            <span class="left-nav-chevron">▶</span>
+            <svg class="left-nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
           </button>
         </div>
         <div class="left-nav-submenu" style="display:none">
@@ -569,7 +573,7 @@ function toggleLeftSubmenu(button) {{
   if (!submenu) return;
   var isOpen = submenu.style.display === 'block';
   submenu.style.display = isOpen ? 'none' : 'block';
-  if (chevron) chevron.textContent = isOpen ? '▶' : '▼';
+  if (chevron) chevron.classList.toggle('open', !isOpen);
 }}
 
 // ---- 预览标签栏 ----

@@ -205,21 +205,21 @@
         </button>
       </form>
 
-      <div class="admin-avatar" title="{{ user.email if user else '' }}">
+      <div class="admin-avatar" title="{{ user.email if user else '' }}" onclick="openAccountPanel()" style="cursor:pointer" role="button">
         {{ (user.email[:1].upper() if user else '?') }}
       </div>
     </div>
   </header>
 
   <div class="d-flex flex-grow-1 overflow-hidden position-relative">
-    <nav class="flex-shrink-0 overflow-auto" id="leftNav">
+    <nav class="flex-shrink-0 d-flex flex-column" id="leftNav">
       {# 站点信息区 #}
       <div class="left-nav-site-info px-3 py-2">
         <div class="site-label">我的网站</div>
         <div class="site-name">{{ site.name or site.slug if site else '未选择站点' }}</div>
       </div>
 
-      <div class="d-flex flex-column">
+      <div class="flex-grow-1 overflow-auto left-nav-menu">
         {# ---- 站点 ---- #}
         <div class="left-nav-section-title">站点</div>
         <a class="left-nav-item {% if active == 'templates' %}active{% endif %}"
@@ -249,7 +249,9 @@
               网站设置
             </span>
             <button class="left-nav-chevron-btn" type="button" onclick="toggleLeftSubmenu(this)" title="展开/折叠子菜单">
-              <span class="left-nav-chevron">▶</span>
+              <svg class="left-nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
             </button>
           </div>
           <div class="left-nav-submenu" style="display:none">
@@ -296,15 +298,7 @@
               </svg>
               SEO 优化
             </a>
-            <a class="left-nav-item {% if active == 'account' %}active{% endif %}" href="{{ url_for('core.account') }}"
-              data-panel="account" style="padding-left:32px" title="账号管理">
-              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-              账号管理
-            </a>
+
           </div>
         </div>
         <a class="left-nav-item {% if active == 'header' %}active{% endif %}" href="{{ url_for('core.header_edit') }}"
@@ -410,7 +404,9 @@
             </span>
             {% endif %}
             <button class="left-nav-chevron-btn" type="button" onclick="toggleLeftSubmenu(this)" title="展开/折叠子菜单">
-              <span class="left-nav-chevron">▶</span>
+              <svg class="left-nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
             </button>
           </div>
           <div class="left-nav-submenu" style="display:none">
@@ -579,7 +575,7 @@
     </div>
 
     {# 右栏：属性面板 #}
-    <aside class="right-panel bg-white border-start flex-shrink-0 d-flex flex-column" style="width:280px"
+    <aside class="right-panel bg-white border-start flex-shrink-0 d-flex flex-column" style="width:380px"
       id="rightPanel">
       <div class="right-panel-header d-flex align-items-center justify-content-between flex-shrink-0">
         <div class="d-flex align-items-center gap-2">
@@ -1092,6 +1088,13 @@
       return fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
         .then(html => {
           body.innerHTML = html;
+          // 提取片段中的标题（.fw-semibold）显示到右侧面板顶栏，然后清空原处
+          var titleEl = body.querySelector('.fw-semibold');
+          if (titleEl && titleEl.textContent.trim()) {
+            var rpt = document.getElementById('rightPanelTitle');
+            if (rpt) rpt.textContent = titleEl.textContent.trim();
+            titleEl.textContent = '';
+          }
           runPanelScripts(body);
           // 将保存按钮移到面板底部悬浮栏
           var saveBar = body.querySelector('.panel-save-bar');
@@ -1185,6 +1188,13 @@
         .then(r => r.text())
         .then(html => {
           body.innerHTML = html;
+          // 提取片段中的标题（.fw-semibold）显示到右侧面板顶栏，然后清空原处
+          var titleEl = body.querySelector('.fw-semibold');
+          if (titleEl && titleEl.textContent.trim()) {
+            var rpt = document.getElementById('rightPanelTitle');
+            if (rpt) rpt.textContent = titleEl.textContent.trim();
+            titleEl.textContent = '';
+          }
           runPanelScripts(body);
           var saveBar = body.querySelector('.panel-save-bar');
           if (saveBar && footer) {
@@ -1315,7 +1325,10 @@
       var tabName = activeTab ? activeTab.dataset.tab : 'content';
       var panel = item.querySelector('.panel-' + tabName);
       if (panel) panel.style.display = '';
-      item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // 滚动模块头部到可见位置，避免被面板顶栏遮挡
+      var header = item.querySelector('.module-header');
+      if (header) header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      else item.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function currentPanelPageKey() {
@@ -1368,6 +1381,16 @@
       }, true);
     }
 
+    function openAccountPanel() {
+      document.querySelectorAll('.left-nav-item').forEach(function(el) { el.classList.remove('active'); });
+      var params = new URLSearchParams(window.location.search);
+      var siteParam = params.get('site');
+      var langParam = params.get('lang');
+      var qs = siteParam ? '&site=' + siteParam : '';
+      if (langParam) qs += '&lang=' + encodeURIComponent(langParam);
+      loadPanel('{{ url_for("core.account") }}?_fragment=1' + qs);
+    }
+
     function toggleLeftSubmenu(button) {
       var group = button.closest('.left-nav-group');
       if (!group) return;
@@ -1376,7 +1399,7 @@
       if (!submenu) return;
       var isOpen = submenu.style.display === 'block';
       submenu.style.display = isOpen ? 'none' : 'block';
-      if (chevron) chevron.textContent = isOpen ? '▶' : '▼';
+      if (chevron) chevron.classList.toggle('open', !isOpen);
     }
 
     function openDatasetPanel(datasetKey) {

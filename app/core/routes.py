@@ -789,7 +789,7 @@ def page_home():
 
     return render_template('dashboard/panel_page_edit.html',
                            user=user, site=site, page=page,
-                           page_key='home',
+                           page_key='home', page_display_name='首页',
                            is_modules_format=is_modules_format,
                            blocks=blocks,
                            active='pages_home',
@@ -1716,6 +1716,19 @@ def page_panel(page_key):
     raw_menu = upgrade_old_format(menu_items, datasets_meta)
     normalized_menu = ensure_home(normalize_for_render(raw_menu))
 
+    # 从菜单中查找 page_key 对应的实际显示名（如 home → 首页）
+    def _find_page_label(items, target_key):
+        for item in (items or []):
+            # home 类型菜单项无 target 字段，通过 type == 'home' 匹配
+            if item.get('target') == target_key or (target_key == 'home' and item.get('type') == 'home'):
+                return item.get('label', target_key)
+            if item.get('children'):
+                found = _find_page_label(item['children'], target_key)
+                if found:
+                    return found
+        return None
+    page_display_name = _find_page_label(normalized_menu, page_key) or page_key
+
     def _collect_targets(items, result=None):
         if result is None:
             result = []
@@ -1738,8 +1751,8 @@ def page_panel(page_key):
         from .icon_registry import icon_names
         return _render('dashboard/panel_page_edit.html',
                        user=user, site=site,
-                       page_key=page_key, page=page,
-                       blocks=blocks, is_modules_format=is_modules_format,
+                       page_key=page_key, page_display_name=page_display_name,
+                       page=page, blocks=blocks, is_modules_format=is_modules_format,
                        is_list_page=is_list_page,
                        all_list_datasets=all_list_datasets,
                        style_registry=STYLE_REGISTRY,
@@ -1756,8 +1769,8 @@ def page_panel(page_key):
     from .icon_registry import icon_names
     return _render('dashboard/panel_page_edit.html',
                    user=user, site=site,
-                   page_key=page_key, page=new_page,
-                   blocks=blocks, is_modules_format=True,
+                   page_key=page_key, page_display_name=page_display_name,
+                   page=new_page, blocks=blocks, is_modules_format=True,
                    is_list_page=is_list_page,
                    all_list_datasets=all_list_datasets,
                    style_registry=STYLE_REGISTRY,
