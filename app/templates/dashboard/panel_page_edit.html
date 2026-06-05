@@ -42,39 +42,13 @@
 {% if is_modules_format %}
 {# ---- 添加模块按钮 ---- #}
 <div class="mb-3">
-  <button class="btn btn-outline-primary btn-sm w-100 panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPalettePageModal">
+  <button class="btn btn-outline-primary btn-sm w-100 panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal">
     + 添加模块
   </button>
 </div>
 
-{# ---- 可用模块弹框（左右分栏：左侧类型列表 + 右侧变体预览） ---- #}
-<div class="modal fade" id="blockPalettePageModal" tabindex="-1">
-  <div class="modal-dialog modal-xl">
-    <div class="modal-content">
-      <div class="modal-header py-2">
-        <h5 class="modal-title">添加模块</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body p-0">
-        <div class="block-modal-layout" id="blockModalLayout">
-          <!-- 左侧: 模块类型列表（JS 动态填充） -->
-          <div class="block-list-panel" id="blockListPanel"></div>
-          <!-- 右侧: 变体预览网格 -->
-          <div class="variant-preview-panel" id="variantPanel">
-            <div class="variant-empty-hint">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-              <span>从左侧选择一个模块类型</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer py-2">
-        <span class="text-muted me-auto" style="font-size:11px" id="variantConfirmHint"></span>
-        <button type="button" class="btn btn-primary btn-sm" id="confirmAddBtn" disabled onclick="confirmAddModule()">确认添加</button>
-      </div>
-    </div>
-  </div>
-</div>
+{# ---- 可用模块弹框（通用组件） ---- #}
+{% include 'dashboard/_block_palette.html' %}
 
 {# ---- 已选模块列表 ---- #}
 <div>
@@ -251,6 +225,7 @@
 <script type="application/json" id="iconListJson">{{ icon_list | default([]) | tojson }}</script>
 <script>
 var blockLibrary = JSON.parse(document.getElementById('blockLibraryJson').textContent || '[]');
+window.blockLibrary = blockLibrary;
 var datasetNames = JSON.parse(document.getElementById('datasetNamesJson').textContent || '[]');
 // data-* 样式注册表：token → {label, control, options}，供 schema 表单生成样式控件
 var styleRegistry = JSON.parse((document.getElementById('styleRegistryJson') || {}).textContent || '{}');
@@ -1015,106 +990,20 @@ function reindexStepItems(moduleIndex) {
   });
 })();
 
-/* ===== 添加模块弹框：左右分栏 + 变体预览 ===== */
-var selectedBlockType = null;
-var selectedVariantKey = null;
+/* ===== 模块确认回调（由 _block_palette.html 弹框调用） ===== */
 var switchTargetIndex = null;  // 换变体模式：非 null 表示正在为第几个模块换变体
 
-// 变体缩略图映射：根据 block type + variant key 生成迷你几何示意图
-function buildVariantThumb(blockType, variantKey) {
-  var builders = {
-    hero_banner: {
-      text_overlay: function(){ return '<div class="mini-hero-text-overlay"><div class="mini-title"></div><div class="mini-sub"></div><div class="mini-btn"></div></div>'; },
-      text_below_slide: function(){ return '<div class="mini-hero-text-below"><div class="mini-img"></div><div class="mini-caption"><div class="mini-line" style="width:60%;height:4px"></div><div class="mini-line" style="width:40%;height:3px"></div></div></div>'; },
-      fullscreen: function(){ return '<div class="mini-hero-fullscreen"><div class="mini-line" style="width:55%;height:7px"></div><div class="mini-line" style="width:35%;height:4px"></div><div class="mini-line" style="width:25%;height:5px;background:#0d9488;margin-top:4px"></div></div>'; },
-      split_media: function(){ return '<div class="mini-hero-split"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:60%;height:5px"></div><div class="mini-line" style="width:40%;height:3px"></div><div class="mini-line" style="width:30%;height:4px;background:#0d9488;margin-top:2px"></div></div></div>'; }
-    },
-    section_title: {
-      default: function(){ return '<div class="mini-section-title"><div class="mini-tag"></div><div class="mini-title-line"></div><div class="mini-desc"></div></div>'; }
-    },
-    text_content: {
-      default: function(){ return '<div class="mini-text-block"><div class="mini-w80"></div><div class="mini-w90"></div><div class="mini-w80"></div><div class="mini-w70"></div><div class="mini-w60"></div></div>'; },
-      narrow: function(){ return '<div class="mini-text-narrow"><div class="mini-w80"></div><div class="mini-w70"></div><div class="mini-w80"></div><div class="mini-w60"></div><div class="mini-w70"></div></div>'; }
-    },
-    highlight_card: {
-      media_left: function(){ return '<div class="mini-card-horizontal"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:80%;height:5px"></div><div class="mini-line" style="width:90%;height:3px"></div><div class="mini-line" style="width:70%;height:3px"></div></div></div>'; },
-      media_right: function(){ return '<div class="mini-card-flip"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:80%;height:5px"></div><div class="mini-line" style="width:90%;height:3px"></div><div class="mini-line" style="width:70%;height:3px"></div></div></div>'; },
-      stack: function(){ return '<div class="mini-card-stack"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:70%;height:4px"></div><div class="mini-line" style="width:90%;height:3px"></div></div></div>'; },
-      bento: function(){ return '<div class="mini-bento"><div class="mini-cell"></div><div class="mini-cell"></div><div class="mini-cell"></div><div class="mini-cell"></div></div>'; }
-    },
-    data_grid: {
-      grid_3: function(){ return '<div class="mini-grid"><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div></div>'; }
-    },
-    feature_grid: {
-      grid_3: function(){ return '<div class="mini-grid"><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div></div>'; },
-      grid_4: function(){ return '<div class="mini-grid"><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div></div>'; }
-    },
-    stat_counter: {
-      grid_3: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-stat"><div class="mini-num"></div><div class="mini-label"></div></div>'; return '<div class="mini-stat-grid">'+h+'</div>'; },
-      grid_4: function(){ var h=''; for(var i=0;i<4;i++) h+='<div class="mini-stat"><div class="mini-num"></div><div class="mini-label"></div></div>'; return '<div class="mini-stat-grid">'+h+'</div>'; },
-      grid_6: function(){ var h=''; for(var i=0;i<6;i++) h+='<div class="mini-stat"><div class="mini-num"></div><div class="mini-label"></div></div>'; return '<div class="mini-stat-grid">'+h+'</div>'; }
-    },
-    contact_info: {
-      cards: function(){ return '<div class="mini-grid"><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div></div>'; },
-      list: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-thumb"></div><div class="mini-line"></div></div>'; return '<div class="mini-list-v">'+h+'</div>'; }
-    },
-    process_steps: {
-      horizontal: function(){ var h=''; for(var i=0;i<4;i++) h+='<div class="mini-step"><div class="mini-dot"></div><div class="mini-line"></div></div>'; return '<div class="mini-steps-h">'+h+'</div>'; },
-      vertical: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-num"></div><div class="mini-line"></div></div>'; return '<div class="mini-steps-v">'+h+'</div>'; },
-      numbered: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-num"></div><div class="mini-line"></div></div>'; return '<div class="mini-steps-numbered">'+h+'</div>'; }
-    },
-    logo_cloud: {
-      grid_4: function(){ var h=''; for(var i=0;i<4;i++) h+='<div class="mini-logo"></div>'; return '<div class="mini-logo-grid">'+h+'</div>'; },
-      grid_5: function(){ var h=''; for(var i=0;i<5;i++) h+='<div class="mini-logo"></div>'; return '<div class="mini-logo-grid">'+h+'</div>'; },
-      grid_6: function(){ var h=''; for(var i=0;i<6;i++) h+='<div class="mini-logo"></div>'; return '<div class="mini-logo-grid">'+h+'</div>'; }
-    },
-    contact_form: {
-      default: function(){ return '<div class="mini-form"><div class="mini-field"></div><div class="mini-field"></div><div class="mini-field" style="height:10px"></div><div class="mini-btn"></div></div>'; },
-      compact: function(){ return '<div class="mini-form" style="padding:14px 30px"><div class="mini-field"></div><div class="mini-field"></div><div class="mini-btn"></div></div>'; }
-    }
-  };
-  var blockBuilders = builders[blockType];
-  if (blockBuilders && blockBuilders[variantKey]) return blockBuilders[variantKey]();
-  // 通用降级: 根据变体名中的关键词推断缩略图
-  if (/grid|网格|列/.test(variantKey)) {
-    var n = parseInt(variantKey.match(/\d+/)) || 3;
-    var cols = ''; for(var i=0;i<n;i++) cols += '<div class="mini-col"></div>';
-    return '<div class="mini-grid">'+cols+'</div>';
-  }
-  if (/list|列表/.test(variantKey)) {
-    var rows = ''; for(var i=0;i<3;i++) rows += '<div class="mini-row"><div class="mini-thumb"></div><div class="mini-line"></div></div>';
-    return '<div class="mini-list-v">'+rows+'</div>';
-  }
-  return '<div class="mini-section-title"><div class="mini-tag"></div><div class="mini-title-line"></div><div class="mini-desc"></div></div>';
-}
-
-// 构建弹框数据：从 blockLibrary 提取（排除内部 block）
-function buildPaletteData() {
-  return (blockLibrary || []).filter(function(b) {
-    return b.name !== 'product_grid' && b.name !== 'item_data';
-  }).map(function(b) {
-    return {
-      type: b.name,
-      name: b.display_name || b.name,
-      variants: (b.variants && b.variants.length) ? b.variants : [{key: 'default', label: '默认'}]
-    };
-  });
-}
-
-// 弹框打开时初始化
-var paletteModalEl = document.getElementById('blockPalettePageModal');
+// 弹框关闭时清理换变体状态
+var paletteModalEl = document.getElementById('blockPaletteModal');
 if (paletteModalEl) {
-  // 弹框关闭时清理换变体状态
   paletteModalEl.addEventListener('hidden.bs.modal', function() {
     if (switchTargetIndex !== null) {
       switchTargetIndex = null;
-      var t = document.querySelector('#blockPalettePageModal .modal-title');
+      var t = document.querySelector('#blockPaletteModal .modal-title');
       if (t) t.textContent = '添加模块';
     }
   });
   paletteModalEl.addEventListener('show.bs.modal', function() {
-    initBlockPalette();
-    resetConfirmBtn();
     // 换变体模式：预选当前模块的类型与变体
     if (switchTargetIndex !== null) {
       var item = document.querySelector('.module-item[data-index="' + switchTargetIndex + '"]');
@@ -1124,137 +1013,46 @@ if (paletteModalEl) {
         var curType = typeInput ? typeInput.value : '';
         var curVariant = variantInput ? variantInput.value : 'default';
         if (curType) {
-          selectBlockType(curType);
-          // 延迟选中变体卡片（等 selectBlockType 渲染完右侧面板）
           setTimeout(function() {
-            var cards = document.querySelectorAll('#variantPanel .variant-preview-card');
-            cards.forEach(function(c) {
-              if (c.dataset.blockType === curType && c.dataset.variant === curVariant) {
-                selectVariant(c, curType, curVariant);
-              }
-            });
-          }, 80);
+            if (typeof window._selectBlockType === 'function') window._selectBlockType(curType);
+            setTimeout(function() {
+              var cards = document.querySelectorAll('#variantPanel .variant-preview-card');
+              cards.forEach(function(c) {
+                if (c.dataset.blockType === curType && c.dataset.variant === curVariant) {
+                  if (typeof window._selectVariant === 'function') window._selectVariant(c, curType, curVariant);
+                }
+              });
+            }, 80);
+          }, 50);
         }
       }
     }
   });
 }
 
-function resetConfirmBtn() {
-  selectedBlockType = null;
-  selectedVariantKey = null;
-  var btn = document.getElementById('confirmAddBtn');
-  if (btn) btn.disabled = true;
-  var hint = document.getElementById('variantConfirmHint');
-  if (hint) hint.textContent = '';
-}
-
-function initBlockPalette() {
-  var listPanel = document.getElementById('blockListPanel');
-  if (!listPanel || listPanel.children.length > 0) return;
-  var paletteData = buildPaletteData();
-  var html = '';
-  paletteData.forEach(function(blk) {
-    var vcount = blk.variants.length;
-    html += '<div class="block-list-item" data-block-type="' + blk.type + '" onclick="selectBlockType(\'' + blk.type + '\')">';
-    html += '<div class="block-list-icon">' + getBlockIconHTML(blk.type) + '</div>';
-    html += '<div class="block-list-text"><div class="block-list-name">' + blk.name + '</div><div class="block-list-count">' + vcount + ' 种排版</div></div>';
-    html += '</div>';
-  });
-  listPanel.innerHTML = html;
-}
-
-function selectBlockType(blockType) {
-  selectedBlockType = blockType;
-  selectedVariantKey = null;
-  resetConfirmBtn();
-  selectedBlockType = blockType;
-
-  // 左侧列表 active 态
-  document.querySelectorAll('#blockListPanel .block-list-item').forEach(function(item) {
-    item.classList.toggle('active', item.dataset.blockType === blockType);
-  });
-
-  // 查找数据
-  var paletteData = buildPaletteData();
-  var blk = paletteData.find(function(b) { return b.type === blockType; });
-  if (!blk) return;
-
-  // 渲染右侧变体预览
-  var panel = document.getElementById('variantPanel');
-  var html = '<div class="variant-section-title">' + blk.name + ' — ' + blk.variants.length + ' 种排版变体</div>';
-  html += '<div class="variant-preview-grid">';
-  blk.variants.forEach(function(v) {
-    html += '<div class="variant-preview-card" data-block-type="' + blk.type + '" data-variant="' + v.key + '" onclick="selectVariant(this, \'' + blk.type + '\', \'' + v.key + '\')">';
-    html += '<div class="variant-preview-thumb">' + buildVariantThumb(blk.type, v.key) + '</div>';
-    html += '<div class="variant-preview-label">' + v.label + '</div>';
-    html += '</div>';
-  });
-  html += '</div>';
-  panel.innerHTML = html;
-}
-
-function selectVariant(card, blockType, variantKey) {
-  // 视觉选中态
-  document.querySelectorAll('#variantPanel .variant-preview-card').forEach(function(c) {
-    c.classList.remove('selected');
-  });
-  card.classList.add('selected');
-  selectedBlockType = blockType;
-  selectedVariantKey = variantKey;
-
-  // 启用确认按钮 + 显示提示文字
-  var paletteData = buildPaletteData();
-  var blk = paletteData.find(function(b) { return b.type === blockType; });
-  var vlabel = variantKey;
-  if (blk) {
-    var v = blk.variants.find(function(x) { return x.key === variantKey; });
-    if (v) vlabel = v.label;
-  }
-  var btn = document.getElementById('confirmAddBtn');
-  if (btn) btn.disabled = false;
-  var hint = document.getElementById('variantConfirmHint');
-  if (hint) hint.textContent = '已选: ' + (blk ? blk.name : blockType) + ' / ' + vlabel;
-}
-
-// 打开弹框为已有模块更换变体（保留已编辑内容，仅更新 variant 隐藏字段）
-function openVariantSwitch(idx) {
-  switchTargetIndex = idx;
-  var item = document.querySelector('.module-item[data-index="' + idx + '"]');
-  if (!item) return;
-  var typeInput = item.querySelector('input[name$="_type"]');
-  var variantInput = item.querySelector('input[name$="_variant"]');
-  var currentType = typeInput ? typeInput.value : '';
-  var currentVariant = variantInput ? variantInput.value : 'default';
-
-  // 更新弹框标题
-  var title = document.querySelector('#blockPalettePageModal .modal-title');
-  if (title) title.textContent = '更换变体';
-
-  // 打开弹框（show.bs.modal 事件会自动调用 initBlockPalette + 预选逻辑）
-  var modal = new bootstrap.Modal(document.getElementById('blockPalettePageModal'));
-  modal.show();
-}
-
-function confirmAddModule() {
-  if (!selectedBlockType || !selectedVariantKey) return;
-  // 切换模式：仅更新已有模块的 variant 字段，保留其他所有内容
+function onBlockPaletteConfirm(type, variant) {
   if (switchTargetIndex !== null) {
+    // 换变体模式：仅更新已有模块的 variant 字段
     var item = document.querySelector('.module-item[data-index="' + switchTargetIndex + '"]');
     if (item) {
       var variantInput = item.querySelector('input[name$="_variant"]');
-      if (variantInput) variantInput.value = selectedVariantKey || 'default';
+      if (variantInput) variantInput.value = variant || 'default';
     }
     switchTargetIndex = null;
-    // 恢复弹框标题
-    var title = document.querySelector('#blockPalettePageModal .modal-title');
-    if (title) title.textContent = '添加模块';
+    var t = document.querySelector('#blockPaletteModal .modal-title');
+    if (t) t.textContent = '添加模块';
   } else {
-    addModule(selectedBlockType, selectedVariantKey);
+    addModule(type, variant);
   }
-  // 关闭弹框
-  var modal = bootstrap.Modal.getInstance(document.getElementById('blockPalettePageModal'));
-  if (modal) modal.hide();
+}
+
+// 打开弹框为已有模块更换变体
+function openVariantSwitch(idx) {
+  switchTargetIndex = idx;
+  var title = document.querySelector('#blockPaletteModal .modal-title');
+  if (title) title.textContent = '更换变体';
+  var modal = new bootstrap.Modal(document.getElementById('blockPaletteModal'));
+  modal.show();
 }
 
 function switchContentStyleTab(btn, tabName) {

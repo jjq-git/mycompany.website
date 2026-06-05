@@ -1,0 +1,234 @@
+{# 通用模块选择弹框（左右分栏：左侧类型列表 + 右侧变体预览）
+   使用方式：
+   1. 引入前设置 blockLibrary JS 变量
+   2. 定义 onBlockPaletteConfirm(type, variant) 回调
+   3. {% include 'dashboard/_block_palette.html' %}
+   4. 按钮 data-bs-target="#blockPaletteModal" 触发 #}
+
+<div class="modal fade" id="blockPaletteModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h5 class="modal-title">添加模块</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="block-modal-layout">
+          <div class="block-list-panel" id="blockListPanel"></div>
+          <div class="variant-preview-panel" id="variantPanel">
+            <div class="variant-empty-hint">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <span>从左侧选择一个模块类型</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer py-2">
+        <span class="text-muted me-auto" style="font-size:11px" id="variantConfirmHint"></span>
+        <button type="button" class="btn btn-primary btn-sm" id="confirmAddBtn" disabled onclick="confirmBlockPaletteAdd()">确认添加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var selectedBlockType = null;
+  var selectedVariantKey = null;
+
+  // 模块图标映射
+  function getBlockIconHTML(type) {
+    var icons = {
+      'hero_banner': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>',
+      'section_title': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16"/><path d="M4 10h12"/><path d="M4 15h8"/><path d="M4 20h4"/></svg>',
+      'text_content': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
+      'highlight_card': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="8" height="16" rx="1"/><path d="M10 9h12v-2a1 1 0 0 0-1-1H10z"/><path d="M10 14h9"/><path d="M10 18h6"/></svg>',
+      'feature_grid': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
+      'data_grid': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>',
+      'stat_counter': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>',
+      'contact_info': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h4"/><circle cx="8.5" cy="8.5" r="0.5" fill="currentColor"/><circle cx="8.5" cy="12.5" r="0.5" fill="currentColor"/></svg>',
+      'contact_form': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h4"/><path d="M17 17l2 2"/><path d="M19 15a4 4 0 1 0-8 0"/></svg>',
+      'process_steps': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><path d="M8 12h1"/><path d="M15 12h1"/></svg>',
+      'logo_cloud': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>',
+      'item_detail': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><path d="M13 15h4"/><path d="M13 19h6"/></svg>'
+    };
+    return icons[type] || '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>';
+  }
+
+  // 变体缩略图
+  function buildVariantThumb(blockType, variantKey) {
+    var builders = {
+      hero_banner: {
+        text_overlay: function(){ return '<div class="mini-hero-text-overlay"><div class="mini-title"></div><div class="mini-sub"></div><div class="mini-btn"></div></div>'; },
+        text_below_slide: function(){ return '<div class="mini-hero-text-below"><div class="mini-img"></div><div class="mini-caption"><div class="mini-line" style="width:60%;height:4px"></div><div class="mini-line" style="width:40%;height:3px"></div></div></div>'; },
+        fullscreen: function(){ return '<div class="mini-hero-fullscreen"><div class="mini-line" style="width:55%;height:7px"></div><div class="mini-line" style="width:35%;height:4px"></div><div class="mini-line" style="width:25%;height:5px;background:#0d9488;margin-top:4px"></div></div>'; },
+        split_media: function(){ return '<div class="mini-hero-split"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:60%;height:5px"></div><div class="mini-line" style="width:40%;height:3px"></div><div class="mini-line" style="width:30%;height:4px;background:#0d9488;margin-top:2px"></div></div></div>'; }
+      },
+      section_title: {
+        default: function(){ return '<div class="mini-section-title"><div class="mini-tag"></div><div class="mini-title-line"></div><div class="mini-desc"></div></div>'; }
+      },
+      text_content: {
+        default: function(){ return '<div class="mini-text-block"><div class="mini-w80"></div><div class="mini-w90"></div><div class="mini-w80"></div><div class="mini-w70"></div><div class="mini-w60"></div></div>'; },
+        narrow: function(){ return '<div class="mini-text-narrow"><div class="mini-w80"></div><div class="mini-w70"></div><div class="mini-w80"></div><div class="mini-w60"></div><div class="mini-w70"></div></div>'; }
+      },
+      highlight_card: {
+        media_left: function(){ return '<div class="mini-card-horizontal"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:80%;height:5px"></div><div class="mini-line" style="width:90%;height:3px"></div><div class="mini-line" style="width:70%;height:3px"></div></div></div>'; },
+        media_right: function(){ return '<div class="mini-card-flip"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:80%;height:5px"></div><div class="mini-line" style="width:90%;height:3px"></div><div class="mini-line" style="width:70%;height:3px"></div></div></div>'; },
+        stack: function(){ return '<div class="mini-card-stack"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:70%;height:4px"></div><div class="mini-line" style="width:90%;height:3px"></div></div></div>'; },
+        bento: function(){ return '<div class="mini-bento"><div class="mini-cell"></div><div class="mini-cell"></div><div class="mini-cell"></div><div class="mini-cell"></div></div>'; }
+      },
+      data_grid: {
+        grid_3: function(){ return '<div class="mini-grid"><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div></div>'; }
+      },
+      feature_grid: {
+        grid_3: function(){ return '<div class="mini-grid"><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div></div>'; },
+        grid_4: function(){ return '<div class="mini-grid"><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div></div>'; }
+      },
+      stat_counter: {
+        grid_3: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-stat"><div class="mini-num"></div><div class="mini-label"></div></div>'; return '<div class="mini-stat-grid">'+h+'</div>'; },
+        grid_4: function(){ var h=''; for(var i=0;i<4;i++) h+='<div class="mini-stat"><div class="mini-num"></div><div class="mini-label"></div></div>'; return '<div class="mini-stat-grid">'+h+'</div>'; },
+        grid_6: function(){ var h=''; for(var i=0;i<6;i++) h+='<div class="mini-stat"><div class="mini-num"></div><div class="mini-label"></div></div>'; return '<div class="mini-stat-grid">'+h+'</div>'; }
+      },
+      contact_info: {
+        cards: function(){ return '<div class="mini-grid"><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div></div>'; },
+        list: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-thumb"></div><div class="mini-line"></div></div>'; return '<div class="mini-list-v">'+h+'</div>'; }
+      },
+      process_steps: {
+        horizontal: function(){ var h=''; for(var i=0;i<4;i++) h+='<div class="mini-step"><div class="mini-dot"></div><div class="mini-line"></div></div>'; return '<div class="mini-steps-h">'+h+'</div>'; },
+        vertical: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-num"></div><div class="mini-line"></div></div>'; return '<div class="mini-steps-v">'+h+'</div>'; },
+        numbered: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-num"></div><div class="mini-line"></div></div>'; return '<div class="mini-steps-numbered">'+h+'</div>'; }
+      },
+      logo_cloud: {
+        grid_4: function(){ var h=''; for(var i=0;i<4;i++) h+='<div class="mini-logo"></div>'; return '<div class="mini-logo-grid">'+h+'</div>'; },
+        grid_5: function(){ var h=''; for(var i=0;i<5;i++) h+='<div class="mini-logo"></div>'; return '<div class="mini-logo-grid">'+h+'</div>'; },
+        grid_6: function(){ var h=''; for(var i=0;i<6;i++) h+='<div class="mini-logo"></div>'; return '<div class="mini-logo-grid">'+h+'</div>'; }
+      },
+      contact_form: {
+        default: function(){ return '<div class="mini-form"><div class="mini-field"></div><div class="mini-field"></div><div class="mini-field" style="height:10px"></div><div class="mini-btn"></div></div>'; },
+        compact: function(){ return '<div class="mini-form" style="padding:14px 30px"><div class="mini-field"></div><div class="mini-field"></div><div class="mini-btn"></div></div>'; }
+      }
+    };
+    var blockBuilders = builders[blockType];
+    if (blockBuilders && blockBuilders[variantKey]) return blockBuilders[variantKey]();
+    if (/grid|网格|列/.test(variantKey)) {
+      var n = parseInt(variantKey.match(/\d+/)) || 3;
+      var cols = ''; for(var i=0;i<n;i++) cols += '<div class="mini-col"></div>';
+      return '<div class="mini-grid">'+cols+'</div>';
+    }
+    if (/list|列表/.test(variantKey)) {
+      var rows = ''; for(var i=0;i<3;i++) rows += '<div class="mini-row"><div class="mini-thumb"></div><div class="mini-line"></div></div>';
+      return '<div class="mini-list-v">'+rows+'</div>';
+    }
+    return '<div class="mini-section-title"><div class="mini-tag"></div><div class="mini-title-line"></div><div class="mini-desc"></div></div>';
+  }
+
+  function buildPaletteData() {
+    return (window.blockLibrary || []).filter(function(b) {
+      return b.name !== 'product_grid' && b.name !== 'item_data';
+    }).map(function(b) {
+      return {
+        type: b.name,
+        name: b.display_name || b.name,
+        variants: (b.variants && b.variants.length) ? b.variants : [{key: 'default', label: '默认'}]
+      };
+    });
+  }
+
+  function resetConfirmBtn() {
+    selectedBlockType = null;
+    selectedVariantKey = null;
+    var btn = document.getElementById('confirmAddBtn');
+    if (btn) btn.disabled = true;
+    var hint = document.getElementById('variantConfirmHint');
+    if (hint) hint.textContent = '';
+  }
+
+  function initBlockPalette() {
+    var listPanel = document.getElementById('blockListPanel');
+    if (!listPanel || listPanel.children.length > 0) return;
+    var paletteData = buildPaletteData();
+    var html = '<div class="block-list-header">共 ' + paletteData.length + ' 个模块类型</div>';
+    paletteData.forEach(function(blk) {
+      var vcount = blk.variants.length;
+      html += '<div class="block-list-item" data-block-type="' + blk.type + '" onclick="window._selectBlockType(\'' + blk.type + '\')">';
+      html += '<div class="block-list-icon">' + getBlockIconHTML(blk.type) + '</div>';
+      html += '<div class="block-list-text"><div class="block-list-name">' + blk.name + '</div><div class="block-list-count">' + vcount + ' 种排版</div></div>';
+      html += '</div>';
+    });
+    listPanel.innerHTML = html;
+  }
+
+  window._selectBlockType = function(blockType) {
+    selectedBlockType = blockType;
+    selectedVariantKey = null;
+    resetConfirmBtn();
+    selectedBlockType = blockType;
+
+    document.querySelectorAll('#blockListPanel .block-list-item').forEach(function(item) {
+      item.classList.toggle('active', item.dataset.blockType === blockType);
+    });
+
+    var paletteData = buildPaletteData();
+    var blk = paletteData.find(function(b) { return b.type === blockType; });
+    if (!blk) return;
+
+    var panel = document.getElementById('variantPanel');
+    var html = '<div class="variant-section-title">' + blk.name + ' — ' + blk.variants.length + ' 种排版变体</div>';
+    html += '<div class="variant-preview-grid">';
+    blk.variants.forEach(function(v) {
+      html += '<div class="variant-preview-card" data-block-type="' + blk.type + '" data-variant="' + v.key + '" onclick="window._selectVariant(this, \'' + blk.type + '\', \'' + v.key + '\')">';
+      html += '<div class="variant-preview-thumb">' + buildVariantThumb(blk.type, v.key) + '</div>';
+      html += '<div class="variant-preview-label">' + v.label + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    panel.innerHTML = html;
+  };
+
+  window._selectVariant = function(card, blockType, variantKey) {
+    document.querySelectorAll('#variantPanel .variant-preview-card').forEach(function(c) {
+      c.classList.remove('selected');
+    });
+    card.classList.add('selected');
+    selectedBlockType = blockType;
+    selectedVariantKey = variantKey;
+
+    var paletteData = buildPaletteData();
+    var blk = paletteData.find(function(b) { return b.type === blockType; });
+    var vlabel = variantKey;
+    if (blk) {
+      var v = blk.variants.find(function(x) { return x.key === variantKey; });
+      if (v) vlabel = v.label;
+    }
+    var btn = document.getElementById('confirmAddBtn');
+    if (btn) btn.disabled = false;
+    var hint = document.getElementById('variantConfirmHint');
+    if (hint) hint.textContent = '已选: ' + (blk ? blk.name : blockType) + ' / ' + vlabel;
+  };
+
+  // 确认添加 → 调页面定义的 onBlockPaletteConfirm 回调
+  window.confirmBlockPaletteAdd = function() {
+    if (!selectedBlockType || !selectedVariantKey) return;
+    var type = selectedBlockType;
+    var variant = selectedVariantKey;
+    // 关闭弹框
+    var modalEl = document.getElementById('blockPaletteModal');
+    if (modalEl) {
+      var modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
+    }
+    if (typeof onBlockPaletteConfirm === 'function') {
+      onBlockPaletteConfirm(type, variant);
+    }
+  };
+
+  // 弹框事件
+  var paletteModalEl = document.getElementById('blockPaletteModal');
+  if (paletteModalEl) {
+    paletteModalEl.addEventListener('show.bs.modal', function() {
+      resetConfirmBtn();
+      initBlockPalette();
+    });
+  }
+})();
+</script>

@@ -20,38 +20,8 @@
   </button>
 </div>
 
-{# ---- 可用模块弹框 ---- #}
-<div class="modal fade" id="blockPaletteModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">可用模块</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="row g-3">
-          {% for blk in blocks %}
-          <div class="col-6">
-            <div class="block-palette-card card p-3"
-                 data-block-name="{{ blk.name }}"
-                 data-block-variant="{{ blk.variants[0].key if blk.variants else 'default' }}">
-              <div class="d-flex align-items-start gap-3">
-                <div class="block-palette-icon flex-shrink-0">
-                  {{ block_icon(blk.name) }}
-                </div>
-                <div class="min-w-0">
-                  <div class="fw-semibold small mb-1">{{ blk.display_name }}</div>
-                  <div class="text-muted" style="font-size:11px;line-height:1.4">{{ blk.description }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+{# ---- 可用模块弹框（通用组件） ---- #}
+{% include 'dashboard/_block_palette.html' %}
 
 {# ---- 已选模块列表 ---- #}
 <div>
@@ -292,6 +262,13 @@
 </div>
 
 <script>
+window.blockLibrary = {{ blocks | tojson }};
+
+// 模块选择回调
+function onBlockPaletteConfirm(type, variant) {
+  addModule(type, variant || 'default');
+}
+
 // 展开第一个模块
 (function(){
   var items = document.querySelectorAll('.module-item');
@@ -303,14 +280,6 @@
       if (cfg) cfg.style.display = item.classList.contains('expanded') ? 'block' : 'none';
     });
     if (cfg && item.classList.contains('expanded')) cfg.style.display = 'block';
-  });
-  document.querySelectorAll('.block-palette-card[data-block-name]').forEach(function(card){
-    card.addEventListener('click', function(){
-      addModule(card.dataset.blockName, card.dataset.blockVariant || 'default');
-      // 关闭弹框
-      var modalEl = document.getElementById('blockPaletteModal');
-      if (modalEl) { var modal = bootstrap.Modal.getInstance(modalEl); if (modal) modal.hide(); }
-    });
   });
   document.querySelectorAll('.remove-module-btn').forEach(function(btn){
     btn.addEventListener('click', function(event){

@@ -49,43 +49,13 @@
 
 {# ---- 添加模块按钮 ---- #}
 <div class="mb-3">
-  <button class="btn btn-outline-primary btn-sm w-100 panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteDsModal">
+  <button class="btn btn-outline-primary btn-sm w-100 panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal">
     + 添加模块
   </button>
 </div>
 
-{# ---- 可用模块弹框 ---- #}
-<div class="modal fade" id="blockPaletteDsModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">可用模块</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="row g-3">
-          {% for blk in blocks %}
-          <div class="col-6">
-            <div class="block-palette-card card p-3"
-                 data-block-name="{{ blk.name }}"
-                 data-block-variant="{{ blk.variants[0].key if blk.variants else 'default' }}">
-              <div class="d-flex align-items-start gap-3">
-                <div class="block-palette-icon flex-shrink-0">
-                  {{ block_icon(blk.name) }}
-                </div>
-                <div class="min-w-0">
-                  <div class="fw-semibold small mb-1">{{ blk.display_name }}</div>
-                  <div class="text-muted" style="font-size:11px;line-height:1.4">{{ blk.description }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+{# ---- 可用模块弹框（通用组件） ---- #}
+{% include 'dashboard/_block_palette.html' %}
 
 {# ---- 已选模块列表 ---- #}
 <form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" data-page-key="{{ dataset_key }}" enctype="multipart/form-data">
@@ -114,6 +84,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   var DATASET_KEY = '{{ dataset_key }}';
   var SITE_ID = '{{ site.id }}';
   var blockLibrary = JSON.parse(document.getElementById('blockLibraryDsJson').textContent || '[]');
+  window.blockLibrary = blockLibrary;
   var styleRegistry = JSON.parse((document.getElementById('styleRegistryDsJson') || {}).textContent || '{}');
 
   // ===== 设置共享模块上下文 =====
@@ -296,16 +267,10 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     reindexModulesDs();
   };
 
-  // 弹框关闭
-  function closeDsBlockPalette() {
-    var modalEl = document.getElementById('blockPaletteDsModal');
-    if (modalEl) { var modal = bootstrap.Modal.getInstance(modalEl); if (modal) modal.hide(); }
-  }
-
-  // ===== 事件绑定 =====
-  document.querySelectorAll('.block-palette-card').forEach(function(card) {
-    card.addEventListener('click', function() { window.addModuleDs(card.dataset.blockName, card.dataset.blockVariant); closeDsBlockPalette(); });
-  });
+  // ===== 模块选择回调 =====
+  window.onBlockPaletteConfirm = function(type, variant) {
+    window.addModuleDs(type, variant || 'default');
+  };
 
   // ===== 恢复已保存的模块 =====
   (function(){
