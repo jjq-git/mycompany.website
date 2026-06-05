@@ -49,7 +49,7 @@
 
 {# ---- 添加模块按钮 ---- #}
 <div class="mb-3">
-  <button class="btn btn-outline-primary btn-sm w-100" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteDsModal">
+  <button class="btn btn-outline-primary btn-sm w-100 panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteDsModal">
     + 添加模块
   </button>
 </div>
@@ -105,6 +105,7 @@
 {# JS: 模块选择器交互 #}
 <script src="/static/js/admin_modules.js?v=3"></script>
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
+<script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
 <script>
 window._dsEditItemJson = {{ edit_item | tojson }};
 </script>
@@ -113,12 +114,14 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   var DATASET_KEY = '{{ dataset_key }}';
   var SITE_ID = '{{ site.id }}';
   var blockLibrary = JSON.parse(document.getElementById('blockLibraryDsJson').textContent || '[]');
+  var styleRegistry = JSON.parse((document.getElementById('styleRegistryDsJson') || {}).textContent || '{}');
 
   // ===== 设置共享模块上下文 =====
   window._moduleCtx = {
     blockLibrary: blockLibrary,
     datasetNames: [],
     editItem: window._dsEditItemJson,
+    styleRegistry: styleRegistry,
     isDatasetMode: true,
     containerId: 'selectedModulesDs'
   };

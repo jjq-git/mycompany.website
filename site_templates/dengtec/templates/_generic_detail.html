@@ -11,99 +11,18 @@
   <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="btn btn-ghost" style="margin: var(--spacing-md) 0;">← {{ t.project.backToList | default('返回列表') }}</a>
 </div>
 
-{# 模块驱动的详情渲染：遍历 modules，item_data 渲染详情内容 #}
+{# 模块驱动的详情渲染：所有详情模块统一交给 render_block 处理。 #}
 {% set modules = item.modules or [] %}
 {% if modules %}
   {% for module in modules %}
-    {% if module.type == 'item_data' %}
-      {# 渲染详情内容（替代硬编码的 <section>） #}
-      {% set section_bg = item.section_bg or '' %}
-      {% set outer_w = item.outer_width or settings.get('layout', {}).get('global_width', '') or '' %}
-      {% set inner_w = item.inner_width or '' %}
-      <section class="section builder-module" data-builder-module-index="{{ loop.index0 }}" style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}">
-        <div class="container"{% if inner_w %} style="max-width: {{ inner_w }}; margin: 0 auto;"{% endif %}>
-          <article style="margin: 0 auto;">
-            {% set t_color = item.title_color or '' %}
-            {% set t_size = item.title_size or '' %}
-            <h1 style="{% if t_color %}color: {{ t_color }};{% endif %}{% if t_size %}font-size: {{ t_size }};{% endif %} margin-bottom: var(--spacing-sm);">{{ item.title | default(item.name) }}</h1>
-            <div class="text-secondary" style="margin-bottom: var(--spacing-lg);">{{ item.date or '' }}</div>
-
-            {% if item.tags %}
-            {% set tag_color = item.tag_color or '' %}
-            {% set tag_size = item.tag_size or '' %}
-            {% set tag_bg = item.tag_bg or '' %}
-            {% set tag_radius = item.tag_radius or '' %}
-            <div class="filter-options" style="margin-bottom: var(--spacing-xl);">
-              {% for tag in (item.tags if item.tags is iterable and item.tags is not string else item.tags.split(',')) %}
-              <span class="badge badge-primary" style="{% if tag_color %}color: {{ tag_color }};{% endif %}{% if tag_size %}font-size: {{ tag_size }};{% endif %}{% if tag_bg %}background-color: {{ tag_bg }};{% endif %}{% if tag_radius %}border-radius: {{ tag_radius }};{% endif %}">{{ tag | trim }}</span>
-              {% endfor %}
-            </div>
-            {% endif %}
-
-            {% set d_color = item.desc_color or '' %}
-            {% set d_size = item.desc_size or '' %}
-            {% if item.description or item.summary or item.excerpt %}
-            <p style="{% if d_color %}color: {{ d_color }};{% endif %}{% if d_size %}font-size: {{ d_size }};{% endif %} margin-bottom: var(--spacing-xl); line-height: 1.7;">
-              {{ item.description or item.summary or item.excerpt }}
-            </p>
-            {% endif %}
-
-            {% if item.body or item.content %}
-            <div style="line-height: 1.8; font-size: var(--font-size-md); white-space: pre-line;">
-              {{ item.body or item.content }}
-            </div>
-            {% endif %}
-          </article>
-        </div>
-      </section>
-    {% else %}
-      <div class="builder-module" data-builder-module-index="{{ loop.index0 }}">
-        {% set blk_tpl = 'blocks/' + module.type + '/template.html' %}
-        {% include blk_tpl ignore missing %}
-      </div>
-    {% endif %}
+    <div class="builder-module" data-builder-module-index="{{ loop.index0 }}">
+      {{- render_block(module) }}
+    </div>
   {% endfor %}
 {% else %}
-  {# 无 modules 数组：使用旧格式直接渲染详情内容 #}
-  {% set section_bg = item.section_bg or '' %}
-  {% set outer_w = item.outer_width or settings.get('layout', {}).get('global_width', '') or '' %}
-  {% set inner_w = item.inner_width or '' %}
-  <section class="section" style="{% if outer_w %}max-width: {{ outer_w }}; margin-left: auto; margin-right: auto;{% endif %}{% if section_bg %}background: {{ section_bg }};{% endif %}">
-    <div class="container"{% if inner_w %} style="max-width: {{ inner_w }}; margin: 0 auto;"{% endif %}>
-      <article style="margin: 0 auto;">
-        {% set t_color = item.title_color or '' %}
-        {% set t_size = item.title_size or '' %}
-        <h1 style="{% if t_color %}color: {{ t_color }};{% endif %}{% if t_size %}font-size: {{ t_size }};{% endif %} margin-bottom: var(--spacing-sm);">{{ item.title | default(item.name) }}</h1>
-        <div class="text-secondary" style="margin-bottom: var(--spacing-lg);">{{ item.date or '' }}</div>
-
-        {% if item.tags %}
-        {% set tag_color = item.tag_color or '' %}
-        {% set tag_size = item.tag_size or '' %}
-        {% set tag_bg = item.tag_bg or '' %}
-        {% set tag_radius = item.tag_radius or '' %}
-        <div class="filter-options" style="margin-bottom: var(--spacing-xl);">
-          {% for tag in (item.tags if item.tags is iterable and item.tags is not string else item.tags.split(',')) %}
-          <span class="badge badge-primary" style="{% if tag_color %}color: {{ tag_color }};{% endif %}{% if tag_size %}font-size: {{ tag_size }};{% endif %}{% if tag_bg %}background-color: {{ tag_bg }};{% endif %}{% if tag_radius %}border-radius: {{ tag_radius }};{% endif %}">{{ tag | trim }}</span>
-          {% endfor %}
-        </div>
-        {% endif %}
-
-        {% set d_color = item.desc_color or '' %}
-        {% set d_size = item.desc_size or '' %}
-        {% if item.description or item.summary or item.excerpt %}
-        <p style="{% if d_color %}color: {{ d_color }};{% endif %}{% if d_size %}font-size: {{ d_size }};{% endif %} margin-bottom: var(--spacing-xl); line-height: 1.7;">
-          {{ item.description or item.summary or item.excerpt }}
-        </p>
-        {% endif %}
-
-        {% if item.body or item.content %}
-        <div style="line-height: 1.8; font-size: var(--font-size-md); white-space: pre-line;">
-          {{ item.body or item.content }}
-        </div>
-        {% endif %}
-      </article>
-    </div>
-  </section>
+  <div class="builder-module" data-builder-module-index="0">
+    {{- render_block({'type': 'item_data', 'variant': 'default', 'data': {}}) }}
+  </div>
 {% endif %}
 
 {% endblock %}

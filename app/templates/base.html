@@ -6,7 +6,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{% block title %}{{ site.slug if site else '' }}{% endblock %} — {{ platform_domain }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260519">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260605">
   <style>
     :root {
       --bs-primary: {{ admin_primary }};
@@ -19,36 +19,46 @@
       --bs-link-color-rgb: {{ admin_primary_rgb }};
       --bs-link-hover-color: {{ admin_primary_hover }};
       --bs-link-hover-color-rgb: {{ admin_primary_rgb }};
+      --theme-primary: {{ admin_primary }};
+      --theme-primary-hover: {{ admin_primary_hover }};
+      --theme-primary-active: {{ admin_primary_active }};
+      --theme-primary-rgb: {{ admin_primary_rgb }};
+      --theme-btn-bg: {{ admin_primary }};
+      --theme-btn-border-color: {{ admin_primary }};
+      --theme-btn-hover-bg: {{ admin_primary_hover }};
+      --theme-btn-hover-border-color: {{ admin_primary_hover }};
+      --theme-btn-active-bg: {{ admin_primary_active }};
+      --theme-btn-active-border-color: {{ admin_primary_active }};
     }
     .btn-primary {
-      --bs-btn-bg: {{ admin_primary }};
-      --bs-btn-border-color: {{ admin_primary }};
-      --bs-btn-hover-bg: {{ admin_primary_hover }};
-      --bs-btn-hover-border-color: {{ admin_primary_hover }};
-      --bs-btn-active-bg: {{ admin_primary_active }};
-      --bs-btn-active-border-color: {{ admin_primary_active }};
-      --bs-btn-disabled-bg: {{ admin_primary }};
-      --bs-btn-disabled-border-color: {{ admin_primary }};
+      --bs-btn-bg: var(--theme-btn-bg);
+      --bs-btn-border-color: var(--theme-btn-border-color);
+      --bs-btn-hover-bg: var(--theme-btn-hover-bg);
+      --bs-btn-hover-border-color: var(--theme-btn-hover-border-color);
+      --bs-btn-active-bg: var(--theme-btn-active-bg);
+      --bs-btn-active-border-color: var(--theme-btn-active-border-color);
+      --bs-btn-disabled-bg: var(--theme-btn-bg);
+      --bs-btn-disabled-border-color: var(--theme-btn-border-color);
     }
     .btn-outline-primary {
-      --bs-btn-color: {{ admin_primary }};
-      --bs-btn-border-color: {{ admin_primary }};
-      --bs-btn-hover-bg: {{ admin_primary }};
-      --bs-btn-hover-border-color: {{ admin_primary }};
-      --bs-btn-active-bg: {{ admin_primary_hover }};
-      --bs-btn-active-border-color: {{ admin_primary_hover }};
-      --bs-btn-disabled-color: {{ admin_primary }};
-      --bs-btn-disabled-border-color: {{ admin_primary }};
+      --bs-btn-color: var(--theme-btn-bg);
+      --bs-btn-border-color: var(--theme-btn-border-color);
+      --bs-btn-hover-bg: var(--theme-btn-bg);
+      --bs-btn-hover-border-color: var(--theme-btn-border-color);
+      --bs-btn-active-bg: var(--theme-btn-active-bg);
+      --bs-btn-active-border-color: var(--theme-btn-active-border-color);
+      --bs-btn-disabled-color: var(--theme-btn-bg);
+      --bs-btn-disabled-border-color: var(--theme-btn-border-color);
     }
     .bg-primary {
       --bs-bg-opacity: 1;
       background-color: rgba(var(--bs-primary-rgb), var(--bs-bg-opacity)) !important;
     }
-    .text-primary { color: {{ admin_primary }} !important; }
-    .border-primary { border-color: {{ admin_primary }} !important; }
+    .text-primary { color: var(--bs-primary) !important; }
+    .border-primary { border-color: var(--bs-primary) !important; }
     .text-bg-primary {
       color: #fff !important;
-      background-color: {{ admin_primary }} !important;
+      background-color: var(--bs-primary) !important;
     }
   </style>
 </head>
@@ -60,7 +70,7 @@
     <a href="{{ url_for('core.overview') }}" class="d-flex align-items-center gap-2 text-decoration-none">
       {# 内联 SVG logo — 不依赖外部文件，确保始终显示 #}
       <svg class="admin-logo" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="28" height="28" rx="6" fill="#067a7a"/>
+        <rect width="28" height="28" rx="6" fill="var(--bs-primary)"/>
         <rect x="5" y="7" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95"/>
         <rect x="16" y="7" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95"/>
         <rect x="5" y="16" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95"/>
@@ -88,6 +98,32 @@
     </a>
 
     <div class="flex-grow-1"></div>
+
+    <div class="nav-mode-swatches" aria-label="侧栏颜色">
+      <button class="nav-mode-swatch active" data-mode="dark" type="button" title="深色侧栏" onclick="setNavTheme('dark')" style="background:var(--theme-primary)"></button>
+      <button class="nav-mode-swatch" data-mode="light" type="button" title="浅色侧栏" onclick="setNavTheme('light')" style="background:#f8fafc;border:1px solid #d1d5db"></button>
+      <button class="nav-mode-swatch" data-mode="white" type="button" title="白色侧栏" onclick="setNavTheme('white')" style="background:#ffffff;border:1px solid #d1d5db"></button>
+    </div>
+
+    <div class="theme-swatches" id="themeSwatches" aria-label="主题色">
+      <button class="theme-swatch" data-color="#263544" type="button" style="background:#263544" title="深灰蓝" onclick="setThemeColor('#263544')"></button>
+      <button class="theme-swatch" data-color="#2563eb" type="button" style="background:#2563eb" title="经典蓝" onclick="setThemeColor('#2563eb')"></button>
+      <button class="theme-swatch" data-color="#4f46e5" type="button" style="background:#4f46e5" title="靛蓝" onclick="setThemeColor('#4f46e5')"></button>
+      <button class="theme-swatch" data-color="#0d9488" type="button" style="background:#0d9488" title="青绿" onclick="setThemeColor('#0d9488')"></button>
+      <button class="theme-swatch" data-color="#0284c7" type="button" style="background:#0284c7" title="天蓝" onclick="setThemeColor('#0284c7')"></button>
+      <button class="theme-swatch" data-color="#7c3aed" type="button" style="background:#7c3aed" title="紫罗兰" onclick="setThemeColor('#7c3aed')"></button>
+      <button class="theme-swatch" data-color="#059669" type="button" style="background:#059669" title="翠绿" onclick="setThemeColor('#059669')"></button>
+      <button class="theme-swatch" data-color="#dc2626" type="button" style="background:#dc2626" title="赤红" onclick="setThemeColor('#dc2626')"></button>
+      <button class="theme-swatch" data-color="#d97706" type="button" style="background:#d97706" title="琥珀" onclick="setThemeColor('#d97706')"></button>
+      <button class="theme-swatch" data-color="#6366f1" type="button" style="background:#6366f1" title="柔靛" onclick="setThemeColor('#6366f1')"></button>
+      <label class="theme-custom-btn" title="自定义颜色">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 2a10 10 0 0 0 0 20"/>
+        </svg>
+        <input type="color" class="theme-color-input" value="{{ admin_primary }}" onchange="setThemeColor(this.value)">
+      </label>
+    </div>
 
     {% if site %}
     <a class="header-btn" href="{{ url_for('core.preview_site', site_id=site.id) }}" target="_blank" title="在新窗口中打开站点预览">
@@ -352,7 +388,7 @@
   </div>
 
   {# 右栏：属性面板 #}
-  <aside class="right-panel bg-white border-start flex-shrink-0 d-flex flex-column" style="width:380px" id="rightPanel">
+  <aside class="right-panel bg-white border-start flex-shrink-0 d-flex flex-column" style="width:280px" id="rightPanel">
     <div class="right-panel-header d-flex align-items-center justify-content-between flex-shrink-0">
       <div class="d-flex align-items-center gap-2">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -443,6 +479,90 @@
     return origFetch.call(this, input, init);
   };
 })();
+
+function normalizeThemeHex(value) {
+  var hex = String(value || '').trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(hex)) return hex.toLowerCase();
+  if (/^#[0-9a-fA-F]{3}$/.test(hex)) {
+    return ('#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3]).toLowerCase();
+  }
+  return '{{ admin_primary }}'.toLowerCase();
+}
+
+function setThemeColor(hex, options) {
+  options = options || {};
+  hex = normalizeThemeHex(hex);
+  var r = parseInt(hex.slice(1, 3), 16);
+  var g = parseInt(hex.slice(3, 5), 16);
+  var b = parseInt(hex.slice(5, 7), 16);
+  var toHex = function(v) { return ('0' + Math.max(0, Math.min(255, v)).toString(16)).slice(-2); };
+  var hover = '#' + toHex(Math.round(r * 0.9)) + toHex(Math.round(g * 0.9)) + toHex(Math.round(b * 0.9));
+  var active = '#' + toHex(Math.round(r * 0.8)) + toHex(Math.round(g * 0.8)) + toHex(Math.round(b * 0.8));
+  var textEmphasis = '#' + toHex(Math.round(r * 0.85)) + toHex(Math.round(g * 0.85)) + toHex(Math.round(b * 0.85));
+  var rgb = r + ', ' + g + ', ' + b;
+  var root = document.documentElement;
+
+  root.style.setProperty('--theme-primary', hex);
+  root.style.setProperty('--theme-primary-hover', textEmphasis);
+  root.style.setProperty('--theme-primary-active', active);
+  root.style.setProperty('--theme-primary-rgb', rgb);
+  root.style.setProperty('--theme-btn-bg', hex);
+  root.style.setProperty('--theme-btn-border-color', hex);
+  root.style.setProperty('--theme-btn-hover-bg', hover);
+  root.style.setProperty('--theme-btn-hover-border-color', hover);
+  root.style.setProperty('--theme-btn-active-bg', active);
+  root.style.setProperty('--theme-btn-active-border-color', active);
+  root.style.setProperty('--bs-primary', hex);
+  root.style.setProperty('--bs-primary-rgb', rgb);
+  root.style.setProperty('--bs-primary-bg', hex);
+  root.style.setProperty('--bs-primary-text-emphasis', textEmphasis);
+  root.style.setProperty('--bs-link-color', hex);
+  root.style.setProperty('--bs-link-color-rgb', rgb);
+  root.style.setProperty('--bs-link-hover-color', textEmphasis);
+  root.style.setProperty('--bs-link-hover-color-rgb', rgb);
+
+  document.querySelectorAll('.theme-swatch').forEach(function(sw) {
+    sw.classList.toggle('active', normalizeThemeHex(sw.dataset.color) === hex);
+  });
+  document.querySelectorAll('.theme-color-input').forEach(function(input) {
+    input.value = hex;
+  });
+  document.querySelectorAll('.nav-mode-swatch[data-mode="dark"]').forEach(function(sw) {
+    sw.style.background = 'var(--theme-primary)';
+  });
+  if (typeof renderPreviewTabs === 'function') renderPreviewTabs();
+  if (typeof updatePreviewCanvasTheme === 'function') updatePreviewCanvasTheme();
+  if (!options.skipStorage) {
+    try { localStorage.setItem('adminThemeColor', hex); } catch (e) {}
+  }
+}
+
+function setNavTheme(mode, options) {
+  options = options || {};
+  mode = ['dark', 'light', 'white'].indexOf(mode) >= 0 ? mode : 'dark';
+  var nav = document.getElementById('leftNav');
+  if (!nav) return;
+  nav.classList.remove('nav-light', 'nav-white');
+  if (mode === 'light') nav.classList.add('nav-light');
+  if (mode === 'white') nav.classList.add('nav-white');
+  document.querySelectorAll('.nav-mode-swatch').forEach(function(sw) {
+    sw.classList.toggle('active', sw.dataset.mode === mode);
+  });
+  if (!options.skipStorage) {
+    try { localStorage.setItem('adminNavTheme', mode); } catch (e) {}
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var themeColor = '{{ admin_primary }}';
+  var navTheme = 'dark';
+  try {
+    themeColor = localStorage.getItem('adminThemeColor') || themeColor;
+    navTheme = localStorage.getItem('adminNavTheme') || navTheme;
+  } catch (e) {}
+  setThemeColor(themeColor, {skipStorage: true});
+  setNavTheme(navTheme, {skipStorage: true});
+});
 
 function openTemplatesPanel() {
   document.querySelectorAll('.left-nav-item').forEach(el => el.classList.remove('active'));
@@ -603,7 +723,7 @@ function toggleRightPanel() {
     // 如果之前是折叠状态，恢复宽度
     if (panel.classList.contains('panel-collapsed')) {
       panel.classList.remove('panel-collapsed');
-      panel.style.width = (panel.dataset.savedWidth || '380') + 'px';
+      panel.style.width = (panel.dataset.savedWidth || '280') + 'px';
     }
     if (reopenBtn) reopenBtn.style.display = 'none';
     if (collapseBtn) {
@@ -626,7 +746,7 @@ function togglePanelCollapse() {
 
   if (panel.classList.contains('panel-collapsed')) {
     // 展开：恢复之前保存的宽度
-    var savedWidth = panel.dataset.savedWidth || '380';
+    var savedWidth = panel.dataset.savedWidth || '280';
     panel.style.width = savedWidth + 'px';
     panel.classList.remove('panel-collapsed');
     if (btn) {
@@ -634,7 +754,7 @@ function togglePanelCollapse() {
       btn.title = '收起面板';
     }
   } else {
-    // 收起：保存当前宽度，CSS 会缩至 32px 仅露出按钮
+    // 收起：保存当前宽度，CSS 会缩至 5px 仅露出按钮
     panel.dataset.savedWidth = panel.offsetWidth;
     panel.classList.add('panel-collapsed');
     if (btn) {
@@ -685,10 +805,11 @@ function renderPreviewTabs() {
   var bar = document.getElementById('previewTabBar');
   if (!bar) return;
   var html = '';
+  var primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim() || '#067a7a';
   previewTabs.forEach(function(tab) {
     var activeClass = tab.key === activeTabKey ? ' active' : '';
     html += '<div class="preview-tab' + activeClass + '" onclick="switchPreviewTab(' + JSON.stringify(tab.key).replace(/"/g, '&quot;') + ')">';
-    html += '<span class="tab-favicon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="' + (tab.key === 'home' ? '#067a7a' : '#94a3b8') + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/><path d="M12 2a15.3 15.3 0 0 0-4 10 15.3 15.3 0 0 0 4 10"/></svg></span>';
+    html += '<span class="tab-favicon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="' + (tab.key === 'home' ? primaryColor : '#94a3b8') + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/><path d="M12 2a15.3 15.3 0 0 0-4 10 15.3 15.3 0 0 0 4 10"/></svg></span>';
     html += '<span class="tab-title">' + escapeHtml(tab.title) + '</span>';
     if (previewTabs.length > 1) {
       html += '<button class="tab-close" type="button" onclick="event.stopPropagation(); closePreviewTab(' + JSON.stringify(tab.key).replace(/"/g, '&quot;') + ')">×</button>';
@@ -1004,30 +1125,44 @@ function installPreviewCanvasHandlers() {
   if (!frame) return;
   var doc;
   try { doc = frame.contentDocument || frame.contentWindow.document; } catch (e) { return; }
-  if (!doc || doc.__builderCanvasReady) return;
+  if (!doc || !doc.head) return;
+
+  var style = doc.getElementById('builderCanvasThemeStyle');
+  if (!style) {
+    style = doc.createElement('style');
+    style.id = 'builderCanvasThemeStyle';
+    doc.head.appendChild(style);
+  }
+  style.textContent = builderCanvasThemeCss();
+
+  if (doc.__builderCanvasReady) return;
   doc.__builderCanvasReady = true;
-  var style = doc.createElement('style');
-  style.textContent = '.builder-module{position:relative;cursor:pointer}.builder-region{cursor:pointer}.builder-module:hover::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 2px #067a7a,inset 0 0 15px #067a7a70;}.builder-region:hover{box-shadow:inset 0 0 0 2px #067a7a,inset 0 0 15px #067a7a70;}.site-header.builder-region:hover{box-shadow:none;}.site-header.builder-region:hover::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 2px #067a7a,inset 0 0 15px #067a7a70;}.builder-module.builder-canvas-selected::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 2px #067a7a,inset 0 0 15px #067a7a70;}.builder-region.builder-canvas-selected{box-shadow:inset 0 0 0 2px #067a7a,inset 0 0 15px #067a7a70;}';
-  doc.head.appendChild(style);
-  doc.querySelectorAll('.builder-region[data-builder-region]').forEach(regionEl => {
-    regionEl.addEventListener('click', function(event) {
-      event.preventDefault(); event.stopPropagation();
-      doc.querySelectorAll('.builder-module.builder-canvas-selected,.builder-region.builder-canvas-selected').forEach(el => el.classList.remove('builder-canvas-selected'));
-      regionEl.classList.add('builder-canvas-selected');
-      var siteParam = new URLSearchParams(window.location.search).get('site');
-      var url = (regionEl.dataset.builderRegion === 'header' ? '/settings/header' : '/settings/footer_variant') + '?_fragment=1';
-      if (siteParam) url += '&site=' + encodeURIComponent(siteParam);
-      loadPanel(url);
-    }, true);
-  });
-  doc.querySelectorAll('.builder-module[data-builder-module-index]').forEach(moduleEl => {
-    moduleEl.addEventListener('click', function(event) {
-      event.preventDefault(); event.stopPropagation();
-      doc.querySelectorAll('.builder-module.builder-canvas-selected,.builder-region.builder-canvas-selected').forEach(el => el.classList.remove('builder-canvas-selected'));
+
+  doc.addEventListener('click', function(event) {
+    var target = event.target;
+    if (!target || !target.closest) return;
+    var moduleEl = target.closest('.builder-module[data-builder-module-index]');
+    var regionEl = target.closest('.builder-region[data-builder-region]');
+    if (!moduleEl && !regionEl) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    doc.querySelectorAll('.builder-module.builder-canvas-selected,.builder-region.builder-canvas-selected').forEach(function(el) {
+      el.classList.remove('builder-canvas-selected');
+    });
+
+    if (moduleEl) {
       moduleEl.classList.add('builder-canvas-selected');
       selectModuleInPanel(moduleEl.dataset.builderModuleIndex, pageKeyFromPreviewPath(frame.contentWindow.location.pathname));
-    }, true);
-  });
+      return;
+    }
+
+    regionEl.classList.add('builder-canvas-selected');
+    var siteParam = new URLSearchParams(window.location.search).get('site');
+    var url = (regionEl.dataset.builderRegion === 'header' ? '/settings/header' : '/settings/footer_variant') + '?_fragment=1';
+    if (siteParam) url += '&site=' + encodeURIComponent(siteParam);
+    loadPanel(url);
+  }, true);
 }
 
 function toggleLeftSubmenu(button) {
@@ -1078,7 +1213,40 @@ function switchPanelLang(url, langCode) {
   });
 }
 
-document.getElementById('previewFrame')?.addEventListener('load', installPreviewCanvasHandlers);
+function builderCanvasThemeCss() {
+  var primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim() || '#067a7a';
+  var glowColor = previewGlowColor(primaryColor);
+  return '.builder-module{position:relative;cursor:pointer}.builder-region{cursor:pointer}.builder-module:hover::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 2px ' + primaryColor + ',inset 0 0 15px ' + glowColor + ';}.builder-region:hover{box-shadow:inset 0 0 0 2px ' + primaryColor + ',inset 0 0 15px ' + glowColor + ';}.site-header.builder-region:hover{box-shadow:none;}.site-header.builder-region:hover::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 2px ' + primaryColor + ',inset 0 0 15px ' + glowColor + ';}.builder-module.builder-canvas-selected::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 2px ' + primaryColor + ',inset 0 0 15px ' + glowColor + ';}.builder-region.builder-canvas-selected{box-shadow:inset 0 0 0 2px ' + primaryColor + ',inset 0 0 15px ' + glowColor + ';}';
+}
+
+function previewGlowColor(color) {
+  if (/^#[0-9a-fA-F]{6}$/.test(color)) return color + '70';
+  var rgb = color.match(/^rgb\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)$/);
+  if (rgb) return 'rgba(' + rgb[1] + ',' + rgb[2] + ',' + rgb[3] + ',.44)';
+  return 'rgba(6,122,122,.44)';
+}
+
+function updatePreviewCanvasTheme() {
+  var frame = document.getElementById('previewFrame');
+  if (!frame) return;
+  var doc;
+  try { doc = frame.contentDocument || frame.contentWindow.document; } catch (e) { return; }
+  if (!doc) return;
+  var style = doc.getElementById('builderCanvasThemeStyle');
+  if (style) style.textContent = builderCanvasThemeCss();
+}
+
+function schedulePreviewCanvasInstall() {
+  installPreviewCanvasHandlers();
+  setTimeout(installPreviewCanvasHandlers, 80);
+  setTimeout(installPreviewCanvasHandlers, 300);
+}
+
+var previewFrameEl = document.getElementById('previewFrame');
+if (previewFrameEl) {
+  previewFrameEl.addEventListener('load', schedulePreviewCanvasInstall);
+  schedulePreviewCanvasInstall();
+}
 
 // ---- 侧栏收缩/展开 + hover 弹出标签 ----
 (function(){
@@ -1181,8 +1349,8 @@ document.getElementById('previewFrame')?.addEventListener('load', installPreview
 
 <style>
 .module-item.builder-selected-module {
-  border-color: #067a7a !important;
-  box-shadow: 0 0 0 0.2rem rgba(13,110,253,.18);
+  border-color: var(--bs-primary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), .18);
 }
 </style>
 

@@ -85,6 +85,17 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
         # 新路径：开关开 + 是 data-* 声明式
         if enable_data_attr and schema is not None:
             data_dict = module.get('data') if isinstance(module.get('data'), dict) else {}
+            if block_type == 'item_data':
+                item_data = jinja_ctx.get('item')
+                if isinstance(item_data, dict):
+                    merged_item = dict(item_data)
+                    tags = merged_item.get('tags')
+                    if isinstance(tags, str):
+                        merged_item['tags'] = [t.strip() for t in tags.split(',') if t.strip()]
+                    if merged_item.get('section_bg') and not merged_item.get('style_bg-color'):
+                        merged_item['style_bg-color'] = merged_item.get('section_bg')
+                    merged_item.update(data_dict)
+                    data_dict = merged_item
             context = {
                 'all_datasets': jinja_ctx.get('all_datasets', {}),
                 # data-from 用：settings（含 contact 等全局配置）

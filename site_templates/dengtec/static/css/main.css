@@ -295,8 +295,8 @@ h6 { font-size: var(--font-size-md); }
 }
 
 .badge-primary {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary);
+  background: var(--color-bg-secondary, #f5f7fa);
+  color: var(--color-text-secondary, #64748b);
 }
 
 /* === Cards === */
@@ -5460,6 +5460,44 @@ h6 { font-size: var(--font-size-md); }
 .id-spec-value {
   color: var(--color-text, #1e293b);
   font-weight: 500;
+}
+
+/* ============================================
+   详情数据模块 (item_data → item-data-*)
+   ============================================ */
+.item-data-article {
+  margin: 0 auto;
+}
+
+.item-data-title {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--font-size-3xl, 2.25rem);
+  line-height: 1.2;
+  color: var(--color-text, #1e293b);
+}
+
+.item-data-date {
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-text-secondary, #64748b);
+  font-size: var(--font-size-sm, 0.875rem);
+}
+
+.item-data-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: var(--spacing-xl);
+}
+
+.item-data-desc {
+  margin: 0 0 var(--spacing-xl);
+  line-height: 1.7;
+  color: var(--color-text-secondary, #64748b);
+}
+
+.item-data-body {
+  line-height: 1.8;
+  font-size: var(--font-size-md, 1.125rem);
 }
 
 @media (max-width: 768px) {

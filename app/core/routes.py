@@ -1604,6 +1604,9 @@ def dataset_edit(dataset_key, item_id):
                 # 保留 item_data 模块用于排序，但清除敏感数据字段
                 for m in modules:
                     if m.get('type') == 'item_data':
+                        for key, value in (m.get('data') or {}).items():
+                            if key.startswith('style_'):
+                                fields[key] = value
                         m['data'] = {}  # 清空数据（已在 fields 中保存）
                 fields['modules'] = modules
             except Exception as exc:
@@ -1630,6 +1633,7 @@ def dataset_edit(dataset_key, item_id):
     meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
     raw_menu = menu_lib.upgrade_old_format(menu_items, meta.get('datasets', []))
     preview_path = find_menu_path(raw_menu, dataset_key)
+    from .style_registry import STYLE_REGISTRY
     return _render('dashboard/panel_data_list.html',
                    user=user, site=site,
                    dataset_key=dataset_key, items=[item],
@@ -1641,7 +1645,8 @@ def dataset_edit(dataset_key, item_id):
                    is_list_page=is_list_page,
                    page_key=dataset_key,
                    preview_slug=slug,
-                   preview_path=preview_path)
+                   preview_path=preview_path,
+                   style_registry=STYLE_REGISTRY)
 
 @bp.route('/_dataset/<path:dataset_key>/<int:item_id>/delete', methods=['POST'])
 def dataset_delete(dataset_key, item_id):

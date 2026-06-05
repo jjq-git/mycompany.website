@@ -1,1 +1,16 @@
-{# 详情数据 — 后台专用模块，不参与前端渲染 #}
+<section data-name="item_data" data-type="group" data-hideable data-style="bg-color" class="section item-data-section">
+    <div class="container">
+        <article class="item-data-article">
+            <h1 data-name="title" data-type="text" data-fallback="name" class="item-data-title">详情标题</h1>
+            <div data-name="date" data-type="text" class="item-data-date">发布日期</div>
+            <div data-name="tags" data-type="list" class="item-data-tags">
+                <span data-name="tag" data-type="text" class="badge badge-primary item-data-tag">标签</span>
+            </div>
+            <p data-name="description" data-type="textarea" data-fallback="summary,excerpt" class="item-data-desc">详情简述
+            </p>
+            <div data-name="body" data-type="richtext" data-fallback="content" class="item-data-body">
+                <p>详情正文</p>
+            </div>
+        </article>
+    </div>
+</section>

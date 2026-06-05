@@ -51,6 +51,50 @@
     return h + '</select>';
   }
 
+  function schemaEsc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function schemaStyleForm(prefix, schema, mdata) {
+    mdata = mdata || {};
+    var registry = (window._moduleCtx && window._moduleCtx.styleRegistry) || {};
+    var tokens = [];
+    ((schema && schema.style_tokens) || []).concat((schema && schema.element_style_tokens) || []).forEach(function(token) {
+      if (tokens.indexOf(token) === -1) tokens.push(token);
+    });
+    if (!tokens.length) return '<div class="small text-muted">该模块无可调样式</div>';
+    var html = '';
+    tokens.forEach(function(token) {
+      var def = registry[token];
+      if (!def) return;
+      var name = prefix + 'style_' + token;
+      var val = (mdata && mdata['style_' + token] != null) ? mdata['style_' + token] : '';
+      html += '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + schemaEsc(def.label || token) + '</label>';
+      if (def.control === 'select' || def.control === 'switch') {
+        html += '<select class="form-select form-select-sm" name="' + schemaEsc(name) + '"><option value="">默认</option>';
+        (def.options || []).forEach(function(o) {
+          var ov = o.value, ol = o.text || o.value;
+          html += '<option value="' + schemaEsc(ov) + '"' + (String(val) === String(ov) ? ' selected' : '') + '>' + schemaEsc(ol) + '</option>';
+        });
+        html += '</select>';
+      } else if (def.control === 'color') {
+        html += '<div class="input-group input-group-sm">' +
+          '<input type="color" class="form-control form-control-color" value="' + schemaEsc(val || '#888888') + '" oninput="this.nextElementSibling.value=this.value">' +
+          '<input type="text" class="form-control form-control-sm" name="' + schemaEsc(name) + '" value="' + schemaEsc(val) + '" placeholder="如 #f5f7fa"></div>';
+      } else if (def.control === 'image') {
+        html += '<input type="text" class="form-control form-control-sm" name="' + schemaEsc(name) + '" value="' + schemaEsc(val) + '" placeholder="背景图 URL" oninput="updateImagePreview(this)">' +
+          '<label class="d-flex align-items-center gap-2 px-3 py-2 mt-1 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传背景图' +
+          '<input type="file" name="' + schemaEsc(name) + '_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label>';
+      } else {
+        html += '<input type="text" class="form-control form-control-sm" name="' + schemaEsc(name) + '" value="' + schemaEsc(val) + '">';
+      }
+      html += '</div>';
+    });
+    return html || '<div class="small text-muted">该模块无可调样式</div>';
+  }
+
   // 眼睛切换按钮（显隐控制），与 panel_page_edit.html 中 toggleVisibilityEye 配合
   var EYE_OPEN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
   var EYE_OFF = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72 1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
@@ -230,32 +274,7 @@
     if (isDataModule) {
       var item = (window._moduleCtx && window._moduleCtx.editItem) || mdata || {};
       var tagsVal = (item.tags && Array.isArray(item.tags)) ? item.tags.join(', ') : (item.tags || '');
-      styleEditor =
-        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
-        '<div class="row g-2">' +
-          '<div class="col-6">' + cn('section_bg', '外层背景色', item.section_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('inner_width', '内层宽度', ['px','%','rem'], item.inner_width) + '</div>' +
-        '</div>' +
-        '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">标题样式</div>' +
-        '<div class="row g-2">' +
-          '<div class="col-6">' + cn('title_color', '标题颜色', item.title_color || '#1e293b') + '</div>' +
-          '<div class="col-6">' + un('title_size', '标题字号', ['px','rem'], item.title_size) + '</div>' +
-        '</div>' +
-        '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">简述样式</div>' +
-        '<div class="row g-2">' +
-          '<div class="col-6">' + cn('desc_color', '简述颜色', item.desc_color || '#64748b') + '</div>' +
-          '<div class="col-6">' + un('desc_size', '简述字号', ['px','rem'], item.desc_size) + '</div>' +
-        '</div>' +
-        '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">标签样式</div>' +
-        '<div class="row g-2">' +
-          '<div class="col-6">' + cn('tag_color', '标签颜色', item.tag_color || '#64748b') + '</div>' +
-          '<div class="col-6">' + un('tag_size', '标签字号', ['px','rem'], item.tag_size) + '</div>' +
-          '<div class="col-6">' + cn('tag_bg', '标签背景色', item.tag_bg || '#f5f7fa') + '</div>' +
-          '<div class="col-6">' + un('tag_radius', '标签圆角', ['px','rem','%'], item.tag_radius) + '</div>' +
-        '</div>';
+      styleEditor = schemaStyleForm('module_' + idx + '_data_', meta.schema || {}, item);
       specialEditor =
         '<div class="small fw-semibold mb-1 text-muted">内容字段</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm font-monospace" name="slug" value="' + esc(item.slug || '') + '" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="如 my-post"><div class="form-text">英文+数字+连字符，唯一标识</div></div>' +
@@ -267,7 +286,7 @@
         '<hr class="my-2">' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">详细介绍</label><textarea class="form-control form-control-sm" name="body" rows="10" style="min-height:200px;font-family:monospace;white-space:pre-wrap;" placeholder="支持 Markdown 格式">' + esc(item.body || item.content || '') + '</textarea></div>';
       // 动态剩余字段
-      var skipKeys = ['id','slug','date','title','description','excerpt','summary','cover','image','photo','logo','tags','body','content','modules','section_bg','inner_width','title_color','title_size','desc_color','desc_size','tag_color','tag_size','tag_bg','tag_radius'];
+      var skipKeys = ['id','slug','date','title','description','excerpt','summary','cover','image','photo','logo','tags','body','content','modules','section_bg','inner_width','title_color','title_size','desc_color','desc_size','tag_color','tag_size','tag_bg','tag_radius','style_bg-color'];
       Object.keys(item).forEach(function(k) {
         if (skipKeys.indexOf(k) >= 0 || /^module_/.test(k)) return;
         var v = item[k];
