@@ -7,7 +7,7 @@
 - 后端：Flask + SQLAlchemy
 - 数据库：SQLite（开发）/ PostgreSQL（部署）
 - 模板引擎：Jinja2
-- 静态资源：字体子集化（fonttools）、图片处理（Pillow）
+- 静态资源：图片处理（Pillow，已装）；字体子集化（fonttools）待实现
 - 部署：阿里云 OSS + CDN
 - 登录：邮箱魔法链接
 
@@ -53,13 +53,14 @@ ls sites/1/
 | 文档 | 说明 |
 | --- | --- |
 | [docs/architecture.md](docs/architecture.md) | 整体架构、技术决策 |
-| [docs/database.md](docs/database.md) | 数据库表设计 |
+| [docs/dashboard/database.md](docs/dashboard/database.md) | 数据库表设计 |
 | [docs/infrastructure.md](docs/infrastructure.md) | CDN、SSL 自动化 |
-| [docs/domains.md](docs/domains.md) | 子域、URL 路径、预览、自定义域名 |
-| [docs/templates.md](docs/templates.md) | 模板系统、块、数据集 |
-| [docs/content.md](docs/content.md) | 店主后台（内容管理界面） |
-| [docs/publish.md](docs/publish.md) | 发布、输出结构、字体优化 |
-| [docs/seo.md](docs/seo.md) | SEO + AI 检索（sitemap、llms.txt 等） |
-| [docs/i18n.md](docs/i18n.md) | 多语言 + AI 翻译 |
+| [docs/cloud/domains.md](docs/cloud/domains.md) | 子域、URL 路径、预览、自定义域名 |
+| [docs/themes/](docs/themes/README.md) | 模板系统、块、数据集 |
+| [docs/dashboard/content.md](docs/dashboard/content.md) | 店主后台（内容管理界面） |
+| [docs/site/publish.md](docs/site/publish.md) | 发布、输出结构、字体优化 |
+| [docs/site/seo.md](docs/site/seo.md) | SEO + AI 检索（sitemap、llms.txt 等） |
+| [docs/themes/i18n.md](docs/themes/i18n.md) | 多语言 + AI 翻译 |
+| [docs/site-creation-manual.md](docs/site-creation-manual.md) | 手动建站操作手册（CLI 步骤） |
 
 给 Claude 的工作指引：[CLAUDE.md](CLAUDE.md)
