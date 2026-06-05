@@ -1,6 +1,6 @@
 <!-- 联系表单模块 - 访客在线留言 + 可选嵌入地图（data-* 声明式） -->
-<section data-name="contact_form" data-type="group" data-hideable class="section">
-  <div class="container" style="max-width:none;margin:0 auto">
+<section data-name="contact_form" data-type="group" data-hideable class="section" data-style="dir,bg-color">
+  <div class="container">
     <div class="section-header">
       <h2 data-name="title" data-type="text" class="section-title"></h2>
       <p data-name="subtitle" data-type="text" class="section-description"></p>
@@ -8,6 +8,10 @@
     <!-- 表单 action URL 由 JS 读取并注入到 form.action -->
     <span class="js-form-action" data-name="form_action" data-type="text" style="display:none"></span>
     <div class="cf-layout">
+      <!-- 地图列（可独立隐藏） -->
+      <div data-name="map_panel" data-type="group" data-hideable class="cf-map-col">
+        <iframe data-name="map_src" data-type="embed" src="" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" class="cf-map-iframe"></iframe>
+      </div>
       <!-- 表单列（可独立隐藏） -->
       <div data-name="form_panel" data-type="group" data-hideable class="cf-form-col">
         <form class="cf-form" method="POST">
@@ -35,10 +39,6 @@
             <button type="submit" class="cf-btn">发送留言</button>
           </div>
         </form>
-      </div>
-      <!-- 地图列（可独立隐藏） -->
-      <div data-name="map_panel" data-type="group" data-hideable class="cf-map-col">
-        <iframe data-name="map_src" data-type="embed" src="" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" class="cf-map-iframe"></iframe>
       </div>
     </div>
   </div>

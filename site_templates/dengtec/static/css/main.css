@@ -5799,8 +5799,11 @@ a.ci-value:hover {
 /* 表单+地图双栏布局 */
 .cf-layout {
   display: flex;
-  gap: 2rem;
+  /* gap: 2rem; */
   align-items: stretch;
+  flex-direction: var(--dir, row);
+  background: var(--color-bg, #fff);
+  border-radius: var(--radius-md, 8px);
 }
 
 .cf-layout--reverse {
@@ -5808,10 +5811,13 @@ a.ci-value:hover {
 }
 
 .cf-form-col {
+  flex: 1;
   min-width: 0;
+  padding: var(--spacing-xl, 2rem);
 }
 
 .cf-map-col {
+  flex: 2;
   min-width: 0;
   position: relative;
   overflow: hidden;
@@ -6038,7 +6044,7 @@ a.ci-value:hover {
   height: 3rem;
   border-radius: 50%;
   background: var(--color-primary-light, rgba(6,122,122,0.1));
-  color: var(--color-primary, #067a7a);
+  color: var(--color-bg, #067a7a);
 }
 
 .ps-body {
