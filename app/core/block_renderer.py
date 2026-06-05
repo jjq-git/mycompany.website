@@ -386,6 +386,21 @@ def _apply_style(node, style_tokens, data_dict):
         node.attrs['style'] = '; '.join(parts)  # 序列化时整体再转义引号
 
 
+def _apply_descendant_styles(node, data_dict):
+    """给子孙元素上的 data-style 注入 CSS 变量。
+
+    这让普通包裹层也能声明样式能力，例如 <div class="hl-grid" data-style="bg-color">。
+    """
+    for child in node.children:
+        tokens = [
+            t for t in style_registry.parse_style_tokens(child.attrs.get('data-style', ''))
+            if style_registry.get_style_def(t)
+        ]
+        if tokens:
+            _apply_style(child, tokens, data_dict)
+        _apply_descendant_styles(child, data_dict)
+
+
 def _sanitize_style_value(sdef, val):
     """按控件类型校验样式值，非法返回 None。
 
@@ -461,6 +476,7 @@ def render(block_html, schema, data_dict, context=None):
     # 4. 样式注入
     if schema.style_tokens:
         _apply_style(root, schema.style_tokens, data_dict)
+    _apply_descendant_styles(root, data_dict)
 
     # 4.5 全树补扫静态 href 模板（"查看全部"等仅依赖 base_url/lang 的链接）；
     # 依赖项字段的链接（含 {slug} 等）已在列表展开时填好，这里因占位无值而跳过，不会被覆盖

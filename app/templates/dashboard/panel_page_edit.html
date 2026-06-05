@@ -369,7 +369,10 @@ function _schemaHideToggle(name, label, hiddenVal) {
 /* 样式面板：遍历 schema.style_tokens 查 styleRegistry 生成控件 */
 function generateSchemaStyleForm(prefix, schema, mdata) {
   mdata = mdata || {};
-  var tokens = schema.style_tokens || [];
+  var tokens = [];
+  (schema.style_tokens || []).concat(schema.element_style_tokens || []).forEach(function(token) {
+    if (tokens.indexOf(token) === -1) tokens.push(token);
+  });
   if (!tokens.length) return '<div class="small text-muted">该模块无可调样式</div>';
   var html = '';
   tokens.forEach(function(token) {
@@ -391,7 +394,19 @@ function generateSchemaStyleForm(prefix, schema, mdata) {
         '<input type="color" class="form-control form-control-color" value="' + _schemaEsc(val || '#888888') + '" oninput="this.nextElementSibling.value=this.value">' +
         '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="如 #f5f7fa"></div>';
     } else if (def.control === 'image') {
-      html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="背景图 URL">';
+      html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="背景图 URL" oninput="updateImagePreview(this)">';
+      html += '<label class="d-flex align-items-center gap-2 px-3 py-2 mt-1 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传背景图' +
+        '<input type="file" name="' + _schemaEsc(name) + '_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label>' +
+        '<div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>';
+      var urlVisible = val ? '' : 'display:none';
+      html += '<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;' + urlVisible + '">' + _schemaEsc(val) + '</div>';
+      var previewVisible = val ? '' : 'display:none';
+      html += '<div class="mt-2 module-image-preview" style="' + previewVisible + '">' +
+        '<div style="position:relative;display:inline-block">' +
+        '<img src="' + _schemaEsc(val) + '" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'">' +
+        '<button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除背景图">&times;</button>' +
+        '</div></div>';
     } else {
       html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '">';
     }

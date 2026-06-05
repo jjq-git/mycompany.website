@@ -16,7 +16,7 @@ import re
 
 import yaml as _yaml
 
-from . import datasets
+from . import datasets, style_registry
 from . import menu as menu_lib
 from .translator import is_configured as translation_configured, translate_json
 from .builder import build_site, build_template_preview
@@ -1956,6 +1956,24 @@ def _parse_modules_form(form, existing_modules=None):
                         )
                     except Exception as exc:
                         current_app.logger.warning('上传失败 %s: %s', field_name, exc)
+
+            style_tokens = list(_schema.style_tokens or [])
+            for token in getattr(_schema, 'element_style_tokens', []) or []:
+                if token not in style_tokens:
+                    style_tokens.append(token)
+            for token in style_tokens:
+                sdef = style_registry.get_style_def(token)
+                if not sdef or sdef.get('control') != 'image':
+                    continue
+                upload = request.files.get(f'{idx}_data_style_{token}_file')
+                if upload and upload.filename:
+                    try:
+                        data[f'style_{token}'] = _save_uploaded_media(
+                            _current_context()[1].id, upload,
+                            prefix=f'{m_type}-style-{token}'
+                        )
+                    except Exception as exc:
+                        current_app.logger.warning('样式图片上传失败 %s: %s', token, exc)
 
         if m_type == 'hero_banner':
             slide_count = 0

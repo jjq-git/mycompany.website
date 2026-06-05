@@ -90,6 +90,7 @@ class BlockSchema:
     root_type: str                 # 根 data-type（group/list/grid/...）
     hideable: bool = False
     style_tokens: list = field(default_factory=list)
+    element_style_tokens: list = field(default_factory=list)  # 子孙普通元素 data-style 的 token 汇总
     source: str = None
     page_size: int = None
     cols: int = None
@@ -203,6 +204,34 @@ def _int_or_none(raw):
         return None
 
 
+def _style_tokens(attrs):
+    """解析一个元素上的 data-style，只保留注册表里已声明的 token。"""
+    return [
+        t for t in style_registry.parse_style_tokens(attrs.get('data-style', ''))
+        if style_registry.get_style_def(t)
+    ]
+
+
+def _descendant_style_tokens(node):
+    """汇总子孙元素上的 data-style token，供编辑器生成样式控件。
+
+    普通包裹层可以只写 data-style，不必强行变成 data-name/data-type 字段。
+    """
+    tokens = []
+    seen = set()
+
+    def walk(current):
+        for child in current.children:
+            for token in _style_tokens(child.attrs):
+                if token not in seen:
+                    seen.add(token)
+                    tokens.append(token)
+            walk(child)
+
+    walk(node)
+    return tokens
+
+
 def _item_children(item):
     """解析 list/grid 项模板的可编辑子字段（供编辑器生成条目子表单）。
 
@@ -228,10 +257,7 @@ def _build_field(node):
         href_template=attrs.get('data-href-template', '') or '',
         fallback=[k.strip() for k in (attrs.get('data-fallback') or '').split(',') if k.strip()],
         hideable='data-hideable' in attrs,
-        style_tokens=[
-            t for t in style_registry.parse_style_tokens(attrs.get('data-style', ''))
-            if style_registry.get_style_def(t)  # 只保留注册表里的合法 token
-        ],
+        style_tokens=_style_tokens(attrs),
     )
 
     if dtype in LEAF_TYPES:
@@ -289,10 +315,8 @@ def parse(html):
         root_type=attrs.get('data-type', ''),
         hideable='data-hideable' in attrs,
         href_field=attrs.get('data-href', '') or '',
-        style_tokens=[
-            t for t in style_registry.parse_style_tokens(attrs.get('data-style', ''))
-            if style_registry.get_style_def(t)
-        ],
+        style_tokens=_style_tokens(attrs),
+        element_style_tokens=_descendant_style_tokens(root),
         from_source=attrs.get('data-from', None) or None,
     )
 

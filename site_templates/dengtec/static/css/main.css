@@ -345,8 +345,13 @@ h6 { font-size: var(--font-size-md); }
 
 /* === Section Styles === */
 .section {
-  padding-top: var(--spacing-md);
-  padding-bottom: var(--spacing-md);
+  padding-top: var(--spacing-lg);
+  padding-bottom: var(--spacing-lg);
+  background-color: var(--bg-color, transparent);
+  background-image: var(--bg, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .section-sm {
@@ -4915,6 +4920,7 @@ h6 { font-size: var(--font-size-md); }
   border-radius: var(--radius-lg, 12px);
   overflow: hidden;
   box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.08));
+  background-color: var(--color-bg, #fff);
 }
 .hl-grid > * {
   flex: 1 1 0;
