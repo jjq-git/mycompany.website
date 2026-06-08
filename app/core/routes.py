@@ -804,6 +804,8 @@ def page_home():
 
     # 准备渲染上下文
     lang, languages, default_lang = _get_panel_lang(site)
+    from .icon_registry import icon_names
+    from .style_registry import STYLE_REGISTRY
     blocks = _get_available_blocks(site.template_name)
     if is_modules_format:
         page.setdefault('modules', [])
@@ -814,11 +816,33 @@ def page_home():
     # 将 meta.yaml 默认值合并到模块数据，让属性面板显示 CSS 兜底值
     _merge_block_defaults(page.get('modules'), blocks)
 
+    # 收集可用的列表型数据集（供 data-source="" 下拉选择）
+    settings_data = read_yaml(site.id, 'settings.yaml') or {}
+    tpl_root = Path(current_app.config['TEMPLATES_DIR']) / site.template_name
+    meta_data = _yaml.safe_load((tpl_root / 'meta.yaml').read_text(encoding='utf-8')) if (tpl_root / 'meta.yaml').exists() else {}
+    raw_menu = settings_data.get('menu', [])
+    normalized = menu_lib.ensure_home(menu_lib.normalize_for_render(
+        menu_lib.upgrade_old_format(raw_menu, meta_data.get('datasets', []))
+    ))
+    def _collect_list_targets(items, result=None):
+        if result is None:
+            result = []
+        for it in (items or []):
+            if it.get('type') == 'list' and it.get('target'):
+                result.append({'target': it['target'], 'label': it.get('label', it['target'])})
+            if it.get('children'):
+                _collect_list_targets(it['children'], result)
+        return result
+    all_list_datasets = _collect_list_targets(normalized)
+
     return render_template('dashboard/panel_page_edit.html',
                            user=user, site=site, page=page,
                            page_key='home', page_display_name='首页',
                            is_modules_format=is_modules_format,
                            blocks=blocks,
+                           all_list_datasets=all_list_datasets,
+                           style_registry=STYLE_REGISTRY,
+                           icon_list=icon_names(),
                            active='pages_home',
                            current_lang=lang,
                            languages=languages,
@@ -1512,6 +1536,10 @@ def _get_panel_lang(site):
 def _render(template_name, **kwargs):
     """渲染模板，支持 ?_fragment=1 返回右侧面板片段."""
     from flask import request
+    from .icon_registry import icon_names
+    from .style_registry import STYLE_REGISTRY
+    kwargs.setdefault('icon_list', icon_names())
+    kwargs.setdefault('style_registry', STYLE_REGISTRY)
     if request.args.get('_fragment'):
         return render_template(template_name, **kwargs)
     return render_template(template_name, **kwargs)

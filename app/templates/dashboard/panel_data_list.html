@@ -76,6 +76,7 @@
 <script src="/static/js/admin_modules.js?v=3"></script>
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
+<script type="application/json" id="iconListDsJson">{{ icon_list | default([]) | tojson }}</script>
 <script>
 window._dsEditItemJson = {{ edit_item | tojson }};
 </script>
@@ -86,6 +87,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   var blockLibrary = JSON.parse(document.getElementById('blockLibraryDsJson').textContent || '[]');
   window.blockLibrary = blockLibrary;
   var styleRegistry = JSON.parse((document.getElementById('styleRegistryDsJson') || {}).textContent || '{}');
+  var iconList = JSON.parse((document.getElementById('iconListDsJson') || {}).textContent || '[]');
 
   // ===== 设置共享模块上下文 =====
   window._moduleCtx = {
@@ -268,8 +270,8 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   };
 
   // ===== 模块选择回调 =====
-  window.onBlockPaletteConfirm = function(type, variant) {
-    window.addModuleDs(type, variant || 'default');
+  window.onBlockPaletteConfirm = function(type, variant, dataPreset) {
+    window.addModuleDs(type, variant || 'default', dataPreset);
   };
 
   // ===== 恢复已保存的模块 =====
