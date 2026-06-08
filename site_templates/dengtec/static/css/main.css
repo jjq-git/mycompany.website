@@ -48,17 +48,21 @@
   --font-size-2xl: 1.875rem;
   --font-size-3xl: 2.25rem;
   --font-size-4xl: 3rem;
+  --font-size-5xl: 3.75rem;   /* 60px - Hero 主标题 */
 
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
+  --font-weight-extrabold: 800;   /* Hero 超大标题 */
 
+  --line-height-none: 1;          /* 按钮 / 图标 */
   --line-height-tight: 1.25;
   --line-height-base: 1.6;
   --line-height-relaxed: 1.75;
 
   /* Spacing */
+  --spacing-2xs: 0.125rem;    /* 2px - 极紧凑场景 */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
@@ -67,6 +71,7 @@
   --spacing-2xl: 3rem;
   --spacing-3xl: 4rem;
   --spacing-4xl: 6rem;
+  --spacing-section: 5rem;    /* 80px - section 上下标准间距 */
 
   /* Border Radius */
   --radius-sm: 4px;
@@ -82,6 +87,7 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);  /* 卡片悬浮轻阴影 */
 
   /* Transitions */
   --transition-fast: 150ms ease;
@@ -97,9 +103,10 @@
   --z-tooltip: 600;
 
   /* Layout */
+  --container-narrow: 768px;    /* 文章 / 文字型内容 */
+  --container-base: 1280px;     /* 常规页面内容 */
+  --container-wide: 1440px;     /* 宽屏内容 */
   --container-max: 1440px;
-  --container-wide: 1440px;
-  --container-narrow: 1280px;
   --header-height: 64px;
   --spacing-1xl: 2rem;
 }
@@ -362,6 +369,11 @@ h6 { font-size: var(--font-size-md); }
   text-align: center;
   margin-bottom: var(--spacing-xl);
   /* padding-bottom: var(--spacing-xl); */
+}
+
+/* 标题和副标题都为空/隐藏时，整个区域不占空间 */
+.section-header:has(> [hidden]:first-child):has(> [hidden]:last-child) {
+  display: none;
 }
 
 .section-title {
@@ -1497,12 +1509,12 @@ h6 { font-size: var(--font-size-md); }
 
 .service-icon {
   flex-shrink: 0;
-  width: 56px;
-  height: 56px;
+  width: 50px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--color-primary-light);
+  background-color: var(--color-primary);
   border-radius: var(--radius-md);
   color: var(--color-primary);
   margin-bottom: var(--spacing-xs);
@@ -1511,8 +1523,20 @@ h6 { font-size: var(--font-size-md); }
 .service-icon svg {
   width: 28px;
   height: 28px;
-  stroke: var(--color-primary);
+  stroke: var(--color-bg-secondary);
   fill: none;
+}
+
+.service-card-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.service-card-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
 }
 
 .service-content {
@@ -5696,6 +5720,33 @@ a.ci-value:hover {
   }
 }
 
+/* 纵向列表变体 */
+.ci-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.ci-list-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+}
+.ci-list-row:last-child {
+  border-bottom: none;
+}
+.ci-list-row .ci-icon {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+.ci-row-body {
+  flex: 1;
+  min-width: 0;
+}
+
 /* ============================================
    联系表单模块 (contact_form → cf-*)
    ============================================ */
@@ -5978,6 +6029,11 @@ a.ci-value:hover {
 .ps-track--vertical {
   grid-template-columns: 1fr;
   gap: 0;
+  width: 500px;
+  margin: 0 auto;
+  .ps-body {
+    padding-left: 1rem;
+  }
 }
 
 .ps-step {
@@ -6040,11 +6096,11 @@ a.ci-value:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 3rem;
-  height: 3rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
-  color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
 }
 
 .ps-body {
@@ -6076,6 +6132,17 @@ a.ci-value:hover {
   background: var(--color-border, #e2e8f0);
 }
 
+/* 数字序号变体：CSS counter 自增 1/2/3... */
+.ps-track--numbered {
+  counter-reset: ps-counter;
+}
+.ps-track--numbered .ps-step {
+  counter-increment: ps-counter;
+}
+.ps-track--numbered .ps-number::before {
+  content: counter(ps-counter);
+}
+
 @media (max-width: 768px) {
   .ps-track--horizontal {
     grid-auto-flow: row;
@@ -6084,5 +6151,9 @@ a.ci-value:hover {
   }
   .ps-track--horizontal .ps-step:not(:last-child)::after {
     display: none;
+  }
+  .ps-track--vertical {
+    width: 100%;
+    margin: 0;
   }
 }

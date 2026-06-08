@@ -602,7 +602,7 @@ function findBlockMeta(type) {
     name: type,
     display_name: type.replace(/_/g, ' '),
     fields: [],
-    variants: [{key: 'default', label: '默认'}]
+    variants: []
   };
 }
 
@@ -1030,7 +1030,7 @@ if (paletteModalEl) {
   });
 }
 
-function onBlockPaletteConfirm(type, variant) {
+function onBlockPaletteConfirm(type, variant, dataPreset) {
   if (switchTargetIndex !== null) {
     // 换变体模式：仅更新已有模块的 variant 字段
     var item = document.querySelector('.module-item[data-index="' + switchTargetIndex + '"]');
@@ -1042,7 +1042,7 @@ function onBlockPaletteConfirm(type, variant) {
     var t = document.querySelector('#blockPaletteModal .modal-title');
     if (t) t.textContent = '添加模块';
   } else {
-    addModule(type, variant);
+    addModule(type, variant, dataPreset);
   }
 }
 
@@ -1064,7 +1064,8 @@ function switchContentStyleTab(btn, tabName) {
   if (target) target.style.display = '';
 }
 
-function addModule(type, variant) {
+function addModule(type, variant, dataPreset) {
+  dataPreset = dataPreset || {};
   var meta = findBlockMeta(type);
   var fields = meta.fields || [];
   var displayName = meta.display_name || type.replace(/_/g, ' ');
@@ -1104,7 +1105,7 @@ function addModule(type, variant) {
   // meta.is_data_attr/schema 由后端 scan_blocks 解析、随 blockLibraryJson 下发。
   if (meta.is_data_attr && meta.schema) {
     specialEditor = generateSchemaForm('module_' + idx + '_data_', meta.schema, {}, vT);
-    styleEditor = generateSchemaStyleForm('module_' + idx + '_data_', meta.schema, {});
+    styleEditor = generateSchemaStyleForm('module_' + idx + '_data_', meta.schema, dataPreset);
   } else if (type === 'hero_banner') {
     styleEditor =
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +

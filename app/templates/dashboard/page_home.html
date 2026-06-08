@@ -265,8 +265,8 @@
 window.blockLibrary = {{ blocks | tojson }};
 
 // 模块选择回调
-function onBlockPaletteConfirm(type, variant) {
-  addModule(type, variant || 'default');
+function onBlockPaletteConfirm(type, variant, dataPreset) {
+  addModule(type, variant || 'default', dataPreset);
 }
 
 // 展开第一个模块
@@ -291,7 +291,8 @@ function onBlockPaletteConfirm(type, variant) {
 })();
 
 
-function addModule(type, variant) {
+function addModule(type, variant, dataPreset) {
+  dataPreset = dataPreset || {};
   var count = document.getElementById('moduleCount');
   var idx = parseInt(count.value);
   count.value = idx + 1;

@@ -130,6 +130,14 @@
         html += '<option value="' + esc(ov) + '"' + (String(value || '') === String(ov) ? ' selected' : '') + '>' + esc(ol) + '</option>';
       });
       html += '</select>';
+    } else if (type === 'icon') {
+      // icon 字段 → 下拉选择器（图标名来自 iconList 全局变量，与 panel_page_edit.html 一致）
+      html += '<select class="form-select form-select-sm" name="' + prefix + key + '"><option value="">（无图标）</option>';
+      var icons = (typeof iconList !== 'undefined' && Array.isArray(iconList)) ? iconList : [];
+      icons.forEach(function(name) {
+        html += '<option value="' + esc(name) + '"' + (String(value || '') === String(name) ? ' selected' : '') + '>' + esc(name) + '</option>';
+      });
+      html += '</select>';
     } else if (type === 'number') {
       html += '<input type="number" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '">';
     } else {
@@ -235,7 +243,7 @@
   function findBlockMeta(type) {
     var lib = (window._moduleCtx && window._moduleCtx.blockLibrary) || [];
     return lib.find(function(b) { return b.name === type; }) || {
-      name: type, display_name: type.replace(/_/g, ' '), fields: [], variants: [{key:'default',label:'默认'}]
+      name: type, display_name: type.replace(/_/g, ' '), fields: [], variants: []
     };
   }
 

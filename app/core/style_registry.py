@@ -24,6 +24,8 @@ STYLE_REGISTRY = {
             {'value': '2', 'text': '2'},
             {'value': '3', 'text': '3'},
             {'value': '4', 'text': '4'},
+            {'value': '5', 'text': '5'},
+            {'value': '6', 'text': '6'},
         ],
     },
     'dir': {

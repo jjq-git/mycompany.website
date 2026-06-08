@@ -13,7 +13,7 @@ from pathlib import Path
 import yaml
 from flask import current_app
 
-from . import block_parser
+from . import block_parser, style_registry
 from .db import db
 from .models import Template
 
@@ -92,6 +92,31 @@ def scan_blocks(template_name):
                     is_data_attr = False
                     schema = None
 
+        # 自动从 data-style 派生样式变体（select/switch 类 control），
+        # 与 meta.yaml 声明的结构变体合并：meta.yaml 优先（供手动覆盖）。
+        meta_variants = meta.get('variants', [])
+        meta_variant_keys = {v['key'] for v in meta_variants if isinstance(v, dict)}
+        style_variants = []
+        if schema is not None:
+            all_tokens = list(schema.style_tokens or [])
+            for t in getattr(schema, 'element_style_tokens', []) or []:
+                if t not in all_tokens:
+                    all_tokens.append(t)
+            for token in all_tokens:
+                sdef = style_registry.get_style_def(token)
+                if not sdef or sdef.get('control') not in ('select', 'switch'):
+                    continue
+                for opt in sdef.get('options', []):
+                    style_variants.append({
+                        'key': f'{token}_{opt["value"]}',
+                        'label': opt.get('text', opt['value']),
+                        'source': 'style',
+                        'data_preset': {f'style_{token}': opt['value']},
+                    })
+        all_variants = meta_variants + [
+            v for v in style_variants if v['key'] not in meta_variant_keys
+        ]
+
         blocks.append({
             'name': block_dir.name,
             'display_name': meta.get('name', block_dir.name),
@@ -99,7 +124,7 @@ def scan_blocks(template_name):
             'icon': meta.get('icon', ''),
             'description': meta.get('description', ''),
             'fields': meta.get('fields', []),
-            'variants': meta.get('variants', []),
+            'variants': all_variants,
             'is_data_attr': is_data_attr,
             'schema': schema,
         })
