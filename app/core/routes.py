@@ -63,10 +63,10 @@ ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'ogg', 'mov'}
 AUTH_EXEMPT_ENDPOINTS = {
     'core.login',
     'core.magic_login',
+    # template_preview 只渲染模板自带的种子数据, 不涉及任何用户私有内容, 可免登录。
     'core.template_preview',
-    'core.preview_site',
-    'core.preview_or_build',
-    'core.preview',
+    # 注意: preview / preview_site / preview_or_build 吐的是店主 output 下的真实
+    # 私有数据, 已从免登录名单移除, 改为在各路由内做 _require_site_access 归属校验。
 }
 
 
@@ -216,6 +216,20 @@ def _current_user():
     if not user or user.status != 'active':
         session.pop('user_id', None)
         return None
+    return user
+
+
+def _require_site_access(site):
+    """校验当前登录用户有权访问该 site（本人站点或平台 admin）。
+
+    预览路由会吐出店主 output 下的真实 HTML/资源, 必须做归属校验,
+    否则任何登录用户自增 site_id 就能读他人未发布的私密站点(跨用户 IDOR)。
+    """
+    user = _current_user()
+    if not user:
+        abort(401)
+    if user.role != 'admin' and site.owner_id != user.id:
+        abort(403)
     return user
 
 
@@ -1331,12 +1345,17 @@ def theme_edit():
     default_theme = tpl_meta.get('default_theme') or {}
 
     if request.method == 'POST':
+        # 颜色值会被 _base.html 用 |safe 注入 <style> 块（关闭转义），
+        # 必须在入库前按白名单校验，否则 `red}</style><script>...` 可闭合标签注入脚本。
+        # 复用 block_renderer 的同一套颜色白名单，保持全项目一致。
+        from .block_renderer import _SAFE_COLOR
         theme = settings.setdefault('theme', {})
         for key in ('color-primary', 'color-bg', 'color-surface', 'color-text', 'color-text-secondary', 'color-border'):
             v = request.form.get(key, '').strip()
-            if v:
+            if v and _SAFE_COLOR.match(v):
                 theme[key] = v
             else:
+                # 空值或非法颜色一律清除该键，回退到模板默认色
                 theme.pop(key, None)
         # 清理旧版短 key（迁移前遗留数据）
         for old_key in ('accent', 'bg', 'surface', 'text', 'text_muted', 'border'):
@@ -1356,6 +1375,19 @@ def theme_edit():
 
 
 SLUG_PATTERN = re.compile(r'^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$')
+
+# page_key / dataset_key 经 <path:> 转换器接收, 会原样带进 `..` 和 `/`。
+# 这里做路由层白名单, 与 site_storage._safe_path 的存储层兜底形成双保险。
+# 字符集放宽到下划线 + 允许单字符, 覆盖现有所有 key(about/contact/home/
+# portfolio/posts/pricing/products/features), 零误伤。
+_KEY_PATTERN = re.compile(r'^[a-z0-9][a-z0-9_-]{0,40}$')
+
+
+def _validate_key(key):
+    """校验动态 page_key / dataset_key, 非法直接 404(不暴露细节)."""
+    if not _KEY_PATTERN.match(key or ''):
+        abort(404)
+    return key
 
 
 @bp.route('/templates')
@@ -1593,6 +1625,7 @@ def preview_site(site_id):
     """确保已构建，重定向到默认语言首页."""
     from flask import redirect, request, url_for
     site = Site.query.get_or_404(site_id)
+    _require_site_access(site)
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
     lang_code = _default_lang_code(site)
     lang_index = out / lang_code / 'index.html'
@@ -1608,6 +1641,7 @@ def preview_site(site_id):
 def preview_or_build(site_id):
     """确保已构建，直接返回默认语言的首页."""
     site = Site.query.get_or_404(site_id)
+    _require_site_access(site)
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
     lang_code = _default_lang_code(site)
     lang_index = out / lang_code / 'index.html'
@@ -1628,6 +1662,7 @@ def preview_or_build(site_id):
 def preview(site_id, filepath='index.html'):
     """预览 output/<site_id>/ 下的静态文件，自动构建."""
     site = Site.query.get_or_404(site_id)
+    _require_site_access(site)
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
     force_rebuild = bool(request.args.get('_'))
     if filepath == 'index.html':
@@ -1730,6 +1765,7 @@ def api_translate():
 @bp.route('/_dataset/<path:dataset_key>')
 def dataset_panel(dataset_key):
     """通用数据集管理面板 — 支持 ?lang= 参数编辑不同语言版本."""
+    _validate_key(dataset_key)
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
@@ -1754,6 +1790,7 @@ def dataset_panel(dataset_key):
 def dataset_new(dataset_key):
     """通用数据集新建条目 — 支持 ?lang= 参数保存到对应语言."""
     from flask import redirect, url_for
+    _validate_key(dataset_key)
     _, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
@@ -1767,6 +1804,7 @@ def dataset_new(dataset_key):
 def dataset_edit(dataset_key, item_id):
     """通用数据集编辑 — 支持 ?lang= 参数编辑不同语言版本."""
     from flask import flash, redirect, request, url_for
+    _validate_key(dataset_key)
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
@@ -1788,6 +1826,13 @@ def dataset_edit(dataset_key, item_id):
         # slug 唯一性校验
         new_slug = fields.get('slug', '').strip() or None
         if new_slug:
+            # 格式校验: slug 会拼进详情页输出路径 {item_path}/{slug}/index.html,
+            # 不校验则 `../../<任意路径>` 可让 builder 把 HTML 写到 output 目录外
+            # (构建期任意文件写入)。复用站点级同一套 SLUG_PATTERN 严格白名单。
+            if not SLUG_PATTERN.match(new_slug):
+                flash(f'Slug "{new_slug}" 格式非法：只能用小写字母、数字、连字符，3-30 字符', 'error')
+                return redirect(url_for('core.dataset_edit', dataset_key=dataset_key,
+                                        item_id=item_id, _fragment='1', site=site.id, lang=lang))
             all_items = datasets.load(site.id, dataset_key, lang=storage_lang)
             dup = next((it for it in all_items
                         if it.get('slug') == new_slug and it.get('id') != item_id), None)
@@ -1866,6 +1911,7 @@ def dataset_edit(dataset_key, item_id):
 def dataset_delete(dataset_key, item_id):
     """通用数据集删除 — 支持 ?lang= 参数删除指定语言版本."""
     from flask import flash, redirect, url_for
+    _validate_key(dataset_key)
     _, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
@@ -1884,6 +1930,7 @@ def page_panel(page_key):
     支持语言参数 ?lang=en 来编辑特定语言版本的页面内容。
     """
     from flask import flash, redirect, request, url_for
+    _validate_key(page_key)
     user, site = _current_context()
 
     lang, languages, default_lang = _get_panel_lang(site)

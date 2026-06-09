@@ -17,7 +17,7 @@ import shutil
 from pathlib import Path
 
 import yaml
-from flask import current_app
+from flask import abort, current_app
 
 
 def site_root(site_id):
@@ -29,6 +29,23 @@ def site_root(site_id):
 def lang_root(site_id, lang_code):
     """获取站点某语言版本的根目录 (lang/<code>/)."""
     return site_root(site_id) / 'lang' / lang_code
+
+
+def _safe_path(site_id, relative_path, lang=None):
+    """把 relative_path 解析到站点(或语言)根目录下, 并强制校验不逃出边界.
+
+    为什么需要: page_key / dataset_key 经 Flask <path:> 转换器接收, 保留了
+    `..` 和 `/`, 一路传到这里拼成 relative_path。若不校验, 已登录店主可用
+    `../../<别人站点id>/...` 跨租户读写他人 .yaml, 或写到 sites/ 目录之外。
+    这里是所有 YAML 读写的单一出口, 在此兜底一次即可全覆盖。
+    """
+    base = (lang_root(site_id, lang) if lang else site_root(site_id)).resolve()
+    full = (base / relative_path).resolve()
+    try:
+        full.relative_to(base)
+    except ValueError:
+        abort(400, '非法路径')
+    return full
 
 
 def init_site_folder(site_id):
@@ -44,10 +61,7 @@ def write_yaml(site_id, relative_path, data, lang=None):
 
     如果指定了 lang (非默认语言), 写入 lang/<lang>/<relative_path>.
     """
-    if lang:
-        path = lang_root(site_id, lang) / relative_path
-    else:
-        path = site_root(site_id) / relative_path
+    path = _safe_path(site_id, relative_path, lang=lang)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         yaml.safe_dump(data, allow_unicode=True, sort_keys=False, indent=2),
@@ -61,14 +75,14 @@ def read_yaml(site_id, relative_path, default=None, lang=None):
     如果指定了 lang: 先尝试 lang/<lang>/<relative_path>, 不存在则回退到根路径.
     不指定 lang: 只读根路径.
     """
-    # 先尝试语言特定版本
+    # 先尝试语言特定版本 (路径同样过 _safe_path 兜底, 防 .. 逃逸)
     if lang:
-        lang_path = lang_root(site_id, lang) / relative_path
+        lang_path = _safe_path(site_id, relative_path, lang=lang)
         if lang_path.exists():
             return yaml.safe_load(lang_path.read_text(encoding='utf-8'))
 
     # 回退到根路径
-    path = site_root(site_id) / relative_path
+    path = _safe_path(site_id, relative_path)
     if not path.exists():
         return default
     return yaml.safe_load(path.read_text(encoding='utf-8'))

@@ -12,7 +12,7 @@ from pathlib import Path
 import yaml
 from flask import current_app
 from jinja2 import Environment, FileSystemLoader, select_autoescape, pass_context
-from markupsafe import Markup
+from markupsafe import Markup, escape
 
 from . import block_parser, block_renderer
 from . import menu as menu_lib
@@ -278,20 +278,27 @@ def _build_language_selector_page(output_root, base_url, settings, theme, year, 
     if not languages:
         return
 
+    # 本页不走 Jinja2（手工字符串拼接），自动转义不生效。
+    # 公司名/语言名等值都可能含用户输入，必须显式 escape，否则
+    # 公司名填 <script>... 会在生成的根 index.html 里执行（存储型 XSS）。
+    company_name = escape(settings.get('company', {}).get('name', ''))
+    safe_base = escape(base_url.rstrip('/'))
+    first_lang_code = escape(languages[0]['code'])
+
     html = '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
     html += '<meta charset="UTF-8">\n'
     html += '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-    html += '<title>Language - ' + settings.get('company', {}).get('name', '') + '</title>\n'
-    html += '<meta http-equiv="refresh" content="0;url=' + base_url.rstrip('/') + '/' + languages[0]['code'] + '/">\n'
-    html += '<link rel="stylesheet" href="' + base_url.rstrip('/') + '/static/css/main.css">\n'
+    html += '<title>Language - ' + str(company_name) + '</title>\n'
+    html += '<meta http-equiv="refresh" content="0;url=' + str(safe_base) + '/' + str(first_lang_code) + '/">\n'
+    html += '<link rel="stylesheet" href="' + str(safe_base) + '/static/css/main.css">\n'
     html += '</head>\n<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:2rem;">\n'
-    html += '<h1>' + settings.get('company', {}).get('name', '') + '</h1>\n'
+    html += '<h1>' + str(company_name) + '</h1>\n'
     html += '<p>Select your language / 選擇語言 / 选择语言</p>\n'
     html += '<div style="display:flex;gap:1rem;">\n'
     for lang in languages:
-        html += '<a href="' + base_url.rstrip('/') + '/' + lang['code'] + '/" '
+        html += '<a href="' + str(safe_base) + '/' + str(escape(lang['code'])) + '/" '
         html += 'style="padding:1rem 2rem;border:1px solid #e5e7eb;border-radius:8px;text-decoration:none;font-size:1.2rem;">'
-        html += lang.get('flag', '') + ' ' + lang['name'] + '</a>\n'
+        html += str(escape(lang.get('flag', ''))) + ' ' + str(escape(lang['name'])) + '</a>\n'
     html += '</div>\n</body>\n</html>'
 
     (output_root / 'index.html').write_text(html, encoding='utf-8')
@@ -329,6 +336,17 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
 
             rendered = tpl.render(**ctx)
             out = lang_output / task['output_path']
+            # 越界兜底: detail 页的 output_path 含店主可编辑的 slug,
+            # 若 slug 形如 ../../ 会逃出 output 根写到任意位置。即便 routes
+            # 层已校验新 slug, 历史脏数据仍可能存在, 这里写文件前强制断言。
+            try:
+                out.resolve().relative_to(output_root.resolve())
+            except ValueError:
+                current_app.logger.error(
+                    '跳过越界输出路径 %s (lang=%s): 解析后逃出 output 根',
+                    task.get('output_path'), lang_code,
+                )
+                continue
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_text(rendered, encoding='utf-8')
         except Exception as e:

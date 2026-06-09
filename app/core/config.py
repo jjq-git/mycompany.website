@@ -15,16 +15,23 @@ load_dotenv(ROOT / '.env')
 
 
 def _resolve_secret_key():
-    """SECRET_KEY: 生产环境必须从 SECRET_KEY 环境变量获取, 否则拒绝启动;
-    开发环境允许使用临时默认值, 但打出警告提醒补 .env."""
+    """SECRET_KEY: fail-closed —— 默认按生产对待, 必须从 SECRET_KEY 环境变量获取,
+    否则拒绝启动; 只有显式声明开发环境时才允许回落临时默认值, 并打警告。
+
+    为什么反过来判定: 最常见的生产启动方式 `gunicorn run:app` 不会设
+    FLASK_ENV / FLASK_DEBUG。旧逻辑只在显式 prod 时才拦, 于是裸 gunicorn
+    会静默用源码里公开的硬编码 key, 攻击者可伪造任意用户(含 admin)的 session。
+    改为: 除非明确说"我在开发", 否则一律要求真 SECRET_KEY。
+    """
     key = os.environ.get('SECRET_KEY', '').strip()
     env = os.environ.get('FLASK_ENV', '').strip().lower()
-    is_prod = env in ('production', 'prod') or os.environ.get('FLASK_DEBUG', '').strip() == '0'
+    is_dev = env in ('development', 'dev') or os.environ.get('FLASK_DEBUG', '').strip() in ('1', 'true')
     if not key:
-        if is_prod:
+        if not is_dev:
             raise RuntimeError(
-                '生产环境必须设置 SECRET_KEY 环境变量（建议 32+ 字节随机字符串）。'
-                '参考 .env.example，可用 python -c "import secrets; print(secrets.token_urlsafe(48))" 生成。'
+                '未设置 SECRET_KEY 环境变量。生产部署必须提供（建议 32+ 字节随机字符串）；'
+                '本地开发请在 .env 设 SECRET_KEY，或设 FLASK_DEBUG=1 显式声明开发环境。'
+                '可用 python -c "import secrets; print(secrets.token_urlsafe(48))" 生成。'
             )
         logger.warning('SECRET_KEY 未设置，开发环境使用临时默认值；生产部署前必须改！')
         key = 'dev-only-do-not-use-in-prod'
