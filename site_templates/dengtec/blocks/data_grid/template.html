@@ -7,7 +7,7 @@
     <div data-name="items" data-type="list" data-source="" class="dg-list">
       <a data-name="item" data-type="group" data-href-template="{base_url}/{lang}{current_path}{slug}/" class="dg-card">
         <div class="dg-card-image">
-          <img data-name="cover" data-type="image" src="" alt="" loading="lazy">
+          <img data-name="cover" data-fallback="image,photo,logo" data-type="image" src="" alt="" loading="lazy">
           <span data-name="category" data-type="text" class="dg-card-category">分类</span>
         </div>
         <div class="dg-card-body">
@@ -19,6 +19,16 @@
           </div>
         </div>
       </a>
+    </div>
+    <!-- 分页配置区：data-name span 由 block_renderer 注入值并清除 data-name 属性，
+         data-pager-key 不被渲染器清理，JS 据此读取配置；span 文本空时 JS 用默认值兜底 -->
+    <div data-name="pager" data-type="group" class="dg-pager" style="display:none">
+      <span data-name="show_pagination" data-type="text" data-pager-key="show_pagination" hidden>true</span>
+      <span data-name="pagination_style" data-type="text" data-pager-key="pagination_style" hidden>load_more</span>
+      <span data-name="items_per_page" data-type="text" data-pager-key="items_per_page" hidden>6</span>
+      <span data-name="pager_align" data-type="text" data-pager-key="pager_align" hidden>center</span>
+      <button class="btn btn-outline-primary dg-load-more" style="display:none" onclick="loadMoreDataGrid(this)">加载更多 <span class="dg-remaining"></span></button>
+      <div class="dg-page-numbers" style="display:none"></div>
     </div>
   </div>
 </section>

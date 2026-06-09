@@ -1,7 +1,6 @@
 {# 总览面板 #}
 <div class="d-flex align-items-center justify-content-between mb-3">
   <span class="fw-semibold">站点总览</span>
-  <button type="button" class="btn btn-sm btn-outline-primary" onclick="saveGlobalSettings()">保存</button>
 </div>
 <div class="panel-section">
   <div class="panel-section-title">内容统计</div>
@@ -20,34 +19,3 @@
     </div>
   </div>
 </div>
-<div class="panel-section mt-3">
-  <div class="panel-section-title">全局样式</div>
-  <div class="row g-2">
-    <div class="col-12">
-      <label class="form-label small mb-1 text-muted">全局宽度 <span class="text-muted" style="font-weight:normal;">（每个模块的外层宽度默认使用此值）</span></label>
-      <div class="input-group input-group-sm">
-        <input type="text" class="form-control form-control-sm" id="globalWidth" name="global_width" value="{{ global_width }}" placeholder="如 1200px，留空表示不限制宽度" style="width:60%">
-        <select class="form-select form-select-sm unit-picker" data-target="globalWidth" style="width:40%" onchange="var inp=document.getElementById('globalWidth');if(inp){var v=inp.value.replace(/px|%|rem|vw$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="%">%</option><option value="px">px</option><option value="rem">rem</option><option value="vw">vw</option></select>
-      </div>
-    </div>
-  </div>
-</div>
-<script>
-function saveGlobalSettings() {
-  var globalWidth = document.getElementById('globalWidth').value.trim();
-  var formData = new FormData();
-  formData.append('global_width', globalWidth);
-  fetch(window.location.href, {
-    method: 'POST',
-    body: formData
-  }).then(function(r) {
-    if (r.ok) {
-      var toast = document.createElement('div');
-      toast.className = 'toast-notice';
-      toast.textContent = '已保存';
-      document.body.appendChild(toast);
-      setTimeout(function() { toast.remove(); }, 1500);
-    }
-  });
-}
-</script>

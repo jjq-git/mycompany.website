@@ -45,10 +45,27 @@ fields:
       - value: "page_numbers"
         label: 页码导航
   - key: items_per_page
-    label: 每页条数（每页放几条）
-    type: number
+    label: 每页条数
+    type: select
     group: 分页
-    default: 6
+    default: "6"
+    options:
+      - value: "3"
+        label: 3 条/页
+      - value: "4"
+        label: 4 条/页
+      - value: "6"
+        label: 6 条/页
+      - value: "8"
+        label: 8 条/页
+      - value: "10"
+        label: 10 条/页
+      - value: "12"
+        label: 12 条/页
+      - value: "18"
+        label: 18 条/页
+      - value: "24"
+        label: 24 条/页
   - key: pager_align
     label: 分页对齐
     type: select
@@ -72,7 +89,7 @@ fields:
     type: text
     group: 外层样式
     default: ""
-    placeholder: 如 1200px（留空使用全局宽度）
+    placeholder: 如 1200px（留空不限制宽度）
   - key: inner_width
     label: 内层内容区宽度
     type: text

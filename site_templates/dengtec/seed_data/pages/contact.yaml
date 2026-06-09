@@ -1,32 +1,36 @@
-# 联系页面
 modules:
-  - type: section_title
-    order: 1
-    variant: default
-    data:
-      tag: 联系我们
-      title: 期待与您合作
-      desc: 无论是产品咨询、方案定制还是技术支持，欢迎随时联系
-
-  - type: contact_info
-    order: 2
-    variant: cards
-    data:
-      title: 联系方式
-      subtitle: 您可以通过以下方式找到我们
-      show_phone: "true"
-      show_mobile: "true"
-      show_email: "true"
-      show_address: "true"
-      show_business_hours: "true"
-
-  - type: text_content
-    order: 3
-    variant: default
-    data:
-      title: 来访须知
-      # body 为富文本（richtext / innerHTML）：用 HTML 段落标签
-      body: |
-        <p>如需来访洽谈，请提前通过电话或邮件预约，以便我们安排相关人员接待。</p>
-        <p>公司地址：江苏省昆山市开发区新星路5号</p>
-        <p>工作时间：周一至周五 9:00 - 18:00，周末请提前预约。</p>
+- type: contact_info
+  order: 1
+  variant: default
+  data:
+    title: 联系方式
+    subtitle: 您可以通过以下方式找到我们
+    _hidden_phone_card: ''
+    phone: 180 2020 4529
+    _hidden_mobile_card: ''
+    mobile: 512 5013 3094
+    _hidden_email_card: ''
+    email: info@dengtec.com
+    _hidden_address_card: ''
+    address: 江苏省昆山市开发区新星路5号
+    _hidden_hours_card: ''
+    business_hours: 90-
+    _hidden: 'false'
+- type: contact_form
+  order: 2
+  variant: dir_row
+  data:
+    title: ''
+    subtitle: ''
+    form_action: ''
+    _hidden_map_panel: ''
+    map_src: https://www.amap.com/
+    _hidden_form_panel: ''
+    _hidden_name_field: ''
+    _hidden_email_field: ''
+    _hidden_phone_field: ''
+    _hidden_company_field: ''
+    _hidden_message_field: ''
+    _hidden: 'false'
+    style_dir: row
+    style_bg-color: '#f6f7f8'

@@ -1,0 +1,76 @@
+# 种子数据: 公司信息与站点设置
+company:
+  name: "Nova AI"
+  short_name: "Nova"
+  logo: ""
+  icp: ""
+
+contact:
+  phone: "+1 (415) 555-0172"
+  mobile: ""
+  email: "hello@nova-ai.example.com"
+  address: "548 Market St, San Francisco, CA 94104"
+  business_hours: "Mon–Fri 9:00–18:00"
+  weekend: ""
+
+social:
+  twitter: "https://twitter.com/"
+  linkedin: "https://linkedin.com/"
+  github: "https://github.com/"
+  enabled: true
+
+theme: {}  # 使用 meta.yaml default_theme 全部默认值
+
+menu:
+  - {label: Home, type: home}
+  - label: Products
+    type: list
+    target: products
+    dropdown_style: horizontal
+  - {label: Solutions, type: list, target: portfolio}
+  - {label: Pricing, type: page, target: pricing}
+  - {label: About, type: page, target: about}
+  - {label: Blog, type: list, target: posts}
+
+menu_zh-CN:
+  - {label: 首页, type: home}
+  - label: 产品
+    type: list
+    target: products
+    dropdown_style: horizontal
+  - {label: 解决方案, type: list, target: portfolio}
+  - {label: 定价, type: page, target: pricing}
+  - {label: 关于我们, type: page, target: about}
+  - {label: 博客, type: list, target: posts}
+
+header:
+  variant: logo_left_menu_right
+  language_switcher:
+    enabled: true
+    style: vertical_dropdown
+  enabled_languages:
+    - en
+    - zh-CN
+
+footer:
+  variant: columns_social
+  columns:
+    - title: Product
+      type: menu
+      links:
+        - {label: Claude Opus, url: /products/claude-opus/}
+        - {label: Claude Sonnet, url: /products/claude-sonnet/}
+        - {label: Claude Haiku, url: /products/claude-haiku/}
+        - {label: Pricing, url: /pricing/}
+    - title: Company
+      type: menu
+      links:
+        - {label: About, url: /about/}
+        - {label: Blog, url: /posts/}
+        - {label: Careers, url: "#"}
+    - title: Resources
+      type: menu
+      links:
+        - {label: Documentation, url: "#"}
+        - {label: API Reference, url: "#"}
+        - {label: Status, url: "#"}

@@ -100,6 +100,7 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
                 'all_datasets': jinja_ctx.get('all_datasets', {}),
                 # data-from 用：settings（含 contact 等全局配置）
                 'settings': jinja_ctx.get('settings', {}),
+                't': jinja_ctx.get('t', {}),
                 # data-href-template 用：站内链接前缀（base_url/lang/current_path）
                 'vars': {
                     'base_url': jinja_ctx.get('base_url', '') or '',
@@ -239,6 +240,34 @@ def _load_translations(tpl_root):
     return {}
 
 
+def _load_seed_lang_overrides(seed, lang_code, default_lang, default_pages, default_data):
+    """从 seed_data/lang/<code>/ 加载语言特定的 pages 和 data.
+
+    非默认语言: 先加载默认数据, 再用 lang/<code>/ 下的同名文件覆盖.
+    默认语言: 直接用默认数据.
+    """
+    if lang_code == default_lang:
+        return default_pages, default_data
+
+    lang_dir = seed / 'lang' / lang_code
+
+    # 加载语言特定 pages (覆盖同名 key)
+    lang_pages = dict(default_pages)
+    pages_dir = lang_dir / 'pages'
+    if pages_dir.exists():
+        for f in pages_dir.glob('*.yaml'):
+            lang_pages[f.stem] = _load_yaml(f)
+
+    # 加载语言特定 data (覆盖同名 key)
+    lang_data = dict(default_data)
+    data_dir = lang_dir / 'data'
+    if data_dir.exists():
+        for f in data_dir.glob('*.yaml'):
+            lang_data[f.stem] = _load_yaml(f)
+
+    return lang_pages, lang_data
+
+
 def _build_language_selector_page(output_root, base_url, settings, theme, year, meta, translations, languages=None):
     """在根路径生成语言选择首页.
 
@@ -323,6 +352,7 @@ def build_site(site_id, base_url=''):
         raise ValueError(f'站点不存在: {site_id}')
 
     settings, pages, data = _gather_site_data(site_id, site.template_name)
+    site_settings = _load_yaml(Path(current_app.config['SITES_DIR']) / str(site_id) / 'settings.yaml')
 
     # 模板默认值兜底
     tpl_root, tpl_html_dir, tpl_static_dir = _template_paths(site.template_name)
@@ -392,15 +422,32 @@ def build_site(site_id, base_url=''):
             # 加载语言特定数据，回退到默认语言
             lang_pages, lang_data = _load_lang_overrides(site_id, lang_code, default_lang, pages, data)
 
-            # 语言特定菜单（settings 中 menu_<lang> 覆盖 menu）
+            # 语言特定菜单：优先旧格式 menu_<lang> 键（向后兼容），
+            # 否则用共享 menu 结构 + menu_labels.<lang> 覆盖标签
             lang_settings = dict(settings)
             menu_override_key = f'menu_{lang_code}'
-            if menu_override_key in settings and settings[menu_override_key]:
+            if menu_override_key in settings and settings.get(menu_override_key):
+                # 旧格式: 语言独立的完整菜单树（向后兼容）
                 lang_settings['menu'] = menu_lib.ensure_home(
                     menu_lib.normalize_for_render(
                         menu_lib.upgrade_old_format(settings[menu_override_key], meta.get('datasets', []))
                     )
                 )
+            else:
+                # 新格式: 共享 menu 结构 + menu_labels 覆盖标签（所有语言统一走此路径）
+                shared_menu = settings.get('menu', [])
+                label_map = (settings.get('menu_labels') or {}).get(lang_code, {})
+                if label_map:
+                    lang_settings['menu'] = menu_lib.apply_labels(shared_menu, label_map)
+            footer_override_key = f'footer_{lang_code}'
+            if footer_override_key in settings and settings[footer_override_key]:
+                lang_settings['footer'] = settings[footer_override_key]
+            company_override_key = f'company_{lang_code}'
+            if company_override_key in settings and settings[company_override_key]:
+                lang_settings['company'] = settings[company_override_key]
+            contact_override_key = f'contact_{lang_code}'
+            if contact_override_key in settings and settings[contact_override_key]:
+                lang_settings['contact'] = settings[contact_override_key]
 
             # 提取语言特定的产品分类和列表
             lang_products_categories = _extract_products_categories(lang_data)
@@ -517,21 +564,50 @@ def build_template_preview(template_name, base_url=''):
 
     if languages:
         _build_language_selector_page(output_root, base_url, settings, theme, year, meta, translations)
+        default_lang = meta.get('default_language', languages[0]['code'] if languages else 'zh-CN')
         for lang_opt in languages:
             lang_code = lang_opt['code']
             t_data = translations.get(lang_code, {})
+
+            # 加载语言特定 pages/data（seed_data/lang/<code>/ 覆盖默认）
+            lang_pages, lang_data = _load_seed_lang_overrides(seed, lang_code, default_lang, pages, data)
+
+            # 语言特定 settings 覆盖（menu_en, footer_en, company_en, contact_en）
+            lang_settings = dict(settings)
+            menu_override_key = f'menu_{lang_code}'
+            if menu_override_key in settings and settings[menu_override_key]:
+                lang_settings['menu'] = menu_lib.ensure_home(
+                    menu_lib.normalize_for_render(
+                        menu_lib.upgrade_old_format(settings[menu_override_key], meta.get('datasets', []))
+                    )
+                )
+            footer_override_key = f'footer_{lang_code}'
+            if footer_override_key in settings and settings[footer_override_key]:
+                lang_settings['footer'] = settings[footer_override_key]
+            company_override_key = f'company_{lang_code}'
+            if company_override_key in settings and settings[company_override_key]:
+                lang_settings['company'] = settings[company_override_key]
+            contact_override_key = f'contact_{lang_code}'
+            if contact_override_key in settings and settings[contact_override_key]:
+                lang_settings['contact'] = settings[contact_override_key]
+
+            # 提取语言特定的产品分类和列表
+            lang_products_categories = _extract_products_categories(lang_data)
+            lang_products_items = _extract_products_items(lang_data)
+
             common = {
-                'settings': settings, 'theme': theme,
+                'settings': lang_settings, 'theme': theme,
                 'year': year, 'lang': lang_code,
                 'base_url': base_url.rstrip('/'),
                 't': t_data, 'languages': languages,
-                'products_categories': products_categories,
-                'products': products_items,
-                'portfolio': data.get('portfolio', []),
-                'posts': data.get('posts', []),
-                'features': data.get('features', []),
+                'products_categories': lang_products_categories,
+                'products': lang_products_items,
+                'portfolio': lang_data.get('portfolio', []),
+                'posts': lang_data.get('posts', []),
+                'features': lang_data.get('features', []),
+                'all_datasets': lang_data,
             }
-            _render_for_language(env, tpl_html_dir, output_root, lang_code, common, pages, data, meta)
+            _render_for_language(env, tpl_html_dir, output_root, lang_code, common, lang_pages, lang_data, meta)
     else:
         common = {
             'settings': settings, 'theme': theme,

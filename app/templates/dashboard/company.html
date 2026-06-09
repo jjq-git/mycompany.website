@@ -12,8 +12,26 @@
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('core.company', site=site.id) }}" style="max-width: 720px;">
+<form method="post" action="{{ url_for('core.company', site=site.id, lang=current_lang) }}" style="max-width: 720px;" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% set current_logo = company.get('logo', '') %}
+  <div class="mb-2">
+    <label class="form-label small mb-1 text-muted">Logo</label>
+    <input type="hidden" name="company.logo" value="{{ current_logo }}" oninput="updateImagePreview(this)">
+    <label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor='#94a3b8';this.style.background='#f1f5f9'" onmouseleave="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      上传图片
+      <input type="file" name="company_logo_file" accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp" onchange="handleCompanyLogoUpload(this)" style="display:none">
+    </label>
+    <div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>
+    <div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;{% if not current_logo %}display:none{% endif %}">{{ current_logo }}</div>
+    <div class="mt-2 module-image-preview" style="{% if not current_logo %}display:none{% endif %}">
+      <div style="position:relative;display:inline-block">
+        <img src="{{ current_logo }}" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeCompanyLogo(this)" onerror="this.parentElement.parentElement.style.display='none'">
+        <button type="button" class="btn btn-sm" onclick="clearCompanyLogo(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button>
+      </div>
+    </div>
+  </div>
   <div class="mb-2">
     <label class="form-label small mb-1">公司名称</label>
     <input class="form-control form-control-sm" name="company.name" value="{{ company.get('name', '') }}">
@@ -41,4 +59,69 @@
   </div>
   <button class="btn btn-primary btn-sm mt-2" type="submit">保存</button>
 </form>
+
+<script>
+function handleCompanyLogoUpload(fileInput) {
+  var file = fileInput.files[0];
+  var container = fileInput.closest('.mb-2');
+  var preview = container ? container.querySelector('.module-image-preview') : null;
+  var img = preview ? preview.querySelector('img') : null;
+  var urlText = container ? container.querySelector('.module-image-url-text') : null;
+  if (!file || !preview || !img) return;
+  if (file.type.startsWith('image/')) {
+    img.src = URL.createObjectURL(file);
+    preview.style.display = '';
+  }
+  if (urlText) { urlText.textContent = file.name; urlText.style.display = ''; }
+  img.onerror = function() { preview.style.display = 'none'; };
+}
+
+function enlargeCompanyLogo(img) {
+  var src = img.src;
+  if (!src) return;
+  var overlay = document.getElementById('imgLightbox');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'imgLightbox';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:pointer';
+    overlay.onclick = function() { overlay.style.display = 'none'; };
+    var lbImg = document.createElement('img');
+    lbImg.style.cssText = 'max-width:95vw;max-height:95vh;border-radius:6px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
+    overlay.appendChild(lbImg);
+    document.body.appendChild(overlay);
+  }
+  overlay.querySelector('img').src = src;
+  overlay.style.display = 'flex';
+}
+
+function clearCompanyLogo(btn) {
+  var container = btn.closest('.mb-2');
+  if (!container) return;
+  var urlInput = container.querySelector('input[type="hidden"]');
+  var fileInput = container.querySelector('input[type="file"]');
+  var urlText = container.querySelector('.module-image-url-text');
+  var preview = container.querySelector('.module-image-preview');
+  var img = preview ? preview.querySelector('img') : null;
+  if (urlInput) urlInput.value = '';
+  if (fileInput) fileInput.value = '';
+  if (urlText) { urlText.textContent = ''; urlText.style.display = 'none'; }
+  if (img) img.src = '';
+  if (preview) preview.style.display = 'none';
+}
+
+function updateImagePreview(urlInput) {
+  var container = urlInput.closest('.mb-2');
+  var preview = container ? container.querySelector('.module-image-preview') : null;
+  var img = preview ? preview.querySelector('img') : null;
+  if (!preview || !img) return;
+  var url = urlInput.value.trim();
+  if (url) {
+    img.src = url;
+    preview.style.display = '';
+  } else {
+    preview.style.display = 'none';
+    img.src = '';
+  }
+}
+</script>
 {% endblock %}

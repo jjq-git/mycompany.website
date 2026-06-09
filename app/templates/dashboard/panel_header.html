@@ -9,72 +9,30 @@
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('core.header_edit', _fragment='1', site=site.id) }}">
+<form method="post" action="{{ url_for('core.header_edit', _fragment='1', site=site.id, lang=current_lang) }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  {# Header 变体选择 - 卡片式，分 tab（内容/样式） #}
+  {# Header 变体选择 - 卡片式 #}
   {% set selected_variant = current_header.get('variant', header_variants[0].key) %}
   <div class="panel-section">
     <div class="panel-section-title">头部布局</div>
-    {# Tab 切换按钮 — 与模块编辑器的 tab 风格一致 #}
-    <div class="d-flex mb-2">
-      <button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="switchHeaderTab(this, 'content')">内容</button>
-      <button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="switchHeaderTab(this, 'style')">样式</button>
-    </div>
-    {# 内容 Tab：变体选择 #}
-    <div class="content-style-panel panel-content">
-      <div class="variant-card-grid">
-        {% for variant in header_variants %}
-        <label class="variant-card {% if selected_variant == variant.key %}selected{% endif %}" data-variant="{{ variant.key }}">
-          <input type="radio" name="header_variant" value="{{ variant.key }}"
-                 {% if selected_variant == variant.key %}checked{% endif %}
-                 class="variant-card-radio">
-          <div class="variant-card-icon">
-            {% if variant.key == 'logo_left_menu_right' %}
-            <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="2" y="8" width="10" height="16" rx="2" fill="currentColor" opacity="0.7"/><rect x="16" y="12" width="6" height="8" rx="1" fill="currentColor" opacity="0.35"/><rect x="25" y="12" width="6" height="8" rx="1" fill="currentColor" opacity="0.35"/><rect x="34" y="12" width="6" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
-            {% elif variant.key == 'logo_center_menu_below' %}
-            <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="19" y="4" width="10" height="10" rx="2" fill="currentColor" opacity="0.7"/><rect x="10" y="18" width="6" height="6" rx="1" fill="currentColor" opacity="0.35"/><rect x="21" y="18" width="6" height="6" rx="1" fill="currentColor" opacity="0.35"/><rect x="32" y="18" width="6" height="6" rx="1" fill="currentColor" opacity="0.35"/></svg>
-            {% elif variant.key == 'minimal_hamburger' %}
-            <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="2" y="10" width="8" height="12" rx="2" fill="currentColor" opacity="0.7"/><rect x="34" y="11" width="12" height="3" rx="1.5" fill="currentColor" opacity="0.5"/><rect x="36" y="16" width="10" height="3" rx="1.5" fill="currentColor" opacity="0.5"/><rect x="38" y="21" width="8" height="3" rx="1.5" fill="currentColor" opacity="0.5"/></svg>
-            {% elif variant.key == 'top_bar_social' %}
-            <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="0" y="2" width="48" height="7" rx="1" fill="currentColor" opacity="0.25"/><circle cx="38" cy="5.5" r="1.5" fill="currentColor" opacity="0.4"/><circle cx="42" cy="5.5" r="1.5" fill="currentColor" opacity="0.4"/><rect x="2" y="15" width="8" height="10" rx="2" fill="currentColor" opacity="0.7"/><rect x="16" y="18" width="6" height="5" rx="1" fill="currentColor" opacity="0.35"/><rect x="25" y="18" width="6" height="5" rx="1" fill="currentColor" opacity="0.35"/></svg>
-            {% endif %}
-          </div>
-          <div class="variant-card-label">{{ variant.label }}</div>
-        </label>
-        {% endfor %}
-      </div>
-    </div>
-      {# 样式 Tab：外层宽度(header-main) + 内层样式(container 宽度 + 内边距) #}
-    <div class="content-style-panel panel-style" style="display:none">
-      <div class="small fw-semibold mb-1 text-muted mt-2">外层样式</div>
-      <div class="row g-2">
-        <div class="col-12">
-          {% set gw = settings.get('layout', {}).get('global_width', '90%') %}
-          <label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（头部整体最大宽度，留空=使用全局宽度 {{ gw }}）</span></label>
-          <div class="input-group input-group-sm">
-            <input type="text" class="form-control form-control-sm" name="header_outer_width" value="{{ current_header.get('outer_width', '') }}" placeholder="留空则使用全局宽度 {{ gw }}" style="width:60%">
-            <select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'header_outer_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select>
-          </div>
+    <div class="variant-card-grid">
+      {% for variant in header_variants %}
+      <label class="variant-card {% if selected_variant == variant.key %}selected{% endif %}" data-variant="{{ variant.key }}">
+        <input type="radio" name="header_variant" value="{{ variant.key }}"
+               {% if selected_variant == variant.key %}checked{% endif %}
+               class="variant-card-radio">
+        <div class="variant-card-icon">
+          {% if variant.key == 'logo_left_menu_right' %}
+          <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="2" y="8" width="10" height="16" rx="2" fill="currentColor" opacity="0.7"/><rect x="16" y="12" width="6" height="8" rx="1" fill="currentColor" opacity="0.35"/><rect x="25" y="12" width="6" height="8" rx="1" fill="currentColor" opacity="0.35"/><rect x="34" y="12" width="6" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+          {% elif variant.key == 'logo_center_menu_below' %}
+          <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="19" y="4" width="10" height="10" rx="2" fill="currentColor" opacity="0.7"/><rect x="10" y="18" width="6" height="6" rx="1" fill="currentColor" opacity="0.35"/><rect x="21" y="18" width="6" height="6" rx="1" fill="currentColor" opacity="0.35"/><rect x="32" y="18" width="6" height="6" rx="1" fill="currentColor" opacity="0.35"/></svg>
+          {% elif variant.key == 'minimal_hamburger' %}
+          <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="2" y="10" width="8" height="12" rx="2" fill="currentColor" opacity="0.7"/><rect x="34" y="11" width="12" height="3" rx="1.5" fill="currentColor" opacity="0.5"/><rect x="36" y="16" width="10" height="3" rx="1.5" fill="currentColor" opacity="0.5"/><rect x="38" y="21" width="8" height="3" rx="1.5" fill="currentColor" opacity="0.5"/></svg>
+          {% endif %}
         </div>
-      </div>
-      <div class="small fw-semibold mb-1 text-muted mt-2">内层样式</div>
-      <div class="row g-2">
-        <div class="col-12">
-          <label class="form-label small mb-1 text-muted">内层宽度 <span class="text-muted" style="font-weight:normal;">（头部内容区最大宽度，留空=撑满外层）</span></label>
-          <div class="input-group input-group-sm">
-            <input type="text" class="form-control form-control-sm" name="header_inner_width" value="{{ current_header.get('inner_width', '') }}" placeholder="留空则撑满外层" style="width:60%">
-            <select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'header_inner_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,'').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select>
-          </div>
-        </div>
-      </div>
-      <div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>
-      <div class="input-group input-group-sm">
-        <input type="text" class="form-control form-control-sm placeholder-light" name="header_padding_top" value="{{ current_header.get('padding_top', '') }}" placeholder="↑ 上">
-        <input type="text" class="form-control form-control-sm placeholder-light" name="header_padding_right" value="{{ current_header.get('padding_right', '') }}" placeholder="→ 右">
-        <input type="text" class="form-control form-control-sm placeholder-light" name="header_padding_bottom" value="{{ current_header.get('padding_bottom', '') }}" placeholder="↓ 下">
-        <input type="text" class="form-control form-control-sm placeholder-light" name="header_padding_left" value="{{ current_header.get('padding_left', '') }}" placeholder="← 左">
-        <select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll('input[type=text]').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,'').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>
-      </div>
+        <div class="variant-card-label">{{ variant.label }}</div>
+      </label>
+      {% endfor %}
     </div>
   </div>
 
@@ -114,43 +72,12 @@
     </div>
   </div>
 
-  {# 社交链接 #}
-  <div class="panel-section">
-    <div class="panel-section-title">社交链接</div>
-    {% set social = settings.get('social', {}) %}
-    <div class="form-check form-switch mb-2">
-      <input class="form-check-input" type="checkbox" name="social_enabled" value="1"
-             id="socialToggle"
-             {% if social.get('enabled', True) %}checked{% endif %}>
-      <label class="form-check-label small" for="socialToggle">显示社交链接图标</label>
-    </div>
-
-    <div id="socialOptions" {% if not social.get('enabled', True) %}style="display:none"{% endif %}>
-      {% for platform in ('github','twitter','facebook','linkedin','youtube') %}
-      <div class="mb-2">
-        <label class="form-label small mb-1 text-muted">{{ platform | title }}</label>
-        <input class="form-control form-control-sm" name="social_{{ platform }}" value="{{ social.get(platform, '') }}" placeholder="https://...">
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
   <div class="panel-save-bar">
     <button class="btn btn-primary btn-sm w-100" type="submit">保存</button>
   </div>
 </form>
 
 <script>
-// 头部布局 Tab 切换（风格与模块编辑器的 switchContentStyleTab 一致）
-function switchHeaderTab(btn, tabName) {
-  var section = btn.closest('.panel-section');
-  section.querySelectorAll('.content-style-tab').forEach(function(t) { t.classList.remove('active'); });
-  btn.classList.add('active');
-  section.querySelectorAll('.content-style-panel').forEach(function(c) { c.style.display = 'none'; });
-  var target = section.querySelector('.panel-' + tabName);
-  if (target) target.style.display = '';
-}
-
 // 头部布局卡片点击切换
 document.querySelectorAll('.variant-card').forEach(function(card) {
   card.addEventListener('click', function() {
@@ -165,7 +92,4 @@ document.getElementById('langSwitcherToggle').addEventListener('change', functio
   document.getElementById('langSwitcherPanel').style.display = this.checked ? '' : 'none';
 });
 
-document.getElementById('socialToggle').addEventListener('change', function(){
-  document.getElementById('socialOptions').style.display = this.checked ? '' : 'none';
-});
 </script>

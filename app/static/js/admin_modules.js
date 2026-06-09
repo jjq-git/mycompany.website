@@ -140,6 +140,16 @@
       html += '</select>';
     } else if (type === 'number') {
       html += '<input type="number" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '">';
+    } else if (type === 'radio') {
+      (field.options || []).forEach(function(opt, oi) {
+        var ov = typeof opt === 'object' ? opt.value : opt;
+        var ol = typeof opt === 'object' ? (opt.label || opt.value) : opt;
+        html += '<div class="form-check form-check-inline">' +
+          '<input class="form-check-input" type="radio" name="' + prefix + key + '" value="' + esc(ov) + '" id="' + prefix + key + '_' + oi + '"' +
+          (String(value || '') === String(ov) ? ' checked' : '') + '>' +
+          '<label class="form-check-label" for="' + prefix + key + '_' + oi + '">' + esc(ol) + '</label>' +
+          '</div>';
+      });
     } else {
       html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '">';
     }
@@ -260,14 +270,21 @@
     var fields = meta.fields || [];
     var displayName = meta.display_name || type.replace(/_/g, ' ');
     var isDataModule = (type === 'item_data');
-    var needsResp = (type !== 'section_title' && type !== 'hero_banner' && type !== 'highlight_card' && type !== 'item_detail' && type !== 'text_content');
     var d = mdata;
     var isDsMode = !!(window._moduleCtx && window._moduleCtx.isDatasetMode);
 
     // 动态字段 (根据 meta.yaml fields 生成)
-    var desktopFields = fields.map(function(f) { return renderField('module_' + idx + '_data_', f, d[f.key] || f.default || '', ''); }).join('');
-    var tabletFields  = fields.map(function(f) { return renderField('module_' + idx + '_resp_tablet_data_', f, '', '继承电脑端'); }).join('');
-    var mobileFields  = fields.map(function(f) { return renderField('module_' + idx + '_resp_mobile_data_', f, '', '继承电脑端'); }).join('');
+    // 过滤掉由 specialEditor 自行渲染的字段（分页配置、columns 等），避免在通用表单区重复出现
+    var pagerKeys = ['show_pagination', 'pagination_style', 'items_per_page', 'pager_align', 'pager'];
+    var desktopFields = fields.filter(function(f) {
+      return ['columns', 'max_items'].concat(pagerKeys).indexOf(f.key) === -1;
+    }).map(function(f) { return renderField('module_' + idx + '_data_', f, d[f.key] || f.default || '', ''); }).join('');
+    var tabletFields  = fields.filter(function(f) {
+      return ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'].indexOf(f.key) === -1;
+    }).map(function(f) { return renderField('module_' + idx + '_resp_tablet_data_', f, '', '继承电脑端'); }).join('');
+    var mobileFields  = fields.filter(function(f) {
+      return ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'].indexOf(f.key) === -1;
+    }).map(function(f) { return renderField('module_' + idx + '_resp_mobile_data_', f, '', '继承电脑端'); }).join('');
 
     // 数据集来源选项
     var datasetNames = (window._moduleCtx && window._moduleCtx.datasetNames) || [];
@@ -443,17 +460,35 @@
           '<select class="form-select form-select-sm" name="module_' + idx + '_data_card_layout"><option value="image_top"' + (d.card_layout !== 'image_left' ? ' selected' : '') + '>上图下文</option><option value="image_left"' + (d.card_layout === 'image_left' ? ' selected' : '') + '>左图右文</option></select></div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
-        '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">显示分页</label>' +
-            '<select class="form-select form-select-sm" name="module_' + idx + '_data_show_pagination"><option value="true"' + (d.show_pagination !== 'false' ? ' selected' : '') + '>显示</option><option value="false"' + (d.show_pagination === 'false' ? ' selected' : '') + '>隐藏</option></select></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">分页样式</label>' +
-            '<select class="form-select form-select-sm" name="module_' + idx + '_data_pagination_style"><option value="load_more"' + (d.pagination_style !== 'page_numbers' ? ' selected' : '') + '>加载更多</option><option value="page_numbers"' + (d.pagination_style === 'page_numbers' ? ' selected' : '') + '>页码导航</option></select></div>' +
+        // Row 1: 显示分页 — toggle 开关
+        '<div class="form-check form-switch mb-3">' +
+          '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_pagination"' +
+          (d.show_pagination !== 'false' ? ' checked' : '') +
+          ' onchange="this.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
+          '<label class="form-check-label small" for="module_' + idx + '_show_pagination">显示分页</label>' +
+          '<input type="hidden" name="module_' + idx + '_data_show_pagination" value="' + (d.show_pagination !== 'false' ? 'true' : 'false') + '">' +
         '</div>' +
-        '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">每页显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_data_items_per_page" value="' + esc(d.items_per_page || '6') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">分页对齐</label>' +
-            '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align"><option value="center"' + (d.pager_align === 'center' || !d.pager_align ? ' selected' : '') + '>居中</option><option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option><option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option></select></div>' +
-        '</div>' +
+        // Row 2: 分页样式 — 下拉选择
+        '<div class="mb-2">' +
+          '<label class="form-label small mb-1 text-muted">分页样式</label>' +
+          '<select class="form-select form-select-sm" name="module_' + idx + '_data_pagination_style">' +
+            '<option value="load_more"' + (d.pagination_style !== 'page_numbers' ? ' selected' : '') + '>加载更多</option>' +
+            '<option value="page_numbers"' + (d.pagination_style === 'page_numbers' ? ' selected' : '') + '>页码导航</option>' +
+          '</select></div>' +
+        // Row 3: 每页显示数量 — 下拉选择
+        '<div class="mb-2">' +
+          '<label class="form-label small mb-1 text-muted">每页显示数量</label>' +
+          '<select class="form-select form-select-sm" name="module_' + idx + '_data_items_per_page">' +
+            ['3','4','6','8','10','12','18','24'].map(function(n) { return '<option value="' + n + '"' + ((d.items_per_page || '6') === n ? ' selected' : '') + '>' + n + ' 条/页</option>'; }).join('') +
+          '</select></div>' +
+        // Row 4: 分页对齐 — 下拉选择
+        '<div class="mb-2">' +
+          '<label class="form-label small mb-1 text-muted">分页对齐</label>' +
+          '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align">' +
+            '<option value="center"' + (d.pager_align === 'center' || !d.pager_align ? ' selected' : '') + '>居中</option>' +
+            '<option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option>' +
+            '<option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option>' +
+          '</select></div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>';
@@ -911,16 +946,12 @@
           visToggle('module_' + idx + '_data_show_address', '地址', (d.show_address || 'true')) +
           visToggle('module_' + idx + '_data_show_business_hours', '营业时间', (d.show_business_hours || 'false')) +
         '</div>' +
-        '<hr class="my-2">' +
-        '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_columns" value="' + esc(d.columns || '') + '" placeholder="默认" min="1" max="6"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">每页显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_items_per_page" value="' + esc(d.items_per_page || '') + '" placeholder="默认"></div>' +
-        '</div>';
+        '';
       styleEditor =
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg) + '</div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空使用全局宽度）</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空不限制宽度）</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">—</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
@@ -1086,11 +1117,6 @@
         '</div>';
     }
 
-    /* ====== responsive 控件 ====== */
-    var respCountField = 'items_per_page';
-    var respCountLabel = '每页显示数量';
-    var respCountPlaceholder = (type === 'data_grid') ? '默认' : '0=全部';
-
     /* ====== 构建 HTML (结构与 Jinja 模板对齐) ====== */
     var html =
       '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="' + headerBg + 'cursor:pointer">' +
@@ -1114,11 +1140,6 @@
         '</div>' +
         '<div class="content-style-panel panel-content">' +
           (specialEditor || desktopFields) +
-          (needsResp ?
-            '<hr class="my-2"><div class="row g-2">' +
-              '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_columns" value="' + esc(d.columns || '') + '" placeholder="默认" min="1" max="6"></div>' +
-              (type !== 'data_grid' ? '<div class="col-6"><label class="form-label small mb-1 text-muted">' + respCountLabel + '</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_' + respCountField + '" value="' + esc(d[respCountField] || '') + '" placeholder="' + respCountPlaceholder + '"></div>' : '') +
-            '</div>' : '') +
         '</div>' +
         '<div class="content-style-panel panel-style" style="display:none">' +
           (styleEditor || '') +
@@ -1142,20 +1163,10 @@
       html +=
         '<div class="device-config device-tablet" style="display:none">' +
           tabletFields +
-          (needsResp ?
-            '<hr class="my-2"><div class="row g-2">' +
-              '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_columns" placeholder="继承电脑端" min="1" max="6"></div>' +
-              (type !== 'data_grid' ? '<div class="col-6"><label class="form-label small mb-1 text-muted">' + respCountLabel + '</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_' + respCountField + '" placeholder="继承电脑端"></div>' : '') +
-            '</div>' : '') +
           '<div class="mb-2 mt-2"><label class="form-check-label small"><input type="checkbox" class="form-check-input" name="module_' + idx + '_resp_tablet_hidden" value="1"> 平板端隐藏此模块</label></div>' +
         '</div>' +
         '<div class="device-config device-mobile" style="display:none">' +
           mobileFields +
-          (needsResp ?
-            '<hr class="my-2"><div class="row g-2">' +
-              '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_columns" placeholder="继承电脑端" min="1" max="6"></div>' +
-              (type !== 'data_grid' ? '<div class="col-6"><label class="form-label small mb-1 text-muted">' + respCountLabel + '</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_' + respCountField + '" placeholder="继承电脑端"></div>' : '') +
-            '</div>' : '') +
           '<div class="mb-2 mt-2"><label class="form-check-label small"><input type="checkbox" class="form-check-input" name="module_' + idx + '_resp_mobile_hidden" value="1"> 手机端隐藏此模块</label></div>' +
         '</div>';
     }

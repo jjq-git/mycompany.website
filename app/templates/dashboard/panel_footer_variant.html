@@ -9,7 +9,16 @@
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('core.footer_variant_edit', _fragment='1', site=site.id) }}" id="footerForm">
+{% if translation_enabled and languages and languages|length > 1 and current_lang != default_lang %}
+<div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
+  {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
+  <span class="text-muted text-nowrap">AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
+  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" type="button" style="font-size:11px;">从默认语言翻译</button>
+  <span class="text-muted text-nowrap" style="font-size:10px;">翻译后请手动检查并保存</span>
+</div>
+{% endif %}
+
+<form method="post" action="{{ url_for('core.footer_variant_edit', _fragment='1', site=site.id, lang=current_lang) }}" id="footerForm">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {# Footer 变体选择 - 卡片式，与头部布局风格一致 #}
   {% set current_variant = current_footer.get('variant', 'columns') %}
@@ -33,6 +42,15 @@
           <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="10" y="13" width="28" height="2" rx="1" fill="currentColor" opacity="0.3"/><rect x="14" y="18" width="20" height="2" rx="1" fill="currentColor" opacity="0.2"/></svg>
         </div>
         <div class="variant-card-label">极简模式</div>
+      </label>
+      <label class="variant-card {% if current_variant == 'columns_social' %}selected{% endif %}" data-variant="columns_social">
+        <input type="radio" name="footer_variant" value="columns_social"
+               {% if current_variant == 'columns_social' %}checked{% endif %}
+               class="variant-card-radio">
+        <div class="variant-card-icon">
+          <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="2" y="5" width="9" height="9" rx="1.5" fill="currentColor" opacity="0.65"/><circle cx="5" cy="20" r="2" fill="currentColor" opacity="0.4"/><circle cx="11" cy="20" r="2" fill="currentColor" opacity="0.4"/><rect x="18" y="5" width="8" height="10" rx="1" fill="currentColor" opacity="0.42"/><rect x="29" y="5" width="8" height="10" rx="1" fill="currentColor" opacity="0.42"/><rect x="40" y="5" width="6" height="10" rx="1" fill="currentColor" opacity="0.42"/><rect x="18" y="22" width="26" height="2" rx="1" fill="currentColor" opacity="0.16"/></svg>
+        </div>
+        <div class="variant-card-label">栏目 + 社交</div>
       </label>
     </div>
   </div>
@@ -65,43 +83,45 @@
       {% set footer_columns = current_footer.get('columns', []) %}
       {% if footer_columns %}
       {% for col in footer_columns %}
-      <div class="border rounded p-2 mb-2 footer-column-item">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <span class="small fw-semibold">栏目 {{ loop.index }}</span>
-          <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.footer-column-item').remove();reindexFooterColumns()">✕</button>
+      <div class="border rounded p-2 mb-2 footer-column-item collapsed">
+        <div class="d-flex justify-content-between align-items-center mb-2 footer-column-header" style="cursor:pointer; user-select:none;" onclick="this.closest('.footer-column-item').classList.toggle('collapsed')">
+          <span class="small fw-semibold d-flex align-items-center"><svg class="footer-column-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>栏目 {{ loop.index }}</span>
+          <button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation(); this.closest('.footer-column-item').remove();reindexFooterColumns()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
-        <div class="row g-2 mb-2">
-          <div class="col-6">
-            <label class="form-label small mb-1 text-muted">类型</label>
-            <select class="form-select form-select-sm footer-col-type" name="footer_col_{{ loop.index0 }}_type">
-              <option value="menu" {% if col.type|default('menu') == 'menu' %}selected{% endif %}>菜单列</option>
-              <option value="text" {% if col.type == 'text' %}selected{% endif %}>文本列</option>
-            </select>
-          </div>
-          <div class="col-6">
-            <label class="form-label small mb-1 text-muted">标题</label>
-            <input type="text" class="form-control form-control-sm" name="footer_col_{{ loop.index0 }}_title" value="{{ col.title | default('') }}">
-          </div>
-        </div>
-        <div class="footer-col-links">
-          {% set links = col.links | default([]) %}
-          {% set col_idx = loop.index0 %}
-          <input type="hidden" name="footer_col_{{ col_idx }}_link_count" value="{{ links | length }}">
-          {% for link in links %}
-          <div class="row g-1 mb-1 footer-link-item">
-            <div class="col-5">
-              <input type="text" class="form-control form-control-sm" name="footer_col_{{ col_idx }}_link_{{ loop.index0 }}_label" value="{{ link.label | default('') }}" placeholder="名称">
+        <div class="footer-column-body">
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label small mb-1 text-muted">类型</label>
+              <select class="form-select form-select-sm footer-col-type" name="footer_col_{{ loop.index0 }}_type">
+                <option value="menu" {% if col.type|default('menu') == 'menu' %}selected{% endif %}>菜单列</option>
+                <option value="text" {% if col.type == 'text' %}selected{% endif %}>文本列</option>
+              </select>
             </div>
-            <div class="col-5">
-              <input type="text" class="form-control form-control-sm" name="footer_col_{{ col_idx }}_link_{{ loop.index0 }}_url" value="{{ link.url | default('') }}" placeholder="链接">
-            </div>
-            <div class="col-2">
-              <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="this.closest('.footer-link-item').remove()">✕</button>
+            <div class="col-6">
+              <label class="form-label small mb-1 text-muted">标题</label>
+              <input type="text" class="form-control form-control-sm" name="footer_col_{{ loop.index0 }}_title" value="{{ col.title | default('') }}">
             </div>
           </div>
-          {% endfor %}
+          <div class="footer-col-links">
+            {% set links = col.links | default([]) %}
+            {% set col_idx = loop.index0 %}
+            <input type="hidden" name="footer_col_{{ col_idx }}_link_count" value="{{ links | length }}">
+            {% for link in links %}
+            <div class="row g-1 mb-1 footer-link-item">
+              <div class="col-5">
+                <input type="text" class="form-control form-control-sm" name="footer_col_{{ col_idx }}_link_{{ loop.index0 }}_label" value="{{ link.label | default('') }}" placeholder="名称">
+              </div>
+              <div class="col-5">
+                <input type="text" class="form-control form-control-sm" name="footer_col_{{ col_idx }}_link_{{ loop.index0 }}_url" value="{{ link.url | default('') }}" placeholder="链接">
+              </div>
+              <div class="col-2">
+                <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="this.closest('.footer-link-item').remove()">✕</button>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addFooterLink(this)">+ 添加链接</button>
         </div>
-        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addFooterLink(this)">+ 添加链接</button>
       </div>
       {% endfor %}
       {% else %}
@@ -111,6 +131,29 @@
         <div class="small mt-1" style="font-size: 10px;">点击上方「+ 添加栏目」来创建快速链接、联系方式等</div>
       </div>
       {% endif %}
+    </div>
+  </div>
+
+  {% set social = settings.get('social', {}) %}
+  <div id="footerSocialSection" {% if current_variant != 'columns_social' %}style="display:none"{% endif %}>
+    <hr>
+    <div class="mb-2">
+      <label class="form-label small mb-1 fw-semibold">社交链接</label>
+      <div class="form-check form-switch mb-2">
+        <input class="form-check-input" type="checkbox" name="social_enabled" value="1"
+               id="footerSocialToggle"
+               {% if social.get('enabled', True) %}checked{% endif %}>
+        <label class="form-check-label small" for="footerSocialToggle">显示社交链接图标</label>
+      </div>
+    </div>
+    <div id="footerSocialOptions" {% if not social.get('enabled', True) %}style="display:none"{% endif %}>
+      {% for platform in ('github','twitter','facebook','linkedin','youtube') %}
+      <div class="mb-2">
+        <label class="form-label small mb-1 text-muted">{{ platform | title }}</label>
+        <input class="form-control form-control-sm" name="social_{{ platform }}" value="{{ social.get(platform, '') }}" placeholder="https://...">
+      </div>
+      {% endfor %}
+    </div>
   </div>
 
   <div class="panel-save-bar">
@@ -127,24 +170,37 @@ document.querySelectorAll('.variant-card').forEach(function(card) {
     this.querySelector('.variant-card-radio').checked = true;
     var mode = this.querySelector('.variant-card-radio').value;
     var section = document.getElementById('footerColumnsSection');
-    if (section) section.style.display = mode === 'columns' ? '' : 'none';
+    var socialSection = document.getElementById('footerSocialSection');
+    if (section) section.style.display = mode === 'minimal' ? 'none' : '';
+    if (socialSection) socialSection.style.display = mode === 'columns_social' ? '' : 'none';
   });
 });
+
+var footerSocialToggle = document.getElementById('footerSocialToggle');
+if (footerSocialToggle) {
+  footerSocialToggle.addEventListener('change', function() {
+    var options = document.getElementById('footerSocialOptions');
+    if (options) options.style.display = this.checked ? '' : 'none';
+  });
+}
 function addFooterColumn() {
   var list = document.getElementById('footerColumnsList');
   var count = parseInt(document.getElementById('footerColumnCount').value || '0');
   var idx = count;
   document.getElementById('footerColumnCount').value = idx + 1;
-  var html = '<div class="border rounded p-2 mb-2 footer-column-item">' +
-    '<div class="d-flex justify-content-between align-items-center mb-2">' +
-    '<span class="small fw-semibold">栏目 ' + (idx + 1) + '</span>' +
-    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest(\'.footer-column-item\').remove();reindexFooterColumns()">✕</button></div>' +
+  // 新栏目默认收缩（collapsed），点击标题栏展开
+  var html = '<div class="border rounded p-2 mb-2 footer-column-item collapsed">' +
+    '<div class="d-flex justify-content-between align-items-center mb-2 footer-column-header" style="cursor:pointer; user-select:none;" onclick="this.closest(\'.footer-column-item\').classList.toggle(\'collapsed\')">' +
+    '<span class="small fw-semibold d-flex align-items-center"><svg class="footer-column-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>栏目 ' + (idx + 1) + '</span>' +
+    '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation(); this.closest(\'.footer-column-item\').remove();reindexFooterColumns()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
+    '<div class="footer-column-body">' +
     '<div class="row g-2 mb-2"><div class="col-6"><label class="form-label small mb-1 text-muted">类型</label>' +
     '<select class="form-select form-select-sm footer-col-type" name="footer_col_' + idx + '_type"><option value="menu">菜单列</option><option value="text">文本列</option></select></div>' +
     '<div class="col-6"><label class="form-label small mb-1 text-muted">标题</label>' +
     '<input type="text" class="form-control form-control-sm" name="footer_col_' + idx + '_title"></div></div>' +
     '<div class="footer-col-links"><input type="hidden" name="footer_col_' + idx + '_link_count" value="0"></div>' +
-    '<button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addFooterLink(this)">+ 添加链接</button></div>';
+    '<button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addFooterLink(this)">+ 添加链接</button>' +
+    '</div></div>';
   list.insertAdjacentHTML('beforeend', html);
 }
 function addFooterLink(btn) {
@@ -165,10 +221,143 @@ function reindexFooterColumns() {
   var items = document.querySelectorAll('.footer-column-item');
   document.getElementById('footerColumnCount').value = items.length;
   items.forEach(function(item, i) {
-    item.querySelector('span.small.fw-semibold').textContent = '栏目 ' + (i + 1);
+    var label = item.querySelector('.footer-column-header .small.fw-semibold');
+    if (label) {
+      var chevronSvg = label.querySelector('svg');
+      label.textContent = ' 栏目 ' + (i + 1);
+      if (chevronSvg) label.insertBefore(chevronSvg, label.firstChild);
+    }
     item.querySelectorAll('[name]').forEach(function(el) {
       el.name = el.name.replace(/footer_col_\d+_/, 'footer_col_' + i + '_');
     });
   });
 }
 </script>
+
+{% if translation_enabled and current_lang != default_lang %}
+<script>
+(function(){
+  var CURRENT_LANG = '{{ current_lang }}';
+  var DEFAULT_LANG = '{{ default_lang }}';
+  var SOURCE_FOOTER = {{ (source_footer | default({})) | tojson }};
+  var LANG_LABELS = {};
+  {{ languages | tojson }}.forEach(function(l){ LANG_LABELS[l.code] = l.name; });
+
+  var btn = document.getElementById('aiTranslateBtn');
+  if (!btn) return;
+
+  btn.addEventListener('click', function(){
+    showTranslateConfirm(
+      'AI 翻译',
+      '<p>将默认语言 <strong>' + (LANG_LABELS[DEFAULT_LANG] || DEFAULT_LANG) + '</strong> 底部内容翻译到当前 <strong>' + (LANG_LABELS[CURRENT_LANG] || CURRENT_LANG) + '</strong>？</p><p class="text-muted small mb-0">译文会填入当前底部表单，检查后请手动保存。</p>',
+      function(){ doTranslate(); }
+    );
+  });
+
+  function sourceValueForField(name) {
+    if (!SOURCE_FOOTER) return null;
+    if (name === 'copyright' || name === 'icp') return SOURCE_FOOTER[name] || null;
+    var titleMatch = String(name || '').match(/^footer_col_(\d+)_title$/);
+    if (titleMatch) {
+      var col = (SOURCE_FOOTER.columns || [])[parseInt(titleMatch[1], 10)];
+      return col ? col.title : null;
+    }
+    var linkMatch = String(name || '').match(/^footer_col_(\d+)_link_(\d+)_label$/);
+    if (linkMatch) {
+      var col2 = (SOURCE_FOOTER.columns || [])[parseInt(linkMatch[1], 10)];
+      var link = col2 && col2.links ? col2.links[parseInt(linkMatch[2], 10)] : null;
+      return link ? link.label : null;
+    }
+    return null;
+  }
+
+  function doTranslate() {
+    var texts = {};
+    var fields = [];
+    document.querySelectorAll('#footerForm input[type="text"]:not([name$="_url"])').forEach(function(el){
+      var name = el.name || '';
+      var sourceVal = sourceValueForField(name);
+      var val = sourceVal == null ? el.value : sourceVal;
+      val = String(val || '').trim();
+      if (!val) return;
+      if (/^https?:\/\//.test(val)) return;
+      texts[name] = val;
+      fields.push(name);
+    });
+
+    if (!Object.keys(texts).length) {
+      showTranslateMsg('AI 翻译', '未找到可翻译的底部文本字段');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '翻译中...';
+    fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texts: texts, source_lang: DEFAULT_LANG, target_lang: CURRENT_LANG })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.error) { showTranslateMsg('翻译失败', data.error); return; }
+      if (!data.translated) { showTranslateMsg('翻译失败', '翻译结果为空'); return; }
+      fields.forEach(function(name){
+        var el = document.querySelector('#footerForm [name="' + name + '"]');
+        if (el && data.translated[name] != null) {
+          el.value = data.translated[name];
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+      showTranslateMsg('翻译完成', '<p>译文已填入当前 <strong>' + (LANG_LABELS[CURRENT_LANG] || CURRENT_LANG) + '</strong> 底部表单，请检查后保存。</p>');
+    })
+    .catch(function(err){
+      showTranslateMsg('翻译失败', err.message || '网络错误');
+    })
+    .finally(function(){
+      btn.disabled = false;
+      btn.textContent = '从默认语言翻译';
+    });
+  }
+
+  function showTranslateConfirm(title, body, onConfirm) {
+    var modalEl = document.getElementById('translateModal');
+    if (!modalEl) { onConfirm(); return; }
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    document.getElementById('translateModalTitle').textContent = title;
+    document.getElementById('translateModalBody').innerHTML = body;
+    document.getElementById('translateModalConfirm').style.display = '';
+    document.getElementById('translateModalCancel').style.display = '';
+    document.getElementById('translateModalConfirm').onclick = function(){ modal.hide(); onConfirm(); };
+    modal.show();
+  }
+
+  function showTranslateMsg(title, body) {
+    var modalEl = document.getElementById('translateModal');
+    if (!modalEl) { alert(String(body).replace(/<[^>]*>/g, '')); return; }
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    document.getElementById('translateModalTitle').textContent = title;
+    document.getElementById('translateModalBody').innerHTML = '<p>' + body + '</p>';
+    document.getElementById('translateModalConfirm').style.display = '';
+    document.getElementById('translateModalCancel').style.display = 'none';
+    document.getElementById('translateModalConfirm').onclick = function(){ modal.hide(); };
+    modal.show();
+  }
+})();
+</script>
+
+<div class="modal fade" id="translateModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="translateModalTitle">AI 翻译</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="translateModalBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" id="translateModalCancel" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary btn-sm" id="translateModalConfirm">确认</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}

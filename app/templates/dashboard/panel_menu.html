@@ -1,28 +1,14 @@
 ﻿{# 菜单配置面板 #}
-{% if languages and languages|length > 1 %}
-{# 语言切换标签 — 用 onclick 而非 <a> 链接，避免浏览器直接导航到 fragment URL #}
-<div class="d-flex gap-1 mb-2">
-  {% for l in languages %}
-  <button onclick="switchPanelLang('/settings/menu?_fragment=1&site={{ site.id }}&lang={{ l.code }}', '{{ l.code }}')"
-     class="badge border-0 lang-tab {% if current_lang == l.code %}bg-primary text-white{% else %}bg-light text-dark border{% endif %}"
-     style="font-size:12px;padding:6px 12px;cursor:pointer;">{{ l.name }}</button>
-  {% endfor %}
-</div>
-{% endif %}
 <div class="d-flex align-items-center justify-content-between mb-3">
   <span class="fw-semibold">菜单配置</span>
   <span class="small text-muted">首页固定在第一项</span>
 </div>
-{% if translation_enabled and languages and languages|length > 1 %}
+{% if translation_enabled and languages and languages|length > 1 and current_lang != default_lang %}
 {# AI 翻译栏 #}
 <div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
-  <span class="text-muted text-nowrap">🌐 AI 翻译：当前菜单 →</span>
-  <select class="form-select form-select-sm text-nowrap" id="translateTargetLang" style="min-width:70px;font-size:11px;">
-    {% for l in languages if l.code != current_lang %}
-    <option value="{{ l.code }}">{{ l.name }}</option>
-    {% endfor %}
-  </select>
-  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:11px;">开始翻译</button>
+  {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
+  <span class="text-muted text-nowrap">🌐 AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
+  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:11px;">从默认语言翻译</button>
   <span class="text-muted text-nowrap" style="font-size:10px;">翻译后请手动检查并保存</span>
 </div>
 {% endif %}
@@ -206,6 +192,10 @@
 (function(){
   var STORAGE_KEY = 'pending_translation_menu';
   var CURRENT_LANG = '{{ current_lang }}';
+  var DEFAULT_LANG = '{{ default_lang }}';
+  var SOURCE_MENU = {{ (source_menu | default([])) | tojson }};
+  var LANG_LABELS = {};
+  {{ languages | tojson }}.forEach(function(l){ LANG_LABELS[l.code] = l.name; });
 
   // 页面加载时检查是否有待恢复的译文
   (function restorePending() {
@@ -229,26 +219,32 @@
   if (!btn) return;
 
   btn.addEventListener('click', function(){
-    var targetLang = document.getElementById('translateTargetLang').value;
-    var langLabels = {};
-    {{ languages | tojson }}.forEach(function(l){ langLabels[l.code] = l.name; });
-
     showTranslateConfirm(
       'AI 翻译',
-      '<p>将当前 <strong>' + langLabels[CURRENT_LANG] + '</strong> 菜单名称翻译为 <strong>' + langLabels[targetLang] + '</strong>？</p><p class="text-muted small mb-0">仅翻译菜单标签文字，翻译后请切换到目标语言标签页手动保存。</p>',
-      function() { doTranslate(targetLang, langLabels); }
+      '<p>将默认语言 <strong>' + (LANG_LABELS[DEFAULT_LANG] || DEFAULT_LANG) + '</strong> 菜单名称翻译到当前 <strong>' + (LANG_LABELS[CURRENT_LANG] || CURRENT_LANG) + '</strong>？</p><p class="text-muted small mb-0">译文会填入当前菜单表单，检查后请手动保存。</p>',
+      function() { doTranslate(CURRENT_LANG); }
     );
   });
 
-  function doTranslate(targetLang, langLabels) {
+  function collectSourceLabels(items, result) {
+    result = result || [];
+    (items || []).forEach(function(item) {
+      if (item && item.label) result.push(item.label);
+      if (item && item.children) collectSourceLabels(item.children, result);
+    });
+    return result;
+  }
+
+  function doTranslate(targetLang) {
     var labels = [];
     var originals = [];
-    document.querySelectorAll('.menu-label').forEach(function(el){
-      var val = el.value.trim();
+    var sourceLabels = collectSourceLabels(SOURCE_MENU);
+    document.querySelectorAll('.menu-label').forEach(function(el, i){
+      var val = (sourceLabels[i] || el.value || '').trim();
       if (!val) return;
       if (/^[#\d]/.test(val) && val.length < 10) return;
       labels.push(val);
-      originals.push(val);
+      originals.push(el.value.trim());
     });
 
     if (labels.length === 0) {
@@ -266,7 +262,7 @@
     fetch('/api/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ texts: texts, source_lang: CURRENT_LANG, target_lang: targetLang })
+      body: JSON.stringify({ texts: texts, source_lang: DEFAULT_LANG, target_lang: targetLang })
     })
     .then(function(r){ return r.json(); })
     .then(function(data){
@@ -296,27 +292,14 @@
         }
       });
 
-      showTranslateMsg('翻译完成',
-        '<p>菜单名称已翻译，即将切换到 <strong>' + langLabels[targetLang] + '</strong> 编辑。</p>');
-      // 自动切换到目标语言标签页
-      var modalEl2 = document.getElementById('translateModal');
-      var bsModal = bootstrap.Modal.getInstance(modalEl2);
-      if (bsModal) {
-        bsModal.hide();
-        modalEl2.addEventListener('hidden.bs.modal', function h(){
-          modalEl2.removeEventListener('hidden.bs.modal', h);
-          switchPanelLang('/settings/menu?_fragment=1&site={{ site.id }}&lang=' + targetLang, targetLang);
-        });
-      } else {
-        switchPanelLang('/settings/menu?_fragment=1&site={{ site.id }}&lang=' + targetLang, targetLang);
-      }
+      showTranslateMsg('翻译完成', '<p>菜单名称已填入当前 <strong>' + (LANG_LABELS[targetLang] || targetLang) + '</strong> 表单，请检查后保存。</p>');
     })
     .catch(function(err){
       showTranslateMsg('翻译失败', err.message || '网络错误');
     })
     .finally(function(){
       btn.disabled = false;
-      btn.textContent = '开始翻译';
+      btn.textContent = '从默认语言翻译';
     });
   }
 

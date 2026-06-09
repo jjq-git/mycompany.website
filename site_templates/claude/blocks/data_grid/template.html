@@ -1,0 +1,34 @@
+<!-- Data Grid - Claude 风格: 数据集卡片网格, 奶油卡片 -->
+<section data-name="data_grid" data-type="group" data-hideable data-style="cols" class="section surface-canvas">
+  <div class="container">
+    <div class="section-header">
+      <h2 data-name="title" data-type="text" class="section-header__title">Latest</h2>
+    </div>
+    <div data-name="items" data-type="list" data-source="" class="dg-list grid grid--3">
+      <a data-name="item" data-type="group" data-href-template="{base_url}/{lang}{current_path}{slug}/" class="dg-card card-feature">
+        <div class="dg-card-image">
+          <img data-name="cover" data-fallback="image,photo,logo" data-type="image" src="" alt="" loading="lazy" class="dg-card-img">
+        </div>
+        <div class="dg-card-body">
+          <span data-name="category" data-type="text" class="badge badge-pill dg-card-category"></span>
+          <h3 data-name="title" data-fallback="name" data-type="text" class="text-title-sm text-ink mb-xs"></h3>
+          <div data-name="date" data-type="text" class="text-caption text-muted-soft mb-sm"></div>
+          <p data-name="summary" data-fallback="excerpt,description" data-type="text" class="text-body-sm text-muted"></p>
+          <div data-name="tags" data-type="list" class="dg-card-tags flex gap-xs flex-wrap mt-sm">
+            <span data-name="tag" data-type="text" class="badge badge-outline"></span>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div data-name="pager" data-type="group" class="dg-pager" style="display:none">
+      <span data-name="show_pagination" data-type="text" data-pager-key="show_pagination" hidden>true</span>
+      <span data-name="pagination_style" data-type="text" data-pager-key="pagination_style" hidden>load_more</span>
+      <span data-name="items_per_page" data-type="text" data-pager-key="items_per_page" hidden>6</span>
+      <span data-name="pager_align" data-type="text" data-pager-key="pager_align" hidden>center</span>
+      <button class="btn btn-secondary dg-load-more" style="display:none" onclick="loadMoreDataGrid(this)">
+        Load More <span class="dg-remaining"></span>
+      </button>
+      <div class="dg-page-numbers" style="display:none"></div>
+    </div>
+  </div>
+</section>

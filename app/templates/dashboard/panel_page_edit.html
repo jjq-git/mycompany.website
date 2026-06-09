@@ -1,16 +1,5 @@
 ﻿{# 单页模块编辑器 — 所有菜单页面共用同一个模块库（blocks/），各自保存不同的模块数据 #}
 {% from 'dashboard/_block_icons.html' import block_icon %}
-{% if languages and languages|length > 1 %}
-{# 语言切换标签 — 切换当前编辑的语言版本 #}
-<div class="d-flex align-items-center gap-1 mb-2">
-  <span class="text-muted" style="font-size:11px;">编辑语言:</span>
-  {% for l in languages %}
-  <button onclick="switchPanelLang('/_panel/{{ page_key }}?_fragment=1&site={{ site.id }}&lang={{ l.code }}', '{{ l.code }}')"
-     class="badge border-0 lang-tab {% if current_lang == l.code %}bg-primary text-white{% else %}bg-light text-dark border{% endif %}"
-     style="font-size:12px;padding:6px 12px;cursor:pointer;">{{ l.name }}</button>
-  {% endfor %}
-</div>
-{% endif %}
 <div class="d-flex align-items-center justify-content-between mb-2">
   <span class="fw-semibold">{{ page_display_name }}</span>
   <div class="d-flex gap-1">
@@ -19,16 +8,12 @@
     {% endif %}
   </div>
 </div>
-{% if translation_enabled and languages and languages|length > 1 %}
+{% if translation_enabled and languages and languages|length > 1 and current_lang != default_lang %}
 {# AI 翻译栏 — 独立一行，与语言标签区分 #}
 <div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
-  <span class="text-muted text-nowrap">🌐 AI 翻译：当前内容 →</span>
-  <select class="form-select form-select-sm text-nowrap" id="translateTargetLang" style="min-width:70px;font-size:11px;">
-    {% for l in languages if l.code != current_lang %}
-    <option value="{{ l.code }}">{{ l.name }}</option>
-    {% endfor %}
-  </select>
-  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:11px;">开始翻译</button>
+  {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
+  <span class="text-muted text-nowrap">🌐 AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
+  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:11px;">从默认语言翻译</button>
   <span class="text-muted text-nowrap" style="font-size:10px;">翻译后请手动检查并保存</span>
 </div>
 {% endif %}
@@ -112,6 +97,7 @@
             {% else %}
             {% if mdata is mapping %}
               {% for key, val in mdata.items() %}
+              {% if key not in ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'] %}
               {# 跳过复杂嵌套结构（列表/映射），如旧格式的 features/items 列表 #}
               {% if val is mapping or (val is iterable and val is not string) %}
               {# 跳过，不渲染复杂字段 #}
@@ -128,6 +114,7 @@
                 {% endif %}
               </div>
               {% endif %}
+              {% endif %}
               {% endfor %}
             {% endif %}
             {% endif %}
@@ -136,6 +123,7 @@
           <div class="device-config device-tablet" style="display:none">
 {% if mdata is mapping %}
               {% for key, val in mdata.items() %}
+              {% if key not in ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'] %}
               <div class="mb-2">
                 <label class="form-label small mb-1 text-muted">{{ key }}</label>
                 {% set tval = mdata_tablet.get(key, '') %}
@@ -143,23 +131,9 @@
                        name="module_{{ i }}_resp_tablet_data_{{ key }}"
                        value="{{ tval }}" placeholder="继承: {{ val }}">
               </div>
+              {% endif %}
               {% endfor %}
             {% endif %}
-            <hr class="my-2">
-            <div class="row g-2">
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">每行列数</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_tablet_columns"
-                       value="{{ mdata_tablet.get('columns', '') }}" placeholder="继承电脑端" min="1" max="6">
-              </div>
-              {% if module.type != 'data_grid' %}
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">每页显示数量</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_tablet_items_per_page"
-                       value="{{ mdata_tablet.get('items_per_page', '') }}" placeholder="继承电脑端">
-              </div>
-              {% endif %}
-            </div>
             <div class="mb-2 mt-2">
               <label class="form-check-label small">
                 <input type="checkbox" class="form-check-input"
@@ -173,6 +147,7 @@
           <div class="device-config device-mobile" style="display:none">
 {% if mdata is mapping %}
               {% for key, val in mdata.items() %}
+              {% if key not in ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'] %}
               <div class="mb-2">
                 <label class="form-label small mb-1 text-muted">{{ key }}</label>
                 {% set mval = mdata_mobile.get(key, '') %}
@@ -180,23 +155,9 @@
                        name="module_{{ i }}_resp_mobile_data_{{ key }}"
                        value="{{ mval }}" placeholder="继承: {{ val }}">
               </div>
+              {% endif %}
               {% endfor %}
             {% endif %}
-            <hr class="my-2">
-            <div class="row g-2">
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">每行列数</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_mobile_columns"
-                       value="{{ mdata_mobile.get('columns', '') }}" placeholder="继承电脑端" min="1" max="6">
-              </div>
-              {% if module.type != 'data_grid' %}
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">每页显示数量</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_mobile_items_per_page"
-                       value="{{ mdata_mobile.get('items_per_page', '') }}" placeholder="继承电脑端">
-              </div>
-              {% endif %}
-            </div>
             <div class="mb-2 mt-2">
               <label class="form-check-label small">
                 <input type="checkbox" class="form-check-input"
@@ -298,6 +259,28 @@ function _schemaFieldHtml(prefix, field, mdata) {
   } else if (field.type === 'icon') {
     // icon → 下拉选择器（图标名来自 icon_registry，渲染时查表注入 SVG）
     html += '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">' + _schemaIconOptions(val) + '</select>';
+  } else if (field.type === 'select') {
+    // select → 下拉选择框（options 来自 meta.yaml 或字段定义）
+    var opts = field.options || [];
+    html += '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">';
+    opts.forEach(function(opt) {
+      html += '<option value="' + _schemaEsc(opt.value) + '"' + (String(val) === String(opt.value) ? ' selected' : '') + '>' + _schemaEsc(opt.label) + '</option>';
+    });
+    html += '</select>';
+  } else if (field.type === 'radio') {
+    // radio → 分段按钮组（隐藏 input，label 做成按钮卡片，选中项高亮主题色）
+    var ropts = field.options || [];
+    var segClass = 'segmented-control' + (ropts.length === 3 ? ' segmented-control--3' : '');
+    html += '<div class="' + segClass + '">';
+    ropts.forEach(function(opt, oi) {
+      html += '<input class="segmented-input" type="radio" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(opt.value) + '" id="' + _schemaEsc(name) + '_' + oi + '"' +
+        (String(val) === String(opt.value) ? ' checked' : '') + '>' +
+        '<label class="segmented-label" for="' + _schemaEsc(name) + '_' + oi + '">' + _schemaEsc(opt.label) + '</label>';
+    });
+    html += '</div>';
+  } else if (field.type === 'number') {
+    // number → 数字输入框
+    html += '<input type="number" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" min="1">';
   } else {
     // text / 其他叶子 → 单行输入
     html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '">';
@@ -406,7 +389,7 @@ function _schemaGroupHtml(prefix, field, mdata) {
       });
       html += '</div>';
     } else {
-      html += '<div class="ps-3 mb-2">';
+      html += '<div class="mb-2">';
       field.children.forEach(function(child) {
         if (child.type === 'group') {
           html += _schemaGroupHtml(prefix, child, mdata);
@@ -671,24 +654,6 @@ function renderDynamicField(prefix, field, value, placeholder) {
   }
   return html + '</div>';
 }
-function renderResponsiveControls(idx, device, type) {
-  var fieldPrefix = device ? 'module_' + idx + '_resp_' + device : 'module_' + idx + '_resp';
-  var inheritText = device ? '继承电脑端' : '默认';
-  var countField = 'items_per_page';
-  var countLabel = '每页显示数量';
-  var countPlaceholder = (type === 'data_grid') ? (device ? '继承电脑端' : '默认') : (device ? '继承电脑端' : '0=全部');
-  var html = '<hr class="my-2"><div class="row g-2">';
-  html += '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>';
-  html += '<input type="number" class="form-control form-control-sm" name="' + fieldPrefix + '_columns" placeholder="' + inheritText + '" min="1" max="6"></div>';
-  // data_grid 在数据配置区已有"每页显示数量"，响应式区不重复
-  if (type !== 'data_grid') {
-    html += '<div class="col-6"><label class="form-label small mb-1 text-muted">' + countLabel + '</label>';
-    html += '<input type="number" class="form-control form-control-sm" name="' + fieldPrefix + '_' + countField + '" placeholder="' + countPlaceholder + '"></div>';
-  }
-  html += '</div>';
-  return html;
-}
-
 function renderHiddenControl(idx, device, label) {
   return '<div class="mb-2 mt-2"><label class="form-check-label small"><input type="checkbox" class="form-check-input" name="module_' + idx + '_resp_' + device + '_hidden" value="1"> ' + label + '隐藏此模块</label></div>';
 }
@@ -1030,13 +995,30 @@ if (paletteModalEl) {
   });
 }
 
+function applyDataPresetToModule(item, idx, dataPreset) {
+  dataPreset = dataPreset || {};
+  Object.keys(dataPreset).forEach(function(key) {
+    var name = 'module_' + idx + '_data_' + key;
+    var input = item.querySelector('[name="' + name + '"]');
+    if (!input) {
+      input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      item.appendChild(input);
+    }
+    input.value = dataPreset[key];
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+
 function onBlockPaletteConfirm(type, variant, dataPreset) {
   if (switchTargetIndex !== null) {
-    // 换变体模式：仅更新已有模块的 variant 字段
+    // 换变体模式：更新已有模块的 variant，并应用样式型变体的预设值。
     var item = document.querySelector('.module-item[data-index="' + switchTargetIndex + '"]');
     if (item) {
       var variantInput = item.querySelector('input[name$="_variant"]');
       if (variantInput) variantInput.value = variant || 'default';
+      applyDataPresetToModule(item, switchTargetIndex, dataPreset);
     }
     switchTargetIndex = null;
     var t = document.querySelector('#blockPaletteModal .modal-title');
@@ -1064,6 +1046,49 @@ function switchContentStyleTab(btn, tabName) {
   if (target) target.style.display = '';
 }
 
+/* 合并 meta.fields（meta.yaml）的类型信息到 schema.fields（block_parser 解析）。
+ * meta.yaml 才是类型权威来源——模板里 data-type="text" 的隐藏 span 会在这里
+ * 被 meta.yaml 的 radio/select 等正确类型覆盖。
+ * 递归处理 group/list children，确保嵌套字段（如 pager > show_pagination）也能拿到正确类型。
+ * 供 addModule（新增）和 initSchemaMounts（已保存）共用，保证两处渲染一致。 */
+function _getMergedSchema(meta) {
+  var metaFieldMap = {};
+  (meta.fields || []).forEach(function(f) { metaFieldMap[f.key] = f; });
+
+  function mergeField(sf) {
+    var mf = metaFieldMap[sf.name];
+    var mergedChildren;
+    if (sf.children && sf.children.length) {
+      mergedChildren = sf.children.map(function(c) { return mergeField(c); });
+    } else {
+      mergedChildren = sf.children;
+    }
+    if (!mf) return Object.assign({}, sf, {children: mergedChildren});
+    return {
+      name: sf.name, tag: sf.tag,
+      default_text: sf.default_text, default_src: sf.default_src,
+      href_field: sf.href_field, href_template: sf.href_template,
+      hideable: sf.hideable, style_tokens: sf.style_tokens,
+      children: mergedChildren,
+      page_size: sf.page_size, cols: sf.cols, source: sf.source,
+      item_template_html: sf.item_template_html,
+      type: mf.type || sf.type,
+      options: mf.options || sf.options
+    };
+  }
+
+  return {
+    root_type: meta.schema.root_type,
+    root_tag: meta.schema.root_tag,
+    hideable: meta.schema.hideable,
+    href_field: meta.schema.href_field,
+    style_tokens: meta.schema.style_tokens || [],
+    element_style_tokens: meta.schema.element_style_tokens || [],
+    from_source: meta.schema.from_source,
+    fields: (meta.schema.fields || []).map(function(sf) { return mergeField(sf); })
+  };
+}
+
 function addModule(type, variant, dataPreset) {
   dataPreset = dataPreset || {};
   var meta = findBlockMeta(type);
@@ -1073,13 +1098,21 @@ function addModule(type, variant, dataPreset) {
   var idx = parseInt(count.value);
   count.value = idx + 1;
 
-    var desktopFields = fields.map(function(field) {
+  // 过滤掉由 specialEditor 自行渲染的字段（分页配置、columns 等），避免在通用表单区重复出现
+  var pagerKeys = ['show_pagination', 'pagination_style', 'items_per_page', 'pager_align', 'pager'];
+  var desktopFields = fields.filter(function(field) {
+    return ['columns', 'max_items'].concat(pagerKeys).indexOf(field.key) === -1;
+  }).map(function(field) {
     return renderDynamicField('module_' + idx + '_data_', field, field.default || '', '');
   }).join('');
-  var tabletFields = fields.map(function(field) {
+  var tabletFields = fields.filter(function(field) {
+    return ['columns', 'max_items'].concat(pagerKeys).indexOf(field.key) === -1;
+  }).map(function(field) {
     return renderDynamicField('module_' + idx + '_resp_tablet_data_', field, '', '继承电脑端');
   }).join('');
-  var mobileFields = fields.map(function(field) {
+  var mobileFields = fields.filter(function(field) {
+    return ['columns', 'max_items'].concat(pagerKeys).indexOf(field.key) === -1;
+  }).map(function(field) {
     return renderDynamicField('module_' + idx + '_resp_mobile_data_', field, '', '继承电脑端');
   }).join('');
 
@@ -1104,8 +1137,9 @@ function addModule(type, variant, dataPreset) {
   // data-* 声明式 block：用 schema 自动生成表单，拦截在所有硬编码分支之前。
   // meta.is_data_attr/schema 由后端 scan_blocks 解析、随 blockLibraryJson 下发。
   if (meta.is_data_attr && meta.schema) {
-    specialEditor = generateSchemaForm('module_' + idx + '_data_', meta.schema, {}, vT);
-    styleEditor = generateSchemaStyleForm('module_' + idx + '_data_', meta.schema, dataPreset);
+    var mergedSchema = _getMergedSchema(meta);
+    specialEditor = generateSchemaForm('module_' + idx + '_data_', mergedSchema, {}, vT);
+    styleEditor = generateSchemaStyleForm('module_' + idx + '_data_', mergedSchema, dataPreset);
   } else if (type === 'hero_banner') {
     styleEditor =
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
@@ -1233,26 +1267,54 @@ function addModule(type, variant, dataPreset) {
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">卡片布局</label>' +
         '<select class="form-select form-select-sm" name="module_' + idx + '_data_card_layout"><option value="image_top">上图下文</option><option value="image_left">左图右文</option></select></div>' +
     '<hr class="my-2">' +
-    '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">显示分页</label>' +
-        '<select class="form-select form-select-sm" name="module_' + idx + '_data_show_pagination"><option value="true" selected>显示</option><option value="false">隐藏</option></select></div>' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">分页样式</label>' +
-        '<select class="form-select form-select-sm" name="module_' + idx + '_data_pagination_style"><option value="load_more" selected>加载更多</option><option value="page_numbers">页码导航</option></select></div>' +
-    '</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">每页显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_data_items_per_page" value="6"></div>' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">分页对齐</label>' +
-        '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align"><option value="center">居中</option><option value="left">居左</option><option value="right">居右</option></select></div>' +
-    '</div>' +
-    '<hr class="my-2">' +
-    '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
-    '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>';
-    styleEditor =
-    '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色', '#ffffff') + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem','vw']) + '</div>' +
+	    '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
+	    // show_pagination: toggle switch
+	    '<div class="form-check form-switch mb-2">' +
+	      '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_pagination"' +
+	      (d.show_pagination !== 'false' ? ' checked' : '') +
+	      ' onchange="this.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
+	      '<label class="form-check-label small" for="module_' + idx + '_show_pagination">显示分页</label>' +
+	      '<input type="hidden" name="module_' + idx + '_data_show_pagination" value="' + _schemaEsc(d.show_pagination !== 'false' ? 'true' : 'false') + '">' +
+	    '</div>' +
+	    // Row 2: pagination_style (radio) + items_per_page (select)
+	    '<div class="row g-2 mb-2">' +
+	      '<div class="col-6"><label class="form-label small mb-1 text-muted">分页样式</label>' +
+	        '<div class="d-flex gap-2">' +
+	          '<div class="form-check form-check-inline mb-0">' +
+	            '<input class="form-check-input" type="radio" name="module_' + idx + '_data_pagination_style" value="load_more" id="ps_' + idx + '_lm"' +
+	            (d.pagination_style !== 'page_numbers' ? ' checked' : '') + '>' +
+	            '<label class="form-check-label small" for="ps_' + idx + '_lm">加载更多</label>' +
+	          '</div>' +
+	          '<div class="form-check form-check-inline mb-0">' +
+	            '<input class="form-check-input" type="radio" name="module_' + idx + '_data_pagination_style" value="page_numbers" id="ps_' + idx + '_pn"' +
+	            (d.pagination_style === 'page_numbers' ? ' checked' : '') + '>' +
+	            '<label class="form-check-label small" for="ps_' + idx + '_pn">页码导航</label>' +
+	          '</div>' +
+	        '</div></div>' +
+	      '<div class="col-6"><label class="form-label small mb-1 text-muted">每页显示数量</label>' +
+	        '<select class="form-select form-select-sm" name="module_' + idx + '_data_items_per_page">' +
+	          ['3','4','6','8','10','12','18','24'].map(function(n) { return '<option value="' + n + '"' + ((d.items_per_page || '6') === n ? ' selected' : '') + '>' + n + ' 条/页</option>'; }).join('') +
+	        '</select></div>' +
+	    '</div>' +
+	    // Row 3: pager_align (radio, 3 options)
+	    '<div class="mb-2"><label class="form-label small mb-1 text-muted">分页对齐</label>' +
+	      '<div class="d-flex gap-2">' +
+	        '<div class="form-check form-check-inline mb-0">' +
+	          '<input class="form-check-input" type="radio" name="module_' + idx + '_data_pager_align" value="center" id="pa_' + idx + '_c"' +
+	          (d.pager_align === 'center' || !d.pager_align ? ' checked' : '') + '>' +
+	          '<label class="form-check-label small" for="pa_' + idx + '_c">居中</label>' +
+	        '</div>' +
+	        '<div class="form-check form-check-inline mb-0">' +
+	          '<input class="form-check-input" type="radio" name="module_' + idx + '_data_pager_align" value="left" id="pa_' + idx + '_l"' +
+	          (d.pager_align === 'left' ? ' checked' : '') + '>' +
+	          '<label class="form-check-label small" for="pa_' + idx + '_l">居左</label>' +
+	        '</div>' +
+	        '<div class="form-check form-check-inline mb-0">' +
+	          '<input class="form-check-input" type="radio" name="module_' + idx + '_data_pager_align" value="right" id="pa_' + idx + '_r"' +
+	          (d.pager_align === 'right' ? ' checked' : '') + '>' +
+	          '<label class="form-check-label small" for="pa_' + idx + '_r">居右</label>' +
+	        '</div>' +
+	      '</div></div>' +
     '</div>' +
     '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
     '<div class="input-group input-group-sm">' +
@@ -1699,7 +1761,7 @@ function addModule(type, variant, dataPreset) {
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色') + '</div>' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空使用全局宽度）</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空不限制宽度）</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
     '</div>' +
     '<hr class="my-2">' +
     '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
@@ -1759,7 +1821,7 @@ function addModule(type, variant, dataPreset) {
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色') + '</div>' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空使用全局宽度）</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空不限制宽度）</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" placeholder="如 1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
     '</div>' +
     '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
     '<div class="input-group input-group-sm">' +
@@ -1950,7 +2012,6 @@ function addModule(type, variant, dataPreset) {
       '<div class="col-6">' + uP('module_' + idx + '_data_number_font_size', '序号字体大小', ['px','rem']) + '</div>' +
     '</div>';
   }
-  var needsResp = (type !== 'section_title' && type !== 'hero_banner' && type !== 'highlight_card' && type !== 'item_detail' && type !== 'text_content');
   var div = document.createElement('div');
   div.className = 'card mb-2 module-item expanded';
   div.dataset.index = idx;
@@ -1975,17 +2036,17 @@ function addModule(type, variant, dataPreset) {
           '<button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="switchContentStyleTab(this, \'style\')">样式</button>' +
         '</div>' +
         '<div class="content-style-panel panel-content">' +
-          (specialEditor || desktopFields) + (needsResp ? renderResponsiveControls(idx, '', type) : '') +
+          (specialEditor || desktopFields) +
         '</div>' +
         '<div class="content-style-panel panel-style" style="display:none">' +
           (styleEditor || '') +
         '</div>' +
       '</div>' +
       '<div class="device-config device-tablet" style="display:none">' +
-        tabletFields + (needsResp ? renderResponsiveControls(idx, 'tablet', type) : '') + renderHiddenControl(idx, 'tablet', '平板端') +
+        tabletFields + renderHiddenControl(idx, 'tablet', '平板端') +
       '</div>' +
       '<div class="device-config device-mobile" style="display:none">' +
-        mobileFields + (needsResp ? renderResponsiveControls(idx, 'mobile', type) : '') + renderHiddenControl(idx, 'mobile', '手机端') +
+        mobileFields + renderHiddenControl(idx, 'mobile', '手机端') +
       '</div>' +
     '</div>';
   container.appendChild(div);
@@ -2317,13 +2378,17 @@ function initSchemaMounts() {
     if (!typeEl) return;
     var meta = findBlockMeta(typeEl.value);
     if (!meta.is_data_attr || !meta.schema) return;
+
+    // 使用共享的 _getMergedSchema 合并 meta.yaml 类型（与 addModule 保持一致）
+    var schema = _getMergedSchema(meta);
+
     var mdata = {};
     var dataEl = document.querySelector('.schema-mount-data[data-module-index="' + idx + '"]');
     if (dataEl) { try { mdata = JSON.parse(dataEl.textContent || '{}') || {}; } catch (e) { mdata = {}; } }
     var prefix = 'module_' + idx + '_data_';
-    mount.innerHTML = generateSchemaForm(prefix, meta.schema, mdata, function() { return ''; });
+    mount.innerHTML = generateSchemaForm(prefix, schema, mdata, function() { return ''; });
     var styleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"]');
-    if (styleMount) styleMount.innerHTML = generateSchemaStyleForm(prefix, meta.schema, mdata);
+    if (styleMount) styleMount.innerHTML = generateSchemaStyleForm(prefix, schema, mdata);
     mount.dataset.mounted = '1';
   });
 }
@@ -2336,6 +2401,10 @@ initSchemaMounts();
 (function(){
   var STORAGE_KEY = 'pending_translation_{{ page_key }}';
   var CURRENT_LANG = '{{ current_lang }}';
+  var DEFAULT_LANG = '{{ default_lang }}';
+  var SOURCE_PAGE = {{ (source_page | default({})) | tojson }};
+  var LANG_LABELS = {};
+  {{ languages | tojson }}.forEach(function(l){ LANG_LABELS[l.code] = l.name; });
 
   // 页面加载时检查是否有待恢复的译文
   (function restorePending() {
@@ -2368,18 +2437,24 @@ initSchemaMounts();
   if (!btn) return;
 
   btn.addEventListener('click', function(){
-    var targetLang = document.getElementById('translateTargetLang').value;
-    var langLabels = {};
-    {{ languages | tojson }}.forEach(function(l){ langLabels[l.code] = l.name; });
-
     showTranslateConfirm(
       'AI 翻译',
-      '<p>将当前 <strong>' + CURRENT_LANG + '</strong> 内容翻译为 <strong>' + langLabels[targetLang] + '</strong>？</p><p class="text-muted small mb-0">翻译完成后请切换到目标语言标签页手动保存。</p>',
-      function() { doTranslate(targetLang, langLabels); }
+      '<p>将默认语言 <strong>' + (LANG_LABELS[DEFAULT_LANG] || DEFAULT_LANG) + '</strong> 内容翻译到当前 <strong>' + (LANG_LABELS[CURRENT_LANG] || CURRENT_LANG) + '</strong>？</p><p class="text-muted small mb-0">译文会填入当前右侧表单，检查后请手动保存。</p>',
+      function() { doTranslate(CURRENT_LANG); }
     );
   });
 
-  function doTranslate(targetLang, langLabels) {
+  function sourceValueForField(key) {
+    var m = String(key || '').match(/^module_(\d+)_data_(.+)$/);
+    if (m && SOURCE_PAGE && SOURCE_PAGE.modules && SOURCE_PAGE.modules[m[1]]) {
+      var data = SOURCE_PAGE.modules[m[1]].data || {};
+      if (data && data[m[2]] !== undefined && data[m[2]] !== null) return data[m[2]];
+    }
+    if (SOURCE_PAGE && SOURCE_PAGE[key] !== undefined && SOURCE_PAGE[key] !== null) return SOURCE_PAGE[key];
+    return null;
+  }
+
+  function doTranslate(targetLang) {
     var texts = {};
     var inputKeys = [];
     var selector = [
@@ -2389,11 +2464,14 @@ initSchemaMounts();
     ].join(', ');
 
     document.querySelectorAll(selector).forEach(function(el){
-      var val = (el.value || el.textContent || '').trim();
+      var key = el.name || el.id || ('field_' + inputKeys.length);
+      var sourceVal = sourceValueForField(key);
+      var val = (sourceVal == null ? (el.value || el.textContent || '') : sourceVal);
+      if (typeof val === 'object') return;
+      val = String(val).trim();
       if (!val) return;
       if (/^[#\d]/.test(val) && val.length < 10) return;
       if (/^https?:\/\//.test(val)) return;
-      var key = el.name || el.id || ('field_' + inputKeys.length);
       texts[key] = val;
       inputKeys.push(key);
     });
@@ -2409,7 +2487,7 @@ initSchemaMounts();
     fetch('/api/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ texts: texts, source_lang: CURRENT_LANG, target_lang: targetLang })
+      body: JSON.stringify({ texts: texts, source_lang: DEFAULT_LANG, target_lang: targetLang })
     })
     .then(function(r){ return r.json(); })
     .then(function(data){
@@ -2446,27 +2524,14 @@ initSchemaMounts();
         }
       });
 
-      showTranslateMsg('翻译完成',
-        '<p>译文已翻译，即将切换到 <strong>' + langLabels[targetLang] + '</strong> 编辑。</p>');
-      // 自动切换到目标语言标签页
-      var modalEl2 = document.getElementById('translateModal');
-      var bsModal = bootstrap.Modal.getInstance(modalEl2);
-      if (bsModal) {
-        bsModal.hide();
-        modalEl2.addEventListener('hidden.bs.modal', function h(){
-          modalEl2.removeEventListener('hidden.bs.modal', h);
-          switchPanelLang('/_panel/{{ page_key }}?_fragment=1&site={{ site.id }}&lang=' + targetLang, targetLang);
-        });
-      } else {
-        switchPanelLang('/_panel/{{ page_key }}?_fragment=1&site={{ site.id }}&lang=' + targetLang, targetLang);
-      }
+      showTranslateMsg('翻译完成', '<p>译文已填入当前 <strong>' + (LANG_LABELS[targetLang] || targetLang) + '</strong> 表单，请检查后保存。</p>');
     })
     .catch(function(err){
       showTranslateMsg('翻译失败', err.message || '网络错误');
     })
     .finally(function(){
       btn.disabled = false;
-      btn.textContent = '开始翻译';
+      btn.textContent = '从默认语言翻译';
     });
   }
 

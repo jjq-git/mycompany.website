@@ -14,7 +14,7 @@ fields:
     type: text
     group: 外层样式
     default: ""
-    placeholder: 如 1200px（留空使用全局宽度）
+    placeholder: 如 1200px（留空不限制宽度）
   - key: inner_width
     label: 内层内容区宽度
     type: text
@@ -55,18 +55,6 @@ fields:
     type: text
     group: 内容
     default: ""
-  - key: columns
-    label: 每行列数
-    type: select
-    group: 内容
-    default: "4"
-    options:
-      - value: "3"
-        label: 三列
-      - value: "4"
-        label: 四列
-      - value: "6"
-        label: 六列
   - key: stats
     label: 统计项列表
     type: list

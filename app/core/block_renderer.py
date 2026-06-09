@@ -52,7 +52,7 @@ def _hide(node):
 _SCHEMA_DATA_ATTRS = {
     'data-name', 'data-type', 'data-href', 'data-href-template', 'data-fallback',
     'data-style', 'data-hideable', 'data-source', 'data-page-size', 'data-cols',
-    'data-from',
+    'data-from', 'data-i18n', 'data-i18n-placeholder',
 }
 
 
@@ -94,6 +94,30 @@ def _strip_data_attrs(node):
     node.attrs = {k: v for k, v in node.attrs.items() if k not in _SCHEMA_DATA_ATTRS}
     for child in node.children:
         _strip_data_attrs(child)
+
+
+def _resolve_path(data, path):
+    node = data
+    for part in str(path or '').split('.'):
+        if not isinstance(node, dict) or part not in node:
+            return None
+        node = node[part]
+    return node
+
+
+def _apply_i18n(node, context):
+    key = node.attrs.get('data-i18n')
+    if key:
+        value = _resolve_path((context or {}).get('t') or {}, key)
+        if value not in (None, ''):
+            _set_text(node, value)
+    placeholder_key = node.attrs.get('data-i18n-placeholder')
+    if placeholder_key:
+        placeholder = _resolve_path((context or {}).get('t') or {}, placeholder_key)
+        if placeholder not in (None, ''):
+            node.attrs['placeholder'] = str(placeholder)
+    for child in node.children:
+        _apply_i18n(child, context)
 
 
 def _safe_href(value):
@@ -481,6 +505,7 @@ def render(block_html, schema, data_dict, context=None):
     # 4.5 全树补扫静态 href 模板（"查看全部"等仅依赖 base_url/lang 的链接）；
     # 依赖项字段的链接（含 {slug} 等）已在列表展开时填好，这里因占位无值而跳过，不会被覆盖
     _fill_static_href_templates(root, context)
+    _apply_i18n(root, context)
 
     # 5. 清理 data-*
     _strip_data_attrs(root)

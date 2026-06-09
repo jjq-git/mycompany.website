@@ -62,7 +62,7 @@
 | `.section { padding-top: var(--spacing-md) }` | 外层上内边距 | `"1rem"` |
 | `.section { padding-bottom: var(--spacing-md) }` | 外层下内边距 | `"1rem"` |
 | `.hero-banner { height: 77vh }` | Banner 高度 | `"77vh"` |
-| `.container { max-width: var(--container-max) }` | 内容区宽度(header) | `"1440px"` |
+| `.container { max-width: var(--container-max) }` | 内容区宽度(header) | `"1400px"` |
 | `background: transparent` (无 CSS 规则) | 背景色 | `""` (空=透明) |
 | `padding: 0` (无 CSS 规则) | 内边距为 0 | `""` (空=0, 避免冗余 inline style) |
 

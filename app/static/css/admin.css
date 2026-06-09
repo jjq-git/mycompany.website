@@ -1489,6 +1489,56 @@
   opacity: 1;
 }
 
+/* ============================================
+   分段按钮组（radio 切换 → 按钮卡片）
+   用于分页样式 / 分页对齐等少选项切换
+   ============================================ */
+.segmented-control {
+  display: inline-flex;
+  border: 1px solid #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+/* 隐藏原生 radio，视觉由紧随的 label 驱动 */
+.segmented-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.segmented-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.12s;
+  border-right: 1px solid #e2e8f0;
+  user-select: none;
+  white-space: nowrap;
+}
+.segmented-label:last-child {
+  border-right: none;
+}
+.segmented-label:hover {
+  background: #e8ecf0;
+  color: #334155;
+}
+.segmented-input:checked + .segmented-label {
+  background: var(--bs-primary, #067a7a);
+  color: #fff;
+}
+/* 3 按钮变体（分页对齐：居左/居中/居右）每个按钮稍窄 */
+.segmented-control--3 .segmented-label {
+  padding: 5px 10px;
+}
+
 /* 属性面板底部悬浮保存栏 */
 .right-panel-footer {
   background: #fff;
@@ -1658,15 +1708,17 @@
   transform: rotate(90deg);
 }
 
-/* 轮播/功能卡片条目折叠 */
+/* 轮播/功能卡片/底部栏目条目折叠 */
 .hero-slide-item.collapsed .hero-slide-body,
 .feature-item.collapsed .feature-item-body,
-.schema-list-item.collapsed .schema-list-item-body {
+.schema-list-item.collapsed .schema-list-item-body,
+.footer-column-item.collapsed .footer-column-body {
   display: none;
 }
 .hero-slide-item:not(.collapsed) .hero-slide-chevron,
 .feature-item:not(.collapsed) .feature-chevron,
-.schema-list-item:not(.collapsed) .schema-list-chevron {
+.schema-list-item:not(.collapsed) .schema-list-chevron,
+.footer-column-item:not(.collapsed) .footer-column-chevron {
   transform: rotate(90deg);
 }
 

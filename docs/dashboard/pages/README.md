@@ -12,7 +12,7 @@
 
 | 文档 | 讲什么 |
 |---|---|
-| [overview.html.md](overview.html.md) | 仪表盘：内容统计 + 全局宽度 |
+| [overview.html.md](overview.html.md) | 仪表盘：内容统计 |
 | [settings_forms.html.md](settings_forms.html.md) | 设置表单（company / social / theme）：同一套 card + label + input 骨架 |
 | [menu.html.md](menu.html.md) | 菜单配置：表格编辑器、类型切换、新增删除上下移 |
 | [variants.html.md](variants.html.md) | 变体选择（header_edit / footer_variant）：radio 卡片网格 |

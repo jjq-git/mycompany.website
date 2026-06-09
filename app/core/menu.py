@@ -358,6 +358,104 @@ def collect_render_tasks(menu_items, tpl_html_dir, data, pages=None):
     return tasks
 
 
+def _item_id(item):
+    """为菜单项生成稳定的跨语言标识符。
+
+    - home        → '__home__'
+    - page/list/group with target → target 值
+    - link        → url 值
+    """
+    t = item.get('type', '')
+    if t == 'home':
+        return '__home__'
+    if t in ('page', 'list', 'group'):
+        target = (item.get('target') or '').strip()
+        if target:
+            return target
+    if t == 'link':
+        url = (item.get('url') or '').strip()
+        if url:
+            return url
+    # 兜底: label 做 key (极少数情况, 如无 target 的 page)
+    return '__fallback__' + (item.get('label') or '')
+
+
+def apply_labels(menu_tree, label_map):
+    """递归遍历菜单树, 用 label_map 覆盖每个 item 的 label。
+
+    label_map: {item_id: translated_label, ...}
+    返回新列表, 不修改原数据。
+    """
+    if not menu_tree or not label_map:
+        return list(menu_tree or [])
+
+    result = []
+    for it in (menu_tree or []):
+        new_it = dict(it)
+        key = _item_id(it)
+        if key in label_map and label_map[key]:
+            new_it['label'] = label_map[key]
+        if new_it.get('children'):
+            new_it['children'] = apply_labels(new_it['children'], label_map)
+        result.append(new_it)
+    return result
+
+
+def extract_labels(menu_tree):
+    """从菜单树提取 {item_id: label} 映射。
+
+    用于保存时把当前语言的标签写入 menu_labels.<lang>。
+    """
+    result = {}
+    def walk(items):
+        for it in (items or []):
+            key = _item_id(it)
+            if key and not key.startswith('__fallback__'):
+                result[key] = it.get('label', '')
+            if it.get('children'):
+                walk(it['children'])
+    walk(menu_tree)
+    return result
+
+
+def merge_structure(existing_menu, submitted):
+    """把 submitted 的结构变更合并到 existing_menu，保留 existing 的标签。
+
+    - submitted 有但 existing 无 → 新项，用 submitted 的 label
+    - submitted 和 existing 都有 → 保留 existing 的 label，更新结构（target/children等）
+    - existing 有但 submitted 无 → 删除
+    返回新列表，不修改原数据。
+    """
+    existing_by_id = {}
+
+    def index(tree):
+        for item in (tree or []):
+            key = _item_id(item)
+            if key and not key.startswith('__fallback__'):
+                existing_by_id[key] = item
+            if item.get('children'):
+                index(item['children'])
+
+    index(existing_menu or [])
+
+    def merge(items):
+        result = []
+        for sub in (items or []):
+            key = _item_id(sub)
+            old = existing_by_id.get(key)
+            new_item = dict(sub)
+            if old:
+                # 保留已有标签，其余字段（target/type/children/dropdown_style）更新
+                new_item['label'] = old.get('label', sub.get('label', ''))
+            # else: 新项，直接用 submitted 的 label
+            if sub.get('children'):
+                new_item['children'] = merge(sub.get('children', []))
+            result.append(new_item)
+        return result
+
+    return merge(submitted or [])
+
+
 def check_deletion_impact(item, site_id, all_menu_items):
     """检查删除菜单项的关联影响.
 

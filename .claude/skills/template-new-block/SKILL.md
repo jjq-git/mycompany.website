@@ -24,7 +24,7 @@ Block 设计的核心原则:
 - **一个 Block 做好一件事**(不要做一个"万能通用模块")
 - **字段够用就好**(不是越多越好,店主填起来累)
 - **固定样式写在 CSS**,可变样式通过字段配置
-- **meta.yaml 的 default 必须与 CSS 兜底值一致**: 每个字段的 `default` 要填模板 CSS 中的实际默认值(如 padding 默认 1rem、header 内层宽度默认 1440px), 不能随意留空。 详见 [reference/meta-yaml.md](reference/meta-yaml.md#default-字段填写规则硬约束)
+- **meta.yaml 的 default 必须与 CSS 兜底值一致**: 每个字段的 `default` 要填模板 CSS 中的实际默认值(如 padding 默认 1rem、header 内层宽度默认 1400px), 不能随意留空。 详见 [reference/meta-yaml.md](reference/meta-yaml.md#default-字段填写规则硬约束)
 ## 创建目录和文件
 
 ```

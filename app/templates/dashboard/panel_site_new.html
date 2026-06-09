@@ -61,6 +61,13 @@
       </div>
     </div>
 
+    <div class="panel-section">
+      <div class="panel-section-title">语言版本</div>
+      <div class="form-text mb-2">请选择该模板支持的语言版本，至少选择一种。</div>
+      <div class="d-flex flex-wrap gap-2" id="templateLanguageOptions"></div>
+      <div class="text-danger small mt-2" id="templateLanguageError" style="display:none;">请选择至少一种语言版本</div>
+    </div>
+
     <div class="d-flex gap-2 mt-3">
       <button type="button" class="btn btn-primary btn-sm" id="createSiteBtn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="me-1"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -74,8 +81,42 @@
 
 <script>
 (function(){
+  var TEMPLATE_LANGUAGES = {{ template_language_map | tojson }};
+  var TEMPLATE_DEFAULT_LANGS = {{ template_default_language_map | tojson }};
+  var SELECTED_LANGS = {{ (form.enabled_languages | default([])) | tojson }};
   var createBtn = document.getElementById('createSiteBtn');
   if (!createBtn) return;
+
+  function currentTemplateName() {
+    var tplSelect = document.getElementById('tplSelect');
+    var name = tplSelect ? tplSelect.value.trim() : '{{ template.name if template else "" }}';
+    return name || Object.keys(TEMPLATE_LANGUAGES)[0] || '';
+  }
+
+  function renderLanguageOptions() {
+    var box = document.getElementById('templateLanguageOptions');
+    if (!box) return;
+    var tplName = currentTemplateName();
+    var langs = TEMPLATE_LANGUAGES[tplName] || [];
+    var defaultLang = TEMPLATE_DEFAULT_LANGS[tplName] || (langs[0] && langs[0].code) || '';
+    var selected = SELECTED_LANGS.length ? SELECTED_LANGS : (defaultLang ? [defaultLang] : []);
+    box.innerHTML = '';
+    langs.forEach(function(lang){
+      var label = document.createElement('label');
+      label.className = 'd-flex align-items-center gap-2 px-2 py-1 rounded';
+      label.style.cssText = 'border:1px solid #e5e7eb;background:#f8fafc;cursor:pointer;font-size:12px;';
+      label.innerHTML = '<input class="form-check-input mt-0" type="checkbox" name="enabled_lang" value="' +
+        String(lang.code).replace(/"/g, '&quot;') + '"' + (selected.indexOf(lang.code) !== -1 ? ' checked' : '') +
+        '><span>' + (lang.name || lang.code) + '</span>';
+      box.appendChild(label);
+    });
+  }
+
+  document.getElementById('tplSelect')?.addEventListener('change', function(){
+    SELECTED_LANGS = [];
+    renderLanguageOptions();
+  });
+  renderLanguageOptions();
 
   createBtn.addEventListener('click', function(){
     var tplSelect = document.getElementById('tplSelect');
@@ -88,6 +129,13 @@
     if (!name) { alert('请填写站点名称'); return; }
     if (!slug) { alert('请填写 Slug'); return; }
 
+    var checkedLangs = Array.from(document.querySelectorAll('#templateLanguageOptions input[name="enabled_lang"]:checked')).map(function(el){ return el.value; });
+    if (!checkedLangs.length) {
+      var langError = document.getElementById('templateLanguageError');
+      if (langError) langError.style.display = '';
+      return;
+    }
+
     var originalText = createBtn.innerHTML;
     createBtn.disabled = true;
     createBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>创建中...';
@@ -96,6 +144,7 @@
     formData.append('template_name', tplName);
     formData.append('name', name);
     formData.append('slug', slug);
+    checkedLangs.forEach(function(code){ formData.append('enabled_lang', code); });
 
     fetch('{{ url_for("core.site_new", _fragment="1") }}', { method: 'POST', body: formData })
       .then(function(r){

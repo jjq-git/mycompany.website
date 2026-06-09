@@ -55,10 +55,6 @@
           {% set resp = module.get('responsive', {}) if module.get('responsive', {}) is mapping else {} %}
           {% set mdata_tablet = resp.get('tablet', {}) %}
           {% set mdata_mobile = resp.get('mobile', {}) %}
-          {% set count_field = 'items_per_page' if module.type == 'data_grid' else 'max_items' %}
-          {% set count_label = '每页显示数量' if module.type == 'data_grid' else '显示数量' %}
-          {% set count_placeholder = '默认' if module.type == 'data_grid' else '0=全部' %}
-
           <div class="device-config device-desktop">
 {% if module.type == 'text_content' %}
             {# 文本内容专属表单 #}
@@ -85,7 +81,9 @@
             {% elif mdata is mapping %}
               {% set prefix = 'module_' ~ i ~ '_data_' %}
               {% for key, val in mdata.items() %}
-              {% set is_color = 'color' in key|lower or key|lower.endswith('_bg') %}
+              {% if key not in ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'] %}
+              {% set key_lower = key|lower %}
+              {% set is_color = 'color' in key_lower or key_lower.endswith('_bg') %}
               <div class="mb-2">
                 <label class="form-label small mb-1 text-muted">{{ key | replace('_', ' ') | title }}</label>
                 {% if val is mapping or (val is iterable and val is not string) %}
@@ -112,6 +110,7 @@
                        name="{{ prefix }}{{ key }}" value="{{ val }}">
                 {% endif %}
               </div>
+              {% endif %}
               {% endfor %}
             {% endif %}
             {% if module.type == 'hero_banner' %}
@@ -121,32 +120,15 @@
               <div class="form-text">一次选择多个图片或视频，保存后会追加到 slides 轮播列表。</div>
             </div>
             {% endif %}
-            {% if module.type not in ('section_title', 'hero_banner', 'highlight_card', 'item_detail', 'text_content') %}
-            <hr class="my-2">
-            <div class="row g-2">
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">每行列数</label>
-                <select class="form-select form-select-sm" name="module_{{ i }}_resp_columns">
-                  <option value="" {% if not mdata.get('columns') %}selected{% endif %}>默认</option>
-                  {% for n in [1,2,3,4] %}
-                  <option value="{{ n }}" {% if mdata.get('columns') == n %}selected{% endif %}>{{ n }} 列</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">{{ count_label }}</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_{{ count_field }}"
-                       value="{{ mdata.get(count_field, '') }}" placeholder="{{ count_placeholder }}">
-              </div>
-            </div>
-            {% endif %}
           </div>
 
           <div class="device-config device-tablet" style="display:none">
 {% if mdata is mapping %}
               {% for key, val in mdata.items() %}
+              {% if key not in ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'] %}
               {% set tval = mdata_tablet.get(key, '') %}
-              {% set is_color = 'color' in key|lower or key|lower.endswith('_bg') %}
+              {% set key_lower = key|lower %}
+              {% set is_color = 'color' in key_lower or key_lower.endswith('_bg') %}
               <div class="mb-2">
                 <label class="form-label small mb-1 text-muted">{{ key | replace('_', ' ') | title }}</label>
                 {% if is_color %}
@@ -165,26 +147,8 @@
                        value="{{ tval }}" placeholder="继承: {{ val }}">
                 {% endif %}
               </div>
+              {% endif %}
               {% endfor %}
-            {% endif %}
-            {% if module.type not in ('section_title', 'hero_banner', 'highlight_card', 'item_detail', 'text_content') %}
-            <hr class="my-2">
-            <div class="row g-2">
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">每行列数</label>
-                <select class="form-select form-select-sm" name="module_{{ i }}_resp_tablet_columns">
-                  <option value="" {% if not mdata_tablet.get('columns') %}selected{% endif %}>继承电脑端</option>
-                  {% for n in [1,2,3] %}
-                  <option value="{{ n }}" {% if mdata_tablet.get('columns') == n %}selected{% endif %}>{{ n }} 列</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">{{ count_label }}</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_tablet_{{ count_field }}"
-                       value="{{ mdata_tablet.get(count_field, '') }}" placeholder="继承电脑端">
-              </div>
-            </div>
             {% endif %}
             <div class="mb-2 mt-2">
               <label class="form-check-label small">
@@ -199,8 +163,10 @@
           <div class="device-config device-mobile" style="display:none">
 {% if mdata is mapping %}
               {% for key, val in mdata.items() %}
+              {% if key not in ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'] %}
               {% set mval = mdata_mobile.get(key, '') %}
-              {% set is_color = 'color' in key|lower or key|lower.endswith('_bg') %}
+              {% set key_lower = key|lower %}
+              {% set is_color = 'color' in key_lower or key_lower.endswith('_bg') %}
               <div class="mb-2">
                 <label class="form-label small mb-1 text-muted">{{ key | replace('_', ' ') | title }}</label>
                 {% if is_color %}
@@ -219,26 +185,8 @@
                        value="{{ mval }}" placeholder="继承: {{ val }}">
                 {% endif %}
               </div>
+              {% endif %}
               {% endfor %}
-            {% endif %}
-            {% if module.type not in ('section_title', 'hero_banner', 'highlight_card', 'item_detail', 'text_content') %}
-            <hr class="my-2">
-            <div class="row g-2">
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">每行列数</label>
-                <select class="form-select form-select-sm" name="module_{{ i }}_resp_mobile_columns">
-                  <option value="" {% if not mdata_mobile.get('columns') %}selected{% endif %}>继承电脑端</option>
-                  {% for n in [1, 2] %}
-                  <option value="{{ n }}" {% if mdata_mobile.get('columns') == n %}selected{% endif %}>{{ n }} 列</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="col-6">
-                <label class="form-label small mb-1 text-muted">{{ count_label }}</label>
-                <input type="number" class="form-control form-control-sm" name="module_{{ i }}_resp_mobile_{{ count_field }}"
-                       value="{{ mdata_mobile.get(count_field, '') }}" placeholder="继承电脑端">
-              </div>
-            </div>
             {% endif %}
             <div class="mb-2 mt-2">
               <label class="form-check-label small">
@@ -347,12 +295,6 @@ function addModule(type, variant, dataPreset) {
         '<div class="col-6"><label class="form-label small mb-1 text-muted">正文字号</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_body_size" placeholder="如 1rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=module_' + idx + '_data_body_size]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>' +
       '</div>'
     : '';
-  // 只有数据类模块才需要每行列数和显示数量控件
-  var needsResp = (type === 'data_grid' || type === 'product_grid' || type === 'feature_grid');
-  // data_grid 使用 items_per_page，其他模块使用 max_items
-  var respCountField = (type === 'data_grid') ? 'items_per_page' : 'max_items';
-  var respCountLabel = (type === 'data_grid') ? '每页显示数量' : '显示数量';
-  var respCountPlaceholder = (type === 'data_grid') ? '默认' : '0=全部';
   var div = document.createElement('div');
   div.className = 'card mb-2 module-item expanded';
   div.innerHTML =
@@ -365,39 +307,9 @@ function addModule(type, variant, dataPreset) {
     '<div class="module-config p-2 border-top" style="display:block">' +
       '<div class="device-config device-desktop">' +
           heroEditor + sectionEditor + textEditor +
-        (needsResp ? '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>' +
-            '<select class="form-select form-select-sm" name="module_' + idx + '_resp_columns">' +
-              '<option value="" selected>默认</option>' +
-              '<option value="1">1 列</option><option value="2">2 列</option>' +
-              '<option value="3">3 列</option><option value="4">4 列</option>' +
-            '</select></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">' + respCountLabel + '</label>' +
-            '<input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_' + respCountField + '" placeholder="' + respCountPlaceholder + '"></div>' +
-        '</div>' : '') +
       '</div>' +
-      '<div class="device-config device-tablet" style="display:none">' +
-          (needsResp ? '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>' +
-            '<select class="form-select form-select-sm" name="module_' + idx + '_resp_tablet_columns">' +
-              '<option value="" selected>继承电脑端</option>' +
-              '<option value="1">1 列</option><option value="2">2 列</option><option value="3">3 列</option>' +
-            '</select></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">' + respCountLabel + '</label>' +
-            '<input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_tablet_' + respCountField + '" placeholder="继承电脑端"></div>' +
-        '</div>' : '') +
-      '</div>' +
-      '<div class="device-config device-mobile" style="display:none">' +
-          (needsResp ? '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">每行列数</label>' +
-            '<select class="form-select form-select-sm" name="module_' + idx + '_resp_mobile_columns">' +
-              '<option value="" selected>继承电脑端</option>' +
-              '<option value="1">1 列</option><option value="2">2 列</option>' +
-            '</select></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">' + respCountLabel + '</label>' +
-            '<input type="number" class="form-control form-control-sm" name="module_' + idx + '_resp_mobile_' + respCountField + '" placeholder="继承电脑端"></div>' +
-        '</div>' : '') +
-      '</div>' +
+      '<div class="device-config device-tablet" style="display:none"></div>' +
+      '<div class="device-config device-mobile" style="display:none"></div>' +
     '</div>';
   container.appendChild(div);
   initColorPickers(div);

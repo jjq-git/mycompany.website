@@ -16,27 +16,27 @@
       <div data-name="form_panel" data-type="group" data-hideable class="cf-form-col">
         <form class="cf-form" method="POST">
           <div data-name="name_field" data-type="group" data-hideable class="cf-field">
-            <label class="cf-label">姓名</label>
-            <input type="text" name="name" class="cf-input" required placeholder="请输入您的姓名">
+            <label class="cf-label" data-i18n="contact.formName">姓名</label>
+            <input type="text" name="name" class="cf-input" required placeholder="姓名" data-i18n-placeholder="contact.formName">
           </div>
           <div data-name="email_field" data-type="group" data-hideable class="cf-field">
-            <label class="cf-label">邮箱</label>
-            <input type="email" name="email" class="cf-input" required placeholder="请输入您的邮箱">
+            <label class="cf-label" data-i18n="contact.formEmail">邮箱</label>
+            <input type="email" name="email" class="cf-input" required placeholder="邮箱" data-i18n-placeholder="contact.formEmail">
           </div>
           <div data-name="phone_field" data-type="group" data-hideable class="cf-field">
-            <label class="cf-label">电话</label>
-            <input type="tel" name="phone" class="cf-input" placeholder="请输入您的电话（可选）">
+            <label class="cf-label" data-i18n="contact.formPhone">电话</label>
+            <input type="tel" name="phone" class="cf-input" placeholder="电话" data-i18n-placeholder="contact.formPhone">
           </div>
           <div data-name="company_field" data-type="group" data-hideable class="cf-field">
-            <label class="cf-label">公司</label>
-            <input type="text" name="company" class="cf-input" placeholder="请输入您的公司名称（可选）">
+            <label class="cf-label" data-i18n="contact.formCompany">公司</label>
+            <input type="text" name="company" class="cf-input" placeholder="公司" data-i18n-placeholder="contact.formCompany">
           </div>
           <div data-name="message_field" data-type="group" data-hideable class="cf-field">
-            <label class="cf-label">留言</label>
-            <textarea name="message" class="cf-input cf-textarea" rows="4" required placeholder="请输入您的留言内容"></textarea>
+            <label class="cf-label" data-i18n="contact.formMessage">留言</label>
+            <textarea name="message" class="cf-input cf-textarea" rows="4" required placeholder="留言" data-i18n-placeholder="contact.formMessage"></textarea>
           </div>
           <div class="cf-actions">
-            <button type="submit" class="cf-btn">发送留言</button>
+            <button type="submit" class="cf-btn" data-i18n="contact.formSend">发送留言</button>
           </div>
         </form>
       </div>

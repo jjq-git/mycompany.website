@@ -1,4 +1,19 @@
-# page_edit.html：页面模块编辑器
+# page_edit.html：页面模块编辑器（已过时）
+
+> ⚠️ 本文档描述的是早期 modal 弹框 + 拖拽列表方案，已被当前的手风琴卡片 + schema 驱动表单替代。
+> 最新架构见 [frontend.md §5](../frontend.md#五页面编辑器panel_page_edithtml--page_homehtml)。
+
+## 当前实现要点
+
+- **面板渲染**：`panel_page_edit.html` 通过 `?_fragment=1` 注入右侧面板，不是独立页面
+- **模块配置**：data-* block 走 `generateSchemaForm()` schema 驱动，radio 字段渲染为 `.segmented-control` 分段按钮组
+- **新增/已保存同源**：`addModule()` 和 `initSchemaMounts()` 都通过 `_getMergedSchema(meta)` 合并 meta.yaml 类型后生成表单，保证两处渲染一致
+- **变体切换**：`_block_palette.html` 弹框列出 block 变体（meta.yaml 声明 + style_tokens 自动派生）
+- **共享构建**：`admin_modules.js` 的 `_buildModuleHTML()` 供数据集编辑页（`panel_data_list.html`）独立使用
+
+## 旧文档（保留供历史参考）
+
+以下内容描述的是 v1 方案，已不再使用。
 
 `app/templates/dashboard/page_home.html`（待重命名为 `page_edit.html`）是通用页面模块编辑器——**不只是首页**，所有页面（关于我们、联系我们……）都用它来排列和配置模块。首页唯一的特殊之处是没有面包屑和 `<h1>` 外层包裹。
 

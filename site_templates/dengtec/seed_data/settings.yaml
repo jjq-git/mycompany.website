@@ -1,32 +1,33 @@
 company:
   name: 昆山德恩基电子科技有限公司
   short_name: 德恩基电子科技
-  logo: ""
+  logo: /assets/uploads/company-logo-20260608062012-25b5e74e.webp
   icp: 苏ICP备14020096号-1
-
 contact:
-  phone: "0512-50133094"
-  mobile: "18020204529"
+  phone: 0512-50133094
+  mobile: '18020204529'
   email: info@dengtec.com
   address: 江苏省昆山市开发区新星路5号
   business_hours: 周一至周五 9:00 - 18:00
   weekend: 周末请提前预约
-
 social:
   kickstarter: https://www.kickstarter.com/projects/rimu
   rimu: https://rimu.me
-
+  enabled: true
+  github: https://www.baidu.com
+  twitter: ''
+  facebook: ''
+  linkedin: ''
+  youtube: ''
 layout:
-  global_width: "90%"
-
+  global_width: 90%
 theme: {}
-# 使用 meta.yaml 中的 default_theme
-
 menu:
 - label: 首页
   type: home
+  url: /
 - label: 产品
-  type: list
+  type: group
   target: products
   dropdown_style: horizontal
   children:
@@ -34,7 +35,7 @@ menu:
     type: page
     target: silent-booth
   - label: 产品展示
-    type: page
+    type: list
     target: props-display
   - label: 干冰机
     type: page
@@ -51,22 +52,134 @@ menu:
 - label: 博客
   type: list
   target: posts
-
 header:
   variant: logo_left_menu_right
-  outer_width: ""
-  inner_width: "1440px"
-  padding_top: ""
-  padding_right: ""
-  padding_bottom: ""
-  padding_left: ""
+  outer_width: ''
+  inner_width: ''
+  padding_top: ''
+  padding_right: ''
+  padding_bottom: ''
+  padding_left: ''
   language_switcher:
     enabled: true
     style: vertical_dropdown
   enabled_languages:
-    - zh-CN
-    - en
-
+  - zh-CN
+  - zh-TW
+  - en
 footer:
-  variant: columns
-  columns: []
+  variant: columns_social
+  columns:
+  - type: menu
+    title: 产品
+    links:
+    - label: 静音仓01
+      url: ''
+    - label: 干冰机
+      url: ''
+    - label: 产品
+      url: ''
+    - label: 会议室
+      url: ''
+  - type: text
+    title: 关于我们
+    links:
+    - label: 关于我们
+      url: ''
+    - label: 联系我们
+      url: ''
+  - type: menu
+    title: 技术支持
+    links:
+    - label: 定制开发
+      url: ''
+  - type: menu
+    title: 相关行业
+    links:
+    - label: 电子制造
+      url: ''
+  - type: text
+    title: 关联公司
+    links:
+    - label: 日目
+      url: ''
+  copyright: ''
+  icp: ''
+menu_en:
+- label: Home
+  type: home
+  url: /
+- label: Products
+  type: group
+  target: products
+  dropdown_style: horizontal
+  children:
+  - label: Silent Booth
+    type: list
+    target: silent-booth
+  - label: Product Showcase
+    type: page
+    target: props-display
+  - label: Dry Ice Machine
+    type: page
+    target: dry-ice-machine
+- label: Recent Projects
+  type: list
+  target: portfolio
+- label: About Us
+  type: page
+  target: about
+- label: Contact
+  type: page
+  target: contact
+- label: Blog
+  type: list
+  target: posts
+footer_en:
+  variant: columns_social
+  copyright: ''
+  icp: ''
+  columns:
+  - type: menu
+    title: Products
+    links:
+    - label: Silent Booth 01
+      url: ''
+    - label: Dry Ice Machine
+      url: ''
+    - label: Products
+      url: ''
+    - label: Meeting Room
+      url: ''
+  - type: text
+    title: About Us
+    links:
+    - label: About Us
+      url: ''
+    - label: Contact Us
+      url: ''
+  - type: menu
+    title: Technical Support
+    links:
+    - label: Custom Development
+      url: ''
+  - type: menu
+    title: Related Industries
+    links:
+    - label: Electronics Manufacturing
+      url: ''
+  - type: text
+    title: Affiliated Companies
+    links:
+    - label: Rimu
+      url: ''
+company_en:
+  name: Kunshan Deenji Electronic Technology Co., Ltd.
+  short_name: Deenji Electronic Technology
+  icp: 苏ICP备14020096号-1
+  logo: /assets/uploads/company-logo-20260608062012-25b5e74e.webp
+contact_en:
+  phone: 0512-50133094
+  email: info@dengtec.com
+  address: No. 5 Xinxing Road, Kunshan Development Zone, Jiangsu Province
+  wechat: ''

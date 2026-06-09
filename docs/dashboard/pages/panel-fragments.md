@@ -19,7 +19,7 @@
 
 | 概念名称 | 对应模板 | 页面内容 |
 |---|---|---|
-| `panel_overview` | `overview.html` | 内容统计 + 全局宽度设置 |
+| `panel_overview` | `overview.html` | 内容统计 |
 | `panel_company` | `company.html` | 公司名称 / 电话 / 邮箱 / 地址表单 |
 | `panel_header` | `header_edit.html` | 头部变体选择（radio 卡片） |
 | `panel_menu` | `menu.html` | 菜单表格编辑器 |

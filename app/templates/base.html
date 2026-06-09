@@ -104,7 +104,7 @@
             {% for opt in available_sites | default([]) %}
             <li><a class="dropdown-item {% if site and opt.id == site.id %}active{% endif %}"
                 href="{{ request.path }}?site={{ opt.id }}{% if current_lang %}&lang={{ current_lang }}{% endif %}">{{
-                opt.name or opt.slug }} <span class="text-muted small">/{{ opt.slug }}</span></a></li>
+                opt.name or opt.slug }} <span class="small">/{{ opt.slug }}</span></a></li>
             {% endfor %}
           </ul>
         </div>
@@ -791,7 +791,7 @@
         if (reopenBtn) reopenBtn.style.display = 'none';
       }
       var url = '{{ url_for("core.templates_gallery") }}?_fragment=1';
-      var siteParam = new URLSearchParams(window.location.search).get('site');
+      var siteParam = currentSiteParam();
       if (siteParam) url += '&site=' + encodeURIComponent(siteParam);
       loadPanel(url);
     }
@@ -995,7 +995,7 @@
       if (!f) return;
       var previewUrl = f.dataset.previewUrl || f.src;
       updatePreviewUrlBar(previewUrl);
-      var siteParam = new URLSearchParams(window.location.search).get('site');
+      var siteParam = currentSiteParam();
       var buildUrl = '/build?_fragment=1';
       if (siteParam) buildUrl += '&site=' + encodeURIComponent(siteParam);
       fetch(buildUrl, { method: 'POST' })
@@ -1005,6 +1005,33 @@
 
     var previewTabs = [];
     var activeTabKey = null;
+    var currentAdminLang = '{{ current_lang | default("") }}';
+    var currentSiteId = '{{ site.id if site else "" }}';
+
+    function currentSiteParam() {
+      return new URLSearchParams(window.location.search).get('site') || currentSiteId;
+    }
+
+    function currentLangParam() {
+      return new URLSearchParams(window.location.search).get('lang') || currentAdminLang;
+    }
+
+    (function normalizeAdminUrlParams() {
+      if (!currentSiteId) return;
+      try {
+        var url = new URL(window.location.href);
+        var changed = false;
+        if (!url.searchParams.get('site')) {
+          url.searchParams.set('site', currentSiteId);
+          changed = true;
+        }
+        if (currentAdminLang && !url.searchParams.get('lang')) {
+          url.searchParams.set('lang', currentAdminLang);
+          changed = true;
+        }
+        if (changed) window.history.replaceState({}, '', url.toString());
+      } catch (e) {}
+    })();
 
     function escapeHtml(value) {
       return String(value || '').replace(/[&<>"']/g, function (ch) {
@@ -1250,8 +1277,8 @@
       var href = link.getAttribute('href');
       if (href && href !== '#') {
         var params = new URLSearchParams(window.location.search);
-        var siteParam = params.get('site');
-        var langParam = params.get('lang');
+        var siteParam = currentSiteParam();
+        var langParam = currentLangParam();
         var qs = siteParam ? '&site=' + siteParam : '';
         if (langParam) qs += '&lang=' + encodeURIComponent(langParam);
         loadPanel(href + '?_fragment=1' + qs);
@@ -1277,10 +1304,11 @@
       var frame = document.getElementById('previewFrame');
       var initialUrl = previewUrlForPage('/');
       if (frame) frame.dataset.previewUrl = initialUrl;
-      openPreviewTab('home', '首页', initialUrl, true);
+      openPreviewTab('home', '首页', initialUrl);
     })();
 
     function currentPreviewLanguage() {
+      if (currentAdminLang) return currentAdminLang;
       var frame = document.getElementById('previewFrame');
       var path = '';
       try { path = frame.contentWindow.location.pathname; } catch (e) { path = frame.src || ''; }
@@ -1290,7 +1318,7 @@
 
     function doPublish() {
       if (confirm('确认发布站点？')) {
-        var siteParam = new URLSearchParams(window.location.search).get('site');
+        var siteParam = currentSiteParam();
         var buildUrl = '/build?_fragment=1';
         if (siteParam) buildUrl += '&site=' + encodeURIComponent(siteParam);
         fetch(buildUrl, { method: 'POST' })
@@ -1319,8 +1347,8 @@
       var targetPageKey = pageKey || currentPanelPageKey() || 'home';
       if (currentPanelPageKey() !== targetPageKey) {
         var params = new URLSearchParams(window.location.search);
-        var siteParam = params.get('site');
-        var langParam = params.get('lang');
+        var siteParam = currentSiteParam();
+        var langParam = currentLangParam();
         var joiner = siteParam ? '&site=' + siteParam : '';
         if (langParam) joiner += '&lang=' + encodeURIComponent(langParam);
         return loadPanel('/_panel/' + targetPageKey + '?_fragment=1' + joiner)
@@ -1391,9 +1419,11 @@
         }
 
         regionEl.classList.add('builder-canvas-selected');
-        var siteParam = new URLSearchParams(window.location.search).get('site');
+        var siteParam = currentSiteParam();
+        var langParam = currentLangParam();
         var url = (regionEl.dataset.builderRegion === 'header' ? '/settings/header' : '/settings/footer_variant') + '?_fragment=1';
         if (siteParam) url += '&site=' + encodeURIComponent(siteParam);
+        if (langParam) url += '&lang=' + encodeURIComponent(langParam);
         loadPanel(url);
       }, true);
     }
@@ -1401,8 +1431,8 @@
     function openAccountPanel() {
       document.querySelectorAll('.left-nav-item').forEach(function(el) { el.classList.remove('active'); });
       var params = new URLSearchParams(window.location.search);
-      var siteParam = params.get('site');
-      var langParam = params.get('lang');
+      var siteParam = currentSiteParam();
+      var langParam = currentLangParam();
       var qs = siteParam ? '&site=' + siteParam : '';
       if (langParam) qs += '&lang=' + encodeURIComponent(langParam);
       loadPanel('{{ url_for("core.account") }}?_fragment=1' + qs);
@@ -1421,8 +1451,8 @@
 
     function openDatasetPanel(datasetKey) {
       var params = new URLSearchParams(window.location.search);
-      var siteParam = params.get('site');
-      var langParam = params.get('lang');
+      var siteParam = currentSiteParam();
+      var langParam = currentLangParam();
       var url = '/_dataset/' + encodeURIComponent(datasetKey) + '?_fragment=1';
       if (siteParam) url += '&site=' + encodeURIComponent(siteParam);
       if (langParam) url += '&lang=' + encodeURIComponent(langParam);
@@ -1431,6 +1461,12 @@
 
     // 切换面板语言并同步预览 iframe
     function switchPanelLang(url, langCode) {
+      currentAdminLang = langCode || currentAdminLang;
+      try {
+        var currentUrl = new URL(window.location.href);
+        if (currentAdminLang) currentUrl.searchParams.set('lang', currentAdminLang);
+        window.history.replaceState({}, '', currentUrl.toString());
+      } catch (e) {}
       // 在加载新面板内容前，保存当前预览页面路径
       var f = document.getElementById('previewFrame');
       var previewPath = '';
@@ -1444,7 +1480,7 @@
       loadPanel(url).then(function () {
         var frame = document.getElementById('previewFrame');
         if (!frame) return;
-        var siteParam = new URLSearchParams(window.location.search).get('site') || '{{ site.id if site else "" }}';
+        var siteParam = currentSiteParam();
         var newUrl = '/preview/' + siteParam + '/' + langCode + '/' + (previewPath || '') + 'index.html';
         frame.dataset.previewUrl = newUrl;
         // 先触发构建，确保多语言菜单等内容已生成
