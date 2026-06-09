@@ -305,7 +305,11 @@ def _build_language_selector_page(output_root, base_url, settings, theme, year, 
 
 
 def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, pages, data, meta):
-    """为一种语言渲染所有页面 (菜单驱动)."""
+    """为一种语言渲染所有页面 (菜单驱动).
+
+    返回失败任务列表 [{lang, template, type, error}], 供 build_site 汇总,
+    避免渲染失败被逐页静默吞掉、导致店主拿到缺页 ZIP/发布缺页站点而不自知。
+    """
     lang_output = output_root / lang_code
 
     _common = dict(common)
@@ -315,6 +319,7 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
     menu_items = menu_lib.cap_menu_depth(_common.get('settings', {}).get('menu', []))
     tasks = menu_lib.collect_render_tasks(menu_items, tpl_html_dir, data, pages)
 
+    failures = []
     for task in tasks:
         try:
             tpl = env.get_template(task['template'])
@@ -346,6 +351,8 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
                     '跳过越界输出路径 %s (lang=%s): 解析后逃出 output 根',
                     task.get('output_path'), lang_code,
                 )
+                failures.append({'lang': lang_code, 'template': task.get('template'),
+                                 'type': task.get('type'), 'error': '输出路径越界, 已跳过'})
                 continue
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_text(rendered, encoding='utf-8')
@@ -354,9 +361,12 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
                 '页面 %s (type=%s, lang=%s) 渲染失败: %s',
                 task.get('template'), task.get('type'), lang_code, e,
             )
+            failures.append({'lang': lang_code, 'template': task.get('template'),
+                             'type': task.get('type'), 'error': str(e)})
+    return failures
 
 
-def build_site(site_id, base_url=''):
+def build_site(site_id, base_url='', report=None):
     """生成站点到 output/<site_id>/. 返回输出根目录.
 
     支持多语言: 每种语言一个子目录, 根路径生成语言选择首页.
@@ -364,6 +374,9 @@ def build_site(site_id, base_url=''):
     base_url: 站内链接和静态资源的前缀.
               发布到 CDN 时为 '' (站点在根),
               本地预览时为 '/preview/<id>'.
+    report:   #13 可选 list, 传入则收集所有渲染失败任务 [{lang,template,type,error}]。
+              零侵入: 现有调用方不传即忽略; export/发布传入后可据此提示店主"N 页缺失",
+              避免缺页 ZIP/缺页站点被静默发布。失败也会统一记 warning 日志。
     """
     site = Site.query.get(site_id)
     if not site:
@@ -371,6 +384,8 @@ def build_site(site_id, base_url=''):
 
     settings, pages, data = _gather_site_data(site_id, site.template_name)
     site_settings = _load_yaml(Path(current_app.config['SITES_DIR']) / str(site_id) / 'settings.yaml')
+
+    _all_failures = []  # #13: 收集各语言渲染失败任务
 
     # 模板默认值兜底
     tpl_root, tpl_html_dir, tpl_static_dir = _template_paths(site.template_name)
@@ -487,7 +502,9 @@ def build_site(site_id, base_url=''):
                 'all_datasets': lang_data,
             }
 
-            _render_for_language(env, tpl_html_dir, output_root, lang_code, common, lang_pages, lang_data, meta)
+            _all_failures.extend(
+                _render_for_language(env, tpl_html_dir, output_root, lang_code, common, lang_pages, lang_data, meta)
+            )
     else:
         # 单语言模式 (兼容旧模板)
         # 修复：原先引用了未定义的 products_categories/products_items 导致单语言站点构建崩溃。
@@ -509,7 +526,19 @@ def build_site(site_id, base_url=''):
             'features': data.get('features', []),
             'all_datasets': data,
         }
-        _render_for_language(env, tpl_html_dir, output_root, '', common, pages, data, meta)
+        _all_failures.extend(
+            _render_for_language(env, tpl_html_dir, output_root, '', common, pages, data, meta)
+        )
+
+    # #13: 汇总缺页。有失败时统一记 warning, 并填入调用方传入的 report。
+    if _all_failures:
+        current_app.logger.warning(
+            '站点 %s 构建完成但有 %d 个页面渲染失败(已缺页): %s',
+            site_id, len(_all_failures),
+            '; '.join(f"{f['lang'] or '默认'}:{f['template']}" for f in _all_failures),
+        )
+        if report is not None:
+            report.extend(_all_failures)
 
     return output_root
 

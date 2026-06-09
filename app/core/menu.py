@@ -89,6 +89,8 @@ def normalize_for_render(items, parent_path=''):
     """
     result = []
     for it in items or []:
+        if not isinstance(it, dict):  # #14: 同 upgrade_old_format, 防脏项
+            continue
         new = dict(it)
         new['url'] = url_of(it, parent_path)
 
@@ -109,7 +111,7 @@ def normalize_for_render(items, parent_path=''):
 
 def ensure_home(items):
     """确保首页固定为第一项. 返回新 list, 不改原数据."""
-    normalized = list(items or [])
+    normalized = [it for it in (items or []) if isinstance(it, dict)]  # #14: 防脏项
     home_items = [it for it in normalized if it.get('type') == 'home']
     other_items = [it for it in normalized if it.get('type') != 'home']
     home = dict(home_items[0]) if home_items else {'label': '首页', 'type': 'home'}
@@ -196,6 +198,11 @@ def upgrade_old_format(items, datasets):
     """
     upgraded = []
     for it in items or []:
+        # #14: 防御非 dict 菜单项(手工编辑 yaml 或模板作者写错塞进标量/None)。
+        # upgrade_old_format 是 menu 渲染链(upgrade→normalize→ensure_home)的第一站,
+        # 在此过滤掉非 dict, 后续两步就拿不到脏项, 不会再抛 AttributeError 中断整站构建。
+        if not isinstance(it, dict):
+            continue
         if 'type' in it:
             # 已是新格式, 递归处理 children
             new_it = dict(it)

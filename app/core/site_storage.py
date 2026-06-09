@@ -13,7 +13,9 @@
     │   └── settings.yaml     语言特有设置 (如 menu 覆盖)
     └── assets/               上传的图片/文件
 """
+import os
 import shutil
+import tempfile
 from pathlib import Path
 
 import yaml
@@ -63,10 +65,24 @@ def write_yaml(site_id, relative_path, data, lang=None):
     """
     path = _safe_path(site_id, relative_path, lang=lang)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        yaml.safe_dump(data, allow_unicode=True, sort_keys=False, indent=2),
-        encoding='utf-8',
-    )
+    text = yaml.safe_dump(data, allow_unicode=True, sort_keys=False, indent=2)
+    # 原子写: 这是店主网站内容(pages/data/settings)的唯一权威副本, 无备份、不入仓。
+    # 直接 'w' 模式会先把目标截断为 0 再写, 进程中途崩溃/被 kill/磁盘满就会
+    # 留下截断或半写的损坏文件(yaml.safe_load 静默返回 None, 内容全失)。
+    # 改为: 先写同目录临时文件 -> fsync 落盘 -> os.replace 原子替换。
+    # 与产品 P0 信念"网站像 PDF, 5 年后还能打开"一致。
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix='.tmp-', suffix='.yaml')
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)  # 同目录原子替换, 替换前后目标始终是完整文件
+    except Exception:
+        # 写失败时清理临时文件, 不留垃圾; 原文件保持原样(未被截断)
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
 
 
 def read_yaml(site_id, relative_path, default=None, lang=None):

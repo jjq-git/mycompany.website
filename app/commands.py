@@ -103,10 +103,14 @@ def create_site_cmd(owner_email, slug, template, name):
     db.session.flush()  # 拿 id
 
     site.folder_path = f'sites/{site.id}'
+    # #12: 文件初始化全部成功后才 commit, 失败回滚, 不留"DB 有、文件无"的半成品站。
+    try:
+        init_site_folder(site.id)
+        copied = copy_seed_data(site.id, tpl.name)
+    except Exception as exc:
+        db.session.rollback()
+        raise click.ClickException(f'建站文件初始化失败, 已回滚: {exc}')
     db.session.commit()
-
-    init_site_folder(site.id)
-    copied = copy_seed_data(site.id, tpl.name)
 
     click.echo(f'已创建站点: id={site.id}, slug={slug}, 模板={tpl.name}')
     click.echo(f'文件夹: {site_root(site.id)}')

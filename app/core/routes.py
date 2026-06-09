@@ -1512,26 +1512,38 @@ def site_new():
                     enabled_languages=selected_enabled_langs,
                 )
                 db.session.add(site)
-                db.session.flush()
+                db.session.flush()  # 拿到 site.id, 但先不 commit
                 site.folder_path = f'sites/{site.id}'
+                # #12: 先把文件初始化做完, 全部成功后才 commit。文件操作期间
+                # 异常(磁盘满/权限/seed 损坏)就回滚 DB, 不留"DB 有、文件无"的半成品站。
+                try:
+                    init_site_folder(site.id)
+                    copy_seed_data(site.id, selected_template.name)
+                    settings = read_yaml(site.id, 'settings.yaml') or {}
+                    header = settings.setdefault('header', {})
+                    header['enabled_languages'] = selected_enabled_langs
+                    header.setdefault('language_switcher', {})['enabled'] = len(selected_enabled_langs) > 1
+                    write_yaml(site.id, 'settings.yaml', settings)
+                except Exception:
+                    db.session.rollback()
+                    current_app.logger.exception('建站文件初始化失败, 已回滚 DB (slug=%s)', form['slug'])
+                    error = '建站失败：文件初始化出错，请重试或联系管理员'
+                    if is_fragment:
+                        from flask import jsonify
+                        return jsonify({'ok': False, 'error': error})
+                    current_site = Site.query.filter_by(owner_id=user.id).order_by(Site.id.desc()).first()
+                    return render_template('dashboard/site_new.html',
+                                           user=user, site=current_site,
+                                           template=template, templates=templates, form=form, error=error,
+                                           template_language_map=template_language_map,
+                                           template_default_language_map=template_default_language_map,
+                                           active='templates')
                 db.session.commit()
-                init_site_folder(site.id)
-                copy_seed_data(site.id, selected_template.name)
-                settings = read_yaml(site.id, 'settings.yaml') or {}
-                header = settings.setdefault('header', {})
-                header['enabled_languages'] = selected_enabled_langs
-                header.setdefault('language_switcher', {})['enabled'] = len(selected_enabled_langs) > 1
-                write_yaml(site.id, 'settings.yaml', settings)
-                flash(f'宸插垱寤虹珯鐐?#{site.id} ({form["slug"]})')
+                flash(f'已创建站点 #{site.id} ({form["slug"]})')
                 if is_fragment:
                     from flask import jsonify
                     return jsonify({'ok': True, 'redirect': url_for('core.overview', site=site.id)})
                 return redirect(url_for('core.overview', site=site.id))
-            flash(f'已创建站点 #{site.id} ({form["slug"]})')
-            if is_fragment:
-                from flask import jsonify
-                return jsonify({'ok': True, 'redirect': url_for('core.overview', site=site.id)})
-            return redirect(url_for('core.overview', site=site.id))
 
         # POST 验证失败 -> fragment 模式返回 JSON，普通模式重渲染页面
         if is_fragment:
@@ -1585,13 +1597,20 @@ def export_zip():
     from flask import send_file
 
     _, site = _current_context()
-    output_root = build_site(site.id, base_url='')
+    # #13: 传入 report 收集缺页, 有失败时在 ZIP 内附一份说明, 不让店主拿到缺页站还不自知。
+    report = []
+    output_root = build_site(site.id, base_url='', report=report)
 
     buffer = BytesIO()
     with ZipFile(buffer, 'w', ZIP_DEFLATED) as zf:
         for path in output_root.rglob('*'):
             if path.is_file():
                 zf.write(path, path.relative_to(output_root).as_posix())
+        if report:
+            warn_lines = ['本次导出有以下页面构建失败、未包含在内：', '']
+            warn_lines += [f"- [{f['lang'] or '默认'}] {f['template']} ({f['type']}): {f['error']}"
+                           for f in report]
+            zf.writestr('_构建警告.txt', '\n'.join(warn_lines) + '\n')
     buffer.seek(0)
 
     filename = f'{site.slug or "site"}-static.zip'
@@ -1672,7 +1691,9 @@ def preview(site_id, filepath='index.html'):
             try:
                 build_site(site_id, base_url=f'/preview/{site_id}')
             except Exception:
-                pass
+                # #15: 构建失败必须留痕(对比 build() 路由用 logger.exception);
+                # 保留继续尝试返回已有文件的行为, 但不再静默吞掉真正的失败原因。
+                current_app.logger.exception('预览构建站点 %s 失败', site_id)
         if lang_index.exists():
             return _safe_send_from_directory(out, f'{lang_code}/index.html')
 
@@ -1685,7 +1706,7 @@ def preview(site_id, filepath='index.html'):
         try:
             build_site(site_id, base_url=f'/preview/{site_id}')
         except Exception:
-            pass
+            current_app.logger.exception('预览构建站点 %s 失败', site_id)  # #15: 留痕
     if not out.exists():
         out.mkdir(parents=True, exist_ok=True)
     if not full.exists():
