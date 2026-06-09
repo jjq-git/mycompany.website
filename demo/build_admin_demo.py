@@ -2,7 +2,9 @@
 from pathlib import Path
 
 HERE = Path(__file__).parent
-ADMIN_CSS = Path(r"f:\dengtec\mycompany.website11\app\static\css\admin.css")
+# #33: 原来硬编码他机 Windows 路径 f:\dengtec\... 必崩。改为相对项目根定位,
+# demo/ 在项目根下, 故项目根 = HERE.parent, admin.css 在 app/static/css/ 下。
+ADMIN_CSS = HERE.parent / "app" / "static" / "css" / "admin.css"
 
 CSS = ADMIN_CSS.read_text(encoding="utf-8")
 

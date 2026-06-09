@@ -6,7 +6,8 @@
   <title>{% block title %}{{ t.nav.home }} - {{ t.company }}{% endblock %}</title>
   <meta name="description" content="{% block description %}{{ t.company }}{% endblock %}">
   <link rel="stylesheet" href="{{ base_url }}/static/css/main.css">
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <!-- #26: 原 favicon 绝对路径且 builder 从不生成, 每页 404。改用内联 SVG data-URI 占位。 -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23222'/%3E%3C/svg%3E">
   {% set theme_colors = theme | default({}) %}
   {% if theme_colors %}
   <style>
@@ -77,7 +78,7 @@
     {# 水平行内 #}
     <div class="language-switcher language-switcher--inline" id="langSwitcher">
       {%- for lang_opt in languages -%}
-        <a href="{{ base_url }}/{{ lang_opt.code }}{{ current_path }}"
+        <a href="{{ base_url }}/{{ lang_opt.code }}{{ lang_switch_path | default(current_path) }}"
            class="lang-switcher-link{% if lang == lang_opt.code %} active{% endif %}">
           {{ lang_opt.name }}
         </a>
@@ -87,7 +88,7 @@
     {# 旗帜 + 简称 #}
     <div class="language-switcher language-switcher--flag" id="langSwitcher">
       {%- for lang_opt in languages -%}
-        <a href="{{ base_url }}/{{ lang_opt.code }}{{ current_path }}"
+        <a href="{{ base_url }}/{{ lang_opt.code }}{{ lang_switch_path | default(current_path) }}"
            class="lang-switcher-link{% if lang == lang_opt.code %} active{% endif %}"
            title="{{ lang_opt.name }}">
           {{ lang_opt.flag }} {{ lang_opt.code.split('-')[0] | upper }}
@@ -111,7 +112,7 @@
         <ul class="language-list">
           {%- for lang_opt in languages -%}
           <li class="language-item{% if lang == lang_opt.code %} active{% endif %}">
-            <a href="{{ base_url }}/{{ lang_opt.code }}{{ current_path }}" class="lang-name" style="color:inherit;text-decoration:none;">{{ lang_opt.name }}</a>
+            <a href="{{ base_url }}/{{ lang_opt.code }}{{ lang_switch_path | default(current_path) }}" class="lang-name" style="color:inherit;text-decoration:none;">{{ lang_opt.name }}</a>
           </li>
           {%- endfor -%}
         </ul>

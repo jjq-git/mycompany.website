@@ -329,6 +329,10 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
             ctx['current_path'] = task['current_path']
 
             ctx['page_key'] = task['page_key']
+            # #27: 语言切换器默认把当前 current_path 拼到目标语言, 但详情页的 slug 是
+            # 按语言各自生成的(zh 的 slug ≠ en 的 slug), 直接拼会 404。这里给详情页提供
+            # 降级到"列表页"的 lang_switch_path; 其它页就用自身路径。模板的语言切换器改用它。
+            ctx['lang_switch_path'] = task['current_path']
             if task['type'] == 'home':
                 ctx['page'] = pages.get('home', {})
             elif task['type'] == 'list':
@@ -338,6 +342,9 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
             elif task['type'] == 'detail':
                 ctx['page'] = pages.get(task['page_key'], {})
                 ctx[task['var_name']] = task['item']
+                # 详情页降级: 去掉末尾 slug 段, 退到列表页(各语言都有列表页, 不会 404)
+                _p = task['current_path'].rstrip('/')
+                ctx['lang_switch_path'] = _p.rsplit('/', 1)[0] + '/' if '/' in _p else '/'
 
             rendered = tpl.render(**ctx)
             out = lang_output / task['output_path']

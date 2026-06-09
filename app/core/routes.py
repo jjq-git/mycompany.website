@@ -8,8 +8,9 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from flask import (Blueprint, abort, current_app, flash, redirect, render_template,
-                   request, send_from_directory, session, url_for)
+from flask import (Blueprint, abort, current_app, flash, jsonify, redirect,
+                   render_template, request, send_file, send_from_directory,
+                   session, url_for)
 from werkzeug.utils import secure_filename
 
 import re
@@ -137,12 +138,14 @@ def _save_uploaded_image(site_id, file_storage, prefix='image'):
     filename = f"{safe_prefix}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(4)}.webp"
     output_path = uploads_dir / filename
 
-    image = Image.open(file_storage.stream)
-    # 分辨率上限校验, Pillow 默认对超大图触发 DecompressionBombWarning, 这里直接拒绝
-    w, h = image.size
-    if w * h > MAX_IMAGE_PIXELS:
-        raise ValueError(f'图片分辨率过大: {w}x{h} 超过 {MAX_IMAGE_PIXELS} 像素上限')
-    first_frame = next(ImageSequence.Iterator(image)).convert('RGBA')
+    # #25: 用 with 确保 PIL 句柄及时释放(代码卫生)。损坏图会在此抛 PIL 异常,
+    # 由各编辑路由捕获并提示, 不再 500。
+    with Image.open(file_storage.stream) as image:
+        # 分辨率上限校验, Pillow 默认对超大图触发 DecompressionBombWarning, 这里直接拒绝
+        w, h = image.size
+        if w * h > MAX_IMAGE_PIXELS:
+            raise ValueError(f'图片分辨率过大: {w}x{h} 超过 {MAX_IMAGE_PIXELS} 像素上限')
+        first_frame = next(ImageSequence.Iterator(image)).convert('RGBA')
     background = Image.new('RGBA', first_frame.size, (255, 255, 255, 0))
     background.alpha_composite(first_frame)
     background.save(output_path, 'WEBP', quality=86, method=6)
@@ -185,24 +188,19 @@ def _save_uploaded_media(site_id, file_storage, prefix='media'):
 
 def _uploaded_image_or_form(site_id, form_field, file_field=None, prefix='image'):
     """若上传了图片则返回 WebP URL，否则返回文本框中的原 URL。"""
-    from flask import request
     upload = request.files.get(file_field or f'{form_field}_file')
     if upload and upload.filename:
-        return _save_uploaded_image(site_id, upload, prefix=prefix)
+        # #25: 损坏图/超大图/不支持格式会抛异常, 这里捕获并提示, 回退到表单 URL,
+        # 避免 product/post 编辑路径整个 500。
+        try:
+            return _save_uploaded_image(site_id, upload, prefix=prefix)
+        except Exception as exc:
+            current_app.logger.warning('图片上传保存失败(%s): %s', form_field, exc)
+            flash(f'图片上传失败：{exc}', 'error')
     return request.form.get(form_field, '').strip()
 
 
 def _field_looks_like_image(field):
-    name = (field or '').lower()
-    return any(part in name for part in ('image', 'cover', 'background', 'media', 'photo', 'logo'))
-
-
-def _field_looks_like_uploadable_media(field):
-    """判断字段是否适合展示上传控件。
-
-    Banner 的媒体字段既可能是图片也可能是视频；后端当前只处理图片转 WebP，
-    所以前端可展示文件入口，但保存时仍以图片字段为准。
-    """
     name = (field or '').lower()
     return any(part in name for part in ('image', 'cover', 'background', 'media', 'photo', 'logo'))
 
@@ -236,7 +234,6 @@ def _require_site_access(site):
 @bp.before_request
 def require_login():
     """保护后台页面：除登录和静态预览外都需要登录."""
-    from flask import request
     if request.endpoint in AUTH_EXEMPT_ENDPOINTS:
         return None
     if request.endpoint and request.endpoint.startswith('static'):
@@ -249,7 +246,6 @@ def require_login():
 @bp.context_processor
 def inject_context():
     """给所有模板注入站点上下文."""
-    from flask import request
     user = _current_user()
     site_id = request.args.get('site', type=int)
     if not site_id:
@@ -327,16 +323,7 @@ def inject_context():
         ctx['left_menu_items'] = normalized
 
         # 收集所有层级中 type=list 的菜单项（供数据网格模块选择数据源）
-        def _collect_list_targets(items, result=None):
-            if result is None:
-                result = []
-            for it in (items or []):
-                if it.get('type') == 'list' and it.get('target'):
-                    result.append({'target': it['target'], 'label': it.get('label', it['target'])})
-                if it.get('children'):
-                    _collect_list_targets(it['children'], result)
-            return result
-        ctx['all_list_datasets'] = _collect_list_targets(normalized)
+        ctx['all_list_datasets'] = menu_lib.collect_list_targets(normalized)  # #22
 
     ctx['platform_domain'] = current_app.config.get('PLATFORM_DOMAIN', 'mycompany.website')
 
@@ -371,7 +358,6 @@ def _current_context():
     URL 中带 ?site=N 时存入 session，后续资源请求（如 /assets/uploads/...）
     不带 ?site= 也能从 session 中取到正确的站点.
     """
-    from flask import request
     user = _current_user()
     if not user:
         abort(401)
@@ -440,10 +426,32 @@ def _create_magic_link(email, request):
     return url_for('core.magic_login', token=raw_token, _external=True)
 
 
+# #9: /login 的轻量内存限流。MVP 不引入 Redis/flask-limiter 新依赖(符合"依赖能少则少"),
+# 单进程内用滑动窗口足够挡住"接入真实邮件后的邮件轰炸/刷库"。key 为 IP 或邮箱, 值为时间戳列表。
+# 注意: 多 worker 部署下各进程独立计数, 规模化时再换集中式限流。
+_LOGIN_ATTEMPTS = {}
+_LOGIN_WINDOW_SECONDS = 600   # 10 分钟窗口
+_LOGIN_MAX_PER_WINDOW = 5     # 同一 IP/邮箱 10 分钟内最多 5 次
+
+
+def _login_rate_limited(*keys):
+    """检查并记录登录尝试; 任一 key 超过窗口上限则返回 True(应拒绝)."""
+    now = datetime.now(timezone.utc).timestamp()
+    limited = False
+    for key in keys:
+        if not key:
+            continue
+        hits = [t for t in _LOGIN_ATTEMPTS.get(key, []) if now - t < _LOGIN_WINDOW_SECONDS]
+        if len(hits) >= _LOGIN_MAX_PER_WINDOW:
+            limited = True
+        hits.append(now)
+        _LOGIN_ATTEMPTS[key] = hits
+    return limited
+
+
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     """邮箱魔法链接登录入口."""
-    from flask import request
     if _current_user() and request.method == 'GET':
         return redirect(_safe_next_url(request.args.get('next')) or url_for('core.overview'))
 
@@ -454,9 +462,15 @@ def login():
         if not email or '@' not in email:
             flash('请输入有效邮箱地址', 'danger')
         else:
-            magic_link = _create_magic_link(email, request)
-            current_app.logger.info('Magic login link for %s: %s', email, magic_link)
-            flash('登录链接已生成。开发环境中可直接点击下方链接；生产环境将通过邮件发送。', 'success')
+            client_ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
+            if _login_rate_limited(client_ip, email):
+                # 中性提示, 不暴露"邮箱是否已注册", 也不告知具体是被限流
+                current_app.logger.warning('登录请求被限流: ip=%s email=%s', client_ip, email)
+                flash('请求过于频繁，请稍后再试。', 'danger')
+            else:
+                magic_link = _create_magic_link(email, request)
+                current_app.logger.info('Magic login link for %s: %s', email, magic_link)
+                flash('登录链接已生成。开发环境中可直接点击下方链接；生产环境将通过邮件发送。', 'success')
     return render_template('auth/login.html', email=email, magic_link=magic_link)
 
 
@@ -517,7 +531,6 @@ def site_asset(filename):
 @bp.errorhandler(404)
 def not_found(error):
     """捕获 404，无站点时重定向到模板库."""
-    from flask import request
     desc = error.description if hasattr(error, 'description') else str(error)
     if '尚无站点' in str(desc):
         flash("尚无站点，请先从模板库创建站点", "warning")
@@ -547,7 +560,6 @@ def overview():
 
 @bp.route('/company', methods=['GET', 'POST'])
 def company():
-    from flask import flash, redirect, request, url_for
     user, site = _current_context()
     settings = read_yaml(site.id, 'settings.yaml') or {}
 
@@ -609,7 +621,6 @@ def company():
 
 @bp.route('/products')
 def products():
-    from flask import request
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
@@ -625,7 +636,6 @@ def products():
 
 @bp.route('/products/new', methods=['POST'])
 def product_new():
-    from flask import redirect, url_for
     _, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
@@ -640,7 +650,6 @@ def product_new():
 
 @bp.route('/products/<int:product_id>/delete', methods=['POST'])
 def product_delete(product_id):
-    from flask import flash, redirect, url_for
     _, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
@@ -651,7 +660,6 @@ def product_delete(product_id):
 
 @bp.route('/products/<int:product_id>/edit', methods=['GET', 'POST'])
 def product_edit(product_id):
-    from flask import flash, redirect, request, url_for
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
@@ -683,7 +691,6 @@ def product_edit(product_id):
 
 @bp.route('/features')
 def features():
-    from flask import request
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
@@ -699,7 +706,6 @@ def features():
 
 @bp.route('/features/new', methods=['POST'])
 def feature_new():
-    from flask import redirect, url_for
     _, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
@@ -710,7 +716,6 @@ def feature_new():
 
 @bp.route('/features/<int:item_id>/delete', methods=['POST'])
 def feature_delete(item_id):
-    from flask import flash, redirect, url_for
     _, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
@@ -721,7 +726,6 @@ def feature_delete(item_id):
 
 @bp.route('/features/<int:item_id>/edit', methods=['GET', 'POST'])
 def feature_edit(item_id):
-    from flask import flash, redirect, request, url_for
     user, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
@@ -741,7 +745,6 @@ def feature_edit(item_id):
 
 @bp.route('/blog')
 def blog():
-    from flask import request
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
@@ -757,7 +760,6 @@ def blog():
 
 @bp.route('/blog/new', methods=['POST'])
 def post_new():
-    from flask import redirect, url_for
     from datetime import date as _date
     _, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
@@ -772,7 +774,6 @@ def post_new():
 
 @bp.route('/blog/<int:item_id>/delete', methods=['POST'])
 def post_delete(item_id):
-    from flask import flash, redirect, url_for
     _, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
@@ -783,7 +784,6 @@ def post_delete(item_id):
 
 @bp.route('/blog/<int:item_id>/edit', methods=['GET', 'POST'])
 def post_edit(item_id):
-    from flask import flash, redirect, request, url_for
     user, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
     storage_lang = lang if lang != default_lang else None
@@ -803,7 +803,6 @@ def post_edit(item_id):
 
 @bp.route('/pages/home', methods=['GET', 'POST'])
 def page_home():
-    from flask import flash, redirect, request, url_for
     user, site = _current_context()
     page = read_yaml(site.id, 'pages/home.yaml') or {}
 
@@ -864,16 +863,7 @@ def page_home():
     normalized = menu_lib.ensure_home(menu_lib.normalize_for_render(
         menu_lib.upgrade_old_format(raw_menu, meta_data.get('datasets', []))
     ))
-    def _collect_list_targets(items, result=None):
-        if result is None:
-            result = []
-        for it in (items or []):
-            if it.get('type') == 'list' and it.get('target'):
-                result.append({'target': it['target'], 'label': it.get('label', it['target'])})
-            if it.get('children'):
-                _collect_list_targets(it['children'], result)
-        return result
-    all_list_datasets = _collect_list_targets(normalized)
+    all_list_datasets = menu_lib.collect_list_targets(normalized)  # #22
 
     return render_template('dashboard/panel_page_edit.html',
                            user=user, site=site, page=page,
@@ -906,7 +896,6 @@ def pages():
 
 @bp.route('/account')
 def account():
-    from flask import request
     user, site = _current_context()
     site_count = Site.query.filter_by(owner_id=user.id).count() if user else 0
     if request.args.get('_fragment'):
@@ -919,7 +908,6 @@ def account():
 @bp.route('/sites/delete', methods=['POST'])
 def site_delete():
     """删除当前站点：清除数据库记录 + 站点文件夹 + output 文件."""
-    from flask import flash, jsonify, redirect, request, url_for
     from .db import db
 
     import shutil as _shutil
@@ -954,7 +942,6 @@ def site_delete():
     return redirect(url_for('core.overview'))
 def _save_link_list(site_id, settings_key):
     """收集表单 label[] 和 url[], 写回 settings.yaml[settings_key]."""
-    from flask import request
     settings = read_yaml(site_id, 'settings.yaml') or {}
     labels = request.form.getlist('label[]')
     urls = request.form.getlist('url[]')
@@ -970,7 +957,6 @@ def _save_link_list(site_id, settings_key):
 @bp.route('/settings/header', methods=['GET', 'POST'])
 def header_edit():
     """网站头部变体选择 + 语言切换按钮配置."""
-    from flask import flash, redirect, request, url_for
     user, site = _current_context()
     settings = read_yaml(site.id, 'settings.yaml') or {}
     is_fragment = request.args.get('_fragment') is not None
@@ -1068,7 +1054,6 @@ def header_edit():
 @bp.route('/settings/footer_variant', methods=['GET', 'POST'])
 def footer_variant_edit():
     """网站底部变体选择."""
-    from flask import flash, redirect, request, url_for
     user, site = _current_context()
     settings = read_yaml(site.id, 'settings.yaml') or {}
     is_fragment = request.args.get('_fragment') is not None
@@ -1163,7 +1148,6 @@ def footer_variant_edit():
 
 @bp.route('/settings/menu', methods=['GET', 'POST'])
 def menu_edit():
-    from flask import flash, redirect, request, url_for
     user, site = _current_context()
     settings = read_yaml(site.id, 'settings.yaml') or {}
     is_fragment = request.args.get('_fragment') is not None
@@ -1289,7 +1273,6 @@ def menu_edit():
 @bp.route('/settings/footer', methods=['GET', 'POST'])
 def footer_edit():
     """旧页脚链接页面 —— 已迁移至 footer_variant_edit，自动转换旧数据格式"""
-    from flask import flash, redirect, request, url_for
     user, site = _current_context()
     settings = read_yaml(site.id, 'settings.yaml') or {}
 
@@ -1313,7 +1296,6 @@ def footer_edit():
 
 @bp.route('/settings/social', methods=['GET', 'POST'])
 def social_edit():
-    from flask import flash, redirect, request, url_for
     user, site = _current_context()
     settings = read_yaml(site.id, 'settings.yaml') or {}
     is_fragment = request.args.get('_fragment') is not None
@@ -1336,7 +1318,6 @@ def social_edit():
 
 @bp.route('/settings/theme', methods=['GET', 'POST'])
 def theme_edit():
-    from flask import flash, redirect, request, url_for
     user, site = _current_context()
     settings = read_yaml(site.id, 'settings.yaml') or {}
     is_fragment = request.args.get('_fragment') is not None
@@ -1392,7 +1373,6 @@ def _validate_key(key):
 
 @bp.route('/templates')
 def templates_gallery():
-    from flask import request
     user = _current_user()
     query = Site.query
     if user and user.role != 'admin':
@@ -1424,7 +1404,6 @@ def template_preview(template_name, filepath='index.html'):
 
 @bp.route('/sites/new', methods=['GET', 'POST'])
 def site_new():
-    from flask import flash, redirect, request, url_for
     from .models import SLUG_RESERVED
     template_name = request.args.get('template')
     template = Template.query.filter_by(name=template_name).first() if template_name else None
@@ -1491,7 +1470,6 @@ def site_new():
             if not selected_enabled_langs:
                 error = '请选择至少一种模板支持的语言版本'
                 if is_fragment:
-                    from flask import jsonify
                     return jsonify({'ok': False, 'error': error})
                 current_site = Site.query.filter_by(owner_id=user.id).order_by(Site.id.desc()).first()
                 return render_template('dashboard/site_new.html',
@@ -1511,12 +1489,14 @@ def site_new():
                     default_language=default_language,
                     enabled_languages=selected_enabled_langs,
                 )
+                from sqlalchemy.exc import IntegrityError
                 db.session.add(site)
-                db.session.flush()  # 拿到 site.id, 但先不 commit
-                site.folder_path = f'sites/{site.id}'
-                # #12: 先把文件初始化做完, 全部成功后才 commit。文件操作期间
-                # 异常(磁盘满/权限/seed 损坏)就回滚 DB, 不留"DB 有、文件无"的半成品站。
+                # #12+#29: flush(触发 INSERT, slug 唯一约束在此生效) 和文件初始化都纳入保护。
+                # 上面虽已查过 slug 唯一性, 但 查→insert 之间存在 TOCTOU(并发建同名 slug),
+                # 唯一约束会抛 IntegrityError; 文件操作也可能失败。两种都回滚 DB + 友好提示, 不 500。
                 try:
+                    db.session.flush()  # 拿到 site.id, 但先不 commit
+                    site.folder_path = f'sites/{site.id}'
                     init_site_folder(site.id)
                     copy_seed_data(site.id, selected_template.name)
                     settings = read_yaml(site.id, 'settings.yaml') or {}
@@ -1524,12 +1504,11 @@ def site_new():
                     header['enabled_languages'] = selected_enabled_langs
                     header.setdefault('language_switcher', {})['enabled'] = len(selected_enabled_langs) > 1
                     write_yaml(site.id, 'settings.yaml', settings)
-                except Exception:
+                    db.session.commit()
+                except IntegrityError:
                     db.session.rollback()
-                    current_app.logger.exception('建站文件初始化失败, 已回滚 DB (slug=%s)', form['slug'])
-                    error = '建站失败：文件初始化出错，请重试或联系管理员'
+                    error = f'Slug "{form["slug"]}" 刚被占用，请换一个'
                     if is_fragment:
-                        from flask import jsonify
                         return jsonify({'ok': False, 'error': error})
                     current_site = Site.query.filter_by(owner_id=user.id).order_by(Site.id.desc()).first()
                     return render_template('dashboard/site_new.html',
@@ -1538,16 +1517,26 @@ def site_new():
                                            template_language_map=template_language_map,
                                            template_default_language_map=template_default_language_map,
                                            active='templates')
-                db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                    current_app.logger.exception('建站文件初始化失败, 已回滚 DB (slug=%s)', form['slug'])
+                    error = '建站失败：文件初始化出错，请重试或联系管理员'
+                    if is_fragment:
+                        return jsonify({'ok': False, 'error': error})
+                    current_site = Site.query.filter_by(owner_id=user.id).order_by(Site.id.desc()).first()
+                    return render_template('dashboard/site_new.html',
+                                           user=user, site=current_site,
+                                           template=template, templates=templates, form=form, error=error,
+                                           template_language_map=template_language_map,
+                                           template_default_language_map=template_default_language_map,
+                                           active='templates')
                 flash(f'已创建站点 #{site.id} ({form["slug"]})')
                 if is_fragment:
-                    from flask import jsonify
                     return jsonify({'ok': True, 'redirect': url_for('core.overview', site=site.id)})
                 return redirect(url_for('core.overview', site=site.id))
 
         # POST 验证失败 -> fragment 模式返回 JSON，普通模式重渲染页面
         if is_fragment:
-            from flask import jsonify
             return jsonify({'ok': False, 'error': error})
 
     current_site = Site.query.filter_by(owner_id=user.id).order_by(Site.id.desc()).first()
@@ -1571,7 +1560,6 @@ def site_new():
 @bp.route('/build', methods=['GET', 'POST'])
 def build():
     """触发构建当前站点, 跳到预览首页."""
-    from flask import jsonify, request
     _, site = _current_context()
     try:
         build_site(site.id, base_url=f'/preview/{site.id}')
@@ -1584,7 +1572,6 @@ def build():
     if request.method == 'POST' or request.args.get('_fragment'):
         return jsonify({'ok': True, 'preview_url': f'/preview_site/{site.id}'})
 
-    from flask import redirect, url_for
     return redirect(url_for('core.preview_site', site_id=site.id))
 
 
@@ -1594,7 +1581,6 @@ def export_zip():
     from io import BytesIO
     from zipfile import ZIP_DEFLATED, ZipFile
 
-    from flask import send_file
 
     _, site = _current_context()
     # #13: 传入 report 收集缺页, 有失败时在 ZIP 内附一份说明, 不让店主拿到缺页站还不自知。
@@ -1642,7 +1628,6 @@ def _default_lang_code(site):
 @bp.route('/preview_site/<int:site_id>')
 def preview_site(site_id):
     """确保已构建，重定向到默认语言首页."""
-    from flask import redirect, request, url_for
     site = Site.query.get_or_404(site_id)
     _require_site_access(site)
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
@@ -1723,7 +1708,6 @@ def _get_panel_lang(site):
 
     只返回站点已启用的语言列表，未启用的不显示在面板语言标签中.
     """
-    from flask import request
     meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
     all_languages = []
     default_lang = 'zh-CN'
@@ -1747,14 +1731,15 @@ def _get_panel_lang(site):
 
 
 def _render(template_name, **kwargs):
-    """渲染模板，支持 ?_fragment=1 返回右侧面板片段."""
-    from flask import request
+    """渲染模板, 顺带注入图标列表和样式注册表(供面板表单用)。
+
+    #19: 原来按 ?_fragment 分两支但两支完全相同(伪分支), docstring 也误导。
+    fragment 与整页用的是同一个 template_name, 调用方自行传不同模板名, 这里不分支。
+    """
     from .icon_registry import icon_names
     from .style_registry import STYLE_REGISTRY
     kwargs.setdefault('icon_list', icon_names())
     kwargs.setdefault('style_registry', STYLE_REGISTRY)
-    if request.args.get('_fragment'):
-        return render_template(template_name, **kwargs)
     return render_template(template_name, **kwargs)
 
 
@@ -1810,7 +1795,6 @@ def dataset_panel(dataset_key):
 @bp.route('/_dataset/<path:dataset_key>/new', methods=['POST'])
 def dataset_new(dataset_key):
     """通用数据集新建条目 — 支持 ?lang= 参数保存到对应语言."""
-    from flask import redirect, url_for
     _validate_key(dataset_key)
     _, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
@@ -1824,7 +1808,6 @@ def dataset_new(dataset_key):
 @bp.route('/_dataset/<path:dataset_key>/<int:item_id>/edit', methods=['GET', 'POST'])
 def dataset_edit(dataset_key, item_id):
     """通用数据集编辑 — 支持 ?lang= 参数编辑不同语言版本."""
-    from flask import flash, redirect, request, url_for
     _validate_key(dataset_key)
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
@@ -1931,7 +1914,6 @@ def dataset_edit(dataset_key, item_id):
 @bp.route('/_dataset/<path:dataset_key>/<int:item_id>/delete', methods=['POST'])
 def dataset_delete(dataset_key, item_id):
     """通用数据集删除 — 支持 ?lang= 参数删除指定语言版本."""
-    from flask import flash, redirect, url_for
     _validate_key(dataset_key)
     _, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
@@ -1950,7 +1932,6 @@ def page_panel(page_key):
 
     支持语言参数 ?lang=en 来编辑特定语言版本的页面内容。
     """
-    from flask import flash, redirect, request, url_for
     _validate_key(page_key)
     user, site = _current_context()
 
@@ -2011,17 +1992,7 @@ def page_panel(page_key):
         return None
     page_display_name = _find_page_label(normalized_menu, page_key) or page_key
 
-    def _collect_targets(items, result=None):
-        if result is None:
-            result = []
-        for it in (items or []):
-            if it.get('type') == 'list' and it.get('target'):
-                result.append({'target': it['target'], 'label': it.get('label', it['target'])})
-            if it.get('children'):
-                _collect_targets(it['children'], result)
-        return result
-
-    all_list_datasets = _collect_targets(normalized_menu)
+    all_list_datasets = menu_lib.collect_list_targets(normalized_menu)  # #22
 
     page = read_yaml(site.id, f'pages/{page_key}.yaml', lang=storage_lang)
     source_page = read_yaml(site.id, f'pages/{page_key}.yaml') or {}
@@ -2190,7 +2161,6 @@ def _parse_modules_form(form, existing_modules=None):
                     form_fields_for_module.add(field)
                     data[field] = _parse_value(form.get(key, ''))
 
-        from flask import request
 
         # ===== 通用 data-* list/grid 条目解析 =====
         # 若该模块是 data-* 声明式且 schema 含 list/grid 字段，按 schema 通用还原：

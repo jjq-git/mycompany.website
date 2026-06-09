@@ -14,7 +14,12 @@ from app import create_app
 app = create_app()
 
 if __name__ == '__main__':
-    debug = os.environ.get('FLASK_DEBUG', '1').strip() in ('1', 'true', 'True')
+    # #10: 默认关 debug(与 docstring 一致)。debug=True 会开 Werkzeug 交互式调试器
+    # (PIN 多次被绕过, 等同 RCE 入口), 本地调试要显式设 FLASK_DEBUG=1。
+    debug = os.environ.get('FLASK_DEBUG', '0').strip() in ('1', 'true', 'True')
     host = os.environ.get('FLASK_HOST', '127.0.0.1').strip()
     port = int(os.environ.get('FLASK_PORT', '5000'))
+    # 对外暴露(0.0.0.0 等)时强制拒绝 debug, 防止误把调试器开到公网
+    if debug and host not in ('127.0.0.1', 'localhost'):
+        raise SystemExit(f'拒绝启动: host={host} 对外暴露时不允许 debug=1(Werkzeug 调试器=RCE 风险)')
     app.run(debug=debug, host=host, port=port)

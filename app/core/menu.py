@@ -109,6 +109,24 @@ def normalize_for_render(items, parent_path=''):
     return result
 
 
+def collect_list_targets(items, result=None):
+    """递归收集菜单里所有 list 类型项的 {target, label}。
+
+    #22: 此前 routes.py 里以 _collect_list_targets/_collect_targets 内联复制了 3 份
+    (逻辑逐字相同, 命名还不一致), 统一抽到这里。
+    """
+    if result is None:
+        result = []
+    for it in (items or []):
+        if not isinstance(it, dict):
+            continue
+        if it.get('type') == 'list' and it.get('target'):
+            result.append({'target': it['target'], 'label': it.get('label', it['target'])})
+        if it.get('children'):
+            collect_list_targets(it['children'], result)
+    return result
+
+
 def ensure_home(items):
     """确保首页固定为第一项. 返回新 list, 不改原数据."""
     normalized = [it for it in (items or []) if isinstance(it, dict)]  # #14: 防脏项
@@ -321,14 +339,10 @@ def collect_render_tasks(menu_items, tpl_html_dir, data, pages=None):
                     'page_key': target,
                     'dataset_key': target,
                 })
-                # 详情页：先用预定义映射，回退通用推导
-                dt_tmpl = None
-                var_name = None
-                slug_field = 'slug'
+                # 详情页：derive_detail_info 内部已覆盖"预定义映射 + 通用推导 + <target>_detail.html"
+                # 三种情况(见该函数), #21: 原先此处的二次回退 <target>_detail.html 是不可达死代码,
+                # 死初始化也已删除。
                 dt_tmpl, var_name, slug_field = derive_detail_info(target, tpl_html_dir)
-                if not dt_tmpl and (tpl_html_dir / f'{target}_detail.html').exists():
-                    dt_tmpl = f'{target}_detail.html'
-                    var_name = 'item'
                 if dt_tmpl and var_name:
                     items_data = data.get(target, [])
                     if isinstance(items_data, dict):

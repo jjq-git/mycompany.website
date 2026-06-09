@@ -5,6 +5,12 @@
 
 分语言: 指定 lang 参数时，读写 lang/<lang>/data/<name>.yaml，
 不指定时读写根 data/<name>.yaml（默认语言）。
+
+并发说明 (#24): add/update/remove 是"读全表→改→写回"且无文件锁，理论上并发写会丢更新。
+本产品是单店主、每 1-6 个月更新一次的低频场景(见 CLAUDE.md 核心信念), 同一用户并发写
+几乎不可能, 故按"简单 > 优化"刻意不加文件锁。写入本身已是原子替换(见 site_storage #11),
+不会写出半损坏文件; 丢更新的最坏情况是一次编辑被另一次覆盖, 可重填。规模化(多店主/PostgreSQL)
+后改用数据库行级锁或乐观锁, 而非给 YAML 加文件锁。
 """
 from .site_storage import read_yaml, write_yaml
 

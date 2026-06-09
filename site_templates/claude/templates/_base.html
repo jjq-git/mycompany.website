@@ -12,7 +12,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="{{ base_url }}/static/css/main.css">
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <!-- #26: 原 favicon 绝对路径且 builder 从不生成, 每页 404。
+       改用内联 SVG data-URI: 零额外文件、零 404, 用主题色画一个圆点占位。 -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23222'/%3E%3C/svg%3E">
 
   {# 两层主题色注入: 默认令牌（main.css :root）+ 店主覆盖（settings.yaml theme） #}
   {% set theme_colors = theme | default({}) %}
@@ -89,7 +91,7 @@
   {%- if lang_switcher_style == 'inline_row' -%}
     <div class="lang-switcher lang-switcher--inline" id="langSwitcher">
       {%- for lang_opt in languages -%}
-        <a href="{{ base_url }}/{{ lang_opt.code }}{{ current_path }}"
+        <a href="{{ base_url }}/{{ lang_opt.code }}{{ lang_switch_path | default(current_path) }}"
            class="{% if lang == lang_opt.code %}active{% endif %}">
           {{ lang_opt.name }}
         </a>
@@ -98,7 +100,7 @@
   {%- elif lang_switcher_style == 'flag_icon' -%}
     <div class="lang-switcher lang-switcher--inline" id="langSwitcher">
       {%- for lang_opt in languages -%}
-        <a href="{{ base_url }}/{{ lang_opt.code }}{{ current_path }}"
+        <a href="{{ base_url }}/{{ lang_opt.code }}{{ lang_switch_path | default(current_path) }}"
            class="{% if lang == lang_opt.code %}active{% endif %}"
            title="{{ lang_opt.name }}">
           {{ lang_opt.flag }} {{ lang_opt.code.split('-')[0] | upper }}
@@ -119,7 +121,7 @@
       </button>
       <div class="lang-switcher__dropdown" id="langDropdownMenu" style="display:none;">
         {%- for lang_opt in languages -%}
-        <a href="{{ base_url }}/{{ lang_opt.code }}{{ current_path }}"
+        <a href="{{ base_url }}/{{ lang_opt.code }}{{ lang_switch_path | default(current_path) }}"
            class="lang-switcher__option{% if lang == lang_opt.code %} active{% endif %}">
           {{ lang_opt.name }}
         </a>
