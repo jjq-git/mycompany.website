@@ -26,8 +26,13 @@ for block in SOURCES:
     for m in BRANCH_RE.finditer(tpl):
         cond, svg = m.group(1), m.group(2).strip()
         names = NAME_RE.findall(cond)
-        # 规范化 SVG：去掉模板里写死的 width/height（renderer 注入时由 CSS 控制尺寸）
-        svg_norm = re.sub(r'\s(width|height)="[^"]*"', '', svg)
+        # 原样提取 SVG, 不改写尺寸。
+        # 历史教训(#7): 这里曾用全文 re.sub(r'\s(width|height)="..."') 想剥掉根 <svg>
+        # 的写死尺寸, 但正则对全文生效, 把 <rect>/<circle> 等内部元素的内在 width/height
+        # 也删了, 导致 briefcase/cpu/camera 等 11 个图标的零面积图形不渲染、显示残缺。
+        # 现成 icon_registry.py 的根 <svg> 本就保留 24×24(由 CSS 覆盖), 故这里原样保留,
+        # 既复现现状成品, 又彻底杜绝误删内部元素尺寸。
+        svg_norm = svg
         for name in names:
             if name not in icons:
                 icons[name] = svg_norm
@@ -38,7 +43,7 @@ lines = [
     '',
     'data-* 改造方案 Phase 3：data-type="icon" 字段存图标名，渲染器据此查表注入 SVG。',
     '由 scripts/extract_icons.py 从原 block 模板的硬编码 SVG 分支自动抽取生成。',
-    'SVG 已去掉写死的 width/height，尺寸由 CSS 控制（.service-icon/.sc-icon/.ps-icon）。',
+    'SVG 根标签保留 width="24" height="24"，可由 CSS 覆盖（.service-icon/.sc-icon/.ps-icon）。',
     '',
     '新增图标：在 ICON_REGISTRY 加一条 名→SVG 即可，全部 block 共用。',
     '"""',

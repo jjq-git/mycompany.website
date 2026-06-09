@@ -239,7 +239,9 @@ def derive_detail_info(target, tpl_html_dir):
     # 自动推导: 尝试 <target>_detail.html
     detail_tmpl = f'{target}_detail.html'
     if (tpl_html_dir / detail_tmpl).exists():
-        var_name = target.rstrip('s') if target.endswith('s') else target
+        # #17: 用 [:-1] 只去末尾一个 s; rstrip('s') 会剥掉所有尾部 s
+        # (address→addre, process→proce), 与下方 246 行的 [:-1] 也不一致。
+        var_name = target[:-1] if target.endswith('s') else target
         return detail_tmpl, var_name, 'slug'
 
     # 尝试去尾 s: products → product_detail.html
