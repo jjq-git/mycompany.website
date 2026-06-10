@@ -28,6 +28,10 @@
     <input type="text" name="category" value="{{ product.category or '' }}">
   </div>
   <div class="form-row">
+    <label>价格</label>
+    <input type="text" name="price" value="{{ product.price or '' }}" placeholder="Contact for quote">
+  </div>
+  <div class="form-row">
     <label>封面图 URL</label>
     <input type="text" name="cover" value="{{ product.cover or '' }}" placeholder="/assets/host.png">
     <div style="margin-top: 8px;">

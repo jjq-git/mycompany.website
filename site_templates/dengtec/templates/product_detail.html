@@ -1,8 +1,10 @@
 {% extends "_base.html" %}
-{% block title %}{{ product.title }} - {{ t.company }}{% endblock %}
-{% block description %}{{ product.description }}{% endblock %}
+{% block title %}{{ product.name | default(product.title) }} - {{ t.company }}{% endblock %}
+{% block description %}{{ product.summary | default(product.description) }}{% endblock %}
 
 {% block content %}
+{% set product_name = product.name | default(product.title) %}
+{% set product_summary = product.summary | default(product.description) %}
 {# 从菜单动态查找联系页 URL，避免硬编码 /contact/——即使用户在后台修改菜单 target 也能正确链接 #}
 {% set ns = namespace(contact_url=base_url + '/' + lang + '/contact/') %}
 {% macro _resolve_contact(items) %}
@@ -27,6 +29,7 @@
     <span class="sb-hero__tag">{{ ps.heroTag }}</span>
     <h1 class="sb-hero__title">{{ ps.heroTitle }}</h1>
     <p class="sb-hero__desc">{{ ps.heroDesc }}</p>
+    {% if product.price %}<div class="product-detail-price">{{ product.price }}</div>{% endif %}
     <div class="sb-hero__actions">
       <a href="{{ ps.bookingUrl }}" target="_blank" rel="noopener" class="sb-btn sb-btn--primary sb-btn--lg">{{ t.actions.bookNow }} →</a>
     </div>
@@ -93,6 +96,7 @@
     <span class="pd-hero__tag">{{ pp.heroTag }}</span>
     <h1 class="pd-hero__title">{{ pp.heroTitle }}</h1>
     <p class="pd-hero__desc">{{ pp.heroDesc }}</p>
+    {% if product.price %}<div class="product-detail-price">{{ product.price }}</div>{% endif %}
     <div class="pd-hero__actions">
       <a href="#features" class="pd-btn pd-btn--primary pd-btn--lg">{{ t.actions.viewProducts }} →</a>
       <a href="{{ ns.contact_url }}" class="pd-btn pd-btn--outline pd-btn--lg">{{ t.actions.contactUs }}</a>
@@ -145,6 +149,7 @@
     <span class="dim-hero__tag">{{ pd.heroTag }}</span>
     <h1 class="dim-hero__title">{{ pd.heroTitle }}</h1>
     <p class="dim-hero__desc">{{ pd.heroDesc }}</p>
+    {% if product.price %}<div class="product-detail-price">{{ product.price }}</div>{% endif %}
     <div class="dim-hero__actions">
       <a href="{{ ns.contact_url }}" class="dim-btn dim-btn--primary dim-btn--lg">{{ t.actions.contactNow }} →</a>
       <a href="#specifications" class="dim-btn dim-btn--outline dim-btn--lg">{{ t.actions.viewDetails }}</a>
@@ -207,16 +212,78 @@
   <div class="container">
     <a href="{{ base_url }}/{{ lang }}/products/" class="btn btn-ghost" style="margin-bottom: var(--spacing-lg);">← {{ t.products.backToList }}</a>
     <div class="grid grid-2" style="align-items: start;">
-      <div>{% if product.image %}<img src="{{ product.image }}" alt="{{ product.title }}" style="width:100%;border-radius:var(--radius-md);">{% else %}<div class="project-image">📦</div>{% endif %}</div>
+      <div>{% if product.image or product.cover %}<img src="{{ product.image or product.cover }}" alt="{{ product_name }}" style="width:100%;border-radius:var(--radius-md);">{% else %}<div class="project-image">Product</div>{% endif %}</div>
       <div>
-        <h1 style="font-size:var(--font-size-3xl);margin-bottom:var(--spacing-md);">{{ product.title }}</h1>
-        <p class="text-secondary" style="font-size:var(--font-size-md);margin-bottom:var(--spacing-xl);">{{ product.description }}</p>
-        {% if product.specs %}<div class="filter-panel">{% for key, val in product.specs.items() %}{% if val is iterable and val is not string %}<div class="filter-group"><div class="filter-label">{{ key|replace('_',' ')|title }}</div><div class="filter-options">{% for v in val %}<span class="filter-option">{{ v }}</span>{% endfor %}</div></div>{% endif %}{% endfor %}</div>{% endif %}
+        <h1 style="font-size:var(--font-size-3xl);margin-bottom:var(--spacing-md);">{{ product_name }}</h1>
+        {% if product.price %}<div class="product-detail-price product-detail-price--dark">{{ product.price }}</div>{% endif %}
+        <p class="text-secondary" style="font-size:var(--font-size-md);margin-bottom:var(--spacing-xl);">{{ product_summary }}</p>
+        {% if product.tags %}
+        <div class="dg-card-tags product-detail-tags">
+          {% for tag in product.tags %}<span class="dg-card-tag">{{ tag }}</span>{% endfor %}
+        </div>
+        {% endif %}
+        {% if product.specs %}
+        <table class="product-spec-table">
+          <tbody>
+          {% for key, val in product.specs.items() %}
+            <tr>
+              <th>{{ key|replace('_',' ')|title }}</th>
+              <td>{% if val is iterable and val is not string %}{{ val|join(' / ') }}{% else %}{{ val }}{% endif %}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
         {% if product.body %}<div style="margin-top:var(--spacing-xl);line-height:1.8;">{{ product.body }}</div>{% endif %}
       </div>
     </div>
   </div>
 </section>
 {% endif %}
+
+{% set rel = namespace(count=0) %}
+<section class="section product-related-section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Related products</h2>
+    </div>
+    <div class="dg-list product-related-grid">
+      {% for item in products %}
+        {% if item.slug != product.slug and item.category == product.category and rel.count < 3 %}
+          {% set rel.count = rel.count + 1 %}
+          <a href="{{ base_url }}/{{ lang }}/products/{{ item.slug }}/" class="dg-card product-related-card">
+            <div class="dg-card-image">
+              {% if item.cover or item.image %}<img src="{{ item.cover or item.image }}" alt="{{ item.name }}" loading="lazy">{% endif %}
+              {% if item.category %}<span class="dg-card-category">{{ item.category }}</span>{% endif %}
+            </div>
+            <div class="dg-card-body">
+              <h3 class="dg-card-title">{{ item.name }}</h3>
+              {% if item.price %}<div class="dg-card-price">{{ item.price }}</div>{% endif %}
+              <p class="dg-card-desc">{{ item.summary }}</p>
+            </div>
+          </a>
+        {% endif %}
+      {% endfor %}
+      {% if rel.count == 0 %}
+        {% for item in products %}
+          {% if item.slug != product.slug and rel.count < 3 %}
+            {% set rel.count = rel.count + 1 %}
+            <a href="{{ base_url }}/{{ lang }}/products/{{ item.slug }}/" class="dg-card product-related-card">
+              <div class="dg-card-image">
+                {% if item.cover or item.image %}<img src="{{ item.cover or item.image }}" alt="{{ item.name }}" loading="lazy">{% endif %}
+                {% if item.category %}<span class="dg-card-category">{{ item.category }}</span>{% endif %}
+              </div>
+              <div class="dg-card-body">
+                <h3 class="dg-card-title">{{ item.name }}</h3>
+                {% if item.price %}<div class="dg-card-price">{{ item.price }}</div>{% endif %}
+                <p class="dg-card-desc">{{ item.summary }}</p>
+              </div>
+            </a>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</section>
 
 {% endblock %}

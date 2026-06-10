@@ -68,6 +68,9 @@ AUTH_EXEMPT_ENDPOINTS = {
     'core.template_preview',
     # 注意: preview / preview_site / preview_or_build 吐的是店主 output 下的真实
     # 私有数据, 已从免登录名单移除, 改为在各路由内做 _require_site_access 归属校验。
+    # site_asset 免登录：路由内部通过 session / Referer 自行定位资源目录，
+    # 模板预览（无站点归属）也需要访问 seed_data/assets 下的资源。
+    'core.site_asset',
 }
 
 
@@ -522,9 +525,52 @@ def logout():
 
 @bp.route('/assets/<path:filename>')
 def site_asset(filename):
-    """后台/预览使用的站点上传资源入口。静态导出时由 output/assets 直接承载。"""
-    _, site = _current_context()
-    assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
+    """预览/后台共用的站点上传资源入口。预览页免登录，资源请求也免登录。
+
+    通过 session 定位资源目录，确保预览页里 <img src="/assets/...">
+    和 CSS 中 url(/assets/...) 直接访问而不被拦到登录页。
+    静态导出时由 output/assets 直接承载。
+    """
+    assets_root = None
+
+    # 1. 模板预览 session（最优先：CSS 背景图 Referer 是 main.css，不包含 /preview/）
+    tpl_name = session.get('current_template_preview')
+    if tpl_name:
+        tpl_assets = Path(current_app.config['OUTPUT_DIR']) / '_preview' / tpl_name / 'assets'
+        if tpl_assets.exists():
+            assets_root = tpl_assets
+
+    # 2. 站点预览 / 管理后台 session
+    if assets_root is None:
+        site_id = session.get('current_site_id')
+        if site_id is not None:
+            site = Site.query.get(int(site_id))
+            if site:
+                assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
+
+    # 3. Referer 兜底（清除 session 后首次请求等极端情况）
+    referer = request.headers.get('Referer', '')
+    if assets_root is None:
+        m = re.search(r'/templates/([a-zA-Z0-9_-]+)/preview/', referer)
+        if m:
+            tpl_assets = Path(current_app.config['OUTPUT_DIR']) / '_preview' / m.group(1) / 'assets'
+            if tpl_assets.exists():
+                assets_root = tpl_assets
+    if assets_root is None:
+        m = re.search(r'/preview(?:/(?:site|or_build))?/(\d+)', referer)
+        if m:
+            site = Site.query.get(int(m.group(1)))
+            if site:
+                assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
+
+    # 4. 最终兜底
+    if assets_root is None:
+        site = Site.query.order_by(Site.id.desc()).first()
+        if site:
+            assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
+
+    if assets_root is None:
+        abort(404, '资源不存在')
     return _safe_send_from_directory(assets_root, filename)
 
 
@@ -669,7 +715,7 @@ def product_edit(product_id):
 
     if request.method == 'POST':
         fields = {f: request.form.get(f, '').strip()
-                  for f in ('name', 'slug', 'category', 'summary', 'description', 'cover')}
+                  for f in ('name', 'slug', 'category', 'summary', 'description', 'cover', 'price')}
         fields['cover'] = _uploaded_image_or_form(site.id, 'cover', 'cover_file', 'product-cover')
         # specs: 多行 "键: 值"
         specs = {}
@@ -1389,6 +1435,8 @@ def templates_gallery():
 @bp.route('/templates/<template_name>/preview/')
 @bp.route('/templates/<template_name>/preview/<path:filepath>')
 def template_preview(template_name, filepath='index.html'):
+    """模板预览 —— 用模板 seed_data 渲染."""
+    session['current_template_preview'] = template_name  # 后续 /assets/ 请求需要定位资源目录
     if not Template.query.filter_by(name=template_name).first():
         abort(404)
     out = build_template_preview(
@@ -1628,6 +1676,8 @@ def _default_lang_code(site):
 @bp.route('/preview_site/<int:site_id>')
 def preview_site(site_id):
     """确保已构建，重定向到默认语言首页."""
+    session['current_site_id'] = site_id  # 后续 /assets/ 资源请求需要
+    from flask import redirect, request, url_for
     site = Site.query.get_or_404(site_id)
     _require_site_access(site)
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
@@ -1644,6 +1694,7 @@ def preview_site(site_id):
 @bp.route('/preview_or_build/<int:site_id>')
 def preview_or_build(site_id):
     """确保已构建，直接返回默认语言的首页."""
+    session['current_site_id'] = site_id  # 后续 /assets/ 资源请求需要
     site = Site.query.get_or_404(site_id)
     _require_site_access(site)
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
@@ -1665,6 +1716,7 @@ def preview_or_build(site_id):
 @bp.route('/preview/<int:site_id>/<path:filepath>')
 def preview(site_id, filepath='index.html'):
     """预览 output/<site_id>/ 下的静态文件，自动构建."""
+    session['current_site_id'] = site_id  # 后续 /assets/ 资源请求需要
     site = Site.query.get_or_404(site_id)
     _require_site_access(site)
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)

@@ -602,7 +602,122 @@ function goToDataGridPage(btn, page) {
   btn.classList.add('active');
 }
 
-document.addEventListener('DOMContentLoaded', initDataGridPagers);
+function initFilterableGrids() {
+  document.querySelectorAll('.filterable-grid[data-filter-id]').forEach(function(grid) {
+    var filterId = grid.getAttribute('data-filter-id');
+    var panel = document.querySelector('.dg-filter-panel[data-filter-for="' + filterId + '"]');
+    if (!panel) return;
+
+    var cards = Array.prototype.slice.call(grid.querySelectorAll('.dg-card'));
+    if (!cards.length) {
+      panel.hidden = true;
+      return;
+    }
+
+    var state = { category: '', tag: '' };
+    var allLabel = panel.getAttribute('data-all-label') || 'All';
+
+    function textOf(el) {
+      return el ? (el.textContent || '').trim() : '';
+    }
+
+    function cardData(card) {
+      var tags = Array.prototype.slice.call(card.querySelectorAll('.filter-source-tags .dg-card-tag'))
+        .map(textOf)
+        .filter(Boolean);
+      return {
+        category: textOf(card.querySelector('.filter-source-category')),
+        tags: tags
+      };
+    }
+
+    function unique(values) {
+      var seen = {};
+      return values.filter(function(value) {
+        if (!value || seen[value]) return false;
+        seen[value] = true;
+        return true;
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, function(char) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[char];
+      });
+    }
+
+    function matches(card, override) {
+      var data = cardData(card);
+      var category = override && Object.prototype.hasOwnProperty.call(override, 'category') ? override.category : state.category;
+      var tag = override && Object.prototype.hasOwnProperty.call(override, 'tag') ? override.tag : state.tag;
+      return (!category || data.category === category) && (!tag || data.tags.indexOf(tag) !== -1);
+    }
+
+    function renderButtons(groupName, values) {
+      var target = panel.querySelector('[data-filter-group="' + groupName + '"]');
+      if (!target) return;
+      var buttons = [{ value: '', label: allLabel }].concat(values.map(function(value) {
+        return { value: value, label: value };
+      }));
+      target.innerHTML = buttons.map(function(button) {
+        return '<button type="button" class="dg-filter-option" data-filter-value="' +
+          escapeHtml(button.value) + '">' + escapeHtml(button.label) + '</button>';
+      }).join('');
+      target.addEventListener('click', function(event) {
+        var button = event.target.closest('.dg-filter-option');
+        if (!button || button.disabled) return;
+        state[groupName] = button.getAttribute('data-filter-value') || '';
+        apply();
+      });
+    }
+
+    function updateButtons(groupName) {
+      var target = panel.querySelector('[data-filter-group="' + groupName + '"]');
+      if (!target) return;
+      target.querySelectorAll('.dg-filter-option').forEach(function(button) {
+        var value = button.getAttribute('data-filter-value') || '';
+        var override = {};
+        override[groupName] = value;
+        var available = !value || cards.some(function(card) { return matches(card, override); });
+        button.classList.toggle('active', state[groupName] === value);
+        button.disabled = !available;
+      });
+    }
+
+    function apply() {
+      var shown = 0;
+      cards.forEach(function(card) {
+        var show = matches(card);
+        card.classList.toggle('dg-card--hidden', !show);
+        if (show) shown += 1;
+      });
+      updateButtons('category');
+      updateButtons('tag');
+      var empty = document.querySelector('[data-filter-empty="' + filterId + '"]');
+      if (empty) empty.hidden = shown !== 0;
+    }
+
+    var categories = unique(cards.map(function(card) { return cardData(card).category; }));
+    var tags = unique(cards.reduce(function(acc, card) {
+      return acc.concat(cardData(card).tags);
+    }, []));
+
+    renderButtons('category', categories);
+    renderButtons('tag', tags);
+    apply();
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initDataGridPagers();
+  initFilterableGrids();
+});
 </script>
 
 </body>

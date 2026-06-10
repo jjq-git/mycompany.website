@@ -3,18 +3,37 @@
     <div class="section-header">
       <h2 data-name="title" data-type="text" class="section-title">产品展示</h2>
     </div>
-    <div data-name="items" data-type="list" data-source="products" data-page-size="6" class="dg-list">
+
+    <div class="dg-filter-panel" data-filter-for="products">
+      <div class="dg-filter-group">
+        <span class="dg-filter-label">Category</span>
+        <div class="dg-filter-options" data-filter-group="category"></div>
+      </div>
+      <div class="dg-filter-group">
+        <span class="dg-filter-label">Tags</span>
+        <div class="dg-filter-options" data-filter-group="tag"></div>
+      </div>
+    </div>
+
+    <div data-name="items" data-type="list" data-source="products" data-page-size="12" class="dg-list filterable-grid" data-filter-id="products">
       <a data-name="item" data-type="group" data-href-template="{base_url}/{lang}/products/{slug}/" class="dg-card">
         <div class="dg-card-image">
-          <img data-name="cover" data-type="image" src="" alt="" loading="lazy">
-          <span data-name="category" data-type="text" class="dg-card-category">分类</span>
+          <img data-name="cover" data-fallback="image" data-type="image" src="" alt="" loading="lazy">
+          <span data-name="category" data-type="text" class="dg-card-category filter-source-category">分类</span>
         </div>
         <div class="dg-card-body">
-          <h3 data-name="name" data-type="text" class="dg-card-title">产品名称</h3>
-          <p data-name="summary" data-type="text" class="dg-card-desc">产品简介</p>
+          <h3 data-name="name" data-fallback="title" data-type="text" class="dg-card-title">产品名称</h3>
+          <div data-name="price" data-type="text" class="dg-card-price"></div>
+          <p data-name="summary" data-fallback="description" data-type="text" class="dg-card-desc">产品简介</p>
+          <div data-name="tags" data-type="list" class="dg-card-tags filter-source-tags">
+            <span data-name="tag" data-type="text" class="dg-card-tag">标签</span>
+          </div>
         </div>
       </a>
     </div>
+
+    <p class="dg-empty-state" data-filter-empty="products" hidden>No matching products.</p>
+
     <div class="text-center" style="margin-top: 2rem;">
       <a data-href-template="{base_url}/{lang}/products/" class="btn btn-primary">查看全部</a>
     </div>

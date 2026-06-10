@@ -5363,6 +5363,136 @@ h6 { font-size: var(--font-size-md); }
   text-overflow: ellipsis;
 }
 
+.dg-card-price {
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-primary, #067a7a);
+  margin-top: var(--spacing-xs, 0.25rem);
+}
+
+.dg-filter-panel {
+  display: grid;
+  gap: var(--spacing-md, 1rem);
+  margin: 0 0 var(--spacing-xl, 1.5rem);
+  padding: var(--spacing-md, 1rem);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-bg, #fff);
+}
+
+.dg-filter-group {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: var(--spacing-sm, 0.5rem);
+  align-items: start;
+}
+
+.dg-filter-label {
+  color: var(--color-text-secondary, #64748b);
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: var(--font-weight-semibold, 600);
+  line-height: 2rem;
+}
+
+.dg-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs, 0.25rem);
+}
+
+.dg-filter-option {
+  min-height: 2rem;
+  padding: 0 var(--spacing-md, 1rem);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-full, 999px);
+  background: var(--color-bg, #fff);
+  color: var(--color-text-secondary, #64748b);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-sm, 0.875rem);
+  transition: all var(--transition-base, 0.2s ease);
+}
+
+.dg-filter-option:hover,
+.dg-filter-option.active {
+  border-color: var(--color-primary, #067a7a);
+  background: var(--color-primary, #067a7a);
+  color: #fff;
+}
+
+.dg-filter-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.dg-empty-state {
+  margin: var(--spacing-xl, 1.5rem) 0 0;
+  padding: var(--spacing-xl, 1.5rem);
+  border: 1px dashed var(--color-border, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  color: var(--color-text-secondary, #64748b);
+  text-align: center;
+}
+
+.product-detail-price {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin: 0 0 var(--spacing-lg, 1rem);
+  padding: var(--spacing-xs, 0.25rem) var(--spacing-md, 1rem);
+  border-radius: var(--radius-full, 999px);
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: var(--font-size-lg, 1.125rem);
+  font-weight: var(--font-weight-semibold, 600);
+}
+
+.product-detail-price--dark {
+  background: var(--color-bg-secondary, #f5f7fa);
+  color: var(--color-primary, #067a7a);
+}
+
+.product-detail-tags {
+  margin-bottom: var(--spacing-lg, 1rem);
+}
+
+.product-spec-table {
+  width: 100%;
+  margin-top: var(--spacing-lg, 1rem);
+  border-collapse: collapse;
+  overflow: hidden;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+}
+
+.product-spec-table th,
+.product-spec-table td {
+  padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 1rem);
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  text-align: left;
+  vertical-align: top;
+}
+
+.product-spec-table th {
+  width: 34%;
+  background: var(--color-bg-secondary, #f5f7fa);
+  color: var(--color-text, #1e293b);
+  font-weight: var(--font-weight-semibold, 600);
+}
+
+.product-spec-table tr:last-child th,
+.product-spec-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.product-related-section {
+  background: var(--color-bg-secondary, #f5f7fa);
+}
+
+.product-related-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .dg-card-date {
   font-size: var(--font-size-xs, var(--font-size-xs));
   color: var(--color-text-light, #94a3b8);
@@ -5398,6 +5528,9 @@ h6 { font-size: var(--font-size-md); }
 
 @media (max-width: 768px) {
   .dg-list { grid-template-columns: 1fr; }
+  .dg-filter-group {
+    grid-template-columns: 1fr;
+  }
   /* 水平布局在手机端：卡片改为上下堆叠 */
   .dg-card--horizontal {
     flex-direction: column;
