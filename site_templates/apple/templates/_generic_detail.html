@@ -1,0 +1,32 @@
+<!-- Generic Detail -->
+{% extends "_base.html" %}
+{% block title %}{{ item.title | default(item.name) }} — {{ t.company }}{% endblock %}
+{% block description %}{{ item.description | default(item.summary, true) | default(item.excerpt, true) | default('') }}{% endblock %}
+
+{% block content %}
+
+{# ── 返回列表 ── #}
+{% set _path_parts = current_path.strip('/').split('/') %}
+{% set _list_path = _path_parts[:-1] | join('/') %}
+<div class="container">
+  <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="btn btn-text-link" style="margin: var(--space-md) 0; display: inline-flex; align-items: center; gap: 4px;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    {{ t.actions.viewAll | default('Back') }}
+  </a>
+</div>
+
+{# ── 模块驱动的详情渲染 ── #}
+{% set modules = item.modules | default([]) %}
+{% if modules %}
+  {% for module in modules %}
+    <div class="builder-module" data-builder-module-index="{{ loop.index0 }}">
+      {{- render_block(module) }}
+    </div>
+  {% endfor %}
+{% else %}
+  <div class="builder-module" data-builder-module-index="0">
+    {{- render_block({'type': 'item_data', 'variant': 'default', 'data': {}}) }}
+  </div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,89 @@
+<!-- Product Detail -->
+{% extends "_base.html" %}
+{% block title %}{{ product.name }} - {{ t.company }}{% endblock %}
+{% block description %}{{ product.summary }}{% endblock %}
+
+{% block content %}
+
+{% set _path_parts = current_path.strip('/').split('/') %}
+{% set _list_path = _path_parts[:-1] | join('/') %}
+<div class="container">
+  <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="btn btn-text-link" style="margin: var(--space-md) 0; display: inline-flex; align-items: center; gap: 4px;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    {{ t.actions.viewAll | default('Back to Products') }}
+  </a>
+</div>
+
+<section class="section surface-canvas" style="padding-top: var(--space-md);">
+  <div class="container">
+    <div class="detail-grid item-detail-carousel">
+      <div class="detail-gallery">
+        {% set gallery_images = product.images | default([], true) %}
+        {% if gallery_images %}
+        <div class="detail-carousel-stage">
+          <div class="detail-images">
+            {% for image in gallery_images %}
+            <img src="{{ image.url if image is mapping else image }}" alt="{{ product.name }}" class="detail-gallery-img" loading="{% if loop.first %}eager{% else %}lazy{% endif %}">
+            {% endfor %}
+          </div>
+          <button type="button" class="detail-carousel-btn detail-carousel-prev" aria-label="Previous image"><span aria-hidden="true">&#8249;</span></button>
+          <button type="button" class="detail-carousel-btn detail-carousel-next" aria-label="Next image"><span aria-hidden="true">&#8250;</span></button>
+          <button type="button" class="detail-zoom-btn" aria-label="Zoom image"><span aria-hidden="true">+</span></button>
+        </div>
+        <div class="detail-thumbs" aria-label="Image thumbnails"></div>
+        {% elif product.image or product.cover %}
+        <div class="detail-carousel-stage">
+          <div class="detail-images">
+            <img src="{{ product.image or product.cover }}" alt="{{ product.name }}" class="detail-gallery-img" loading="eager">
+          </div>
+          <button type="button" class="detail-zoom-btn" aria-label="Zoom image"><span aria-hidden="true">+</span></button>
+        </div>
+        {% else %}
+        <div class="detail-gallery-placeholder card-feature">
+          <span class="text-muted text-body-md">{{ product.name }}</span>
+        </div>
+        {% endif %}
+      </div>
+      <div class="detail-info">
+        {% if product.category %}
+        <span class="badge badge-coral mb-sm">{{ product.category }}</span>
+        {% endif %}
+        <h1 class="text-display-lg text-ink mb-md">{{ product.name }}</h1>
+        <p class="text-body-md text-body mb-lg">{{ product.summary }}</p>
+
+        {% if product.tags %}
+        <div class="detail-tags mb-lg">
+          {% for tag in product.tags %}
+          <span class="badge badge-outline">{{ tag }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="highlight-actions flex gap-sm">
+          <a href="{{ base_url }}/{{ lang }}/contact/" class="btn btn-primary">{{ t.actions.contactUs | default('Contact Us') }}</a>
+          <a href="{{ base_url }}/{{ lang }}/products/" class="btn btn-secondary">{{ t.actions.viewAll | default('View All') }}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if product.description %}
+<section class="section surface-soft">
+  <div class="container container--narrow">
+    <div class="rich-text text-body-md text-body">
+      <p>{{ product.description }}</p>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section surface-canvas">
+  <div class="container text-center">
+    <h2 class="text-display-sm text-ink mb-md">Find the right setup.</h2>
+    <p class="text-body-md text-muted mb-lg">Talk with a Specialist about configuration, accessories, and setup support.</p>
+    <a href="{{ base_url }}/{{ lang }}/contact/" class="btn btn-primary btn-lg">{{ t.actions.contactUs | default('Contact Us') }}</a>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,78 @@
+company:
+  name: "Studio One"
+  short_name: "Studio"
+  logo: "https://dummyimage.com/120x120/1d1d1f/ffffff.png&text=S1"
+  icp: "Studio One Inc."
+
+contact:
+  phone: "+1 (408) 555-0198"
+  mobile: "+1 (408) 555-0144"
+  email: "hello@studio-one.example.com"
+  address: "1 Infinite Loop, Cupertino, CA 95014"
+  business_hours: "Mon-Fri 9:00-18:00"
+  weekend: "By appointment"
+
+social:
+  twitter: "https://twitter.com/"
+  linkedin: "https://linkedin.com/"
+  youtube: "https://youtube.com/"
+  github: "https://github.com/"
+  facebook: "https://facebook.com/"
+  enabled: true
+
+theme:
+  color-primary: "#0066cc"
+
+menu:
+  - {label: Store, type: home}
+  - label: Mac
+    type: list
+    target: products
+    dropdown_style: horizontal
+  - {label: Studio, type: list, target: portfolio}
+  - {label: Support, type: page, target: support}
+  - {label: About, type: page, target: about}
+  - {label: Newsroom, type: list, target: posts}
+
+menu_labels:
+  zh-CN:
+    __home__: 商店
+    products: Mac
+    portfolio: 工作室
+    support: 支持
+    about: 关于
+    posts: 新闻
+
+header:
+  variant: logo_left_menu_right
+  language_switcher:
+    enabled: true
+    style: vertical_dropdown
+  enabled_languages:
+    - en
+    - zh-CN
+
+footer:
+  variant: columns
+  copyright: "Studio One Inc."
+  icp: "Studio One Inc."
+  columns:
+    - title: Shop and Learn
+      type: menu
+      links:
+        - {label: MacBook Air, url: /products/macbook-air/}
+        - {label: MacBook Pro, url: /products/macbook-pro/}
+        - {label: Studio Display, url: /products/studio-display/}
+        - {label: Accessories, url: /products/airpods-max/}
+    - title: Experiences
+      type: menu
+      links:
+        - {label: Product Gallery, url: /portfolio/}
+        - {label: Today at Studio, url: /support/}
+        - {label: Trade In, url: "#"}
+    - title: About Studio One
+      type: menu
+      links:
+        - {label: Newsroom, url: /posts/}
+        - {label: Leadership, url: /about/}
+        - {label: Contact, url: /contact/}

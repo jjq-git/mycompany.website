@@ -44,7 +44,8 @@ with app.app_context():
 
     print('\n=== data_grid（data-source="" → 选 portfolio）===')
     out = render('data_grid', {'title': '近期项目', 'dataset': 'portfolio'})
-    chk('6 张案例卡', out.count('class="dg-card"') == 6, out.count('class="dg-card"'))
+    portfolio_items = ds['portfolio'].get('items', ds['portfolio']) if isinstance(ds['portfolio'], dict) else ds['portfolio']
+    chk('案例卡数量匹配 seed 数据', out.count('class="dg-card"') == len(portfolio_items), out.count('class="dg-card"'))
     chk('标题 fallback（portfolio 用 title）', '苏州博物馆静音展示项目' in out)
     chk('current_path 链接', 'href="/zh-CN/portfolio/museum-2024/"' in out)
     chk('日期注入', '2024-08' in out)

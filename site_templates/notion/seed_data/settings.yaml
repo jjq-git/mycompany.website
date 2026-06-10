@@ -1,0 +1,87 @@
+company:
+  name: "Paperlab"
+  short_name: "Paperlab"
+  logo: "https://dummyimage.com/120x120/f6f5f4/0075de.png&text=P"
+  icp: "Paperlab Inc."
+
+contact:
+  phone: "+1 (415) 555-0147"
+  mobile: "+1 (415) 555-0148"
+  email: "hello@paperlab.example.com"
+  address: "548 Market St, San Francisco, CA 94104"
+  business_hours: "Mon-Fri 9:00-18:00 PST"
+  weekend: "Weekend by appointment"
+
+social:
+  twitter: "https://twitter.com/"
+  linkedin: "https://linkedin.com/"
+  youtube: "https://youtube.com/"
+  github: "https://github.com/"
+  facebook: "https://facebook.com/"
+  enabled: true
+
+theme:
+  color-primary: "#0075de"
+
+menu:
+  - {label: Home, type: home}
+  - label: Products
+    type: list
+    target: products
+    dropdown_style: vertical
+  - {label: Solutions, type: list, target: portfolio}
+  - {label: Pricing, type: page, target: pricing}
+  - {label: About, type: page, target: about}
+  - {label: Blog, type: list, target: posts}
+
+menu_labels:
+  zh-CN:
+    __home__: 首页
+    products: 产品
+    portfolio: 解决方案
+    pricing: 定价
+    about: 关于
+    posts: 博客
+  zh-TW:
+    __home__: 首頁
+    products: 產品
+    portfolio: 解決方案
+    pricing: 定價
+    about: 關於
+    posts: 部落格
+
+header:
+  variant: logo_left_menu_right
+  language_switcher:
+    enabled: true
+    style: vertical_dropdown
+  enabled_languages:
+    - en
+    - zh-CN
+    - zh-TW
+
+footer:
+  variant: columns_social
+  copyright: "Paperlab Inc."
+  icp: "Paperlab Inc."
+  columns:
+    - title: Product
+      type: menu
+      links:
+        - {label: Docs, url: /products/docs/}
+        - {label: Wikis, url: /products/wikis/}
+        - {label: Projects, url: /products/projects/}
+        - {label: Calendar, url: /products/calendar/}
+    - title: Solutions
+      type: menu
+      links:
+        - {label: Enterprise, url: /portfolio/enterprise/}
+        - {label: Startups, url: /portfolio/startups/}
+        - {label: Education, url: /portfolio/education/}
+    - title: Company
+      type: menu
+      links:
+        - {label: Blog, url: /posts/}
+        - {label: About, url: /about/}
+        - {label: Contact, url: /contact/}
+        - {label: Pricing, url: /pricing/}

@@ -1,0 +1,458 @@
+name: 联系表单
+category: content
+icon: contact_form.svg
+description: 在线留言表单，访客填写后提交到指定地址（如 Formspree 等表单服务）
+fields:
+  - key: title
+    label: 区块标题
+    type: text
+    group: 内容
+    default: ""
+  - key: subtitle
+    label: 区块副标题
+    type: text
+    group: 内容
+    default: ""
+  - key: form_action
+    label: 表单提交地址
+    type: url
+    group: 内容
+    default: ""
+    placeholder: 如 https://formspree.io/f/your-form-id
+  - key: show_name
+    label: 显示姓名
+    type: select
+    group: 表单字段
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_email
+    label: 显示邮箱
+    type: select
+    group: 表单字段
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_phone
+    label: 显示电话
+    type: select
+    group: 表单字段
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_company
+    label: 显示公司
+    type: select
+    group: 表单字段
+    default: "false"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_message
+    label: 显示留言
+    type: select
+    group: 表单字段
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_form
+    label: 显示表单
+    type: select
+    group: 表单显隐
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: title_size
+    label: 标签字号
+    type: text
+    group: 表单样式
+    default: "0.875rem"
+    placeholder: 如 1rem（留空=CSS 默认 0.875rem）
+  - key: input_height
+    label: 输入框高度
+    type: text
+    group: 表单样式
+    default: ""
+    placeholder: 如 48px（留空=默认）
+  - key: field_gap
+    label: 字段间距
+    type: text
+    group: 表单样式
+    default: ""
+    placeholder: 如 1.25rem（留空=默认）
+  - key: label_style
+    label: 标签排版
+    type: select
+    group: 表单样式
+    default: "top"
+    options:
+      - value: "top"
+        label: 标签在上
+      - value: "left"
+        label: 标签在左
+      - value: "hidden"
+        label: 隐藏标签
+  - key: form_bg
+    label: 表单背景色
+    type: color
+    group: 表单样式
+    default: ""
+    placeholder: 如 #ffffff（留空=透明）
+  - key: input_bg
+    label: 输入框背景色
+    type: color
+    group: 表单样式
+    default: "#ffffff"
+    placeholder: 如 #ffffff（留空=CSS 默认白色）
+  - key: input_border
+    label: 输入框边框色
+    type: color
+    group: 表单样式
+    default: "#e2e8f0"
+    placeholder: 如 #e5e7eb（留空=CSS 默认 #e2e8f0）
+  - key: text_color
+    label: 文字颜色
+    type: color
+    group: 表单样式
+    default: "#1e293b"
+    placeholder: 如 #1e293b（留空=CSS 默认深色）
+  - key: input_radius
+    label: 输入框圆角
+    type: text
+    group: 表单样式
+    default: "8px"
+    placeholder: 如 8px（留空=CSS 默认 8px）
+  - key: form_radius
+    label: 表单圆角
+    type: text
+    group: 表单样式
+    default: "8px"
+    placeholder: 如 12px（留空=CSS 默认 8px）
+  - key: form_padding_top
+    label: 表单上内边距
+    type: text
+    group: 表单样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: form_padding_right
+    label: 表单右内边距
+    type: text
+    group: 表单样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: form_padding_bottom
+    label: 表单下内边距
+    type: text
+    group: 表单样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: form_padding_left
+    label: 表单左内边距
+    type: text
+    group: 表单样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: form_margin_top
+    label: 表单上外边距
+    type: text
+    group: 表单外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: form_margin_right
+    label: 表单右外边距
+    type: text
+    group: 表单外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: form_margin_bottom
+    label: 表单下外边距
+    type: text
+    group: 表单外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: form_margin_left
+    label: 表单左外边距
+    type: text
+    group: 表单外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: submit_text
+    label: 按钮文字
+    type: text
+    group: 按钮
+    default: "发送留言"
+  - key: btn_bg
+    label: 按钮背景色
+    type: color
+    group: 按钮
+    default: "#cc785c"
+    placeholder: 如 #cc785c（留空=CSS 默认主色）
+  - key: btn_color
+    label: 按钮文字色
+    type: color
+    group: 按钮
+    default: "#ffffff"
+    placeholder: 如 #ffffff（留空=CSS 默认白色）
+  - key: btn_size
+    label: 按钮文字大小
+    type: text
+    group: 按钮
+    default: "1rem"
+    placeholder: 如 1rem（留空=CSS 默认 1rem）
+  - key: btn_radius
+    label: 按钮圆角
+    type: text
+    group: 按钮
+    default: "8px"
+    placeholder: 如 8px（留空=CSS 默认 8px）
+  - key: btn_align
+    label: 按钮位置
+    type: select
+    group: 按钮
+    default: "left"
+    options:
+      - value: "left"
+        label: 靠左
+      - value: "center"
+        label: 居中
+      - value: "right"
+        label: 靠右
+  - key: btn_padding_top
+    label: 按钮上内边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 0.75rem（留空=默认）
+  - key: btn_padding_right
+    label: 按钮右内边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: btn_padding_bottom
+    label: 按钮下内边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 0.75rem（留空=默认）
+  - key: btn_padding_left
+    label: 按钮左内边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: btn_margin_top
+    label: 按钮上外边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: btn_margin_right
+    label: 按钮右外边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 0（留空=默认）
+  - key: btn_margin_bottom
+    label: 按钮下外边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 0（留空=默认）
+  - key: btn_margin_left
+    label: 按钮左外边距
+    type: text
+    group: 按钮
+    default: ""
+    placeholder: 如 0（留空=默认）
+  - key: show_map
+    label: 显示地图
+    type: select
+    group: 地图
+    default: "false"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: map_src
+    label: 地图嵌入地址
+    type: url
+    group: 地图
+    default: ""
+    placeholder: 从高德/Google 地图获取的嵌入链接（iframe src）
+  - key: layout
+    label: 排版方式
+    type: select
+    group: 地图
+    default: "form_left"
+    options:
+      - value: "form_left"
+        label: 表单左 地图右
+      - value: "form_right"
+        label: 地图左 表单右
+  - key: map_width_ratio
+    label: 地图占比
+    type: select
+    group: 地图
+    default: "40"
+    options:
+      - value: "30"
+        label: 30%
+      - value: "35"
+        label: 35%
+      - value: "40"
+        label: 40%
+      - value: "45"
+        label: 45%
+      - value: "50"
+        label: 50%
+      - value: "60"
+        label: 60%
+      - value: "70"
+        label: 70%
+      - value: "100"
+        label: 100%
+  - key: map_height
+    label: 地图高度
+    type: text
+    group: 地图样式
+    default: ""
+    placeholder: 如 500px（留空=自适应撑满）
+  - key: map_radius
+    label: 地图圆角
+    type: text
+    group: 地图样式
+    default: ""
+    placeholder: 如 12px（留空=0）
+  - key: map_margin_top
+    label: 地图上外边距
+    type: text
+    group: 地图外边距
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: map_margin_right
+    label: 地图右外边距
+    type: text
+    group: 地图外边距
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: map_margin_bottom
+    label: 地图下外边距
+    type: text
+    group: 地图外边距
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: map_margin_left
+    label: 地图左外边距
+    type: text
+    group: 地图外边距
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: map_padding_top
+    label: 地图上内边距
+    type: text
+    group: 地图内边距
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: map_padding_right
+    label: 地图右内边距
+    type: text
+    group: 地图内边距
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: map_padding_bottom
+    label: 地图下内边距
+    type: text
+    group: 地图内边距
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: map_padding_left
+    label: 地图左内边距
+    type: text
+    group: 地图内边距
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: section_bg
+    label: 外层背景色
+    type: color
+    group: 外层样式
+    default: ""
+    placeholder: 如 #f5f7fa（留空=透明）
+  - key: outer_width
+    label: 外层宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空不限制宽度）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 800px（留空=全宽）
+  - key: margin_top
+    label: 上外边距
+    type: text
+    group: 外层外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: margin_right
+    label: 右外边距
+    type: text
+    group: 外层外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: margin_bottom
+    label: 下外边距
+    type: text
+    group: 外层外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: margin_left
+    label: 左外边距
+    type: text
+    group: 外层外边距
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_top
+    label: 上内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_right
+    label: 右内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_bottom
+    label: 下内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_left
+    label: 左内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）

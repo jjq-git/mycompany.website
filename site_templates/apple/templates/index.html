@@ -1,0 +1,8 @@
+{% extends "_base.html" %}
+{% block title %}{{ settings.company.name }}{% endblock %}
+{% block description %}{{ page.description | default('') }}{% endblock %}
+
+{% block content %}
+{% include '_modules.html' %}
+
+{% endblock %}

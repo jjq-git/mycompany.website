@@ -2,6 +2,8 @@
 
 一套主题（`themes/<name>/`）= 网站的"皮肤"：页面布局 + block 库 + 样式 + 初始内容。**用代码写**（HTML / Jinja2 / CSS），不是可视化拖拽。本文是写主题的规则。
 
+> 新模板落地前必须按 [新模板开发规范清单](template-development-checklist.md) 自检，尤其是种子数据完整性、多语言、详情页多图交互和 data-attr block 纯声明式写法。
+
 > 术语：**主题（theme）** 生成用户网站；**template** 一词留给后台 Flask（`app/templates/`）。主题内部的 Jinja2 页面骨架叫**布局（layout）**。
 
 ## 一、目录结构

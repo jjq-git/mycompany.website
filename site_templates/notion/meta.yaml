@@ -1,0 +1,60 @@
+name: notion
+display_name: "Notion - Productivity Workspace"
+industry: saas-productivity
+description: "Warm paper-calm productivity template with a single confident blue, tight Inter display typography, pill CTAs, sticker accent palette, and a single dark indigo hero moment."
+cover_image: "https://images.unsplash.com/photo-1512758017271-d7b84c2113f1?auto=format&fit=crop&w=1200&q=80"
+version: 0.1.0
+is_public: true
+
+datasets:
+  - products
+  - portfolio
+  - posts
+  - features
+
+default_menu:
+  - {label: Home, type: home}
+  - label: Products
+    type: list
+    target: products
+    dropdown_style: vertical
+  - {label: Solutions, type: list, target: portfolio}
+  - {label: Pricing, type: page, target: pricing}
+  - {label: About, type: page, target: about}
+  - {label: Blog, type: list, target: posts}
+
+default_theme:
+  color-primary: "#0075de"
+  color-bg: "#f6f5f4"
+  color-surface: "#ffffff"
+  color-text: "#000000"
+  color-text-secondary: "#615d59"
+  color-border: "#e6e6e6"
+  font-display: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
+  font-sans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
+  font-mono: "'JetBrains Mono', 'SF Mono', ui-monospace, monospace"
+  radius-xs: "4px"
+  radius-sm: "5px"
+  radius-md: "8px"
+  radius-lg: "12px"
+  radius-xl: "16px"
+  radius-pill: "9999px"
+  shadow-sm: "0 0.175px 1.041px rgba(0,0,0,0.01), 0 0.8px 2.925px rgba(0,0,0,0.02)"
+  shadow-md: "0 2.025px 7.847px rgba(0,0,0,0.027), 0 4px 18px rgba(0,0,0,0.04)"
+  shadow-lg: "0 23px 52px rgba(0,0,0,0.05)"
+
+languages:
+  - {code: en, name: English, flag: EN}
+  - {code: zh-CN, name: "简体中文", flag: CN}
+  - {code: zh-TW, name: "繁體中文", flag: TW}
+default_language: en
+
+header_variants:
+  - {key: logo_left_menu_right, label: "Global nav", description: "Clean white sticky nav with pill CTAs"}
+  - {key: logo_center_menu_below, label: "Centered", description: "Centered brand with nav below"}
+  - {key: minimal_hamburger, label: "Minimal", description: "Compact mobile-friendly navigation"}
+
+footer_variants:
+  - {key: columns, label: "Directory columns", description: "Multi-column link directory on warm paper"}
+  - {key: minimal, label: "Minimal", description: "Copyright and legal only"}
+  - {key: columns_social, label: "Directory + social", description: "Directory columns with brand and social links"}

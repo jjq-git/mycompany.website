@@ -1,0 +1,150 @@
+﻿name: 鏁版嵁缃戞牸
+category: data
+icon: data_grid.svg
+description: 閫氱敤鏁版嵁鍒楄〃妯″潡锛屾敮鎸佷骇鍝?妗堜緥/鍗氬涓夌鏁版嵁闆嗭紝鍗＄墖甯冨眬鍙€?
+fields:
+  - key: dataset
+    label: 鏁版嵁鏉ユ簮锛堟暟鎹泦鍚嶇О锛?
+    type: text
+    group: 鏁版嵁
+    default: portfolio
+    placeholder: 濡?products/portfolio/posts锛屾垨鑷畾涔夋暟鎹泦鍚?
+  - key: max_items
+    label: 鏈€澶ф樉绀猴紙鎬诲叡灞曠ず鍑犳潯锛?
+    type: number
+    group: 鏁版嵁
+    default: 6
+  - key: card_layout
+    label: 鍗＄墖甯冨眬
+    type: select
+    group: 鏁版嵁
+    default: "image_top"
+    options:
+      - value: "image_top"
+        label: 涓婂浘涓嬫枃
+      - value: "image_left"
+        label: 宸﹀浘鍙虫枃
+  - key: show_pagination
+    label: 鏄剧ず鍒嗛〉
+    type: select
+    group: 鍒嗛〉
+    default: "true"
+    options:
+      - value: "true"
+        label: 鏄剧ず
+      - value: "false"
+        label: 闅愯棌
+  - key: pagination_style
+    label: 鍒嗛〉鏍峰紡
+    type: select
+    group: 鍒嗛〉
+    default: "load_more"
+    options:
+      - value: "load_more"
+        label: 鍔犺浇鏇村
+      - value: "page_numbers"
+        label: 椤电爜瀵艰埅
+  - key: items_per_page
+    label: 姣忛〉鏉℃暟
+    type: select
+    group: 鍒嗛〉
+    default: "6"
+    options:
+      - value: "3"
+        label: 3 鏉?椤?
+      - value: "4"
+        label: 4 鏉?椤?
+      - value: "6"
+        label: 6 鏉?椤?
+      - value: "8"
+        label: 8 鏉?椤?
+      - value: "10"
+        label: 10 鏉?椤?
+      - value: "12"
+        label: 12 鏉?椤?
+      - value: "18"
+        label: 18 鏉?椤?
+      - value: "24"
+        label: 24 鏉?椤?
+  - key: pager_align
+    label: 鍒嗛〉瀵归綈
+    type: select
+    group: 鍒嗛〉
+    default: "center"
+    options:
+      - value: "center"
+        label: 灞呬腑
+      - value: "left"
+        label: 灞呭乏
+      - value: "right"
+        label: 灞呭彸
+  - key: section_bg
+    label: 澶栧眰鑳屾櫙鑹?
+    type: color
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?#f5f7fa锛堢暀绌?浣跨敤榛樿锛?
+  - key: outer_width
+    label: 澶栧眰瀹藉害
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?1200px锛堢暀绌轰笉闄愬埗瀹藉害锛?
+  - key: inner_width
+    label: 鍐呭眰鍐呭鍖哄搴?
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?1200px锛堢暀绌?鍏ㄥ锛?
+  - key: padding_top
+    label: 涓婂唴杈硅窛
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: "1rem"
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: padding_right
+    label: 鍙冲唴杈硅窛
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: padding_bottom
+    label: 涓嬪唴杈硅窛
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: "1rem"
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: padding_left
+    label: 宸﹀唴杈硅窛
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: margin_top
+    label: 澶栧眰涓婂杈硅窛
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?40px
+  - key: margin_right
+    label: 澶栧眰鍙冲杈硅窛
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?40px
+  - key: margin_bottom
+    label: 澶栧眰涓嬪杈硅窛
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?40px
+  - key: margin_left
+    label: 澶栧眰宸﹀杈硅窛
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?40px
+  - key: title
+    label: 鍖哄潡鏍囬
+    type: text
+    group: 鍐呭

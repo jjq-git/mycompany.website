@@ -1,0 +1,383 @@
+name: 功能特色网格
+category: content
+description: 展示服务/功能亮点，图标+标题+描述。功能卡片在模块编辑器中直接管理。
+fields:
+  # ── 内容 ──
+  - key: title
+    label: 区块标题
+    type: text
+    group: 内容
+    default: "#1e293b"
+  - key: subtitle
+    label: 区块副标题
+    type: text
+    group: 内容
+  # ── 外层样式 ──
+  - key: section_bg
+    label: 外层背景色
+    type: color
+    group: 外层样式
+    default: "2rem"
+    placeholder: 如 #f5f7fa（留空=使用默认）
+  - key: outer_width
+    label: 外层宽度
+    type: text
+    group: 外层样式
+    default: "56px"
+    placeholder: 如 1200px（留空不限制宽度）
+  - key: padding_top
+    label: 上内边距
+    type: text
+    group: 外层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_right
+    label: 右内边距
+    type: text
+    group: 外层样式
+    default: "#cc785c"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_bottom
+    label: 下内边距
+    type: text
+    group: 外层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_left
+    label: 左内边距
+    type: text
+    group: 外层样式
+    default: "56px"
+    placeholder: 如 2rem（留空=默认）
+  # ── 内层样式 ──
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    group: 内层样式
+    default: "56px"
+    placeholder: 如 1200px（留空=全宽）
+  # ── 外边距 ──
+  - key: margin_top
+    label: 外层上外边距
+    type: text
+    group: 外层样式
+    default: "8px"
+    placeholder: 如 40px
+  - key: margin_right
+    label: 外层右外边距
+    type: text
+    group: 外层样式
+    default: "0.25rem"
+    placeholder: 如 40px
+  - key: margin_bottom
+    label: 外层下外边距
+    type: text
+    group: 外层样式
+    default: "1rem"
+    placeholder: 如 40px
+  - key: margin_left
+    label: 外层左外边距
+    type: text
+    group: 外层样式
+    default: "#1e293b"
+    placeholder: 如 40px
+  # ── 标题区容器 ──
+  - key: header_bg
+    label: 标题区背景色
+    type: color
+    group: 标题区样式
+    default: "600"
+    placeholder: 如 #f7f8fa
+  - key: header_align
+    label: 标题区文字排版
+    type: select
+    group: 标题区样式
+    default: "center"
+    options:
+      - value: ""
+        label: 默认
+      - value: left
+        label: 左对齐
+      - value: center
+        label: 居中
+      - value: right
+        label: 右对齐
+  # ── 标题区外边距 ──
+  - key: header_margin_top
+    label: 标题区上外边距
+    type: text
+    group: 标题区样式
+    default: "0.5rem"
+    placeholder: 如 4rem
+  - key: header_margin_right
+    label: 标题区右外边距
+    type: text
+    group: 标题区样式
+    default: "0.875rem"
+    placeholder: 如 4rem
+  - key: header_margin_bottom
+    label: 标题区下外边距
+    type: text
+    group: 标题区样式
+    default: "4rem"
+    placeholder: 如 4rem（留空=CSS 默认）
+  - key: header_margin_left
+    label: 标题区左外边距
+    type: text
+    group: 标题区样式
+    default: "#64748b"
+    placeholder: 如 4rem
+  # ── 标题区内边距 ──
+  - key: header_padding_top
+    label: 标题区上内边距
+    type: text
+    group: 标题区样式
+    default: "1.6"
+    placeholder: 如 2rem
+  - key: header_padding_right
+    label: 标题区右内边距
+    type: text
+    group: 标题区样式
+    default: ""
+    placeholder: 如 2rem
+  - key: header_padding_bottom
+    label: 标题区下内边距
+    type: text
+    group: 标题区样式
+    default: "2rem"
+    placeholder: 如 2rem（留空=CSS 默认）
+  - key: header_padding_left
+    label: 标题区左内边距
+    type: text
+    group: 标题区样式
+    default: ""
+    placeholder: 如 2rem
+  # ── 区块主标题 ──
+  - key: title_size
+    label: 标题字号
+    type: text
+    group: 标题区样式
+    default: "2.25rem"
+    placeholder: 如 2rem
+  - key: title_color
+    label: 标题颜色
+    type: color
+    group: 标题区样式
+    default: ""
+    placeholder: 如 #1a1a2e
+  - key: title_margin_bottom
+    label: 标题下外边距
+    type: text
+    group: 标题区样式
+    default: "0.5rem"
+    placeholder: 如 0.5rem
+  # ── 区块副标题 ──
+  - key: subtitle_size
+    label: 副标题字号
+    type: text
+    group: 标题区样式
+    default: "1.125rem"
+    placeholder: 如 1.125rem
+  - key: subtitle_color
+    label: 副标题颜色
+    type: color
+    group: 标题区样式
+    default: "#64748b"
+    placeholder: 如 #64748b
+  # ── 网格容器 ──
+  - key: grid_gap
+    label: 卡片间距
+    type: text
+    group: 网格样式
+    default: ""
+    placeholder: 如 1.5rem（统一控制行列间距）
+  - key: grid_row_gap
+    label: 行间距
+    type: text
+    group: 网格样式
+    default: ""
+    placeholder: 如 2rem
+  - key: grid_column_gap
+    label: 列间距
+    type: text
+    group: 网格样式
+    default: ""
+    placeholder: 如 1.5rem
+  # ── 卡片样式 ──
+  - key: card_show_border
+    label: 显示卡片边框
+    type: select
+    group: 卡片样式
+    default: ""
+    options:
+      - value: ""
+        label: 默认（显示）
+      - value: "0"
+        label: 隐藏边框
+  - key: card_padding_top
+    label: 卡片上内边距
+    type: text
+    group: 卡片样式
+    default: "2rem"
+    placeholder: 如 24px（留空=CSS 默认 2rem）
+  - key: card_padding_right
+    label: 卡片右内边距
+    type: text
+    group: 卡片样式
+    default: "1.5rem"
+    placeholder: 如 24px（留空=CSS 默认 1.5rem）
+  - key: card_padding_bottom
+    label: 卡片下内边距
+    type: text
+    group: 卡片样式
+    default: "2rem"
+    placeholder: 如 24px（留空=CSS 默认 2rem）
+  - key: card_padding_left
+    label: 卡片左内边距
+    type: text
+    group: 卡片样式
+    default: "1.5rem"
+    placeholder: 如 24px（留空=CSS 默认 1.5rem）
+  - key: card_radius_top_left
+    label: 卡片左上圆角
+    type: text
+    group: 卡片样式
+    default: "12px"
+    placeholder: 如 12px（留空=CSS 默认 12px）
+  - key: card_radius_top_right
+    label: 卡片右上圆角
+    type: text
+    group: 卡片样式
+    default: "12px"
+    placeholder: 如 12px（留空=CSS 默认 12px）
+  - key: card_radius_bottom_right
+    label: 卡片右下圆角
+    type: text
+    group: 卡片样式
+    default: "12px"
+    placeholder: 如 12px（留空=CSS 默认 12px）
+  - key: card_radius_bottom_left
+    label: 卡片左下圆角
+    type: text
+    group: 卡片样式
+    default: "12px"
+    placeholder: 如 12px（留空=CSS 默认 12px）
+  # ── 图标样式 ──
+  - key: icon_size
+    label: 图标大小
+    type: text
+    group: 图标样式
+    default: ""
+    placeholder: 如 24px
+  - key: icon_color
+    label: 图标颜色
+    type: color
+    group: 图标样式
+    default: ""
+    placeholder: 如 #cc785c
+  - key: icon_bg
+    label: 图标背景色
+    type: color
+    group: 图标样式
+    default: ""
+    placeholder: 如 #e8f4fd
+  - key: icon_width
+    label: 图标区宽度
+    type: text
+    group: 图标样式
+    default: ""
+    placeholder: 如 48px
+  - key: icon_height
+    label: 图标区高度
+    type: text
+    group: 图标样式
+    default: ""
+    placeholder: 如 48px
+  - key: icon_radius
+    label: 图标圆角
+    type: text
+    group: 图标样式
+    default: ""
+    placeholder: 如 8px 或 50%
+  - key: icon_margin_right
+    label: 图标右外边距
+    type: text
+    group: 图标样式
+    default: ""
+    placeholder: 如 1rem
+  - key: icon_margin_bottom
+    label: 图标下外边距
+    type: text
+    group: 图标样式
+    default: ""
+    placeholder: 如 0.5rem
+  # ── 卡片标题样式 ──
+  - key: card_title_size
+    label: 卡片标题字号
+    type: text
+    group: 卡片文字样式
+    default: ""
+    placeholder: 如 1.125rem
+  - key: card_title_color
+    label: 卡片标题颜色
+    type: color
+    group: 卡片文字样式
+    default: ""
+    placeholder: 如 #1a1a2e
+  - key: card_title_weight
+    label: 卡片标题字重
+    type: select
+    group: 卡片文字样式
+    default: ""
+    options:
+      - value: ""
+        label: 默认
+      - value: "400"
+        label: "400"
+      - value: "500"
+        label: "500"
+      - value: "600"
+        label: "600"
+      - value: "700"
+        label: "700"
+  - key: card_title_margin_bottom
+    label: 卡片标题下外边距
+    type: text
+    group: 卡片文字样式
+    default: ""
+    placeholder: 如 0.25rem
+  # ── 卡片描述样式 ──
+  - key: card_desc_size
+    label: 卡片描述字号
+    type: text
+    group: 卡片文字样式
+    default: ""
+    placeholder: 如 0.95rem
+  - key: card_desc_color
+    label: 卡片描述颜色
+    type: color
+    group: 卡片文字样式
+    default: ""
+    placeholder: 如 #64748b
+  - key: card_desc_line_height
+    label: 卡片描述行高
+    type: text
+    group: 卡片文字样式
+    default: ""
+    placeholder: 如 1.6
+  # ── 功能卡片数据 ──
+  - key: features
+    label: 功能卡片列表
+    type: list
+    group: 功能卡片
+    item_label: 功能卡片
+    item_fields:
+      - key: icon
+        label: 图标
+        type: icon
+      - key: title
+        label: 标题
+        type: text
+      - key: desc
+        label: 描述
+        type: textarea

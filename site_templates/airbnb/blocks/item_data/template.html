@@ -1,0 +1,25 @@
+<!-- Structured Item Data -->
+<section data-name="item_data" data-type="group" data-hideable class="section surface-canvas">
+  <div class="container container--narrow">
+    <div class="section-header">
+      <span data-name="category" data-type="text" class="badge badge-coral section-header__tag"></span>
+      <h2 data-name="title" data-fallback="name" data-type="text" class="section-header__title"></h2>
+      <p data-name="summary" data-fallback="description,desc" data-type="text" class="section-header__desc"></p>
+    </div>
+    <div class="item-data-panel">
+      <div class="item-data-row">
+        <span data-name="meta_label" data-type="text" class="text-body-sm text-muted">Detail</span>
+        <strong data-name="price" data-fallback="date,category" data-type="text" class="text-body-sm text-body-strong"></strong>
+      </div>
+      <div data-name="specs" data-type="list" class="detail-specs">
+        <div data-name="spec" data-type="group" class="detail-spec-row flex justify-between">
+          <span data-name="name" data-type="text" class="text-body-sm text-muted"></span>
+          <span data-name="value" data-type="text" class="text-body-sm text-body-strong"></span>
+        </div>
+      </div>
+      <div data-name="tags" data-type="list" class="dg-card-tags flex gap-xs flex-wrap mt-sm">
+        <span data-name="tag" data-type="text" class="badge badge-outline"></span>
+      </div>
+    </div>
+  </div>
+</section>
