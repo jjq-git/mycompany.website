@@ -22,6 +22,24 @@ VOID_TAGS = {
     'link', 'meta', 'param', 'source', 'track', 'wbr',
 }
 
+# SVG 标签集合（含大小写变体，因 HTMLParser 会转小写）：序列化时用于判断是否在
+# SVG 上下文内，从而恢复 viewBox 等区分大小写的 camelCase 属性名。
+_SVG_TAGS = {
+    'svg', 'g', 'path', 'polyline', 'polygon', 'circle', 'ellipse', 'rect',
+    'line', 'text', 'tspan', 'defs', 'clippath', 'lineargradient',
+    'radialgradient', 'stop', 'use', 'image', 'pattern', 'mask',
+    'filter', 'fegaussianblur', 'animate', 'animatetransform', 'set',
+    'symbol', 'marker', 'foreignobject',
+}
+
+# SVG 属性名：HTMLParser 统一转小写后需恢复 camelCase 的映射。
+# 只有内联 SVG 中明确区分大小写的属性才需要此映射；以短横线分隔的属性（如
+# stroke-width、stroke-linecap）在 HTML 解析后保持原样，无需修复。
+_SVG_ATTR_CASE = {
+    'viewbox': 'viewBox',
+    'preserveaspectratio': 'preserveAspectRatio',
+}
+
 # 叶子内容类型：值直接存在元素上（innerText 或 src）。
 LEAF_TYPES = {'text', 'textarea', 'richtext', 'image', 'video', 'audio', 'embed', 'icon'}
 # 容器/可重复类型。
@@ -151,10 +169,16 @@ class _DomBuilder(HTMLParser):
         self._append(_Text(f'&#{name};', raw=True))
 
 
-def _serialize_attrs(attrs):
-    """序列化属性。值统一转义（quote=True），无值属性输出裸名（如 hidden）。"""
+def _serialize_attrs(attrs, in_svg=False):
+    """序列化属性。值统一转义（quote=True），无值属性输出裸名（如 hidden）。
+
+    当 in_svg=True 时，将 HTMLParser 转小写后的 SVG camelCase 属性名恢复正确大小写
+    （如 viewbox→viewBox），防止内联 SVG 图标因属性名错误无法渲染。
+    """
     out = ''
     for k, v in attrs.items():
+        if in_svg and k in _SVG_ATTR_CASE:
+            k = _SVG_ATTR_CASE[k]
         if v is None:
             out += f' {k}'
         else:
@@ -162,22 +186,26 @@ def _serialize_attrs(attrs):
     return out
 
 
-def _serialize(node):
+def _serialize(node, in_svg=False):
     """把 _Node 树重新序列化为 HTML 字符串。
 
     - 子节点按 nodes 的原始顺序输出（文本与元素交错不重排）
     - 属性值转义，无值属性保留（hidden）
     - 文本节点：raw（实体/富文本）原样输出，普通文本转义裸 < > &
+    - in_svg 追踪 SVG 上下文：进入 <svg> 标签后其子孙的属性名恢复 camelCase
     """
-    attrs = _serialize_attrs(node.attrs)
-    if node.tag.lower() in VOID_TAGS or node.self_closing:
+    tag = node.tag.lower()
+    is_svg = in_svg or tag in _SVG_TAGS
+
+    attrs = _serialize_attrs(node.attrs, is_svg or tag == 'svg')
+    if tag in VOID_TAGS or node.self_closing:
         return f'<{node.tag}{attrs}>'
     inner = ''
     for child in node.nodes:
         if isinstance(child, _Text):
             inner += child.data if child.raw else escape(child.data, quote=False)
         else:
-            inner += _serialize(child)
+            inner += _serialize(child, is_svg)
     return f'<{node.tag}{attrs}>{inner}</{node.tag}>'
 
 

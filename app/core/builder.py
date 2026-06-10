@@ -611,6 +611,12 @@ def build_template_preview(template_name, base_url=''):
     if tpl_static_dir.exists():
         shutil.copytree(tpl_static_dir, output_root / 'static')
 
+    # 复制种子数据中的上传资源（如 /assets/uploads/xxx.webp），
+    # 否则模板预览页中引用的图片/video 全部 404
+    seed_assets = seed / 'assets'
+    if seed_assets.exists():
+        shutil.copytree(seed_assets, output_root / 'assets', dirs_exist_ok=True)
+
     languages = meta.get('languages', [])
     products_categories = _extract_products_categories(data)
     products_items = _extract_products_items(data)
