@@ -496,7 +496,7 @@ function initDataGridPagers() {
     // 按 items_per_page 限制初始显示数量（独立于分页开关，店主可能只想显示 N 条但不分页）
     var totalPages = Math.ceil(total / perPage);
     cards.forEach(function(card, i) {
-      if (i >= perPage) card.classList.add('dg-card--hidden');
+      if (i >= perPage) card.classList.add('dg-card--page-hidden');
     });
 
     // 不需分页：隐藏分页容器，退出
@@ -550,9 +550,11 @@ function loadMoreDataGrid(btn) {
   var start = currentPage * perPage;
   var end = Math.min(start + perPage, total);
 
-  var cards = list.querySelectorAll('.dg-card');
+  var cards = Array.prototype.slice.call(list.querySelectorAll('.dg-card')).filter(function(card) {
+    return !card.classList.contains('dg-card--filter-hidden');
+  });
   for (var i = start; i < end; i++) {
-    if (cards[i]) cards[i].classList.remove('dg-card--hidden');
+    if (cards[i]) cards[i].classList.remove('dg-card--page-hidden');
   }
 
   // 更新状态
@@ -583,15 +585,17 @@ function goToDataGridPage(btn, page) {
   var configSpan = pager.querySelector('[data-pager-key="items_per_page"]');
   var perPage = configSpan ? parseInt(configSpan.textContent, 10) || 6 : 6;
 
-  var cards = list.querySelectorAll('.dg-card');
+  var cards = Array.prototype.slice.call(list.querySelectorAll('.dg-card')).filter(function(card) {
+    return !card.classList.contains('dg-card--filter-hidden');
+  });
   var start = (page - 1) * perPage;
   var end = start + perPage;
 
   cards.forEach(function(card, i) {
     if (i >= start && i < end) {
-      card.classList.remove('dg-card--hidden');
+      card.classList.remove('dg-card--page-hidden');
     } else {
-      card.classList.add('dg-card--hidden');
+      card.classList.add('dg-card--page-hidden');
     }
   });
 
@@ -602,11 +606,88 @@ function goToDataGridPage(btn, page) {
   btn.classList.add('active');
 }
 
+function readDataGridPagerConfig(pager) {
+  var config = {};
+  pager.querySelectorAll('[data-pager-key]').forEach(function(el) {
+    config[el.getAttribute('data-pager-key')] = (el.textContent || '').trim();
+  });
+  return {
+    perPage: parseInt(config.items_per_page, 10) || 6,
+    showPagination: config.show_pagination !== 'false',
+    paginationStyle: config.pagination_style || 'load_more',
+    pagerAlign: config.pager_align || 'center'
+  };
+}
+
+function resetDataGridPager(pager) {
+  if (!pager) return;
+  var list = pager.parentElement.querySelector('.dg-list');
+  if (!list) return;
+
+  var cfg = readDataGridPagerConfig(pager);
+  var cards = Array.prototype.slice.call(list.querySelectorAll('.dg-card'));
+  var visibleCards = cards.filter(function(card) {
+    return !card.classList.contains('dg-card--filter-hidden');
+  });
+  var total = visibleCards.length;
+  var totalPages = Math.ceil(total / cfg.perPage);
+  var loadMoreBtn = pager.querySelector('.dg-load-more');
+  var pageNumbers = pager.querySelector('.dg-page-numbers');
+
+  cards.forEach(function(card) {
+    card.classList.remove('dg-card--page-hidden');
+  });
+  visibleCards.forEach(function(card, i) {
+    if (i >= cfg.perPage) card.classList.add('dg-card--page-hidden');
+  });
+
+  pager.className = 'dg-pager dg-pager--' + cfg.pagerAlign;
+  pager.style.display = 'none';
+  if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+  if (pageNumbers) {
+    pageNumbers.style.display = 'none';
+    pageNumbers.innerHTML = '';
+  }
+
+  if (!cfg.showPagination || total <= cfg.perPage) return;
+
+  pager.style.display = '';
+  if (cfg.paginationStyle === 'page_numbers') {
+    var html = '';
+    for (var p = 1; p <= totalPages; p++) {
+      html += '<button class="dg-page-btn' + (p === 1 ? ' active' : '') +
+              '" onclick="goToDataGridPage(this, ' + p + ')" data-page="' + p + '">' + p + '</button>';
+    }
+    if (pageNumbers) {
+      pageNumbers.innerHTML = html;
+      pageNumbers.style.display = '';
+    }
+  } else if (loadMoreBtn) {
+    loadMoreBtn.style.display = '';
+    var remaining = total - cfg.perPage;
+    var remainingEl = loadMoreBtn.querySelector('.dg-remaining');
+    if (remainingEl) remainingEl.textContent = '(' + remaining + ')';
+    loadMoreBtn.setAttribute('data-page', '1');
+    loadMoreBtn.setAttribute('data-per-page', cfg.perPage);
+    loadMoreBtn.setAttribute('data-total', total);
+  }
+}
+
+// 筛选面板：扫描卡片 DOM 中 .filter-source-category 和 .filter-source-tags > .dg-card-tag 生成按钮。
+// ⚠ 这些 CSS class 是 JS 与模板之间的隐式契约，模板改名需同步更新此处。
+
 function initFilterableGrids() {
   document.querySelectorAll('.filterable-grid[data-filter-id]').forEach(function(grid) {
     var filterId = grid.getAttribute('data-filter-id');
     var panel = document.querySelector('.dg-filter-panel[data-filter-for="' + filterId + '"]');
     if (!panel) return;
+
+    var showFiltersEl = panel.querySelector('[data-filter-key="show_filters"]');
+    var showFilters = !showFiltersEl || (showFiltersEl.textContent || '').trim() !== 'false';
+    if (!showFilters) {
+      panel.hidden = true;
+      return;
+    }
 
     var cards = Array.prototype.slice.call(grid.querySelectorAll('.dg-card'));
     if (!cards.length) {
@@ -694,13 +775,14 @@ function initFilterableGrids() {
       var shown = 0;
       cards.forEach(function(card) {
         var show = matches(card);
-        card.classList.toggle('dg-card--hidden', !show);
+        card.classList.toggle('dg-card--filter-hidden', !show);
         if (show) shown += 1;
       });
       updateButtons('category');
       updateButtons('tag');
       var empty = document.querySelector('[data-filter-empty="' + filterId + '"]');
       if (empty) empty.hidden = shown !== 0;
+      resetDataGridPager(grid.parentElement.querySelector('.dg-pager'));
     }
 
     var categories = unique(cards.map(function(card) { return cardData(card).category; }));
@@ -714,9 +796,22 @@ function initFilterableGrids() {
   });
 }
 
+// "查看全部"按钮显隐控制：读取 show_view_all 隐藏 span，按值切换按钮可见性
+
+function initViewAllButtons() {
+  document.querySelectorAll('[data-view-key="show_view_all"]').forEach(function(span) {
+    var show = (span.textContent || '').trim() !== 'false';
+    var section = span.closest('.section');
+    if (!section) return;
+    var viewAll = section.querySelector('.dg-view-all');
+    if (viewAll) viewAll.style.display = show ? '' : 'none';
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   initDataGridPagers();
   initFilterableGrids();
+  initViewAllButtons();
 });
 </script>
 

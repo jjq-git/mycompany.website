@@ -286,4 +286,16 @@
   </div>
 </section>
 
+{# ── 店主自定义模块（数据集编辑中为该产品配置的模块） ── #}
+{% set modules = product.modules | default([]) %}
+{% if modules %}
+  {% for module in modules %}
+    {% if module.type != 'item_data' %}
+    <div class="builder-module" data-builder-module-index="{{ loop.index0 }}">
+      {{- render_block(module) }}
+    </div>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
 {% endblock %}

@@ -1,8 +1,13 @@
-# 种子数据: 公司信息与站点设置
 company:
   name: "Nova AI"
   short_name: "Nova"
-  logo: ""
+  logo: "/static/img/logo-nova.svg"
+  icp: ""
+
+company_zh-CN:
+  name: "Nova AI"
+  short_name: "Nova"
+  logo: "/static/img/logo-nova.svg"
   icp: ""
 
 contact:
@@ -10,7 +15,15 @@ contact:
   mobile: ""
   email: "hello@nova-ai.example.com"
   address: "548 Market St, San Francisco, CA 94104"
-  business_hours: "Mon–Fri 9:00–18:00"
+  business_hours: "Mon-Fri 9:00-18:00"
+  weekend: ""
+
+contact_zh-CN:
+  phone: "+1 (415) 555-0172"
+  mobile: ""
+  email: "hello@nova-ai.example.com"
+  address: "548 Market St, San Francisco, CA 94104"
+  business_hours: "周一至周五 9:00-18:00"
   weekend: ""
 
 social:
@@ -19,7 +32,7 @@ social:
   github: "https://github.com/"
   enabled: true
 
-theme: {}  # 使用 meta.yaml default_theme 全部默认值
+theme: {}
 
 menu:
   - {label: Home, type: home}
@@ -31,6 +44,7 @@ menu:
   - {label: Pricing, type: page, target: pricing}
   - {label: About, type: page, target: about}
   - {label: Blog, type: list, target: posts}
+  - {label: Contact, type: page, target: contact}
 
 menu_zh-CN:
   - {label: 首页, type: home}
@@ -42,6 +56,7 @@ menu_zh-CN:
   - {label: 定价, type: page, target: pricing}
   - {label: 关于我们, type: page, target: about}
   - {label: 博客, type: list, target: posts}
+  - {label: 联系我们, type: page, target: contact}
 
 header:
   variant: logo_left_menu_right
@@ -60,17 +75,40 @@ footer:
       links:
         - {label: Claude Opus, url: /products/claude-opus/}
         - {label: Claude Sonnet, url: /products/claude-sonnet/}
-        - {label: Claude Haiku, url: /products/claude-haiku/}
+        - {label: Claude Code, url: /products/claude-code/}
         - {label: Pricing, url: /pricing/}
     - title: Company
       type: menu
       links:
         - {label: About, url: /about/}
         - {label: Blog, url: /posts/}
-        - {label: Careers, url: "#"}
+        - {label: Contact, url: /contact/}
     - title: Resources
       type: menu
       links:
         - {label: Documentation, url: "#"}
         - {label: API Reference, url: "#"}
         - {label: Status, url: "#"}
+
+footer_zh-CN:
+  variant: columns_social
+  columns:
+    - title: 产品
+      type: menu
+      links:
+        - {label: Claude Opus, url: /products/claude-opus/}
+        - {label: Claude Sonnet, url: /products/claude-sonnet/}
+        - {label: Claude Code, url: /products/claude-code/}
+        - {label: 定价, url: /pricing/}
+    - title: 公司
+      type: menu
+      links:
+        - {label: 关于我们, url: /about/}
+        - {label: 博客, url: /posts/}
+        - {label: 联系我们, url: /contact/}
+    - title: 资源
+      type: menu
+      links:
+        - {label: 文档, url: "#"}
+        - {label: API 参考, url: "#"}
+        - {label: 服务状态, url: "#"}

@@ -59,10 +59,6 @@
         </div>
         {% endif %}
 
-        <div class="highlight-actions flex gap-sm">
-          <a href="{{ base_url }}/{{ lang }}/contact/" class="btn btn-primary">{{ t.actions.contactUs | default('Contact Us') }}</a>
-          <a href="{{ base_url }}/{{ lang }}/products/" class="btn btn-secondary">{{ t.actions.viewAll | default('View All') }}</a>
-        </div>
       </div>
     </div>
   </div>
@@ -78,12 +74,16 @@
 </section>
 {% endif %}
 
-<section class="section surface-canvas">
-  <div class="container text-center">
-    <h2 class="text-display-sm text-ink mb-md">Find the right setup.</h2>
-    <p class="text-body-md text-muted mb-lg">Talk with a Specialist about configuration, accessories, and setup support.</p>
-    <a href="{{ base_url }}/{{ lang }}/contact/" class="btn btn-primary btn-lg">{{ t.actions.contactUs | default('Contact Us') }}</a>
-  </div>
-</section>
+{# ── 店主自定义模块（数据集编辑中为该产品配置的模块） ── #}
+{% set modules = product.modules | default([]) %}
+{% if modules %}
+  {% for module in modules %}
+    {% if module.type != 'item_data' %}
+    <div class="builder-module" data-builder-module-index="{{ loop.index0 }}">
+      {{- render_block(module) }}
+    </div>
+    {% endif %}
+  {% endfor %}
+{% endif %}
 
 {% endblock %}

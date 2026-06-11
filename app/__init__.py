@@ -30,22 +30,35 @@ def create_app(config_override=None):
 
     # #8: Session Cookie 加固。HTTPONLY 默认 True(JS 读不到), 这里再补 SAMESITE(浏览器层
     # 防 CSRF 纵深) 和会话有效期; SECURE 在生产强制(只走 HTTPS 传 cookie, 防明文窃取)。
-    # 复用与上面 TEMPLATES_AUTO_RELOAD 相同的 dev 判定: 显式声明开发才放开 SECURE。
+    # 判定逻辑：只有显式设 FLASK_ENV=production 才开 Secure；未设置或设 dev 均关 Secure。
+    # 旧逻辑用 "not FLASK_DEBUG" 反推生产，FLASK_DEBUG 忘了设就锁死所有 HTTP 表单(CSRF 400)。
     from datetime import timedelta
     _is_dev = os.environ.get('FLASK_DEBUG', '').strip() in ('1', 'true', 'True') \
         or os.environ.get('FLASK_ENV', '').strip().lower() in ('development', 'dev')
+    _is_prod = os.environ.get('FLASK_ENV', '').strip().lower() in ('production', 'prod')
     # 直接赋值: Flask Config 默认已含这些键(SAMESITE/SECURE 默认 None/False),
     # setdefault 会被既有 None 挡住不生效, 故强制覆盖。允许 config_override 显式传入时优先。
     app.config['SESSION_COOKIE_HTTPONLY'] = app.config.get('SESSION_COOKIE_HTTPONLY', True)
     if 'SESSION_COOKIE_SAMESITE' not in (config_override or {}):
         app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     if 'SESSION_COOKIE_SECURE' not in (config_override or {}):
-        app.config['SESSION_COOKIE_SECURE'] = not _is_dev
+        # 只对显式声明的生产环境开 Secure；未配置 / dev 模式均走 HTTP cookie
+        app.config['SESSION_COOKIE_SECURE'] = _is_prod and not _is_dev
     if 'PERMANENT_SESSION_LIFETIME' not in (config_override or {}):
         app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 
     db.init_app(app)
     csrf.init_app(app)
+
+    # CSRF 校验失败时重定向回来源页并给出提示，而不是返回空白 400
+    # 常见触发场景：服务器重启导致浏览器 session cookie 与当前 CSRF token 不匹配
+    from flask_wtf.csrf import CSRFError
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        from flask import flash, redirect, request
+        app.logger.warning('CSRF 校验失败: %s (referrer=%s)', e.description, request.referrer)
+        flash('页面已过期，请重新提交。', 'warning')
+        return redirect(request.referrer or request.url)
 
     # 注册路由
     from .core.routes import bp as core_bp

@@ -176,14 +176,18 @@
   <div class="header-inner">
     {# Logo: Anthropic 风格 —— spike-mark SVG + 公司名 #}
     <a href="{{ base_url }}/{{ lang }}/" class="header-logo">
-      {# 简化 spike-mark 星形图标（Claude 风格的 4 辐径向星） #}
-      <svg class="header-logo-mark" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <circle cx="10" cy="10" r="2" fill="currentColor"/>
-        <line x1="10" y1="2" x2="10" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        <line x1="10" y1="13" x2="10" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        <line x1="2" y1="10" x2="7" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        <line x1="13" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
+      {# 如果有自定义 logo 则显示图片；否则用默认 SVG 星形图标作为品牌标记 #}
+      {% if settings.company.logo %}
+        <img src="{{ settings.company.logo }}" alt="{{ t.company }}" class="header-logo-img">
+      {% else %}
+        <svg class="header-logo-mark" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="10" cy="10" r="2" fill="currentColor"/>
+          <line x1="10" y1="2" x2="10" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="10" y1="13" x2="10" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="2" y1="10" x2="7" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="13" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      {% endif %}
       <span class="header-logo-text">{{ t.company }}</span>
     </a>
 
@@ -375,13 +379,17 @@ document.addEventListener('click', function(e) {
       {# 品牌区 #}
       <div class="footer-brand">
         <div class="footer-brand__logo">
-          <svg class="footer-brand__mark" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <circle cx="10" cy="10" r="2" fill="currentColor"/>
-            <line x1="10" y1="2" x2="10" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="10" y1="13" x2="10" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="2" y1="10" x2="7" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="13" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
+          {% if settings.company.logo %}
+            <img src="{{ settings.company.logo }}" alt="{{ t.company }}" class="footer-brand__img">
+          {% else %}
+            <svg class="footer-brand__mark" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <circle cx="10" cy="10" r="2" fill="currentColor"/>
+              <line x1="10" y1="2" x2="10" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="10" y1="13" x2="10" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="2" y1="10" x2="7" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="13" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          {% endif %}
           <span class="footer-brand__name">{{ t.company }}</span>
         </div>
         {% if settings.contact %}
@@ -427,51 +435,7 @@ document.addEventListener('click', function(e) {
 <script>
 function initDataGridPagers() {
   document.querySelectorAll('.dg-pager').forEach(function(pager) {
-    var config = {};
-    pager.querySelectorAll('[data-pager-key]').forEach(function(el) {
-      config[el.getAttribute('data-pager-key')] = (el.textContent || '').trim();
-    });
-
-    var perPage = parseInt(config.items_per_page, 10) || 6;
-    var showPagination = config.show_pagination !== 'false';
-    var paginationStyle = config.pagination_style || 'load_more';
-    var pagerAlign = config.pager_align || 'center';
-
-    var list = pager.parentElement.querySelector('.dg-list');
-    if (!list) return;
-    var cards = list.querySelectorAll('.dg-card');
-    var total = cards.length;
-
-    var totalPages = Math.ceil(total / perPage);
-    cards.forEach(function(card, i) {
-      if (i >= perPage) card.classList.add('dg-card--hidden');
-    });
-
-    if (!showPagination || total <= perPage) return;
-
-    pager.className = 'dg-pager dg-pager--' + pagerAlign;
-    pager.style.display = '';
-
-    var loadMoreBtn = pager.querySelector('.dg-load-more');
-    var pageNumbers = pager.querySelector('.dg-page-numbers');
-
-    if (paginationStyle === 'page_numbers') {
-      var html = '';
-      for (var p = 1; p <= totalPages; p++) {
-        html += '<button class="dg-page-btn' + (p === 1 ? ' active' : '') +
-                '" onclick="goToDataGridPage(this, ' + p + ')" data-page="' + p + '">' + p + '</button>';
-      }
-      pageNumbers.innerHTML = html;
-      pageNumbers.style.display = '';
-    } else {
-      loadMoreBtn.style.display = '';
-      var remaining = total - perPage;
-      var remainingEl = loadMoreBtn.querySelector('.dg-remaining');
-      if (remainingEl) remainingEl.textContent = '(' + remaining + ' items)';
-      loadMoreBtn.setAttribute('data-page', '1');
-      loadMoreBtn.setAttribute('data-per-page', perPage);
-      loadMoreBtn.setAttribute('data-total', total);
-    }
+    resetDataGridPager(pager);
   });
 }
 
@@ -480,18 +444,20 @@ function loadMoreDataGrid(btn) {
   if (!pager) return;
 
   var perPage = parseInt(btn.getAttribute('data-per-page'), 10) || 6;
-  var total = parseInt(btn.getAttribute('data-total'), 10) || 0;
   var currentPage = parseInt(btn.getAttribute('data-page'), 10) || 1;
 
   var list = pager.parentElement.querySelector('.dg-list');
   if (!list) return;
 
+  var cards = Array.prototype.slice.call(list.querySelectorAll('.dg-card')).filter(function(card) {
+    return !card.classList.contains('dg-card--filter-hidden');
+  });
+  var total = cards.length;
   var start = currentPage * perPage;
   var end = Math.min(start + perPage, total);
 
-  var cards = list.querySelectorAll('.dg-card');
   for (var i = start; i < end; i++) {
-    if (cards[i]) cards[i].classList.remove('dg-card--hidden');
+    if (cards[i]) cards[i].classList.remove('dg-card--page-hidden');
   }
 
   var newPage = currentPage + 1;
@@ -516,15 +482,17 @@ function goToDataGridPage(btn, page) {
   var configSpan = pager.querySelector('[data-pager-key="items_per_page"]');
   var perPage = configSpan ? parseInt(configSpan.textContent, 10) || 6 : 6;
 
-  var cards = list.querySelectorAll('.dg-card');
+  var cards = Array.prototype.slice.call(list.querySelectorAll('.dg-card')).filter(function(card) {
+    return !card.classList.contains('dg-card--filter-hidden');
+  });
   var start = (page - 1) * perPage;
   var end = start + perPage;
 
   cards.forEach(function(card, i) {
     if (i >= start && i < end) {
-      card.classList.remove('dg-card--hidden');
+      card.classList.remove('dg-card--page-hidden');
     } else {
-      card.classList.add('dg-card--hidden');
+      card.classList.add('dg-card--page-hidden');
     }
   });
 
@@ -534,7 +502,214 @@ function goToDataGridPage(btn, page) {
   btn.classList.add('active');
 }
 
-document.addEventListener('DOMContentLoaded', initDataGridPagers);
+function readDataGridPagerConfig(pager) {
+  var config = {};
+  pager.querySelectorAll('[data-pager-key]').forEach(function(el) {
+    config[el.getAttribute('data-pager-key')] = (el.textContent || '').trim();
+  });
+  return {
+    perPage: parseInt(config.items_per_page, 10) || 6,
+    showPagination: config.show_pagination !== 'false',
+    paginationStyle: config.pagination_style || 'load_more',
+    pagerAlign: config.pager_align || 'center'
+  };
+}
+
+function resetDataGridPager(pager) {
+  if (!pager) return;
+  var list = pager.parentElement.querySelector('.dg-list');
+  if (!list) return;
+
+  var cfg = readDataGridPagerConfig(pager);
+  var cards = Array.prototype.slice.call(list.querySelectorAll('.dg-card'));
+  var visibleCards = cards.filter(function(card) {
+    return !card.classList.contains('dg-card--filter-hidden');
+  });
+  var total = visibleCards.length;
+  var totalPages = Math.ceil(total / cfg.perPage);
+  var loadMoreBtn = pager.querySelector('.dg-load-more');
+  var pageNumbers = pager.querySelector('.dg-page-numbers');
+
+  cards.forEach(function(card) {
+    card.classList.remove('dg-card--page-hidden');
+    card.classList.remove('dg-card--hidden');
+  });
+  visibleCards.forEach(function(card, i) {
+    if (i >= cfg.perPage) card.classList.add('dg-card--page-hidden');
+  });
+
+  pager.className = 'dg-pager dg-pager--' + cfg.pagerAlign;
+  pager.style.display = 'none';
+  if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+  if (pageNumbers) {
+    pageNumbers.style.display = 'none';
+    pageNumbers.innerHTML = '';
+  }
+
+  if (!cfg.showPagination || total <= cfg.perPage) return;
+
+  pager.style.display = '';
+  if (cfg.paginationStyle === 'page_numbers') {
+    var html = '';
+    for (var p = 1; p <= totalPages; p++) {
+      html += '<button class="dg-page-btn' + (p === 1 ? ' active' : '') +
+              '" onclick="goToDataGridPage(this, ' + p + ')" data-page="' + p + '">' + p + '</button>';
+    }
+    if (pageNumbers) {
+      pageNumbers.innerHTML = html;
+      pageNumbers.style.display = '';
+    }
+  } else if (loadMoreBtn) {
+    loadMoreBtn.style.display = '';
+    var remaining = total - cfg.perPage;
+    var remainingEl = loadMoreBtn.querySelector('.dg-remaining');
+    if (remainingEl) remainingEl.textContent = '(' + remaining + ' items)';
+    loadMoreBtn.setAttribute('data-page', '1');
+    loadMoreBtn.setAttribute('data-per-page', cfg.perPage);
+    loadMoreBtn.setAttribute('data-total', total);
+  }
+}
+
+// 筛选面板：扫描卡片 DOM 中 .filter-source-category 和 .filter-source-tags > .dg-card-tag 生成按钮。
+// ⚠ 这些 CSS class 是 JS 与模板之间的隐式契约，模板改名需同步更新此处。
+
+function initFilterableGrids() {
+  document.querySelectorAll('.filterable-grid[data-filter-id]').forEach(function(grid) {
+    var filterId = grid.getAttribute('data-filter-id');
+    var panel = document.querySelector('.dg-filter-panel[data-filter-for="' + filterId + '"]');
+    if (!panel) return;
+
+    var showFiltersEl = panel.querySelector('[data-filter-key="show_filters"]');
+    var showFilters = !showFiltersEl || (showFiltersEl.textContent || '').trim() !== 'false';
+    if (!showFilters) {
+      panel.hidden = true;
+      return;
+    }
+
+    var cards = Array.prototype.slice.call(grid.querySelectorAll('.dg-card'));
+    if (!cards.length) {
+      panel.hidden = true;
+      return;
+    }
+
+    var state = { category: '', tag: '' };
+    var allLabel = panel.getAttribute('data-all-label') || 'All';
+
+    function textOf(el) {
+      return el ? (el.textContent || '').trim() : '';
+    }
+
+    function cardData(card) {
+      var tags = Array.prototype.slice.call(card.querySelectorAll('.filter-source-tags .dg-card-tag'))
+        .map(textOf)
+        .filter(Boolean);
+      return {
+        category: textOf(card.querySelector('.filter-source-category')),
+        tags: tags
+      };
+    }
+
+    function unique(values) {
+      var seen = {};
+      return values.filter(function(value) {
+        if (!value || seen[value]) return false;
+        seen[value] = true;
+        return true;
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, function(char) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[char];
+      });
+    }
+
+    function matches(card, override) {
+      var data = cardData(card);
+      var category = override && Object.prototype.hasOwnProperty.call(override, 'category') ? override.category : state.category;
+      var tag = override && Object.prototype.hasOwnProperty.call(override, 'tag') ? override.tag : state.tag;
+      return (!category || data.category === category) && (!tag || data.tags.indexOf(tag) !== -1);
+    }
+
+    function renderButtons(groupName, values) {
+      var target = panel.querySelector('[data-filter-group="' + groupName + '"]');
+      if (!target) return;
+      var buttons = [{ value: '', label: allLabel }].concat(values.map(function(value) {
+        return { value: value, label: value };
+      }));
+      target.innerHTML = buttons.map(function(button) {
+        return '<button type="button" class="dg-filter-option" data-filter-value="' +
+          escapeHtml(button.value) + '">' + escapeHtml(button.label) + '</button>';
+      }).join('');
+      target.addEventListener('click', function(event) {
+        var button = event.target.closest('.dg-filter-option');
+        if (!button || button.disabled) return;
+        state[groupName] = button.getAttribute('data-filter-value') || '';
+        apply();
+      });
+    }
+
+    function updateButtons(groupName) {
+      var target = panel.querySelector('[data-filter-group="' + groupName + '"]');
+      if (!target) return;
+      target.querySelectorAll('.dg-filter-option').forEach(function(button) {
+        var value = button.getAttribute('data-filter-value') || '';
+        var override = {};
+        override[groupName] = value;
+        var available = !value || cards.some(function(card) { return matches(card, override); });
+        button.classList.toggle('active', state[groupName] === value);
+        button.disabled = !available;
+      });
+    }
+
+    function apply() {
+      var shown = 0;
+      cards.forEach(function(card) {
+        var show = matches(card);
+        card.classList.toggle('dg-card--filter-hidden', !show);
+        if (show) shown += 1;
+      });
+      updateButtons('category');
+      updateButtons('tag');
+      var empty = document.querySelector('[data-filter-empty="' + filterId + '"]');
+      if (empty) empty.hidden = shown !== 0;
+      resetDataGridPager(grid.parentElement.querySelector('.dg-pager'));
+    }
+
+    var categories = unique(cards.map(function(card) { return cardData(card).category; }));
+    var tags = unique(cards.reduce(function(acc, card) {
+      return acc.concat(cardData(card).tags);
+    }, []));
+
+    renderButtons('category', categories);
+    renderButtons('tag', tags);
+    apply();
+  });
+}
+
+	// "查看全部"按钮显隐控制：读取 show_view_all 隐藏 span，按值切换按钮可见性
+
+function initViewAllButtons() {
+  document.querySelectorAll('[data-view-key="show_view_all"]').forEach(function(span) {
+    var show = (span.textContent || '').trim() !== 'false';
+    var section = span.closest('.section');
+    if (!section) return;
+    var viewAll = section.querySelector('.dg-view-all');
+    if (viewAll) viewAll.style.display = show ? '' : 'none';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initDataGridPagers();
+  initFilterableGrids();
+  initViewAllButtons();
+});
 </script>
 
 </body>

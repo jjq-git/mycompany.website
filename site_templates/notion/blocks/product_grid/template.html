@@ -1,20 +1,23 @@
-<!-- Product Grid — Notion 风格: 3 栏数据集网格 -->
-<section data-name="product_grid" data-type="group" data-hideable data-style="bg-color" class="section surface-canvas">
+<!-- Product Grid（class 同 dengtec） -->
+<section data-name="product_grid" data-type="group" data-hideable class="section">
   <div class="container">
     <div class="section-header">
-      <h2 data-name="title" data-type="text" class="section-header__title"></h2>
-      <p data-name="subtitle" data-type="text" class="section-header__desc"></p>
+      <h2 data-name="title" data-type="text" class="section-title">产品展示</h2>
+      <p data-name="subtitle" data-type="text" class="section-description">内容副标题</p>
     </div>
-    <div data-name="items" data-type="list" data-source="" class="dg-list grid grid--3">
-      <a data-name="item" data-type="group" data-href-template="{base_url}/{lang}/products/{slug}/" class="dg-card card-feature">
+    <div data-name="items" data-type="list" data-source="" data-page-size="" class="dg-list">
+      <a data-name="item" data-type="group" data-href-template="{base_url}/{lang}/products/{slug}/" class="dg-card">
         <div class="dg-card-image">
-          <img data-name="cover" data-fallback="image,photo" data-type="image" src="" alt="" loading="lazy" class="dg-card-img">
+          <img data-name="cover" data-fallback="image,photo" data-type="image" src="" alt="" loading="lazy">
+          <span data-name="category" data-type="text" class="dg-card-category">分类</span>
         </div>
         <div class="dg-card-body">
-          <span data-name="category" data-type="text" class="badge badge-pill dg-card-category"></span>
-          <h3 data-name="title" data-fallback="name" data-type="text" class="text-heading-3 text-ink mb-xs"></h3>
-          <p data-name="summary" data-fallback="excerpt,description" data-type="text" class="text-body-sm text-muted"></p>
-          <div data-name="price" data-type="text" class="text-title text-ink mt-sm"></div>
+          <h3 data-name="title" data-fallback="name" data-type="text" class="dg-card-title">产品名称</h3>
+          <div data-name="price" data-type="text" class="dg-card-price"></div>
+          <p data-name="summary" data-fallback="description" data-type="text" class="dg-card-desc">产品简介</p>
+          <div data-name="tags" data-type="list" class="dg-card-tags">
+            <span data-name="tag" data-type="text" class="dg-card-tag">标签</span>
+          </div>
         </div>
       </a>
     </div>
@@ -23,9 +26,7 @@
       <span data-name="pagination_style" data-type="text" data-pager-key="pagination_style" hidden>load_more</span>
       <span data-name="items_per_page" data-type="text" data-pager-key="items_per_page" hidden>6</span>
       <span data-name="pager_align" data-type="text" data-pager-key="pager_align" hidden>center</span>
-      <button class="btn btn-secondary dg-load-more" style="display:none" onclick="loadMoreDataGrid(this)">
-        <span data-i18n="actions.viewAll">Load More</span> <span class="dg-remaining"></span>
-      </button>
+      <button class="btn btn-outline-primary dg-load-more" style="display:none" onclick="loadMoreDataGrid(this)">加载更多 <span class="dg-remaining"></span></button>
       <div class="dg-page-numbers" style="display:none"></div>
     </div>
   </div>

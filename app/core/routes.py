@@ -672,9 +672,11 @@ def products():
     storage_lang = lang if lang != default_lang else None
     products = datasets.load(site.id, 'products', lang=storage_lang)
     if request.args.get('_fragment'):
+        blocks = _get_available_blocks(site.template_name)
         return render_template('dashboard/panel_data_list.html',
                                user=user, site=site,
                                dataset_key='products', items=products,
+                               blocks=blocks,
                                current_lang=lang, languages=languages, default_lang=default_lang)
     return render_template('dashboard/products.html',
                            user=user, site=site, products=products, active='products')
@@ -742,9 +744,11 @@ def features():
     storage_lang = lang if lang != default_lang else None
     items = datasets.load(site.id, 'features', lang=storage_lang)
     if request.args.get('_fragment'):
+        blocks = _get_available_blocks(site.template_name)
         return render_template('dashboard/panel_data_list.html',
                                user=user, site=site,
                                dataset_key='features', items=items,
+                               blocks=blocks,
                                current_lang=lang, languages=languages, default_lang=default_lang)
     return render_template('dashboard/features.html',
                            user=user, site=site, items=items, active='features')
@@ -796,9 +800,11 @@ def blog():
     storage_lang = lang if lang != default_lang else None
     items = datasets.load(site.id, 'posts', lang=storage_lang)
     if request.args.get('_fragment'):
+        blocks = _get_available_blocks(site.template_name)
         return render_template('dashboard/panel_data_list.html',
                                user=user, site=site,
                                dataset_key='posts', items=items,
+                               blocks=blocks,
                                current_lang=lang, languages=languages, default_lang=default_lang)
     return render_template('dashboard/blog.html',
                            user=user, site=site, items=items, active='blog')
@@ -1836,9 +1842,11 @@ def dataset_panel(dataset_key):
     meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
     raw_menu = menu_lib.upgrade_old_format(menu_items, meta.get('datasets', []))
     preview_path = find_menu_path(raw_menu, dataset_key)
+    blocks = _get_available_blocks(site.template_name)
     return _render('dashboard/panel_data_list.html',
                    user=user, site=site,
                    dataset_key=dataset_key, items=items,
+                   blocks=blocks,
                    edit_prefix=f'_dataset/{dataset_key}',
                    current_lang=lang, languages=languages, default_lang=default_lang,
                    preview_path=preview_path,
@@ -1871,10 +1879,14 @@ def dataset_edit(dataset_key, item_id):
     source_item = datasets.find(site.id, dataset_key, item_id) or item
 
     if request.method == 'POST':
+        # 用旧数据做底，表单字段覆盖，避免种子字段（name/category/cover 等）被静默删除
         fields = {}
+        for key, val in item.items():
+            if key not in ('id', 'slug', 'modules', 'csrf_token'):
+                fields[key] = val
         for key in request.form:
-            # 跳过模块配置字段 (module_N_*)
-            if key.startswith('module_') or key == 'module_count':
+            # 跳过模块配置字段和 CSRF 令牌（不参与数据存储）
+            if key.startswith('module_') or key in ('module_count', 'csrf_token'):
                 continue
             val = request.form.get(key, '').strip()
             if val:
@@ -1899,8 +1911,9 @@ def dataset_edit(dataset_key, item_id):
         # tags: 逗号/空格分隔的字符串 → 列表
         if 'tags' in fields and fields['tags']:
             raw_tags = fields['tags']
-            tags_list = [t.strip() for t in raw_tags.replace(',', ' ').split() if t.strip()]
-            fields['tags'] = tags_list
+            if isinstance(raw_tags, str):
+                tags_list = [t.strip() for t in raw_tags.replace(',', ' ').split() if t.strip()]
+                fields['tags'] = tags_list
         # 处理图片上传
         for field_name in ('cover', 'image', 'photo', 'logo'):
             upload = request.files.get(field_name)
@@ -1910,23 +1923,37 @@ def dataset_edit(dataset_key, item_id):
                 except Exception as exc:
                     current_app.logger.warning('数据集图片上传失败 %s: %s', field_name, exc)
         # 保存模块配置到数据项 (item) 中
+        # module_count 缺失表示表单不包含模块数据（例如用户未展开面板就保存），
+        # 此时保留已有 modules 而非清空
         module_count_str = request.form.get('module_count')
         if module_count_str and module_count_str.isdigit():
             try:
                 existing_modules = item.get('modules', [])
                 modules = _parse_modules_form(request.form, existing_modules)
-                # 保留 item_data 模块用于排序，但清除敏感数据字段
+                # item_data：style 字段提升到 item 顶层；其余数据（images、specs 等）
+                # 保留在模块 data 中，供 render_block 使用
                 for m in modules:
                     if m.get('type') == 'item_data':
+                        keep = {}
                         for key, value in (m.get('data') or {}).items():
                             if key.startswith('style_'):
                                 fields[key] = value
-                        m['data'] = {}  # 清空数据（已在 fields 中保存）
+                            else:
+                                keep[key] = value
+                        # 清理扁平残留键（已被 _parse_modules_form 结构化到
+                        # images / specs 列表中），避免 YAML 冗余污染
+                        for stale_prefix in ('images_', 'specs_'):
+                            for k in list(keep.keys()):
+                                if k.startswith(stale_prefix) and k not in ('images', 'specs'):
+                                    keep.pop(k, None)
+                        m['data'] = keep
                 fields['modules'] = modules
             except Exception as exc:
                 current_app.logger.warning('数据集编辑保存模块配置失败: %s', exc)
-        else:
+        elif module_count_str is not None:
+            # 明确传了 module_count 但非数字 → 清空
             fields['modules'] = []
+        # 否则 module_count 不在表单中 → 保留旧 modules 不动
 
         datasets.update(site.id, dataset_key, item_id, fields, lang=storage_lang)
         flash('已保存')
@@ -2136,7 +2163,7 @@ def _parse_modules_form(form, existing_modules=None):
     data_field_allowed_types = {
         'columns': {'text_content', 'logo_cloud'},
         'max_items': {'data_grid', 'product_grid'},
-        'items_per_page': {'data_grid'},
+        'items_per_page': {'data_grid', 'product_grid'},
     }
 
     # 构建已有模块查找索引：(type, order) → existing_data
@@ -2228,9 +2255,18 @@ def _parse_modules_form(form, existing_modules=None):
                 if lf.type not in ('list', 'grid'):
                     continue
                 list_name = lf.name
+                # 兼容两种表单 key 格式:
+                #   schema 表单 → module_0_images_count（无 _data_）
+                #   admin_modules.js 硬编码 → module_0_data_images_count（有 _data_）
                 count_key = f'{idx}_{list_name}_count'
+                alt_count_key = f'{idx}_data_{list_name}_count'
+                is_alt_fmt = False
                 if count_key not in form:
-                    continue  # 表单未表达该 list（如现有模块的旧式编辑器）
+                    if alt_count_key in form:
+                        count_key = alt_count_key
+                        is_alt_fmt = True
+                    else:
+                        continue  # 表单未表达该 list
                 try:
                     item_n = int(form.get(count_key, '0') or '0')
                 except (ValueError, TypeError):
@@ -2239,7 +2275,7 @@ def _parse_modules_form(form, existing_modules=None):
                 sub_specs = [(c.name, c.type, c.href_field) for c in lf.children]
                 items = []
                 for j in range(item_n):
-                    item_prefix = f'{idx}_{list_name}_{j}_'
+                    item_prefix = f'{idx}_data_{list_name}_{j}_' if is_alt_fmt else f'{idx}_{list_name}_{j}_'
                     entry = {}
                     for sub_name, sub_type, href_field in sub_specs:
                         # 图片/视频字段：优先处理文件上传，否则取 URL 文本值
@@ -2266,8 +2302,9 @@ def _parse_modules_form(form, existing_modules=None):
                                 entry[href_field] = hval
                     if entry:  # 跳过完全空白的条目
                         items.append(entry)
-                data[list_name] = items
-                form_fields_for_module.add(list_name)  # 防止"已有数据保留"覆盖
+                if items:
+                    data[list_name] = items
+                    form_fields_for_module.add(list_name)  # 防止"已有数据保留"覆盖
                 handled_lists.add(list_name)
 
         # 通用 data-* 顶层 image/video 字段：处理文件上传（list 内字段已在上面处理）
@@ -2377,45 +2414,95 @@ def _parse_modules_form(form, existing_modules=None):
                 data['slides'] = existing + uploaded_slides
 
         if m_type == 'item_detail':
-            images_count = 0
-            try:
-                images_count = int(form.get(f'{idx}_data_images_count', '0'))
-            except (ValueError, TypeError):
-                pass
-            images = []
-            for ii in range(images_count):
-                url = form.get(f'{idx}_data_images_{ii}_url', '').strip()
-                upload = request.files.get(f'{idx}_data_images_{ii}_url_file')
-                if upload and upload.filename:
-                    try:
-                        url = _save_uploaded_image(
-                            _current_context()[1].id, upload,
-                            prefix=f'{m_type}-img-{ii + 1}'
-                        )
-                    except Exception as exc:
-                        current_app.logger.warning('模块图片上传失败: %s', exc)
-                if url:
-                    images.append({'url': url})
-            if images:
-                data['images'] = images
-            else:
-                data.pop('images', None)
+            # data-* schema 表单（_schemaListEditor）已走通用 list 解析，
+            # 这里仅作旧 Jinja2 / admin_modules.js 表单的兜底（handled_lists 守卫）。
+            if 'images' not in handled_lists:
+                images_count = 0
+                try:
+                    images_count = int(form.get(f'{idx}_data_images_count', '0'))
+                except (ValueError, TypeError):
+                    pass
+                images = []
+                for ii in range(images_count):
+                    url = form.get(f'{idx}_data_images_{ii}_url', '').strip()
+                    upload = request.files.get(f'{idx}_data_images_{ii}_url_file')
+                    if upload and upload.filename:
+                        try:
+                            url = _save_uploaded_image(
+                                _current_context()[1].id, upload,
+                                prefix=f'{m_type}-img-{ii + 1}'
+                            )
+                        except Exception as exc:
+                            current_app.logger.warning('模块图片上传失败: %s', exc)
+                    if url:
+                        images.append({'url': url})
+                if images:
+                    data['images'] = images
+                else:
+                    data.pop('images', None)
 
-            specs_count = 0
-            try:
-                specs_count = int(form.get(f'{idx}_data_specs_count', '0'))
-            except (ValueError, TypeError):
-                pass
-            specs = []
-            for si in range(specs_count):
-                name = form.get(f'{idx}_data_specs_{si}_name', '').strip()
-                value = form.get(f'{idx}_data_specs_{si}_value', '').strip()
-                if name or value:
-                    specs.append({'name': name, 'value': value})
-            if specs:
-                data['specs'] = specs
-            else:
-                data.pop('specs', None)
+            if 'specs' not in handled_lists:
+                specs_count = 0
+                try:
+                    specs_count = int(form.get(f'{idx}_data_specs_count', '0'))
+                except (ValueError, TypeError):
+                    pass
+                specs = []
+                for si in range(specs_count):
+                    name = form.get(f'{idx}_data_specs_{si}_name', '').strip()
+                    value = form.get(f'{idx}_data_specs_{si}_value', '').strip()
+                    if name or value:
+                        specs.append({'name': name, 'value': value})
+                if specs:
+                    data['specs'] = specs
+                else:
+                    data.pop('specs', None)
+
+        if m_type == 'item_data':
+            # item_data 的 images / specs 表单字段命名与 item_detail 完全一致
+            # （admin_modules.js 硬编码编辑器使用相同前缀 module_X_data_images_Y_url）,
+            # 这里复用相同的解析逻辑，确保不依赖 schema_by_type 的通用解析路径
+            if 'images' not in handled_lists:
+                images_count = 0
+                try:
+                    images_count = int(form.get(f'{idx}_data_images_count', '0'))
+                except (ValueError, TypeError):
+                    pass
+                images = []
+                for ii in range(images_count):
+                    url = form.get(f'{idx}_data_images_{ii}_url', '').strip()
+                    upload = request.files.get(f'{idx}_data_images_{ii}_url_file')
+                    if upload and upload.filename:
+                        try:
+                            url = _save_uploaded_image(
+                                _current_context()[1].id, upload,
+                                prefix=f'{m_type}-img-{ii + 1}'
+                            )
+                        except Exception as exc:
+                            current_app.logger.warning('item_data 图片上传失败: %s', exc)
+                    if url:
+                        images.append({'url': url})
+                if images:
+                    data['images'] = images
+                else:
+                    data.pop('images', None)
+
+            if 'specs' not in handled_lists:
+                specs_count = 0
+                try:
+                    specs_count = int(form.get(f'{idx}_data_specs_count', '0'))
+                except (ValueError, TypeError):
+                    pass
+                specs = []
+                for si in range(specs_count):
+                    name = form.get(f'{idx}_data_specs_{si}_name', '').strip()
+                    value = form.get(f'{idx}_data_specs_{si}_value', '').strip()
+                    if name or value:
+                        specs.append({'name': name, 'value': value})
+                if specs:
+                    data['specs'] = specs
+                else:
+                    data.pop('specs', None)
 
         if m_type == 'feature_grid' and 'features' not in handled_lists:
             feature_count = 0
@@ -2575,6 +2662,10 @@ def _parse_modules_form(form, existing_modules=None):
         if existing_key in existing_by_key and isinstance(existing_by_key[existing_key], dict):
             for ek, ev in existing_by_key[existing_key].items():
                 if ek not in form_fields_for_module and ek not in data:
+                    data[ek] = ev
+                elif ek in form_fields_for_module and ek not in data:
+                    # 表单表达了该字段（如 images_count）但解析后 data 中没有该 key
+                    # （如图片列表为空未设置 data['images']）→ 从旧数据恢复
                     data[ek] = ev
 
         if m_type == 'stat_counter' and data.get('columns') and not data.get('style_cols'):

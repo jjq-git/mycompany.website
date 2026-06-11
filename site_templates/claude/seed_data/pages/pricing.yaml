@@ -1,4 +1,5 @@
-# 定价页 — Claude 风格: 三列定价卡, 中间 featured 暗色
+title: "Pricing"
+description: "Usage-based model pricing and enterprise options for Nova AI."
 modules:
   - type: section_title
     variant: null
@@ -6,26 +7,26 @@ modules:
     data:
       tag: "Pricing"
       title: "Simple, transparent pricing"
-      desc: "No monthly minimums. No hidden fees. Pay only for what you use."
-      btn_text: ""
-      btn_url: ""
+      desc: "Start with usage-based access, then add governance, support, and private deployments when your team needs them."
+      btn_text: "Contact Sales"
+      btn_url: "/contact/"
 
   - type: feature_grid
     variant: null
     order: 2
     data:
-      title: ""
-      subtitle: ""
+      title: "Choose the right model"
+      subtitle: "The seed data mirrors the products dataset so pricing pages and product pages stay aligned."
       features:
         - icon: "zap"
           title: "Opus"
-          desc: "Our most intelligent model. $15 per million input tokens. Built for complex reasoning and high-stakes analysis."
+          desc: "From $15 per million input tokens. Built for complex reasoning and high-stakes analysis."
         - icon: "star"
           title: "Sonnet"
-          desc: "The balanced workhorse. $3 per million input tokens. Excellent quality-to-cost ratio for production workloads."
+          desc: "From $3 per million input tokens. Balanced quality and speed for production workloads."
         - icon: "cpu"
           title: "Haiku"
-          desc: "Lightning fast. $0.25 per million input tokens. Sub-second responses for real-time applications and high-volume processing."
+          desc: "From $0.25 per million input tokens. Fast responses for real-time and high-volume use cases."
 
   - type: highlight_card
     variant: null
@@ -34,14 +35,31 @@ modules:
       image_position: left
       tag: "Enterprise"
       title: "Need a custom plan?"
-      desc: "Volume discounts, dedicated support, SSO, and custom SLAs for teams shipping at scale. Contact our enterprise team for a tailored solution."
-      image: ""
+      desc: "Volume discounts, dedicated support, SSO, custom SLAs, private networking, and advanced governance for teams shipping at scale."
+      image: "/static/img/highlight-enterprise.svg"
       features:
         - text: "Volume-based discounts for high-throughput workloads"
-        - text: "Dedicated support with < 1hr response time"
+        - text: "Dedicated support with priority response targets"
         - text: "Custom data retention and compliance configurations"
       primaryBtn: "Contact Sales"
       primaryLink: "/contact/"
-      secondaryBtn: ""
-      secondaryLink: ""
+      secondaryBtn: "View Products"
+      secondaryLink: "/products/"
       btn_bg: "#cc785c"
+
+  - type: item_data
+    variant: null
+    order: 4
+    data:
+      tag: "Plan Notes"
+      title: "What is included"
+      desc: "Example pricing facts for the template preview."
+      fields:
+        - label: "Billing"
+          value: "Usage based"
+        - label: "Support"
+          value: "Email, priority for enterprise"
+        - label: "Security"
+          value: "SSO and audit logs on enterprise"
+        - label: "Deployment"
+          value: "Cloud, private options available"

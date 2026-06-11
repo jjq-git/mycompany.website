@@ -6,7 +6,9 @@
     <p class="text-muted small mb-1">站点数量：{{ site_count }}</p>
     <p class="text-muted small">当前站点：{{ site.name }} (slug: {{ site.slug }})</p>
     <div class="d-flex gap-2 mt-3">
-      <form method="post" action="{{ url_for('core.logout') }}">
+      {# data-ajax-handled="1" 告诉 rightPanelBody 的全局 submit 拦截器跳过此表单，
+         让退出登录走浏览器原生 POST + 302 重定向，避免被 AJAX 接管后拿不到跳转。 #}
+      <form method="post" action="{{ url_for('core.logout') }}" data-ajax-handled="1">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button class="btn btn-outline-secondary btn-sm" type="submit">退出登录</button>
       </form>

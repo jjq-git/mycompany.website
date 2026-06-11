@@ -5285,7 +5285,9 @@ h6 { font-size: var(--font-size-md); }
   text-decoration: none;
 }
 
-.dg-card--hidden {
+.dg-card--hidden,
+.dg-card--page-hidden,
+.dg-card--filter-hidden {
   display: none;
 }
 
@@ -5821,6 +5823,13 @@ h6 { font-size: var(--font-size-md); }
 .item-data-body {
   line-height: var(--line-height-relaxed);
   font-size: var(--font-size-md, var(--font-size-md));
+  padding-top: var(--spacing-lg);
+  border-top: 2px solid var(--color-border, #e2e8f0);
+}
+
+.item-data-body img {
+  max-width: 100%; 
+  width: 100%;
 }
 
 @media (max-width: 768px) {

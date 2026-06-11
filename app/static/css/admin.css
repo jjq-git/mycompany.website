@@ -2173,3 +2173,35 @@
 .block-palette-card { cursor: pointer; border: 1px solid #dee2e6; border-radius: 8px; transition: all 0.15s ease; }
 .block-palette-card:hover { border-color: var(--bs-primary); background: rgba(var(--bs-primary-rgb), .06); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb), 0.1); }
 .block-palette-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 8px; background: rgba(var(--bs-primary-rgb), 0.06); color: var(--bs-primary); }
+
+/* ---- 富文本编辑器 (RTE) ---- */
+.rte-toolbar { background: #f8f9fa; border: 1px solid #dee2e6; border-bottom: 0; border-radius: 6px 6px 0 0; padding: 4px 6px; }
+.rte-toolbar .btn-light { border: 1px solid transparent; }
+.rte-toolbar .btn-light:hover { border-color: #ced4da; background: #e9ecef; }
+.rte-toolbar .btn-light:active,
+.rte-toolbar .btn-light.active { background: #dee2e6; border-color: #adb5bd; }
+.rte-sep { display: inline-block; width: 1px; height: 22px; background: #dee2e6; margin: 0 3px; vertical-align: middle; }
+.rte-heading-select { font-size: 11px !important; min-width: 60px; height: 28px; }
+.rte-color-picker { vertical-align: middle; cursor: pointer; }
+.rte-color-picker::-webkit-color-swatch-wrapper { padding: 0; }
+.rte-color-picker::-webkit-color-swatch { border: none; border-radius: 2px; }
+/* placeholder */
+.rte-editor[data-placeholder]:empty:before {
+  content: attr(data-placeholder);
+  color: #adb5bd;
+  pointer-events: none;
+}
+/* 与 form-control 衔接：工具栏下方无圆角 */
+.rte-toolbar + .rte-editor { border-top-left-radius: 0; border-top-right-radius: 0; border-top: 0; }
+/* 编辑区内标题/引用/列表样式 */
+.rte-editor h1 { font-size: 1.5rem; margin: 0.5em 0; }
+.rte-editor h2 { font-size: 1.3rem; margin: 0.5em 0; }
+.rte-editor h3 { font-size: 1.1rem; margin: 0.5em 0; }
+.rte-editor h4 { font-size: 1rem; margin: 0.5em 0; }
+.rte-editor blockquote { border-left: 3px solid var(--bs-primary, #0d6efd); padding-left: 12px; margin: 0.5em 0; color: #6c757d; }
+.rte-editor ul, .rte-editor ol { padding-left: 1.5em; }
+.rte-editor a { color: var(--bs-primary, #0d6efd); text-decoration: underline; }
+.rte-editor hr { border: none; border-top: 1px solid #dee2e6; margin: 0.8em 0; }
+.rte-editor img { max-width: 100%; height: auto; border-radius: 6px; margin: 0.5em 0; }
+.rte-url-dialog-title { font-size: 13px; color: #343a40; }
+.rte-url-dialog-input:focus { border-color: var(--bs-primary, #0d6efd); box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15); }

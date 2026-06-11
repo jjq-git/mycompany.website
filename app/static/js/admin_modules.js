@@ -275,7 +275,7 @@
 
     // 动态字段 (根据 meta.yaml fields 生成)
     // 过滤掉由 specialEditor 自行渲染的字段（分页配置、columns 等），避免在通用表单区重复出现
-    var pagerKeys = ['show_pagination', 'pagination_style', 'items_per_page', 'pager_align', 'pager'];
+    var pagerKeys = ['show_pagination', 'pagination_style', 'items_per_page', 'pager_align', 'show_view_all', 'pager'];
     var desktopFields = fields.filter(function(f) {
       return ['columns', 'max_items'].concat(pagerKeys).indexOf(f.key) === -1;
     }).map(function(f) { return renderField('module_' + idx + '_data_', f, d[f.key] || f.default || '', ''); }).join('');
@@ -299,19 +299,78 @@
     if (isDataModule) {
       var item = (window._moduleCtx && window._moduleCtx.editItem) || mdata || {};
       var tagsVal = (item.tags && Array.isArray(item.tags)) ? item.tags.join(', ') : (item.tags || '');
+      /* 封面图：取 item 顶层字段，与列表页缩略图一致（cover / image / photo 依次回退） */
+      var coverVal = item.cover || item.image || item.photo || '';
       styleEditor = schemaStyleForm('module_' + idx + '_data_', meta.schema || {}, item);
       specialEditor =
-        '<div class="small fw-semibold mb-1 text-muted">内容字段</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">基础字段</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm font-monospace" name="slug" value="' + esc(item.slug || '') + '" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="如 my-post"><div class="form-text">英文+数字+连字符，唯一标识</div></div>' +
+        /* ── 封面图：位于日期上方，只显示在数据集列表缩略图，不在详情页展示 ── */
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">封面图</label>' +
+        '<input type="text" class="form-control form-control-sm" name="cover" value="' + esc(coverVal) + '" placeholder="图片 URL 或上传">' +
+        '<input type="file" class="form-control form-control-sm mt-1" name="cover" accept="image/*">' +
+        (coverVal ? '<img src="' + esc(coverVal) + '" alt="预览" style="margin-top:6px;max-width:200px;max-height:120px;border-radius:6px;">' : '') +
+        '<div class="form-text">仅显示在数据集列表中作为封面缩略图，不在详情页展示</div></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">日期</label><input type="date" class="form-control form-control-sm" name="date" value="' + esc(item.date || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="title" value="' + esc(item.title || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">简述</label><textarea class="form-control form-control-sm" name="description" rows="2">' + esc(item.description || item.excerpt || item.summary || '') + '</textarea></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">预览图</label><input type="text" class="form-control form-control-sm" name="image" value="' + esc(item.image || item.cover || item.photo || '') + '" placeholder="图片 URL 或上传"><input type="file" class="form-control form-control-sm mt-1" name="image" accept="image/*"><div class="form-text">可粘贴 URL 或上传图片（自动转 WebP）</div></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签</label><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="多个用逗号或空格分隔"><div class="form-text">如：LED, 展示道具, 近期项目</div></div>' +
         '<hr class="my-2">' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">详细介绍</label><textarea class="form-control form-control-sm" name="body" rows="10" style="min-height:200px;font-family:monospace;white-space:pre-wrap;" placeholder="支持 Markdown 格式">' + esc(item.body || item.content || '') + '</textarea></div>';
+        /* ── 富文本编辑器（详细介绍） ── */
+        '<div class="mb-2 rte-wrapper"><label class="form-label small mb-1 text-muted">详细介绍</label>' +
+        '<div class="rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">' +
+          /* 格式按钮 */
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="bold" title="加粗"><b>B</b></button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="italic" title="斜体"><i>I</i></button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="underline" title="下划线"><u>U</u></button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="strikeThrough" title="删除线"><s>S</s></button>' +
+          '<span class="rte-sep"></span>' +
+          /* 标题下拉 */
+          '<select class="form-select form-select-sm rte-heading-select" style="width:auto;font-size:12px">' +
+            '<option value="">正文</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option>' +
+          '</select>' +
+          '<span class="rte-sep"></span>' +
+          /* 列表 */
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertUnorderedList" title="无序列表">•≡</button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertOrderedList" title="有序列表">1≡</button>' +
+          '<span class="rte-sep"></span>' +
+          /* 块级 */
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="formatBlock" data-arg="blockquote" title="引用块">❝</button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertHorizontalRule" title="分割线">—</button>' +
+          '<span class="rte-sep"></span>' +
+          /* 链接 */
+          '<button type="button" class="btn btn-sm btn-light rte-btn rte-link-btn" title="插入/编辑链接">🔗</button>' +
+          /* 图片 */
+          '<button type="button" class="btn btn-sm btn-light rte-btn rte-image-btn" title="插入图片">🖼️</button>' +
+          /* 文字颜色 */
+          '<input type="color" class="rte-color-picker" title="文字颜色" value="#141413" style="width:28px;height:28px;border:1px solid #dee2e6;border-radius:4px;padding:2px;cursor:pointer">' +
+          '<span class="rte-sep"></span>' +
+          /* 清除格式 */
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="removeFormat" title="清除格式">✕</button>' +
+          /* 撤销/重做 */
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="undo" title="撤销">↩</button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="redo" title="重做">↪</button>' +
+        '</div>' +
+        /* URL 弹出框（链接 / 图片共用，剧中遮罩） */
+        '<div class="rte-url-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.35);align-items:center;justify-content:center">' +
+          '<div class="rte-url-dialog" style="background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);padding:20px;width:420px;max-width:90vw">' +
+            '<div class="rte-url-dialog-title small fw-semibold mb-3" style="font-size:13px;color:#343a40"></div>' +
+            '<input type="text" class="form-control form-control-sm rte-url-dialog-input" placeholder="https://">' +
+            '<div class="d-flex gap-2 mt-3 justify-content-end">' +
+              '<button type="button" class="btn btn-sm btn-outline-secondary rte-url-dialog-cancel">取消</button>' +
+              '<button type="button" class="btn btn-sm btn-primary rte-url-dialog-confirm">确定</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div contenteditable="true" class="form-control form-control-sm rte-editor" ' +
+          'style="min-height:180px;max-height:450px;overflow-y:auto;line-height:1.7;font-size:13px;outline:none" ' +
+          'data-placeholder="在此输入详细介绍…">' + (item.body || item.content || '') + '</div>' +
+        '<textarea name="body" hidden>' + esc(item.body || item.content || '') + '</textarea>' +
+        '<input type="hidden" name="rte_clicked_editor_idx" value="">' +
+        '<div class="form-text">支持加粗、斜体、标题、列表、引用、分割线、链接、图片、文字颜色</div></div>' +
+        '<hr class="my-2">';
       // 动态剩余字段
-      var skipKeys = ['id','slug','date','title','description','excerpt','summary','cover','image','photo','logo','tags','body','content','modules','section_bg','inner_width','title_color','title_size','desc_color','desc_size','tag_color','tag_size','tag_bg','tag_radius','style_bg-color'];
+      var skipKeys = ['id','slug','date','title','description','excerpt','summary','cover','image','photo','logo','tags','body','content','modules','csrf_token','name','category','price','specs','section_bg','inner_width','style_bg-color'];
       Object.keys(item).forEach(function(k) {
         if (skipKeys.indexOf(k) >= 0 || /^module_/.test(k)) return;
         var v = item[k];
@@ -464,7 +523,7 @@
         '<div class="form-check form-switch mb-3">' +
           '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_pagination"' +
           (d.show_pagination !== 'false' ? ' checked' : '') +
-          ' onchange="this.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
+          ' onchange="this.nextElementSibling.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
           '<label class="form-check-label small" for="module_' + idx + '_show_pagination">显示分页</label>' +
           '<input type="hidden" name="module_' + idx + '_data_show_pagination" value="' + (d.show_pagination !== 'false' ? 'true' : 'false') + '">' +
         '</div>' +
@@ -511,10 +570,47 @@
     /* ====== product_grid ====== */
     } else if (type === 'product_grid') {
       specialEditor =
+        '<div class="small fw-semibold mb-1 text-muted">数据</div>' +
         '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">最大显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_data_max_items" value="' + esc(d.max_items || '6') + '"></div>' +
         '</div>' +
         '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
+        '<div class="form-check form-switch mb-3">' +
+          '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_pagination"' +
+          (d.show_pagination !== 'false' ? ' checked' : '') +
+          ' onchange="this.nextElementSibling.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
+          '<label class="form-check-label small" for="module_' + idx + '_show_pagination">显示分页</label>' +
+          '<input type="hidden" name="module_' + idx + '_data_show_pagination" value="' + (d.show_pagination !== 'false' ? 'true' : 'false') + '">' +
+        '</div>' +
+        '<div class="mb-2">' +
+          '<label class="form-label small mb-1 text-muted">分页样式</label>' +
+          '<select class="form-select form-select-sm" name="module_' + idx + '_data_pagination_style">' +
+            '<option value="load_more"' + (d.pagination_style !== 'page_numbers' ? ' selected' : '') + '>加载更多</option>' +
+            '<option value="page_numbers"' + (d.pagination_style === 'page_numbers' ? ' selected' : '') + '>页码导航</option>' +
+          '</select></div>' +
+        '<div class="mb-2">' +
+          '<label class="form-label small mb-1 text-muted">每页显示数量</label>' +
+          '<select class="form-select form-select-sm" name="module_' + idx + '_data_items_per_page">' +
+            ['3','4','6','8','10','12','18','24'].map(function(n) { return '<option value="' + n + '"' + ((d.items_per_page || '6') === n ? ' selected' : '') + '>' + n + ' 条/页</option>'; }).join('') +
+          '</select></div>' +
+        '<div class="mb-2">' +
+          '<label class="form-label small mb-1 text-muted">分页对齐</label>' +
+          '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align">' +
+            '<option value="center"' + (d.pager_align === 'center' || !d.pager_align ? ' selected' : '') + '>居中</option>' +
+            '<option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option>' +
+            '<option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option>' +
+          '</select></div>' +
+        // Row 5: 显示"查看全部"按钮 — toggle 开关
+        '<div class="form-check form-switch mb-2">' +
+          '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_view_all"' +
+          (d.show_view_all !== 'false' ? ' checked' : '') +
+          ' onchange="this.nextElementSibling.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
+          '<label class="form-check-label small" for="module_' + idx + '_show_view_all">显示"查看全部"按钮</label>' +
+          '<input type="hidden" name="module_' + idx + '_data_show_view_all" value="' + (d.show_view_all !== 'false' ? 'true' : 'false') + '">' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>';
       styleEditor =
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
@@ -1215,5 +1311,194 @@
   /* ====== 对外暴露 ====== */
   window._buildModuleHTML = buildModuleHTML;
   window._toggleModuleAccordion = toggleModuleAccordion;
+
+  /* ====== 富文本编辑器 (RTE) ======
+   * 核心策略：
+   *   1. 委托 mousedown 在 .rte-toolbar 上 preventDefault，阻止按钮点击导致编辑器失焦
+   *   2. 委托 click 执行 execCommand，通过 _lastRteEditor 找到对应的编辑器
+   *   3. 颜色选择器和标题下拉用 change/input 事件
+   */
+  var _lastRteEditor = null;
+
+  document.addEventListener('focusin', function(e) {
+    var rte = e.target.closest('.rte-editor');
+    if (rte) _lastRteEditor = rte;
+  });
+
+  // ── 工具栏 mousedown：阻止按钮偷走焦点 ──
+  document.addEventListener('mousedown', function(e) {
+    if (e.target.closest('.rte-toolbar')) {
+      e.preventDefault();
+    }
+  });
+
+  // ── 工具栏 click：执行命令 ──
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.rte-btn');
+    if (!btn) return;
+    var rte = btn.closest('.rte-wrapper').querySelector('.rte-editor');
+    if (!rte) rte = _lastRteEditor;
+    if (!rte) return;
+
+    // 先用 preventDefault 过的 mousedown 保住了光标在此处
+    var cmd = btn.dataset.cmd;
+    var arg = btn.dataset.arg || null;
+
+    if (btn.classList.contains('rte-link-btn')) {
+      openRtePopover(rte, 'link');
+    } else if (btn.classList.contains('rte-image-btn')) {
+      openRtePopover(rte, 'image');
+    } else {
+      rte.focus();
+      document.execCommand(cmd, false, arg);
+      syncRteBody(rte);
+    }
+  });
+
+  // ── 标题下拉 ──
+  document.addEventListener('change', function(e) {
+    if (!e.target.classList.contains('rte-heading-select')) return;
+    var rte = e.target.closest('.rte-wrapper').querySelector('.rte-editor');
+    if (!rte) rte = _lastRteEditor;
+    if (!rte) return;
+    rte.focus();
+    var tag = e.target.value;
+    document.execCommand('formatBlock', false, tag ? '<' + tag + '>' : '<p>');
+    syncRteBody(rte);
+  });
+
+  // ── 颜色选择器 ──
+  document.addEventListener('input', function(e) {
+    if (!e.target.classList.contains('rte-color-picker')) return;
+    var rte = e.target.closest('.rte-wrapper').querySelector('.rte-editor');
+    if (!rte) rte = _lastRteEditor;
+    if (!rte) return;
+    rte.focus();
+    document.execCommand('foreColor', false, e.target.value);
+    syncRteBody(rte);
+  });
+
+  // ── 编辑器内容变更 → 同步 textarea ──
+  document.addEventListener('input', function(e) {
+    var rte = e.target.closest('.rte-editor');
+    if (rte) syncRteBody(rte);
+  });
+
+  // ── 粘贴清理格式 ──
+  document.addEventListener('paste', function(e) {
+    var rte = e.target.closest('.rte-editor');
+    if (!rte) return;
+    e.preventDefault();
+    var text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    var html = text.split(/\n\n+/).map(function(p) {
+      return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
+    }).join('');
+    document.execCommand('insertHTML', false, html);
+    syncRteBody(rte);
+  });
+
+  /* ── URL 对话框（链接 / 图片共用，页面居中遮罩） ── */
+  var _rteDialogState = { rte: null, mode: '', existingLink: null };
+
+  function openRtePopover(rte, mode) {
+    var wrapper = rte.closest('.rte-wrapper');
+    var overlay = wrapper ? wrapper.querySelector('.rte-url-overlay') : null;
+    if (!overlay) return;
+
+    var titleEl   = overlay.querySelector('.rte-url-dialog-title');
+    var inputEl   = overlay.querySelector('.rte-url-dialog-input');
+    var confirmEl = overlay.querySelector('.rte-url-dialog-confirm');
+
+    var existing = null;
+    var currentUrl = '';
+    if (mode === 'link') {
+      var sel = window.getSelection();
+      if (sel.rangeCount) {
+        var node = sel.getRangeAt(0).commonAncestorContainer;
+        existing = node.closest ? node.closest('a') : (node.parentElement ? node.parentElement.closest('a') : null);
+      }
+      currentUrl = existing ? (existing.getAttribute('href') || '') : '';
+    }
+
+    _rteDialogState = { rte: rte, mode: mode, existingLink: existing };
+
+    titleEl.textContent = mode === 'link'
+      ? (existing ? '编辑链接' : '插入链接')
+      : '插入图片';
+    inputEl.value = currentUrl;
+    inputEl.placeholder = mode === 'link' ? 'https://example.com' : 'https://example.com/pic.webp';
+    confirmEl.textContent = mode === 'link' && existing ? '更新' : '确定';
+    overlay.style.display = 'flex';
+    setTimeout(function(){ inputEl.focus(); inputEl.select(); }, 50);
+  }
+
+  // 确定（加锁防重复触发）
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.rte-url-dialog-confirm')) return;
+    var overlay = e.target.closest('.rte-url-overlay');
+    if (!overlay || overlay.style.display === 'none') return;
+    var state = _rteDialogState;
+    if (!state.rte) return;
+    var url = overlay.querySelector('.rte-url-dialog-input').value.trim();
+    var rte = state.rte;
+    // 先消费 state + 隐藏 overlay，再操作 DOM，防止任何重入
+    _rteDialogState = { rte: null, mode: '', existingLink: null };
+    overlay.style.display = 'none';
+
+    rte.focus();
+
+    if (state.mode === 'link') {
+      if (state.existingLink) {
+        if (url) {
+          state.existingLink.setAttribute('href', url);
+          state.existingLink.setAttribute('target', '_blank');
+          state.existingLink.setAttribute('rel', 'noopener');
+        } else {
+          var txt = document.createTextNode(state.existingLink.textContent);
+          state.existingLink.parentNode.replaceChild(txt, state.existingLink);
+        }
+      } else if (url) {
+        document.execCommand('createLink', false, url);
+      }
+    } else if (state.mode === 'image' && url) {
+      // execCommand('insertImage') 行为不可靠（选区/浏览器差异导致重复插入）。
+      // 改用 insertHTML 注入 <img> 标签，一次精确插入。
+      var imgHtml = '<img src="' + url.replace(/"/g, '&quot;') + '" style="max-width:100%;border-radius:6px">';
+      document.execCommand('insertHTML', false, imgHtml);
+    }
+    syncRteBody(rte);
+  });
+
+  // 取消 / 点击遮罩关闭
+  // 用 closest 匹配取消按钮（可能被点击的是按钮内的文本节点）
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.rte-url-dialog-cancel')) {
+      var overlay = e.target.closest('.rte-url-overlay');
+      if (overlay) overlay.style.display = 'none';
+      _rteDialogState = { rte: null, mode: '', existingLink: null };
+      return;
+    }
+    // 点击 overlay 自身（遮罩空白处）关闭
+    if (e.target.classList.contains('rte-url-overlay')) {
+      e.target.style.display = 'none';
+      _rteDialogState = { rte: null, mode: '', existingLink: null };
+    }
+  });
+
+  // Enter 确认
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    var input = e.target.closest('.rte-url-dialog-input');
+    if (!input) return;
+    e.preventDefault();
+    var overlay = input.closest('.rte-url-overlay');
+    var confirm = overlay ? overlay.querySelector('.rte-url-dialog-confirm') : null;
+    if (confirm) confirm.click();
+  });
+
+  function syncRteBody(rte) {
+    var ta = rte.parentElement.querySelector('textarea[name="body"]');
+    if (ta) ta.value = rte.innerHTML;
+  }
 
 })();

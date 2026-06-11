@@ -4,7 +4,8 @@
       <h2 data-name="title" data-type="text" class="section-title">产品展示</h2>
     </div>
 
-    <div class="dg-filter-panel" data-filter-for="products">
+    <div data-name="filters" data-type="group" class="dg-filter-panel" data-filter-for="products">
+      <span data-name="show_filters" data-type="text" data-filter-key="show_filters" hidden>true</span>
       <div class="dg-filter-group">
         <span class="dg-filter-label">Category</span>
         <div class="dg-filter-options" data-filter-group="category"></div>
@@ -15,16 +16,18 @@
       </div>
     </div>
 
-    <div data-name="items" data-type="list" data-source="products" data-page-size="12" class="dg-list filterable-grid" data-filter-id="products">
+    <div data-name="items" data-type="list" data-source="products" class="dg-list filterable-grid" data-filter-id="products">
       <a data-name="item" data-type="group" data-href-template="{base_url}/{lang}/products/{slug}/" class="dg-card">
         <div class="dg-card-image">
           <img data-name="cover" data-fallback="image" data-type="image" src="" alt="" loading="lazy">
+          <!-- ⚠ JS数据源：initFilterableGrids() 扫描 .filter-source-category 生成筛选按钮，改名需同步更新 _base.html -->
           <span data-name="category" data-type="text" class="dg-card-category filter-source-category">分类</span>
         </div>
         <div class="dg-card-body">
           <h3 data-name="name" data-fallback="title" data-type="text" class="dg-card-title">产品名称</h3>
           <div data-name="price" data-type="text" class="dg-card-price"></div>
           <p data-name="summary" data-fallback="description" data-type="text" class="dg-card-desc">产品简介</p>
+          <!-- ⚠ JS数据源：initFilterableGrids() 扫描 .filter-source-tags > .dg-card-tag 生成筛选按钮 -->
           <div data-name="tags" data-type="list" class="dg-card-tags filter-source-tags">
             <span data-name="tag" data-type="text" class="dg-card-tag">标签</span>
           </div>
@@ -34,7 +37,17 @@
 
     <p class="dg-empty-state" data-filter-empty="products" hidden>No matching products.</p>
 
-    <div class="text-center" style="margin-top: 2rem;">
+    <div data-name="pager" data-type="group" class="dg-pager" style="display:none">
+      <span data-name="show_pagination" data-type="text" data-pager-key="show_pagination" hidden>true</span>
+      <span data-name="pagination_style" data-type="text" data-pager-key="pagination_style" hidden>load_more</span>
+      <span data-name="items_per_page" data-type="text" data-pager-key="items_per_page" hidden>6</span>
+      <span data-name="pager_align" data-type="text" data-pager-key="pager_align" hidden>center</span>
+      <button class="btn btn-outline-primary dg-load-more" style="display:none" onclick="loadMoreDataGrid(this)">加载更多 <span class="dg-remaining"></span></button>
+      <div class="dg-page-numbers" style="display:none"></div>
+    </div>
+
+    <span data-name="show_view_all" data-type="text" data-view-key="show_view_all" hidden>true</span>
+    <div class="text-center dg-view-all" style="margin-top: 2rem;">
       <a data-href-template="{base_url}/{lang}/products/" class="btn btn-primary">查看全部</a>
     </div>
   </div>

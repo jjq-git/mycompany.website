@@ -1,43 +1,44 @@
-<!-- Hero Banner — Claude 风格: 6/6 分栏, 衬线标题, 奶油画布 -->
-<section data-name="hero_banner" data-style="dir" data-type="group" data-hideable class="section hero-claude">
-  <div class="container">
-    <div data-name="slides" data-type="list" class="hero-claude-slides">
-      <div data-name="slide" data-type="group" class="hero-claude-slide">
-        <div class="hero-claude-grid">
-          <div class="hero-claude-illustration">
-            <img data-name="media" data-type="image" src="" alt="" loading="eager" class="hero-claude-image">
-          </div>
-          <div class="hero-claude-content">
-            <h1 data-name="title" data-type="text" class="hero-claude-title text-display-xl"></h1>
-            <p data-name="subtitle" data-type="text" class="hero-claude-subtitle text-body-md"></p>
-            <div class="hero-claude-actions">
-              <a data-name="primaryBtn" data-type="text" data-href="primaryBtnLink" class="btn btn-primary btn-lg"></a>
-              <a data-name="secondaryBtn" data-type="text" data-href="secondaryBtnLink" class="btn btn-secondary btn-lg"></a>
-            </div>
+<!-- Hero Banner - 全屏轮播（结构对齐 dengtec） -->
+<section data-name="hero_banner" data-type="group" data-hideable class="section hero-banner">
+  <div class="container" style="height:100%;max-width:none">
+    <div data-name="slides" data-type="list" class="hero-banner-slides">
+      <div data-name="slide" data-type="group" class="hero-banner-slide">
+        <div class="hero-banner-media">
+          <img data-name="image" data-type="image" src="" alt="" loading="lazy" class="hero-banner-image">
+          <video data-name="video" data-type="video" src="" autoplay muted loop playsinline preload="none" class="hero-banner-video"></video>
+        </div>
+        <div class="hero-banner-overlay"></div>
+        <div class="hero-banner-content">
+          <h1 data-name="title" data-type="text" class="hero-banner-title"></h1>
+          <p data-name="subtitle" data-type="text" class="hero-banner-subtitle"></p>
+          <div class="hero-banner-actions">
+            <a data-name="primaryBtn" data-type="text" data-href="primaryLink" class="btn btn-primary btn-lg"></a>
+            <a data-name="secondaryBtn" data-type="text" data-href="secondaryLink" class="btn btn-secondary btn-lg"></a>
           </div>
         </div>
       </div>
     </div>
-    <div class="hero-claude-dots"></div>
-    <button class="hero-claude-nav hero-claude-nav-prev btn-icon-circular" aria-label="Previous">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-    </button>
-    <button class="hero-claude-nav hero-claude-nav-next btn-icon-circular" aria-label="Next">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-    </button>
   </div>
+  <div class="hero-banner-dots"></div>
+  <button class="hero-banner-nav hero-banner-nav-prev" aria-label="Previous">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <button class="hero-banner-nav hero-banner-nav-next" aria-label="Next">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
   <script>
     (function() {
       var section = document.currentScript.parentElement;
-      var slides = section.querySelectorAll('.hero-claude-slide');
-      var dotsContainer = section.querySelector('.hero-claude-dots');
-      var prevBtn = section.querySelector('.hero-claude-nav-prev');
-      var nextBtn = section.querySelector('.hero-claude-nav-next');
-      var current = 0, total = slides.length;
+      var slides = section.querySelectorAll('.hero-banner-slide');
+      var dotsContainer = section.querySelector('.hero-banner-dots');
+      var prevBtn = section.querySelector('.hero-banner-nav-prev');
+      var nextBtn = section.querySelector('.hero-banner-nav-next');
+      var current = 0;
+      var total = slides.length;
       if (!total) return;
       for (var i = 0; i < total; i++) {
         var dot = document.createElement('button');
-        dot.className = 'hero-claude-dot';
+        dot.className = 'hero-banner-dot';
         dot.setAttribute('data-slide', i);
         dot.setAttribute('aria-label', 'Slide ' + (i + 1));
         dotsContainer.appendChild(dot);
@@ -45,7 +46,8 @@
       if (total === 1) { slides[0].classList.add('active'); return; }
       function showSlide(index) {
         slides.forEach(function(s, i) { s.classList.toggle('active', i === index); });
-        dotsContainer.querySelectorAll('.hero-claude-dot').forEach(function(d, i) { d.classList.toggle('active', i === index); });
+        var dots = dotsContainer.querySelectorAll('.hero-banner-dot');
+        dots.forEach(function(d, i) { d.classList.toggle('active', i === index); });
         current = index;
       }
       showSlide(0);
@@ -53,7 +55,7 @@
       function prev() { showSlide((current - 1 + total) % total); }
       if (prevBtn) prevBtn.addEventListener('click', prev);
       if (nextBtn) nextBtn.addEventListener('click', next);
-      dotsContainer.querySelectorAll('.hero-claude-dot').forEach(function(dot) {
+      dotsContainer.querySelectorAll('.hero-banner-dot').forEach(function(dot) {
         dot.addEventListener('click', function() { showSlide(parseInt(dot.getAttribute('data-slide'))); });
       });
       setInterval(next, 8000);

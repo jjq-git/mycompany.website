@@ -86,7 +86,15 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
         if enable_data_attr and schema is not None:
             data_dict = module.get('data') if isinstance(module.get('data'), dict) else {}
             if block_type == 'item_data':
+                # 数据集详情页的上下文变量名因数据集而异（product / post / feature / item 等），
+                # 优先取 item，找不到再依次尝试 product / post / feature 等常见命名
                 item_data = jinja_ctx.get('item')
+                if not isinstance(item_data, dict):
+                    for _var in ('product', 'post', 'feature', 'portfolio'):
+                        _candidate = jinja_ctx.get(_var)
+                        if isinstance(_candidate, dict):
+                            item_data = _candidate
+                            break
                 if isinstance(item_data, dict):
                     merged_item = dict(item_data)
                     tags = merged_item.get('tags')
@@ -94,7 +102,10 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
                         merged_item['tags'] = [t.strip() for t in tags.split(',') if t.strip()]
                     if merged_item.get('section_bg') and not merged_item.get('style_bg-color'):
                         merged_item['style_bg-color'] = merged_item.get('section_bg')
-                    merged_item.update(data_dict)
+                    # 模块 data 覆盖产品字段，但空值不覆盖已有字段
+                    for k, v in data_dict.items():
+                        if v not in (None, '', [], {}):
+                            merged_item[k] = v
                     data_dict = merged_item
             context = {
                 'all_datasets': jinja_ctx.get('all_datasets', {}),

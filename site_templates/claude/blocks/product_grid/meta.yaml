@@ -1,63 +1,132 @@
-name: 产品网格
+name: Product Grid
 category: data
 icon: product_grid.svg
-description: 从产品数据集自动拉取产品卡片展示
+description: Render product cards from the products dataset, with price, linked filters, and pagination.
 fields:
   - key: dataset
-    label: 数据来源
+    label: Data Source
     type: select
-    group: 数据
+    group: Data
+    default: products
     options:
       - value: products
-        label: 产品
+        label: Products
   - key: max_items
-    label: 最大显示数量
+    label: Maximum Items
     type: number
-    group: 数据
-    default: 6
+    group: Data
+    default: 12
+  - key: show_filters
+    label: Show Filters
+    type: select
+    group: Filters
+    default: "true"
+    options:
+      - value: "true"
+        label: Show
+      - value: "false"
+        label: Hide
+  - key: show_pagination
+    label: Show Pagination
+    type: select
+    group: Pagination
+    default: "true"
+    options:
+      - value: "true"
+        label: Show
+      - value: "false"
+        label: Hide
+  - key: pagination_style
+    label: Pagination Style
+    type: select
+    group: Pagination
+    default: "load_more"
+    options:
+      - value: "load_more"
+        label: Load More
+      - value: "page_numbers"
+        label: Page Numbers
+  - key: items_per_page
+    label: Items Per Page
+    type: select
+    group: Pagination
+    default: "6"
+    options:
+      - value: "3"
+        label: 3 per page
+      - value: "4"
+        label: 4 per page
+      - value: "6"
+        label: 6 per page
+      - value: "8"
+        label: 8 per page
+      - value: "10"
+        label: 10 per page
+      - value: "12"
+        label: 12 per page
+      - value: "18"
+        label: 18 per page
+      - value: "24"
+        label: 24 per page
+  - key: show_view_all
+    label: Show View All Button
+    type: select
+    group: Pagination
+    default: "true"
+    options:
+      - value: "true"
+        label: Show
+      - value: "false"
+        label: Hide
+  - key: pager_align
+    label: Pager Align
+    type: select
+    group: Pagination
+    default: "center"
+    options:
+      - value: "left"
+        label: Left
+      - value: "center"
+        label: Center
+      - value: "right"
+        label: Right
   - key: section_bg
-    label: 外层背景色
+    label: Section Background
     type: color
-    group: 外层样式
+    group: Outer Style
     default: ""
-    placeholder: 如 #f5f7fa（留空=使用默认）
   - key: outer_width
-    label: 外层宽度
+    label: Outer Width
     type: text
-    group: 外层样式
+    group: Outer Style
     default: ""
-    placeholder: 如 1200px（留空不限制宽度）
   - key: inner_width
-    label: 内层内容区宽度
+    label: Inner Width
     type: text
-    group: 外层样式
+    group: Outer Style
     default: ""
-    placeholder: 如 1200px（留空=全宽）
   - key: padding_top
-    label: 上内边距
+    label: Padding Top
     type: text
-    group: 外层样式
+    group: Outer Style
     default: "1rem"
-    placeholder: 如 2rem（留空=默认）
   - key: padding_right
-    label: 右内边距
+    label: Padding Right
     type: text
-    group: 外层样式
+    group: Outer Style
     default: ""
-    placeholder: 如 2rem（留空=默认）
   - key: padding_bottom
-    label: 下内边距
+    label: Padding Bottom
     type: text
-    group: 外层样式
+    group: Outer Style
     default: "1rem"
-    placeholder: 如 2rem（留空=默认）
   - key: padding_left
-    label: 左内边距
+    label: Padding Left
     type: text
-    group: 外层样式
+    group: Outer Style
     default: ""
-    placeholder: 如 2rem（留空=默认）
   - key: title
-    label: 区块标题
+    label: Title
     type: text
-    group: 内容
+    group: Content
+    default: Products

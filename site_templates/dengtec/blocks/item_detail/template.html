@@ -45,7 +45,7 @@
         var src = img.getAttribute('src') || img.src;
         if (src && !/^\s*$/.test(src)) {
           img.parentElement.style.backgroundImage = 'url(' + src + ')';
-          if (i === 0 && mainImg && !mainImg.src) mainImg.src = src;
+          if (i === 0 && mainImg && !mainImg.getAttribute('src')) mainImg.src = src;
         }
       });
       /* 缩略图点击切换主图 */

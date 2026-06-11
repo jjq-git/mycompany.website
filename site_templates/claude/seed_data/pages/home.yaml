@@ -1,4 +1,6 @@
-# 首页模块: 演示奶油 → 深色节奏
+# Home modules: show every Claude block once.
+title: "Home"
+description: "Nova AI product template preview with complete modules, images, datasets, and multilingual content."
 modules:
   - type: hero_banner
     variant: null
@@ -6,66 +8,100 @@ modules:
     data:
       slides:
         - type: image
-          media: ""
+          media: "/static/img/hero-collaboration.svg"
           title: "Meet your thinking partner"
-          subtitle: "Nova AI brings together advanced reasoning, code generation, and creative collaboration — all in one warm, human-centered experience."
+          subtitle: "Nova AI brings together advanced reasoning, code generation, and creative collaboration in one focused product experience."
           primaryBtn: "Try Nova"
           primaryBtnLink: "/pricing/"
           secondaryBtn: "Learn More"
           secondaryBtnLink: "/about/"
+        - type: image
+          media: "/static/img/hero-agents.svg"
+          title: "Build useful AI agents"
+          subtitle: "Connect models, tools, evaluations, and human review into workflows your team can actually trust."
+          primaryBtn: "Explore Products"
+          primaryBtnLink: "/products/"
+          secondaryBtn: "View Cases"
+          secondaryBtnLink: "/portfolio/"
 
-  - type: feature_grid
+  - type: section_title
     variant: null
     order: 2
     data:
+      tag: "Platform"
+      title: "One model family for real work"
+      desc: "Use the right balance of intelligence, speed, and governance for each workflow."
+      btn_text: "Explore Products"
+      btn_url: "/products/"
+
+  - type: feature_grid
+    variant: null
+    order: 3
+    data:
       title: "What Nova can do"
-      subtitle: "Purpose-built models for every task, from creative writing to enterprise-grade code generation."
+      subtitle: "Purpose-built capabilities for product teams, developers, and enterprise operators."
       features:
         - icon: "brain"
           title: "Advanced Reasoning"
-          desc: "Tackle complex analysis, multi-step planning, and nuanced decision-making with state-of-the-art reasoning capabilities."
+          desc: "Handle complex analysis, multi-step planning, and nuanced decisions."
         - icon: "code"
           title: "Code Generation"
-          desc: "Generate, debug, and refactor production-quality code across dozens of languages and frameworks."
+          desc: "Generate, debug, and refactor production code across modern stacks."
         - icon: "eye"
           title: "Multimodal Understanding"
-          desc: "Process images, documents, and text together — extract insights from PDFs, analyze charts, and describe visual content."
-        - icon: "shield"
-          title: "Enterprise Security"
-          desc: "SOC 2 compliant, data encryption at rest and in transit, zero data retention for API customers."
-        - icon: "zap"
-          title: "Lightning Fast"
-          desc: "Sub-second response times for real-time applications. Haiku delivers speed without sacrificing quality."
-        - icon: "globe"
-          title: "Multilingual"
-          desc: "Fluent in 90+ languages with native-level understanding of cultural context and nuance."
+          desc: "Read images, documents, charts, screenshots, and text together."
+
+  - type: product_grid
+    variant: null
+    order: 4
+    data:
+      title: "Products"
+      dataset: products
+      max_items: 12
+      show_filters: "true"
+      show_pagination: "true"
+      pagination_style: "load_more"
+      items_per_page: "3"
+      pager_align: "center"
+
+  - type: data_grid
+    variant: null
+    order: 5
+    data:
+      dataset: posts
+      max_items: 6
+      card_layout: image_top
+      show_pagination: "true"
+      pagination_style: "page_numbers"
+      items_per_page: "3"
+      pager_align: "center"
+      title: "Latest from the blog"
 
   - type: highlight_card
     variant: null
-    order: 3
+    order: 6
     data:
       image_position: left
       tag: "Nova Code"
       title: "The editor that thinks with you"
-      desc: "Write, debug, and ship production code faster with AI that understands your entire codebase. Nova Code runs natively in your terminal and IDE."
-      image: ""
+      desc: "Write, debug, and ship production code faster with AI that understands your repository and workflow."
+      image: "/static/img/highlight-code.svg"
       features:
-        - text: "Full codebase understanding with context-aware suggestions"
-        - text: "Generate entire features from plain-English descriptions"
-        - text: "Automated testing, refactoring, and documentation"
+        - text: "Repository-aware suggestions"
+        - text: "Feature implementation from plain language"
+        - text: "Testing, refactoring, and documentation support"
       primaryBtn: "Try Nova Code"
       primaryLink: "#"
       secondaryBtn: "Read Docs"
       secondaryLink: "#"
       btn_bg: "#cc785c"
-      text_bg: ""
 
   - type: stat_counter
     variant: null
-    order: 4
+    order: 7
     data:
       title: "By the numbers"
-      subtitle: "Trusted by developers and enterprises worldwide"
+      subtitle: "Built for teams that need dependable AI at scale."
       stats:
         - number: 500
           suffix: "K+"
@@ -81,33 +117,106 @@ modules:
           icon: "globe"
         - number: 3
           suffix: "x"
-          label: "Faster Development"
+          label: "Faster Delivery"
           icon: "zap"
 
-  - type: data_grid
+  - type: process_steps
     variant: null
-    order: 5
+    order: 8
     data:
-      dataset: posts
-      max_items: 3
-      card_layout: image_top
-      show_pagination: "false"
-      title: "Latest from the blog"
+      title: "From idea to production"
+      subtitle: "A practical path for teams adopting AI in real workflows."
+      steps:
+        - icon: "search"
+          title: "Map the workflow"
+          desc: "Identify the high-value tasks, risks, data sources, and success metrics."
+        - icon: "settings"
+          title: "Prototype safely"
+          desc: "Test prompts, tools, and model choices with representative examples."
+        - icon: "rocket"
+          title: "Launch and monitor"
+          desc: "Ship with evaluations, logs, budget controls, and feedback loops."
 
-  - type: highlight_card
+  - type: logo_cloud
     variant: null
-    order: 6
+    order: 9
     data:
-      image_position: right
-      tag: ""
-      title: "Start building with Nova today"
-      desc: "From solo developers to Fortune 500 teams, Nova scales with you. Pay only for what you use — no monthly minimums, no hidden fees."
-      image: ""
-      features: []
-      primaryBtn: "Get Started Free"
-      primaryLink: "/pricing/"
-      secondaryBtn: ""
-      secondaryLink: ""
-      btn_bg: "#252320"
-      text_bg: "#cc785c"
-      text_color: "#ffffff"
+      title: "Trusted by product teams"
+      subtitle: "A sample partner wall for the Claude template."
+      logos:
+        - name: "Northstar"
+          image: "/static/img/logo-northstar.svg"
+        - name: "Helio"
+          image: "/static/img/logo-helio.svg"
+        - name: "SignalForge"
+          image: "/static/img/logo-signalforge.svg"
+        - name: "Atlas Labs"
+          image: "/static/img/logo-atlas.svg"
+
+  - type: contact_info
+    variant: null
+    order: 10
+    data:
+      title: "Talk to the team"
+      subtitle: "Contact details are pulled from site settings and can be edited centrally."
+      phone: "+1 (415) 555-0172"
+      email: "hello@nova-ai.example.com"
+      address: "548 Market St, San Francisco, CA 94104"
+
+  - type: contact_form
+    variant: null
+    order: 11
+    data:
+      title: "Start a conversation"
+      subtitle: "Tell us what you are building and we will route your note to the right team."
+      form_action: ""
+      show_name: "true"
+      show_email: "true"
+      show_phone: "true"
+      show_company: "true"
+      show_message: "true"
+      show_form: "true"
+      submit_text: "Send Message"
+
+  - type: text_content
+    variant: null
+    order: 12
+    data:
+      title: "A calmer way to build with AI"
+      subtitle: "The template supports long-form content without forcing it into cards."
+      body: "<p>Nova AI is designed for teams that need thoughtful, inspectable AI experiences. Use this content block for product stories, implementation notes, policy explanations, or editorial sections.</p><p>The typography stays readable while the surrounding modules provide navigation, proof, data, and conversion surfaces.</p>"
+
+  - type: item_detail
+    variant: null
+    order: 13
+    data:
+      title: "Claude Sonnet"
+      tags: "balanced, production, versatile"
+      desc: "A detail block for a highlighted product, case study, or data item."
+      images:
+        - url: "/static/img/product-model.svg"
+        - url: "/static/img/highlight-code.svg"
+      specs:
+        - name: "Category"
+          value: "AI Models"
+        - name: "Best for"
+          value: "Production workloads"
+        - name: "Pricing"
+          value: "From $3 / million input tokens"
+
+  - type: item_data
+    variant: null
+    order: 14
+    data:
+      tag: "Data"
+      title: "Structured product snapshot"
+      desc: "A compact data module for key-value facts on list or detail pages."
+      fields:
+        - label: "Dataset"
+          value: "products"
+        - label: "Filter fields"
+          value: "category, tags"
+        - label: "Pagination"
+          value: "shared data-grid pager"
+        - label: "Reusable"
+          value: "ready to move into other templates"

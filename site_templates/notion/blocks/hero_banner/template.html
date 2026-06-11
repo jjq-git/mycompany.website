@@ -1,62 +1,63 @@
-<!-- Hero Banner — Notion 全屏深靛蓝 Night Band -->
-<section data-name="hero_banner" data-style="dir" data-type="group" data-hideable class="hero-notion">
-  {# 装饰 sticker 色块 —— Notion 品牌特征 #}
-  <div class="hero-notion-stickers" aria-hidden="true">
-    <div class="hero-notion-sticker hero-notion-sticker--1"></div>
-    <div class="hero-notion-sticker hero-notion-sticker--2"></div>
-    <div class="hero-notion-sticker hero-notion-sticker--3"></div>
-    <div class="hero-notion-sticker hero-notion-sticker--4"></div>
-    <div class="hero-notion-sticker hero-notion-sticker--5"></div>
+<!-- Hero Banner — Notion 全屏深靛蓝 Night Band（class 同 dengtec） -->
+<section data-name="hero_banner" data-type="group" data-hideable class="section hero-banner">
+  <div class="hero-banner-stickers" aria-hidden="true">
+    <div class="hero-banner-sticker hero-banner-sticker--1"></div>
+    <div class="hero-banner-sticker hero-banner-sticker--2"></div>
+    <div class="hero-banner-sticker hero-banner-sticker--3"></div>
+    <div class="hero-banner-sticker hero-banner-sticker--4"></div>
+    <div class="hero-banner-sticker hero-banner-sticker--5"></div>
   </div>
-  <div class="container">
-    <div data-name="slides" data-type="list" class="hero-notion-slides">
-      <div data-name="slide" data-type="group" class="hero-notion-slide">
-        <div class="hero-notion-content">
-          <h1 data-name="title" data-type="text" class="hero-notion-title"></h1>
-          <p data-name="subtitle" data-type="text" class="hero-notion-subtitle"></p>
-          <div class="hero-notion-actions">
+  <div class="hero-banner-inner">
+    <div data-name="slides" data-type="list" class="hero-banner-slides">
+      <div data-name="slide" data-type="group" class="hero-banner-slide">
+        <div class="hero-banner-content">
+          <h1 data-name="title" data-type="text" class="hero-banner-title"></h1>
+          <p data-name="subtitle" data-type="text" class="hero-banner-subtitle"></p>
+          <div class="hero-banner-actions">
             <a data-name="primaryBtn" data-type="text" data-href="primaryBtnLink" class="btn btn-primary btn-lg"></a>
             <a data-name="secondaryBtn" data-type="text" data-href="secondaryBtnLink" class="btn btn-secondary btn-lg"></a>
           </div>
         </div>
       </div>
     </div>
-    <div class="hero-notion-dots"></div>
+    <div class="hero-banner-dots"></div>
   </div>
-  <button class="hero-notion-nav hero-notion-nav-prev btn-icon-circular" aria-label="Previous">
+  <button class="hero-banner-nav btn-icon-circular hero-banner-nav-prev" type="button" aria-label="Previous slide">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
   </button>
-  <button class="hero-notion-nav hero-notion-nav-next btn-icon-circular" aria-label="Next">
+  <button class="hero-banner-nav btn-icon-circular hero-banner-nav-next" type="button" aria-label="Next slide">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
   </button>
   <script>
     (function() {
-      var section = document.currentScript.parentElement;
-      var slides = section.querySelectorAll('.hero-notion-slide');
-      var dotsContainer = section.querySelector('.hero-notion-dots');
-      var prevBtn = section.querySelector('.hero-notion-nav-prev');
-      var nextBtn = section.querySelector('.hero-notion-nav-next');
+      var section = document.currentScript && document.currentScript.parentElement;
+      if (!section) return;
+      var slides = section.querySelectorAll('.hero-banner-slide');
+      var dotsContainer = section.querySelector('.hero-banner-dots');
+      var prevBtn = section.querySelector('.hero-banner-nav-prev');
+      var nextBtn = section.querySelector('.hero-banner-nav-next');
       var current = 0, total = slides.length;
       if (!total) return;
       for (var i = 0; i < total; i++) {
         var dot = document.createElement('button');
-        dot.className = 'hero-notion-dot';
+        dot.className = 'hero-banner-dot';
+        dot.setAttribute('type', 'button');
         dot.setAttribute('data-slide', i);
-        dot.setAttribute('aria-label', 'Slide ' + (i + 1));
-        dotsContainer.appendChild(dot);
+        dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+        if (dotsContainer) dotsContainer.appendChild(dot);
       }
-      if (total === 1) { slides[0].classList.add('active'); return; }
       function showSlide(index) {
-        slides.forEach(function(s, i) { s.classList.toggle('active', i === index); });
-        dotsContainer.querySelectorAll('.hero-notion-dot').forEach(function(d, i) { d.classList.toggle('active', i === index); });
-        current = index;
+        current = (index + total) % total;
+        slides.forEach(function(s, i) { s.classList.toggle('active', i === current); });
+        if (dotsContainer) dotsContainer.querySelectorAll('.hero-banner-dot').forEach(function(d, i) { d.classList.toggle('active', i === current); });
       }
       showSlide(0);
-      function next() { showSlide((current + 1) % total); }
-      function prev() { showSlide((current - 1 + total) % total); }
+      if (total <= 1) return;
+      function next() { showSlide(current + 1); }
+      function prev() { showSlide(current - 1); }
       if (prevBtn) prevBtn.addEventListener('click', prev);
       if (nextBtn) nextBtn.addEventListener('click', next);
-      dotsContainer.querySelectorAll('.hero-notion-dot').forEach(function(dot) {
+      if (dotsContainer) dotsContainer.querySelectorAll('.hero-banner-dot').forEach(function(dot) {
         dot.addEventListener('click', function() { showSlide(parseInt(dot.getAttribute('data-slide'))); });
       });
       setInterval(next, 8000);

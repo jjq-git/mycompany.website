@@ -133,6 +133,22 @@ def _is_truthy(value):
     return bool(value)
 
 
+# 模板中图片/视频占位元素常见的隐藏样式（仅清除纯占位，保留其他合法 style）
+_HIDE_STYLE_RE = re.compile(r'^\s*display\s*:\s*none\s*(;\s*)?\s*$', re.I)
+
+
+def _clean_placeholder_style(node):
+    """若 node 的 style 仅为占位隐藏（display:none），清掉它。
+
+    模板中图片/视频默认写 style="display:none" 作为"无数据时隐藏"的占位，
+    当真实 URL 注入后应清除此样式，否则图片/视频仍然不可见。
+    仅匹配纯 display:none；带其他合法样式（width/height/border 等）则保留。
+    """
+    style = node.attrs.get('style')
+    if style is not None and _HIDE_STYLE_RE.match(str(style)):
+        node.attrs.pop('style', None)
+
+
 def _icon_svg(name):
     """图标名 → SVG 字符串。注册表的 SVG 是可信的（开发者维护），原样注入。"""
     return icon_registry.get_icon_svg(name)
@@ -166,6 +182,9 @@ def _inject_leaf(node, field_def, value):
         attr = _MEDIA_SRC_ATTR[dtype]
         if has_content:
             node.attrs[attr] = str(value)  # 序列化时统一转义
+            # 清除模板中的占位隐藏样式（如 style="display:none"），
+            # 否则图片/视频有真实 URL 后仍然不可见
+            _clean_placeholder_style(node)
         else:
             node.attrs.pop(attr, None)  # 清掉占位 src，元素稍后会被隐藏
 

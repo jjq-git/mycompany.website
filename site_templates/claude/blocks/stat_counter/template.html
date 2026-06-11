@@ -1,19 +1,49 @@
-<!-- Stat Counter - Claude 风格: 衬线数字 + muted 标签 -->
-<section data-name="stat_counter" data-type="group" data-hideable class="section surface-canvas">
+<!-- 统计数字模块 - 数字滚动动画（结构对齐 dengtec） -->
+<section data-name="stat_counter" data-type="group" data-hideable data-style="cols" class="section">
   <div class="container">
-    <h2 data-name="title" data-type="text" class="section-header__title text-center mb-sm"></h2>
-    <p data-name="subtitle" data-type="text" class="section-header__desc mb-xl"></p>
-    <div data-name="stats" data-type="list" class="stat-grid flex justify-center gap-xl flex-wrap">
-      <div data-name="stat" data-type="group" class="stat-item text-center">
-        <div class="stat-icon mb-sm">
-          <span data-name="icon" data-type="icon"></span>
-        </div>
-        <div class="text-display-md text-ink stat-number">
-          <span data-name="number" data-type="number">0</span>
-          <span data-name="suffix" data-type="text" class="stat-suffix"></span>
-        </div>
-        <p data-name="label" data-type="text" class="text-body-sm text-muted"></p>
+    <div class="section-header">
+      <h2 data-name="heading" data-type="text" class="section-title">数据统计</h2>
+      <p data-name="subheading" data-type="text" class="section-description">区块副标题</p>
+    </div>
+    <div data-name="stats" data-type="list" class="sc-grid">
+      <div data-name="stat" data-type="group" class="sc-card">
+        <div data-name="icon" data-type="icon" class="sc-icon"></div>
+        <div data-name="number" data-type="text" class="sc-number">0</div>
+        <span data-name="suffix" data-type="text" class="sc-suffix">+</span>
+        <div data-name="label" data-type="text" class="sc-label">统计项</div>
       </div>
     </div>
   </div>
+  <script>
+(function(){
+  var grid = document.currentScript.closest('section').querySelector('.sc-grid');
+  if (!grid) return;
+  var cards = grid.querySelectorAll('.sc-number');
+  if (!cards.length) return;
+  var animated = false;
+  function animate(card) {
+    var target = parseInt(card.textContent) || 0;
+    if (!target) return;
+    var duration = 1200, start = performance.now();
+    function step(now) {
+      var progress = Math.min((now - start) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      card.textContent = Math.floor(eased * target);
+      if (progress < 1) requestAnimationFrame(step);
+      else card.textContent = target;
+    }
+    requestAnimationFrame(step);
+  }
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting && !animated) {
+        animated = true;
+        cards.forEach(function(c) { animate(c); });
+        observer.disconnect();
+      }
+    });
+  }, { threshold: 0.3 });
+  observer.observe(grid);
+})();
+</script>
 </section>
