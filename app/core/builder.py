@@ -74,6 +74,9 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
     @pass_context
     def render_block(jinja_ctx, module):
         block_type = module.get('type')
+        # product_grid → data_grid 别名（向后兼容已有站点的旧模块配置）
+        if block_type == 'product_grid':
+            block_type = 'data_grid'
         variant = module.get('variant') or 'default'
         if not block_type:
             return Markup('')
@@ -112,11 +115,12 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
                 # data-from 用：settings（含 contact 等全局配置）
                 'settings': jinja_ctx.get('settings', {}),
                 't': jinja_ctx.get('t', {}),
-                # data-href-template 用：站内链接前缀（base_url/lang/current_path）
+                # data-href-template 及 data-filter-* 用：站内链接前缀 + 数据集名
                 'vars': {
                     'base_url': jinja_ctx.get('base_url', '') or '',
                     'lang': jinja_ctx.get('lang', '') or '',
                     'current_path': jinja_ctx.get('current_path', '') or '',
+                    'dataset': data_dict.get('dataset', ''),
                 },
             }
             try:
@@ -327,7 +331,12 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
     _common['lang'] = lang_code
 
     # 收集渲染任务 (菜单驱动). cap_menu_depth 防御深嵌套递归栈溢出.
-    menu_items = menu_lib.cap_menu_depth(_common.get('settings', {}).get('menu', []))
+    full_menu = menu_lib.cap_menu_depth(_common.get('settings', {}).get('menu', []))
+    nav_menu = menu_lib.filter_hidden_for_nav(full_menu)
+    _common = dict(_common)
+    _common['settings'] = dict(_common.get('settings') or {})
+    _common['settings']['menu'] = nav_menu
+    menu_items = full_menu
     tasks = menu_lib.collect_render_tasks(menu_items, tpl_html_dir, data, pages)
 
     failures = []
@@ -473,23 +482,23 @@ def build_site(site_id, base_url='', report=None):
             # 加载语言特定数据，回退到默认语言
             lang_pages, lang_data = _load_lang_overrides(site_id, lang_code, default_lang, pages, data)
 
-            # 语言特定菜单：优先旧格式 menu_<lang> 键（向后兼容），
-            # 否则用共享 menu 结构 + menu_labels.<lang> 覆盖标签
+            # 语言特定菜单：menu_labels（新格式）优先于 menu_<lang>（旧格式）
+            # 当两者同时存在时用新格式，否则旧格式向后兼容。
             lang_settings = dict(settings)
             menu_override_key = f'menu_{lang_code}'
-            if menu_override_key in settings and settings.get(menu_override_key):
-                # 旧格式: 语言独立的完整菜单树（向后兼容）
+            label_map = (settings.get('menu_labels') or {}).get(lang_code, {})
+            if menu_override_key in settings and settings.get(menu_override_key) and not label_map:
+                # 旧格式: 语言独立的完整菜单树（仅当该语言没有 menu_labels 时才用）
                 lang_settings['menu'] = menu_lib.ensure_home(
                     menu_lib.normalize_for_render(
                         menu_lib.upgrade_old_format(settings[menu_override_key], meta.get('datasets', []))
                     )
                 )
-            else:
-                # 新格式: 共享 menu 结构 + menu_labels 覆盖标签（所有语言统一走此路径）
+            elif label_map:
+                # 新格式: 共享 menu 结构 + menu_labels 覆盖标签
                 shared_menu = settings.get('menu', [])
-                label_map = (settings.get('menu_labels') or {}).get(lang_code, {})
-                if label_map:
-                    lang_settings['menu'] = menu_lib.apply_labels(shared_menu, label_map)
+                lang_settings['menu'] = menu_lib.apply_labels(shared_menu, label_map)
+            # else: 没有语言特定菜单, 保持 shared_menu 不变 (已在 settings['menu'] 中)
             footer_override_key = f'footer_{lang_code}'
             if footer_override_key in settings and settings[footer_override_key]:
                 lang_settings['footer'] = settings[footer_override_key]

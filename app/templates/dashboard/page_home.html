@@ -59,7 +59,28 @@
 {% if module.type == 'text_content' %}
             {# 文本内容专属表单 #}
             <div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title" value="{{ mdata.get('title', '') }}"></div>
-            <div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label><textarea class="form-control form-control-sm" rows="5" name="module_{{ i }}_data_body">{{ mdata.get('body', '') }}</textarea></div>
+            <div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label>
+              <div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'bold')" title="加粗" style="font-size:12px;line-height:1"><b>B</b></button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'italic')" title="斜体" style="font-size:12px;line-height:1"><i>I</i></button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'underline')" title="下划线" style="font-size:12px;line-height:1"><u>U</u></button>
+                <span style="border-left:1px solid #dee2e6;margin:0 3px"></span>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'formatBlock','h2')" title="大标题" style="font-size:12px;line-height:1">H2</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'formatBlock','h3')" title="小标题" style="font-size:12px;line-height:1">H3</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'formatBlock','p')" title="正文段落" style="font-size:12px;line-height:1">P</button>
+                <span style="border-left:1px solid #dee2e6;margin:0 3px"></span>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'justifyLeft')" title="左对齐" style="font-size:12px;line-height:1">☰</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'justifyCenter')" title="居中" style="font-size:12px;line-height:1">≡</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'justifyRight')" title="右对齐" style="font-size:12px;line-height:1">☷</button>
+                <span style="border-left:1px solid #dee2e6;margin:0 3px"></span>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'insertUnorderedList')" title="无序列表" style="font-size:12px;line-height:1">•≡</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'insertOrderedList')" title="有序列表" style="font-size:12px;line-height:1">1≡</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorTable(this,event)" title="插入表格" style="font-size:12px;line-height:1">▦</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorLink(this,event)" title="插入链接" style="font-size:12px;line-height:1">🔗</button>
+              </div>
+              <div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">{{ mdata.get('body', '') | safe }}</div>
+              <textarea class="form-control form-control-sm d-none" name="module_{{ i }}_data_body">{{ mdata.get('body', '') }}</textarea>
+            </div>
             <div class="row g-2">
               <div class="col-6"><label class="form-label small mb-1 text-muted">文字排版</label><select class="form-select form-select-sm" name="module_{{ i }}_data_text_align"><option value="left" {% if mdata.get('text_align', 'left') == 'left' %}selected{% endif %}>居左</option><option value="center" {% if mdata.get('text_align') == 'center' %}selected{% endif %}>居中</option><option value="right" {% if mdata.get('text_align') == 'right' %}selected{% endif %}>居右</option></select></div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">分栏</label><select class="form-select form-select-sm" name="module_{{ i }}_data_columns"><option value="1" {% if mdata.get('columns', 1)|int == 1 %}selected{% endif %}>单栏</option><option value="2" {% if mdata.get('columns')|int == 2 %}selected{% endif %}>双栏</option></select></div>
@@ -217,6 +238,150 @@ function onBlockPaletteConfirm(type, variant, dataPreset) {
   addModule(type, variant || 'default', dataPreset);
 }
 
+function richEditorEscape(value) {
+  return String(value || '').replace(/[&<>"']/g, function(ch) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+  });
+}
+
+function richEditorHtml(name, value) {
+  var safeName = richEditorEscape(name);
+  return '<div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
+    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'bold\')" title="加粗" style="font-size:12px;line-height:1"><b>B</b></button>' +
+    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'italic\')" title="斜体" style="font-size:12px;line-height:1"><i>I</i></button>' +
+    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'underline\')" title="下划线" style="font-size:12px;line-height:1"><u>U</u></button>' +
+    '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
+    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'formatBlock\',\'h2\')" title="大标题" style="font-size:12px;line-height:1">H2</button>' +
+    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'formatBlock\',\'h3\')" title="小标题" style="font-size:12px;line-height:1">H3</button>' +
+    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'formatBlock\',\'p\')" title="正文段落" style="font-size:12px;line-height:1">P</button>' +
+    '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
+    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'justifyLeft\')" title="左对齐" style="font-size:12px;line-height:1">☰</button>' +
+    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'justifyCenter\')" title="居中" style="font-size:12px;line-height:1">≡</button>' +
+    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'justifyRight\')" title="右对齐" style="font-size:12px;line-height:1">☷</button>' +
+    '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
+    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'insertUnorderedList\')" title="无序列表" style="font-size:12px;line-height:1">•≡</button>' +
+    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'insertOrderedList\')" title="有序列表" style="font-size:12px;line-height:1">1≡</button>' +
+    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorTable(this,event)" title="插入表格" style="font-size:12px;line-height:1">▦</button>' +
+    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorLink(this,event)" title="插入链接" style="font-size:12px;line-height:1">🔗</button>' +
+    '</div>' +
+    '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (value || '') + '</div>' +
+    '<textarea class="form-control form-control-sm d-none" name="' + safeName + '">' + richEditorEscape(value || '') + '</textarea>';
+}
+
+function richEditorHtml(name, value) {
+  var safeName = richEditorEscape(name);
+  return '<div class="rich-toolbar rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'bold\')" title="Bold"><b>B</b></button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'italic\')" title="Italic"><i>I</i></button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'underline\')" title="Underline"><u>U</u></button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'strikeThrough\')" title="Strike"><s>S</s></button>' +
+    '<select class="form-select form-select-sm rte-heading-select" onchange="return richEditorSelectCommand(this,\'formatBlock\',this.value)" title="Heading"><option value="p">Paragraph</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option></select>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'justifyLeft\')" title="Align left">☰</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'justifyCenter\')" title="Align center">≡</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'justifyRight\')" title="Align right">☷</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'insertUnorderedList\')" title="Bullet list">•≡</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'insertOrderedList\')" title="Numbered list">1≡</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return insertRichEditorTable(this,event)" title="Table">▦</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return insertRichEditorLink(this,event)" title="Link">🔗</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'formatBlock\',\'blockquote\')" title="Quote">❝</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'insertHorizontalRule\')" title="Horizontal rule">—</button>' +
+    '<input type="color" class="rte-color-picker" value="#000000" oninput="return richEditorSelectCommand(this,\'foreColor\',this.value)" title="Text color">' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'removeFormat\')" title="Clear format">✕</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'undo\')" title="Undo">↩</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'redo\')" title="Redo">↪</button>' +
+    '</div>' +
+    '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (value || '') + '</div>' +
+    '<textarea class="form-control form-control-sm d-none" name="' + safeName + '">' + richEditorEscape(value || '') + '</textarea>';
+}
+
+function richEditorCommand(btn, event, cmd, arg) {
+  if (event) event.preventDefault();
+  var wrapper = btn && btn.closest ? btn.closest('.mb-2') : null;
+  var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+  if (!editor) return false;
+  editor.focus();
+  document.execCommand(cmd, false, arg || null);
+  var textarea = editor.nextElementSibling;
+  if (textarea) textarea.value = editor.innerHTML;
+  return false;
+}
+
+function richEditorSelectCommand(control, cmd, arg) {
+  var wrapper = control && control.closest ? control.closest('.mb-2') : null;
+  var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+  if (!editor) return false;
+  editor.focus();
+  document.execCommand(cmd, false, arg || null);
+  var textarea = editor.nextElementSibling;
+  if (textarea) textarea.value = editor.innerHTML;
+  return false;
+}
+
+function insertRichEditorTable(btn, event) {
+  if (event) event.preventDefault();
+  var wrapper = btn && btn.closest ? btn.closest('.mb-2') : null;
+  var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+  if (!editor) return false;
+  var size = window.prompt('表格行列，例如 3x3', '3x3');
+  if (size === null) return false;
+  var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,，, ]\s*(\d+)\s*$/);
+  var rows = match ? parseInt(match[1], 10) : 3;
+  var cols = match ? parseInt(match[2], 10) : 3;
+  rows = Math.max(1, Math.min(rows || 3, 20));
+  cols = Math.max(1, Math.min(cols || 3, 10));
+  editor.focus();
+  var html = '<table><tbody>';
+  for (var r = 0; r < rows; r++) {
+    html += '<tr>';
+    for (var c = 0; c < cols; c++) html += '<td><br></td>';
+    html += '</tr>';
+  }
+  html += '</tbody></table><p><br></p>';
+  document.execCommand('insertHTML', false, html);
+  var textarea = editor.nextElementSibling;
+  if (textarea) textarea.value = editor.innerHTML;
+  return false;
+}
+
+function insertRichEditorLink(btn, event) {
+  if (event) event.preventDefault();
+  var wrapper = btn && btn.closest ? btn.closest('.mb-2') : null;
+  var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+  if (!editor) return false;
+  var sel = window.getSelection();
+  var range = null;
+  if (sel && sel.rangeCount && editor.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+    range = sel.getRangeAt(0).cloneRange();
+  }
+  var url = window.prompt('链接地址');
+  if (!url) return false;
+  editor.focus();
+  var link = document.createElement('a');
+  link.href = url;
+  link.target = '_blank';
+  link.rel = 'noopener';
+  if (range && !range.collapsed) {
+    try {
+      range.surroundContents(link);
+    } catch (err) {
+      var fragment = range.extractContents();
+      link.appendChild(fragment);
+      range.insertNode(link);
+    }
+  } else {
+    link.textContent = url;
+    if (!range) {
+      range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+    }
+    range.insertNode(link);
+  }
+  var textarea = editor.nextElementSibling;
+  if (textarea) textarea.value = editor.innerHTML;
+  return false;
+}
+
 // 展开第一个模块
 (function(){
   var items = document.querySelectorAll('.module-item');
@@ -275,7 +440,7 @@ function addModule(type, variant, dataPreset) {
     : '';
   var textEditor = type === 'text_content'
     ? '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
-      '<div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label><textarea class="form-control form-control-sm" rows="5" name="module_' + idx + '_data_body"></textarea></div>' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label>' + richEditorHtml('module_' + idx + '_data_body', '') + '</div>' +
       '<div class="row g-2">' +
         '<div class="col-6"><label class="form-label small mb-1 text-muted">文字排版</label><select class="form-select form-select-sm" name="module_' + idx + '_data_text_align"><option value="left">居左</option><option value="center">居中</option><option value="right">居右</option></select></div>' +
         '<div class="col-6"><label class="form-label small mb-1 text-muted">分栏</label><select class="form-select form-select-sm" name="module_' + idx + '_data_columns"><option value="1">单栏</option><option value="2">双栏</option></select></div>' +

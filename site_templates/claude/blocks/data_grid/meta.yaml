@@ -1,7 +1,7 @@
 name: 数据网格
 category: data
 icon: data_grid.svg
-description: 通用数据列表模块，支持产品/案例/博客三种数据集，卡片布局可选
+description: 通用数据列表模块，支持所有数据集，可配置筛选面板、卡片布局、分页、价格/日期、查看全部按钮
 fields:
   - key: dataset
     label: 数据来源（数据集名称）
@@ -24,6 +24,16 @@ fields:
         label: 上图下文
       - value: "image_left"
         label: 左图右文
+  - key: show_filters
+    label: 显示筛选
+    type: select
+    group: 筛选
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
   - key: show_pagination
     label: 显示分页
     type: select
@@ -66,6 +76,16 @@ fields:
         label: 18 条/页
       - value: "24"
         label: 24 条/页
+  - key: show_view_all
+    label: 显示"查看全部"按钮
+    type: select
+    group: 分页
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
   - key: pager_align
     label: 分页对齐
     type: select

@@ -57,7 +57,7 @@ def _lighten(hex_color, factor=0.1):
         min(255, int(g + (255 - g) * factor)),
         min(255, int(b + (255 - b) * factor)),
     )
-ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
+ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'}
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'ogg', 'mov'}
 
 
@@ -125,7 +125,22 @@ def _save_uploaded_image(site_id, file_storage, prefix='image'):
     original = secure_filename(file_storage.filename)
     suffix = original.rsplit('.', 1)[-1].lower() if '.' in original else ''
     if suffix not in ALLOWED_IMAGE_EXTENSIONS:
-        raise ValueError('仅支持 JPG、PNG、GIF、WebP 图片')
+        raise ValueError('仅支持 JPG、PNG、GIF、WebP、SVG 图片')
+
+    uploads_dir = Path(current_app.config['SITES_DIR']) / str(site_id) / 'assets' / 'uploads'
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+
+    safe_prefix = secure_filename(prefix or 'image') or 'image'
+    ts = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
+    hex_part = secrets.token_hex(4)
+
+    # SVG 是矢量格式，保留原格式直接写入，不经过 Pillow 转换
+    if suffix == 'svg':
+        _check_upload_size(file_storage, MAX_IMAGE_BYTES, label='SVG')
+        filename = f"{safe_prefix}-{ts}-{hex_part}.svg"
+        output_path = uploads_dir / filename
+        file_storage.save(str(output_path))
+        return f'/assets/uploads/{filename}'
 
     _check_upload_size(file_storage, MAX_IMAGE_BYTES, label='图片')
 
@@ -134,11 +149,7 @@ def _save_uploaded_image(site_id, file_storage, prefix='image'):
     except ImportError as exc:
         raise RuntimeError('缺少 Pillow 依赖，请先安装 requirements.txt') from exc
 
-    uploads_dir = Path(current_app.config['SITES_DIR']) / str(site_id) / 'assets' / 'uploads'
-    uploads_dir.mkdir(parents=True, exist_ok=True)
-
-    safe_prefix = secure_filename(prefix or 'image') or 'image'
-    filename = f"{safe_prefix}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(4)}.webp"
+    filename = f"{safe_prefix}-{ts}-{hex_part}.webp"
     output_path = uploads_dir / filename
 
     # #25: 用 with 确保 PIL 句柄及时释放(代码卫生)。损坏图会在此抛 PIL 异常,
@@ -630,6 +641,18 @@ def company():
                 return redirect(url_for('core.company', site=site.id, lang=lang))
         elif 'company.logo' in request.form:
             settings[company_key]['logo'] = request.form.get('company.logo', '').strip()
+        # Favicon 上传（favicon 通常较小，复用图片上传逻辑转 WebP）
+        favicon_upload = request.files.get('company_favicon_file')
+        if favicon_upload and favicon_upload.filename:
+            try:
+                settings[company_key]['favicon'] = _save_uploaded_image(site.id, favicon_upload, prefix='company-favicon')
+            except Exception as exc:
+                flash(f'Favicon 上传失败: {exc}')
+                if is_fragment:
+                    return redirect(url_for('core.company', _fragment='1', site=site.id, lang=lang))
+                return redirect(url_for('core.company', site=site.id, lang=lang))
+        elif 'company.favicon' in request.form:
+            settings[company_key]['favicon'] = request.form.get('company.favicon', '').strip()
         for field in ('phone', 'email', 'address', 'wechat'):
             settings[contact_key][field] = request.form.get(f'contact.{field}', '').strip()
         write_yaml(site.id, 'settings.yaml', settings)
@@ -1826,6 +1849,21 @@ def api_translate():
         return {'error': '翻译失败，请稍后重试'}, 500
 
 
+@bp.route('/api/richtext/upload-image', methods=['POST'])
+def api_richtext_upload_image():
+    """Upload an image for rich-text editors and return a site-local URL."""
+    _, site = _current_context()
+    upload = request.files.get('image')
+    if not upload or not upload.filename:
+        return jsonify({'error': 'No image file provided'}), 400
+    try:
+        url = _save_uploaded_image(site.id, upload, prefix='richtext')
+    except Exception as exc:
+        current_app.logger.warning('rich text image upload failed: %s', exc)
+        return jsonify({'error': str(exc)}), 400
+    return jsonify({'ok': True, 'url': url})
+
+
 @bp.route('/_dataset/<path:dataset_key>')
 def dataset_panel(dataset_key):
     """通用数据集管理面板 — 支持 ?lang= 参数编辑不同语言版本."""
@@ -2075,6 +2113,18 @@ def page_panel(page_key):
 
     page = read_yaml(site.id, f'pages/{page_key}.yaml', lang=storage_lang)
     source_page = read_yaml(site.id, f'pages/{page_key}.yaml') or {}
+
+    # 迁移：product_grid → data_grid（模块合并后的向后兼容）
+    for _pg, _sl in [(page, storage_lang), (source_page, None)]:
+        if _pg and _pg.get('modules'):
+            _migrated = False
+            for mod in _pg['modules']:
+                if mod.get('type') == 'product_grid':
+                    mod['type'] = 'data_grid'
+                    _migrated = True
+            if _migrated:
+                write_yaml(site.id, f'pages/{page_key}.yaml', _pg, lang=_sl)
+
     if page:
         blocks = _get_available_blocks(site.template_name)
         is_modules_format = 'modules' in page
@@ -2162,8 +2212,8 @@ def _parse_modules_form(form, existing_modules=None):
     """
     data_field_allowed_types = {
         'columns': {'text_content', 'logo_cloud'},
-        'max_items': {'data_grid', 'product_grid'},
-        'items_per_page': {'data_grid', 'product_grid'},
+        'max_items': {'data_grid'},
+        'items_per_page': {'data_grid'},
     }
 
     # 构建已有模块查找索引：(type, order) → existing_data
@@ -2251,10 +2301,16 @@ def _parse_modules_form(form, existing_modules=None):
         handled_lists = set()
         _schema = schema_by_type.get(m_type)
         if _schema is not None:
-            for lf in _schema.fields:
-                if lf.type not in ('list', 'grid'):
-                    continue
-                list_name = lf.name
+            # 递归遍历所有字段（穿透 group 的 children），确保嵌套 list/grid 也能被解析
+            def _iter_list_fields(fields):
+                for f in fields:
+                    if f.get('type', '') in ('list', 'grid'):
+                        yield f
+                    if f.get('children'):
+                        yield from _iter_list_fields(f['children'])
+
+            for lf in _iter_list_fields(_schema.get('fields', [])):
+                list_name = lf.get('name', '')
                 # 兼容两种表单 key 格式:
                 #   schema 表单 → module_0_images_count（无 _data_）
                 #   admin_modules.js 硬编码 → module_0_data_images_count（有 _data_）
@@ -2272,7 +2328,7 @@ def _parse_modules_form(form, existing_modules=None):
                 except (ValueError, TypeError):
                     item_n = 0
                 # 子字段名 + 类型 + data-href 字段名
-                sub_specs = [(c.name, c.type, c.href_field) for c in lf.children]
+                sub_specs = [(c.get('name', ''), c.get('type', ''), c.get('href_field', '')) for c in lf.get('children', [])]
                 items = []
                 for j in range(item_n):
                     item_prefix = f'{idx}_data_{list_name}_{j}_' if is_alt_fmt else f'{idx}_{list_name}_{j}_'
@@ -2309,12 +2365,12 @@ def _parse_modules_form(form, existing_modules=None):
 
         # 通用 data-* 顶层 image/video 字段：处理文件上传（list 内字段已在上面处理）
         if _schema is not None:
-            for lf in _schema.fields:
-                if lf.type in ('list', 'grid', 'group'):
+            for lf in _schema.get('fields', []):
+                if lf.get('type', '') in ('list', 'grid', 'group'):
                     continue
-                if lf.type not in ('image', 'video'):
+                if lf.get('type', '') not in ('image', 'video'):
                     continue
-                field_name = lf.name
+                field_name = lf.get('name', '')
                 upload = request.files.get(f'{idx}_data_{field_name}_file')
                 if upload and upload.filename:
                     try:
@@ -2325,8 +2381,8 @@ def _parse_modules_form(form, existing_modules=None):
                     except Exception as exc:
                         current_app.logger.warning('上传失败 %s: %s', field_name, exc)
 
-            style_tokens = list(_schema.style_tokens or [])
-            for token in getattr(_schema, 'element_style_tokens', []) or []:
+            style_tokens = list(_schema.get('style_tokens', []) or [])
+            for token in _schema.get('element_style_tokens', []) or []:
                 if token not in style_tokens:
                     style_tokens.append(token)
             for token in style_tokens:
@@ -2603,6 +2659,7 @@ def _parse_modules_form(form, existing_modules=None):
                     steps.append(item)
             if steps:
                 data['steps'] = steps
+
 
         for field in list(data.keys()):
             if _field_looks_like_image(field):

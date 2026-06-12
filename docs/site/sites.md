@@ -42,7 +42,7 @@ sites/<name>/
 modules:
   - {type: hero_banner, data: {title: ..., image: ...}}
   - {type: feature_grid, data: {items: [...]}}
-  - {type: product_grid, data: {target: products, limit: 6}}
+  - {type: data_grid, data: {target: products, limit: 6}}
 ```
 
 模块的字段与渲染见 [themes/blocks/](../themes/blocks/)。

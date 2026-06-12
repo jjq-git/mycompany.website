@@ -59,7 +59,7 @@
 </form>
 
 {# JS: 模块选择器交互 #}
-<script src="/static/js/admin_modules.js?v=4"></script>
+<script src="/static/js/admin_modules.js?v=13"></script>
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="iconListDsJson">{{ icon_list | default([]) | tojson }}</script>
@@ -175,7 +175,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var countEl = editor.querySelector('.id-image-count');
     var list = editor.querySelector('.id-image-list');
     var next = parseInt(countEl.value || '0', 10);
-    var html = '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="' + next + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();window._reindexIdImages(' + modIdx + ')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片 URL</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_images_' + next + '_url"><input type="file" class="form-control form-control-sm mt-1" name="module_' + modIdx + '_data_images_' + next + '_url_file" accept="image/*"><div class="form-text">上传后自动转 WebP 并覆盖 URL</div></div></div>';
+    var html = '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="' + next + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();window._reindexIdImages(' + modIdx + ')" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片 URL</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_images_' + next + '_url"><input type="file" class="form-control form-control-sm mt-1" name="module_' + modIdx + '_data_images_' + next + '_url_file" accept="image/*"><div class="form-text">上传后自动转 WebP 并覆盖 URL</div></div></div>';
     list.insertAdjacentHTML('beforeend', html);
     countEl.value = next + 1;
   };
@@ -200,7 +200,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var countEl = editor.querySelector('.id-spec-count');
     var list = editor.querySelector('.id-spec-list');
     var next = parseInt(countEl.value || '0', 10);
-    var html = '<div class="border rounded p-2 mb-2 id-spec-item" data-spec-index="' + next + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">规格 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-spec-item\').remove();window._reindexIdSpecs(' + modIdx + ')">删除</button></div><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">参数名</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_specs_' + next + '_name"></div><div class="col-6"><label class="form-label small mb-1 text-muted">参数值</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_specs_' + next + '_value"></div></div></div>';
+    var html = '<div class="border rounded p-2 mb-2 id-spec-item" data-spec-index="' + next + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">规格 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-spec-item\').remove();window._reindexIdSpecs(' + modIdx + ')" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></div><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">参数名</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_specs_' + next + '_name"></div><div class="col-6"><label class="form-label small mb-1 text-muted">参数值</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_specs_' + next + '_value"></div></div></div>';
     list.insertAdjacentHTML('beforeend', html);
     countEl.value = next + 1;
   };
@@ -342,7 +342,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         <td><strong>{{ it.title or it.name }}</strong></td>
         <td class="text-muted"><code style="font-size:11px">{{ it.slug }}</code></td>
         <td class="text-muted small">{{ it.date or '' }}</td>
-        <td><button class="btn btn-sm btn-outline-danger" style="font-size:10px" onclick="event.stopPropagation(); deleteDataItem({{ it.id }})">删除</button></td>
+        <td><button class="btn" onclick="event.stopPropagation(); deleteDataItem({{ it.id }})" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></td>
       </tr>
       {% endfor %}
     </tbody>

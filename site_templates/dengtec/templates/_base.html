@@ -3,11 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}{{ t.nav.home }} - {{ t.company }}{% endblock %}</title>
-  <meta name="description" content="{% block description %}{{ t.company }}{% endblock %}">
-  <link rel="stylesheet" href="{{ base_url }}/static/css/main.css">
-  <!-- #26: 原 favicon 绝对路径且 builder 从不生成, 每页 404。改用内联 SVG data-URI 占位。 -->
+  <title>{% block title %}{{ settings.company.name or t.nav.home }} - {{ settings.company.name or t.company }}{% endblock %}</title>
+  <meta name="description" content="{% block description %}{{ settings.company.name or t.company }}{% endblock %}">
+  <link rel="stylesheet" href="{{ base_url }}/static/css/main.css?v=20260612-rte-table-width">
+  <!-- Favicon: 优先使用店主上传的图片，无则回退到内联 SVG 占位 -->
+  {% if settings.company.favicon %}
+  <link rel="icon" href="{{ settings.company.favicon }}">
+  {% else %}
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23222'/%3E%3C/svg%3E">
+  {% endif %}
   {% set theme_colors = theme | default({}) %}
   {% if theme_colors %}
   <style>
@@ -180,10 +184,10 @@
   <div class="header-main">
     <div class="container">
       <a href="{{ base_url }}/{{ lang }}/" class="logo">
-        {% if settings.company.logo %}<img src="{{ settings.company.logo }}" alt="{{ t.siteLogoText }}" class="logo-img" />{% endif %}
+        {% if settings.company.logo %}<img src="{{ settings.company.logo }}" alt="{{ settings.company.short_name or settings.company.name or t.siteLogoText }}" class="logo-img" />{% endif %}
         <div class="logo-text-group">
-          <span class="logo-text">{{ t.company }}</span>
-          <span class="logo-text-cn">{{ t.siteLogoText }}</span>
+          <span class="logo-text">{{ settings.company.name or t.company }}</span>
+          <span class="logo-text-cn">{{ settings.company.short_name or settings.company.name or t.siteLogoText }}</span>
         </div>
       </a>
 
@@ -215,10 +219,10 @@
         </div>
       </div>
       <a href="{{ base_url }}/{{ lang }}/" class="logo logo--centered">
-        {% if settings.company.logo %}<img src="{{ settings.company.logo }}" alt="{{ t.siteLogoText }}" class="logo-img" />{% endif %}
+        {% if settings.company.logo %}<img src="{{ settings.company.logo }}" alt="{{ settings.company.short_name or settings.company.name or t.siteLogoText }}" class="logo-img" />{% endif %}
         <div class="logo-text-group">
-          <span class="logo-text">{{ t.company }}</span>
-          <span class="logo-text-cn">{{ t.siteLogoText }}</span>
+          <span class="logo-text">{{ settings.company.name or t.company }}</span>
+          <span class="logo-text-cn">{{ settings.company.short_name or settings.company.name or t.siteLogoText }}</span>
         </div>
       </a>
       <nav class="header-nav header-nav--centered" id="headerNav">
@@ -240,8 +244,8 @@
   <div class="header-main">
     <div class="container">
       <a href="{{ base_url }}/{{ lang }}/" class="logo">
-        {% if settings.company.logo %}<img src="{{ settings.company.logo }}" alt="{{ t.siteLogoText }}" class="logo-img" />{% endif %}
-        <span class="logo-text" style="font-size:var(--font-size-lg);">{{ t.company }}</span>
+        {% if settings.company.logo %}<img src="{{ settings.company.logo }}" alt="{{ settings.company.short_name or settings.company.name or t.siteLogoText }}" class="logo-img" />{% endif %}
+        <span class="logo-text" style="font-size:var(--font-size-lg);">{{ settings.company.name or t.company }}</span>
       </a>
 
       <div class="header-actions">
@@ -424,8 +428,8 @@ document.addEventListener('click', function(e) {
       {% endif %}
       <div class="footer-social-brand">
         <a href="{{ base_url }}/{{ lang }}/" class="footer-brand-logo">
-          {% if settings.company.logo %}<img src="{{ settings.company.logo }}" alt="{{ t.siteLogoText }}" class="logo-img" />{% endif %}
-          <span class="footer-brand-name">{{ t.company }}</span>
+          {% if settings.company.logo %}<img src="{{ settings.company.logo }}" alt="{{ settings.company.short_name or settings.company.name or t.siteLogoText }}" class="logo-img" />{% endif %}
+          <span class="footer-brand-name">{{ settings.company.name or t.company }}</span>
         </a>
         {% if settings.contact %}
         <div class="footer-brand-contact">
@@ -455,7 +459,7 @@ document.addEventListener('click', function(e) {
     {% endif %}
 
     <div class="footer-bottom">
-      {% set copyright_text = footer_cfg.get('copyright') or t.company %}
+      {% set copyright_text = footer_cfg.get('copyright') or settings.company.name or t.company %}
       <p>© {{ year }} {{ copyright_text }}</p>
       {% set icp_text = footer_cfg.get('icp') or (settings.company and settings.company.icp) %}
       {% if icp_text %}<p>{{ icp_text }}</p>{% endif %}

@@ -85,21 +85,42 @@ fields:
     label: 描述
     type: textarea
     group: 内容
+  - key: media_type
+    label: 媒体类型
+    type: select
+    group: 内容
+    default: image
+    options:
+      - value: image
+        label: 图片
+      - value: video
+        label: 视频
+      - value: embed
+        label: 嵌入页面
   - key: image
     label: 图片
     type: image
     group: 内容
     placeholder: "Use image, video, or embed URL"
+    show_if:
+      field: media_type
+      value: image
   - key: video
     label: 视频
     type: video
     group: 内容
     placeholder: "MP4/WebM video URL, or upload a video"
+    show_if:
+      field: media_type
+      value: video
   - key: embed_url
     label: 嵌入页面 URL
     type: embed
     group: 内容
     placeholder: "https://example.com/tool/index.html"
+    show_if:
+      field: media_type
+      value: embed
   - key: features
     label: 功能点列表
     type: list

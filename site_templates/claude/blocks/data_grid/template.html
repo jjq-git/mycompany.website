@@ -1,26 +1,52 @@
-<!-- 数据网格模块 - 数据集卡片列表（结构对齐 dengtec） -->
+<!-- 数据网格模块 - 通用数据集卡片列表，支持筛选/分页/查看全部（合并 product_grid） -->
 <section data-name="data_grid" data-type="group" data-hideable data-style="cols,bg,bg-color" class="section">
   <div class="container">
     <div class="section-header">
       <h2 data-name="title" data-type="text" class="section-title">数据列表</h2>
       <p data-name="subtitle" data-type="text" class="section-description">内容副标题</p>
     </div>
-    <div data-name="items" data-type="list" data-source="" class="dg-list">
+
+    <!-- 筛选面板：由 initFilterableGrids() 扫描 .filter-source-category/tags 生成按钮 -->
+    <div data-name="filters" data-type="group" class="dg-filter-panel" data-filter-for="{dataset}">
+      <span data-name="show_filters" data-type="text" data-filter-key="show_filters" hidden>true</span>
+      <div class="dg-filter-group">
+        <span class="dg-filter-label">Category</span>
+        <div class="dg-filter-options" data-filter-group="category"></div>
+      </div>
+      <div class="dg-filter-group">
+        <span class="dg-filter-label">Tags</span>
+        <div class="dg-filter-options" data-filter-group="tag"></div>
+      </div>
+    </div>
+
+    <!-- 卡片列表：data-source 空=用户自由选数据集；filterable-grid class 触发 JS 筛选 -->
+    <div data-name="items" data-type="list" data-source="" class="dg-list filterable-grid" data-filter-id="{dataset}">
       <a data-name="item" data-type="group" data-href-template="{base_url}/{lang}{current_path}{slug}/" class="dg-card">
         <div class="dg-card-image">
           <img data-name="cover" data-fallback="image,photo,logo" data-type="image" src="" alt="" loading="lazy">
-          <span data-name="category" data-type="text" class="dg-card-category">分类</span>
+          <!-- ⚠ JS 数据源：initFilterableGrids() 扫描 .filter-source-category 生成分类筛选按钮 -->
+          <span data-name="category" data-type="text" class="dg-card-category filter-source-category">分类</span>
         </div>
         <div class="dg-card-body">
           <h3 data-name="title" data-fallback="name" data-type="text" class="dg-card-title">标题</h3>
+          <!-- 价格：产品数据集有值，其他数据集为空 → 自动 hidden -->
+          <div data-name="price" data-type="text" class="dg-card-price"></div>
+          <!-- 日期：博客/案例有值，产品为空 → 自动 hidden -->
           <div data-name="date" data-type="text" class="dg-card-date">日期</div>
           <p data-name="summary" data-fallback="excerpt,description" data-type="text" class="dg-card-desc">简介</p>
-          <div data-name="tags" data-type="list" class="dg-card-tags">
+          <!-- ⚠ JS 数据源：initFilterableGrids() 扫描 .filter-source-tags > .dg-card-tag 生成标签筛选按钮 -->
+          <div data-name="tags" data-type="list" class="dg-card-tags filter-source-tags">
             <span data-name="tag" data-type="text" class="dg-card-tag">标签</span>
           </div>
         </div>
       </a>
     </div>
+
+    <!-- 筛选空状态 -->
+    <p class="dg-empty-state" data-filter-empty="{dataset}" hidden>No matching items.</p>
+
+    <!-- 分页配置区：data-name span 由 block_renderer 注入值并清除 data-name 属性，
+         data-pager-key 不被渲染器清理，JS 据此读取配置；span 文本空时 JS 用默认值兜底 -->
     <div data-name="pager" data-type="group" class="dg-pager" style="display:none">
       <span data-name="show_pagination" data-type="text" data-pager-key="show_pagination" hidden>true</span>
       <span data-name="pagination_style" data-type="text" data-pager-key="pagination_style" hidden>load_more</span>
@@ -28,6 +54,12 @@
       <span data-name="pager_align" data-type="text" data-pager-key="pager_align" hidden>center</span>
       <button class="btn btn-outline-primary dg-load-more" style="display:none" onclick="loadMoreDataGrid(this)">加载更多 <span class="dg-remaining"></span></button>
       <div class="dg-page-numbers" style="display:none"></div>
+    </div>
+
+    <!-- 查看全部：读取 show_view_all 控制显隐，链接到数据集列表页 -->
+    <span data-name="show_view_all" data-type="text" data-view-key="show_view_all" hidden>true</span>
+    <div class="text-center dg-view-all" style="margin-top: 2rem;">
+      <a data-href-template="{base_url}/{lang}{current_path}" class="btn btn-primary">查看全部</a>
     </div>
   </div>
 </section>

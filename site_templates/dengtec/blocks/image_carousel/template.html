@@ -1,0 +1,81 @@
+<!-- 图片轮播模块 - 横向滚动展示图片 -->
+<section data-name="image_carousel" data-type="group" class="section ic-section">
+  <div class="container">
+    <h2 data-name="title" data-type="text" class="ic-title">标题</h2>
+    <p data-name="desc" data-type="textarea" class="ic-desc">描述</p>
+
+    <div class="ic-viewport">
+      <div data-name="images" data-type="list" class="ic-track">
+        <a data-name="image_item" data-type="group" data-href="link" class="ic-slide" target="_blank" rel="noopener">
+          <div class="ic-img-wrap">
+            <img data-name="image" data-type="image" src="" alt="" loading="lazy" class="ic-image">
+          </div>
+          <span data-name="caption" data-type="text" class="ic-caption">图片说明</span>
+          <span data-name="alt" data-type="text" class="ic-alt" hidden></span>
+          <span data-name="link" data-type="url" class="ic-link-val" hidden></span>
+        </a>
+      </div>
+    </div>
+
+    <div class="ic-dots"></div>
+    <div class="ic-config" hidden>
+      <span data-name="images_per_row" data-type="text" class="ic-cfg-row">4</span>
+      <span data-name="auto_scroll" data-type="text" class="ic-cfg-auto">true</span>
+      <span data-name="scroll_interval" data-type="text" class="ic-cfg-interval">4</span>
+      <span data-name="show_dots" data-type="text" class="ic-cfg-dots">true</span>
+    </div>
+  </div>
+  <script>
+    (function(){
+      var section = document.currentScript.parentElement;
+      var readCfg = function(cls, def) {
+        var el = section.querySelector('.ic-cfg-' + cls);
+        var v = el ? (el.textContent || '').trim() : '';
+        return v || def;
+      };
+      var perRow = parseInt(readCfg('row', '4')) || 4;
+      var autoScroll = readCfg('auto', 'true') !== 'false';
+      var intervalMs = (parseInt(readCfg('interval', '4')) || 4) * 1000;
+      var showDots = readCfg('dots', 'true') !== 'false';
+
+      section.querySelectorAll('.ic-slide').forEach(function(slide){
+        var img = slide.querySelector('.ic-image');
+        var altEl = slide.querySelector('.ic-alt');
+        var linkEl = slide.querySelector('.ic-link-val');
+        if (img && altEl) { var t = altEl.textContent.trim(); if (t) img.alt = t; }
+        if (linkEl) { var l = linkEl.textContent.trim(); if (!l) slide.removeAttribute('href'); }
+      });
+
+      var track = section.querySelector('.ic-track');
+      var slides = track.querySelectorAll('.ic-slide');
+      var dotsContainer = section.querySelector('.ic-dots');
+      var total = slides.length;
+      if (!total) return;
+      var totalPages = Math.max(1, total - perRow + 1);
+      var current = 0, autoTimer = null;
+      slides.forEach(function(s){ s.style.flex = '0 0 ' + (100 / perRow) + '%'; });
+
+      if (showDots && totalPages > 1) {
+        for (var i = 0; i < totalPages; i++) {
+          var dot = document.createElement('button');
+          dot.className = 'ic-dot';
+          dot.setAttribute('aria-label', '第' + (i + 1) + '页');
+          dot.addEventListener('click', (function(idx){ return function(){ goTo(idx); resetAutoScroll(); }; })(i));
+          dotsContainer.appendChild(dot);
+        }
+      } else { dotsContainer.style.display = 'none'; }
+
+      function updateUI() {
+        track.style.transform = 'translateX(' + (-current * (100 / perRow)) + '%)';
+        dotsContainer.querySelectorAll('.ic-dot').forEach(function(d, i){ d.classList.toggle('ic-dot--active', i === current); });
+      }
+      function goTo(i) { current = Math.max(0, Math.min(i, totalPages - 1)); updateUI(); }
+      function next() { goTo(current < totalPages - 1 ? current + 1 : 0); }
+      function prev() { goTo(current > 0 ? current - 1 : totalPages - 1); }
+      function startAutoScroll() { if (!autoScroll || totalPages <= 1) return; stopAutoScroll(); autoTimer = setInterval(next, intervalMs); }
+      function stopAutoScroll() { if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } }
+      function resetAutoScroll() { stopAutoScroll(); startAutoScroll(); }
+      updateUI(); startAutoScroll();
+    })();
+  </script>
+</section>

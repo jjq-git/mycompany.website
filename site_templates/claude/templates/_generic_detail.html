@@ -1,6 +1,6 @@
 <!-- Generic Detail - Claude 风格: 通用数据集详情页 -->
 {% extends "_base.html" %}
-{% block title %}{{ item.title | default(item.name) }} — {{ t.company }}{% endblock %}
+{% block title %}{{ item.title | default(item.name) }} — {{ settings.company.name or t.company }}{% endblock %}
 {% block description %}{{ item.description | default(item.summary, true) | default(item.excerpt, true) | default('') }}{% endblock %}
 
 {% block content %}
@@ -8,12 +8,12 @@
 {# ── 返回列表 ── #}
 {% set _path_parts = current_path.strip('/').split('/') %}
 {% set _list_path = _path_parts[:-1] | join('/') %}
-<div class="container">
+<!-- <div class="container">
   <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="btn btn-text-link" style="margin: var(--space-md) 0; display: inline-flex; align-items: center; gap: 4px;">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
     {{ t.actions.viewAll | default('Back') }}
   </a>
-</div>
+</div> -->
 
 {# ── 模块驱动的详情渲染 ── #}
 {% set modules = item.modules | default([]) %}

@@ -1,6 +1,9 @@
 """Flask 应用工厂."""
 import os
-from flask import Flask
+import re
+from pathlib import Path
+
+from flask import Flask, jsonify, request, session, send_from_directory
 from flask_wtf.csrf import CSRFProtect
 
 from .core.config import load_config
@@ -10,7 +13,14 @@ csrf = CSRFProtect()
 
 
 def create_app(config_override=None):
-    app = Flask(__name__)
+    # 修正 Windows 上 Python mimetypes 对 SVG 的错误 MIME 类型（image/svg → image/svg+xml）
+    # 浏览器在 <img> 标签中遇到 image/svg 会拒绝渲染，必须用正确的 image/svg+xml
+    import mimetypes
+    mimetypes.add_type('image/svg+xml', '.svg')
+
+    # static_folder=None 阻止 Werkzeug SharedDataMiddleware 在 WSGI 层拦截 /static/
+    # 改为自定义路由接管，优先从模板目录 serve，兜底 app/static/
+    app = Flask(__name__, static_folder=None)
     app.config.update(load_config(config_override))
     # 调试模式下确保模板改动即时生效，无需重启服务器
     # Flask 默认不设置 TEMPLATES_AUTO_RELOAD, 只在 app.run(debug=True) 时才启用
@@ -23,9 +33,9 @@ def create_app(config_override=None):
     # #34: 支持从环境变量 MAX_CONTENT_LENGTH 覆盖, 与 .env.example 注释一一对应。
     if app.config.get('MAX_CONTENT_LENGTH') is None:
         _env_max = os.environ.get('MAX_CONTENT_LENGTH', '').strip()
-        # 默认 24MB（视频 multipart 编码膨胀约30%，需要留余量）; 非法值回退默认
+        # 默认 64MB（视频 multipart 编码膨胀约30%，需要留余量）; 非法值回退默认
         app.config['MAX_CONTENT_LENGTH'] = (
-            int(_env_max) if _env_max.isdigit() else 24 * 1024 * 1024
+            int(_env_max) if _env_max.isdigit() else 64 * 1024 * 1024
         )
 
     # #8: Session Cookie 加固。HTTPONLY 默认 True(JS 读不到), 这里再补 SAMESITE(浏览器层
@@ -58,13 +68,91 @@ def create_app(config_override=None):
         from flask import flash, redirect, request
         app.logger.warning('CSRF 校验失败: %s (referrer=%s)', e.description, request.referrer)
         flash('页面已过期，请重新提交。', 'warning')
+        if request.path.startswith('/api/'):
+            return jsonify({'error': 'Page expired. Please refresh and try again.'}), 400
         return redirect(request.referrer or request.url)
 
     # 注册路由
+    @app.errorhandler(401)
+    def handle_unauthorized(e):
+        if request.path.startswith('/api/'):
+            return jsonify({'error': 'Please log in again.'}), 401
+        return e
+
+    @app.errorhandler(404)
+    def handle_not_found(e):
+        if request.path.startswith('/api/'):
+            return jsonify({'error': 'API endpoint not found. Please restart the server and refresh the page.'}), 404
+        return e
+
+    @app.errorhandler(413)
+    def handle_request_too_large(e):
+        if request.path.startswith('/api/'):
+            return jsonify({'error': 'Uploaded file is too large.'}), 413
+        return e
+
     from .core.routes import bp as core_bp
     from .core.admin_routes import bp as admin_bp
     app.register_blueprint(core_bp)
     app.register_blueprint(admin_bp, url_prefix='/admin')
+
+    @app.route('/favicon.ico', endpoint='favicon')
+    def _serve_favicon():
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+            '<rect width="32" height="32" rx="7" fill="#2563eb"/>'
+            '<path d="M9 21V11h3.2l3.8 5.6 3.8-5.6H23v10h-3v-5.3l-3.2 4.6h-1.6L12 15.7V21H9z" fill="white"/>'
+            '</svg>'
+        )
+        return app.response_class(svg, mimetype='image/svg+xml')
+
+    # 自定义 /static/ 路由（static_folder=None，Werkzeug 不拦截，请求会到达这里）
+    # 搜索优先级：
+    #   1. 模板预览 session → output/_preview/<tpl>/static/
+    #   2. 站点预览 session → output/<site_id>/static/
+    #   3. Referer 推断模板 → output/_preview/<tpl>/static/
+    #   4. 模板源目录 site_templates/*/static/
+    #   5. 兜底：app/static/
+    _app_static = Path(__file__).parent / 'static'
+
+    @app.route('/static/<path:filename>', endpoint='static')
+    def _serve_static(filename):
+        # 1. 模板预览 session（最优先）
+        tpl_name = session.get('current_template_preview')
+        if tpl_name:
+            d = Path(app.config['OUTPUT_DIR']) / '_preview' / tpl_name / 'static'
+            if (d / filename).exists():
+                return send_from_directory(str(d.resolve()), filename)
+
+        # 2. 站点预览 session
+        site_id = session.get('current_site_id')
+        if site_id:
+            d = Path(app.config['OUTPUT_DIR']) / str(site_id) / 'static'
+            if (d / filename).exists():
+                return send_from_directory(str(d.resolve()), filename)
+
+        # 3. Referer 推断模板
+        if tpl_name is None and site_id is None:
+            m = re.search(r'/templates/([a-zA-Z0-9_-]+)/preview/', request.headers.get('Referer', ''))
+            if m:
+                d = Path(app.config['OUTPUT_DIR']) / '_preview' / m.group(1) / 'static'
+                if (d / filename).exists():
+                    return send_from_directory(str(d.resolve()), filename)
+
+        # 4. 搜索模板源目录
+        for tpl_dir in sorted(Path(app.config['TEMPLATES_DIR']).iterdir()):
+            if not tpl_dir.is_dir() or tpl_dir.name.startswith('.'):
+                continue
+            d = tpl_dir / 'static'
+            if (d / filename).exists():
+                return send_from_directory(str(d.resolve()), filename)
+
+        # 5. 兜底：app/static/
+        if (_app_static / filename).exists():
+            return send_from_directory(str(_app_static.resolve()), filename)
+
+        from flask import abort
+        abort(404)
 
     # 注册 CLI 命令
     from . import commands

@@ -21,7 +21,7 @@
     <label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor='#94a3b8';this.style.background='#f1f5f9'" onmouseleave="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc'">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
       上传图片
-      <input type="file" name="company_logo_file" accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp" onchange="handleCompanyLogoUpload(this)" style="display:none">
+      <input type="file" name="company_logo_file" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml,.jpg,.jpeg,.png,.gif,.webp,.svg" onchange="handleCompanyLogoUpload(this)" style="display:none">
     </label>
     <div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>
     <div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;{% if not current_logo %}display:none{% endif %}">{{ current_logo }}</div>
@@ -33,6 +33,24 @@
     </div>
   </div>
   <div class="mb-2">
+  {% set current_favicon = company.get('favicon', '') %}
+  <div class="mb-2">
+    <label class="form-label small mb-1 text-muted">Favicon</label>
+    <input type="hidden" name="company.favicon" value="{{ current_favicon }}" oninput="updateFaviconPreview(this)">
+    <label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor='#94a3b8';this.style.background='#f1f5f9'" onmouseleave="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      上传图片
+      <input type="file" name="company_favicon_file" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml,image/x-icon,.jpg,.jpeg,.png,.gif,.webp,.svg,.ico" onchange="handleCompanyFaviconUpload(this)" style="display:none">
+    </label>
+    <div class="form-text mt-1">浏览器标签页小图标，建议 32×32 或 16×16 像素</div>
+    <div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;{% if not current_favicon %}display:none{% endif %}">{{ current_favicon }}</div>
+    <div class="mt-2 module-image-preview" style="{% if not current_favicon %}display:none{% endif %}">
+      <div style="position:relative;display:inline-block">
+        <img src="{{ current_favicon }}" style="max-width:32px;max-height:32px;border-radius:2px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeCompanyFavicon(this)" onerror="this.parentElement.parentElement.style.display='none'">
+        <button type="button" class="btn btn-sm" onclick="clearCompanyFavicon(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button>
+      </div>
+    </div>
+  </div>
     <label class="form-label small mb-1">公司名称</label>
     <input class="form-control form-control-sm" name="company.name" value="{{ company.get('name', '') }}">
   </div>
@@ -68,7 +86,16 @@ function handleCompanyLogoUpload(fileInput) {
   var img = preview ? preview.querySelector('img') : null;
   var urlText = container ? container.querySelector('.module-image-url-text') : null;
   if (!file || !preview || !img) return;
-  if (file.type.startsWith('image/')) {
+  // SVG 在 Windows 上 file.type 常为空或 image/svg，Blob URL 会导致 <img> 不渲染，
+  // 用 FileReader 强制输出 data:image/svg+xml data URI 绕过 MIME 问题
+  if (/\.svg$/i.test(file.name) || file.type === 'image/svg+xml' || file.type === 'image/svg') {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      img.src = e.target.result;
+      preview.style.display = '';
+    };
+    reader.readAsDataURL(file);
+  } else if (file.type.startsWith('image/')) {
     img.src = URL.createObjectURL(file);
     preview.style.display = '';
   }
@@ -122,6 +149,23 @@ function updateImagePreview(urlInput) {
     preview.style.display = 'none';
     img.src = '';
   }
+}
+
+// Favicon 相关 JS（复用 Logo 的 lightbox 和预览逻辑）
+function handleCompanyFaviconUpload(fileInput) {
+  handleCompanyLogoUpload(fileInput);
+}
+
+function enlargeCompanyFavicon(img) {
+  enlargeCompanyLogo(img);
+}
+
+function clearCompanyFavicon(btn) {
+  clearCompanyLogo(btn);
+}
+
+function updateFaviconPreview(urlInput) {
+  updateImagePreview(urlInput);
 }
 </script>
 {% endblock %}

@@ -149,13 +149,17 @@
       })
       .then(function(html){
         if (html) {
-          document.getElementById('rightPanelBody').innerHTML = html;
-          var scripts = document.getElementById('rightPanelBody').querySelectorAll('script');
-          scripts.forEach(function(s){
-            var ns = document.createElement('script');
-            ns.textContent = s.textContent;
-            s.replaceWith(ns);
-          });
+          var panelBody = document.getElementById('rightPanelBody');
+          panelBody.innerHTML = html;
+          if (typeof runPanelScripts === 'function') {
+            runPanelScripts(panelBody);
+          } else {
+            panelBody.querySelectorAll('script').forEach(function(s){
+              if ((s.type || '').indexOf('json') >= 0) return;
+              try { (0, eval)(s.textContent || ''); } catch (e) { console.warn('Panel script failed:', e); }
+              s.remove();
+            });
+          }
         }
       })
       .catch(function(err){

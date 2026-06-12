@@ -109,6 +109,23 @@ def normalize_for_render(items, parent_path=''):
     return result
 
 
+def filter_hidden_for_nav(items):
+    """返回导航可见菜单树；hidden=True 的项仍可构建页面，但不进入 Header/Footer 导航。"""
+    result = []
+    for it in items or []:
+        if not isinstance(it, dict):
+            continue
+        if it.get('hidden') is True:
+            continue
+        new = dict(it)
+        if it.get('children'):
+            new['children'] = filter_hidden_for_nav(it.get('children') or [])
+        else:
+            new['children'] = []
+        result.append(new)
+    return result
+
+
 def collect_list_targets(items, result=None):
     """递归收集菜单里所有 list 类型项的 {target, label}。
 
@@ -159,6 +176,8 @@ def clean_for_storage(items):
                 continue
 
             item = {'label': label, 'type': item_type}
+            if raw.get('hidden') is True:
+                item['hidden'] = True
             if item_type in ('list', 'page', 'group'):
                 target = str(raw.get('target') or '').strip().strip('/')
                 if target:
@@ -365,12 +384,13 @@ def collect_render_tasks(menu_items, tpl_html_dir, data, pages=None):
                 page_tmpl = f'{target}.html'
                 if not (tpl_html_dir / page_tmpl).exists():
                     page_tmpl = '_page.html' if (tpl_html_dir / '_page.html').exists() else 'index.html'
+                page_key = item_path if pages and item_path in pages else target
                 tasks.append({
                     'type': 'page',
                     'template': page_tmpl,
                     'output_path': f'{item_path}/index.html',
                     'current_path': f'/{item_path}/',
-                    'page_key': target,
+                    'page_key': page_key,
                 })
 
             # 递归子菜单

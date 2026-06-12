@@ -24,6 +24,175 @@
     });
   }
 
+  window._insertRichEditorLink = function(btn, event) {
+    if (event) event.preventDefault();
+    var wrapper = btn && btn.closest ? btn.closest('.mb-2') : null;
+    var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+    if (!editor) return false;
+    var sel = window.getSelection();
+    var range = null;
+    if (sel && sel.rangeCount && editor.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+      range = sel.getRangeAt(0).cloneRange();
+    }
+    var url = window.prompt('链接地址');
+    if (!url) return false;
+    editor.focus();
+    var link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    if (range && !range.collapsed) {
+      try {
+        range.surroundContents(link);
+      } catch (err) {
+        var fragment = range.extractContents();
+        link.appendChild(fragment);
+        range.insertNode(link);
+      }
+    } else {
+      link.textContent = url;
+      if (!range) {
+        range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+      }
+      range.insertNode(link);
+    }
+    var textarea = editor.nextElementSibling;
+    if (textarea) textarea.value = editor.innerHTML;
+    return false;
+  };
+
+  window._richEditorCommand = function(btn, event, cmd, arg) {
+    if (event) event.preventDefault();
+    var wrapper = btn && btn.closest ? btn.closest('.mb-2') : null;
+    var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+    if (!editor) return false;
+    editor.focus();
+    document.execCommand(cmd, false, arg || null);
+    var textarea = editor.nextElementSibling;
+    if (textarea) textarea.value = editor.innerHTML;
+    return false;
+  };
+
+  window._richEditorSelectCommand = function(control, cmd, arg) {
+    var wrapper = control && control.closest ? control.closest('.mb-2') : null;
+    var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+    if (!editor) return false;
+    editor.focus();
+    document.execCommand(cmd, false, arg || null);
+    var textarea = editor.nextElementSibling;
+    if (textarea) textarea.value = editor.innerHTML;
+    return false;
+  };
+
+  window._insertRichEditorTable = function(btn, event) {
+    if (event) event.preventDefault();
+    var wrapper = btn && btn.closest ? btn.closest('.mb-2') : null;
+    var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+    if (!editor) return false;
+    var size = window.prompt('表格行列，例如 3x3', '3x3');
+    if (size === null) return false;
+    var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,，, ]\s*(\d+)\s*$/);
+    var rows = match ? parseInt(match[1], 10) : 3;
+    var cols = match ? parseInt(match[2], 10) : 3;
+    rows = Math.max(1, Math.min(rows || 3, 20));
+    cols = Math.max(1, Math.min(cols || 3, 10));
+    editor.focus();
+    var html = '<table><tbody>';
+    for (var r = 0; r < rows; r++) {
+      html += '<tr>';
+      for (var c = 0; c < cols; c++) html += '<td><br></td>';
+      html += '</tr>';
+    }
+    html += '</tbody></table><p><br></p>';
+    document.execCommand('insertHTML', false, html);
+    var textarea = editor.nextElementSibling;
+    if (textarea) textarea.value = editor.innerHTML;
+    return false;
+  };
+
+  function richEditorHtml(name, value) {
+    return '<div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'bold\')" title="加粗" style="font-size:12px;line-height:1"><b>B</b></button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'italic\')" title="斜体" style="font-size:12px;line-height:1"><i>I</i></button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'underline\')" title="下划线" style="font-size:12px;line-height:1"><u>U</u></button>' +
+      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'formatBlock\',\'h2\')" title="大标题" style="font-size:12px;line-height:1">H2</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'formatBlock\',\'h3\')" title="小标题" style="font-size:12px;line-height:1">H3</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'formatBlock\',\'p\')" title="正文段落" style="font-size:12px;line-height:1">P</button>' +
+      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyLeft\')" title="左对齐" style="font-size:12px;line-height:1">☰</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyCenter\')" title="居中" style="font-size:12px;line-height:1">≡</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyRight\')" title="右对齐" style="font-size:12px;line-height:1">☷</button>' +
+      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertUnorderedList\')" title="无序列表" style="font-size:12px;line-height:1">•≡</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertOrderedList\')" title="有序列表" style="font-size:12px;line-height:1">1≡</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorTable(this,event)" title="插入表格" style="font-size:12px;line-height:1">▦</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorLink(this,event)" title="插入链接" style="font-size:12px;line-height:1">🔗</button>' +
+      '</div>' +
+      '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (value || '') + '</div>' +
+      '<textarea class="form-control form-control-sm d-none" name="' + esc(name) + '">' + esc(value || '') + '</textarea>';
+  }
+
+  function richEditorHtml(name, value) {
+    return '<div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'bold\')" title="Bold" style="font-size:12px;line-height:1"><b>B</b></button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'italic\')" title="Italic" style="font-size:12px;line-height:1"><i>I</i></button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'underline\')" title="Underline" style="font-size:12px;line-height:1"><u>U</u></button>' +
+      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'formatBlock\',\'h2\')" title="Heading 2" style="font-size:12px;line-height:1">H2</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'formatBlock\',\'h3\')" title="Heading 3" style="font-size:12px;line-height:1">H3</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'formatBlock\',\'p\')" title="Paragraph" style="font-size:12px;line-height:1">P</button>' +
+      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyLeft\')" title="Align left" style="font-size:12px;line-height:1">L</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyCenter\')" title="Align center" style="font-size:12px;line-height:1">C</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyRight\')" title="Align right" style="font-size:12px;line-height:1">R</button>' +
+      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertUnorderedList\')" title="Bullet list" style="font-size:12px;line-height:1">UL</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertOrderedList\')" title="Numbered list" style="font-size:12px;line-height:1">OL</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorTable(this,event)" title="Table" style="font-size:12px;line-height:1">TB</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorLink(this,event)" title="Link" style="font-size:12px;line-height:1">LK</button>' +
+      '</div>' +
+      '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (value || '') + '</div>' +
+      '<textarea class="form-control form-control-sm d-none" name="' + esc(name) + '">' + esc(value || '') + '</textarea>';
+  }
+
+  function richEditorHtml(name, value) {
+    return '<div class="rte-wrapper">' +
+      '<div class="rich-toolbar rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="bold" title="Bold"><b>B</b></button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="italic" title="Italic"><i>I</i></button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="underline" title="Underline"><u>U</u></button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="strikeThrough" title="Strike"><s>S</s></button>' +
+      '<span class="rte-sep"></span>' +
+      '<select class="form-select form-select-sm rte-heading-select" style="width:auto;font-size:12px" title="Heading">' +
+        '<option value="">Paragraph</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option>' +
+      '</select>' +
+      '<span class="rte-sep"></span>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyLeft" title="Align left">☰</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyCenter" title="Align center">≡</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyRight" title="Align right">☷</button>' +
+      '<span class="rte-sep"></span>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertUnorderedList" title="Bullet list">•≡</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertOrderedList" title="Numbered list">1≡</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-btn" title="Table">▦</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-settings-btn" title="Table settings">▤</button>' +
+      '<span class="rte-sep"></span>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="formatBlock" data-arg="blockquote" title="Quote">❝</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertHorizontalRule" title="Horizontal rule">—</button>' +
+      '<span class="rte-sep"></span>' +
+      '<input type="color" class="rte-color-picker" value="#141413" style="width:28px;height:28px;border:1px solid #dee2e6;border-radius:4px;padding:2px;cursor:pointer" title="Text color">' +
+      '<span class="rte-sep"></span>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="removeFormat" title="Clear format">✕</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="undo" title="Undo">↩</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="redo" title="Redo">↪</button>' +
+      '</div>' +
+      '<div contenteditable="true" class="rich-editor-body form-control form-control-sm rte-editor" style="min-height:150px;max-height:400px;overflow-y:auto;line-height:1.7;font-size:13px;outline:none" data-placeholder="">' + (value || '') + '</div>' +
+      '<textarea class="form-control form-control-sm d-none" name="' + esc(name) + '">' + esc(value || '') + '</textarea>' +
+      '</div>';
+  }
+
   function cn(name, ph, dv) {
     var hasVal = dv && String(dv).trim();
     var color = hasVal ? dv : '#888888';
@@ -112,7 +281,12 @@
   function renderField(prefix, field, value, placeholder) {
     var key = field.key, type = (field.type || 'text').toLowerCase(), html = '';
     var isImage = /(image|cover|background|media|photo|logo)/i.test(key);
-    html += '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + esc(field.label || key) + '</label>';
+    var showIf = field.show_if || null;
+    var wrapperAttrs = ' class="mb-2 module-field" data-field-key="' + esc(key) + '"';
+    if (showIf && showIf.field) {
+      wrapperAttrs += ' data-show-if-field="' + esc(showIf.field) + '" data-show-if-value="' + esc(showIf.value || '') + '"';
+    }
+    html += '<div' + wrapperAttrs + '><label class="form-label small mb-1 text-muted">' + esc(field.label || key) + '</label>';
     if (type === 'video') {
       html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || 'Video URL') + '">';
       html += '<label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'">Upload video<input type="file" name="' + prefix + key + '_file" accept="video/*" style="display:none"></label>';
@@ -124,6 +298,8 @@
       html += '<div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>';
       html += '<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div>';
       html += '<div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div>';
+    } else if (type === 'richtext') {
+      html += richEditorHtml(prefix + key, value || '');
     } else if (type === 'textarea') {
       html += '<textarea class="form-control form-control-sm" rows="4" name="' + prefix + key + '" placeholder="' + esc(placeholder || '') + '">' + esc(value || '') + '</textarea>';
     } else if (type === 'select') {
@@ -158,6 +334,33 @@
       html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '">';
     }
     return html + '</div>';
+  }
+
+  function findNamedInput(root, name) {
+    var inputs = root.querySelectorAll('[name]');
+    for (var i = 0; i < inputs.length; i++) {
+      if (inputs[i].name === name) return inputs[i];
+    }
+    return null;
+  }
+
+  function updateConditionalFields(root) {
+    root = root || document;
+    root.querySelectorAll('.module-field[data-show-if-field]').forEach(function(fieldEl) {
+      var fieldKey = fieldEl.getAttribute('data-field-key') || '';
+      var depKey = fieldEl.getAttribute('data-show-if-field') || '';
+      var expected = (fieldEl.getAttribute('data-show-if-value') || '').split(',').map(function(v) { return v.trim(); });
+      var ownInput = fieldEl.querySelector('[name]');
+      var prefix = '';
+      if (ownInput && fieldKey && ownInput.name.slice(-fieldKey.length) === fieldKey) {
+        prefix = ownInput.name.slice(0, -fieldKey.length);
+      }
+      var scope = fieldEl.closest('.device-config') || root;
+      var depInput = prefix ? findNamedInput(scope, prefix + depKey) : null;
+      var actual = depInput ? String(depInput.value || '') : '';
+      if (!actual && depKey === 'media_type') actual = 'image';
+      fieldEl.style.display = expected.indexOf(actual) >= 0 ? '' : 'none';
+    });
   }
 
   // 图片上传：选择文件后本地预览（全局函数，供动态生成的 onchange 调用）
@@ -247,7 +450,8 @@
       'contact_form': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h4"/><path d="M17 17l2 2"/><path d="M19 15a4 4 0 1 0-8 0"/></svg>',
       'process_steps': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><path d="M8 12h1"/><path d="M15 12h1"/></svg>',
       'logo_cloud': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>',
-      'item_detail': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><path d="M13 15h4"/><path d="M13 19h6"/></svg>'
+      'item_detail': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><path d="M13 15h4"/><path d="M13 19h6"/></svg>',
+      'image_carousel': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="7" height="13" rx="1"/><rect x="13" y="5" width="7" height="13" rx="1"/><path d="m1 10 2 2-2 2"/><path d="m23 14-2-2 2-2"/></svg>'
     };
     return icons[type] || '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>';
   }
@@ -319,6 +523,7 @@
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="title" value="' + esc(item.title || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">简述</label><textarea class="form-control form-control-sm" name="description" rows="2">' + esc(item.description || item.excerpt || item.summary || '') + '</textarea></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签</label><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="多个用逗号或空格分隔"><div class="form-text">如：LED, 展示道具, 近期项目</div></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">价格</label><input type="text" class="form-control form-control-sm" name="price" value="' + esc(item.price || '') + '" placeholder="如 ¥199 / $3/million"></div>' +
         '<hr class="my-2">' +
         /* ── 富文本编辑器（详细介绍） ── */
         '<div class="mb-2 rte-wrapper"><label class="form-label small mb-1 text-muted">详细介绍</label>' +
@@ -334,18 +539,20 @@
             '<option value="">正文</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option>' +
           '</select>' +
           '<span class="rte-sep"></span>' +
+          /* 对齐 */
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyLeft" title="左对齐">☰</button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyCenter" title="居中">≡</button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyRight" title="右对齐">☷</button>' +
+          '<span class="rte-sep"></span>' +
           /* 列表 */
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertUnorderedList" title="无序列表">•≡</button>' +
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertOrderedList" title="有序列表">1≡</button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-btn" title="插入表格">▦</button>' +
           '<span class="rte-sep"></span>' +
           /* 块级 */
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="formatBlock" data-arg="blockquote" title="引用块">❝</button>' +
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertHorizontalRule" title="分割线">—</button>' +
           '<span class="rte-sep"></span>' +
-          /* 链接 */
-          '<button type="button" class="btn btn-sm btn-light rte-btn rte-link-btn" title="插入/编辑链接">🔗</button>' +
-          /* 图片 */
-          '<button type="button" class="btn btn-sm btn-light rte-btn rte-image-btn" title="插入图片">🖼️</button>' +
           /* 文字颜色 */
           '<input type="color" class="rte-color-picker" title="文字颜色" value="#141413" style="width:28px;height:28px;border:1px solid #dee2e6;border-radius:4px;padding:2px;cursor:pointer">' +
           '<span class="rte-sep"></span>' +
@@ -571,59 +778,6 @@
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>';
 
-    /* ====== product_grid ====== */
-    } else if (type === 'product_grid') {
-      specialEditor =
-        '<div class="small fw-semibold mb-1 text-muted">数据</div>' +
-        '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">最大显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_data_max_items" value="' + esc(d.max_items || '6') + '"></div>' +
-        '</div>' +
-        '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
-        '<div class="form-check form-switch mb-3">' +
-          '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_pagination"' +
-          (d.show_pagination !== 'false' ? ' checked' : '') +
-          ' onchange="this.nextElementSibling.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
-          '<label class="form-check-label small" for="module_' + idx + '_show_pagination">显示分页</label>' +
-          '<input type="hidden" name="module_' + idx + '_data_show_pagination" value="' + (d.show_pagination !== 'false' ? 'true' : 'false') + '">' +
-        '</div>' +
-        '<div class="mb-2">' +
-          '<label class="form-label small mb-1 text-muted">分页样式</label>' +
-          '<select class="form-select form-select-sm" name="module_' + idx + '_data_pagination_style">' +
-            '<option value="load_more"' + (d.pagination_style !== 'page_numbers' ? ' selected' : '') + '>加载更多</option>' +
-            '<option value="page_numbers"' + (d.pagination_style === 'page_numbers' ? ' selected' : '') + '>页码导航</option>' +
-          '</select></div>' +
-        '<div class="mb-2">' +
-          '<label class="form-label small mb-1 text-muted">每页显示数量</label>' +
-          '<select class="form-select form-select-sm" name="module_' + idx + '_data_items_per_page">' +
-            ['3','4','6','8','10','12','18','24'].map(function(n) { return '<option value="' + n + '"' + ((d.items_per_page || '6') === n ? ' selected' : '') + '>' + n + ' 条/页</option>'; }).join('') +
-          '</select></div>' +
-        '<div class="mb-2">' +
-          '<label class="form-label small mb-1 text-muted">分页对齐</label>' +
-          '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align">' +
-            '<option value="center"' + (d.pager_align === 'center' || !d.pager_align ? ' selected' : '') + '>居中</option>' +
-            '<option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option>' +
-            '<option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option>' +
-          '</select></div>' +
-        // Row 5: 显示"查看全部"按钮 — toggle 开关
-        '<div class="form-check form-switch mb-2">' +
-          '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_view_all"' +
-          (d.show_view_all !== 'false' ? ' checked' : '') +
-          ' onchange="this.nextElementSibling.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
-          '<label class="form-check-label small" for="module_' + idx + '_show_view_all">显示"查看全部"按钮</label>' +
-          '<input type="hidden" name="module_' + idx + '_data_show_view_all" value="' + (d.show_view_all !== 'false' ? 'true' : 'false') + '">' +
-        '</div>' +
-        '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>';
-      styleEditor =
-        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
-        '<div class="row g-2">' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', '外层背景色', d.section_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
-        '</div>';
-
     /* ====== feature_grid ====== */
     } else if (type === 'feature_grid') {
       var featCount = d.feature_count || '1';
@@ -808,10 +962,23 @@
           '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'h3\');event.preventDefault()" title="小标题" style="font-size:12px;line-height:1">H3</button>' +
           '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'p\');event.preventDefault()" title="正文段落" style="font-size:12px;line-height:1">P</button>' +
           '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="var u=prompt(\'链接地址\');if(u){document.execCommand(\'createLink\',false,u)};event.preventDefault()" title="插入链接" style="font-size:12px;line-height:1">🔗</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyLeft\')" title="左对齐" style="font-size:12px;line-height:1">☰</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyCenter\')" title="居中" style="font-size:12px;line-height:1">≡</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyRight\')" title="右对齐" style="font-size:12px;line-height:1">☷</button>' +
+          '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertUnorderedList\')" title="无序列表" style="font-size:12px;line-height:1">•≡</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertOrderedList\')" title="有序列表" style="font-size:12px;line-height:1">1≡</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorTable(this,event)" title="插入表格" style="font-size:12px;line-height:1">▦</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorLink(this,event)" title="插入链接" style="font-size:12px;line-height:1">🔗</button>' +
         '</div>' +
         '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (d.body || '') + '</div>' +
         '<textarea class="form-control form-control-sm d-none" name="module_' + idx + '_data_body">' + esc(d.body || '') + '</textarea></div>';
+      specialEditor =
+        '<div class="small fw-semibold mb-1 text-muted">Content</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">Title</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">Body</label>' +
+        richEditorHtml('module_' + idx + '_data_body', d.body || '') +
+        '</div>';
       styleEditor =
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">文字排版</div>' +
@@ -1283,13 +1450,20 @@
 
     html += '</div>';
 
+    setTimeout(function() { updateConditionalFields(document); }, 0);
     return { html: html, borderStyle: borderStyle, headerBg: headerBg };
   }
 
-  /* ====== 手风琴展开/收缩 (供模板 addEventListener 调用) ======
-   * 除了依赖 CSS !important 规则驱动 .module-config 显隐外，
-   * 额外显式操作 .content-style-panel 的 display，确保即便
-   * DOM 结构异常，面板也能正确切换。 */
+  /* ====== 手风琴展开/收缩 ======
+   *
+   * server 端渲染的模块头使用 onclick="toggleModuleAccordion(...)" 调用此函数，
+   * 因此必须同时暴露为 window.toggleModuleAccordion（不带下划线）。
+   *
+   * 兼容 page editor 和 dataset editor 两种面板上下文：
+   *   - 显式控制 .module-config 的 display（page editor 用，不走 CSS !important）
+   *   - 显式控制 .content-style-panel 的 display（两种面板都用）
+   *   - 有条件调用 selectModuleInPreview（仅 page editor 有预览 iframe）
+   */
   function toggleModuleAccordion(moduleItem) {
     var wasExpanded = moduleItem.classList.contains('expanded');
     // 收缩同容器内所有模块：移除 expanded + 显式隐藏面板
@@ -1297,24 +1471,47 @@
     if (container) {
       container.querySelectorAll('.module-item').forEach(function(item) {
         item.classList.remove('expanded');
+        // 隐藏 .module-config（page editor 面板用）
+        var cfg = item.querySelector('.module-config');
+        if (cfg) cfg.style.display = 'none';
+        // 隐藏所有 content-style 面板
         item.querySelectorAll('.content-style-panel').forEach(function(p) {
           p.style.display = 'none';
         });
       });
     }
-    // 如果之前未展开，则展开当前模块：恢复 active tab 对应的面板
+    // 如果之前未展开，则展开当前模块
     if (!wasExpanded) {
       moduleItem.classList.add('expanded');
+      // 展开 .module-config
+      var cfg = moduleItem.querySelector('.module-config');
+      if (cfg) cfg.style.display = 'block';
+      // 恢复 active tab 对应的内容面板
       var activeTab = moduleItem.querySelector('.content-style-tab.active');
       var tabName = activeTab ? activeTab.dataset.tab : 'content';
       var target = moduleItem.querySelector('.panel-' + tabName);
       if (target) target.style.display = '';
+      // 联动中间预览 iframe（仅 page editor 环境有该函数）
+      if (typeof selectModuleInPreview === 'function') {
+        selectModuleInPreview(moduleItem.dataset.moduleIndex);
+      }
     }
   }
 
   /* ====== 对外暴露 ====== */
   window._buildModuleHTML = buildModuleHTML;
   window._toggleModuleAccordion = toggleModuleAccordion;
+  window.toggleModuleAccordion = toggleModuleAccordion;  // server 端 onclick 引用此名
+  window._updateModuleConditionalFields = updateConditionalFields;
+
+  document.addEventListener('change', function(e) {
+    if (!e.target || !e.target.name || e.target.name.slice(-10) !== 'media_type') return;
+    updateConditionalFields(e.target.closest('.device-config') || document);
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    updateConditionalFields(document);
+  });
 
   /* ====== 富文本编辑器 (RTE) ======
    * 核心策略：
@@ -1322,16 +1519,343 @@
    *   2. 委托 click 执行 execCommand，通过 _lastRteEditor 找到对应的编辑器
    *   3. 颜色选择器和标题下拉用 change/input 事件
    */
+  if (!window.__adminModulesRteBound) {
+  window.__adminModulesRteBound = true;
   var _lastRteEditor = null;
+  var _rteSavedRange = null;
+
+  function saveRteSelection(rte) {
+    var sel = window.getSelection();
+    if (!rte || !sel || !sel.rangeCount) return null;
+    var range = sel.getRangeAt(0);
+    if (rte.contains(range.commonAncestorContainer)) {
+      _rteSavedRange = range.cloneRange();
+      return _rteSavedRange.cloneRange();
+    }
+    return null;
+  }
+
+  function restoreRteSelection(rte, range) {
+    rte.focus();
+    var targetRange = range || _rteSavedRange;
+    if (!targetRange) return;
+    var sel = window.getSelection();
+    try {
+      sel.removeAllRanges();
+      sel.addRange(targetRange);
+    } catch (err) {
+      _rteSavedRange = null;
+    }
+  }
+
+  function savedRangeInRte(rte) {
+    if (!_rteSavedRange || !rte) return null;
+    var node = _rteSavedRange.commonAncestorContainer;
+    var el = node.nodeType === 1 ? node : (node.parentElement || node.parentNode);
+    return el && rte.contains(el) ? _rteSavedRange.cloneRange() : null;
+  }
+
+  function setRteLinkAttrs(link, url) {
+    link.setAttribute('href', url);
+    link.setAttribute('target', '_blank');
+    link.setAttribute('rel', 'noopener');
+  }
+
+  function insertRteLink(rte, url, savedRange) {
+    if (!url) return;
+    var range = savedRange || savedRangeInRte(rte);
+    restoreRteSelection(rte, range);
+
+    var link = document.createElement('a');
+    setRteLinkAttrs(link, url);
+
+    if (!range || range.collapsed) {
+      link.textContent = url;
+      var sel = window.getSelection();
+      if (sel && sel.rangeCount) {
+        range = sel.getRangeAt(0);
+      } else {
+        range = document.createRange();
+        range.selectNodeContents(rte);
+        range.collapse(false);
+      }
+      range.insertNode(link);
+    } else {
+      try {
+        range.surroundContents(link);
+      } catch (err) {
+        var fragment = range.extractContents();
+        link.appendChild(fragment);
+        range.insertNode(link);
+      }
+    }
+
+    var after = document.createRange();
+    after.setStartAfter(link);
+    after.collapse(true);
+    var selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+      selection.addRange(after);
+      _rteSavedRange = after.cloneRange();
+    }
+  }
+
+  function insertRteTable(rte) {
+    var size = window.prompt('表格行列，例如 3x3', '3x3');
+    if (size === null) return;
+    var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,，, ]\s*(\d+)\s*$/);
+    var rows = match ? parseInt(match[1], 10) : 3;
+    var cols = match ? parseInt(match[2], 10) : 3;
+    rows = Math.max(1, Math.min(rows || 3, 20));
+    cols = Math.max(1, Math.min(cols || 3, 10));
+    restoreRteSelection(rte);
+
+    var html = '<table><tbody>';
+    for (var r = 0; r < rows; r++) {
+      html += '<tr>';
+      for (var c = 0; c < cols; c++) {
+        html += '<td><br></td>';
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table><p><br></p>';
+    document.execCommand('insertHTML', false, html);
+    syncRteBody(rte);
+  }
+
+  function parseRteColumnWidths(input, cols) {
+    var raw = String(input || '').trim();
+    if (!raw) return [];
+    var parts = raw.split(/[,\s]+/).filter(Boolean);
+    var widths = [];
+    for (var i = 0; i < Math.min(parts.length, cols); i++) {
+      var part = parts[i].trim();
+      if (!part) continue;
+      if (/^\d+(\.\d+)?$/.test(part)) part += '%';
+      if (/^\d+(\.\d+)?%$/.test(part) || /^\d+(\.\d+)?px$/.test(part) || /^\d+(\.\d+)?rem$/.test(part)) {
+        widths[i] = part;
+      }
+    }
+    return widths;
+  }
+
+  function buildRteColgroup(widths) {
+    if (!widths || !widths.length) return '';
+    var html = '<colgroup>';
+    widths.forEach(function(width) {
+      html += '<col' + (width ? ' style="width:' + width + '"' : '') + '>';
+    });
+    return html + '</colgroup>';
+  }
+
+  function getRteTableAtSelection(rte) {
+    var sel = window.getSelection();
+    var node = null;
+    if (sel && sel.rangeCount) node = sel.getRangeAt(0).commonAncestorContainer;
+    var el = node ? (node.nodeType === 1 ? node : node.parentElement) : null;
+    var table = el && el.closest ? el.closest('table') : null;
+    return table && rte.contains(table) ? table : null;
+  }
+
+  function getRteTableColumnCount(table) {
+    var row = table ? table.querySelector('tr') : null;
+    return row ? row.children.length : 0;
+  }
+
+  function getRteTableWidths(table) {
+    var row = table ? table.querySelector('tr') : null;
+    if (!row) return '';
+    return Array.prototype.map.call(row.children, function(cell) {
+      return (cell.style.width || '').trim();
+    }).join(',');
+  }
+
+  function applyRteTableSettings(table, widths, showBorder) {
+    if (!table) return;
+    table.style.width = '100%';
+    table.style.tableLayout = 'fixed';
+    table.style.borderCollapse = 'collapse';
+    table.setAttribute('data-rte-border', showBorder ? '1' : '0');
+    table.setAttribute('data-rte-widths', widths && widths.length ? '1' : '0');
+
+    var oldColgroup = table.querySelector('colgroup');
+    if (oldColgroup) oldColgroup.remove();
+    if (widths && widths.length) {
+      table.insertAdjacentHTML('afterbegin', buildRteColgroup(widths));
+    }
+
+    table.querySelectorAll('tr').forEach(function(row) {
+      Array.prototype.forEach.call(row.children, function(cell, index) {
+        if (widths && widths[index]) {
+          cell.style.width = widths[index];
+        } else {
+          cell.style.removeProperty('width');
+        }
+        if (showBorder) {
+          cell.style.removeProperty('border');
+        } else {
+          cell.style.border = 'none';
+        }
+      });
+    });
+  }
+
+  function insertRteTableConfigured(rte) {
+    var size = window.prompt('Table size, for example 2x2', '2x2');
+    if (size === null) return;
+    var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,，, ]\s*(\d+)\s*$/);
+    var rows = match ? parseInt(match[1], 10) : 2;
+    var cols = match ? parseInt(match[2], 10) : 2;
+    rows = Math.max(1, Math.min(rows || 2, 20));
+    cols = Math.max(1, Math.min(cols || 2, 10));
+
+    var defaults = [];
+    for (var i = 0; i < cols; i++) defaults.push(Math.round(100 / cols));
+    var widthsInput = window.prompt('Column widths, for example 50,50. Leave blank for equal widths.', defaults.join(','));
+    if (widthsInput === null) return;
+    var borderInput = window.prompt('Show table borders? y/n', 'y');
+    if (borderInput === null) return;
+    var widths = parseRteColumnWidths(widthsInput, cols);
+    var showBorder = !/^n(o)?|0|false$/i.test(String(borderInput || '').trim());
+
+    restoreRteSelection(rte);
+    var html = '<table style="width:100%;table-layout:fixed;border-collapse:collapse" data-rte-border="' + (showBorder ? '1' : '0') + '" data-rte-widths="' + (widths && widths.length ? '1' : '0') + '">';
+    html += buildRteColgroup(widths) + '<tbody>';
+    for (var r = 0; r < rows; r++) {
+      html += '<tr>';
+      for (var c = 0; c < cols; c++) {
+        var cellStyle = '';
+        if (widths[c]) cellStyle += 'width:' + widths[c] + ';';
+        if (!showBorder) cellStyle += 'border:none;';
+        html += '<td' + (cellStyle ? ' style="' + cellStyle + '"' : '') + '><br></td>';
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table><p><br></p>';
+    document.execCommand('insertHTML', false, html);
+    syncRteBody(rte);
+  }
+
+  function editRteTable(rte) {
+    restoreRteSelection(rte);
+    var table = getRteTableAtSelection(rte);
+    if (!table) {
+      window.alert('Place the cursor inside a table first.');
+      return;
+    }
+    var cols = getRteTableColumnCount(table);
+    var widthsInput = window.prompt('Column widths, for example 50,50. Leave blank to clear custom widths.', getRteTableWidths(table));
+    if (widthsInput === null) return;
+    var currentBorder = table.getAttribute('data-rte-border') !== '0';
+    var borderInput = window.prompt('Show table borders? y/n', currentBorder ? 'y' : 'n');
+    if (borderInput === null) return;
+    var widths = parseRteColumnWidths(widthsInput, cols);
+    var showBorder = !/^n(o)?|0|false$/i.test(String(borderInput || '').trim());
+    applyRteTableSettings(table, widths, showBorder);
+    syncRteBody(rte);
+  }
+
+  function ensureRteUploadControls(rte) {
+    var wrapper = rte && rte.closest('.rte-wrapper');
+    if (!wrapper) return;
+    var toolbar = wrapper.querySelector('.rte-toolbar');
+    if (!toolbar) return;
+    if (!wrapper.querySelector('.rte-table-settings-btn')) {
+      var tableBtn = document.createElement('button');
+      tableBtn.type = 'button';
+      tableBtn.className = 'btn btn-sm btn-light rte-btn rte-table-settings-btn';
+      tableBtn.title = 'Table settings';
+      tableBtn.textContent = '▤';
+      toolbar.appendChild(tableBtn);
+    }
+    if (wrapper.querySelector('.rte-upload-image-btn')) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm btn-light rte-btn rte-upload-image-btn';
+    btn.title = 'Upload and insert image';
+    btn.setAttribute('aria-label', 'Upload image');
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path></svg>';
+    toolbar.appendChild(btn);
+
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.className = 'rte-image-upload-input';
+    input.accept = 'image/*';
+    input.style.display = 'none';
+    wrapper.insertBefore(input, rte);
+
+    var status = document.createElement('div');
+    status.className = 'rte-upload-status small text-muted mb-1';
+    status.style.display = 'none';
+    wrapper.insertBefore(status, rte);
+  }
+
+  function insertRteImage(rte, url) {
+    restoreRteSelection(rte);
+    var safeUrl = String(url || '').replace(/"/g, '&quot;');
+    if (!safeUrl) return;
+    document.execCommand('insertHTML', false, '<img src="' + safeUrl + '" style="max-width:100%;border-radius:6px">');
+    syncRteBody(rte);
+  }
+
+  function ensureAllRteUploadControls() {
+    document.querySelectorAll('.rte-editor').forEach(ensureRteUploadControls);
+  }
+  setTimeout(ensureAllRteUploadControls, 0);
+  if (window.MutationObserver) {
+    new MutationObserver(function(mutations) {
+      var shouldScan = mutations.some(function(m) {
+        return Array.prototype.some.call(m.addedNodes || [], function(node) {
+          return node.nodeType === 1 && (
+            (node.matches && node.matches('.rte-editor, .rte-wrapper')) ||
+            (node.querySelector && node.querySelector('.rte-editor'))
+          );
+        });
+      });
+      if (shouldScan) ensureAllRteUploadControls();
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+
+  function triggerRteImageUpload(btn) {
+    var wrapper = btn.closest('.rte-wrapper');
+    var rte = wrapper ? wrapper.querySelector('.rte-editor') : _lastRteEditor;
+    if (!rte) return;
+    ensureRteUploadControls(rte);
+    saveRteSelection(rte);
+    var uploadInput = wrapper.querySelector('.rte-image-upload-input');
+    if (uploadInput) {
+      uploadInput.value = '';
+      uploadInput.click();
+    }
+  }
+
+  function getCsrfToken() {
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta && meta.getAttribute('content')) return meta.getAttribute('content');
+    var input = document.querySelector('input[name="csrf_token"]');
+    return input ? input.value : '';
+  }
+
+  function richtextUploadUrl() {
+    var site = '';
+    if (typeof currentSiteParam === 'function') site = currentSiteParam();
+    if (!site) site = new URLSearchParams(window.location.search).get('site') || '';
+    return '/api/richtext/upload-image' + (site ? '?site=' + encodeURIComponent(site) : '');
+  }
 
   document.addEventListener('focusin', function(e) {
     var rte = e.target.closest('.rte-editor');
-    if (rte) _lastRteEditor = rte;
+    if (rte) {
+      _lastRteEditor = rte;
+      ensureRteUploadControls(rte);
+      saveRteSelection(rte);
+    }
   });
 
   // ── 工具栏 mousedown：阻止按钮偷走焦点 ──
   document.addEventListener('mousedown', function(e) {
-    if (e.target.closest('.rte-toolbar')) {
+    if (e.target.closest('.rte-toolbar .rte-btn')) {
       e.preventDefault();
     }
   });
@@ -1348,7 +1872,15 @@
     var cmd = btn.dataset.cmd;
     var arg = btn.dataset.arg || null;
 
-    if (btn.classList.contains('rte-link-btn')) {
+    saveRteSelection(rte);
+
+    if (btn.classList.contains('rte-upload-image-btn')) {
+      triggerRteImageUpload(btn);
+    } else if (btn.classList.contains('rte-table-btn')) {
+      insertRteTableConfigured(rte);
+    } else if (btn.classList.contains('rte-table-settings-btn')) {
+      editRteTable(rte);
+    } else if (btn.classList.contains('rte-link-btn')) {
       openRtePopover(rte, 'link');
     } else if (btn.classList.contains('rte-image-btn')) {
       openRtePopover(rte, 'image');
@@ -1365,7 +1897,7 @@
     var rte = e.target.closest('.rte-wrapper').querySelector('.rte-editor');
     if (!rte) rte = _lastRteEditor;
     if (!rte) return;
-    rte.focus();
+    restoreRteSelection(rte);
     var tag = e.target.value;
     document.execCommand('formatBlock', false, tag ? '<' + tag + '>' : '<p>');
     syncRteBody(rte);
@@ -1385,7 +1917,91 @@
   // ── 编辑器内容变更 → 同步 textarea ──
   document.addEventListener('input', function(e) {
     var rte = e.target.closest('.rte-editor');
-    if (rte) syncRteBody(rte);
+    if (rte) {
+      saveRteSelection(rte);
+      syncRteBody(rte);
+    }
+  });
+
+  document.addEventListener('keyup', function(e) {
+    var rte = e.target.closest('.rte-editor');
+    if (rte) saveRteSelection(rte);
+  });
+
+  document.addEventListener('mouseup', function(e) {
+    var rte = e.target.closest('.rte-editor');
+    if (rte) saveRteSelection(rte);
+  });
+
+  document.addEventListener('keydown', function(e) {
+    var rte = e.target.closest('.rte-editor');
+    if (!rte) return;
+    var key = e.key ? e.key.toLowerCase() : '';
+    if ((e.ctrlKey || e.metaKey) && key === 'k') {
+      e.preventDefault();
+      _lastRteEditor = rte;
+      saveRteSelection(rte);
+      openRtePopover(rte, 'link');
+    }
+  });
+
+  document.addEventListener('change', function(e) {
+    if (!e.target.classList.contains('rte-image-upload-input')) return;
+    var input = e.target;
+    var wrapper = input.closest('.rte-wrapper');
+    var rte = wrapper ? wrapper.querySelector('.rte-editor') : _lastRteEditor;
+    var status = wrapper ? wrapper.querySelector('.rte-upload-status') : null;
+    var file = input.files && input.files[0];
+    if (!rte || !file) return;
+
+    var fd = new FormData();
+    fd.append('image', file);
+    var csrfToken = getCsrfToken();
+    if (csrfToken) fd.append('csrf_token', csrfToken);
+    if (status) {
+      status.textContent = 'Uploading image...';
+      status.className = 'rte-upload-status small text-muted mb-1';
+      status.style.display = '';
+    }
+
+    fetch(richtextUploadUrl(), {
+      method: 'POST',
+      body: fd,
+      headers: csrfToken ? { 'X-CSRFToken': csrfToken } : {}
+    })
+      .then(function(r) {
+        return r.text().then(function(text) {
+          var data = null;
+          try {
+            data = text ? JSON.parse(text) : {};
+          } catch (err) {
+            if (r.status === 401) throw new Error('Please log in again.');
+            if (r.status === 404) throw new Error('Upload API not found. Please restart the Flask server and refresh the admin page.');
+            throw new Error('Upload failed (HTTP ' + r.status + '). Please refresh the page and try again.');
+          }
+          return { ok: r.ok, data: data };
+        });
+      })
+      .then(function(result) {
+        if (!result.ok || !result.data || !result.data.url) {
+          throw new Error((result.data && result.data.error) || 'Upload failed');
+        }
+        insertRteImage(rte, result.data.url);
+        if (status) {
+          status.textContent = 'Image inserted.';
+          status.className = 'rte-upload-status small text-success mb-1';
+          setTimeout(function() { status.style.display = 'none'; }, 1800);
+        }
+      })
+      .catch(function(err) {
+        if (status) {
+          status.textContent = err.message || 'Upload failed';
+          status.className = 'rte-upload-status small text-danger mb-1';
+          status.style.display = '';
+        } else {
+          alert(err.message || 'Upload failed');
+        }
+      });
   });
 
   // ── 粘贴清理格式 ──
@@ -1402,11 +2018,31 @@
   });
 
   /* ── URL 对话框（链接 / 图片共用，页面居中遮罩） ── */
-  var _rteDialogState = { rte: null, mode: '', existingLink: null };
+  var _rteDialogState = { rte: null, mode: '', existingLink: null, range: null };
+
+  function ensureRteUrlOverlay(wrapper) {
+    if (!wrapper) return null;
+    var overlay = wrapper.querySelector('.rte-url-overlay');
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.className = 'rte-url-overlay';
+    overlay.style.cssText = 'display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.35);align-items:center;justify-content:center';
+    overlay.innerHTML =
+      '<div class="rte-url-dialog" style="background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);padding:20px;width:420px;max-width:90vw">' +
+        '<div class="rte-url-dialog-title small fw-semibold mb-3" style="font-size:13px;color:#343a40"></div>' +
+        '<input type="text" class="form-control form-control-sm rte-url-dialog-input" placeholder="https://">' +
+        '<div class="d-flex gap-2 mt-3 justify-content-end">' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary rte-url-dialog-cancel">Cancel</button>' +
+          '<button type="button" class="btn btn-sm btn-primary rte-url-dialog-confirm">OK</button>' +
+        '</div>' +
+      '</div>';
+    wrapper.appendChild(overlay);
+    return overlay;
+  }
 
   function openRtePopover(rte, mode) {
     var wrapper = rte.closest('.rte-wrapper');
-    var overlay = wrapper ? wrapper.querySelector('.rte-url-overlay') : null;
+    var overlay = ensureRteUrlOverlay(wrapper);
     if (!overlay) return;
 
     var titleEl   = overlay.querySelector('.rte-url-dialog-title');
@@ -1414,17 +2050,26 @@
     var confirmEl = overlay.querySelector('.rte-url-dialog-confirm');
 
     var existing = null;
+    var rangeSnapshot = savedRangeInRte(rte);
     var currentUrl = '';
     if (mode === 'link') {
       var sel = window.getSelection();
       if (sel.rangeCount) {
-        var node = sel.getRangeAt(0).commonAncestorContainer;
-        existing = node.closest ? node.closest('a') : (node.parentElement ? node.parentElement.closest('a') : null);
+        var currentRange = sel.getRangeAt(0);
+        if (rte.contains(currentRange.commonAncestorContainer)) {
+          rangeSnapshot = currentRange.cloneRange();
+          _rteSavedRange = rangeSnapshot.cloneRange();
+        }
+      }
+      if (rangeSnapshot) {
+        var node = rangeSnapshot.commonAncestorContainer;
+        var el = node.nodeType === 1 ? node : (node.parentElement || node.parentNode);
+        existing = el && el.closest ? el.closest('a') : null;
       }
       currentUrl = existing ? (existing.getAttribute('href') || '') : '';
     }
 
-    _rteDialogState = { rte: rte, mode: mode, existingLink: existing };
+    _rteDialogState = { rte: rte, mode: mode, existingLink: existing, range: rangeSnapshot };
 
     titleEl.textContent = mode === 'link'
       ? (existing ? '编辑链接' : '插入链接')
@@ -1446,29 +2091,26 @@
     var url = overlay.querySelector('.rte-url-dialog-input').value.trim();
     var rte = state.rte;
     // 先消费 state + 隐藏 overlay，再操作 DOM，防止任何重入
-    _rteDialogState = { rte: null, mode: '', existingLink: null };
+    _rteDialogState = { rte: null, mode: '', existingLink: null, range: null };
     overlay.style.display = 'none';
 
-    rte.focus();
+    restoreRteSelection(rte, state.range);
 
     if (state.mode === 'link') {
       if (state.existingLink) {
         if (url) {
-          state.existingLink.setAttribute('href', url);
-          state.existingLink.setAttribute('target', '_blank');
-          state.existingLink.setAttribute('rel', 'noopener');
+          setRteLinkAttrs(state.existingLink, url);
         } else {
           var txt = document.createTextNode(state.existingLink.textContent);
           state.existingLink.parentNode.replaceChild(txt, state.existingLink);
         }
       } else if (url) {
-        document.execCommand('createLink', false, url);
+        insertRteLink(rte, url, state.range);
       }
     } else if (state.mode === 'image' && url) {
       // execCommand('insertImage') 行为不可靠（选区/浏览器差异导致重复插入）。
       // 改用 insertHTML 注入 <img> 标签，一次精确插入。
-      var imgHtml = '<img src="' + url.replace(/"/g, '&quot;') + '" style="max-width:100%;border-radius:6px">';
-      document.execCommand('insertHTML', false, imgHtml);
+      insertRteImage(rte, url);
     }
     syncRteBody(rte);
   });
@@ -1479,13 +2121,13 @@
     if (e.target.closest('.rte-url-dialog-cancel')) {
       var overlay = e.target.closest('.rte-url-overlay');
       if (overlay) overlay.style.display = 'none';
-      _rteDialogState = { rte: null, mode: '', existingLink: null };
+      _rteDialogState = { rte: null, mode: '', existingLink: null, range: null };
       return;
     }
     // 点击 overlay 自身（遮罩空白处）关闭
     if (e.target.classList.contains('rte-url-overlay')) {
       e.target.style.display = 'none';
-      _rteDialogState = { rte: null, mode: '', existingLink: null };
+      _rteDialogState = { rte: null, mode: '', existingLink: null, range: null };
     }
   });
 
@@ -1501,8 +2143,10 @@
   });
 
   function syncRteBody(rte) {
-    var ta = rte.parentElement.querySelector('textarea[name="body"]');
+    var wrapper = rte.closest('.rte-wrapper') || rte.parentElement;
+    var ta = wrapper ? (wrapper.querySelector('textarea[hidden], textarea.d-none, textarea[name="body"]')) : null;
     if (ta) ta.value = rte.innerHTML;
   }
 
+  }
 })();

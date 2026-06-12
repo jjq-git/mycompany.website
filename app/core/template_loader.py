@@ -8,6 +8,7 @@
     version: "1.0.0"
     is_public: true
 """
+from dataclasses import asdict
 from pathlib import Path
 
 import yaml
@@ -126,7 +127,7 @@ def scan_blocks(template_name):
             'fields': meta.get('fields', []),
             'variants': all_variants,
             'is_data_attr': is_data_attr,
-            'schema': schema,
+            'schema': asdict(schema) if schema is not None else None,
         })
 
     return blocks
@@ -145,6 +146,7 @@ def scan_block_schema(template_name, block_name):
     if not block_parser.is_data_attr_block(html):
         return None
     try:
-        return block_parser.parse(html)
+        schema = block_parser.parse(html)
+        return asdict(schema)
     except Exception:
         return None

@@ -52,7 +52,7 @@ def _hide(node):
 _SCHEMA_DATA_ATTRS = {
     'data-name', 'data-type', 'data-href', 'data-href-template', 'data-fallback',
     'data-style', 'data-hideable', 'data-source', 'data-page-size', 'data-cols',
-    'data-from', 'data-i18n', 'data-i18n-placeholder',
+    'data-from', 'data-i18n', 'data-i18n-placeholder', 'data-show-when',
 }
 
 
@@ -176,8 +176,12 @@ def _inject_leaf(node, field_def, value):
     elif dtype in _TEXT_TYPES:
         if has_content:
             _set_text(node, value, raw_html=(dtype == 'richtext'))
+        elif field_def.default_text:
+            # 用户未填但有模板默认文字 → 保留默认（隐藏配置区依赖此行为）
+            _set_text(node, field_def.default_text, raw_html=False)
+            has_content = True
         else:
-            _set_text(node, '')  # 清掉占位默认文字，元素稍后会被隐藏
+            _set_text(node, '')  # 无默认文字且无用户值 → 清掉并隐藏
     elif dtype in _MEDIA_SRC_ATTR:
         attr = _MEDIA_SRC_ATTR[dtype]
         if has_content:
@@ -380,6 +384,27 @@ def _apply_element_visibility(node, data_dict):
         _apply_element_visibility(child, data_dict)
 
 
+def _apply_conditional_visibility(node, data_dict):
+    """Remove nodes whose data-show-when condition does not match current data."""
+    condition = node.attrs.get('data-show-when')
+    if condition and ':' in condition:
+        field, raw_values = condition.split(':', 1)
+        field = field.strip()
+        default_value = 'image' if field == 'media_type' else ''
+        actual = str(data_dict.get(field, default_value)).strip()
+        allowed = [v.strip() for v in raw_values.split(',') if v.strip()]
+        if actual not in allowed:
+            return False
+
+    kept_nodes = []
+    for child in node.nodes:
+        if isinstance(child, bp._Node) and not _apply_conditional_visibility(child, data_dict):
+            continue
+        kept_nodes.append(child)
+    node.nodes = kept_nodes
+    return True
+
+
 def _resolve_from_source(schema, context):
     """解析 data-from 路径（如 "settings:contact"），从 context 取对应数据。
 
@@ -515,6 +540,7 @@ def render(block_html, schema, data_dict, context=None):
         _hide(root)
     # 元素级隐藏：遍历所有带 data-hideable 的子元素，检查 _hidden_<name> 标记
     _apply_element_visibility(root, data_dict)
+    _apply_conditional_visibility(root, data_dict)
 
     # 4. 样式注入
     if schema.style_tokens:
@@ -524,12 +550,36 @@ def render(block_html, schema, data_dict, context=None):
     # 4.5 全树补扫静态 href 模板（"查看全部"等仅依赖 base_url/lang 的链接）；
     # 依赖项字段的链接（含 {slug} 等）已在列表展开时填好，这里因占位无值而跳过，不会被覆盖
     _fill_static_href_templates(root, context)
+    # 4.6 补扫业务属性模板（data-filter-id="{dataset}" 等），
+    # 将 {dataset} 等变量替换为实际数据集名
+    _fill_business_attr_templates(root, context)
     _apply_i18n(root, context)
 
     # 5. 清理 data-*
     _strip_data_attrs(root)
 
     return bp._serialize(root)
+
+
+# data-filter-* 等业务属性中支持 {变量} 模板替换
+_TEMPLATE_ATTRS = {'data-filter-id', 'data-filter-for', 'data-filter-empty'}
+
+
+def _fill_business_attr_templates(node, context):
+    """补扫业务属性中的 {变量} 模板（如 data-filter-id="{dataset}"）。
+
+    与 _fill_static_href_templates 类似，但处理的是 data-filter-* 等非 href 属性。
+    从 context['vars'] 取值填充；占位符无对应值则跳过（保持原样）。
+    """
+    vars_dict = (context or {}).get('vars') or {}
+    for attr_name in _TEMPLATE_ATTRS:
+        tmpl = node.attrs.get(attr_name)
+        if tmpl and '{' in tmpl:
+            filled = _fill_template(tmpl, vars_dict)
+            if filled is not None:
+                node.attrs[attr_name] = filled
+    for child in node.children:
+        _fill_business_attr_templates(child, context)
 
 
 def _fill_static_href_templates(node, context):

@@ -91,9 +91,9 @@
               <button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="switchContentStyleTab(this, 'content')">内容</button>
               <button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="switchContentStyleTab(this, 'style')">样式</button>
             </div>
-            <div class="content-style-panel panel-content schema-mount" data-mount="content" data-module-index="{{ i }}"></div>
-            <div class="content-style-panel panel-style schema-mount" data-mount="style" data-module-index="{{ i }}" style="display:none"></div>
-            <script type="application/json" class="schema-mount-data" data-module-index="{{ i }}">{{ mdata | tojson }}</script>
+            <div class="content-style-panel panel-content schema-mount" data-mount="content" data-module-index="{{ i }}" data-device="desktop"></div>
+            <div class="content-style-panel panel-style schema-mount" data-mount="style" data-module-index="{{ i }}" data-device="desktop" style="display:none"></div>
+            <script type="application/json" class="schema-mount-data" data-module-index="{{ i }}" data-device="desktop">{{ mdata | tojson }}</script>
             {% else %}
             {% if mdata is mapping %}
               {% for key, val in mdata.items() %}
@@ -121,6 +121,10 @@
           </div>
 
           <div class="device-config device-tablet" style="display:none">
+{% if module.type in data_attr_types %}
+            <div class="schema-mount" data-mount="content" data-module-index="{{ i }}" data-device="tablet"></div>
+            <script type="application/json" class="schema-mount-data" data-module-index="{{ i }}" data-device="tablet">{{ mdata_tablet | tojson }}</script>
+{% else %}
 {% if mdata is mapping %}
               {% for key, val in mdata.items() %}
               {% if key not in ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'] %}
@@ -134,6 +138,7 @@
               {% endif %}
               {% endfor %}
             {% endif %}
+{% endif %}
             <div class="mb-2 mt-2">
               <label class="form-check-label small">
                 <input type="checkbox" class="form-check-input"
@@ -145,6 +150,10 @@
           </div>
 
           <div class="device-config device-mobile" style="display:none">
+{% if module.type in data_attr_types %}
+            <div class="schema-mount" data-mount="content" data-module-index="{{ i }}" data-device="mobile"></div>
+            <script type="application/json" class="schema-mount-data" data-module-index="{{ i }}" data-device="mobile">{{ mdata_mobile | tojson }}</script>
+{% else %}
 {% if mdata is mapping %}
               {% for key, val in mdata.items() %}
               {% if key not in ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'] %}
@@ -158,6 +167,7 @@
               {% endif %}
               {% endfor %}
             {% endif %}
+{% endif %}
             <div class="mb-2 mt-2">
               <label class="form-check-label small">
                 <input type="checkbox" class="form-check-input"
@@ -179,7 +189,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=4"></script>
+<script src="/static/js/admin_modules.js?v=13"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -224,16 +234,90 @@ function _schemaLabel(field) {
   return FIELD_LABEL_MAP[field.name] || field.label || field.name;
 }
 
+function conditionalFieldAttrs(key, showIf, escFn, actualValue) {
+  escFn = escFn || escapeHtml;
+  var attrs = ' class="mb-2 module-field" data-field-key="' + escFn(key) + '"';
+  if (showIf && showIf.field) {
+    attrs += ' data-show-if-field="' + escFn(showIf.field) + '" data-show-if-value="' + escFn(showIf.value || '') + '"';
+    var expected = String(showIf.value || '').split(',').map(function(v) { return v.trim(); });
+    if (actualValue != null && expected.indexOf(String(actualValue || '')) < 0) {
+      attrs += ' style="display:none"';
+    }
+  }
+  return attrs;
+}
+
+function findNamedInput(root, name) {
+  var inputs = root.querySelectorAll('[name]');
+  for (var i = 0; i < inputs.length; i++) {
+    if (inputs[i].name === name) return inputs[i];
+  }
+  return null;
+}
+
+function updateConditionalFields(root) {
+  root = root || document;
+  root.querySelectorAll('.module-field[data-show-if-field]').forEach(function(fieldEl) {
+    var fieldKey = fieldEl.getAttribute('data-field-key') || '';
+    var depKey = fieldEl.getAttribute('data-show-if-field') || '';
+    var expected = (fieldEl.getAttribute('data-show-if-value') || '').split(',').map(function(v) { return v.trim(); });
+    var ownInput = fieldEl.querySelector('[name]');
+    var prefix = '';
+    if (ownInput && fieldKey && ownInput.name.slice(-fieldKey.length) === fieldKey) {
+      prefix = ownInput.name.slice(0, -fieldKey.length);
+    }
+    var scope = fieldEl.closest('.device-config') || fieldEl.closest('.module-item') || root;
+    var depInput = prefix ? findNamedInput(scope, prefix + depKey) : null;
+    var actual = depInput ? String(depInput.value || '') : '';
+    if (!actual && depKey === 'media_type') actual = 'image';
+    fieldEl.style.display = expected.indexOf(actual) >= 0 ? '' : 'none';
+  });
+}
+
+function richEditorHtml(name, value) {
+  return '<div class="rte-wrapper">' +
+    '<div class="rich-toolbar rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="bold" title="Bold"><b>B</b></button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="italic" title="Italic"><i>I</i></button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="underline" title="Underline"><u>U</u></button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="strikeThrough" title="Strike"><s>S</s></button>' +
+    '<span class="rte-sep"></span>' +
+    '<select class="form-select form-select-sm rte-heading-select" style="width:auto;font-size:12px" title="Heading"><option value="">Paragraph</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option></select>' +
+    '<span class="rte-sep"></span>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyLeft" title="Align left">☰</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyCenter" title="Align center">≡</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyRight" title="Align right">☷</button>' +
+    '<span class="rte-sep"></span>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertUnorderedList" title="Bullet list">•≡</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertOrderedList" title="Numbered list">1≡</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-btn" title="Table">▦</button>' +
+    '<span class="rte-sep"></span>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="formatBlock" data-arg="blockquote" title="Quote">❝</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertHorizontalRule" title="Horizontal rule">—</button>' +
+    '<span class="rte-sep"></span>' +
+    '<input type="color" class="rte-color-picker" value="#141413" style="width:28px;height:28px;border:1px solid #dee2e6;border-radius:4px;padding:2px;cursor:pointer" title="Text color">' +
+    '<span class="rte-sep"></span>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="removeFormat" title="Clear format">✕</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="undo" title="Undo">↩</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="redo" title="Redo">↪</button>' +
+    '</div>' +
+    '<div contenteditable="true" class="rich-editor-body form-control form-control-sm rte-editor" style="min-height:150px;max-height:400px;overflow-y:auto;line-height:1.7;font-size:13px;outline:none" data-placeholder="">' + (value || '') + '</div>' +
+    '<textarea class="form-control form-control-sm d-none" name="' + escapeHtml(name) + '">' + escapeHtml(value || '') + '</textarea>' +
+    '</div>';
+}
+
 /* 单个内容字段 → 编辑控件 */
 function _schemaFieldHtml(prefix, field, mdata) {
   var name = prefix + field.name;
   var val = (mdata && mdata[field.name] != null) ? mdata[field.name] : '';
   var label = _schemaLabel(field);
-  var html = '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + _schemaEsc(label) + '</label>';
+  var depVal = field.show_if ? ((mdata && mdata[field.show_if.field] != null) ? mdata[field.show_if.field] : (field.show_if.field === 'media_type' ? 'image' : '')) : null;
+  var html = '<div' + conditionalFieldAttrs(field.name, field.show_if, _schemaEsc, depVal) + '><label class="form-label small mb-1 text-muted">' + _schemaEsc(label) + '</label>';
 
-  if (field.type === 'textarea' || field.type === 'richtext') {
-    var hint = field.type === 'richtext' ? ' （支持 HTML）' : '';
-    html += '<textarea class="form-control form-control-sm" name="' + _schemaEsc(name) + '" rows="4" placeholder="' + _schemaEsc(label + hint) + '">' + _schemaEsc(val) + '</textarea>';
+  if (field.type === 'richtext') {
+    html += richEditorHtml(name, val || '');
+  } else if (field.type === 'textarea') {
+    html += '<textarea class="form-control form-control-sm" name="' + _schemaEsc(name) + '" rows="4" placeholder="' + _schemaEsc(label) + '">' + _schemaEsc(val) + '</textarea>';
   } else if (field.type === 'image' || field.type === 'video') {
     // 图片/视频：URL 输入 + 上传按钮 + 预览
     html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="' + _schemaEsc(field.type) + ' URL" oninput="updateImagePreview(this)">';
@@ -281,6 +365,25 @@ function _schemaFieldHtml(prefix, field, mdata) {
   } else if (field.type === 'number') {
     // number → 数字输入框
     html += '<input type="number" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" min="1">';
+  } else if (field.name === 'show_dots') {
+    // 显示圆点 → 眼睛图标；未设置时默认开启（true）
+    var visible = val === '' ? true : (String(val) === 'true' || val === true);
+    html += '<div class="visibility-item" style="margin-top:4px">' +
+      '<button type="button" class="eye-toggle-btn" data-visible="' + (visible ? 'true' : 'false') + '" onclick="toggleVisibilityEye(this)" title="' + (visible ? '点击隐藏' : '点击显示') + '">' +
+      (visible ? EYE_OPEN_SVG : EYE_OFF_SVG) +
+      '</button>' +
+      '<span class="vis-label">' + _schemaEsc(label) + '</span>' +
+      '<input type="hidden" name="' + _schemaEsc(name) + '" value="' + (visible ? 'true' : 'false') + '">' +
+      '</div>';
+  } else if (field.type === 'switch') {
+    // switch → 开关控件（true/false）
+    var checked = String(val) === 'true' || val === true;
+    html += '<div class="form-check form-switch mb-0">' +
+      '<input class="form-check-input" type="checkbox" role="switch" ' + (checked ? 'checked' : '') +
+      ' onchange="var h=this.parentElement.querySelector(\'input[type=hidden]\');if(h)h.value=this.checked?\'true\':\'false\'">' +
+      '<label class="form-check-label small">' + _schemaEsc(label) + '</label>' +
+      '<input type="hidden" name="' + _schemaEsc(name) + '" value="' + (checked ? 'true' : 'false') + '">' +
+      '</div>';
   } else {
     // text / 其他叶子 → 单行输入
     html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '">';
@@ -315,16 +418,41 @@ function generateSchemaForm(prefix, schema, mdata, vTFn) {
       '<div>数据源：<code>' + _schemaEsc(schema.from_source) + '</code>，请在「网站设置」中修改联系方式等信息。</div>' +
       '</div>';
   }
+  // 将非 list/grid 字段分成两组：列表类（独占一行）和简单类（两列排列）
+  var simpleFields = [], listFields = [];
   (schema.fields || []).forEach(function(field) {
     if (field.type === 'list' || field.type === 'grid') {
-      // 可重复列表/栅格 → 条目编辑器（增删条目 + 子字段子表单）
-      html += _schemaListEditor(prefix, field, mdata);
-    } else if (field.type === 'group') {
-      html += _schemaGroupHtml(prefix, field, mdata);
+      listFields.push(field);
     } else {
-      html += _schemaFieldHtml(prefix, field, mdata);
+      simpleFields.push(field);
     }
   });
+  // 渲染列表类字段（独占一行）
+  listFields.forEach(function(field) {
+    html += _schemaListEditor(prefix, field, mdata);
+  });
+  // 渲染简单字段：两两配对成行
+  for (var i = 0; i < simpleFields.length; i += 2) {
+    var f1 = simpleFields[i];
+    var f2 = simpleFields[i + 1];
+    if (f2) {
+      // 两个字段放同一行
+      html += '<div class="row g-2">';
+      html += '<div class="col-6">';
+      if (f1.type === 'group') { html += _schemaGroupHtml(prefix, f1, mdata); }
+      else { html += _schemaFieldHtml(prefix, f1, mdata); }
+      html += '</div>';
+      html += '<div class="col-6">';
+      if (f2.type === 'group') { html += _schemaGroupHtml(prefix, f2, mdata); }
+      else { html += _schemaFieldHtml(prefix, f2, mdata); }
+      html += '</div>';
+      html += '</div>';
+    } else {
+      // 最后一个单独放
+      if (f1.type === 'group') { html += _schemaGroupHtml(prefix, f1, mdata); }
+      else { html += _schemaFieldHtml(prefix, f1, mdata); }
+    }
+  }
   // data-hideable → 整块显隐开关（复用 addModule 里的 vT）。显示存 'false'，隐藏存 'true'
   if (schema.hideable && typeof vTFn === 'function') {
     var hiddenVal = mdata._hidden === true || mdata._hidden === 'true' ? 'true' : 'false';
@@ -373,7 +501,7 @@ function _schemaGroupHtml(prefix, field, mdata) {
       var hiddenVal = (mdata && mdata[hiddenKey] != null) ? String(mdata[hiddenKey]) : '';
       html += '<div class="mb-2 pb-2" style="border-bottom:1px solid #e2e8f0">' +
         '<div class="d-flex align-items-center justify-content-between">' +
-        '<label class="form-label small mb-0 text-muted">' + _schemaEsc(label) + '</label>' +
+        '<label class="form-label small mb-0 text-muted fw-semibold">' + _schemaEsc(label) + '</label>' +
         '<div>' + _eyeBtn(hiddenKey, hiddenVal) + '</div>' +
         '</div></div>';
     }
@@ -603,7 +731,8 @@ function getBlockIconHTML(type) {
     'contact_form': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h4"/><path d="M17 17l2 2"/><path d="M19 15a4 4 0 1 0-8 0"/></svg>',
     'process_steps': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><path d="M8 12h1"/><path d="M15 12h1"/></svg>',
     'logo_cloud': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>',
-    'item_detail': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><path d="M13 15h4"/><path d="M13 19h6"/></svg>'
+    'item_detail': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><path d="M13 15h4"/><path d="M13 19h6"/></svg>',
+    'image_carousel': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="7" height="13" rx="1"/><rect x="13" y="5" width="7" height="13" rx="1"/><path d="m1 10 2 2-2 2"/><path d="m23 14-2-2 2-2"/></svg>'
   };
   return icons[type] || '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>';
 }
@@ -613,7 +742,8 @@ function renderDynamicField(prefix, field, value, placeholder) {
   var type = field.type || 'text';
   var label = field.label || key;
   var lowerKey = key.toLowerCase();
-  var html = '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + escapeHtml(label) + '</label>';
+  var depVal = field.show_if && field.show_if.field === 'media_type' ? 'image' : null;
+  var html = '<div' + conditionalFieldAttrs(key, field.show_if, escapeHtml, depVal) + '><label class="form-label small mb-1 text-muted">' + escapeHtml(label) + '</label>';
 
   // 颜色字段: color / bg / text_ → 颜色选择器+文本
   var isColor = /color|_bg$|^bg$/i.test(lowerKey) && !/image|cover|background_image|section_bg|background|media/i.test(lowerKey);
@@ -624,7 +754,9 @@ function renderDynamicField(prefix, field, value, placeholder) {
   var needsSpacingUnit = /margin|padding/i.test(lowerKey);
   var needsUnit = needsSizeUnit || needsWidthUnit || needsRadiusUnit || needsSpacingUnit;
 
-  if (type === 'textarea') {
+  if (type === 'richtext') {
+    html += richEditorHtml(prefix + key, value || '');
+  } else if (type === 'textarea') {
     html += '<textarea class="form-control form-control-sm" rows="4" name="' + prefix + key + '" placeholder="' + escapeHtml(placeholder || '') + '">' + escapeHtml(value || '') + '</textarea>';
   } else if (type === 'select') {
     html += '<select class="form-select form-select-sm" name="' + prefix + key + '"><option value="">请选择</option>';
@@ -788,7 +920,7 @@ function statItemHtml(moduleIndex, statIndex) {
   return '<div class="border rounded p-2 mb-2 list-item" data-item-index="' + statIndex + '">' +
     '<div class="d-flex justify-content-between align-items-center mb-2 list-item-header" style="cursor:pointer; user-select:none;" onclick="this.closest(\'.list-item\').classList.toggle(\'collapsed\')">' +
     '<span class="small fw-semibold">统计项 ' + (statIndex + 1) + '</span>' +
-    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.list-item\').remove();reindexStatItems(' + moduleIndex + ')">删除</button>' +
+    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.list-item\').remove();reindexStatItems(' + moduleIndex + ')" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>' +
     '</div><div class="list-item-body">' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">图标</label><select class="form-select form-select-sm" name="' + p + 'icon">' + iconOptions + '</select></div>' +
     '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">数字</label><input type="number" class="form-control form-control-sm" name="' + p + 'number" placeholder="如 500"></div>' +
@@ -826,7 +958,7 @@ function logoItemHtml(moduleIndex, logoIndex) {
   return '<div class="border rounded p-2 mb-2 list-item" data-item-index="' + logoIndex + '">' +
     '<div class="d-flex justify-content-between align-items-center mb-2 list-item-header" style="cursor:pointer; user-select:none;" onclick="this.closest(\'.list-item\').classList.toggle(\'collapsed\')">' +
     '<span class="small fw-semibold">Logo ' + (logoIndex + 1) + '</span>' +
-    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.list-item\').remove();reindexLogoItems(' + moduleIndex + ')">删除</button>' +
+    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.list-item\').remove();reindexLogoItems(' + moduleIndex + ')" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>' +
     '</div><div class="list-item-body">' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">Logo 图片</label><input type="hidden" name="' + p + 'image" value=""><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="' + p + 'image_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div><div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div><div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div></div>' +
     '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">品牌名称</label><input type="text" class="form-control form-control-sm" name="' + p + 'name"></div>' +
@@ -870,7 +1002,7 @@ function stepItemHtml(moduleIndex, stepIndex) {
   return '<div class="border rounded p-2 mb-2 list-item" data-item-index="' + stepIndex + '">' +
     '<div class="d-flex justify-content-between align-items-center mb-2 list-item-header" style="cursor:pointer; user-select:none;" onclick="this.closest(\'.list-item\').classList.toggle(\'collapsed\')">' +
     '<span class="small fw-semibold">步骤 ' + (stepIndex + 1) + '</span>' +
-    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.list-item\').remove();reindexStepItems(' + moduleIndex + ')">删除</button>' +
+    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.list-item\').remove();reindexStepItems(' + moduleIndex + ')" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>' +
     '</div><div class="list-item-body">' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="' + p + 'title" placeholder="步骤名称"></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label><textarea class="form-control form-control-sm" rows="2" name="' + p + 'desc" placeholder="步骤说明"></textarea></div>' +
@@ -900,6 +1032,7 @@ function reindexStepItems(moduleIndex) {
     });
   });
 }
+
 
 // 展开第一个模块
 (function(){
@@ -1054,6 +1187,12 @@ function switchContentStyleTab(btn, tabName) {
 function _getMergedSchema(meta) {
   var metaFieldMap = {};
   (meta.fields || []).forEach(function(f) { metaFieldMap[f.key] = f; });
+  var schemaFieldMap = {};
+  (meta.schema.fields || []).forEach(function(sf) { schemaFieldMap[sf.name] = sf; });
+  var conditionalControllerMap = {};
+  (meta.fields || []).forEach(function(f) {
+    if (f.show_if && f.show_if.field) conditionalControllerMap[f.show_if.field] = true;
+  });
 
   function mergeField(sf) {
     var mf = metaFieldMap[sf.name];
@@ -1073,9 +1212,21 @@ function _getMergedSchema(meta) {
       page_size: sf.page_size, cols: sf.cols, source: sf.source,
       item_template_html: sf.item_template_html,
       type: mf.type || sf.type,
-      options: mf.options || sf.options
+      options: mf.options || sf.options,
+      label: mf.label || sf.label,
+      show_if: mf.show_if || sf.show_if
     };
   }
+
+  var mergedFields = [];
+  (meta.fields || []).forEach(function(mf) {
+    if (!conditionalControllerMap[mf.key]) return;
+    if (schemaFieldMap[mf.key]) return;
+    mergedFields.push(mergeField({name: mf.key, tag: '', type: mf.type || 'text', children: []}));
+  });
+  (meta.schema.fields || []).forEach(function(sf) {
+    mergedFields.push(mergeField(sf));
+  });
 
   return {
     root_type: meta.schema.root_type,
@@ -1085,7 +1236,7 @@ function _getMergedSchema(meta) {
     style_tokens: meta.schema.style_tokens || [],
     element_style_tokens: meta.schema.element_style_tokens || [],
     from_source: meta.schema.from_source,
-    fields: (meta.schema.fields || []).map(function(sf) { return mergeField(sf); })
+    fields: mergedFields
   };
 }
 
@@ -1252,125 +1403,6 @@ function addModule(type, variant, dataPreset) {
       '<div class="col-6"><label class="form-label small mb-1 text-muted">按钮链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_url"></div>' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">打开方式</label><select class="form-select form-select-sm" name="module_' + idx + '_data_btn_target"><option value="">当前窗口</option><option value="_blank">新窗口</option></select></div>' +
       '<div class="col-6"></div>' +
-    '</div>';
-  } else if (type === 'data_grid') {
-    var dsOptionsHtml = '';
-    (datasetNames || []).forEach(function(ds) {
-      dsOptionsHtml += '<option value="' + escapeHtml(ds.target) + '">' + escapeHtml(ds.label) + '（' + escapeHtml(ds.target) + '）</option>';
-    });
-    specialEditor =
-    '<div class="small fw-semibold mb-1 text-muted">数据</div>' +
-    '<div class="mb-2"><label class="form-label small mb-1 text-muted">数据来源</label>' +
-      '<select class="form-select form-select-sm" name="module_' + idx + '_data_dataset">' +
-      (dsOptionsHtml || '<option value="">暂无数据源</option>') +
-      '</select></div>' +
-    '<div class="mb-2"><label class="form-label small mb-1 text-muted">卡片布局</label>' +
-        '<select class="form-select form-select-sm" name="module_' + idx + '_data_card_layout"><option value="image_top">上图下文</option><option value="image_left">左图右文</option></select></div>' +
-    '<hr class="my-2">' +
-	    '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
-	    // show_pagination: toggle switch
-	    '<div class="form-check form-switch mb-2">' +
-	      '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_pagination"' +
-	      (d.show_pagination !== 'false' ? ' checked' : '') +
-	      ' onchange="this.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
-	      '<label class="form-check-label small" for="module_' + idx + '_show_pagination">显示分页</label>' +
-	      '<input type="hidden" name="module_' + idx + '_data_show_pagination" value="' + _schemaEsc(d.show_pagination !== 'false' ? 'true' : 'false') + '">' +
-	    '</div>' +
-	    // Row 2: pagination_style (radio) + items_per_page (select)
-	    '<div class="row g-2 mb-2">' +
-	      '<div class="col-6"><label class="form-label small mb-1 text-muted">分页样式</label>' +
-	        '<div class="d-flex gap-2">' +
-	          '<div class="form-check form-check-inline mb-0">' +
-	            '<input class="form-check-input" type="radio" name="module_' + idx + '_data_pagination_style" value="load_more" id="ps_' + idx + '_lm"' +
-	            (d.pagination_style !== 'page_numbers' ? ' checked' : '') + '>' +
-	            '<label class="form-check-label small" for="ps_' + idx + '_lm">加载更多</label>' +
-	          '</div>' +
-	          '<div class="form-check form-check-inline mb-0">' +
-	            '<input class="form-check-input" type="radio" name="module_' + idx + '_data_pagination_style" value="page_numbers" id="ps_' + idx + '_pn"' +
-	            (d.pagination_style === 'page_numbers' ? ' checked' : '') + '>' +
-	            '<label class="form-check-label small" for="ps_' + idx + '_pn">页码导航</label>' +
-	          '</div>' +
-	        '</div></div>' +
-	      '<div class="col-6"><label class="form-label small mb-1 text-muted">每页显示数量</label>' +
-	        '<select class="form-select form-select-sm" name="module_' + idx + '_data_items_per_page">' +
-	          ['3','4','6','8','10','12','18','24'].map(function(n) { return '<option value="' + n + '"' + ((d.items_per_page || '6') === n ? ' selected' : '') + '>' + n + ' 条/页</option>'; }).join('') +
-	        '</select></div>' +
-	    '</div>' +
-	    // Row 3: pager_align (radio, 3 options)
-	    '<div class="mb-2"><label class="form-label small mb-1 text-muted">分页对齐</label>' +
-	      '<div class="d-flex gap-2">' +
-	        '<div class="form-check form-check-inline mb-0">' +
-	          '<input class="form-check-input" type="radio" name="module_' + idx + '_data_pager_align" value="center" id="pa_' + idx + '_c"' +
-	          (d.pager_align === 'center' || !d.pager_align ? ' checked' : '') + '>' +
-	          '<label class="form-check-label small" for="pa_' + idx + '_c">居中</label>' +
-	        '</div>' +
-	        '<div class="form-check form-check-inline mb-0">' +
-	          '<input class="form-check-input" type="radio" name="module_' + idx + '_data_pager_align" value="left" id="pa_' + idx + '_l"' +
-	          (d.pager_align === 'left' ? ' checked' : '') + '>' +
-	          '<label class="form-check-label small" for="pa_' + idx + '_l">居左</label>' +
-	        '</div>' +
-	        '<div class="form-check form-check-inline mb-0">' +
-	          '<input class="form-check-input" type="radio" name="module_' + idx + '_data_pager_align" value="right" id="pa_' + idx + '_r"' +
-	          (d.pager_align === 'right' ? ' checked' : '') + '>' +
-	          '<label class="form-check-label small" for="pa_' + idx + '_r">居右</label>' +
-	        '</div>' +
-	      '</div></div>' +
-    '</div>' +
-    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
-    '<div class="input-group input-group-sm">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" placeholder="↑ 上">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" placeholder="→ 右">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" placeholder="↓ 下">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" placeholder="← 左">' +
-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
-        '<option value="px">px</option>' +
-        '<option value="rem">rem</option>' +
-      '</select>' +
-    '</div>' +
-    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
-    '<div class="input-group input-group-sm">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" placeholder="↑ 上">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
-        '<option value="px">px</option>' +
-        '<option value="rem">rem</option>' +
-      '</select>' +
-    '</div>' +
-    '<hr class="my-2">' +
-    '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
-    '</div>';
-  } else if (type === 'product_grid') {
-    specialEditor =
-    '<div class="row g-2">' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">最大显示数量</label><input type="number" class="form-control form-control-sm" name="module_' + idx + '_data_max_items" value="6"></div>' +
-    '</div>' +
-    '<hr class="my-2">' +
-    '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>';
-    styleEditor =
-    '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6">' + cP('module_' + idx + '_data_section_bg', '外层背景色', '#ffffff') + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem','vw']) + '</div>' +
-    '</div>' +
-    '<hr class="my-2">' +
-    '<div class="small fw-semibold mb-1 text-muted">内层样式</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
-'<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
-    '<div class="input-group input-group-sm">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" placeholder="↑ 上">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
-        '<option value="px">px</option>' +
-        '<option value="rem">rem</option>' +
-      '</select>' +
-    '</div>' +
     '</div>';
   } else if (type === 'feature_grid') {
     specialEditor = '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" placeholder="如 产品特点"></div>' +
@@ -1548,7 +1580,10 @@ function addModule(type, variant, dataPreset) {
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag"></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label><textarea class="form-control form-control-sm" rows="3" name="module_' + idx + '_data_desc"></textarea></div>' +
-    '<div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label><input type="hidden" name="module_' + idx + '_data_image" value=""><label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="module_' + idx + '_data_image_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div><div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div><div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div></div>' +
+    renderDynamicField('module_' + idx + '_data_', {key:'media_type', label:'媒体类型', type:'select', options:[{value:'image', label:'图片'}, {value:'video', label:'视频'}, {value:'embed', label:'嵌入页面'}]}, 'image', '') +
+    renderDynamicField('module_' + idx + '_data_', {key:'image', label:'图片', type:'image', show_if:{field:'media_type', value:'image'}}, '', '') +
+    renderDynamicField('module_' + idx + '_data_', {key:'video', label:'视频', type:'video', show_if:{field:'media_type', value:'video'}}, '', '') +
+    renderDynamicField('module_' + idx + '_data_', {key:'embed_url', label:'嵌入页面 URL', type:'embed', show_if:{field:'media_type', value:'embed'}}, '', 'https://example.com/tool/index.html') +
     '<div class="row g-2">' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">主按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryBtn"></div>' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">主按钮链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryLink"></div>' +
@@ -1568,10 +1603,24 @@ function addModule(type, variant, dataPreset) {
       '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'h3\');event.preventDefault()" title="小标题" style="font-size:12px;line-height:1">H3</button>' +
       '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'p\');event.preventDefault()" title="正文段落" style="font-size:12px;line-height:1">P</button>' +
       '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="var u=prompt(\'链接地址\');if(u){document.execCommand(\'createLink\',false,u)};event.preventDefault()" title="插入链接" style="font-size:12px;line-height:1">🔗</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'justifyLeft\')" title="左对齐" style="font-size:12px;line-height:1">☰</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'justifyCenter\')" title="居中" style="font-size:12px;line-height:1">≡</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'justifyRight\')" title="右对齐" style="font-size:12px;line-height:1">☷</button>' +
+      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'insertUnorderedList\')" title="无序列表" style="font-size:12px;line-height:1">•≡</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'insertOrderedList\')" title="有序列表" style="font-size:12px;line-height:1">1≡</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorTable(this,event)" title="插入表格" style="font-size:12px;line-height:1">▦</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorLink(this,event)" title="插入链接" style="font-size:12px;line-height:1">🔗</button>' +
     '</div>' +
     '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML"></div>' +
     '<textarea class="form-control form-control-sm d-none" name="module_' + idx + '_data_body"></textarea></div>';
+    specialEditor =
+    '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle"></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label>' +
+    richEditorHtml('module_' + idx + '_data_body', '') +
+    '</div>';
     styleEditor =
     '<hr class="my-2">' +
     '<div class="small fw-semibold mb-1 text-muted">文字排版</div>' +
@@ -2115,9 +2164,9 @@ function toggleVisibilityEye(btn) {
   // 更新隐藏 input
   var hiddenInput = btn.parentElement.querySelector('input[type="hidden"]');
   if (hiddenInput) hiddenInput.value = newVisible ? 'true' : 'false';
-  // 更新图标：newVisible=true → 内容刚被隐藏 → 填充灰眼
-  btn.innerHTML = newVisible ? EYE_OFF_SVG : EYE_OPEN_SVG;
-  btn.title = newVisible ? '点击显示' : '点击隐藏';
+  // newVisible=true → 内容可见 → 睁眼 + "点击隐藏"
+  btn.innerHTML = newVisible ? EYE_OPEN_SVG : EYE_OFF_SVG;
+  btn.title = newVisible ? '点击隐藏' : '点击显示';
 }
 
 function removeModule(idx) {
@@ -2341,6 +2390,9 @@ function submitModuleFormAjax(form, event) {
 // 全局 unit-picker：选单位后自动拼到左侧输入框（不依赖 class，按 DOM 结构判断）
 document.addEventListener('change', function(e) {
   var sel = e.target;
+  if (sel && sel.name && sel.name.slice(-10) === 'media_type') {
+    updateConditionalFields(sel.closest('.module-item') || sel.closest('.device-config') || document);
+  }
   if (sel.tagName !== 'SELECT') return;
   var unit = sel.value;
   if (!unit) return;
@@ -2366,30 +2418,122 @@ document.addEventListener('paste', function(e) {
   document.execCommand('insertHTML', false, html);
 });
 
+function insertRichEditorLink(btn, event) {
+  if (event) event.preventDefault();
+  var wrapper = btn && btn.closest ? btn.closest('.mb-2') : null;
+  var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+  if (!editor) return false;
+  var sel = window.getSelection();
+  var range = null;
+  if (sel && sel.rangeCount && editor.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+    range = sel.getRangeAt(0).cloneRange();
+  }
+  var url = window.prompt('链接地址');
+  if (!url) return false;
+  editor.focus();
+  var link = document.createElement('a');
+  link.href = url;
+  link.target = '_blank';
+  link.rel = 'noopener';
+  if (range && !range.collapsed) {
+    try {
+      range.surroundContents(link);
+    } catch (err) {
+      var fragment = range.extractContents();
+      link.appendChild(fragment);
+      range.insertNode(link);
+    }
+  } else {
+    link.textContent = url;
+    if (!range) {
+      range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+    }
+    range.insertNode(link);
+  }
+  var textarea = editor.nextElementSibling;
+  if (textarea) textarea.value = editor.innerHTML;
+  return false;
+}
+
+function richEditorCommand(btn, event, cmd, arg) {
+  if (event) event.preventDefault();
+  var wrapper = btn && btn.closest ? btn.closest('.mb-2') : null;
+  var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+  if (!editor) return false;
+  editor.focus();
+  document.execCommand(cmd, false, arg || null);
+  var textarea = editor.nextElementSibling;
+  if (textarea) textarea.value = editor.innerHTML;
+  return false;
+}
+
+function richEditorSelectCommand(control, cmd, arg) {
+  var wrapper = control && control.closest ? control.closest('.mb-2') : null;
+  var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+  if (!editor) return false;
+  editor.focus();
+  document.execCommand(cmd, false, arg || null);
+  var textarea = editor.nextElementSibling;
+  if (textarea) textarea.value = editor.innerHTML;
+  return false;
+}
+
+function insertRichEditorTable(btn, event) {
+  if (event) event.preventDefault();
+  var wrapper = btn && btn.closest ? btn.closest('.mb-2') : null;
+  var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+  if (!editor) return false;
+  var size = window.prompt('表格行列，例如 3x3', '3x3');
+  if (size === null) return false;
+  var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,，, ]\s*(\d+)\s*$/);
+  var rows = match ? parseInt(match[1], 10) : 3;
+  var cols = match ? parseInt(match[2], 10) : 3;
+  rows = Math.max(1, Math.min(rows || 3, 20));
+  cols = Math.max(1, Math.min(cols || 3, 10));
+  editor.focus();
+  var html = '<table><tbody>';
+  for (var r = 0; r < rows; r++) {
+    html += '<tr>';
+    for (var c = 0; c < cols; c++) html += '<td><br></td>';
+    html += '</tr>';
+  }
+  html += '</tbody></table><p><br></p>';
+  document.execCommand('insertHTML', false, html);
+  var textarea = editor.nextElementSibling;
+  if (textarea) textarea.value = editor.innerHTML;
+  return false;
+}
+
 /* ===== 现有 data-* 模块的 schema 表单挂载 =====
    服务端给 data-* 块的现有模块渲染了空的 content/style 挂载点 + mdata JSON，
    这里用 generateSchemaForm/generateSchemaStyleForm 按 mdata 填充——使现有模块
    与新增模块走同一套 schema 表单（存 data-* 渲染器读的新键名）。幂等，可重复调用。 */
 function initSchemaMounts() {
-  document.querySelectorAll('.schema-mount[data-mount="content"]').forEach(function(mount) {
+  var mounts = document.querySelectorAll('.schema-mount[data-mount="content"]');
+  console.log("[initSchemaMounts] mounts count:", mounts.length);
+  mounts.forEach(function(mount) {
     if (mount.dataset.mounted) return;
     var idx = mount.dataset.moduleIndex;
-    var typeEl = document.querySelector('[name="module_' + idx + '_type"]');
-    if (!typeEl) return;
+    var device = mount.dataset.device || "desktop";
+    var typeEl = document.querySelector("[name=module_" + idx + "_type]");
+    if (!typeEl) { console.log("[initSchemaMounts] module_" + idx + " NO typeEl"); return; }
     var meta = findBlockMeta(typeEl.value);
-    if (!meta.is_data_attr || !meta.schema) return;
+    console.log("[initSchemaMounts] module_" + idx + " type=" + typeEl.value + " is_data_attr=" + meta.is_data_attr + " hasSchema=" + !!(meta.schema));
+    if (!meta.is_data_attr || !meta.schema) { console.log("[initSchemaMounts] module_" + idx + " SKIP"); return; }
 
-    // 使用共享的 _getMergedSchema 合并 meta.yaml 类型（与 addModule 保持一致）
     var schema = _getMergedSchema(meta);
 
     var mdata = {};
-    var dataEl = document.querySelector('.schema-mount-data[data-module-index="' + idx + '"]');
+    var dataEl = document.querySelector('.schema-mount-data[data-module-index="' + idx + '"][data-device="' + device + '"]');
     if (dataEl) { try { mdata = JSON.parse(dataEl.textContent || '{}') || {}; } catch (e) { mdata = {}; } }
-    var prefix = 'module_' + idx + '_data_';
+    var prefix = device === 'desktop' ? 'module_' + idx + '_data_' : 'module_' + idx + '_resp_' + device + '_data_';
     mount.innerHTML = generateSchemaForm(prefix, schema, mdata, function() { return ''; });
-    var styleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"]');
+    var styleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
     if (styleMount) styleMount.innerHTML = generateSchemaStyleForm(prefix, schema, mdata);
     mount.dataset.mounted = '1';
+    updateConditionalFields(mount.closest('.module-item') || mount);
   });
 }
 initSchemaMounts();

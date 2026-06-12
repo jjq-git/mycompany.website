@@ -1,114 +1,124 @@
 company:
-  name: "Nova AI"
-  short_name: "Nova"
-  logo: "/static/img/logo-nova.svg"
-  icp: ""
-
+  icp: ''
+  logo: /static/img/logo-nova.svg
+  name: Nova AI
+  short_name: Nova
 company_zh-CN:
-  name: "Nova AI"
-  short_name: "Nova"
-  logo: "/static/img/logo-nova.svg"
-  icp: ""
-
+  icp: ''
+  logo: /static/img/logo-nova.svg
+  name: Nova AI
+  short_name: Nova
 contact:
-  phone: "+1 (415) 555-0172"
-  mobile: ""
-  email: "hello@nova-ai.example.com"
-  address: "548 Market St, San Francisco, CA 94104"
-  business_hours: "Mon-Fri 9:00-18:00"
-  weekend: ""
-
+  address: 548 Market St, San Francisco, CA 94104
+  business_hours: Mon-Fri 9:00-18:00
+  email: hello@nova-ai.example.com
+  mobile: ''
+  phone: +1 (415) 555-0172
+  weekend: ''
 contact_zh-CN:
-  phone: "+1 (415) 555-0172"
-  mobile: ""
-  email: "hello@nova-ai.example.com"
-  address: "548 Market St, San Francisco, CA 94104"
-  business_hours: "周一至周五 9:00-18:00"
-  weekend: ""
-
-social:
-  twitter: "https://twitter.com/"
-  linkedin: "https://linkedin.com/"
-  github: "https://github.com/"
-  enabled: true
-
-theme: {}
-
-menu:
-  - {label: Home, type: home}
-  - label: Products
-    type: list
-    target: products
-    dropdown_style: horizontal
-  - {label: Solutions, type: list, target: portfolio}
-  - {label: Pricing, type: page, target: pricing}
-  - {label: About, type: page, target: about}
-  - {label: Blog, type: list, target: posts}
-  - {label: Contact, type: page, target: contact}
-
-menu_zh-CN:
-  - {label: 首页, type: home}
-  - label: 产品
-    type: list
-    target: products
-    dropdown_style: horizontal
-  - {label: 解决方案, type: list, target: portfolio}
-  - {label: 定价, type: page, target: pricing}
-  - {label: 关于我们, type: page, target: about}
-  - {label: 博客, type: list, target: posts}
-  - {label: 联系我们, type: page, target: contact}
-
+  address: 548 Market St, San Francisco, CA 94104
+  business_hours: 周一至周五 9:00-18:00
+  email: hello@nova-ai.example.com
+  mobile: ''
+  phone: +1 (415) 555-0172
+  weekend: ''
+footer:
+  columns:
+  - links:
+    - label: Claude Opus
+      url: /products/claude-opus/
+    - label: Claude Sonnet
+      url: /products/claude-sonnet/
+    - label: Claude Code
+      url: /products/claude-code/
+    - label: Pricing
+      url: /pricing/
+    title: Product
+    type: menu
+  - links:
+    - label: About
+      url: /about/
+    - label: Blog
+      url: /posts/
+    - label: Contact
+      url: /contact/
+    title: Company
+    type: menu
+  - links:
+    - label: Documentation
+      url: '#'
+    - label: API Reference
+      url: '#'
+    - label: Status
+      url: '#'
+    title: Resources
+    type: menu
+  variant: columns_social
+footer_zh-CN:
+  columns:
+  - links:
+    - label: Claude Opus
+      url: /products/claude-opus/
+    - label: Claude Sonnet
+      url: /products/claude-sonnet/
+    - label: Claude Code
+      url: /products/claude-code/
+    - label: 定价
+      url: /pricing/
+    title: 产品
+    type: menu
+  - links:
+    - label: 关于我们
+      url: /about/
+    - label: 博客
+      url: /posts/
+    - label: 联系我们
+      url: /contact/
+    title: 公司
+    type: menu
+  - links:
+    - label: 文档
+      url: '#'
+    - label: API 参考
+      url: '#'
+    - label: 服务状态
+      url: '#'
+    title: 资源
+    type: menu
+  variant: columns_social
 header:
-  variant: logo_left_menu_right
+  enabled_languages:
+  - en
+  - zh-CN
   language_switcher:
     enabled: true
     style: vertical_dropdown
-  enabled_languages:
-    - en
-    - zh-CN
-
-footer:
-  variant: columns_social
-  columns:
-    - title: Product
-      type: menu
-      links:
-        - {label: Claude Opus, url: /products/claude-opus/}
-        - {label: Claude Sonnet, url: /products/claude-sonnet/}
-        - {label: Claude Code, url: /products/claude-code/}
-        - {label: Pricing, url: /pricing/}
-    - title: Company
-      type: menu
-      links:
-        - {label: About, url: /about/}
-        - {label: Blog, url: /posts/}
-        - {label: Contact, url: /contact/}
-    - title: Resources
-      type: menu
-      links:
-        - {label: Documentation, url: "#"}
-        - {label: API Reference, url: "#"}
-        - {label: Status, url: "#"}
-
-footer_zh-CN:
-  variant: columns_social
-  columns:
-    - title: 产品
-      type: menu
-      links:
-        - {label: Claude Opus, url: /products/claude-opus/}
-        - {label: Claude Sonnet, url: /products/claude-sonnet/}
-        - {label: Claude Code, url: /products/claude-code/}
-        - {label: 定价, url: /pricing/}
-    - title: 公司
-      type: menu
-      links:
-        - {label: 关于我们, url: /about/}
-        - {label: 博客, url: /posts/}
-        - {label: 联系我们, url: /contact/}
-    - title: 资源
-      type: menu
-      links:
-        - {label: 文档, url: "#"}
-        - {label: API 参考, url: "#"}
-        - {label: 服务状态, url: "#"}
+  variant: logo_left_menu_right
+menu:
+- label: Home
+  type: home
+- dropdown_style: horizontal
+  label: Products
+  target: products
+  type: list
+- label: Solutions
+  target: portfolio
+  type: list
+- label: Pricing
+  target: pricing
+  type: page
+- label: About
+  target: about
+  type: page
+- label: Blog
+  target: posts
+  type: list
+- label: Contact
+  target: contact
+  type: page
+social:
+  enabled: true
+  github: https://github.com/
+  linkedin: https://linkedin.com/
+  twitter: https://twitter.com/
+theme: {}

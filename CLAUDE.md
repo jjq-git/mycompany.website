@@ -18,6 +18,7 @@
 - **3 次工具调用搞不定一个简单任务 → 强制复盘**：如果一个排版 / 删除 / 简单替换用了 3 次以上工具调用还没完成，必须停下来问自己：任务到底有多简单？当前方案是不是走偏了？有没有更直接的方式一步到位？
 - **Edit 失败一次 → 立刻写 Python 脚本**：Edit 工具只要匹配失败一次，不准换参数重试。直接写 Python 脚本按行号+中文关键字做精确处理，一轮过。这条没有例外
 - **模板修改范围约束**：涉及 `site_templates/` 的修改，默认只改 `claude` 和 `dengtec` 两套模板。`airbnb`、`apple`、`notion` 等其他模板不动，除非用户明确指出要改哪套。这条同样适用于新增 block、修改 CSS/JS、调整种子数据等所有模板层操作
+- **后台 schema 表单改动必须先查全链路**：改 data-* block 字段时，先同时确认 `template.html`、`meta.yaml`、`app/templates/dashboard/panel_page_edit.html`、`app/static/js/admin_modules.js`、`block_renderer.py` 五处职责。右侧面板以 `template.html` 解析出的 schema 为主，`meta.yaml` 只补类型、label、options、`show_if` 等元信息；不要把 `meta.fields` 整体塞进内容表单，只有被 `show_if` 依赖但不在 schema 里的控制字段（如 `media_type`）可以额外注入。新增/已保存、桌面/平板/手机三条路径必须一起验证。
 
 ## 一、产品是什么
 

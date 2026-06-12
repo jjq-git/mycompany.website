@@ -431,7 +431,7 @@ categories:
 | 类别 | 说明 | 包含模块 |
 |------|------|----------|
 | **内容块** | 手动填写内容的区块 | hero_banner, highlight_card, section_title, text_content, feature_grid, stat_counter, process_steps, logo_cloud, contact_info, item_detail |
-| **数据块** | 自动从数据集拉取内容 | data_grid, product_grid |
+| **数据块** | 自动从数据集拉取内容 | data_grid |
 
 ### 8.4 模块通用操作
 
