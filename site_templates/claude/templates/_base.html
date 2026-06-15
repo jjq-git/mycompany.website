@@ -6,10 +6,13 @@
   <title>{% block title %}{{ settings.company.name or t.company }} — {{ t.nav.home | default('Home') }}{% endblock %}</title>
   <meta name="description" content="{% block description %}{{ settings.company.name or t.company }}{% endblock %}">
 
-  {# Google Fonts: Cormorant Garamond (替代 Copernicus 衬线标题), Inter (替代 StyreneB 正文), JetBrains Mono (代码) #}
+  {# Google Fonts: Cormorant Garamond (替代 Copernicus 衬线标题), Inter (替代 StyreneB 正文), JetBrains Mono (代码)
+     中文页面（zh-CN / zh-TW）不加载 —— 这些字体不含中文字符，走 CSS 中文字体栈 #}
+  {% if lang != 'zh-CN' and lang != 'zh-TW' %}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  {% endif %}
 
   <link rel="stylesheet" href="{{ base_url }}/static/css/main.css?v=20260612-rte-table-width">
   <!-- Favicon: 优先使用店主上传的图片，无则回退到内联 SVG 占位 -->

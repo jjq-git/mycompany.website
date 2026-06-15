@@ -37,7 +37,8 @@
   --color-info: #3b82f6;
 
   /* Typography */
-  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  /* 中文正文字体栈：微软雅黑 > 苹方 > 思源黑体 > 冬青黑体 > 系统回退 */
+  --font-family-base: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', 'Hiragino Sans GB', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
   --font-family-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 
   --font-size-xs: 0.75rem;
@@ -117,6 +118,11 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* 英文环境恢复西文字体优先栈 */
+:root:lang(en) {
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
 }
 
 .main-content {

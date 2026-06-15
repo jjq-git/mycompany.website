@@ -164,6 +164,13 @@
   --color-error:            #c64545;
 }
 
+/* ── 中文环境字体覆盖：微软雅黑 > 苹方 > 思源黑体 > 冬青黑体 ── */
+/* Cormorant Garamond / Inter 不含中文字符，中文页面必须走此栈 */
+:root:lang(zh-CN), :root:lang(zh-TW) {
+  --font-display: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', 'Hiragino Sans GB', sans-serif;
+  --font-sans: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', 'Hiragino Sans GB', sans-serif;
+}
+
 /* ============================================================
    3. RESET & BASE
    ============================================================ */

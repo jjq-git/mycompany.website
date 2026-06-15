@@ -69,6 +69,10 @@ def load_config(override=None):
         'TRANSLATION_API_KEY': os.environ.get('TRANSLATION_API_KEY', ''),
         'TRANSLATION_API_BASE': os.environ.get('TRANSLATION_API_BASE', 'https://api.deepseek.com/v1'),
         'TRANSLATION_MODEL': os.environ.get('TRANSLATION_MODEL', 'deepseek-chat'),
+
+        # 预览页登录控制（测试阶段默认免登录，方便分享预览链接给同事看；
+        # 开发完成后在 .env 设 PREVIEW_REQUIRE_LOGIN=1 恢复登录要求）
+        'PREVIEW_REQUIRE_LOGIN': os.environ.get('PREVIEW_REQUIRE_LOGIN', '').strip() == '1',
     }
 
     if override:

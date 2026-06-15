@@ -176,12 +176,12 @@ def _inject_leaf(node, field_def, value):
     elif dtype in _TEXT_TYPES:
         if has_content:
             _set_text(node, value, raw_html=(dtype == 'richtext'))
-        elif field_def.default_text:
-            # 用户未填但有模板默认文字 → 保留默认（隐藏配置区依赖此行为）
-            _set_text(node, field_def.default_text, raw_html=False)
-            has_content = True
         else:
-            _set_text(node, '')  # 无默认文字且无用户值 → 清掉并隐藏
+            # 用户未填 → 清空文字并隐藏。模板内的占位文字（"标签文字"等）是
+            # 编辑器示意，不应输出到成品站点。此前 default_text 回退导致
+            # 未配置的字段以占位内容出现在预览中。
+            _set_text(node, "")
+            has_content = False
     elif dtype in _MEDIA_SRC_ATTR:
         attr = _MEDIA_SRC_ATTR[dtype]
         if has_content:

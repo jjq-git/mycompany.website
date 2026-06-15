@@ -236,7 +236,13 @@ def _require_site_access(site):
 
     预览路由会吐出店主 output 下的真实 HTML/资源, 必须做归属校验,
     否则任何登录用户自增 site_id 就能读他人未发布的私密站点(跨用户 IDOR)。
+
+    测试阶段可通过 PREVIEW_REQUIRE_LOGIN 环境变量控制：默认免登录（不校验），
+    开发完成后设 PREVIEW_REQUIRE_LOGIN=1 恢复完整鉴权。
     """
+    # 测试阶段预览免登录：跳过站点归属校验，方便分享预览链接
+    if not current_app.config.get('PREVIEW_REQUIRE_LOGIN'):
+        return None
     user = _current_user()
     if not user:
         abort(401)
@@ -247,10 +253,18 @@ def _require_site_access(site):
 
 @bp.before_request
 def require_login():
-    """保护后台页面：除登录和静态预览外都需要登录."""
+    """保护后台页面：除登录和静态预览外都需要登录.
+
+    测试阶段预览页（/preview/ /preview_site/ /preview_or_build/）默认免登录，
+    开发完成后在 .env 设 PREVIEW_REQUIRE_LOGIN=1 恢复登录要求。
+    """
     if request.endpoint in AUTH_EXEMPT_ENDPOINTS:
         return None
     if request.endpoint and request.endpoint.startswith('static'):
+        return None
+    # 预览端点按配置决定是否免登录（测试阶段免登录，方便分享预览链接给同事看）
+    PREVIEW_ENDPOINTS = {'core.preview', 'core.preview_site', 'core.preview_or_build'}
+    if request.endpoint in PREVIEW_ENDPOINTS and not current_app.config.get('PREVIEW_REQUIRE_LOGIN'):
         return None
     if not _current_user():
         return redirect(url_for('core.login', next=request.full_path if request.query_string else request.path))
@@ -2358,9 +2372,8 @@ def _parse_modules_form(form, existing_modules=None):
                                 entry[href_field] = hval
                     if entry:  # 跳过完全空白的条目
                         items.append(entry)
-                if items:
-                    data[list_name] = items
-                    form_fields_for_module.add(list_name)  # 防止"已有数据保留"覆盖
+                data[list_name] = items
+                form_fields_for_module.add(list_name)  # 表单已表达该列表；空列表也要覆盖旧数据
                 handled_lists.add(list_name)
 
         # 通用 data-* 顶层 image/video 字段：处理文件上传（list 内字段已在上面处理）

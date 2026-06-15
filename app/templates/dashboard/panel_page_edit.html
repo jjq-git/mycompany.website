@@ -660,9 +660,9 @@ function _schemaListItemHtml(base, listName, j, children, itemData) {
     inner += _schemaFieldHtml(itemPrefix, child, itemData);
   });
   return '<div class="border rounded p-2 mb-2 schema-list-item collapsed" data-item-index="' + j + '">' +
-    '<div class="d-flex justify-content-between align-items-center mb-2 schema-list-item-header" style="cursor:pointer;user-select:none" onclick="this.closest(\'.schema-list-item\').classList.toggle(\'collapsed\')">' +
+    '<div class="d-flex justify-content-between align-items-center mb-2 schema-list-item-header" data-schema-list-toggle="1" style="cursor:pointer;user-select:none">' +
     '<span class="small fw-semibold d-flex align-items-center"><svg class="schema-list-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>条目 ' + (j + 1) + '</span>' +
-    '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();schemaListRemove(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
+    '<button type="button" class="module-action-btn module-action-del schema-list-remove" title="删除" aria-label="删除条目"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
     '<div class="schema-list-item-body">' + inner + '</div></div>';
 }
 
@@ -675,14 +675,40 @@ function schemaListAdd(btn) {
   var list = editor.querySelector('.schema-list-items');
   var j = list.querySelectorAll('.schema-list-item').length;
   list.insertAdjacentHTML('beforeend', _schemaListItemHtml(base, listName, j, children, {}));
-  editor.querySelector('.schema-list-count').value = list.querySelectorAll('.schema-list-item').length;
+  _schemaListReindex(editor);
+  updateConditionalFields(editor);
 }
 
 function schemaListRemove(btn) {
   var editor = btn.closest('.schema-list-editor');
   if (!editor) return;
-  btn.closest('.schema-list-item').remove();
+  var item = btn.closest('.schema-list-item');
+  if (!item) return;
+  item.remove();
   _schemaListReindex(editor);
+}
+
+function _schemaListToggle(header) {
+  var item = header && header.closest('.schema-list-item');
+  if (item) item.classList.toggle('collapsed');
+}
+
+if (!window._schemaListDelegatedEventsBound) {
+  window._schemaListDelegatedEventsBound = true;
+  document.addEventListener('click', function(e) {
+    var removeBtn = e.target.closest && e.target.closest('.schema-list-remove');
+    if (removeBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      schemaListRemove(removeBtn);
+      return;
+    }
+    var header = e.target.closest && e.target.closest('.schema-list-item-header[data-schema-list-toggle]');
+    if (header && !e.target.closest('button,a,input,select,textarea,label')) {
+      e.preventDefault();
+      _schemaListToggle(header);
+    }
+  }, true);
 }
 
 /* 删除条目后重排 index + 重命名子字段 name */
@@ -703,7 +729,7 @@ function _schemaListReindex(editor) {
       if (chevronSvg) label.insertBefore(chevronSvg, label.firstChild);
     }
     item.querySelectorAll('[name]').forEach(function(el) {
-      el.name = el.name.replace(re, '$1' + idx + '_');
+      el.name = el.name.replace(re, function(_, prefix) { return prefix + idx + '_'; });
     });
   });
 }
