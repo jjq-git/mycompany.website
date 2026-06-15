@@ -307,16 +307,16 @@ def _build_language_selector_page(output_root, base_url, settings, theme, year, 
     html += '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
     html += '<title>Language - ' + str(company_name) + '</title>\n'
     # 客户端 JS 读 navigator.language 智能跳转：精确匹配优先，前缀兜底，无匹配停留选择页
+    # 用相对路径重定向（不用 base_url），兼容预览 /preview/<id>/ 和 CLI 构建 /
     html += '<script>'
     html += 'var L=' + lang_codes_json + ';'
-    html += 'var B="' + safe_base + '";'
     html += '(function(){'
     html += 'var u=(navigator.language||navigator.userLanguage||"");'
     html += 'var m=null;'
     html += 'for(var i=0;i<L.length;i++){if(L[i]===u){m=L[i];break;}}'
     html += 'if(!m){var p=u.split("-")[0];'
     html += 'for(var i=0;i<L.length;i++){if(L[i].indexOf(p)===0){m=L[i];break;}}}'
-    html += 'if(m)window.location.replace(B+"/"+m+"/");'
+    html += 'if(m)window.location.replace(m+"/");'
     html += '})();'
     html += '</script>\n'
     html += '<link rel="stylesheet" href="' + str(safe_base) + '/static/css/main.css">\n'

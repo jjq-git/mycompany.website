@@ -1718,40 +1718,43 @@ def _default_lang_code(site):
 
 @bp.route('/preview_site/<int:site_id>')
 def preview_site(site_id):
-    """确保已构建，重定向到默认语言首页."""
+    """确保已构建，重定向到根 index.html（多语言站走 JS 浏览器语言检测）."""
     session['current_site_id'] = site_id  # 后续 /assets/ 资源请求需要
     from flask import redirect, request, url_for
     site = Site.query.get_or_404(site_id)
     _require_site_access(site)
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
-    lang_code = _default_lang_code(site)
-    lang_index = out / lang_code / 'index.html'
-    if request.args.get('_') or not lang_index.exists():
+
+    # 构建条件：不存在任何产出，或显式传 ?_= 刷新
+    if request.args.get('_') or not (out / 'index.html').exists():
         build_site(site_id, base_url=f'/preview/{site_id}')
 
-    if (out / lang_code / 'index.html').exists():
-        return redirect(url_for('core.preview', site_id=site_id, filepath=f'{lang_code}/index.html'))
+    # 返回根 index.html：多语言站走 JS 浏览器语言检测，单语言站直接渲染
     return redirect(url_for('core.preview', site_id=site_id))
 
 
 @bp.route('/preview_or_build/<int:site_id>')
 def preview_or_build(site_id):
-    """确保已构建，直接返回默认语言的首页."""
+    """确保已构建，返回根 index.html（多语言站走 JS 浏览器语言检测）或默认语言首页."""
     session['current_site_id'] = site_id  # 后续 /assets/ 资源请求需要
     site = Site.query.get_or_404(site_id)
     _require_site_access(site)
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
-    lang_code = _default_lang_code(site)
-    lang_index = out / lang_code / 'index.html'
-    if request.args.get('_') or not lang_index.exists():
+
+    # 优先返回根 index.html（多语言站含 JS 浏览器语言检测），
+    # 不存在则回退到默认语言首页（单语言站点无根选择页）
+    root_index = out / 'index.html'
+    if not root_index.exists() or request.args.get('_'):
         build_site(site_id, base_url=f'/preview/{site_id}')
 
-    # 查找默认语言子目录下的 index.html，跳过语言选择页
+    if (out / 'index.html').exists():
+        return _safe_send_from_directory(out, 'index.html')
+
+    # 回退：单语言站点直接返回首页
+    lang_code = _default_lang_code(site)
     lang_index = out / lang_code / 'index.html'
     if lang_index.exists():
         return _safe_send_from_directory(out / lang_code, 'index.html')
-
-    # 回退：返回根目录的 index.html（可能是单语言站点）
     return _safe_send_from_directory(out, 'index.html')
 
 
@@ -1764,18 +1767,15 @@ def preview(site_id, filepath='index.html'):
     _require_site_access(site)
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
     force_rebuild = bool(request.args.get('_'))
+    # 根路径请求 → 返回根 index.html（多语言站走 JS 浏览器语言检测），不再跳默认语言
     if filepath == 'index.html':
-        lang_code = _default_lang_code(site)
-        lang_index = out / lang_code / 'index.html'
-        if force_rebuild or not lang_index.exists():
+        if force_rebuild or not (out / 'index.html').exists():
             try:
                 build_site(site_id, base_url=f'/preview/{site_id}')
             except Exception:
-                # #15: 构建失败必须留痕(对比 build() 路由用 logger.exception);
-                # 保留继续尝试返回已有文件的行为, 但不再静默吞掉真正的失败原因。
                 current_app.logger.exception('预览构建站点 %s 失败', site_id)
-        if lang_index.exists():
-            return _safe_send_from_directory(out, f'{lang_code}/index.html')
+        if (out / 'index.html').exists():
+            return _safe_send_from_directory(out, 'index.html')
 
     # 先解析出最终目标文件，再判断是否需要重建
     full = out / filepath
