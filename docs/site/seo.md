@@ -176,7 +176,7 @@ AI 模型本身不会"记住"小公司网站（小站很难进入训练集）。
 
 ## 五、根域语言选择首页（关键 SEO 点）
 
-根路径 `/` 必须返回**真实可读 HTML**，含两个语言版本的链接，别只放 JS 跳转 —— 大多数 LLM 爬虫（GPTBot / ClaudeBot / PerplexityBot）不跑 JS，纯 JS 跳转的根页对它们来说是空页面。
+根路径 `/` 返回**真实可读 HTML**，含所有启用语言的手动选择链接。JS 启用时读 `navigator.language` 智能跳转到匹配的语言版本；JS 禁用时（多数 LLM 爬虫：GPTBot / ClaudeBot / PerplexityBot）停留在选择页，仍能爬取到所有语言入口链接。不要只放 JS 跳转而不留可读兜底。
 
 详见 [domains.md 第三节](../cloud/domains.md)。
 

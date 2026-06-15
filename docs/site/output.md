@@ -8,7 +8,7 @@
 
 ```text
 company_a.com/
-├── index.html              ← 根：自动按浏览器语言重定向到 /en/ 或 /de/
+├── index.html              ← 根：JS 读 navigator.language 智能跳转；JS 禁用时展示手动语言选择页
 │
 ├── en/                     ← 英文整站（自包含）
 │   ├── index.html

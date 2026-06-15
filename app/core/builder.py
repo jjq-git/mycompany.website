@@ -5,6 +5,7 @@
 支持多语言: 每种语言一个子目录 (/zh-CN/, /zh-TW/, /en/).
 根路径生成语言选择首页.
 """
+import json
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -298,13 +299,26 @@ def _build_language_selector_page(output_root, base_url, settings, theme, year, 
     # 公司名填 <script>... 会在生成的根 index.html 里执行（存储型 XSS）。
     company_name = escape(settings.get('company', {}).get('name', ''))
     safe_base = escape(base_url.rstrip('/'))
-    first_lang_code = escape(languages[0]['code'])
+    # 语言代码列表 JSON，供 JS 做浏览器语言匹配
+    lang_codes_json = json.dumps([lang['code'] for lang in languages])
 
     html = '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
     html += '<meta charset="UTF-8">\n'
     html += '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
     html += '<title>Language - ' + str(company_name) + '</title>\n'
-    html += '<meta http-equiv="refresh" content="0;url=' + str(safe_base) + '/' + str(first_lang_code) + '/">\n'
+    # 客户端 JS 读 navigator.language 智能跳转：精确匹配优先，前缀兜底，无匹配停留选择页
+    html += '<script>'
+    html += 'var L=' + lang_codes_json + ';'
+    html += 'var B="' + safe_base + '";'
+    html += '(function(){'
+    html += 'var u=(navigator.language||navigator.userLanguage||"");'
+    html += 'var m=null;'
+    html += 'for(var i=0;i<L.length;i++){if(L[i]===u){m=L[i];break;}}'
+    html += 'if(!m){var p=u.split("-")[0];'
+    html += 'for(var i=0;i<L.length;i++){if(L[i].indexOf(p)===0){m=L[i];break;}}}'
+    html += 'if(m)window.location.replace(B+"/"+m+"/");'
+    html += '})();'
+    html += '</script>\n'
     html += '<link rel="stylesheet" href="' + str(safe_base) + '/static/css/main.css">\n'
     html += '</head>\n<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:2rem;">\n'
     html += '<h1>' + str(company_name) + '</h1>\n'

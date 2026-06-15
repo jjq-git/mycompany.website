@@ -33,12 +33,12 @@ design.mycompany.website                用户后台（在线设计 / 编辑器�
 ```text
 com-a.mycompany.website/en/             英文
 com-a.mycompany.website/zh/             中文
-com-a.mycompany.website/                语言选择首页（hreflang + 即时 JS 跳转）
+com-a.mycompany.website/                语言选择首页（JS 浏览器语言检测 + 手动链接兜底）
 ```
 
 - 不在根路径直接渲染任何语言版本，**所有内容都在 `/en/`、`/zh/` 之类的子路径里**
 - 这样切语言只是路径替换，简单直接
-- 根路径生成一个"语言选择首页"，含 `hreflang` 标签 + JS 即时跳转 + `<meta refresh>` 兜底 + 给爬虫看的可读链接（详见 [seo.md](../site/seo.md)）。**不要用纯 JS 跳转**，否则不跑 JS 的 LLM 爬虫拿到空页面
+- 根路径生成一个"语言选择首页"：JS 读 `navigator.language` 智能匹配跳转（精确匹配优先，前缀兜底），JS 禁用时展示手动语言链接给爬虫和用户（详见 [seo.md](../site/seo.md)）。**不要用纯 JS 跳转**，否则不跑 JS 的 LLM 爬虫拿到空页面
 
 文档站同规则：
 
