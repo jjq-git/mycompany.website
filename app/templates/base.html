@@ -8,7 +8,7 @@
   <link rel="icon" href="{{ url_for('favicon') }}" type="image/svg+xml">
   <title>{% block title %}{{ site.slug if site else '' }}{% endblock %} — {{ platform_domain }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260605b">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260615-build-loading">
   <style>
     :root {
       --bs-primary: {{ admin_primary }};
@@ -580,6 +580,16 @@
     </section>
 
     {# 拖拽分隔条 #}
+    <div class="build-loading-overlay" id="buildLoadingOverlay" aria-live="polite" aria-hidden="true">
+      <div class="build-loading-box">
+        <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+        <div>
+          <div class="build-loading-title" id="buildLoadingTitle">正在生成预览...</div>
+          <div class="build-loading-text">请稍候，完成后会自动刷新中间预览。</div>
+        </div>
+      </div>
+    </div>
+
     <div class="resizer-handle" id="panelResizer" title="拖拽调整宽度"></div>
 
     {# 折叠按钮 — 独立 wrapper，不受面板/分隔条 overflow 影响 #}
@@ -991,17 +1001,82 @@
       frame.classList.add(device);
     }
 
-    function refreshPreview() {
+    function cacheBustUrl(url) {
+      if (!url || url === 'about:blank') return url || 'about:blank';
+      return url + (url.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
+    }
+
+    function setPreviewFrameUrl(url) {
       var f = document.getElementById('previewFrame');
-      if (!f) return;
-      var previewUrl = f.dataset.previewUrl || f.src;
-      updatePreviewUrlBar(previewUrl);
+      if (!f) return Promise.resolve();
+      updatePreviewUrlBar(url);
+      return new Promise(function(resolve) {
+        var done = false;
+        var timer = window.setTimeout(finish, 12000);
+        function finish() {
+          if (done) return;
+          done = true;
+          window.clearTimeout(timer);
+          f.removeEventListener('load', finish);
+          resolve();
+        }
+        f.addEventListener('load', finish);
+        f.src = cacheBustUrl(url);
+      });
+    }
+
+    function showBuildLoading(message) {
+      var overlay = document.getElementById('buildLoadingOverlay');
+      var title = document.getElementById('buildLoadingTitle');
+      if (title && message) title.textContent = message;
+      if (!overlay) return;
+      overlay.dataset.startedAt = String(Date.now());
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function hideBuildLoading() {
+      var overlay = document.getElementById('buildLoadingOverlay');
+      if (!overlay) return;
+      var startedAt = parseInt(overlay.dataset.startedAt || '0', 10);
+      var elapsed = startedAt ? Date.now() - startedAt : 0;
+      var delay = Math.max(0, 450 - elapsed);
+      window.setTimeout(function() {
+        overlay.classList.remove('show');
+        overlay.setAttribute('aria-hidden', 'true');
+      }, delay);
+    }
+
+    function buildCurrentSite(message) {
       var siteParam = currentSiteParam();
       var buildUrl = '/build?_fragment=1';
       if (siteParam) buildUrl += '&site=' + encodeURIComponent(siteParam);
-      fetch(buildUrl, { method: 'POST' })
-        .then(r => r.json()).catch(() => ({ ok: true }))
-        .then(() => { f.src = previewUrl + (previewUrl.includes('?') ? '&' : '?') + '_=' + Date.now(); });
+      showBuildLoading(message || '正在生成预览...');
+      return fetch(buildUrl, { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .catch(function() { return { ok: true }; });
+    }
+
+    function refreshPreview(options) {
+      options = options || {};
+      var f = document.getElementById('previewFrame');
+      if (!f) return Promise.resolve();
+      var previewUrl = f.dataset.previewUrl || f.src;
+      updatePreviewUrlBar(previewUrl);
+
+      if (options.build === false) {
+        return setPreviewFrameUrl(previewUrl);
+      }
+
+      return buildCurrentSite(options.message)
+        .then(function(data) {
+          if (data && data.ok === false) {
+            alert(data.error || '生成预览失败');
+            return;
+          }
+          return setPreviewFrameUrl(previewUrl);
+        })
+        .finally(hideBuildLoading);
     }
 
     var previewTabs = [];
@@ -1082,7 +1157,7 @@
       var frame = document.getElementById('previewFrame');
       if (frame) {
         frame.dataset.previewUrl = url;
-        if (!skipFrameUpdate) frame.src = url;
+        if (!skipFrameUpdate) setPreviewFrameUrl(url);
       }
     }
 
@@ -1318,8 +1393,7 @@
       if (previewPage) {
         var previewUrl = previewUrlForPage(previewPage);
         var title = link.getAttribute('title') || link.textContent.trim() || '预览';
-        openPreviewTab((previewPage === '/' ? 'home' : String(previewPage).replace(/^\/+|\/+$/g, '') || 'home'), title, previewUrl, true);
-        refreshPreview();
+        openPreviewTab((previewPage === '/' ? 'home' : String(previewPage).replace(/^\/+|\/+$/g, '') || 'home'), title, previewUrl);
       }
     });
 
@@ -1349,11 +1423,12 @@
 
     function doPublish() {
       if (confirm('确认发布站点？')) {
-        var siteParam = currentSiteParam();
-        var buildUrl = '/build?_fragment=1';
-        if (siteParam) buildUrl += '&site=' + encodeURIComponent(siteParam);
-        fetch(buildUrl, { method: 'POST' })
-          .then(r => r.json()).then(data => { alert(data.ok ? '发布完成' : '发布失败'); refreshPreview(); });
+        buildCurrentSite('正在发布并生成站点...')
+          .then(function(data) {
+            alert(data.ok ? '发布完成' : '发布失败');
+            return refreshPreview({ build: false });
+          })
+          .finally(hideBuildLoading);
       }
     }
 
@@ -1515,11 +1590,15 @@
         var newUrl = '/preview/' + siteParam + '/' + langCode + '/' + (previewPath || '') + 'index.html';
         frame.dataset.previewUrl = newUrl;
         // 先触发构建，确保多语言菜单等内容已生成
-        var buildUrl = '/build?_fragment=1';
-        if (siteParam) buildUrl += '&site=' + encodeURIComponent(siteParam);
-        fetch(buildUrl, { method: 'POST' })
-          .then(function (r) { return r.json(); }).catch(function () { return { ok: true }; })
-          .then(function () { frame.src = newUrl + '?_=' + Date.now(); });
+        buildCurrentSite('正在生成多语言预览...')
+          .then(function (data) {
+            if (data && data.ok === false) {
+              alert(data.error || '生成预览失败');
+              return;
+            }
+            return setPreviewFrameUrl(newUrl);
+          })
+          .finally(hideBuildLoading);
       });
     }
 
