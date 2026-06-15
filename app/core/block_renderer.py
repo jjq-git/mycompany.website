@@ -25,7 +25,7 @@ from . import style_registry
 
 # 媒体类型 → 注入到哪个属性
 _MEDIA_SRC_ATTR = {'image': 'src', 'video': 'src', 'audio': 'src', 'embed': 'src'}
-_TEXT_TYPES = {'text', 'textarea', 'richtext'}  # icon 单独处理（查图标注册表注 SVG）
+_TEXT_TYPES = {'text', 'textarea', 'richtext', 'url'}  # url 也走文本注入（供 JS 读取）；icon 单独处理
 
 # data-href 允许的 URL scheme（其余如 javascript:/data: 一律丢弃，防 XSS）
 _SAFE_HREF = re.compile(r'^(https?:|mailto:|tel:|/|#|\./|\.\./|[^:]*$)', re.I)

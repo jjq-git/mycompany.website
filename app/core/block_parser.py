@@ -41,7 +41,7 @@ _SVG_ATTR_CASE = {
 }
 
 # 叶子内容类型：值直接存在元素上（innerText 或 src）。
-LEAF_TYPES = {'text', 'textarea', 'richtext', 'image', 'video', 'audio', 'embed', 'icon'}
+LEAF_TYPES = {'text', 'textarea', 'richtext', 'url', 'image', 'video', 'audio', 'embed', 'icon'}
 # 容器/可重复类型。
 LIST_TYPES = {'list', 'grid'}
 

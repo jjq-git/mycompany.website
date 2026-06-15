@@ -282,7 +282,7 @@ function richEditorHtml(name, value) {
     '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="underline" title="Underline"><u>U</u></button>' +
     '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="strikeThrough" title="Strike"><s>S</s></button>' +
     '<span class="rte-sep"></span>' +
-    '<select class="form-select form-select-sm rte-heading-select" style="width:auto;font-size:12px" title="Heading"><option value="">Paragraph</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option></select>' +
+    '<select class="form-select form-select-sm rte-heading-select" style="width:auto;font-size:12px" title="Heading"><option value="">标题</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option></select>' +
     '<span class="rte-sep"></span>' +
     '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyLeft" title="Align left">☰</button>' +
     '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyCenter" title="Align center">≡</button>' +
@@ -309,7 +309,9 @@ function richEditorHtml(name, value) {
 /* 单个内容字段 → 编辑控件 */
 function _schemaFieldHtml(prefix, field, mdata) {
   var name = prefix + field.name;
-  var val = (mdata && mdata[field.name] != null) ? mdata[field.name] : '';
+  var rawVal = (mdata && mdata[field.name] != null) ? mdata[field.name] : '';
+  // 安全防护：若值为对象类型，转为字符串，避免 input value 显示 [object Object]
+  var val = (typeof rawVal === 'object' && rawVal !== null) ? JSON.stringify(rawVal) : String(rawVal || '');
   var label = _schemaLabel(field);
   var depVal = field.show_if ? ((mdata && mdata[field.show_if.field] != null) ? mdata[field.show_if.field] : (field.show_if.field === 'media_type' ? 'image' : '')) : null;
   var html = '<div' + conditionalFieldAttrs(field.name, field.show_if, _schemaEsc, depVal) + '><label class="form-label small mb-1 text-muted">' + _schemaEsc(label) + '</label>';
@@ -366,15 +368,20 @@ function _schemaFieldHtml(prefix, field, mdata) {
     // number → 数字输入框
     html += '<input type="number" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" min="1">';
   } else if (field.name === 'show_dots') {
-    // 显示圆点 → 眼睛图标；未设置时默认开启（true）
+    // 显示圆点 → 眼睛图标按钮；未设置时默认开启（true）
     var visible = val === '' ? true : (String(val) === 'true' || val === true);
-    html += '<div class="visibility-item" style="margin-top:4px">' +
-      '<button type="button" class="eye-toggle-btn" data-visible="' + (visible ? 'true' : 'false') + '" onclick="toggleVisibilityEye(this)" title="' + (visible ? '点击隐藏' : '点击显示') + '">' +
+    html += '<button type="button" class="eye-toggle-btn" data-visible="' + (visible ? 'true' : 'false') + '" onclick="toggleVisibilityEye(this)" title="' + (visible ? '点击隐藏' : '点击显示') + '">' +
       (visible ? EYE_OPEN_SVG : EYE_OFF_SVG) +
       '</button>' +
-      '<span class="vis-label">' + _schemaEsc(label) + '</span>' +
-      '<input type="hidden" name="' + _schemaEsc(name) + '" value="' + (visible ? 'true' : 'false') + '">' +
-      '</div>';
+      '<input type="hidden" name="' + _schemaEsc(name) + '" value="' + (visible ? 'true' : 'false') + '">';
+  } else if (field.name === 'auto_scroll') {
+    // 自动滚动 → 开关按钮，无 form-check-label
+    var checked = String(val) === 'true' || val === true;
+    html += '<div class="form-check form-switch mb-0">' +
+      '<input class="form-check-input" type="checkbox" role="switch" ' + (checked ? 'checked' : '') +
+      ' onchange="var h=this.parentElement.querySelector(\'input[type=hidden]\');if(h)h.value=this.checked?\'true\':\'false\'">' +
+      '</div>' +
+      '<input type="hidden" name="' + _schemaEsc(name) + '" value="' + (checked ? 'true' : 'false') + '">';
   } else if (field.type === 'switch') {
     // switch → 开关控件（true/false）
     var checked = String(val) === 'true' || val === true;
@@ -418,41 +425,41 @@ function generateSchemaForm(prefix, schema, mdata, vTFn) {
       '<div>数据源：<code>' + _schemaEsc(schema.from_source) + '</code>，请在「网站设置」中修改联系方式等信息。</div>' +
       '</div>';
   }
-  // 将非 list/grid 字段分成两组：列表类（独占一行）和简单类（两列排列）
-  var simpleFields = [], listFields = [];
+  // 按 schema.fields 原始顺序渲染：list/grid 独占一行，简单字段两两配对成行。
+  // 连续简单字段缓冲到 pendingSimple，遇到 list/grid 或结束时刷新——保证区块标题/描述
+  // 等文本字段出现在列表编辑器上方（而非下方）。
+  var pendingSimple = [];
+  function flushPendingSimple() {
+    for (var i = 0; i < pendingSimple.length; i += 2) {
+      var f1 = pendingSimple[i];
+      var f2 = pendingSimple[i + 1];
+      if (f2) {
+        html += '<div class="row g-2">';
+        html += '<div class="col-6">';
+        if (f1.type === 'group') { html += _schemaGroupHtml(prefix, f1, mdata); }
+        else { html += _schemaFieldHtml(prefix, f1, mdata); }
+        html += '</div>';
+        html += '<div class="col-6">';
+        if (f2.type === 'group') { html += _schemaGroupHtml(prefix, f2, mdata); }
+        else { html += _schemaFieldHtml(prefix, f2, mdata); }
+        html += '</div>';
+        html += '</div>';
+      } else {
+        if (f1.type === 'group') { html += _schemaGroupHtml(prefix, f1, mdata); }
+        else { html += _schemaFieldHtml(prefix, f1, mdata); }
+      }
+    }
+    pendingSimple = [];
+  }
   (schema.fields || []).forEach(function(field) {
     if (field.type === 'list' || field.type === 'grid') {
-      listFields.push(field);
+      flushPendingSimple();
+      html += _schemaListEditor(prefix, field, mdata);
     } else {
-      simpleFields.push(field);
+      pendingSimple.push(field);
     }
   });
-  // 渲染列表类字段（独占一行）
-  listFields.forEach(function(field) {
-    html += _schemaListEditor(prefix, field, mdata);
-  });
-  // 渲染简单字段：两两配对成行
-  for (var i = 0; i < simpleFields.length; i += 2) {
-    var f1 = simpleFields[i];
-    var f2 = simpleFields[i + 1];
-    if (f2) {
-      // 两个字段放同一行
-      html += '<div class="row g-2">';
-      html += '<div class="col-6">';
-      if (f1.type === 'group') { html += _schemaGroupHtml(prefix, f1, mdata); }
-      else { html += _schemaFieldHtml(prefix, f1, mdata); }
-      html += '</div>';
-      html += '<div class="col-6">';
-      if (f2.type === 'group') { html += _schemaGroupHtml(prefix, f2, mdata); }
-      else { html += _schemaFieldHtml(prefix, f2, mdata); }
-      html += '</div>';
-      html += '</div>';
-    } else {
-      // 最后一个单独放
-      if (f1.type === 'group') { html += _schemaGroupHtml(prefix, f1, mdata); }
-      else { html += _schemaFieldHtml(prefix, f1, mdata); }
-    }
-  }
+  flushPendingSimple();
   // data-hideable → 整块显隐开关（复用 addModule 里的 vT）。显示存 'false'，隐藏存 'true'
   if (schema.hideable && typeof vTFn === 'function') {
     var hiddenVal = mdata._hidden === true || mdata._hidden === 'true' ? 'true' : 'false';
@@ -758,7 +765,8 @@ function getBlockIconHTML(type) {
     'process_steps': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><path d="M8 12h1"/><path d="M15 12h1"/></svg>',
     'logo_cloud': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>',
     'item_detail': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><path d="M13 15h4"/><path d="M13 19h6"/></svg>',
-    'image_carousel': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="7" height="13" rx="1"/><rect x="13" y="5" width="7" height="13" rx="1"/><path d="m1 10 2 2-2 2"/><path d="m23 14-2-2 2-2"/></svg>'
+    'image_carousel': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="7" height="13" rx="1"/><rect x="13" y="5" width="7" height="13" rx="1"/><path d="m1 10 2 2-2 2"/><path d="m23 14-2-2 2-2"/></svg>',
+    'featured_picks': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M17.5 14l1.2 2.5 2.7.4-2 2 .5 2.7-2.4-1.3-2.4 1.3.5-2.7-2-2 2.7-.4z"/></svg>'
   };
   return icons[type] || '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>';
 }
@@ -1316,6 +1324,14 @@ function addModule(type, variant, dataPreset) {
   if (meta.is_data_attr && meta.schema) {
     var mergedSchema = _getMergedSchema(meta);
     specialEditor = generateSchemaForm('module_' + idx + '_data_', mergedSchema, {}, vT);
+    // featured_picks：在"＋ 添加条目"按钮前注入"从数据集导入"按钮
+    if (type === 'featured_picks') {
+      specialEditor = specialEditor.replace(
+        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="schemaListAdd(this)">+ 添加条目</button>',
+        '<button type="button" class="btn btn-sm btn-outline-info fp-import-btn" onclick="event.stopPropagation();openFeaturedImport(' + idx + ', this)" style="font-size:11px;margin-right:4px" title="从已有数据集选取条目，自动填入标题、图片、描述和链接">📥 从数据集导入</button>' +
+        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="schemaListAdd(this)">+ 添加条目</button>'
+      );
+    }
     styleEditor = generateSchemaStyleForm('module_' + idx + '_data_', mergedSchema, dataPreset);
   } else if (type === 'hero_banner') {
     styleEditor =
@@ -2086,6 +2102,50 @@ function addModule(type, variant, dataPreset) {
     '<div class="row g-2">' +
       '<div class="col-6">' + uP('module_' + idx + '_data_number_font_size', '序号字体大小', ['px','rem']) + '</div>' +
     '</div>';
+  } else if (type === 'featured_picks') {
+    // 精选推荐：list 编辑器 + 从数据集导入按钮
+    var fpMeta = (window.blockLibrary || []).find(function(b) { return b.name === 'featured_picks'; }) || { fields: [] };
+    var fpItemsField = (fpMeta.fields || []).find(function(f) { return f.key === 'items'; });
+    if (fpItemsField) {
+      specialEditor = _schemaListEditor('module_' + idx + '_data_', fpItemsField, {});
+      // 在"+ 添加条目"按钮前面插入"从数据集导入"按钮（通过字符串替换注入到编辑器标题栏）
+      specialEditor = specialEditor.replace(
+        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="schemaListAdd(this)">+ 添加条目</button>',
+        '<button type="button" class="btn btn-sm btn-outline-info fp-import-btn" onclick="event.stopPropagation();openFeaturedImport(' + idx + ', this)" style="font-size:11px;margin-right:4px" title="从已有数据集选取条目，自动填入标题、图片、描述和链接">📥 从数据集导入</button>' +
+        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="schemaListAdd(this)">+ 添加条目</button>'
+      );
+    }
+    // 外层/内层样式：复用 section 标准字段
+    styleEditor =
+    '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+    '<div class="row g-2">' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
+    '</div>' +
+    '<div class="row g-2">' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_border_radius', '圆角', ['px','rem']) + '</div>' +
+    '</div>' +
+    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" placeholder="↓ 下">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
+    '</div>' +
+    '<hr class="my-2">' +
+    '<div class="small fw-semibold mb-1 text-muted">内层边距</div>' +
+    '<div class="input-group input-group-sm">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" placeholder="↑ 上">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
+      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
+      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
+        '<option value="px">px</option>' +
+        '<option value="rem">rem</option>' +
+      '</select>' +
+    '</div>';
   }
   var div = document.createElement('div');
   div.className = 'card mb-2 module-item expanded';
@@ -2556,6 +2616,14 @@ function initSchemaMounts() {
     if (dataEl) { try { mdata = JSON.parse(dataEl.textContent || '{}') || {}; } catch (e) { mdata = {}; } }
     var prefix = device === 'desktop' ? 'module_' + idx + '_data_' : 'module_' + idx + '_resp_' + device + '_data_';
     mount.innerHTML = generateSchemaForm(prefix, schema, mdata, function() { return ''; });
+    // featured_picks：给已保存模块的列表编辑器也注入"从数据集导入"按钮
+    if (typeEl.value === 'featured_picks') {
+      mount.innerHTML = mount.innerHTML.replace(
+        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="schemaListAdd(this)">+ 添加条目</button>',
+        '<button type="button" class="btn btn-sm btn-outline-info fp-import-btn" onclick="event.stopPropagation();openFeaturedImport(' + idx + ', this)" style="font-size:11px;margin-right:4px" title="从已有数据集选取条目，自动填入标题、图片、描述和链接">📥 从数据集导入</button>' +
+        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="schemaListAdd(this)">+ 添加条目</button>'
+      );
+    }
     var styleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
     if (styleMount) styleMount.innerHTML = generateSchemaStyleForm(prefix, schema, mdata);
     mount.dataset.mounted = '1';
@@ -2563,6 +2631,193 @@ function initSchemaMounts() {
   });
 }
 initSchemaMounts();
+
+// ====== 数据集选取器（featured_picks 从数据集导入条目）======
+
+var dsPickerCache = [];           // 当前加载的数据集条目缓存
+var dsPickerTargetItem = null;    // 选中的 addBtn 引用（用于选中后触发新增）
+var _fpImportModuleIdx = -1;      // 当前正在导入的目标模块 idx
+
+/* 打开数据集选取器（featured_picks 的"从数据集导入"按钮调用）
+   moduleIdx: 模块序号；addBtn: 该模块的"+ 添加条目"按钮（选中后用于触发新增） */
+function openFeaturedImport(moduleIdx, addBtn) {
+  _fpImportModuleIdx = moduleIdx;
+
+  // 填充数据集下拉
+  var sel = document.getElementById('dsPickerDataset');
+  sel.innerHTML = '<option value="">-- 请选择数据集 --</option>';
+  (datasetNames || []).forEach(function(ds) {
+    sel.innerHTML += '<option value="' + _schemaEsc(ds.target) + '">' + _schemaEsc(ds.label || ds.target) + '</option>';
+  });
+  sel.value = '';
+  document.getElementById('dsPickerItems').innerHTML =
+    '<div class="col-12 text-muted small text-center py-4">👆 请先在上方选择一个数据集</div>';
+  dsPickerCache = [];
+  dsPickerTargetItem = addBtn;  // 存 addBtn 引用，选中后用它触发新增
+
+  var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('datasetPickerModal'));
+  modal.show();
+}
+
+/* 选择一个数据集后加载条目列表 */
+function loadPickerDatasetItems(datasetName) {
+  if (!datasetName) {
+    document.getElementById('dsPickerItems').innerHTML =
+      '<div class="col-12 text-muted small text-center py-4">👆 请先在上方选择一个数据集</div>';
+    dsPickerCache = [];
+    return;
+  }
+  // 从 URL query string 获取 siteId（如 ?site=5）
+  var urlParams = new URLSearchParams(window.location.search);
+  var siteId = urlParams.get('site') || '';
+  // 兜底：从 pathname 提取（/.../site/N/...）
+  if (!siteId) {
+    var pathParts = window.location.pathname.replace(/\/$/, '').split('/');
+    var siteIdx = pathParts.indexOf('site');
+    siteId = siteIdx >= 0 ? pathParts[siteIdx + 1] : '';
+  }
+  if (!siteId) siteId = '';
+
+  document.getElementById('dsPickerItems').innerHTML =
+    '<div class="col-12 text-muted small text-center py-4">加载中...</div>';
+
+  fetch('/api/site/' + siteId + '/dataset/' + encodeURIComponent(datasetName) + '/items')
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) {
+      dsPickerCache = data.items || [];
+      if (!dsPickerCache.length) {
+        document.getElementById('dsPickerItems').innerHTML =
+          '<div class="col-12 text-muted small text-center py-4">该数据集暂无条目</div>';
+        return;
+      }
+      var html = '';
+      dsPickerCache.forEach(function(item, i) {
+        var cover = item.cover || '';
+        var covHtml = cover
+          ? '<img src="' + _schemaEsc(cover) + '" alt="" loading="lazy" style="width:100%;height:90px;object-fit:cover;border-radius:4px 4px 0 0" onerror="this.style.display=\'none\'">'
+          : '<div style="width:100%;height:90px;background:#f1f5f9;border-radius:4px 4px 0 0;display:flex;align-items:center;justify-content:center;font-size:24px;color:#cbd5e1">📄</div>';
+        html += '<div class="col-4 col-md-3 mb-2">' +
+          '<div onclick="selectFeaturedItem(' + i + ')" ' +
+          'style="cursor:pointer;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;transition:all .15s;height:100%" ' +
+          'onmouseenter="this.style.borderColor=\'#067a7a\';this.style.boxShadow=\'0 2px 10px rgba(6,122,122,.18)\';this.style.transform=\'translateY(-2px)\'" ' +
+          'onmouseleave="this.style.borderColor=\'#e2e8f0\';this.style.boxShadow=\'none\';this.style.transform=\'none\'">' +
+          covHtml +
+          '<div style="padding:6px 8px">' +
+          '<div style="font-size:11px;font-weight:600;line-height:1.3;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;color:#1e293b">' + _schemaEsc(item.title) + '</div>' +
+          (item.category ? '<div style="font-size:10px;color:#94a3b8;margin-top:2px">' + _schemaEsc(item.category) + '</div>' : '') +
+          '</div></div></div>';
+      });
+      document.getElementById('dsPickerItems').innerHTML = html;
+    })
+    .catch(function(err) {
+      document.getElementById('dsPickerItems').innerHTML =
+        '<div class="col-12 text-danger small text-center py-4">加载失败: ' + _schemaEsc(err.message || '未知错误') + '</div>';
+    });
+}
+
+/* 选中某条数据 → 直接在列表中创建预填数据的新条目 */
+function selectFeaturedItem(cacheIdx) {
+  var item = dsPickerCache[cacheIdx];
+  if (!item) return;
+  var btnRef = dsPickerTargetItem;  // 之前存的按钮引用（import 按钮）
+  if (!btnRef) return;
+
+  // 关闭模态框
+  var modal = bootstrap.Modal.getInstance(document.getElementById('datasetPickerModal'));
+  if (modal) modal.hide();
+
+  var editor = btnRef.closest('.schema-list-editor');
+  if (!editor) return;
+  var base = editor.dataset.listBase;
+  var listName = editor.dataset.listName;
+  var children = JSON.parse(editor.dataset.children || '[]');
+
+  // siteId：URL query string + path 兜底
+  var urlParams = new URLSearchParams(window.location.search);
+  var dsSite = urlParams.get('site') || '';
+  if (!dsSite) {
+    var pathParts = window.location.pathname.replace(/\/$/, '').split('/');
+    var si = pathParts.indexOf('site');
+    dsSite = si >= 0 ? pathParts[si + 1] : '';
+  }
+
+  var dsSel = document.getElementById('dsPickerDataset');
+  var dsName = dsSel ? dsSel.value : '';
+  // 直接读 URL 的 lang 参数：有就加到链接里
+  // 编辑中文版（无 lang 参数）→ /preview/5/blog/slug/
+  // 编辑英文版（?lang=en）→ /preview/5/en/blog/slug/
+  var dsLang = urlParams.get('lang') || '';
+
+  var link = '';
+  if (item.slug && dsName && dsSite) {
+    link = '/preview/' + dsSite + '/';
+    if (dsLang) link += dsLang + '/';
+    link += dsName + '/' + item.slug + '/';
+  }
+
+  // 构建预填数据的条目数据对象（key 名对齐 children[].name）
+  var itemData = {};
+  (children || []).forEach(function(child) {
+    var name = child.name;  // schema 字段名（如 image, title, desc, link, badge, badge_color, badge_bg）
+    if (name === 'image')       { itemData[name] = item.cover || ''; }
+    else if (name === 'title')  { itemData[name] = item.title || ''; }
+    else if (name === 'desc')   { itemData[name] = item.summary || ''; }
+    else if (name === 'link')   { itemData[name] = link; }
+    // badge/badge_color/badge_bg 留空，让用户手动填
+  });
+
+  // 插入带数据的条目 HTML（不经过 schemaListAdd，避免 reindex 后名字变化导致填值错位）
+  var list = editor.querySelector('.schema-list-items');
+  var j = list.querySelectorAll('.schema-list-item').length;
+  list.insertAdjacentHTML('beforeend', _schemaListItemHtml(base, listName, j, children, itemData));
+  _schemaListReindex(editor);
+  updateConditionalFields(editor);
+
+  // 展开新条目 + 触发图片预览
+  var items = editor.querySelectorAll('.schema-list-item');
+  var newItem = items.length > 0 ? items[items.length - 1] : null;
+  if (newItem) {
+    newItem.classList.remove('collapsed');
+    // 触发图片预览更新
+    var imgInput = newItem.querySelector('[name$="_image"]');
+    if (imgInput && typeof updateImagePreview === 'function') {
+      updateImagePreview(imgInput);
+    }
+  }
+}
+
+/* 辅助：通过后缀匹配在 item DOM 中设值（保留给未来可能的同类需求） */
+function _fpSetItemField(itemEl, fieldName, value) {
+  var inputs = itemEl.querySelectorAll('[name]');
+  for (var k = 0; k < inputs.length; k++) {
+    var n = inputs[k].name;
+    if (n.slice(-(fieldName.length + 1)) === '_' + fieldName) {
+      inputs[k].value = value || '';
+      if (fieldName === 'image' && typeof updateImagePreview === 'function') {
+        updateImagePreview(inputs[k]);
+      }
+      return;
+    }
+  }
+}
+
+/* 在指定 list item DOM 中查找并设置字段值 */
+function _fpSetItemField(itemEl, fieldName, value) {
+  var inputs = itemEl.querySelectorAll('[name]');
+  for (var k = 0; k < inputs.length; k++) {
+    var n = inputs[k].name;
+    // 匹配后缀 _<fieldName> 的 input
+    if (n.slice(-(fieldName.length + 1)) === '_' + fieldName) {
+      inputs[k].value = value || '';
+      // 图片字段触发预览更新
+      if (fieldName === 'image' && typeof updateImagePreview === 'function') {
+        updateImagePreview(inputs[k]);
+      }
+      return;
+    }
+  }
+}
+
 </script>
 
 {# AI 翻译脚本 — 翻译后暂存到 sessionStorage，切换语言标签后自动恢复 #}
@@ -2763,6 +3018,29 @@ initSchemaMounts();
 .list-item.collapsed .list-item-header .small::before { content: '▶'; }
 .list-item.collapsed .list-item-body { display: none; }
 </style>
+
+{# ── 数据集选取器模态框（featured_picks 用）── #}
+<div class="modal fade" id="datasetPickerModal" tabindex="-1" aria-labelledby="dsPickerTitle" aria-hidden="true" data-site="{{ site.id }}" data-lang="{{ current_lang }}" data-default-lang="{{ default_lang }}">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <span class="fw-semibold" id="dsPickerTitle">从数据集选取条目</span>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label small mb-1 text-muted">选择数据来源</label>
+          <select class="form-select form-select-sm" id="dsPickerDataset" onchange="loadPickerDatasetItems(this.value)">
+            <option value="">-- 请选择数据集 --</option>
+          </select>
+        </div>
+        <div id="dsPickerItems" class="row g-2" style="max-height:55vh;overflow-y:auto;min-height:80px">
+          <div class="col-12 text-muted small text-center py-4">👆 请先在上方选择一个数据集</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% else %}
 {# 非 modules 格式：旧格式只读展示 + 一键迁移按钮 #}

@@ -1,0 +1,118 @@
+name: 精选推荐
+category: content
+icon: featured_picks.svg
+description: 从多个数据集中精选推荐条目展示（产品/案例/文章），支持卡片布局、角标、每行个数等样式配置
+fields:
+  # ── 内容 ──
+  - key: title
+    label: 区块标题
+    type: text
+    group: 内容
+    default: "精选推荐"
+
+  - key: desc
+    label: 区块描述
+    type: textarea
+    group: 内容
+    default: ""
+
+  # ── 推荐条目列表（手动填写，可从数据集导入）──
+  - key: items
+    label: 推荐条目
+    type: list
+    group: 内容
+    item_label: 推荐条目
+    item_fields:
+      - key: badge
+        label: 角标文字
+        type: text
+        default: ""
+        placeholder: 如"热销""推荐""新品"，留空不显示
+      - key: badge_color
+        label: 角标文字色
+        type: text
+        default: ""
+        placeholder: 如 #ffffff，留空使用默认
+      - key: badge_bg
+        label: 角标背景色
+        type: text
+        default: ""
+        placeholder: 如 #e74c3c，留空使用默认
+      - key: image
+        label: 图片
+        type: image
+      - key: title
+        label: 标题
+        type: text
+        default: ""
+        placeholder: 推荐条目标题
+      - key: desc
+        label: 描述
+        type: textarea
+        default: ""
+        placeholder: 简要描述
+      - key: link
+        label: 链接
+        type: url
+        default: ""
+        placeholder: 点击跳转链接，留空不可点
+
+  # ── 外层样式（标准 section 包裹层）──
+  - key: outer_width
+    label: 外层宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空不限制宽度）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: border_radius
+    label: 圆角
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 12px（留空=CSS 默认）
+
+  # ── 内层边距 ──
+  - key: padding_top
+    label: 上内边距
+    type: text
+    group: 内层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_bottom
+    label: 下内边距
+    type: text
+    group: 内层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_left
+    label: 左内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: padding_right
+    label: 右内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+
+  # ── 外层外边距 ──
+  - key: margin_top
+    label: 上外边距
+    type: text
+    group: 外层外边距
+    default: ""
+    placeholder: 如 0px / 2rem（留空=默认）
+  - key: margin_bottom
+    label: 下外边距
+    type: text
+    group: 外层外边距
+    default: ""
+    placeholder: 如 0px / 2rem（留空=默认）

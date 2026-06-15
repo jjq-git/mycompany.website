@@ -35,6 +35,7 @@ STYLE_REGISTRY = {
         'options': [
             {'value': 'row', 'text': '图左文右'},
             {'value': 'row-reverse', 'text': '图右文左'},
+            {'value': 'column', 'text': '上图下文'},
         ],
     },
     'bg': {
@@ -56,6 +57,45 @@ STYLE_REGISTRY = {
             {'value': 'center', 'text': '居中'},
             {'value': 'right', 'text': '右对齐'},
         ],
+    },
+    # ── featured_picks（精选推荐）专用样式令牌（卡片布局已合并到 dir）──
+    'card-gap': {
+        'label': '卡片间距',
+        'control': 'select',
+        'css_var': '--card-gap',
+        'options': [
+            {'value': '0.75rem', 'text': '紧凑 (0.75rem)'},
+            {'value': '1rem', 'text': '标准 (1rem)'},
+            {'value': '1.5rem', 'text': '宽松 (1.5rem)'},
+            {'value': '2rem', 'text': '特大 (2rem)'},
+        ],
+    },
+    'card-bg': {
+        'label': '卡片背景色',
+        'control': 'color',
+        'css_var': '--card-bg',
+    },
+    'card-radius': {
+        'label': '卡片圆角',
+        'control': 'select',
+        'css_var': '--card-radius',
+        'options': [
+            {'value': '0px', 'text': '无圆角'},
+            {'value': '4px', 'text': '小 (4px)'},
+            {'value': '8px', 'text': '中 (8px)'},
+            {'value': '12px', 'text': '大 (12px)'},
+            {'value': '16px', 'text': '特大 (16px)'},
+        ],
+    },
+    'badge-bg': {
+        'label': '角标背景色',
+        'control': 'color',
+        'css_var': '--badge-bg',
+    },
+    'badge-color': {
+        'label': '角标文字色',
+        'control': 'color',
+        'css_var': '--badge-color',
     },
 }
 

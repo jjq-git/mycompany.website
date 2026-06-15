@@ -1878,6 +1878,41 @@ def api_richtext_upload_image():
     return jsonify({'ok': True, 'url': url})
 
 
+@bp.route('/api/site/<int:site_id>/dataset/<string:dataset_name>/items')
+def api_dataset_items(site_id, dataset_name):
+    """返回某数据集下的条目摘要（供精选推荐等模块的"从数据集选取"功能调用）。
+
+    返回 JSON 数组，每条包含 id/title/cover/summary/slug/category 等轻量字段，
+    前端选取器据此展示列表、自动填入表单。
+    """
+    user, site = _current_context()
+    if not user or site.id != site_id:
+        abort(404)
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    try:
+        items = datasets.load(site_id, dataset_name, lang=storage_lang)
+    except Exception:
+        return jsonify({'error': f'无法加载数据集: {dataset_name}'}), 404
+    # 提取轻量摘要字段（名称有多种可能：title / name、cover / image / photo）
+    result = []
+    for it in items:
+        title = it.get('title') or it.get('name') or ''
+        cover = it.get('cover') or it.get('image') or it.get('photo') or ''
+        summary = it.get('summary') or it.get('excerpt') or it.get('description') or ''
+        slug = it.get('slug', '')
+        category = it.get('category', '')
+        result.append({
+            'id': it.get('id'),
+            'title': str(title).strip(),
+            'cover': str(cover).strip(),
+            'summary': str(summary).strip(),
+            'slug': str(slug).strip(),
+            'category': str(category).strip(),
+        })
+    return jsonify({'dataset': dataset_name, 'items': result})
+
+
 @bp.route('/_dataset/<path:dataset_key>')
 def dataset_panel(dataset_key):
     """通用数据集管理面板 — 支持 ?lang= 参数编辑不同语言版本."""
@@ -2257,6 +2292,10 @@ def _parse_modules_form(form, existing_modules=None):
         try:
             parsed = _yaml.safe_load(value)
         except _yaml.YAMLError:
+            return value
+        # 安全防护：若 yaml.safe_load 将值解析为 dict/list 等复合对象，
+        # 说明原值恰好是合法 YAML 结构（如含冒号的多行文本），应保留原始字符串
+        if isinstance(parsed, (dict, list)):
             return value
         return value if parsed is None else parsed
 

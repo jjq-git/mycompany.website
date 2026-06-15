@@ -1,0 +1,93 @@
+<!-- 精选推荐模块 - 从多个数据集手动精选条目，支持卡片布局、角标、每行个数等 -->
+<section data-name="featured_picks" data-type="group" data-hideable
+  data-style="cols,dir,bg,bg-color"
+  class="section fp-section">
+  <div class="container">
+    <div class="section-header">
+      <h2 data-name="title" data-type="text" class="section-title">精选推荐</h2>
+      <p data-name="desc" data-type="textarea" class="section-description"></p>
+    </div>
+
+    <div data-name="items" data-type="list" class="fp-grid">
+      <a data-name="item" data-type="group" data-href="link" class="fp-card" target="_blank" rel="noopener">
+        <div class="fp-card-img-wrap">
+          <img data-name="image" data-type="image" src="" alt="" loading="lazy" class="fp-card-img">
+        </div>
+        <div class="fp-card-body">
+          <span data-name="badge" data-type="text" class="fp-badge"></span>
+          <span data-name="badge_color" data-type="text" class="fp-badge-color-val" hidden></span>
+          <span data-name="badge_bg" data-type="text" class="fp-badge-bg-val" hidden></span>
+          <h3 data-name="title" data-type="text" class="fp-card-title">卡片标题</h3>
+          <p data-name="desc" data-type="textarea" class="fp-card-desc">卡片描述文字，简要介绍推荐内容</p>
+          <!-- link：值注入到父级 <a data-href="link">，元素本身 hidden 不可见 -->
+          <span data-name="link" data-type="url" class="fp-link-val" hidden></span>
+          <span class="fp-card-link-text">了解更多 →</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      var section = document.currentScript.parentElement;
+
+      // 从 data-style 注入的 --dir CSS 变量读取布局模式，应用对应 class
+      function applyLayout() {
+        var style = section.getAttribute('style') || '';
+        var layout = 'column'; // 默认上图下文（对齐 --dir 的 column 值）
+        var m = style.match(/--dir:\s*(\S+?)(?:;|$)/);
+        if (m) {
+          var raw = m[1].replace(/['"]/g, '').replace(/;.*$/, '').trim();
+          if (raw) layout = raw;
+        }
+        section.querySelectorAll('.fp-card').forEach(function(card) {
+          card.classList.toggle('fp-card--left', layout === 'row');
+          card.classList.toggle('fp-card--right', layout === 'row-reverse');
+        });
+      }
+
+      // 逐条目应用角标颜色覆盖（每张卡片的角标可以有独立配色）
+      function applyBadgeOverrides() {
+        section.querySelectorAll('.fp-card').forEach(function(card) {
+          var badge = card.querySelector('.fp-badge');
+          var colorEl = card.querySelector('.fp-badge-color-val');
+          var bgEl = card.querySelector('.fp-badge-bg-val');
+          if (!badge) return;
+
+          // 空文本 → 隐藏角标
+          var text = (badge.textContent || '').trim();
+          if (!text) {
+            badge.style.display = 'none';
+            return;
+          }
+          badge.style.display = '';
+
+          // 逐条目覆盖颜色（留空则走 CSS 变量默认值）
+          if (colorEl && colorEl.textContent.trim()) {
+            badge.style.color = colorEl.textContent.trim();
+          }
+          if (bgEl && bgEl.textContent.trim()) {
+            badge.style.background = bgEl.textContent.trim();
+          }
+
+          // 清理注入值后的隐藏 span（避免残留文本节点）
+          if (colorEl) colorEl.remove();
+          if (bgEl) bgEl.remove();
+        });
+      }
+
+      // 无链接时移除 href，卡片退化为纯展示
+      section.querySelectorAll('.fp-card').forEach(function(card) {
+        var href = card.getAttribute('href');
+        if (!href || href === '#' || href === '/') {
+          card.removeAttribute('href');
+          card.removeAttribute('target');
+          card.style.cursor = 'default';
+        }
+      });
+
+      applyLayout();
+      applyBadgeOverrides();
+    })();
+  </script>
+</section>
