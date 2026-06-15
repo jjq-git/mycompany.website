@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
   {% endif %}
 
-  <link rel="stylesheet" href="{{ base_url }}/static/css/main.css?v=20260612-rte-table-width">
+  <link rel="stylesheet" href="{{ base_url }}/static/css/main.css?v=20260615">
   <!-- Favicon: 优先使用店主上传的图片，无则回退到内联 SVG 占位 -->
   {% if settings.company.favicon %}
   <link rel="icon" href="{{ settings.company.favicon }}">
@@ -437,6 +437,11 @@ document.addEventListener('click', function(e) {
 
 </div>{# .site-wrapper #}
 
+{# 回到顶部按钮 —— 页面滚动超过 300px 后出现在右下角 #}
+<button class="back-to-top" id="backToTop" aria-label="回到顶部" title="回到顶部">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+
 {# ===== Data Grid 分页 JS ===== #}
 <script>
 function initDataGridPagers() {
@@ -832,6 +837,25 @@ document.addEventListener('DOMContentLoaded', function() {
   initViewAllButtons();
   initModuleLists();
 });
+
+// --- 回到顶部按钮：滚动超过 300px 时显示，点击平滑滚回顶部 ---
+(function() {
+  var btn = document.getElementById('backToTop');
+  if (!btn) return;
+  var ticking = false;
+  window.addEventListener('scroll', function() {
+    if (!ticking) {
+      window.requestAnimationFrame(function() {
+        btn.classList.toggle('visible', window.scrollY > 300);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  });
+  btn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+})();
 </script>
 
 </body>
