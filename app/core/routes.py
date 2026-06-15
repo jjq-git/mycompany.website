@@ -2076,7 +2076,7 @@ def page_panel(page_key):
         existing_modules = page.get('modules', [])
         page['modules'] = _parse_modules_form(request.form, existing_modules)
         for k in list(page.keys()):
-            if k not in ('modules',):
+            if k not in ('modules', 'module_list'):
                 page.pop(k, None)
         write_yaml(site.id, f'pages/{page_key}.yaml', page, lang=storage_lang)
         flash('已保存')
