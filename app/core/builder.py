@@ -460,13 +460,18 @@ def build_site(site_id, base_url='', report=None):
     env.globals['render_block'] = _make_render_block(env, tpl_root, site.template_name, _enable_da)
 
     output_root = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
+    # Windows 下 rmtree 极易因文件锁定/目录竞态抛异常；
+    # 清理失败无所谓，后面 copytree(dirs_exist_ok=True) 会原地覆盖写入。
     if output_root.exists():
-        shutil.rmtree(output_root, ignore_errors=True)
+        try:
+            shutil.rmtree(output_root, ignore_errors=True)
+        except Exception:
+            pass
     output_root.mkdir(parents=True, exist_ok=True)
 
     # 复制 static/
     if tpl_static_dir.exists():
-        shutil.copytree(tpl_static_dir, output_root / 'static')
+        shutil.copytree(tpl_static_dir, output_root / 'static', dirs_exist_ok=True)
 
     # 复制店主上传的 assets/
     site_assets = Path(current_app.config['SITES_DIR']) / str(site_id) / 'assets'
@@ -638,12 +643,17 @@ def build_template_preview(template_name, base_url=''):
     env.globals['render_block'] = _make_render_block(env, tpl_root, template_name, _enable_da)
 
     output_root = Path(current_app.config['OUTPUT_DIR']) / '_preview' / template_name
+    # Windows 下 rmtree 极易因文件锁定/目录竞态抛异常；
+    # 清理失败无所谓，后面 copytree(dirs_exist_ok=True) 会原地覆盖写入。
     if output_root.exists():
-        shutil.rmtree(output_root)
-    output_root.mkdir(parents=True)
+        try:
+            shutil.rmtree(output_root, ignore_errors=True)
+        except Exception:
+            pass
+    output_root.mkdir(parents=True, exist_ok=True)
 
     if tpl_static_dir.exists():
-        shutil.copytree(tpl_static_dir, output_root / 'static')
+        shutil.copytree(tpl_static_dir, output_root / 'static', dirs_exist_ok=True)
 
     # 复制种子数据中的上传资源（如 /assets/uploads/xxx.webp），
     # 否则模板预览页中引用的图片/video 全部 404
