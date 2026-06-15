@@ -812,10 +812,126 @@ function initViewAllButtons() {
   });
 }
 
+function initModuleLists() {
+  document.querySelectorAll('.module-list-region').forEach(function(region) {
+    var items = Array.prototype.slice.call(region.querySelectorAll('[data-module-list-item="true"]'));
+    var searchInput = region.querySelector('.module-list-search');
+    var countEl = region.querySelector('.module-list-count');
+    var emptyEl = region.querySelector('.module-list-empty');
+    var pager = region.querySelector('.module-list-pagination');
+    var perPage = parseInt(region.getAttribute('data-module-list-page-size'), 10) || 6;
+    var resultsLabel = region.getAttribute('data-module-list-results-label') || 'results';
+    var emptyText = region.getAttribute('data-module-list-empty-text') || 'No matching items.';
+    var prevLabel = region.getAttribute('data-module-list-prev-label') || 'Previous';
+    var nextLabel = region.getAttribute('data-module-list-next-label') || 'Next';
+    var currentPage = 1;
+
+    if (!items.length) {
+      if (countEl) countEl.textContent = '0 ' + resultsLabel;
+      if (emptyEl) {
+        emptyEl.textContent = emptyText;
+        emptyEl.hidden = false;
+      }
+      if (pager) pager.hidden = true;
+      return;
+    }
+
+    items.forEach(function(item) {
+      item._moduleListSearchText = (item.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    });
+
+    function matchingItems() {
+      var query = searchInput ? (searchInput.value || '').trim().toLowerCase() : '';
+      return items.filter(function(item) {
+        return !query || item._moduleListSearchText.indexOf(query) !== -1;
+      });
+    }
+
+    function renderPager(totalPages) {
+      if (!pager) return;
+      pager.innerHTML = '';
+      pager.hidden = totalPages <= 1;
+      if (totalPages <= 1) return;
+
+      var prev = document.createElement('button');
+      prev.type = 'button';
+      prev.className = 'module-list-page-btn module-list-page-prev';
+      prev.textContent = prevLabel;
+      prev.disabled = currentPage <= 1;
+      prev.addEventListener('click', function() {
+        if (currentPage > 1) {
+          currentPage -= 1;
+          apply();
+        }
+      });
+      pager.appendChild(prev);
+
+      for (var page = 1; page <= totalPages; page++) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'module-list-page-btn' + (page === currentPage ? ' active' : '');
+        btn.textContent = page;
+        btn.setAttribute('data-page', page);
+        btn.addEventListener('click', function(event) {
+          currentPage = parseInt(event.currentTarget.getAttribute('data-page'), 10) || 1;
+          apply();
+        });
+        pager.appendChild(btn);
+      }
+
+      var next = document.createElement('button');
+      next.type = 'button';
+      next.className = 'module-list-page-btn module-list-page-next';
+      next.textContent = nextLabel;
+      next.disabled = currentPage >= totalPages;
+      next.addEventListener('click', function() {
+        if (currentPage < totalPages) {
+          currentPage += 1;
+          apply();
+        }
+      });
+      pager.appendChild(next);
+    }
+
+    function apply() {
+      var matches = matchingItems();
+      var total = matches.length;
+      var totalPages = Math.max(1, Math.ceil(total / perPage));
+      if (currentPage > totalPages) currentPage = totalPages;
+      var start = (currentPage - 1) * perPage;
+      var end = start + perPage;
+
+      items.forEach(function(item) {
+        var matchIndex = matches.indexOf(item);
+        var isMatch = matchIndex !== -1;
+        item.classList.toggle('module-list-filter-hidden', !isMatch);
+        item.classList.toggle('module-list-page-hidden', isMatch && (matchIndex < start || matchIndex >= end));
+      });
+
+      if (countEl) countEl.textContent = total + ' ' + resultsLabel;
+      if (emptyEl) {
+        emptyEl.textContent = emptyText;
+        emptyEl.hidden = total !== 0;
+      }
+      renderPager(total === 0 ? 0 : totalPages);
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', function() {
+        currentPage = 1;
+        apply();
+      });
+    }
+
+    apply();
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   initDataGridPagers();
   initFilterableGrids();
   initViewAllButtons();
+  initModuleLists();
 });
 </script>
 
