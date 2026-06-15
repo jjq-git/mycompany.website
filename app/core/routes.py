@@ -1725,8 +1725,8 @@ def preview_site(site_id):
     _require_site_access(site)
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
 
-    # 构建条件：不存在任何产出，或显式传 ?_= 刷新
-    if request.args.get('_') or not (out / 'index.html').exists():
+    # 构建条件：不存在任何产出。?_ 只是浏览器 cache-busting 参数，不触发重建。
+    if not (out / 'index.html').exists():
         build_site(site_id, base_url=f'/preview/{site_id}')
 
     # 返回根 index.html：多语言站走 JS 浏览器语言检测，单语言站直接渲染
@@ -1744,7 +1744,7 @@ def preview_or_build(site_id):
     # 优先返回根 index.html（多语言站含 JS 浏览器语言检测），
     # 不存在则回退到默认语言首页（单语言站点无根选择页）
     root_index = out / 'index.html'
-    if not root_index.exists() or request.args.get('_'):
+    if not root_index.exists():
         build_site(site_id, base_url=f'/preview/{site_id}')
 
     if (out / 'index.html').exists():
@@ -1766,10 +1766,9 @@ def preview(site_id, filepath='index.html'):
     site = Site.query.get_or_404(site_id)
     _require_site_access(site)
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
-    force_rebuild = bool(request.args.get('_'))
     # 根路径请求 → 返回根 index.html（多语言站走 JS 浏览器语言检测），不再跳默认语言
     if filepath == 'index.html':
-        if force_rebuild or not (out / 'index.html').exists():
+        if not (out / 'index.html').exists():
             try:
                 build_site(site_id, base_url=f'/preview/{site_id}')
             except Exception:
@@ -1782,7 +1781,7 @@ def preview(site_id, filepath='index.html'):
     if full.is_dir():
         full = full / 'index.html'
         filepath = f'{filepath.rstrip("/")}/index.html'
-    if force_rebuild or not full.exists():
+    if not full.exists():
         try:
             build_site(site_id, base_url=f'/preview/{site_id}')
         except Exception:
