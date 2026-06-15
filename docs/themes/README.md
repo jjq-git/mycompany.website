@@ -34,6 +34,7 @@ themes/<name>/
 ```
 
 - 所有页面 `{% extends "_base.html" %}`。
+- 页面如果由大量 `highlight_card` 等模块组成，并需要当前页搜索 / 分页（如 `/functions/`、`/modules/`），使用页面顶层 `module_list` 配置；开发约定见 [layouts/module-list.md](layouts/module-list.md)。
 - `meta.yaml` 在管理员上传主题 ZIP 时解析进数据库（`Theme` 表）。字段逐项说明见 [meta.yaml.md](meta.yaml.md)。其中 `languages` 字段（如 `languages: [en, zh, ja]`）声明本主题为哪些语言提供了 `i18n/<lang>/` 整套 seed。
 - `settings.yaml` 是主题自带的默认站点设置，位于 `i18n/<lang>/` 下（每语言一份），字段见 [settings.yaml.md](settings.yaml.md)。
 - `layouts/` `blocks/` `static/` `preview/` `translations.yaml` 是语言无关的皮肤，不进 `i18n/`（`translations.yaml` 一个文件含所有语言的 UI 文案，渲染时按当前语言取 `t.*`）。建站时系统按用户选的语言把 `i18n/<lang>/` 整套拷进 `sites/<id>/`，该语言即成为站点源语言（`settings.default_language`）。

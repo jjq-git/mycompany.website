@@ -10,6 +10,7 @@
 | --- | --- |
 | [_base.html.md](_base.html.md) | 页面最外层骨架：`<head>`、CSS/JS 加载、主题色变量注入、OG 标签、header/footer include、全部 Jinja2 block |
 | [_modules.html.md](_modules.html.md) | 模块渲染循环：遍历 `page.modules` → 排序 → `render_block()` → 输出 HTML |
+| [module-list.md](module-list.md) | 页面级模块列表搜索与分页：适用于由多个 `highlight_card` 等页面模块组成的目录页 |
 | [index.html.md](index.html.md) | 首页布局：极简，组装模块序列即可 |
 | [_page.html.md](_page.html.md) | 独立页通用布局（about / contact / …）：面包屑 + 页标题 + 模块序列 |
 | [list.html.md](list.html.md) | 数据集列表页通用布局（products / news / …）：筛选栏 + 模块序列 + 分页 |

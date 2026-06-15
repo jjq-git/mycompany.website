@@ -200,6 +200,49 @@ modules:
           primaryBtnLink: /products/
 ```
 
+#### 4.2.1 页面模块列表搜索与分页（module_list）
+
+当一个页面本身就是“很多图文模块的目录”时，可以在页面 YAML 顶层启用 `module_list`。典型场景是 `/functions/`、`/modules/`、工具目录、服务清单等：每个条目是一个 `highlight_card`，而不是来自 `data/*.yaml` 的数据集。
+
+```yaml
+title: Functions
+
+module_list:
+  enabled: true
+  search: true
+  pagination: true
+  page_size: 6
+  target_types:
+    - highlight_card
+  search_placeholder: Search functions...
+  empty_text: No matching items.
+  results_label: results
+  prev_label: Previous
+  next_label: Next
+
+modules:
+  - type: section_title
+    order: 1
+    data:
+      title: Functions
+
+  - type: highlight_card
+    order: 2
+    data:
+      title: Resistor Decoder
+      desc: Decode resistor color bands.
+```
+
+使用规则：
+
+- `target_types` 决定哪些模块参与搜索和分页；常见值是 `highlight_card`。
+- `section_title` 通常不要加入 `target_types`，否则页面标题也会被搜索和分页隐藏。
+- 搜索匹配模块里的可见文字，包括标题、标签、描述、列表项和按钮文字。
+- 搜索后自动回到第 1 页；没有匹配项时显示 `empty_text`。
+- 内容来自页面 `modules` 数组时用 `module_list`；内容来自 `data/*.yaml` 数据集时用 `data_grid`。
+
+更多编辑说明见 [docs/site/module-list.md](site/module-list.md)，开发实现约定见 [docs/themes/layouts/module-list.md](themes/layouts/module-list.md)。
+
 ### 4.3 数据集 YAML 结构
 
 支持两种格式：

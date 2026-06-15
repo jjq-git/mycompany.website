@@ -58,6 +58,8 @@ render_block()  按 module.type 找 blocks/<type>/ 模板 → 注入 module.data
 
 用户在后台上添加 / 删除 / 重排模块时，只改页面对应的 YAML，`_modules.html` 和页面布局一行不用动。
 
+> 页面级模块列表：如果某个普通页面由大量相同图文模块组成，并需要在当前页搜索和分页（例如 `/functions/`、`/modules/`），不要改成 `data_grid`。在页面 YAML 顶层启用 `module_list`，由 `_modules.html` 给命中的 `.builder-module` 打标，再由主题 JS 做显隐。详见 [module-list.md](module-list.md)。
+
 ## 四、模块的数据结构
 
 `page.modules` 来自页面 YAML（`sites/<name>/pages/<key>.yaml`），每条模块固定三个字段：

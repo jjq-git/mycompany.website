@@ -52,6 +52,15 @@
 - 筛选靠条目上的 `data-f-*` 属性匹配
 - 关 JS 时降级为"全部可见、不分页"（内容不丢）
 
+同一原则也适用于页面模块列表。`data_grid` 处理数据集条目，`module_list` 处理页面模块条目：
+
+| 能力 | DOM 对象 | 常见页面 |
+| --- | --- | --- |
+| `data_grid` | `.dg-card` | 产品、文章、案例等数据集列表 |
+| `module_list` | `.builder-module[data-module-list-item]` | `/functions/`、`/modules/` 等由多个图文模块组成的页面 |
+
+`module_list` 的 JS 应按 `.module-list-region` 独立初始化，搜索命中后重新计算分页。搜索隐藏和分页隐藏使用不同 class，避免状态互相覆盖。详见 [module-list.md](../../layouts/module-list.md)。
+
 ## 五、关键规则
 
 - **不用框架**——不引 jQuery、Vue、React，纯原生 JS。
