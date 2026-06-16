@@ -700,67 +700,139 @@ def _page_text_for_seo(page):
     return re.sub(r'\s+', ' ', ' '.join(parts)).strip()[:2200]
 
 
+def _dataset_items(raw):
+    if isinstance(raw, list):
+        return raw
+    if isinstance(raw, dict):
+        items = raw.get('items')
+        return items if isinstance(items, list) else []
+    return []
+
+
+def _detail_item_text_for_seo(item):
+    if not isinstance(item, dict):
+        return ''
+    parts = []
+    for key in ('seo_title', 'title', 'name', 'seo_description', 'summary', 'description', 'excerpt', 'body', 'content'):
+        text = _plain_text(item.get(key))
+        if text:
+            parts.append(text)
+    return re.sub(r'\s+', ' ', ' '.join(parts)).strip()[:2200]
+
+
+def _seo_status(description, auto_desc):
+    if description:
+        return 'ok', '已设置', '使用手动简介'
+    if auto_desc:
+        return 'auto', '可自动生成', '可从页面内容生成简介'
+    return 'warn', '缺少内容', '页面内容不足，建议手动填写'
+
+
+def _seo_row_for_page(site, lang, page_key, title, page, row_id=None, depth=0, parent_id=''):
+    page = page if isinstance(page, dict) else {}
+    auto_desc = _auto_page_description(page)
+    description = page.get('description') or ''
+    status, status_label, status_detail = _seo_status(description, auto_desc)
+    row_id = row_id or f'page:{page_key}'
+    return {
+        'id': row_id,
+        'key': page_key,
+        'type': 'page',
+        'kind': 'page',
+        'depth': depth,
+        'parent_id': parent_id,
+        'title': page.get('title') or title or page_key,
+        'description': description,
+        'auto_description': auto_desc,
+        'status': status,
+        'status_label': status_label,
+        'status_detail': status_detail,
+        'save_url': url_for('core.seo_page_update', page_key=page_key, site=site.id, lang=lang),
+        'generate_url': url_for('core.seo_page_generate', page_key=page_key, site=site.id, lang=lang),
+    }
+
+
+def _seo_row_for_detail(site, lang, dataset_key, item, depth=0, parent_id=''):
+    item = item if isinstance(item, dict) else {}
+    slug = item.get('slug') or item.get('id') or ''
+    title = item.get('seo_title') or item.get('title') or item.get('name') or str(slug) or '未命名详情页'
+    description = item.get('seo_description') or ''
+    auto_desc = _plain_text(item.get('summary') or item.get('description') or item.get('excerpt') or item.get('body') or item.get('content'))[:180].rstrip()
+    status, status_label, status_detail = _seo_status(description, auto_desc)
+    row_id = f'detail:{dataset_key}:{slug}'
+    return {
+        'id': row_id,
+        'key': str(slug),
+        'type': 'detail',
+        'kind': 'detail',
+        'dataset_key': dataset_key,
+        'depth': depth,
+        'parent_id': parent_id,
+        'title': title,
+        'description': description,
+        'auto_description': auto_desc,
+        'status': status,
+        'status_label': status_label,
+        'status_detail': status_detail,
+        'save_url': url_for('core.seo_detail_update', dataset_key=dataset_key, item_key=slug, site=site.id, lang=lang),
+        'generate_url': url_for('core.seo_detail_generate', dataset_key=dataset_key, item_key=slug, site=site.id, lang=lang),
+    }
+
+
 def _seo_page_rows(site, lang, settings, pages, data, meta):
-    """返回弹框中要展示的页面行：只包含实际会生成 HTML 的菜单页面。"""
-    default_lang = site.default_language or 'zh-CN'
-    storage_lang = lang if lang != default_lang else None
+    """返回 SEO 工作区页面行，按菜单树保留层级，包含列表详情页。"""
     tpl_html_dir = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'templates'
-    menu_items = menu_lib.filter_hidden_for_nav(
-        menu_lib.ensure_home(
-            menu_lib.normalize_for_render(
-                menu_lib.upgrade_old_format(settings.get('menu') or [], meta.get('datasets', []))
-            )
+    menu_items = menu_lib.ensure_home(
+        menu_lib.normalize_for_render(
+            menu_lib.upgrade_old_format(settings.get('menu') or [], meta.get('datasets', []))
         )
     )
-    labels = {}
-    def collect_labels(items):
-        for item in items or []:
-            t = item.get('type')
-            if t == 'home':
-                labels['home'] = item.get('label') or 'Home'
-            elif t in ('page', 'list') and item.get('target'):
-                labels[item.get('target')] = item.get('label') or item.get('target')
-            if item.get('children'):
-                collect_labels(item.get('children') or [])
-    collect_labels(menu_items)
-    tasks = menu_lib.collect_render_tasks(menu_items, tpl_html_dir, data, pages)
     rows = []
     seen = set()
-    for task in tasks:
-        if task.get('type') not in ('home', 'page', 'list'):
-            continue
-        page_key = task.get('page_key')
+
+    def add_page_row(page_key, label, item_type='page', depth=0, parent_id=''):
         if not page_key or page_key in seen or page_key not in pages:
-            continue
+            return ''
         seen.add(page_key)
-        page = pages.get(page_key) if isinstance(pages.get(page_key), dict) else {}
-        auto_desc = _auto_page_description(page)
-        title = page.get('title') or labels.get(page_key) or task.get('page_key') or page_key
-        description = page.get('description') or ''
-        if description:
-            status = 'ok'
-            status_label = '已设置'
-            status_detail = '使用手动简介'
-        elif auto_desc:
-            status = 'auto'
-            status_label = '可自动生成'
-            status_detail = '可从页面内容生成简介'
-        else:
-            status = 'warn'
-            status_label = '缺少内容'
-            status_detail = '页面内容不足，建议手动填写'
-        rows.append({
-            'key': page_key,
-            'type': task.get('type'),
-            'title': title,
-            'description': description,
-            'auto_description': auto_desc,
-            'status': status,
-            'status_label': status_label,
-            'status_detail': status_detail,
-            'save_url': url_for('core.seo_page_update', page_key=page_key, site=site.id, lang=lang),
-            'generate_url': url_for('core.seo_page_generate', page_key=page_key, site=site.id, lang=lang),
-        })
+        row_id = f'page:{page_key}'
+        row = _seo_row_for_page(site, lang, page_key, label, pages.get(page_key), row_id=row_id, depth=depth, parent_id=parent_id)
+        row['type'] = item_type
+        rows.append(row)
+        return row_id
+
+    def walk(items, depth=0, parent_id=''):
+        for item in items or []:
+            if not isinstance(item, dict):
+                continue
+            item_type = item.get('type')
+            label = item.get('label') or item.get('target') or item.get('url') or ''
+            row_id = ''
+            if item_type == 'home':
+                row_id = add_page_row('home', label or 'Home', item_type='home', depth=depth, parent_id=parent_id)
+            elif item_type in ('page', 'list') and item.get('target'):
+                target = item.get('target')
+                row_id = add_page_row(target, label, item_type=item_type, depth=depth, parent_id=parent_id)
+                if item_type == 'list':
+                    dt_tmpl, var_name, slug_field = menu_lib.derive_detail_info(target, tpl_html_dir)
+                    if dt_tmpl and var_name:
+                        for entry in _dataset_items(data.get(target)):
+                            if not isinstance(entry, dict):
+                                continue
+                            slug = entry.get(slug_field) or entry.get('slug') or entry.get('id')
+                            if not slug:
+                                continue
+                            detail_row = _seo_row_for_detail(site, lang, target, entry, depth=depth + 1, parent_id=row_id)
+                            rows.append(detail_row)
+            if item.get('children'):
+                walk(item.get('children') or [], depth=depth + 1, parent_id=row_id or parent_id)
+
+    walk(menu_items)
+
+    # 兜底补充渲染任务里出现但菜单树未直接覆盖的页面，通常是兼容旧数据。
+    tasks = menu_lib.collect_render_tasks(menu_items, tpl_html_dir, data, pages)
+    for task in tasks:
+        if task.get('type') in ('home', 'page', 'list'):
+            add_page_row(task.get('page_key'), task.get('page_key'), item_type=task.get('type'), depth=0)
     return rows
 
 
@@ -817,11 +889,9 @@ def _seo_health_report(site, lang=None):
     seo_pages = _seo_page_rows(site, lang, settings, pages, data, meta)
 
     # 只检查菜单会实际渲染的页面/详情页，避免把孤立草稿 YAML 当成 SEO 问题。
-    menu_items = menu_lib.filter_hidden_for_nav(
-        menu_lib.ensure_home(
-            menu_lib.normalize_for_render(
-                menu_lib.upgrade_old_format(settings.get('menu') or [], meta.get('datasets', []))
-            )
+    menu_items = menu_lib.ensure_home(
+        menu_lib.normalize_for_render(
+            menu_lib.upgrade_old_format(settings.get('menu') or [], meta.get('datasets', []))
         )
     )
     tasks = menu_lib.collect_render_tasks(menu_items, tpl_html_dir, data, pages)
@@ -910,9 +980,18 @@ def seo_health():
                            current_lang=lang, languages=languages, default_lang=default_lang)
 
 
+@bp.route('/seo/workspace')
+def seo_workspace():
+    user, site = _current_context()
+    lang, languages, default_lang = _get_panel_lang(site)
+    report = _seo_health_report(site, lang=lang)
+    return render_template('dashboard/seo_workspace.html', user=user, site=site, report=report,
+                           current_lang=lang, languages=languages, default_lang=default_lang)
+
+
 @bp.route('/seo/page/<path:page_key>', methods=['POST'])
 def seo_page_update(page_key):
-    """保存单个页面的 SEO 标题/简介，供健康检查弹框使用。"""
+    """保存单个页面的 SEO 标题/简介，供健康检查工作区使用。"""
     _validate_key(page_key)
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
@@ -957,6 +1036,84 @@ def seo_page_generate(page_key):
             return jsonify({'ok': True, 'description': description, 'source': 'ai'})
         except Exception as exc:
             current_app.logger.warning('AI 生成 SEO 简介失败，回退本地摘要: %s', exc)
+            return jsonify({'ok': True, 'description': fallback, 'source': 'fallback',
+                            'warning': f'AI 生成失败，已回退本地摘要: {exc}'})
+    return jsonify({'ok': True, 'description': fallback, 'source': 'fallback',
+                    'warning': 'AI 未配置，已使用本地摘要'})
+
+
+def _load_dataset_for_seo(site_id, dataset_key, storage_lang):
+    raw = read_yaml(site_id, f'data/{dataset_key}.yaml', default=[], lang=storage_lang)
+    if raw is None:
+        raw = []
+    return raw
+
+
+def _find_dataset_item(raw, item_key):
+    items = _dataset_items(raw)
+    item_key = str(item_key)
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        candidates = [item.get('slug'), item.get('id'), item.get('title'), item.get('name')]
+        if any(str(value) == item_key for value in candidates if value is not None):
+            return item
+    return None
+
+
+@bp.route('/seo/detail/<path:dataset_key>/<path:item_key>', methods=['POST'])
+def seo_detail_update(dataset_key, item_key):
+    """保存列表详情页的独立 SEO 标题/简介，不覆盖业务标题和正文摘要。"""
+    _validate_key(dataset_key)
+    _validate_key(item_key)
+    user, site = _current_context()
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    raw = _load_dataset_for_seo(site.id, dataset_key, storage_lang)
+    item = _find_dataset_item(raw, item_key)
+    if item is None:
+        abort(404)
+    title = request.form.get('title', '').strip()
+    description = request.form.get('description', '').strip()
+    if title:
+        item['seo_title'] = title
+    else:
+        item.pop('seo_title', None)
+    if description:
+        item['seo_description'] = description
+    else:
+        item.pop('seo_description', None)
+    write_yaml(site.id, f'data/{dataset_key}.yaml', raw, lang=storage_lang)
+    return jsonify({'ok': True})
+
+
+@bp.route('/seo/detail/<path:dataset_key>/<path:item_key>/generate', methods=['POST'])
+def seo_detail_generate(dataset_key, item_key):
+    """从详情页数据生成 SEO 简介。"""
+    _validate_key(dataset_key)
+    _validate_key(item_key)
+    user, site = _current_context()
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    raw = _load_dataset_for_seo(site.id, dataset_key, storage_lang)
+    item = _find_dataset_item(raw, item_key)
+    if item is None:
+        abort(404)
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    company = settings.get('company') or {}
+    company_name = company.get('name') or settings.get('title') or site.name
+    page_title = item.get('seo_title') or item.get('title') or item.get('name') or str(item_key)
+    fallback = _plain_text(
+        item.get('summary') or item.get('description') or item.get('excerpt') or
+        item.get('body') or item.get('content') or page_title
+    )[:180].rstrip()
+    page_text = _detail_item_text_for_seo(item) or fallback
+    if translation_configured():
+        try:
+            description = generate_seo_description(page_title, page_text, company_name=company_name, lang=lang)
+            return jsonify({'ok': True, 'description': description, 'source': 'ai'})
+        except Exception as exc:
+            current_app.logger.warning('AI 生成详情页 SEO 简介失败，回退本地摘要: %s', exc)
             return jsonify({'ok': True, 'description': fallback, 'source': 'fallback',
                             'warning': f'AI 生成失败，已回退本地摘要: {exc}'})
     return jsonify({'ok': True, 'description': fallback, 'source': 'fallback',

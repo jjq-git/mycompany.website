@@ -240,8 +240,8 @@ def _seo_title_description(task, ctx, settings, t):
 
     item = task.get('item') if isinstance(task.get('item'), dict) else {}
     if task.get('type') == 'detail':
-        title = _first_text(item.get('title'), item.get('name'), page.get('title'), page_key)
-        description = _first_text(item.get('summary'), item.get('description'), item.get('excerpt'))
+        title = _first_text(item.get('seo_title'), item.get('title'), item.get('name'), page.get('title'), page_key)
+        description = _first_text(item.get('seo_description'), item.get('summary'), item.get('description'), item.get('excerpt'))
     elif task.get('type') == 'home':
         title = _first_text(page.get('title'), company_name)
         description = _first_text(page.get('description'), _company_description(settings))

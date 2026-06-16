@@ -136,7 +136,7 @@
 
   /* ── 背景色分层（精确 hex 对齐 DESIGN-claude.md） ── */
   --color-canvas:           var(--color-bg);
-  --color-surface-soft:     #f5f0e8;     /* 规范: #f5f0e8 */
+  --color-surface-soft:     color-mix(in srgb, var(--color-bg) 94%, var(--color-primary) 6%);  /* 从背景色混入主题色，随主题色自动变化 */
   --color-surface-card:     var(--color-surface);
   --color-surface-cream-strong: #e8e0d2; /* 规范: #e8e0d2 */
   --color-surface-dark:           #181715;
@@ -835,6 +835,7 @@ input, textarea, select {
   background-color: var(--color-canvas);
   z-index: var(--z-header);
   transition: border-bottom var(--transition-base);
+  border-bottom: 1px solid var(--color-hairline);
 }
 
 /* 滚动后出现 hairline 底部边框（Claude 用边框不用阴影） */

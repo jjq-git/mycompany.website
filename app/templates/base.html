@@ -501,7 +501,7 @@
     </button>
 
     {# 中栏：预览 #}
-    <section class="flex-grow-1 d-flex flex-column overflow-hidden bg-light">
+    <section class="flex-grow-1 d-flex flex-column overflow-hidden bg-light" id="previewPane">
       <div class="preview-tab-bar" id="previewTabBar"></div>
       <div class="preview-url-bar" id="previewUrlBar">
         <svg class="url-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1154,11 +1154,18 @@
       activeTabKey = key;
       renderPreviewTabs();
       updatePreviewUrlBar(url);
+      setPreviewChromeMode(key === 'seo');
       var frame = document.getElementById('previewFrame');
       if (frame) {
         frame.dataset.previewUrl = url;
         if (!skipFrameUpdate) setPreviewFrameUrl(url);
       }
+    }
+
+    function setPreviewChromeMode(workspaceMode) {
+      var pane = document.getElementById('previewPane');
+      if (!pane) return;
+      pane.classList.toggle('preview-workspace-mode', !!workspaceMode);
     }
 
     function switchPreviewTab(key) {
@@ -1201,6 +1208,13 @@
     }
 
     function loadPanel(url) {
+      var panel = document.getElementById('rightPanel');
+      if (panel && panel.classList.contains('d-none') && typeof toggleRightPanel === 'function') {
+        toggleRightPanel();
+      }
+      if (panel && panel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
+        togglePanelCollapse();
+      }
       var body = document.getElementById('rightPanelBody');
       var footer = document.getElementById('rightPanelFooter');
       body.innerHTML = '<div class="p-3 text-muted text-center py-5"><div class="spinner-border spinner-border-sm me-2"></div>加载中...</div>';
@@ -1381,8 +1395,29 @@
       e.preventDefault();
       document.querySelectorAll('.left-nav-item').forEach(el => el.classList.remove('active'));
       link.classList.add('active');
+      if (link.dataset.panel === 'seo') {
+        var seoSiteParam = currentSiteParam();
+        var seoLangParam = currentLangParam();
+        var seoQuery = [];
+        if (seoSiteParam) seoQuery.push('site=' + encodeURIComponent(seoSiteParam));
+        if (seoLangParam) seoQuery.push('lang=' + encodeURIComponent(seoLangParam));
+        var seoUrl = '{{ url_for("core.seo_workspace") }}' + (seoQuery.length ? '?' + seoQuery.join('&') : '');
+        openPreviewTab('seo', 'SEO 检查', seoUrl);
+        var seoPanelTitle = document.getElementById('rightPanelTitle');
+        var seoPanelBody = document.getElementById('rightPanelBody');
+        var seoPanelFooter = document.getElementById('rightPanelFooter');
+        if (seoPanelTitle) seoPanelTitle.textContent = 'SEO 检查';
+        if (seoPanelBody) {
+          seoPanelBody.innerHTML = '<div class="p-3 text-muted small">SEO 健康检查已在中间预览区打开。</div>';
+        }
+        if (seoPanelFooter) seoPanelFooter.style.display = 'none';
+        var seoPanel = document.getElementById('rightPanel');
+        if (seoPanel && !seoPanel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
+          togglePanelCollapse();
+        }
+        return;
+      }
       if (href && href !== '#') {
-        var params = new URLSearchParams(window.location.search);
         var siteParam = currentSiteParam();
         var langParam = currentLangParam();
         var qs = siteParam ? '&site=' + siteParam : '';
