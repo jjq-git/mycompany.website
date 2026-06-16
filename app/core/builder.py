@@ -9,6 +9,7 @@ import json
 import shutil
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urljoin
 
 import yaml
 from flask import current_app
@@ -156,6 +157,216 @@ def _load_yaml(path):
     if not path.exists():
         return {}
     return yaml.safe_load(path.read_text(encoding='utf-8')) or {}
+
+
+def _first_text(*values):
+    """返回第一个非空字符串，用于 SEO 字段的多来源兜底。"""
+    for value in values:
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            return text
+    return ''
+
+
+def _site_base_url(site=None, base_url=''):
+    """计算 SEO 使用的站点根 URL。
+
+    预览构建只有相对 base_url，不能伪造成正式域名；发布构建 base_url 为空时，
+    先用 slug.platform_domain 兜底，等自定义域名链路上线后这里再接真实域名。
+    """
+    base = (base_url or '').strip().rstrip('/')
+    if base.startswith('http://') or base.startswith('https://'):
+        return base
+    if base:
+        return base
+    if site is not None and getattr(site, 'slug', None):
+        domain = current_app.config.get('PLATFORM_DOMAIN', 'mycompany.website').strip().strip('/')
+        return f'https://{site.slug}.{domain}'
+    return ''
+
+
+def _seo_url(site_base_url, lang_code, path):
+    """拼出页面 URL；支持正式域名和预览相对路径两种场景。"""
+    clean_path = path if path.startswith('/') else f'/{path}'
+    if lang_code:
+        clean_path = f'/{lang_code}{clean_path}'
+    if not site_base_url:
+        return clean_path
+    if site_base_url.startswith('http://') or site_base_url.startswith('https://'):
+        return urljoin(site_base_url.rstrip('/') + '/', clean_path.lstrip('/'))
+    return site_base_url.rstrip('/') + clean_path
+
+
+def _seo_asset_url(site_base_url, asset_path):
+    """把 Logo / 分享图转成可用于 OG 的 URL，外链原样保留。"""
+    asset = (asset_path or '').strip()
+    if not asset:
+        return ''
+    if asset.startswith('http://') or asset.startswith('https://') or asset.startswith('data:'):
+        return asset
+    if not asset.startswith('/'):
+        asset = '/' + asset
+    if not site_base_url:
+        return asset
+    if site_base_url.startswith('http://') or site_base_url.startswith('https://'):
+        return urljoin(site_base_url.rstrip('/') + '/', asset.lstrip('/'))
+    return site_base_url.rstrip('/') + asset
+
+
+def _company_name(settings, t=None):
+    company = settings.get('company') or {}
+    return _first_text(company.get('name'), settings.get('title'), (t or {}).get('company'), 'Website')
+
+
+def _company_description(settings):
+    company = settings.get('company') or {}
+    return _first_text(
+        settings.get('slogan'),
+        company.get('slogan'),
+        company.get('description'),
+        company.get('intro'),
+        company.get('name'),
+    )
+
+
+def _seo_title_description(task, ctx, settings, t):
+    """按页面类型推导 title/description，避免让店主手写 SEO。"""
+    company_name = _company_name(settings, t)
+    page = ctx.get('page') if isinstance(ctx.get('page'), dict) else {}
+    page_key = task.get('page_key', '')
+    t_pages = (t or {}).get('pages') if isinstance((t or {}).get('pages'), dict) else {}
+
+    item = task.get('item') if isinstance(task.get('item'), dict) else {}
+    if task.get('type') == 'detail':
+        title = _first_text(item.get('title'), item.get('name'), page.get('title'), page_key)
+        description = _first_text(item.get('summary'), item.get('description'), item.get('excerpt'))
+    elif task.get('type') == 'home':
+        title = _first_text(page.get('title'), company_name)
+        description = _first_text(page.get('description'), _company_description(settings))
+    else:
+        title = _first_text(page.get('title'), t_pages.get(page_key), page_key.replace('_', ' ').title())
+        description = _first_text(page.get('description'), _company_description(settings))
+
+    if company_name and company_name not in title:
+        title = f'{title} - {company_name}'
+    return title, description
+
+
+def _json_ld_for_task(task, seo, ctx, settings):
+    """生成基础 JSON-LD。字段不足时宁可少写，也不让用户维护结构化数据。"""
+    company = settings.get('company') or {}
+    contact = settings.get('contact') or {}
+    company_name = _company_name(settings)
+    logo = seo.get('image', '')
+
+    nodes = [{
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        'name': company_name,
+        'url': seo.get('site_url') or seo.get('canonical_url'),
+    }]
+    if logo:
+        nodes[0]['logo'] = logo
+
+    item = task.get('item') if isinstance(task.get('item'), dict) else {}
+    dataset_key = task.get('dataset_key')
+    if task.get('type') == 'detail' and dataset_key == 'products':
+        product = {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            'name': _first_text(item.get('name'), item.get('title')),
+            'description': _first_text(item.get('summary'), item.get('description')),
+            'brand': {'@type': 'Brand', 'name': company_name},
+        }
+        image = _first_text(item.get('image'), item.get('image_url'), item.get('cover'), item.get('thumbnail'))
+        if image:
+            product['image'] = _seo_asset_url(seo.get('site_url', ''), image)
+        nodes.append(product)
+    elif task.get('type') == 'detail' and dataset_key in ('posts', 'blog', 'articles'):
+        nodes.append({
+            '@context': 'https://schema.org',
+            '@type': 'Article',
+            'headline': _first_text(item.get('title'), item.get('name')),
+            'description': _first_text(item.get('summary'), item.get('description'), item.get('excerpt')),
+            'author': {'@type': 'Organization', 'name': company_name},
+        })
+    elif task.get('page_key') == 'contact':
+        local = {
+            '@context': 'https://schema.org',
+            '@type': 'LocalBusiness',
+            'name': company_name,
+            'url': seo.get('canonical_url'),
+        }
+        if contact.get('phone'):
+            local['telephone'] = contact.get('phone')
+        if contact.get('email'):
+            local['email'] = contact.get('email')
+        if contact.get('address'):
+            local['address'] = contact.get('address')
+        nodes.append(local)
+
+    if task.get('type') != 'home':
+        nodes.append({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            'itemListElement': [
+                {'@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': seo.get('home_url')},
+                {'@type': 'ListItem', 'position': 2, 'name': seo.get('title'), 'item': seo.get('canonical_url')},
+            ],
+        })
+    return nodes
+
+
+def _build_seo_context(task, ctx, common, meta):
+    """为模板和站点级文件构建统一 SEO 上下文。"""
+    settings = common.get('settings') or {}
+    t = common.get('t') or {}
+    lang_code = common.get('lang') or ''
+    site_base_url = common.get('site_base_url') or common.get('base_url') or ''
+    languages = common.get('languages') or []
+    title, description = _seo_title_description(task, ctx, settings, t)
+    company = settings.get('company') or {}
+    page = ctx.get('page') if isinstance(ctx.get('page'), dict) else {}
+    image = _first_text(
+        page.get('og_image'),
+        page.get('cover'),
+        company.get('og_image'),
+        company.get('logo'),
+    )
+
+    canonical_url = _seo_url(site_base_url, lang_code, task.get('current_path', '/'))
+    site_url = site_base_url or _seo_url('', '', '/')
+    alternate_urls = []
+    for lang in languages:
+        code = lang.get('code')
+        if not code:
+            continue
+        alternate_urls.append({
+            'lang': code,
+            'url': _seo_url(site_base_url, code, task.get('current_path', '/')),
+        })
+    if languages:
+        default_lang = meta.get('default_language') or languages[0].get('code')
+        alternate_urls.append({
+            'lang': 'x-default',
+            'url': _seo_url(site_base_url, default_lang, task.get('current_path', '/')),
+        })
+
+    seo = {
+        'title': title,
+        'description': description,
+        'canonical_url': canonical_url,
+        'alternate_urls': alternate_urls,
+        'image': _seo_asset_url(site_base_url, image),
+        'site_name': _company_name(settings, t),
+        'site_url': site_base_url,
+        'home_url': _seo_url(site_base_url, lang_code, '/'),
+        'type': 'article' if task.get('dataset_key') in ('posts', 'blog', 'articles') else 'website',
+    }
+    seo['json_ld'] = _json_ld_for_task(task, seo, ctx, settings)
+    return seo
 
 
 def _deep_merge(default, override):
@@ -333,7 +544,99 @@ def _build_language_selector_page(output_root, base_url, settings, theme, year, 
     (output_root / 'index.html').write_text(html, encoding='utf-8')
 
 
-def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, pages, data, meta):
+def _write_site_seo_files(output_root, seo_records, settings, site_base_url):
+    """写出 sitemap.xml / robots.txt / llms.txt。
+
+    这些文件属于发布器职责，不能要求店主进入后台逐项配置。
+    """
+    today = datetime.now().date().isoformat()
+
+    sitemap = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+        'xmlns:xhtml="http://www.w3.org/1999/xhtml">',
+    ]
+    seen = set()
+    for record in seo_records:
+        loc = record.get('loc')
+        if not loc or loc in seen:
+            continue
+        seen.add(loc)
+        sitemap.append('  <url>')
+        sitemap.append(f'    <loc>{escape(loc)}</loc>')
+        sitemap.append(f'    <lastmod>{today}</lastmod>')
+        for alt in record.get('alternates') or []:
+            sitemap.append(
+                '    <xhtml:link rel="alternate" '
+                f'hreflang="{escape(alt.get("lang", ""))}" '
+                f'href="{escape(alt.get("url", ""))}"/>'
+            )
+        sitemap.append('  </url>')
+    sitemap.append('</urlset>')
+    (output_root / 'sitemap.xml').write_text('\n'.join(str(x) for x in sitemap) + '\n', encoding='utf-8')
+
+    sitemap_url = _seo_url(site_base_url, '', '/sitemap.xml')
+    robots = [
+        '# AI 检索友好：小企业网站默认允许主流搜索与 AI 爬虫抓取。',
+        'User-agent: GPTBot',
+        'Allow: /',
+        '',
+        'User-agent: OAI-SearchBot',
+        'Allow: /',
+        '',
+        'User-agent: ChatGPT-User',
+        'Allow: /',
+        '',
+        'User-agent: ClaudeBot',
+        'Allow: /',
+        '',
+        'User-agent: Claude-Web',
+        'Allow: /',
+        '',
+        'User-agent: PerplexityBot',
+        'Allow: /',
+        '',
+        'User-agent: Google-Extended',
+        'Allow: /',
+        '',
+        'User-agent: Bytespider',
+        'Allow: /',
+        '',
+        'User-agent: *',
+        'Allow: /',
+        'Disallow: /_preview/',
+        '',
+        f'Sitemap: {sitemap_url}',
+    ]
+    (output_root / 'robots.txt').write_text('\n'.join(robots) + '\n', encoding='utf-8')
+
+    company_name = _company_name(settings)
+    company_desc = _company_description(settings)
+    llms = [f'# {company_name}', '']
+    if company_desc:
+        llms.extend([f'> {company_desc}', ''])
+    grouped = {}
+    for record in seo_records:
+        group = 'Pages'
+        if record.get('dataset_key') == 'products':
+            group = 'Products'
+        elif record.get('dataset_key') in ('posts', 'blog', 'articles'):
+            group = 'Blog'
+        elif record.get('dataset_key'):
+            group = record.get('dataset_key').replace('_', ' ').title()
+        grouped.setdefault(group, []).append(record)
+
+    for group, records in grouped.items():
+        llms.extend([f'## {group}', ''])
+        for record in records:
+            desc = record.get('description') or ''
+            suffix = f': {desc}' if desc else ''
+            llms.append(f'- [{record.get("title", "Untitled")}]({record.get("loc")}){suffix}')
+        llms.append('')
+    (output_root / 'llms.txt').write_text('\n'.join(llms).strip() + '\n', encoding='utf-8')
+
+
+def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, pages, data, meta, seo_records=None):
     """为一种语言渲染所有页面 (菜单驱动).
 
     返回失败任务列表 [{lang, template, type, error}], 供 build_site 汇总,
@@ -380,6 +683,8 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
                 _p = task['current_path'].rstrip('/')
                 ctx['lang_switch_path'] = _p.rsplit('/', 1)[0] + '/' if '/' in _p else '/'
 
+            ctx['seo'] = _build_seo_context(task, ctx, common, meta)
+
             rendered = tpl.render(**ctx)
             out = lang_output / task['output_path']
             # 越界兜底: detail 页的 output_path 含店主可编辑的 slug,
@@ -397,6 +702,17 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
                 continue
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_text(rendered, encoding='utf-8')
+            if seo_records is not None:
+                seo_records.append({
+                    'lang': lang_code,
+                    'type': task.get('type'),
+                    'page_key': task.get('page_key'),
+                    'dataset_key': task.get('dataset_key'),
+                    'loc': ctx['seo'].get('canonical_url'),
+                    'alternates': ctx['seo'].get('alternate_urls') or [],
+                    'title': ctx['seo'].get('title'),
+                    'description': ctx['seo'].get('description'),
+                })
         except Exception as e:
             current_app.logger.error(
                 '页面 %s (type=%s, lang=%s) 渲染失败: %s',
@@ -425,8 +741,10 @@ def build_site(site_id, base_url='', report=None):
 
     settings, pages, data = _gather_site_data(site_id, site.template_name)
     site_settings = _load_yaml(Path(current_app.config['SITES_DIR']) / str(site_id) / 'settings.yaml')
+    site_base_url = _site_base_url(site, base_url)
 
     _all_failures = []  # #13: 收集各语言渲染失败任务
+    seo_records = []
 
     # 模板默认值兜底
     tpl_root, tpl_html_dir, tpl_static_dir = _template_paths(site.template_name)
@@ -538,6 +856,7 @@ def build_site(site_id, base_url='', report=None):
                 'year': year,
                 'lang': lang_code,
                 'base_url': base_url.rstrip('/'),
+                'site_base_url': site_base_url,
                 't': t_data,
                 'languages': languages,
                 'products_categories': lang_products_categories,
@@ -549,7 +868,7 @@ def build_site(site_id, base_url='', report=None):
             }
 
             _all_failures.extend(
-                _render_for_language(env, tpl_html_dir, output_root, lang_code, common, lang_pages, lang_data, meta)
+                _render_for_language(env, tpl_html_dir, output_root, lang_code, common, lang_pages, lang_data, meta, seo_records)
             )
     else:
         # 单语言模式 (兼容旧模板)
@@ -563,6 +882,7 @@ def build_site(site_id, base_url='', report=None):
             'year': year,
             'lang': site.default_language,
             'base_url': base_url.rstrip('/'),
+            'site_base_url': site_base_url,
             't': {},
             'languages': [],
             'products_categories': products_categories,
@@ -573,8 +893,10 @@ def build_site(site_id, base_url='', report=None):
             'all_datasets': data,
         }
         _all_failures.extend(
-            _render_for_language(env, tpl_html_dir, output_root, '', common, pages, data, meta)
+            _render_for_language(env, tpl_html_dir, output_root, '', common, pages, data, meta, seo_records)
         )
+
+    _write_site_seo_files(output_root, seo_records, settings, site_base_url)
 
     # #13: 汇总缺页。有失败时统一记 warning, 并填入调用方传入的 report。
     if _all_failures:
@@ -665,6 +987,8 @@ def build_template_preview(template_name, base_url=''):
     products_categories = _extract_products_categories(data)
     products_items = _extract_products_items(data)
     year = datetime.now().year
+    site_base_url = _site_base_url(None, base_url)
+    seo_records = []
 
     if languages:
         _build_language_selector_page(output_root, base_url, settings, theme, year, meta, translations)
@@ -703,6 +1027,7 @@ def build_template_preview(template_name, base_url=''):
                 'settings': lang_settings, 'theme': theme,
                 'year': year, 'lang': lang_code,
                 'base_url': base_url.rstrip('/'),
+                'site_base_url': site_base_url,
                 't': t_data, 'languages': languages,
                 'products_categories': lang_products_categories,
                 'products': lang_products_items,
@@ -711,12 +1036,13 @@ def build_template_preview(template_name, base_url=''):
                 'features': lang_data.get('features', []),
                 'all_datasets': lang_data,
             }
-            _render_for_language(env, tpl_html_dir, output_root, lang_code, common, lang_pages, lang_data, meta)
+            _render_for_language(env, tpl_html_dir, output_root, lang_code, common, lang_pages, lang_data, meta, seo_records)
     else:
         common = {
             'settings': settings, 'theme': theme,
             'year': year, 'lang': 'zh-CN',
             'base_url': base_url.rstrip('/'),
+            'site_base_url': site_base_url,
             't': {}, 'languages': [],
             'products_categories': products_categories,
             'products': products_items,
@@ -724,6 +1050,8 @@ def build_template_preview(template_name, base_url=''):
             'posts': data.get('posts', []),
             'features': data.get('features', []),
         }
-        _render_for_language(env, tpl_html_dir, output_root, '', common, pages, data, meta)
+        _render_for_language(env, tpl_html_dir, output_root, '', common, pages, data, meta, seo_records)
+
+    _write_site_seo_files(output_root, seo_records, settings, site_base_url)
 
     return output_root

@@ -3,8 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}{{ settings.company.name or t.nav.home }} - {{ settings.company.name or t.company }}{% endblock %}</title>
-  <meta name="description" content="{% block description %}{{ settings.company.name or t.company }}{% endblock %}">
+  <title>{{ seo.title | default(settings.company.name or t.company) }}</title>
+  <meta name="description" content="{{ seo.description | default(settings.company.name or t.company) }}">
+  {% if seo.canonical_url %}
+  <link rel="canonical" href="{{ seo.canonical_url }}">
+  {% endif %}
+  {% for alt in seo.alternate_urls | default([]) %}
+  <link rel="alternate" hreflang="{{ alt.lang }}" href="{{ alt.url }}">
+  {% endfor %}
+  <meta property="og:type" content="{{ seo.type | default('website') }}">
+  <meta property="og:title" content="{{ seo.title | default(settings.company.name or t.company) }}">
+  <meta property="og:description" content="{{ seo.description | default(settings.company.name or t.company) }}">
+  {% if seo.image %}
+  <meta property="og:image" content="{{ seo.image }}">
+  {% endif %}
+  {% if seo.canonical_url %}
+  <meta property="og:url" content="{{ seo.canonical_url }}">
+  {% endif %}
+  <meta property="og:site_name" content="{{ seo.site_name | default(settings.company.name or t.company) }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ seo.title | default(settings.company.name or t.company) }}">
+  <meta name="twitter:description" content="{{ seo.description | default(settings.company.name or t.company) }}">
+  {% if seo.image %}
+  <meta name="twitter:image" content="{{ seo.image }}">
+  {% endif %}
   <link rel="stylesheet" href="{{ base_url }}/static/css/main.css?v=20260615">
   <!-- Favicon: 优先使用店主上传的图片，无则回退到内联 SVG 占位 -->
   {% if settings.company.favicon %}
@@ -959,5 +981,8 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 
+{% for node in seo.json_ld | default([]) %}
+<script type="application/ld+json">{{ node | tojson }}</script>
+{% endfor %}
 </body>
 </html>

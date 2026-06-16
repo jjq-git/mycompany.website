@@ -19,7 +19,9 @@ import yaml as _yaml
 
 from . import datasets, style_registry
 from . import menu as menu_lib
-from .translator import is_configured as translation_configured, translate_json
+from .translator import (generate_seo_description,
+                         is_configured as translation_configured,
+                         translate_json)
 from .builder import build_site, build_template_preview
 from .db import db
 from .models import LoginToken, Site, Template, User
@@ -627,6 +629,338 @@ def overview():
                                user=user, site=site, counts=counts)
     return render_template('dashboard/overview.html',
                            user=user, site=site, counts=counts, active='overview')
+
+
+def _as_items(raw):
+    """把数据集 YAML 标准化成条目列表，健康检查只读不改原数据。"""
+    if isinstance(raw, list):
+        return raw
+    if isinstance(raw, dict):
+        items = raw.get('items', [])
+        return items if isinstance(items, list) else []
+    return []
+
+
+def _plain_text(value):
+    """把模块字段压成短文本，供 SEO 简介自动生成使用。"""
+    if value is None:
+        return ''
+    if isinstance(value, str):
+        return re.sub(r'<[^>]+>', ' ', value).strip()
+    if isinstance(value, (int, float)):
+        return str(value)
+    return ''
+
+
+def _auto_page_description(page):
+    """从页面模块内容生成简介。
+
+    这不是让店主手写 SEO，而是先从已有业务内容里抽取摘要；店主觉得不合适
+    时再手动改写。后续接入真正 AI 文案接口时，只需要替换这个函数。
+    """
+    if not isinstance(page, dict):
+        return ''
+    parts = []
+    for module in page.get('modules') or []:
+        data = module.get('data') if isinstance(module, dict) else {}
+        if not isinstance(data, dict):
+            continue
+        for key in ('desc', 'subtitle', 'summary', 'description', 'body', 'content', 'title'):
+            text = _plain_text(data.get(key))
+            if text:
+                parts.append(text)
+        if len(' '.join(parts)) >= 180:
+            break
+    text = re.sub(r'\s+', ' ', ' '.join(parts)).strip()
+    return text[:180].rstrip()
+
+
+def _page_text_for_seo(page):
+    """收集页面核心文本，作为 AI 生成 SEO 简介的上下文。"""
+    if not isinstance(page, dict):
+        return ''
+    parts = []
+    for module in page.get('modules') or []:
+        data = module.get('data') if isinstance(module, dict) else {}
+        if not isinstance(data, dict):
+            continue
+        for key in ('title', 'desc', 'subtitle', 'summary', 'description', 'body', 'content'):
+            text = _plain_text(data.get(key))
+            if text:
+                parts.append(text)
+        for value in data.values():
+            if isinstance(value, list):
+                for item in value[:8]:
+                    if not isinstance(item, dict):
+                        continue
+                    for key in ('title', 'desc', 'text', 'summary'):
+                        text = _plain_text(item.get(key))
+                        if text:
+                            parts.append(text)
+    return re.sub(r'\s+', ' ', ' '.join(parts)).strip()[:2200]
+
+
+def _seo_page_rows(site, lang, settings, pages, data, meta):
+    """返回弹框中要展示的页面行：只包含实际会生成 HTML 的菜单页面。"""
+    default_lang = site.default_language or 'zh-CN'
+    storage_lang = lang if lang != default_lang else None
+    tpl_html_dir = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'templates'
+    menu_items = menu_lib.filter_hidden_for_nav(
+        menu_lib.ensure_home(
+            menu_lib.normalize_for_render(
+                menu_lib.upgrade_old_format(settings.get('menu') or [], meta.get('datasets', []))
+            )
+        )
+    )
+    labels = {}
+    def collect_labels(items):
+        for item in items or []:
+            t = item.get('type')
+            if t == 'home':
+                labels['home'] = item.get('label') or 'Home'
+            elif t in ('page', 'list') and item.get('target'):
+                labels[item.get('target')] = item.get('label') or item.get('target')
+            if item.get('children'):
+                collect_labels(item.get('children') or [])
+    collect_labels(menu_items)
+    tasks = menu_lib.collect_render_tasks(menu_items, tpl_html_dir, data, pages)
+    rows = []
+    seen = set()
+    for task in tasks:
+        if task.get('type') not in ('home', 'page', 'list'):
+            continue
+        page_key = task.get('page_key')
+        if not page_key or page_key in seen or page_key not in pages:
+            continue
+        seen.add(page_key)
+        page = pages.get(page_key) if isinstance(pages.get(page_key), dict) else {}
+        auto_desc = _auto_page_description(page)
+        title = page.get('title') or labels.get(page_key) or task.get('page_key') or page_key
+        description = page.get('description') or ''
+        if description:
+            status = 'ok'
+            status_label = '已设置'
+            status_detail = '使用手动简介'
+        elif auto_desc:
+            status = 'auto'
+            status_label = '可自动生成'
+            status_detail = '可从页面内容生成简介'
+        else:
+            status = 'warn'
+            status_label = '缺少内容'
+            status_detail = '页面内容不足，建议手动填写'
+        rows.append({
+            'key': page_key,
+            'type': task.get('type'),
+            'title': title,
+            'description': description,
+            'auto_description': auto_desc,
+            'status': status,
+            'status_label': status_label,
+            'status_detail': status_detail,
+            'save_url': url_for('core.seo_page_update', page_key=page_key, site=site.id, lang=lang),
+            'generate_url': url_for('core.seo_page_generate', page_key=page_key, site=site.id, lang=lang),
+        })
+    return rows
+
+
+def _seo_health_report(site, lang=None):
+    """生成 SEO 健康检查报告。
+
+    这里检查的是店主能理解并能通过现有表单补齐的内容项；技术性 SEO
+    文件由构建器自动生成，只检查最近构建输出是否存在。
+    """
+    default_lang = site.default_language or 'zh-CN'
+    lang = lang or default_lang
+    storage_lang = lang if lang != default_lang else None
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    company = settings.get('company') or {}
+    tpl_html_dir = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'templates'
+    meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
+
+    checks = []
+
+    def add(status, title, detail, action_url=''):
+        checks.append({
+            'status': status,
+            'title': title,
+            'detail': detail,
+            'action_url': action_url,
+        })
+
+    if company.get('name'):
+        add('ok', '公司名称已填写', '页面标题、OG 站点名和结构化数据会使用公司名称。')
+    else:
+        add('warn', '缺少公司名称', '公司名称是全站 SEO 的基础字段。', url_for('core.company', site=site.id))
+
+    if company.get('logo'):
+        add('ok', 'Logo 已填写', '社交分享图和 Organization 结构化数据有默认图片。')
+    else:
+        add('warn', '缺少 Logo', '没有页面分享图时会缺少默认 OG 图片。', url_for('core.company', site=site.id))
+
+    if settings.get('slogan') or company.get('slogan') or company.get('description') or company.get('intro'):
+        add('ok', '站点简介已填写', '页面 description 缺省时可以回退到站点简介。')
+    else:
+        add('warn', '缺少站点简介', '建议在公司信息里补一句话简介，作为页面描述兜底。', url_for('core.company', site=site.id))
+
+    pages = {}
+    for page_file in list_yaml_files(site.id, 'pages', lang=storage_lang):
+        page_key = page_file.stem
+        pages[page_key] = read_yaml(site.id, f'pages/{page_file.name}', default={}, lang=storage_lang) or {}
+
+    data = {}
+    for data_file in list_yaml_files(site.id, 'data', lang=storage_lang):
+        dataset_key = data_file.stem
+        data[dataset_key] = read_yaml(site.id, f'data/{data_file.name}', default=[], lang=storage_lang)
+
+    seo_pages = _seo_page_rows(site, lang, settings, pages, data, meta)
+
+    # 只检查菜单会实际渲染的页面/详情页，避免把孤立草稿 YAML 当成 SEO 问题。
+    menu_items = menu_lib.filter_hidden_for_nav(
+        menu_lib.ensure_home(
+            menu_lib.normalize_for_render(
+                menu_lib.upgrade_old_format(settings.get('menu') or [], meta.get('datasets', []))
+            )
+        )
+    )
+    tasks = menu_lib.collect_render_tasks(menu_items, tpl_html_dir, data, pages)
+    checked_pages = set()
+    checked_items = set()
+    list_pages_without_description = []
+    for task in tasks:
+        page_key = task.get('page_key')
+        task_type = task.get('type')
+        if task_type in ('home', 'page', 'list') and page_key and page_key not in checked_pages:
+            checked_pages.add(page_key)
+            if page_key not in pages:
+                continue
+            page = pages.get(page_key, {})
+            if isinstance(page, dict) and not page.get('description'):
+                if task_type == 'list':
+                    list_pages_without_description.append(page_key)
+                else:
+                    add('warn', f'{page_key} 缺少页面简介', '建议补 80-160 字简介，用于 meta description 和分享摘要。',
+                        url_for('core.page_panel', page_key=page_key, site=site.id, lang=lang))
+
+        if task_type == 'detail':
+            item = task.get('item') if isinstance(task.get('item'), dict) else {}
+            dataset_key = task.get('dataset_key') or ''
+            item_key = (dataset_key, item.get('slug') or item.get('id') or item.get('title') or item.get('name'))
+            if item_key in checked_items:
+                continue
+            checked_items.add(item_key)
+            item_title = item.get('title') or item.get('name') or item.get('slug') or '未命名条目'
+            if not (item.get('summary') or item.get('description') or item.get('excerpt')):
+                add('warn', f'{dataset_key} / {item_title} 缺少摘要',
+                    '详情页 description 和 llms.txt 摘要会变弱，建议补一段简短说明。',
+                    url_for('core.dataset_panel', dataset_key=dataset_key, site=site.id, lang=lang))
+
+    if list_pages_without_description:
+        add('info', f'{len(list_pages_without_description)} 个列表页缺少简介',
+            '列表页会自动兜底；有时间时可给主要栏目补简介。')
+
+    image_alt_missing = 0
+    for task in tasks:
+        if task.get('type') != 'detail':
+            continue
+        item = task.get('item') if isinstance(task.get('item'), dict) else {}
+        image_value = item.get('image') or item.get('image_url') or item.get('cover') or item.get('thumbnail')
+        has_alt = item.get('alt') or item.get('image_alt') or item.get('imageAlt') or item.get('cover_alt')
+        if image_value and not has_alt:
+            image_alt_missing += 1
+    if image_alt_missing:
+        add('info', f'{image_alt_missing} 张详情页图片缺少 alt', '这是可选优化项，不影响自动 SEO 文件生成；有时间再补即可。')
+
+    output_root = Path(current_app.config['OUTPUT_DIR']) / str(site.id)
+    missing_output_files = []
+    for filename in ('sitemap.xml', 'robots.txt', 'llms.txt'):
+        path = output_root / filename
+        if path.exists() and path.stat().st_size > 0:
+            add('ok', f'{filename} 已生成', '最近一次构建输出中可以找到该文件。')
+        else:
+            missing_output_files.append(filename)
+    if missing_output_files:
+        add('warn', 'SEO 附属文件尚未生成', '点击预览、导出或发布后会自动生成 sitemap.xml、robots.txt 和 llms.txt。')
+
+    warn_count = sum(1 for c in checks if c['status'] == 'warn')
+    info_count = sum(1 for c in checks if c['status'] == 'info')
+    ok_count = sum(1 for c in checks if c['status'] == 'ok')
+    score = max(0, 100 - warn_count * 8 - info_count * 2)
+    return {
+        'score': score,
+        'ok_count': ok_count,
+        'warn_count': warn_count,
+        'info_count': info_count,
+        'checks': checks,
+        'pages': seo_pages,
+        'ai_configured': translation_configured(),
+    }
+
+
+@bp.route('/seo')
+def seo_health():
+    user, site = _current_context()
+    lang, languages, default_lang = _get_panel_lang(site)
+    report = _seo_health_report(site, lang=lang)
+    if request.args.get('_fragment'):
+        return render_template('dashboard/panel_seo.html', user=user, site=site, report=report,
+                               current_lang=lang, languages=languages, default_lang=default_lang)
+    return render_template('dashboard/seo.html', user=user, site=site, report=report, active='seo',
+                           current_lang=lang, languages=languages, default_lang=default_lang)
+
+
+@bp.route('/seo/page/<path:page_key>', methods=['POST'])
+def seo_page_update(page_key):
+    """保存单个页面的 SEO 标题/简介，供健康检查弹框使用。"""
+    _validate_key(page_key)
+    user, site = _current_context()
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    page = read_yaml(site.id, f'pages/{page_key}.yaml', default={}, lang=storage_lang) or {}
+    if not isinstance(page, dict):
+        page = {}
+    title = request.form.get('title', '').strip()
+    description = request.form.get('description', '').strip()
+    if title:
+        page['title'] = title
+    else:
+        page.pop('title', None)
+    if description:
+        page['description'] = description
+    else:
+        page.pop('description', None)
+    write_yaml(site.id, f'pages/{page_key}.yaml', page, lang=storage_lang)
+    return jsonify({'ok': True})
+
+
+@bp.route('/seo/page/<path:page_key>/generate', methods=['POST'])
+def seo_page_generate(page_key):
+    """从页面现有模块生成简介，返回给弹框填入 textarea。"""
+    _validate_key(page_key)
+    user, site = _current_context()
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = lang if lang != default_lang else None
+    page = read_yaml(site.id, f'pages/{page_key}.yaml', default={}, lang=storage_lang) or {}
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    company = settings.get('company') or {}
+    company_name = company.get('name') or settings.get('title') or site.name
+    page_title = page.get('title') or page_key
+    fallback = _auto_page_description(page) or (
+        settings.get('slogan') or company.get('slogan') or
+        company.get('description') or company.get('intro') or company.get('name') or ''
+    )
+    page_text = _page_text_for_seo(page) or fallback
+    if translation_configured():
+        try:
+            description = generate_seo_description(page_title, page_text, company_name=company_name, lang=lang)
+            return jsonify({'ok': True, 'description': description, 'source': 'ai'})
+        except Exception as exc:
+            current_app.logger.warning('AI 生成 SEO 简介失败，回退本地摘要: %s', exc)
+            return jsonify({'ok': True, 'description': fallback, 'source': 'fallback',
+                            'warning': f'AI 生成失败，已回退本地摘要: {exc}'})
+    return jsonify({'ok': True, 'description': fallback, 'source': 'fallback',
+                    'warning': 'AI 未配置，已使用本地摘要'})
 
 
 @bp.route('/company', methods=['GET', 'POST'])
@@ -2109,9 +2443,20 @@ def page_panel(page_key):
         page = read_yaml(site.id, f'pages/{page_key}.yaml', lang=storage_lang) or {}
         existing_modules = page.get('modules', [])
         page['modules'] = _parse_modules_form(request.form, existing_modules)
-        for k in list(page.keys()):
-            if k not in ('modules', 'module_list'):
-                page.pop(k, None)
+        # 页面级 SEO 信息和模块配置共用同一个保存按钮；保存模块时不能把
+        # title/description 清掉，否则健康检查引导填写后预览 head 仍然没有简介。
+        if 'page_title' in request.form:
+            title = request.form.get('page_title', '').strip()
+            if title:
+                page['title'] = title
+            else:
+                page.pop('title', None)
+        if 'page_description' in request.form:
+            description = request.form.get('page_description', '').strip()
+            if description:
+                page['description'] = description
+            else:
+                page.pop('description', None)
         write_yaml(site.id, f'pages/{page_key}.yaml', page, lang=storage_lang)
         flash('已保存')
         return redirect(url_for('core.page_panel', page_key=page_key, _fragment='1', site=site.id, lang=lang))

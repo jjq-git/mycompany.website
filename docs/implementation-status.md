@@ -99,6 +99,12 @@
 | Jinja2 静态渲染 | 完成 | builder 渲染所有页面为静态 HTML |
 | 模块排序 | 完成 | `page.modules` 按 `order` 排序后渲染 |
 | 菜单解析 | 完成 | `menu.py` 解析 `settings.menu` 的 `{type, target}` 为含 `url`/`active` 的导航 |
+| 页面级 SEO head | 完成 | 主题接入 `seo` 上下文，自动输出 canonical、hreflang、OG/Twitter |
+| sitemap.xml 生成 | 完成 | 构建时按渲染任务生成多语言 sitemap |
+| robots.txt 生成 | 完成 | 默认允许搜索/AI 爬虫，屏蔽 `_preview` |
+| llms.txt 生成 | 完成 | 从页面和数据集自动汇总站点摘要 |
+| JSON-LD 结构化数据 | 完成 | 自动输出 Organization/Product/Article/LocalBusiness/BreadcrumbList |
+| SEO 健康检查 | 完成 | 后台只读检查缺失标题、描述、摘要、图片 alt 和构建产物 |
 
 ### 未实现
 
@@ -108,10 +114,6 @@
 | 字体子集化 | fonttools/pyftsubset，按语言提取用到的字符 |
 | CDN 上传 | 阿里云 OSS + CDN 增量上传 |
 | 发布历史与回滚 | 版本快照 + 回滚机制 |
-| sitemap.xml 生成 | 含 hreflang 的多语言 sitemap |
-| robots.txt 生成 | 含 AI 爬虫显式放开的 robots |
-| llms.txt 生成 | AI 检索友好的结构化摘要 |
-| JSON-LD 结构化数据 | Organization/Product/Article/BreadcrumbList |
 | 导出 ZIP | 整站打包下载 |
 | 自定义 HTML 块 | 用户粘贴第三方代码 |
 | head 注入 | 百度统计/Google Analytics |

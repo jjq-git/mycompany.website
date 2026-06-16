@@ -305,7 +305,8 @@
               </svg>
               主题颜色
             </a>
-            <a class="left-nav-item" href="#" data-panel="seo" style="padding-left:32px" title="SEO 优化">
+            <a class="left-nav-item {% if active == 'seo' %}active{% endif %}" href="{{ url_for('core.seo_health') }}"
+              data-panel="seo" style="padding-left:32px" title="SEO 健康检查">
               <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8" />
@@ -314,9 +315,8 @@
                 <line x1="15" y1="12" x2="15" y2="7" />
                 <line x1="10" y1="7" x2="15" y2="7" />
               </svg>
-              SEO 优化
+              SEO 检查
             </a>
-
           </div>
         </div>
         <a class="left-nav-item {% if active == 'header' %}active{% endif %}" href="{{ url_for('core.header_edit') }}"

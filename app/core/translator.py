@@ -34,6 +34,21 @@ _TRANSLATE_PROMPT = """你是一个专业翻译助手。将以下 JSON 中的每
 翻译结果："""
 
 
+_SEO_DESCRIPTION_PROMPT = """你是展示型企业网站的 SEO 文案助手。请根据下面页面信息生成一条 meta description。
+
+要求：
+1. 只返回一句自然语言简介，不要解释，不要 markdown
+2. 语言必须使用 {lang}
+3. 中文控制在 60-90 个汉字；英文控制在 120-160 characters
+4. 不堆砌关键词，不夸大，不写"欢迎访问"
+5. 优先概括页面核心价值，让搜索结果和 AI 检索都容易理解
+
+站点/页面信息：
+{input_json}
+
+meta description："""
+
+
 # 单批输入 JSON 最大字符数：超过此阈值拆批。
 # 长文本页面（如 modules 13 个模块）单次请求的 prompt + 输出容易超出 max_tokens，
 # 拆成小批每批独立请求，最后合并结果。
@@ -294,3 +309,73 @@ def _translate_one_batch(api_key, api_base, model, batch, source_lang, target_la
 def is_configured():
     """检查翻译服务是否已配置."""
     return bool(current_app.config.get('TRANSLATION_API_KEY', ''))
+
+
+def generate_seo_description(page_title, page_text, company_name='', lang='zh-CN'):
+    """调用 AI 生成页面 SEO 简介。
+
+    复用翻译服务的 DeepSeek / OpenAI 兼容配置，避免为 SEO 另起一套 API。
+    返回纯文本 description；未配置或调用失败时由调用方决定是否回退。
+    """
+    lang = _validate_lang(lang, 'lang')
+    api_key = current_app.config.get('TRANSLATION_API_KEY', '')
+    if not api_key:
+        raise ValueError('TRANSLATION_API_KEY 未配置，请在 .env 中设置')
+
+    api_base = current_app.config.get('TRANSLATION_API_BASE', 'https://api.deepseek.com/v1')
+    model = current_app.config.get('TRANSLATION_MODEL', 'deepseek-chat')
+    input_json = json.dumps({
+        'company': str(company_name or '').strip(),
+        'page_title': str(page_title or '').strip(),
+        'page_content': str(page_text or '').strip()[:2200],
+    }, ensure_ascii=False, indent=2)
+    prompt = _SEO_DESCRIPTION_PROMPT.format(lang=lang, input_json=input_json)
+
+    payload = json.dumps({
+        'model': model,
+        'messages': [
+            {'role': 'system', 'content': '你是专业 SEO 文案助手，只输出一条 meta description。'},
+            {'role': 'user', 'content': prompt},
+        ],
+        'temperature': 0.4,
+        'max_tokens': 220,
+    }, ensure_ascii=False).encode('utf-8')
+
+    url = f'{api_base.rstrip("/")}/chat/completions'
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json',
+        },
+        method='POST',
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            raw = resp.read().decode('utf-8')
+            data = json.loads(raw)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode('utf-8', errors='replace') if e.fp else ''
+        logger.error('SEO 生成 API HTTP %s: %s', e.code, body[:300])
+        raise RuntimeError(f'SEO 生成服务返回错误 ({e.code})')
+    except urllib.error.URLError as e:
+        logger.error('SEO 生成 API 网络错误: %s', e.reason)
+        raise RuntimeError(f'SEO 生成服务连接失败: {e.reason}')
+    except json.JSONDecodeError:
+        logger.error('SEO 生成 API 响应 JSON 解析失败')
+        raise RuntimeError('SEO 生成服务返回格式异常')
+
+    content = data['choices'][0]['message']['content'].strip()
+    if content.startswith('```'):
+        lines = content.split('\n')
+        if lines[0].startswith('```'):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == '```':
+            lines = lines[:-1]
+        content = '\n'.join(lines).strip()
+
+    content = content.strip().strip('"').strip("'").strip()
+    # 兜底裁剪：模型偶尔会超长，保存前压到搜索结果可接受范围。
+    return content[:180].rstrip()
