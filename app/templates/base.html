@@ -317,6 +317,16 @@
               </svg>
               SEO 检查
             </a>
+            <a class="left-nav-item {% if active == 'media' %}active{% endif %}" href="{{ url_for('core.media') }}"
+              data-panel="media" style="padding-left:32px" title="媒体管理">
+              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                <path d="M8 14l2.5-2.5L13 14l2-2 3 3" />
+                <circle cx="8" cy="10" r="1" />
+              </svg>
+              媒体管理
+            </a>
           </div>
         </div>
         <a class="left-nav-item {% if active == 'header' %}active{% endif %}" href="{{ url_for('core.header_edit') }}"
@@ -1189,7 +1199,7 @@
       activeTabKey = key;
       renderPreviewTabs();
       updatePreviewUrlBar(url);
-      setPreviewChromeMode(key === 'seo');
+      setPreviewChromeMode(key === 'seo' || key === 'media');
       var frame = document.getElementById('previewFrame');
       if (frame) {
         frame.dataset.previewUrl = url;
@@ -1448,6 +1458,26 @@
         if (seoPanelFooter) seoPanelFooter.style.display = 'none';
         var seoPanel = document.getElementById('rightPanel');
         if (seoPanel && !seoPanel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
+          togglePanelCollapse();
+        }
+        return;
+      }
+      if (link.dataset.panel === 'media') {
+        var mediaSiteParam = currentSiteParam();
+        var mediaQuery = [];
+        if (mediaSiteParam) mediaQuery.push('site=' + encodeURIComponent(mediaSiteParam));
+        var mediaUrl = '{{ url_for("core.media_workspace") }}' + (mediaQuery.length ? '?' + mediaQuery.join('&') : '');
+        openPreviewTab('media', '媒体管理', mediaUrl);
+        var mediaPanelTitle = document.getElementById('rightPanelTitle');
+        var mediaPanelBody = document.getElementById('rightPanelBody');
+        var mediaPanelFooter = document.getElementById('rightPanelFooter');
+        if (mediaPanelTitle) mediaPanelTitle.textContent = '媒体管理';
+        if (mediaPanelBody) {
+          mediaPanelBody.innerHTML = '<div class="p-3 text-muted small">媒体管理已在中间栏打开。</div>';
+        }
+        if (mediaPanelFooter) mediaPanelFooter.style.display = 'none';
+        var mediaPanel = document.getElementById('rightPanel');
+        if (mediaPanel && !mediaPanel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
           togglePanelCollapse();
         }
         return;

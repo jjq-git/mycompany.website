@@ -42,7 +42,7 @@
 2. 网页包可以作为独立资源类型处理，保存到 `sites/<id>/assets/media-packages/<package_name>/`。
 3. 后端不需要解析 WASM，只需要注册 `.wasm` MIME 并安全托管静态文件。
 4. 当前内容主要存储在 YAML 中，引用检测可以先用字符串扫描实现。
-5. 后台已有左侧菜单、fragment 面板加载、独立 CSS、模态框、上传接口等模式，可以复用现有实现风格。
+5. 后台已有类似 SEO 检查的中间栏 workspace、左侧菜单、独立 CSS、模态框、上传接口等模式，可以复用现有实现风格。
 
 主要风险是文件安全和引用完整性：
 
@@ -55,7 +55,7 @@
 
 第一阶段建议包含：
 
-1. 媒体管理菜单与面板。
+1. 媒体管理菜单与中间栏工作台。
 2. 图片、视频、文档、其他普通文件的列表、上传、预览、下载、重命名、删除。
 3. 网页包 zip 上传、解压、列表展示和 iframe 预览。
 4. 重命名/删除前的引用检测；只有引用数为 0 时才允许继续操作。
@@ -75,7 +75,8 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `app/templates/dashboard/panel_media.html` | 媒体管理面板片段，包含文件网格、分类标签、上传区、预览浮层、重命名模态框 |
+| `app/templates/dashboard/media_workspace.html` | 媒体管理中间栏工作台页面，类似 SEO 检查，用于在中间 iframe 中打开 |
+| `app/templates/dashboard/panel_media.html` | 媒体管理内容片段，包含文件网格、分类标签、上传区、右侧预览卡片、重命名模态框 |
 | `app/templates/dashboard/media.html` | 媒体管理完整页面，继承 `base.html`，用于直接访问或刷新 |
 | `app/templates/dashboard/media_package_viewer.html` | 网页包预览容器页，使用 iframe 加载已解压网页包的 `index.html` |
 | `app/static/css/admin-media.css` | 媒体管理专用样式，沿用 `admin-seo.css` 的独立 CSS 模式 |
@@ -85,8 +86,8 @@
 | 文件 | 改动 |
 | --- | --- |
 | `app/core/site_storage.py` | 新增媒体文件扫描、路径校验、重命名、删除、引用检测相关函数 |
-| `app/core/routes.py` | 新增媒体管理页面路由、API、网页包静态路由、上传辅助函数和 `.wasm` MIME 注册 |
-| `app/templates/base.html` | 在「网站设置」子菜单中插入「媒体管理」导航项 |
+| `app/core/routes.py` | 新增媒体管理 workspace/页面路由、API、网页包静态路由、上传辅助函数和 `.wasm` MIME 注册 |
+| `app/templates/base.html` | 在「网站设置」子菜单中插入「媒体管理」导航项，并点击后打开中间栏 workspace |
 
 ## 数据与目录设计
 
@@ -174,7 +175,20 @@ sites/5/assets/media-packages/rimu_web000/
 
 ### `routes.py`
 
-新增媒体管理页面：
+新增媒体管理中间栏工作台：
+
+```text
+GET /media/workspace
+```
+
+行为：
+
+1. 渲染独立页面 `media_workspace.html`，类似 `seo_workspace.html`。
+2. 页面在后台中间栏 iframe 中打开，不占用右侧编辑栏。
+3. 注入 `files` 列表到模板。
+4. 页面内包含 CSRF meta 和 fetch CSRF 包装，保证上传、重命名、删除 API 可用。
+
+保留媒体管理普通页面：
 
 ```text
 GET /media
@@ -182,10 +196,9 @@ GET /media
 
 行为：
 
-1. 沿用 `_fragment=1` 模式。
-2. fragment 请求渲染 `panel_media.html`。
-3. 普通请求渲染 `media.html`。
-4. 注入 `files` 列表到模板。
+1. `_fragment=1` 时渲染 `panel_media.html`，作为可复用内容片段。
+2. 普通请求渲染 `media.html`，用于直接访问或刷新兜底。
+3. 注入 `files` 列表到模板。
 
 新增引用查询 API：
 
@@ -274,16 +287,23 @@ mimetypes.add_type("application/wasm", ".wasm")
 
 ## 前端设计
 
-### 面板布局
+### 中间栏布局
 
-`panel_media.html` 建议结构：
+`media_workspace.html` 作为中间栏工作台页面，内部复用 `panel_media.html`。建议结构：
+
+```text
+工作台主体：
+  panel_media.html
+```
+
+`panel_media.html` 内容片段结构：
 
 ```text
 媒体管理
 分类标签：全部 / 图片 / 视频 / 网页包 / 文档 / 其他
 上传区：拖拽文件到此处或点击上传
 文件网格：缩略图、名称、大小、类型、操作按钮
-预览浮层：图片、视频、PDF、文本、网页包 iframe
+右侧预览卡片：图片、视频、PDF、文本、网页包 iframe
 重命名模态框：新名称、引用占用提示、确认按钮
 ```
 
@@ -298,19 +318,19 @@ mimetypes.add_type("application/wasm", ".wasm")
 
 | 类型 | 预览方式 |
 | --- | --- |
-| 图片 | `<img>` 灯箱 |
-| 视频 | `<video controls>` |
-| 网页包 | `<iframe src="/media-packages/<package_name>/">` |
-| PDF | `<iframe>` |
-| JS/CSS/TXT | `fetch()` 后放入 `<pre><code>` |
-| 其他 | 元信息卡片 + 下载按钮 |
+| 图片 | 右侧预览卡片内 `<img>` |
+| 视频 | 右侧预览卡片内 `<video controls>` |
+| 网页包 | 右侧预览卡片内 `<iframe src="/media-packages/<package_name>/">` |
+| PDF | 右侧预览卡片内 `<iframe>` |
+| JS/CSS/TXT | 右侧预览卡片内 `fetch()` 后放入 `<pre><code>` |
+| 其他 | 右侧预览卡片内显示元信息 + 下载按钮 |
 
 网页包预览必须由包内 `index.html` 自己加载 `main.js`、`main.wasm` 和其他资源，不在后台页面里手写 Emscripten `Module`，也不直接解析 `.wasm`。
 
 ### 核心交互
 
 1. 点击分类标签，在客户端切换卡片显示。
-2. 点击卡片或预览按钮，打开预览浮层。
+2. 点击卡片或预览按钮，在右侧预览卡片中展示资源，不弹框。
 3. 点击重命名，先调用 `GET /api/media/references`。
 4. 如果没有引用，打开重命名模态框；如果已有引用，展示引用路径并禁止重命名。
 5. 点击删除，先调用 `GET /api/media/references`；如果已有引用，展示引用路径并禁止删除。
@@ -323,12 +343,11 @@ mimetypes.add_type("application/wasm", ".wasm")
 
 1. `filterByCategory(cat)`：分类过滤。
 2. `previewFile(filename, category)`：按类型选择预览方式。
-3. `closePreview()`：关闭预览浮层。
-4. `renameFile(oldName)`：打开重命名模态框。
-5. `submitRename()`：提交重命名请求。
-6. `deleteFile(filename)`：引用检测、未引用确认、删除。
-7. `initUploadZone()`：拖拽上传绑定。
-8. `initCardEvents()`：卡片事件委托。
+3. `renameFile(oldName)`：打开重命名模态框。
+4. `submitRename()`：提交重命名请求。
+5. `deleteFile(filename)`：引用检测、未引用确认、删除。
+6. `initUploadZone()`：拖拽上传绑定。
+7. `initCardEvents()`：卡片事件委托。
 
 ### CSS
 
@@ -358,7 +377,11 @@ grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
 </a>
 ```
 
-点击后沿用现有 sidebar click handler，通过 `loadPanel(href + '?_fragment=1')` 加载面板片段。
+点击后按 SEO 检查的方式处理：
+
+1. 调用 `openPreviewTab('media', '媒体管理', url_for('core.media_workspace'))`。
+2. 在中间栏 iframe 中打开媒体管理工作台。
+3. 右侧编辑栏只显示“媒体管理已在中间栏打开”的提示并折叠。
 
 ## 引用影响处理
 
@@ -385,23 +408,25 @@ grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
 1. 在 `routes.py` 注册 `.wasm` MIME。
 2. 在 `site_storage.py` 新增媒体扫描、路径校验、引用检测、重命名、删除函数。
 3. 在 `routes.py` 新增 `_save_any_file()` 和 `_save_media_package()`。
-4. 新增 `/media` 页面路由。
-5. 新增 `/api/media/references`、`/api/media/upload`、`/api/media/rename`、`/api/media/delete`。
-6. 新增 `/media-packages/<package_name>/` 和 `/media-packages/<package_name>/<path:filename>`。
-7. 创建 `admin-media.css`。
-8. 创建 `panel_media.html`。
-9. 创建 `media.html`。
-10. 创建 `media_package_viewer.html`，如确认无需单独容器页，可延后。
-11. 修改 `base.html`，添加侧边栏入口。
-12. 做集成测试。
+4. 新增 `/media/workspace` 中间栏工作台路由。
+5. 保留 `/media` 页面/片段路由。
+6. 新增 `/api/media/references`、`/api/media/upload`、`/api/media/rename`、`/api/media/delete`。
+7. 新增 `/media-packages/<package_name>/` 和 `/media-packages/<package_name>/<path:filename>`。
+8. 创建 `admin-media.css`。
+9. 创建 `media_workspace.html`。
+10. 创建 `panel_media.html`。
+11. 创建 `media.html`。
+12. 创建 `media_package_viewer.html`，如确认无需单独容器页，可延后。
+13. 修改 `base.html`，添加侧边栏入口，并改为中间栏打开。
+14. 做集成测试。
 
 ## 验证方法
 
 1. 启动 `python run.py`，登录后台并选择站点。
-2. 点击左侧「媒体管理」，确认面板加载成功。
+2. 点击左侧「媒体管理」，确认中间栏打开媒体管理工作台，右侧编辑栏折叠或只显示提示。
 3. 确认普通上传文件和网页包能正确出现在列表。
 4. 点击分类标签，确认过滤正常。
-5. 点击图片文件，确认灯箱预览正常。
+5. 点击图片文件，确认右侧预览卡片显示图片。
 6. 点击视频文件，确认播放器预览正常。
 7. 点击 PDF 或文本文件，确认预览或下载正常。
 8. 上传普通文件，确认文件出现在网格中。

@@ -1,0 +1,331 @@
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-media.css') }}?v=1">
+
+<div class="media-panel" id="mediaPanel">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <span class="fw-semibold">媒体管理</span>
+    <span class="media-count">{{ files|length }} 个资源</span>
+  </div>
+
+  <div class="media-tabs" role="tablist" aria-label="媒体分类">
+    <button class="media-tab active" type="button" data-media-filter="all">全部</button>
+    <button class="media-tab" type="button" data-media-filter="image">图片</button>
+    <button class="media-tab" type="button" data-media-filter="video">视频</button>
+    <button class="media-tab" type="button" data-media-filter="package">网页包</button>
+    <button class="media-tab" type="button" data-media-filter="document">文档</button>
+    <button class="media-tab" type="button" data-media-filter="other">其他</button>
+  </div>
+
+  <label class="media-upload-zone" id="mediaUploadZone">
+    <input type="file" id="mediaUploadInput" hidden>
+    <span class="media-upload-icon">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+    </span>
+    <span class="media-upload-text">拖拽文件到此处或点击上传</span>
+    <span class="media-upload-hint">支持图片、视频、文档；包含 index.html 的 zip 会作为网页包处理</span>
+  </label>
+  <div class="media-status" id="mediaStatus" hidden></div>
+
+  <div class="media-manager-layout">
+    <div class="media-list-pane">
+      <div class="media-grid" id="mediaGrid">
+        {% for file in files %}
+          <article class="media-card" data-category="{{ file.category }}" data-name="{{ file.api_name }}" data-display-name="{{ file.display_name }}" data-url="{{ file.url }}" data-ext="{{ file.ext }}" data-is-package="{{ '1' if file.is_package else '0' }}" data-size="{{ file.size_display }}" data-category-label="{{ file.category_label }}">
+            <button class="media-thumb" type="button" data-action="preview" title="预览">
+              {% if file.category == 'image' %}
+                <img src="{{ file.url }}" alt="{{ file.display_name }}" loading="lazy">
+              {% elif file.category == 'video' %}
+                <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              {% elif file.category == 'package' %}
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8h18"/><path d="M8 13l-2 2 2 2"/><path d="M16 13l2 2-2 2"/><path d="M13 12l-2 6"/></svg>
+              {% elif file.category == 'document' %}
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h6"/></svg>
+              {% else %}
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              {% endif %}
+            </button>
+            <div class="media-card-body">
+              <div class="media-name" title="{{ file.display_name }}">{{ file.display_name }}</div>
+              <div class="media-meta">
+                <span>{{ file.category_label }}</span>
+                <span>{{ file.size_display }}</span>
+              </div>
+            </div>
+            <div class="media-actions">
+              <button type="button" class="media-action" data-action="preview" title="预览" aria-label="预览">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+              <button type="button" class="media-action" data-action="rename" title="重命名" aria-label="重命名">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+              </button>
+              <a class="media-action" href="{{ file.url }}" download title="下载" aria-label="下载">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+              </a>
+              <button type="button" class="media-action media-action-danger" data-action="delete" title="删除" aria-label="删除">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+              </button>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+
+      <div class="media-empty" id="mediaEmpty" {% if files %}hidden{% endif %}>暂无媒体文件</div>
+    </div>
+
+    <aside class="media-preview-card" aria-label="媒体预览">
+      <div class="media-preview-head">
+        <div>
+          <div class="media-preview-label">预览</div>
+          <div class="media-preview-title" id="mediaPreviewTitle">选择一个资源</div>
+        </div>
+      </div>
+      <div class="media-preview-body" id="mediaPreviewBody">
+        <div class="media-preview-placeholder">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          <div>点击左侧资源进行预览</div>
+        </div>
+      </div>
+      <div class="media-preview-info" id="mediaPreviewInfo" hidden>
+        <div><span>类型</span><strong data-preview-type></strong></div>
+        <div><span>大小</span><strong data-preview-size></strong></div>
+        <div><span>路径</span><code data-preview-url></code></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="media-modal" id="mediaRenameModal" hidden>
+  <div class="media-modal-dialog">
+    <div class="media-modal-title">重命名</div>
+    <input class="form-control form-control-sm" id="mediaRenameInput" autocomplete="off">
+    <div class="media-ref-warning" id="mediaRenameWarning" hidden></div>
+    <div class="d-flex gap-2 justify-content-end mt-3">
+      <button class="btn btn-sm btn-light" type="button" data-rename-cancel>取消</button>
+      <button class="btn btn-sm btn-primary" type="button" data-rename-submit>保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var panel = document.getElementById('mediaPanel');
+  if (!panel) return;
+  var grid = document.getElementById('mediaGrid');
+  var empty = document.getElementById('mediaEmpty');
+  var status = document.getElementById('mediaStatus');
+  var uploadZone = document.getElementById('mediaUploadZone');
+  var uploadInput = document.getElementById('mediaUploadInput');
+  var previewTitle = document.getElementById('mediaPreviewTitle');
+  var previewBody = document.getElementById('mediaPreviewBody');
+  var previewInfo = document.getElementById('mediaPreviewInfo');
+  var renameModal = document.getElementById('mediaRenameModal');
+  var renameInput = document.getElementById('mediaRenameInput');
+  var renameWarning = document.getElementById('mediaRenameWarning');
+  var renameTarget = null;
+
+  function setStatus(text, type) {
+    if (!status) return;
+    status.hidden = !text;
+    status.textContent = text || '';
+    status.className = 'media-status ' + (type ? 'media-status-' + type : '');
+  }
+
+  function siteQuery() {
+    var params = new URLSearchParams(window.location.search);
+    var site = params.get('site') || '{{ site.id }}';
+    return site ? '?site=' + encodeURIComponent(site) : '';
+  }
+
+  function refreshPanel() {
+    if (typeof loadPanel === 'function') {
+      return loadPanel('{{ url_for("core.media") }}?_fragment=1&site={{ site.id }}');
+    }
+    window.location.reload();
+  }
+
+  function references(name) {
+    return fetch('/api/media/references?filename=' + encodeURIComponent(name) + '&site={{ site.id }}')
+      .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); });
+  }
+
+  function refsHtml(refs) {
+    return '<div class="mb-1">该资源正在被引用，不能重命名或删除。</div><ul>' +
+      refs.map(function(ref) { return '<li>' + String(ref).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }) + '</li>'; }).join('') +
+      '</ul>';
+  }
+
+  function preview(card) {
+    var category = card.dataset.category;
+    var url = card.dataset.url;
+    var name = card.dataset.displayName;
+    var ext = (card.dataset.ext || '').toLowerCase();
+    grid.querySelectorAll('.media-card').forEach(function(item) { item.classList.toggle('active', item === card); });
+    previewTitle.textContent = name;
+    previewBody.innerHTML = '';
+    previewInfo.hidden = false;
+    previewInfo.querySelector('[data-preview-type]').textContent = card.dataset.categoryLabel || category;
+    previewInfo.querySelector('[data-preview-size]').textContent = card.dataset.size || '';
+    previewInfo.querySelector('[data-preview-url]').textContent = url;
+    if (category === 'image') {
+      previewBody.innerHTML = '<img class="media-preview-image" src="' + url + '" alt="">';
+    } else if (category === 'video') {
+      previewBody.innerHTML = '<video class="media-preview-video" src="' + url + '" controls></video>';
+    } else if (category === 'package' || ext === 'pdf') {
+      previewBody.innerHTML = '<iframe class="media-preview-frame" src="' + url + '"></iframe>';
+    } else if (['txt', 'css', 'js', 'json', 'csv'].indexOf(ext) >= 0) {
+      previewBody.innerHTML = '<pre class="media-preview-text">加载中...</pre>';
+      fetch(url).then(function(r) { return r.text(); }).then(function(text) {
+        previewBody.querySelector('pre').textContent = text;
+      }).catch(function() {
+        previewBody.querySelector('pre').textContent = '无法预览该文件';
+      });
+    } else {
+      previewBody.innerHTML = '<div class="media-preview-fallback"><div>' + name + '</div><a class="btn btn-sm btn-primary mt-2" href="' + url + '" download>下载文件</a></div>';
+    }
+  }
+
+  function beginRename(card) {
+    var name = card.dataset.name;
+    references(name).then(function(result) {
+      var refs = result.data.refs || [];
+      if (refs.length) {
+        setStatus('该资源正在被引用，不能重命名。', 'danger');
+        renameTarget = null;
+        renameInput.value = card.dataset.displayName || '';
+        renameWarning.innerHTML = refsHtml(refs);
+        renameWarning.hidden = false;
+        renameModal.hidden = false;
+        renameInput.disabled = true;
+        renameModal.querySelector('[data-rename-submit]').disabled = true;
+        return;
+      }
+      renameTarget = card;
+      renameInput.disabled = false;
+      renameModal.querySelector('[data-rename-submit]').disabled = false;
+      renameInput.value = card.dataset.isPackage === '1' ? card.dataset.displayName : card.dataset.displayName;
+      renameWarning.hidden = true;
+      renameWarning.innerHTML = '';
+      renameModal.hidden = false;
+      renameInput.focus();
+      renameInput.select();
+    });
+  }
+
+  function submitRename() {
+    if (!renameTarget) return;
+    var newName = renameInput.value.trim();
+    if (!newName) return;
+    fetch('/api/media/rename?site={{ site.id }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ old_name: renameTarget.dataset.name, new_name: newName })
+    }).then(function(r) {
+      return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+    }).then(function(result) {
+      if (!result.ok || result.data.ok === false) {
+        if (result.data.refs && result.data.refs.length) {
+          renameWarning.innerHTML = refsHtml(result.data.refs);
+          renameWarning.hidden = false;
+        }
+        throw new Error(result.data.error || '重命名失败');
+      }
+      renameModal.hidden = true;
+      setStatus('已重命名', 'success');
+      refreshPanel();
+    }).catch(function(err) {
+      setStatus(err.message || '重命名失败', 'danger');
+    });
+  }
+
+  function deleteCard(card) {
+    var name = card.dataset.name;
+    references(name).then(function(result) {
+      var refs = result.data.refs || [];
+      if (refs.length) {
+        setStatus('该资源正在被引用，不能删除。', 'danger');
+        previewTitle.textContent = '资源被引用';
+        previewBody.innerHTML = '<div class="media-ref-warning">' + refsHtml(refs) + '</div>';
+        previewInfo.hidden = true;
+        return;
+      }
+      if (!confirm('确定删除这个资源？')) return;
+      return fetch('/api/media/delete?site={{ site.id }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: name })
+      }).then(function(r) {
+        return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+      }).then(function(result) {
+        if (!result.ok || result.data.ok === false) throw new Error(result.data.error || '删除失败');
+        card.remove();
+        setStatus('已删除', 'success');
+        if (!grid.querySelector('.media-card')) empty.hidden = false;
+      });
+    }).catch(function(err) {
+      setStatus(err.message || '删除失败', 'danger');
+    });
+  }
+
+  function upload(file) {
+    if (!file) return;
+    var fd = new FormData();
+    fd.append('file', file);
+    setStatus('正在上传...', 'muted');
+    fetch('/api/media/upload?site={{ site.id }}', { method: 'POST', body: fd })
+      .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+      .then(function(result) {
+        if (!result.ok || result.data.ok === false) throw new Error(result.data.error || '上传失败');
+        setStatus('上传成功', 'success');
+        refreshPanel();
+      })
+      .catch(function(err) { setStatus(err.message || '上传失败', 'danger'); });
+  }
+
+  panel.querySelectorAll('.media-tab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      panel.querySelectorAll('.media-tab').forEach(function(item) { item.classList.remove('active'); });
+      btn.classList.add('active');
+      var filter = btn.dataset.mediaFilter;
+      var visible = 0;
+      grid.querySelectorAll('.media-card').forEach(function(card) {
+        var show = filter === 'all' || card.dataset.category === filter;
+        card.hidden = !show;
+        if (show) visible++;
+      });
+      empty.hidden = visible > 0;
+    });
+  });
+
+  grid.addEventListener('click', function(e) {
+    var actionEl = e.target.closest('[data-action]');
+    if (!actionEl) return;
+    var card = e.target.closest('.media-card');
+    if (!card) return;
+    var action = actionEl.dataset.action;
+    if (action === 'preview') preview(card);
+    if (action === 'rename') beginRename(card);
+    if (action === 'delete') deleteCard(card);
+  });
+
+  uploadZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    uploadZone.classList.add('is-dragover');
+  });
+  uploadZone.addEventListener('dragleave', function() {
+    uploadZone.classList.remove('is-dragover');
+  });
+  uploadZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    uploadZone.classList.remove('is-dragover');
+    upload(e.dataTransfer.files && e.dataTransfer.files[0]);
+  });
+  uploadInput.addEventListener('change', function() {
+    upload(uploadInput.files && uploadInput.files[0]);
+    uploadInput.value = '';
+  });
+
+  renameModal.querySelector('[data-rename-cancel]').addEventListener('click', function() {
+    renameModal.hidden = true;
+  });
+  renameModal.querySelector('[data-rename-submit]').addEventListener('click', submitRename);
+})();
+</script>

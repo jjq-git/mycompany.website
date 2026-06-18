@@ -4,7 +4,9 @@ MVP 登录：邮箱魔法链接，不存密码。开发环境默认把登录链�
 并在页面提示中展示，方便本地调试；接入邮件服务后替换发送逻辑即可。
 """
 import hashlib
+import mimetypes
 import secrets
+import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -26,9 +28,15 @@ from .builder import build_site, build_template_preview
 from .db import db
 from .models import LoginToken, Site, Template, User
 from .site_storage import (copy_seed_data, init_site_folder, lang_root,
-                            list_yaml_files, read_yaml, write_yaml)
+                            list_media_files, list_yaml_files, read_yaml,
+                            rename_media_file, delete_media_file,
+                            find_media_references, is_media_package_token,
+                            media_package_name_from_token, media_package_token,
+                            write_yaml)
 
 bp = Blueprint('core', __name__)
+
+mimetypes.add_type('application/wasm', '.wasm')
 
 def _hex_to_rgb(hex_color):
     """将 #rrggbb 转为 (r, g, b) 整数元组；无效输入返回黑色 (0, 0, 0)."""
@@ -61,6 +69,13 @@ def _lighten(hex_color, factor=0.1):
     )
 ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'}
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'ogg', 'mov'}
+ALLOWED_FILE_EXTENSIONS = ALLOWED_IMAGE_EXTENSIONS | ALLOWED_VIDEO_EXTENSIONS | {
+    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'zip'
+}
+MAX_GENERIC_FILE_BYTES = 32 * 1024 * 1024
+MAX_MEDIA_PACKAGE_BYTES = 64 * 1024 * 1024
+MAX_MEDIA_PACKAGE_UNCOMPRESSED_BYTES = 96 * 1024 * 1024
+MAX_MEDIA_PACKAGE_DEPTH = 10
 
 
 AUTH_EXEMPT_ENDPOINTS = {
@@ -73,6 +88,8 @@ AUTH_EXEMPT_ENDPOINTS = {
     # site_asset 免登录：路由内部通过 session / Referer 自行定位资源目录，
     # 模板预览（无站点归属）也需要访问 seed_data/assets 下的资源。
     'core.site_asset',
+    'core.media_package_index',
+    'core.media_package_asset',
 }
 
 
@@ -200,6 +217,132 @@ def _save_uploaded_media(site_id, file_storage, prefix='media'):
     output_path = uploads_dir / filename
     file_storage.save(output_path)
     return f'/assets/uploads/{filename}'
+
+
+def _save_any_file(site_id, file_storage, prefix='file'):
+    """保存普通文件到 assets/uploads，图片/视频之外的文档等走这里。"""
+    if not file_storage or not file_storage.filename:
+        return ''
+    original = secure_filename(file_storage.filename)
+    if not original:
+        raise ValueError('文件名无效')
+    suffix = original.rsplit('.', 1)[-1].lower() if '.' in original else ''
+    if suffix not in ALLOWED_FILE_EXTENSIONS or suffix in ALLOWED_IMAGE_EXTENSIONS or suffix in ALLOWED_VIDEO_EXTENSIONS:
+        raise ValueError('不支持的文件类型')
+    _check_upload_size(file_storage, MAX_GENERIC_FILE_BYTES, label='文件')
+
+    uploads_dir = Path(current_app.config['SITES_DIR']) / str(site_id) / 'assets' / 'uploads'
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+    safe_prefix = secure_filename(prefix or 'file') or 'file'
+    stem = Path(original).stem
+    safe_stem = secure_filename(stem) or safe_prefix
+    filename = f"{safe_prefix}-{safe_stem}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(4)}.{suffix}"
+    output_path = uploads_dir / filename
+    file_storage.save(output_path)
+    return f'/assets/uploads/{filename}'
+
+
+def _safe_zip_member_name(name):
+    name = (name or '').replace('\\', '/').strip('/')
+    if not name or name.startswith('.') or '\x00' in name:
+        raise ValueError('网页包中包含非法文件名')
+    path = Path(name)
+    if path.is_absolute() or any(part in ('', '.', '..') or part.startswith('.') for part in path.parts):
+        raise ValueError('网页包中包含非法路径')
+    if len(path.parts) > MAX_MEDIA_PACKAGE_DEPTH:
+        raise ValueError('网页包目录层级过深')
+    return name
+
+
+def _zip_strip_root(member_names):
+    first_parts = [Path(name).parts for name in member_names]
+    if not first_parts:
+        return ''
+    first = first_parts[0][0]
+    if all(len(parts) > 1 and parts[0] == first for parts in first_parts):
+        return first
+    return ''
+
+
+def _save_media_package(site_id, file_storage):
+    """保存并解压网页包 zip，返回 {name, url, entry_url, category}。"""
+    if not file_storage or not file_storage.filename:
+        raise ValueError('请选择网页包 zip 文件')
+    original = secure_filename(file_storage.filename)
+    suffix = original.rsplit('.', 1)[-1].lower() if '.' in original else ''
+    if suffix != 'zip':
+        raise ValueError('网页包必须是 zip 文件')
+    _check_upload_size(file_storage, MAX_MEDIA_PACKAGE_BYTES, label='网页包')
+
+    try:
+        archive = zipfile.ZipFile(file_storage.stream)
+    except zipfile.BadZipFile as exc:
+        raise ValueError('zip 文件无法读取') from exc
+
+    with archive:
+        infos = [info for info in archive.infolist() if not info.is_dir()]
+        if not infos:
+            raise ValueError('网页包不能为空')
+        total_size = 0
+        names = []
+        for info in infos:
+            total_size += info.file_size
+            if total_size > MAX_MEDIA_PACKAGE_UNCOMPRESSED_BYTES:
+                raise ValueError('网页包解压后体积过大')
+            names.append(_safe_zip_member_name(info.filename))
+
+        strip_root = _zip_strip_root(names)
+        normalized = []
+        for name in names:
+            parts = Path(name).parts
+            if strip_root:
+                parts = parts[1:]
+            if not parts:
+                continue
+            normalized.append('/'.join(parts))
+        if 'index.html' not in {name.lower() for name in normalized}:
+            raise ValueError('网页包根目录必须包含 index.html')
+
+        package_root = Path(current_app.config['SITES_DIR']) / str(site_id) / 'assets' / 'media-packages'
+        package_root.mkdir(parents=True, exist_ok=True)
+        safe_stem = secure_filename(Path(original).stem) or 'media-package'
+        package_name = f"{safe_stem}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(4)}"
+        target_dir = package_root / package_name
+        target_dir.mkdir(parents=True, exist_ok=False)
+
+        try:
+            for info, name in zip(infos, names):
+                parts = Path(name).parts
+                if strip_root:
+                    parts = parts[1:]
+                if not parts:
+                    continue
+                rel = Path(*parts)
+                target = (target_dir / rel).resolve()
+                try:
+                    target.relative_to(target_dir.resolve())
+                except ValueError as exc:
+                    raise ValueError('网页包中包含非法路径') from exc
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with archive.open(info) as src, target.open('wb') as dst:
+                    dst.write(src.read())
+        except Exception:
+            if target_dir.exists():
+                import shutil
+                shutil.rmtree(target_dir, ignore_errors=True)
+            raise
+
+    entry_url = f'/media-packages/{package_name}/'
+    return {
+        'name': package_name,
+        'display_name': package_name,
+        'api_name': media_package_token(package_name),
+        'url': entry_url,
+        'entry_url': entry_url,
+        'category': 'package',
+        'category_label': '网页包',
+        'is_package': True,
+    }
 
 
 def _uploaded_image_or_form(site_id, form_field, file_field=None, prefix='image'):
@@ -601,6 +744,63 @@ def site_asset(filename):
     return _safe_send_from_directory(assets_root, filename)
 
 
+def _media_package_assets_root():
+    """Resolve the current site's media package root for admin and preview requests."""
+    assets_root = None
+    site_id = session.get('current_site_id')
+    if site_id is not None:
+        site = Site.query.get(int(site_id))
+        if site:
+            assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
+
+    referer = request.headers.get('Referer', '')
+    if assets_root is None:
+        m = re.search(r'/preview(?:/(?:site|or_build))?/(\d+)', referer)
+        if m:
+            site = Site.query.get(int(m.group(1)))
+            if site:
+                assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
+
+    if assets_root is None:
+        site = Site.query.order_by(Site.id.desc()).first()
+        if site:
+            assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
+
+    if assets_root is None:
+        abort(404, '网页包不存在')
+    return assets_root / 'media-packages'
+
+
+@bp.route('/media-packages/<package_name>/')
+def media_package_index(package_name):
+    package_name = secure_filename(package_name or '')
+    if not package_name:
+        abort(404, '网页包不存在')
+    packages_root = _media_package_assets_root()
+    package_dir = (packages_root / package_name).resolve()
+    try:
+        package_dir.relative_to(packages_root.resolve())
+    except ValueError:
+        abort(403, '非法路径')
+    if not (package_dir / 'index.html').exists():
+        abort(404, '网页包不存在')
+    return _safe_send_from_directory(package_dir, 'index.html')
+
+
+@bp.route('/media-packages/<package_name>/<path:filename>')
+def media_package_asset(package_name, filename):
+    package_name = secure_filename(package_name or '')
+    if not package_name:
+        abort(404, '网页包不存在')
+    packages_root = _media_package_assets_root()
+    package_dir = (packages_root / package_name).resolve()
+    try:
+        package_dir.relative_to(packages_root.resolve())
+    except ValueError:
+        abort(403, '非法路径')
+    return _safe_send_from_directory(package_dir, filename)
+
+
 @bp.errorhandler(404)
 def not_found(error):
     """捕获 404，无站点时重定向到模板库."""
@@ -629,6 +829,114 @@ def overview():
                                user=user, site=site, counts=counts)
     return render_template('dashboard/overview.html',
                            user=user, site=site, counts=counts, active='overview')
+
+
+@bp.route('/media')
+def media():
+    user, site = _current_context()
+    files = list_media_files(site.id)
+    if request.args.get('_fragment'):
+        return render_template('dashboard/panel_media.html',
+                               user=user, site=site, files=files)
+    return render_template('dashboard/media.html',
+                           user=user, site=site, files=files, active='media')
+
+
+@bp.route('/media/workspace')
+def media_workspace():
+    user, site = _current_context()
+    files = list_media_files(site.id)
+    return render_template('dashboard/media_workspace.html',
+                           user=user, site=site, files=files, active='media')
+
+
+@bp.route('/api/media/references')
+def api_media_references():
+    _, site = _current_context()
+    name = request.args.get('filename') or request.args.get('name') or ''
+    if not name:
+        return jsonify({'error': '缺少文件名'}), 400
+    refs = find_media_references(site.id, name)
+    return jsonify({'filename': name, 'refs': refs, 'count': len(refs)})
+
+
+@bp.route('/api/media/upload', methods=['POST'])
+def api_media_upload():
+    _, site = _current_context()
+    upload = request.files.get('file')
+    if not upload or not upload.filename:
+        return jsonify({'error': '请选择文件'}), 400
+    original = secure_filename(upload.filename)
+    suffix = original.rsplit('.', 1)[-1].lower() if '.' in original else ''
+    try:
+        if suffix == 'zip':
+            result = _save_media_package(site.id, upload)
+            return jsonify({'ok': True, **result})
+        if suffix in ALLOWED_IMAGE_EXTENSIONS or suffix in ALLOWED_VIDEO_EXTENSIONS:
+            url = _save_uploaded_media(site.id, upload, prefix='media')
+        else:
+            url = _save_any_file(site.id, upload, prefix='media')
+        if not url:
+            return jsonify({'error': '文件上传失败或类型不支持'}), 400
+        filename = url.rsplit('/', 1)[-1]
+        files = [item for item in list_media_files(site.id) if item.get('api_name') == filename]
+        payload = files[0] if files else {'name': filename, 'api_name': filename, 'url': url}
+        return jsonify({'ok': True, **payload})
+    except Exception as exc:
+        current_app.logger.warning('media upload failed: %s', exc)
+        return jsonify({'error': str(exc)}), 400
+
+
+@bp.route('/api/media/rename', methods=['POST'])
+def api_media_rename():
+    _, site = _current_context()
+    data = request.get_json(silent=True) or request.form
+    old_name = (data.get('old_name') or data.get('filename') or '').strip()
+    new_name = (data.get('new_name') or '').strip()
+    if not old_name or not new_name:
+        return jsonify({'error': '缺少文件名'}), 400
+    refs = find_media_references(site.id, old_name)
+    if refs:
+        return jsonify({'ok': False, 'error': '文件已被引用，不能重命名', 'refs': refs, 'count': len(refs)}), 409
+    try:
+        new_api_name = rename_media_file(site.id, old_name, new_name)
+    except Exception as exc:
+        current_app.logger.warning('media rename failed: %s', exc)
+        return jsonify({'error': str(exc)}), 400
+    if is_media_package_token(new_api_name):
+        package_name = media_package_name_from_token(new_api_name)
+        return jsonify({
+            'ok': True,
+            'name': package_name,
+            'api_name': new_api_name,
+            'url': f'/media-packages/{package_name}/',
+            'entry_url': f'/media-packages/{package_name}/',
+            'category': 'package',
+        })
+    return jsonify({
+        'ok': True,
+        'name': new_api_name,
+        'api_name': new_api_name,
+        'url': f'/assets/uploads/{new_api_name}',
+    })
+
+
+@bp.route('/api/media/delete', methods=['POST'])
+def api_media_delete():
+    _, site = _current_context()
+    data = request.get_json(silent=True) or request.form
+    name = (data.get('filename') or data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': '缺少文件名'}), 400
+    refs = find_media_references(site.id, name)
+    if refs:
+        return jsonify({'ok': False, 'error': '文件已被引用，不能删除', 'refs': refs, 'count': len(refs)}), 409
+    try:
+        delete_media_file(site.id, name)
+    except Exception as exc:
+        current_app.logger.warning('media delete failed: %s', exc)
+        return jsonify({'error': str(exc)}), 400
+    return jsonify({'ok': True})
 
 
 def _as_items(raw):

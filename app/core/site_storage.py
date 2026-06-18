@@ -20,6 +20,25 @@ from pathlib import Path
 
 import yaml
 from flask import abort, current_app
+from werkzeug.utils import secure_filename
+
+
+MEDIA_CATEGORIES = {
+    'image': {
+        'label': '图片',
+        'extensions': {'jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'},
+    },
+    'video': {
+        'label': '视频',
+        'extensions': {'mp4', 'webm', 'ogg', 'mov'},
+    },
+    'document': {
+        'label': '文档',
+        'extensions': {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv'},
+    },
+}
+
+_MEDIA_PACKAGE_PREFIX = '__package__:'
 
 
 def _is_content_yaml(path):
@@ -32,6 +51,19 @@ def site_root(site_id):
     """获取站点的文件夹路径."""
     base = Path(current_app.config['SITES_DIR'])
     return base / str(site_id)
+
+
+def media_package_token(package_name):
+    """Return the API token used to address a media package."""
+    return f'{_MEDIA_PACKAGE_PREFIX}{package_name}'
+
+
+def is_media_package_token(name):
+    return isinstance(name, str) and name.startswith(_MEDIA_PACKAGE_PREFIX)
+
+
+def media_package_name_from_token(name):
+    return name[len(_MEDIA_PACKAGE_PREFIX):] if is_media_package_token(name) else name
 
 
 def lang_root(site_id, lang_code):
@@ -153,3 +185,204 @@ def list_yaml_files(site_id, subdir, lang=None):
                 items.append(f)
 
     return items
+
+
+def _format_size(size_bytes):
+    size = float(size_bytes or 0)
+    for unit in ('B', 'KB', 'MB', 'GB'):
+        if size < 1024 or unit == 'GB':
+            if unit == 'B':
+                return f'{int(size)} B'
+            return f'{size:.1f} {unit}'
+        size /= 1024
+    return f'{int(size_bytes or 0)} B'
+
+
+def _media_category_for_extension(ext):
+    ext = (ext or '').lower().lstrip('.')
+    for category, meta in MEDIA_CATEGORIES.items():
+        if ext in meta['extensions']:
+            return category
+    return 'other'
+
+
+def _safe_media_filename(filename):
+    filename = (filename or '').strip()
+    if not filename or filename.startswith(('.', '/')) or '\\' in filename or '/' in filename or '..' in filename:
+        abort(400, '非法文件名')
+    safe = secure_filename(filename)
+    if not safe or safe != filename:
+        abort(400, '非法文件名')
+    return safe
+
+
+def _safe_package_name(package_name):
+    package_name = (package_name or '').strip()
+    if not package_name or package_name.startswith(('.', '/')) or '\\' in package_name or '/' in package_name or '..' in package_name:
+        abort(400, '非法网页包名称')
+    safe = secure_filename(package_name)
+    if not safe or safe != package_name:
+        abort(400, '非法网页包名称')
+    return safe
+
+
+def _directory_size(path):
+    total = 0
+    if not path.exists():
+        return 0
+    for item in path.rglob('*'):
+        if item.is_file():
+            try:
+                total += item.stat().st_size
+            except OSError:
+                continue
+    return total
+
+
+def list_media_files(site_id):
+    """List uploaded files and iframe-previewable media packages for a site."""
+    assets_root = site_root(site_id) / 'assets'
+    uploads_dir = assets_root / 'uploads'
+    packages_dir = assets_root / 'media-packages'
+    items = []
+
+    if uploads_dir.exists():
+        for path in sorted(uploads_dir.iterdir(), key=lambda p: p.name.lower()):
+            if not path.is_file() or path.name.startswith('.'):
+                continue
+            ext = path.suffix.lower().lstrip('.')
+            stat = path.stat()
+            category = _media_category_for_extension(ext)
+            items.append({
+                'name': path.name,
+                'display_name': path.name,
+                'size_bytes': stat.st_size,
+                'size_display': _format_size(stat.st_size),
+                'mtime': stat.st_mtime,
+                'category': category,
+                'category_label': MEDIA_CATEGORIES.get(category, {}).get('label', '其他'),
+                'ext': ext,
+                'url': f'/assets/uploads/{path.name}',
+                'api_name': path.name,
+                'is_package': False,
+            })
+
+    if packages_dir.exists():
+        for path in sorted(packages_dir.iterdir(), key=lambda p: p.name.lower()):
+            if not path.is_dir() or path.name.startswith('.') or not (path / 'index.html').exists():
+                continue
+            size = _directory_size(path)
+            mtime = max((p.stat().st_mtime for p in path.rglob('*') if p.exists()), default=path.stat().st_mtime)
+            entry_url = f'/media-packages/{path.name}/'
+            items.append({
+                'name': path.name,
+                'display_name': path.name,
+                'size_bytes': size,
+                'size_display': _format_size(size),
+                'mtime': mtime,
+                'category': 'package',
+                'category_label': '网页包',
+                'ext': 'package',
+                'url': entry_url,
+                'entry_url': entry_url,
+                'api_name': media_package_token(path.name),
+                'is_package': True,
+            })
+
+    return sorted(items, key=lambda item: (item['category'], item['display_name'].lower()))
+
+
+def get_media_file_path(site_id, filename):
+    filename = _safe_media_filename(filename)
+    path = (site_root(site_id) / 'assets' / 'uploads' / filename).resolve()
+    base = (site_root(site_id) / 'assets' / 'uploads').resolve()
+    try:
+        path.relative_to(base)
+    except ValueError:
+        abort(400, '非法文件路径')
+    if not path.exists() or not path.is_file():
+        abort(404, '文件不存在')
+    return path
+
+
+def get_media_package_path(site_id, package_name):
+    package_name = _safe_package_name(package_name)
+    path = (site_root(site_id) / 'assets' / 'media-packages' / package_name).resolve()
+    base = (site_root(site_id) / 'assets' / 'media-packages').resolve()
+    try:
+        path.relative_to(base)
+    except ValueError:
+        abort(400, '非法网页包路径')
+    if not path.exists() or not path.is_dir():
+        abort(404, '网页包不存在')
+    return path
+
+
+def find_media_references(site_id, name):
+    """Find YAML files that reference an uploaded file or media package."""
+    is_package = is_media_package_token(name)
+    target_name = media_package_name_from_token(name)
+    if is_package:
+        target_name = _safe_package_name(target_name)
+        needle = f'/media-packages/{target_name}/'
+    else:
+        target_name = _safe_media_filename(target_name)
+        needle = f'/assets/uploads/{target_name}'
+
+    refs = []
+    root = site_root(site_id)
+    if not root.exists():
+        return refs
+    yaml_paths = list(root.rglob('*.yaml')) + list(root.rglob('*.yml'))
+    for path in sorted(yaml_paths):
+        if not _is_content_yaml(path):
+            continue
+        try:
+            text = path.read_text(encoding='utf-8')
+        except UnicodeDecodeError:
+            continue
+        if needle in text:
+            refs.append(str(path.relative_to(root)).replace('\\', '/'))
+    return refs
+
+
+def rename_media_file(site_id, old_name, new_name):
+    """Rename an unreferenced upload file or media package."""
+    if find_media_references(site_id, old_name):
+        abort(409, '文件已被引用，不能重命名')
+
+    if is_media_package_token(old_name):
+        old_pkg = _safe_package_name(media_package_name_from_token(old_name))
+        new_pkg = _safe_package_name(media_package_name_from_token(new_name))
+        src = get_media_package_path(site_id, old_pkg)
+        dst = src.parent / new_pkg
+        if dst.exists():
+            abort(409, '目标名称已存在')
+        os.rename(src, dst)
+        return media_package_token(new_pkg)
+
+    old_file = _safe_media_filename(old_name)
+    new_file = _safe_media_filename(new_name)
+    src = get_media_file_path(site_id, old_file)
+    dst = src.parent / new_file
+    if dst.exists():
+        abort(409, '目标名称已存在')
+    os.rename(src, dst)
+    return new_file
+
+
+def delete_media_file(site_id, name):
+    """Delete an unreferenced upload file or media package."""
+    if find_media_references(site_id, name):
+        abort(409, '文件已被引用，不能删除')
+
+    if is_media_package_token(name):
+        package_name = _safe_package_name(media_package_name_from_token(name))
+        path = get_media_package_path(site_id, package_name)
+        shutil.rmtree(path)
+        return True
+
+    filename = _safe_media_filename(name)
+    path = get_media_file_path(site_id, filename)
+    path.unlink()
+    return True

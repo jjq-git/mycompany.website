@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="{{ (current_lang or 'zh-CN')[:2] }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>媒体管理</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --bs-primary: {{ admin_primary }};
+      --bs-primary-rgb: {{ admin_primary_rgb }};
+      --bs-primary-bg-subtle: {{ admin_primary_light }};
+      --bs-primary-border-subtle: {{ admin_primary_light }};
+      --bs-link-color: {{ admin_primary }};
+      --bs-link-hover-color: {{ admin_primary_hover }};
+      --admin-primary: {{ admin_primary }};
+      --admin-primary-rgb: {{ admin_primary_rgb }};
+      --admin-primary-hover: {{ admin_primary_hover }};
+      --admin-primary-active: {{ admin_primary_active }};
+      --admin-primary-light: {{ admin_primary_light }};
+    }
+
+    body {
+      margin: 0;
+      background: #f6f7f9;
+      color: #172033;
+    }
+
+    .media-workspace {
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .media-workspace-inner {
+      max-width: 1540px;
+      margin: 0 auto;
+    }
+
+    .media-workspace-panel {
+      padding: 16px;
+      border: 1px solid #dfe4ea;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 12px 36px rgba(15, 23, 42, .06);
+    }
+
+    .btn-primary {
+      --bs-btn-bg: var(--admin-primary);
+      --bs-btn-border-color: var(--admin-primary);
+      --bs-btn-hover-bg: var(--admin-primary-hover);
+      --bs-btn-hover-border-color: var(--admin-primary-hover);
+      --bs-btn-active-bg: var(--admin-primary-active);
+      --bs-btn-active-border-color: var(--admin-primary-active);
+    }
+  </style>
+</head>
+<body>
+  <main class="media-workspace">
+    <div class="media-workspace-inner">
+      <section class="media-workspace-panel">
+        {% include 'dashboard/panel_media.html' %}
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var meta = document.querySelector('meta[name="csrf-token"]');
+      var token = meta ? meta.getAttribute('content') : '';
+      if (!token) return;
+      var origFetch = window.fetch;
+      window.fetch = function (input, init) {
+        init = init || {};
+        var method = (init.method || (typeof input === 'object' && input.method) || 'GET').toUpperCase();
+        if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+          init.headers = new Headers(init.headers || {});
+          if (!init.headers.has('X-CSRFToken')) init.headers.set('X-CSRFToken', token);
+        }
+        return origFetch.call(this, input, init);
+      };
+    })();
+  </script>
+</body>
+</html>
