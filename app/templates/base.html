@@ -8,7 +8,7 @@
   <link rel="icon" href="{{ url_for('favicon') }}" type="image/svg+xml">
   <title>{% block title %}{{ site.slug if site else '' }}{% endblock %} — {{ platform_domain }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260615-build-loading">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260617-segmented-selects">
   <style>
     :root {
       --bs-primary: {{ admin_primary }};
@@ -353,7 +353,7 @@
 
         {# ---- 内容 ---- #}
         <div class="left-nav-section-title">内容</div>
-        <a class="left-nav-item {% if active == 'pages_home' %}active{% endif %}" href="{{ url_for('core.page_home') }}"
+        <a class="left-nav-item {% if active in ('pages_home', 'home') %}active{% endif %}" href="{{ url_for('core.page_panel', page_key='home') }}"
           data-panel="pages_home" data-preview-page="home" title="首页">
           <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
@@ -376,7 +376,8 @@
               href="{{ url_for('core.page_panel', page_key=item.target) }}"
               data-panel="{{ item.type }}_{{ item.target }}" data-preview-page="{{ item.url }}"
               title="{{ item.label }}">
-              {% if item.type == 'list' %}
+              {% set is_list_icon = item.type == 'list' or item.target in (module_list_page_keys | default([])) or item.target == 'modules' %}
+              {% if is_list_icon %}
               <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <line x1="8" y1="6" x2="21" y2="6" />
@@ -445,7 +446,8 @@
         <a class="left-nav-item" href="{{ url_for('core.page_panel', page_key=item.target) }}"
           data-panel="{{ item.type }}_{{ item.target }}" data-preview-page="{{ item.url }}"
           style="padding-left: {{ 16 + level * 16 }}px;" title="{{ item.label }}">
-          {% if item.type == 'list' %}
+          {% set is_list_icon = item.type == 'list' or item.target in (module_list_page_keys | default([])) or item.target == 'modules' %}
+          {% if is_list_icon %}
           <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <line x1="8" y1="6" x2="21" y2="6" />
@@ -757,11 +759,44 @@
       document.querySelectorAll('.nav-mode-swatch[data-mode="dark"]').forEach(function (sw) {
         sw.style.background = 'var(--theme-primary)';
       });
+      syncPreviewFrameTheme({
+        primary: hex,
+        rgb: rgb,
+        hover: hover,
+        active: active,
+        textEmphasis: textEmphasis
+      });
       if (typeof renderPreviewTabs === 'function') renderPreviewTabs();
       if (typeof updatePreviewCanvasTheme === 'function') updatePreviewCanvasTheme();
       if (!options.skipStorage) {
         try { localStorage.setItem('adminThemeColor', hex); } catch (e) { }
       }
+    }
+
+    function syncPreviewFrameTheme(theme) {
+      var frame = document.getElementById('previewFrame');
+      if (!frame || !frame.contentDocument) return;
+      try {
+        var root = frame.contentDocument.documentElement;
+        if (!root) return;
+        root.style.setProperty('--bs-primary', theme.primary);
+        root.style.setProperty('--bs-primary-rgb', theme.rgb);
+        root.style.setProperty('--bs-primary-bg', theme.primary);
+        root.style.setProperty('--bs-link-color', theme.primary);
+        root.style.setProperty('--bs-link-hover-color', theme.textEmphasis);
+        root.style.setProperty('--theme-primary', theme.primary);
+        root.style.setProperty('--theme-primary-hover', theme.hover);
+        root.style.setProperty('--theme-primary-active', theme.active);
+        root.style.setProperty('--theme-primary-rgb', theme.rgb);
+        root.style.setProperty('--theme-btn-bg', theme.primary);
+        root.style.setProperty('--theme-btn-border-color', theme.primary);
+        root.style.setProperty('--theme-btn-hover-bg', theme.hover);
+        root.style.setProperty('--theme-btn-hover-border-color', theme.hover);
+        root.style.setProperty('--theme-btn-active-bg', theme.active);
+        root.style.setProperty('--theme-btn-active-border-color', theme.active);
+        root.style.setProperty('--seo-primary-soft', 'rgba(' + theme.rgb + ', .10)');
+        root.style.setProperty('--seo-primary-border', 'rgba(' + theme.rgb + ', .28)');
+      } catch (e) { }
     }
 
     function setNavTheme(mode, options) {
@@ -1219,7 +1254,7 @@
       var footer = document.getElementById('rightPanelFooter');
       body.innerHTML = '<div class="p-3 text-muted text-center py-5"><div class="spinner-border spinner-border-sm me-2"></div>加载中...</div>';
       if (footer) footer.style.display = 'none';
-      return fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+      return fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + '_t=' + Date.now()).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
         .then(html => {
           body.innerHTML = html;
           // 提取片段中的标题（.fw-semibold）显示到右侧面板顶栏，然后清空原处
@@ -1669,6 +1704,16 @@
     var previewFrameEl = document.getElementById('previewFrame');
     if (previewFrameEl) {
       previewFrameEl.addEventListener('load', schedulePreviewCanvasInstall);
+      previewFrameEl.addEventListener('load', function () {
+        var styles = getComputedStyle(document.documentElement);
+        syncPreviewFrameTheme({
+          primary: styles.getPropertyValue('--theme-primary').trim() || '{{ admin_primary }}',
+          rgb: styles.getPropertyValue('--theme-primary-rgb').trim() || '{{ admin_primary_rgb }}',
+          hover: styles.getPropertyValue('--theme-primary-hover').trim() || '{{ admin_primary_hover }}',
+          active: styles.getPropertyValue('--theme-primary-active').trim() || '{{ admin_primary_active }}',
+          textEmphasis: styles.getPropertyValue('--bs-primary-text-emphasis').trim() || '{{ admin_primary_active }}'
+        });
+      });
       schedulePreviewCanvasInstall();
     }
 

@@ -189,7 +189,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=13"></script>
+<script src="/static/js/admin_modules.js?v=30"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -219,19 +219,157 @@ function _schemaEsc(s) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function segmentedControl(name, options, value, escFn) {
+  escFn = escFn || _schemaEsc;
+  var opts = (options || []).map(function(opt) {
+    return {
+      value: String(typeof opt === 'object' ? opt.value : opt),
+      label: String(typeof opt === 'object' ? (opt.label || opt.text || opt.value) : opt)
+    };
+  });
+  if (opts.length < 2 || opts.length > 3) return '';
+  var current = String(value == null ? '' : value);
+  return '<div class="seg-radio" role="radiogroup">' +
+    '<input type="hidden" name="' + escFn(name) + '" value="' + escFn(current) + '">' +
+    opts.map(function(opt) {
+      var active = current === opt.value;
+      return '<button type="button" class="seg-radio-option' + (active ? ' active' : '') + '" role="radio" aria-checked="' + (active ? 'true' : 'false') + '" data-value="' + escFn(opt.value) + '" onclick="var g=this.closest(\'.seg-radio\');var i=g.querySelector(\'input[type=hidden]\');i.value=this.getAttribute(\'data-value\');g.querySelectorAll(\'.seg-radio-option\').forEach(function(b){b.classList.remove(\'active\');b.setAttribute(\'aria-checked\',\'false\');});this.classList.add(\'active\');this.setAttribute(\'aria-checked\',\'true\');i.dispatchEvent(new Event(\'change\',{bubbles:true}));">' + escFn(opt.label) + '</button>';
+    }).join('') +
+    '</div>';
+}
+
 // 字段名 → 中文显示名（后续迁移到模板 data-label 属性 + block_parser 透传）
 var FIELD_LABEL_MAP = {
-  'form_panel':    '表单',
-  'map_panel':     '地图',
-  'name_field':    '姓名',
-  'email_field':   '邮箱',
-  'phone_field':   '电话',
+  'title': '标题',
+  'subtitle': '副标题',
+  'desc': '描述',
+  'description': '描述',
+  'excerpt': '摘要',
+  'summary': '摘要',
+  'body': '正文',
+  'content': '内容',
+  'tag': '标签',
+  'tags': '标签',
+  'name': '名称',
+  'category': '分类',
+  'price': '价格',
+  'date': '日期',
+  'slug': '标识 slug',
+  'image': '图片',
+  'cover': '封面图',
+  'photo': '图片',
+  'logo': '标志图片',
+  'icon': '图标',
+  'video': '视频',
+  'media': '媒体',
+  'media_type': '媒体类型',
+  'embed_url': '嵌入页面链接',
+  'link': '链接',
+  'url': '链接',
+  'href': '链接',
+  'alt': '替代文本',
+  'dataset': '数据来源',
+  'columns': '列数',
+  'rows': '行数',
+  'max_items': '最大显示数量',
+  'items_per_page': '每页条数',
+  'show_filters': '显示筛选',
+  'show_search': '显示搜索框',
+  'show_pagination': '显示分页',
+  'show_view_all': '显示查看全部',
+  'pagination_style': '分页样式',
+  'pager_align': '分页对齐',
+  'card_layout': '卡片布局',
+  'primarybtn': '主按钮文字',
+  'primarylink': '主按钮链接',
+  'secondarybtn': '副按钮文字',
+  'secondarylink': '副按钮链接',
+  'btn': '按钮文字',
+  'btn_text': '按钮文字',
+  'btn_url': '按钮链接',
+  'form_panel': '表单',
+  'map_panel': '地图',
+  'name_field': '姓名',
+  'email_field': '邮箱',
+  'phone_field': '电话',
   'company_field': '公司',
   'message_field': '留言',
-  'map_src':       '地图链接'
+  'map_src': '地图链接',
+  'phone_card': '电话',
+  'mobile_card': '手机',
+  'email_card': '邮箱',
+  'address_card': '地址',
+  'hours_card': '营业时间',
+  'business_hours_card': '营业时间',
+  'business_hours': '营业时间',
+  'phone': '电话',
+  'mobile': '手机',
+  'email': '邮箱',
+  'address': '地址'
 };
 function _schemaLabel(field) {
-  return FIELD_LABEL_MAP[field.name] || field.label || field.name;
+  var key = String(field.name || field.key || '');
+  var raw = String(field.label || '');
+  var normalizedKey = key.toLowerCase();
+  var normalizedRaw = raw.toLowerCase().replace(/[\s-]+/g, '_');
+  return FIELD_LABEL_MAP[normalizedKey] || FIELD_LABEL_MAP[normalizedRaw] || translateFieldLabel(raw || key);
+}
+
+function translateFieldLabel(label) {
+  return String(label || '')
+    .replace(/\bLogo\b/g, '标志')
+    .replace(/\bBanner\b/g, '横幅')
+    .replace(/\bURL\b/g, '链接');
+}
+
+function _schemaIsVisibilityField(field) {
+  var key = String(field.name || field.key || '');
+  var opts = field.options || [];
+  var values = opts.map(function(opt) { return String(typeof opt === 'object' ? opt.value : opt); });
+  var hasTrueFalse = values.indexOf('true') >= 0 && values.indexOf('false') >= 0;
+  return hasTrueFalse && (/^show_/i.test(key) || /_show_/i.test(key) || /visible/i.test(key));
+}
+
+function _schemaVisibilityEye(name, value) {
+  var visible = value === '' || value == null ? true : (String(value) === 'true' || value === true);
+  return '<button type="button" class="eye-toggle-btn" data-visible="' + (visible ? 'true' : 'false') + '" onclick="toggleVisibilityEye(this)" title="' + (visible ? '点击隐藏' : '点击显示') + '">' +
+    (visible ? EYE_OPEN_SVG : EYE_OFF_SVG) +
+    '</button>' +
+    '<input type="hidden" name="' + _schemaEsc(name) + '" value="' + (visible ? 'true' : 'false') + '">';
+}
+
+function _schemaChildren(field) {
+  return (field.children || field.item_fields || []).map(function(child) {
+    var copy = Object.assign({}, child);
+    copy.name = copy.name || copy.key;
+    return copy;
+  }).filter(function(child) {
+    return !!child.name;
+  });
+}
+
+function _schemaIsHalfField(field) {
+  var key = String(field.name || field.key || '').toLowerCase();
+  var type = String(field.type || 'text').toLowerCase();
+  var label = String(field.label || '').toLowerCase();
+  if (_schemaIsVisibilityField(field)) return true;
+  if (field.show_if && field.show_if.field) return false;
+  if (/^(group|list|grid|textarea|richtext|image|video|embed|audio|file)$/i.test(type)) return false;
+  if (/(url|src|href|link|action|address|description|summary|excerpt|content|body|message|image|cover|photo|logo|media|video)/i.test(key)) return false;
+  if (/(_text|_title|title|subtitle|desc)$/i.test(key)) return false;
+  if (/^(show_|hide_|enable_|enabled_|visible|is_)/i.test(key) || /(_show_|_visible|_enabled)$/i.test(key)) return true;
+  if (/(align|layout|style|columns|items_per_page|max_items|count|number|ratio|category|date|price|name)$/i.test(key)) return true;
+  if (/(color|bg|border|radius|width|height|size|gap|margin|padding|opacity|weight)$/i.test(key)) return true;
+  if (/(显示|隐藏|颜色|宽度|高度|字号|圆角|间距|对齐|排版|列数|数量|分类|日期|价格|名称)/.test(label)) return true;
+  return false;
+}
+
+function _schemaInlineHalfChild(field) {
+  if (!field || field.type !== 'group' || field.hideable) return null;
+  var children = _schemaChildren(field);
+  if (children.length !== 1) return null;
+  var child = children[0];
+  return _schemaIsHalfField(child) ? child : null;
 }
 
 function conditionalFieldAttrs(key, showIf, escFn, actualValue) {
@@ -314,16 +452,26 @@ function _schemaFieldHtml(prefix, field, mdata) {
   var val = (typeof rawVal === 'object' && rawVal !== null) ? JSON.stringify(rawVal) : String(rawVal || '');
   var label = _schemaLabel(field);
   var depVal = field.show_if ? ((mdata && mdata[field.show_if.field] != null) ? mdata[field.show_if.field] : (field.show_if.field === 'media_type' ? 'image' : '')) : null;
-  var html = '<div' + conditionalFieldAttrs(field.name, field.show_if, _schemaEsc, depVal) + '><label class="form-label small mb-1 text-muted">' + _schemaEsc(label) + '</label>';
+  var fieldAttrs = conditionalFieldAttrs(field.name, field.show_if, _schemaEsc, depVal);
+  if (_schemaIsVisibilityField(field)) {
+    fieldAttrs = fieldAttrs.replace('module-field', 'module-field module-visibility-field');
+  }
+  if (_schemaIsHalfField(field)) {
+    fieldAttrs = fieldAttrs.replace('module-field', 'module-field module-field-half');
+  }
+  var html = '<div' + fieldAttrs + '><label class="form-label small mb-1 text-muted">' + _schemaEsc(label) + '</label>';
 
-  if (field.type === 'richtext') {
+  if (_schemaIsVisibilityField(field)) {
+    html += _schemaVisibilityEye(name, val);
+  } else if (field.type === 'richtext') {
     html += richEditorHtml(name, val || '');
   } else if (field.type === 'textarea') {
     html += '<textarea class="form-control form-control-sm" name="' + _schemaEsc(name) + '" rows="4" placeholder="' + _schemaEsc(label) + '">' + _schemaEsc(val) + '</textarea>';
   } else if (field.type === 'image' || field.type === 'video') {
     // 图片/视频：URL 输入 + 上传按钮 + 预览
-    html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="' + _schemaEsc(field.type) + ' URL" oninput="updateImagePreview(this)">';
-    var accept = field.type === 'video' ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*';
+    var mediaPlaceholder = field.type === 'video' ? '视频链接' : '图片链接';
+    html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="' + _schemaEsc(mediaPlaceholder) + '" oninput="updateImagePreview(this)">';
+    var accept = field.type === 'video' ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*,.svg,.svgz';
     var uploadLabel = field.type === 'video' ? '上传视频' : '上传图片';
     var helpText = field.type === 'video' ? '支持 MP4/WebM/OGG/MOV，最大 12MB' : '支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP';
     html += '<label class="d-flex align-items-center gap-2 px-3 py-2 mt-1 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'">' +
@@ -337,22 +485,27 @@ function _schemaFieldHtml(prefix, field, mdata) {
     var previewVisible = val ? '' : 'display:none';
     html += '<div class="mt-2 module-image-preview" style="' + previewVisible + '">' +
       '<div style="position:relative;display:inline-block">' +
-      '<img src="' + _schemaEsc(val) + '" style="max-width:100%;max-height:200px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer;display:block" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'">' +
+      '<img src="' + _schemaEsc(val) + '" style="width:180px;height:auto;max-width:100%;max-height:200px;object-fit:contain;background:#f8fafc;border-radius:4px;border:1px solid #dee2e6;cursor:pointer;display:block" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'">' +
       '<button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除文件">&times;</button>' +
       '</div></div>';
   } else if (field.type === 'embed' || field.type === 'audio') {
-    html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="' + _schemaEsc(field.type) + ' URL">';
+    var urlPlaceholder = field.type === 'audio' ? '音频链接' : '嵌入页面链接';
+    html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="' + _schemaEsc(urlPlaceholder) + '">';
   } else if (field.type === 'icon') {
     // icon → 下拉选择器（图标名来自 icon_registry，渲染时查表注入 SVG）
     html += '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">' + _schemaIconOptions(val) + '</select>';
   } else if (field.type === 'select') {
-    // select → 下拉选择框（options 来自 meta.yaml 或字段定义）
-    var opts = field.options || [];
-    html += '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">';
-    opts.forEach(function(opt) {
-      html += '<option value="' + _schemaEsc(opt.value) + '"' + (String(val) === String(opt.value) ? ' selected' : '') + '>' + _schemaEsc(opt.label) + '</option>';
-    });
-    html += '</select>';
+    var schemaSegmented = segmentedControl(name, field.options || [], val, _schemaEsc);
+    if (schemaSegmented) {
+      html += schemaSegmented;
+    } else {
+      var opts = field.options || [];
+      html += '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">';
+      opts.forEach(function(opt) {
+        html += '<option value="' + _schemaEsc(opt.value) + '"' + (String(val) === String(opt.value) ? ' selected' : '') + '>' + _schemaEsc(opt.label) + '</option>';
+      });
+      html += '</select>';
+    }
   } else if (field.type === 'radio') {
     // radio → 分段按钮组（隐藏 input，label 做成按钮卡片，选中项高亮主题色）
     var ropts = field.options || [];
@@ -425,41 +578,37 @@ function generateSchemaForm(prefix, schema, mdata, vTFn) {
       '<div>数据源：<code>' + _schemaEsc(schema.from_source) + '</code>，请在「网站设置」中修改联系方式等信息。</div>' +
       '</div>';
   }
-  // 按 schema.fields 原始顺序渲染：list/grid 独占一行，简单字段两两配对成行。
-  // 连续简单字段缓冲到 pendingSimple，遇到 list/grid 或结束时刷新——保证区块标题/描述
-  // 等文本字段出现在列表编辑器上方（而非下方）。
-  var pendingSimple = [];
-  function flushPendingSimple() {
-    for (var i = 0; i < pendingSimple.length; i += 2) {
-      var f1 = pendingSimple[i];
-      var f2 = pendingSimple[i + 1];
-      if (f2) {
-        html += '<div class="row g-2">';
-        html += '<div class="col-6">';
-        if (f1.type === 'group') { html += _schemaGroupHtml(prefix, f1, mdata); }
-        else { html += _schemaFieldHtml(prefix, f1, mdata); }
-        html += '</div>';
-        html += '<div class="col-6">';
-        if (f2.type === 'group') { html += _schemaGroupHtml(prefix, f2, mdata); }
-        else { html += _schemaFieldHtml(prefix, f2, mdata); }
-        html += '</div>';
-        html += '</div>';
-      } else {
-        if (f1.type === 'group') { html += _schemaGroupHtml(prefix, f1, mdata); }
-        else { html += _schemaFieldHtml(prefix, f1, mdata); }
-      }
-    }
-    pendingSimple = [];
+  // 按字段自身宽度标记渲染：短字段可半宽，URL/富文本/图片/分组/列表保持整行。
+  var pendingHalf = [];
+  function flushPendingHalf() {
+    if (!pendingHalf.length) return;
+    html += '<div class="module-field-row">';
+    pendingHalf.forEach(function(f) {
+      html += _schemaFieldHtml(prefix, f, mdata);
+    });
+    html += '</div>';
+    pendingHalf = [];
   }
   (schema.fields || []).forEach(function(field) {
     if (field.type === 'list' || field.type === 'grid') {
-      flushPendingSimple();
+      flushPendingHalf();
       html += _schemaListEditor(prefix, field, mdata);
+    } else if (field.type === 'group') {
+      var inlineChild = _schemaInlineHalfChild(field);
+      if (inlineChild) {
+        pendingHalf.push(inlineChild);
+      } else {
+        flushPendingHalf();
+        html += _schemaGroupHtml(prefix, field, mdata);
+      }
+    } else if (_schemaIsHalfField(field)) {
+      pendingHalf.push(field);
     } else {
-      pendingSimple.push(field);
+      flushPendingHalf();
+      html += _schemaFieldHtml(prefix, field, mdata);
     }
   });
-  flushPendingSimple();
+  flushPendingHalf();
   // data-hideable → 整块显隐开关（复用 addModule 里的 vT）。显示存 'false'，隐藏存 'true'
   if (schema.hideable && typeof vTFn === 'function') {
     var hiddenVal = mdata._hidden === true || mdata._hidden === 'true' ? 'true' : 'false';
@@ -487,7 +636,8 @@ function _schemaHideToggle(name, label, hiddenVal) {
 function _schemaGroupHtml(prefix, field, mdata) {
   mdata = mdata || {};
   var label = _schemaLabel(field);
-  var hasChildren = field.children && field.children.length > 0;
+  var children = _schemaChildren(field);
+  var hasChildren = children.length > 0;
   var html = '';
 
   // 生成眼睛图标 + 隐藏域
@@ -514,18 +664,18 @@ function _schemaGroupHtml(prefix, field, mdata) {
     }
 
     // 子字段全是无子的 hideable group → flex-wrap 行内排列
-    var allLeafGroups = field.children.every(function(c) {
-      return c.type === 'group' && (!c.children || !c.children.length);
+    var allLeafGroups = children.every(function(c) {
+      return c.type === 'group' && !_schemaChildren(c).length;
     });
     if (allLeafGroups) {
       html += '<div class="d-flex flex-wrap gap-2 ps-3 mb-2">';
-      field.children.forEach(function(child) {
+      children.forEach(function(child) {
         html += _schemaGroupHtml(prefix, child, mdata);
       });
       html += '</div>';
     } else {
       html += '<div class="mb-2">';
-      field.children.forEach(function(child) {
+      children.forEach(function(child) {
         if (child.type === 'group') {
           html += _schemaGroupHtml(prefix, child, mdata);
         } else if (child.type === 'list' || child.type === 'grid') {
@@ -563,15 +713,20 @@ function generateSchemaStyleForm(prefix, schema, mdata) {
     if (!def) return;
     var name = prefix + 'style_' + token;
     var val = (mdata && mdata['style_' + token] != null) ? mdata['style_' + token] : '';
-    html += '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + _schemaEsc(def.label || token) + '</label>';
+    html += '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + _schemaEsc(translateFieldLabel(def.label || token)) + '</label>';
     if (def.control === 'select' || def.control === 'switch') {
-      html += '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">';
-      html += '<option value="">默认</option>';
-      (def.options || []).forEach(function(o) {
-        var ov = o.value, ol = o.text || o.value;
-        html += '<option value="' + _schemaEsc(ov) + '"' + (String(val) === String(ov) ? ' selected' : '') + '>' + _schemaEsc(ol) + '</option>';
-      });
-      html += '</select>';
+      var styleSegmented = segmentedControl(name, def.options || [], val, _schemaEsc);
+      if (styleSegmented) {
+        html += styleSegmented;
+      } else {
+        html += '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">';
+        html += '<option value="">默认</option>';
+        (def.options || []).forEach(function(o) {
+          var ov = o.value, ol = o.text || o.value;
+          html += '<option value="' + _schemaEsc(ov) + '"' + (String(val) === String(ov) ? ' selected' : '') + '>' + _schemaEsc(ol) + '</option>';
+        });
+        html += '</select>';
+      }
     } else if (def.control === 'color') {
       html += '<div class="input-group input-group-sm">' +
         '<input type="color" class="form-control form-control-color" value="' + _schemaEsc(val || '#888888') + '" oninput="this.nextElementSibling.value=this.value">' +
@@ -580,14 +735,14 @@ function generateSchemaStyleForm(prefix, schema, mdata) {
       html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="背景图 URL" oninput="updateImagePreview(this)">';
       html += '<label class="d-flex align-items-center gap-2 px-3 py-2 mt-1 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'">' +
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传背景图' +
-        '<input type="file" name="' + _schemaEsc(name) + '_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label>' +
+        '<input type="file" name="' + _schemaEsc(name) + '_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none"></label>' +
         '<div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>';
       var urlVisible = val ? '' : 'display:none';
       html += '<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;' + urlVisible + '">' + _schemaEsc(val) + '</div>';
       var previewVisible = val ? '' : 'display:none';
       html += '<div class="mt-2 module-image-preview" style="' + previewVisible + '">' +
         '<div style="position:relative;display:inline-block">' +
-        '<img src="' + _schemaEsc(val) + '" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'">' +
+        '<img src="' + _schemaEsc(val) + '" style="width:120px;height:auto;max-width:100%;max-height:90px;object-fit:contain;background:#f8fafc;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'">' +
         '<button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除背景图">&times;</button>' +
         '</div></div>';
     } else {
@@ -619,7 +774,7 @@ function _schemaListEditor(prefix, field, mdata) {
   var base = prefix.replace(/data_$/, '');
   var listName = field.name;
   var items = (mdata && Array.isArray(mdata[listName])) ? mdata[listName] : [];
-  var children = field.children || [];
+  var children = _schemaChildren(field);
   var html = '<div class="schema-list-editor mb-2" data-list-base="' + _schemaEsc(base) +
     '" data-list-name="' + _schemaEsc(listName) +
     '" data-children="' + _schemaEsc(JSON.stringify(children)) + '">';
@@ -647,7 +802,7 @@ function _schemaDatasetField(prefix, field, mdata) {
   var val = (mdata && mdata.dataset != null) ? mdata.dataset : '';
   var html = '<div class="mb-2"><label class="form-label small mb-1 text-muted">数据来源（' +
     _schemaEsc(field.name) + '）</label>' +
-    '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">' +
+    '<select class="form-select form-select-sm" data-no-segmented="1" name="' + _schemaEsc(name) + '">' +
     '<option value="">请选择数据集</option>';
   (datasetNames || []).forEach(function(ds) {
     html += '<option value="' + _schemaEsc(ds.target) + '"' +
@@ -774,10 +929,14 @@ function getBlockIconHTML(type) {
 function renderDynamicField(prefix, field, value, placeholder) {
   var key = field.key;
   var type = field.type || 'text';
-  var label = field.label || key;
+  var label = _schemaLabel({ name: key, key: key, label: field.label });
   var lowerKey = key.toLowerCase();
   var depVal = field.show_if && field.show_if.field === 'media_type' ? 'image' : null;
-  var html = '<div' + conditionalFieldAttrs(key, field.show_if, escapeHtml, depVal) + '><label class="form-label small mb-1 text-muted">' + escapeHtml(label) + '</label>';
+  var attrs = conditionalFieldAttrs(key, field.show_if, escapeHtml, depVal);
+  if (_schemaIsHalfField({ name: key, key: key, type: type, show_if: field.show_if, options: field.options })) {
+    attrs = attrs.replace('module-field', 'module-field module-field-half');
+  }
+  var html = '<div' + attrs + '><label class="form-label small mb-1 text-muted">' + escapeHtml(label) + '</label>';
 
   // 颜色字段: color / bg / text_ → 颜色选择器+文本
   var isColor = /color|_bg$|^bg$/i.test(lowerKey) && !/image|cover|background_image|section_bg|background|media/i.test(lowerKey);
@@ -793,13 +952,18 @@ function renderDynamicField(prefix, field, value, placeholder) {
   } else if (type === 'textarea') {
     html += '<textarea class="form-control form-control-sm" rows="4" name="' + prefix + key + '" placeholder="' + escapeHtml(placeholder || '') + '">' + escapeHtml(value || '') + '</textarea>';
   } else if (type === 'select') {
-    html += '<select class="form-select form-select-sm" name="' + prefix + key + '"><option value="">请选择</option>';
-    (field.options || []).forEach(function(opt) {
-      var optValue = typeof opt === 'object' ? opt.value : opt;
-      var optLabel = typeof opt === 'object' ? (opt.label || opt.value) : opt;
-      html += '<option value="' + escapeHtml(optValue) + '"' + (String(value || '') === String(optValue) ? ' selected' : '') + '>' + escapeHtml(optLabel) + '</option>';
-    });
-    html += '</select>';
+    var dynamicSegmented = segmentedControl(prefix + key, field.options || [], value, escapeHtml);
+    if (dynamicSegmented) {
+      html += dynamicSegmented;
+    } else {
+      html += '<select class="form-select form-select-sm" name="' + prefix + key + '"><option value="">请选择</option>';
+      (field.options || []).forEach(function(opt) {
+        var optValue = typeof opt === 'object' ? opt.value : opt;
+        var optLabel = typeof opt === 'object' ? (opt.label || opt.value) : opt;
+        html += '<option value="' + escapeHtml(optValue) + '"' + (String(value || '') === String(optValue) ? ' selected' : '') + '>' + escapeHtml(optLabel) + '</option>';
+      });
+      html += '</select>';
+    }
   } else if (type === 'number') {
     html += '<input type="number" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '">';
   } else if (isColor) {
@@ -811,15 +975,45 @@ function renderDynamicField(prefix, field, value, placeholder) {
     else if (needsRadiusUnit) unitOptions = '<option value="px">px</option><option value="rem">rem</option><option value="%">%</option>';
     else if (needsSpacingUnit) unitOptions = '<option value="px">px</option><option value="rem">rem</option>';
     html += '<div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="' + prefix + key + '" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name="' + prefix + key + '"]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}">' + unitOptions + '</select></div>';
+  } else if (/(image|cover|background|media|photo|logo)/i.test(key)) {
+    html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '" oninput="updateImagePreview(this)">';
   } else {
     html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '">';
   }
   if (/(image|cover|background|media|photo|logo)/i.test(key)) {
-    html += '<label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="' + prefix + key + '_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label>';
-    html += '<div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>';
+    html += '<label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="' + prefix + key + '_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none"></label>';
+    html += '<div class="form-text mt-1">支持 JPG/PNG/GIF/WebP/SVG，最大 12MB，上传后自动转 WebP</div>';
+    html += '<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div>';
+    html += '<div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="width:120px;height:auto;max-width:100%;max-height:90px;object-fit:contain;background:#f8fafc;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div>';
   }
   return html + '</div>';
 }
+
+function renderDynamicFieldsGrouped(prefix, fields, values, placeholder) {
+  values = values || {};
+  var html = '';
+  var pendingHalf = [];
+  function flushPendingHalf() {
+    if (!pendingHalf.length) return;
+    html += '<div class="module-field-row">';
+    pendingHalf.forEach(function(field) {
+      html += renderDynamicField(prefix, field, values[field.key] || field.default || '', placeholder || '');
+    });
+    html += '</div>';
+    pendingHalf = [];
+  }
+  (fields || []).forEach(function(field) {
+    if (_schemaIsHalfField({ name: field.key, key: field.key, type: field.type, label: field.label, show_if: field.show_if, options: field.options })) {
+      pendingHalf.push(field);
+    } else {
+      flushPendingHalf();
+      html += renderDynamicField(prefix, field, values[field.key] || field.default || '', placeholder || '');
+    }
+  });
+  flushPendingHalf();
+  return html;
+}
+
 function renderHiddenControl(idx, device, label) {
   return '<div class="mb-2 mt-2"><label class="form-check-label small"><input type="checkbox" class="form-check-input" name="module_' + idx + '_resp_' + device + '_hidden" value="1"> ' + label + '隐藏此模块</label></div>';
 }
@@ -832,7 +1026,7 @@ function heroSlideHtml(moduleIndex, slideIndex) {
     '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation(); this.closest(\'.hero-slide-item\').remove(); reindexHeroSlides(' + moduleIndex + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
     '<div class="hero-slide-body">' +
     '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">媒体类型</label><select class="form-select form-select-sm" name="' + p + 'type"><option value="image">图片</option><option value="video">视频</option></select></div>' +
-    '<div class="col-6"><label class="form-label small mb-1 text-muted">上传图片/视频</label><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片/视频<input type="file" name="' + p + 'file" accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP/MP4/WebM/OGG/MOV，最大 12MB</div></div></div>' +
+    '<div class="col-6"><label class="form-label small mb-1 text-muted">上传图片/视频</label><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片/视频<input type="file" name="' + p + 'file" accept="image/*,.svg,.svgz,video/mp4,video/webm,video/ogg,video/quicktime" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP/SVG/MP4/WebM/OGG/MOV，最大 12MB</div></div></div>' +
     '<div class="mb-2 mt-2"><label class="form-label small mb-1 text-muted">媒体 URL</label><input type="text" class="form-control form-control-sm" name="' + p + 'media" oninput="updateImagePreview(this)"></div><div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除文件">&times;</button></div></div></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="' + p + 'title"></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">副标题</label><input type="text" class="form-control form-control-sm" name="' + p + 'subtitle"></div>' +
@@ -991,10 +1185,10 @@ function logoItemHtml(moduleIndex, logoIndex) {
   var p = 'module_' + moduleIndex + '_logo_' + logoIndex + '_';
   return '<div class="border rounded p-2 mb-2 list-item" data-item-index="' + logoIndex + '">' +
     '<div class="d-flex justify-content-between align-items-center mb-2 list-item-header" style="cursor:pointer; user-select:none;" onclick="this.closest(\'.list-item\').classList.toggle(\'collapsed\')">' +
-    '<span class="small fw-semibold">Logo ' + (logoIndex + 1) + '</span>' +
+    '<span class="small fw-semibold">标志 ' + (logoIndex + 1) + '</span>' +
     '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.list-item\').remove();reindexLogoItems(' + moduleIndex + ')" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>' +
     '</div><div class="list-item-body">' +
-    '<div class="mb-2"><label class="form-label small mb-1 text-muted">Logo 图片</label><input type="hidden" name="' + p + 'image" value=""><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="' + p + 'image_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div><div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div><div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">标志图片</label><input type="hidden" name="' + p + 'image" value=""><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="' + p + 'image_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP/SVG，最大 12MB，上传后自动转 WebP</div><div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div><div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div></div>' +
     '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">品牌名称</label><input type="text" class="form-control form-control-sm" name="' + p + 'name"></div>' +
     '<div class="col-6"><label class="form-label small mb-1 text-muted">链接（可选）</label><input type="text" class="form-control form-control-sm" name="' + p + 'link" placeholder="https://"></div></div>' +
     '</div></div>';
@@ -1016,7 +1210,7 @@ function reindexLogoItems(moduleIndex) {
   items.forEach(function(item, idx) {
     item.dataset.itemIndex = idx;
     var label = item.querySelector('.small.fw-semibold');
-    if (label) label.textContent = 'Logo ' + (idx + 1);
+    if (label) label.textContent = '标志 ' + (idx + 1);
     item.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el) {
       el.name = el.name.replace(/module_\d+_logo_\d+_/, 'module_' + moduleIndex + '_logo_' + idx + '_');
     });
@@ -1231,10 +1425,11 @@ function _getMergedSchema(meta) {
   function mergeField(sf) {
     var mf = metaFieldMap[sf.name];
     var mergedChildren;
-    if (sf.children && sf.children.length) {
-      mergedChildren = sf.children.map(function(c) { return mergeField(c); });
+    var children = _schemaChildren(sf);
+    if (children.length) {
+      mergedChildren = children.map(function(c) { return mergeField(c); });
     } else {
-      mergedChildren = sf.children;
+      mergedChildren = children;
     }
     if (!mf) return Object.assign({}, sf, {children: mergedChildren});
     return {
@@ -1251,6 +1446,15 @@ function _getMergedSchema(meta) {
       show_if: mf.show_if || sf.show_if
     };
   }
+  function metaToSchemaField(mf) {
+    return mergeField({
+      name: mf.key,
+      tag: '',
+      type: mf.type || 'text',
+      label: mf.label || mf.key,
+      children: mf.item_fields || mf.children || []
+    });
+  }
 
   var mergedFields = [];
   (meta.fields || []).forEach(function(mf) {
@@ -1260,6 +1464,12 @@ function _getMergedSchema(meta) {
   });
   (meta.schema.fields || []).forEach(function(sf) {
     mergedFields.push(mergeField(sf));
+  });
+  (meta.fields || []).forEach(function(mf) {
+    if (schemaFieldMap[mf.key]) return;
+    if (mf.type === 'list' || mf.type === 'grid') {
+      mergedFields.push(metaToSchemaField(mf));
+    }
   });
 
   return {
@@ -1285,21 +1495,18 @@ function addModule(type, variant, dataPreset) {
 
   // 过滤掉由 specialEditor 自行渲染的字段（分页配置、columns 等），避免在通用表单区重复出现
   var pagerKeys = ['show_pagination', 'pagination_style', 'items_per_page', 'pager_align', 'pager'];
-  var desktopFields = fields.filter(function(field) {
+  var desktopFieldList = fields.filter(function(field) {
     return ['columns', 'max_items'].concat(pagerKeys).indexOf(field.key) === -1;
-  }).map(function(field) {
-    return renderDynamicField('module_' + idx + '_data_', field, field.default || '', '');
-  }).join('');
-  var tabletFields = fields.filter(function(field) {
+  });
+  var desktopFields = renderDynamicFieldsGrouped('module_' + idx + '_data_', desktopFieldList, dataPreset, '');
+  var tabletFieldList = fields.filter(function(field) {
     return ['columns', 'max_items'].concat(pagerKeys).indexOf(field.key) === -1;
-  }).map(function(field) {
-    return renderDynamicField('module_' + idx + '_resp_tablet_data_', field, '', '继承电脑端');
-  }).join('');
-  var mobileFields = fields.filter(function(field) {
+  });
+  var tabletFields = renderDynamicFieldsGrouped('module_' + idx + '_resp_tablet_data_', tabletFieldList, {}, '继承电脑端');
+  var mobileFieldList = fields.filter(function(field) {
     return ['columns', 'max_items'].concat(pagerKeys).indexOf(field.key) === -1;
-  }).map(function(field) {
-    return renderDynamicField('module_' + idx + '_resp_mobile_data_', field, '', '继承电脑端');
-  }).join('');
+  });
+  var mobileFields = renderDynamicFieldsGrouped('module_' + idx + '_resp_mobile_data_', mobileFieldList, {}, '继承电脑端');
 
   var cP = function(name, ph, dv) { return '<label class="form-label small mb-1 text-muted">' + ph + '</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="' + (dv || '#888888') + '" oninput="this.parentElement.querySelector(\'input[type=text]\').value=this.value"><input type="text" class="form-control form-control-sm" name="' + name + '" value="' + (dv || '') + '" placeholder="' + ph + '" oninput="this.parentElement.querySelector(\'input[type=color]\').value=this.value"></div>'; };
   var uP = function(name, ph, units, dv) { var o = units.map(function(u){return '<option value="'+u+'">'+u+'</option>';}).join(''); return '<label class="form-label small mb-1 text-muted">' + ph + '</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="' + name + '" value="' + (dv || '') + '" placeholder="' + ph + '" style="width:60%"><select class="form-select form-select-sm unit-picker" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name="' + name + '"]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option>' + o + '</select></div>'; };
@@ -1337,10 +1544,10 @@ function addModule(type, variant, dataPreset) {
     styleEditor =
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
     '<div class="row g-2 mb-2">' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_hero_width', 'Banner 外层宽度', ['px','%','vw','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_hero_height', 'Banner 高度', ['px','vh','rem','%']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_hero_width', '横幅外层宽度', ['px','%','vw','rem']) + '</div>' +
+      '<div class="col-6">' + uP('module_' + idx + '_data_hero_height', '横幅高度', ['px','vh','rem','%']) + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_content_width', '内容区宽度', ['px','%','vw','rem']) + '</div>' +
-      '<div class="col-6"><label class="form-label small mb-1 text-muted">Banner 文字排版</label><select class="form-select form-select-sm" name="module_' + idx + '_data_banner_align"><option value="">默认（全宽）</option><option value="center">居中</option><option value="left">居左</option><option value="right">居右</option></select></div>' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">横幅文字排版</label><select class="form-select form-select-sm" name="module_' + idx + '_data_banner_align"><option value="">默认（全宽）</option><option value="center">居中</option><option value="left">居左</option><option value="right">居右</option></select></div>' +
     '</div>' +
     '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
     '<div class="input-group input-group-sm">' +
@@ -1625,7 +1832,7 @@ function addModule(type, variant, dataPreset) {
     renderDynamicField('module_' + idx + '_data_', {key:'media_type', label:'媒体类型', type:'select', options:[{value:'image', label:'图片'}, {value:'video', label:'视频'}, {value:'embed', label:'嵌入页面'}]}, 'image', '') +
     renderDynamicField('module_' + idx + '_data_', {key:'image', label:'图片', type:'image', show_if:{field:'media_type', value:'image'}}, '', '') +
     renderDynamicField('module_' + idx + '_data_', {key:'video', label:'视频', type:'video', show_if:{field:'media_type', value:'video'}}, '', '') +
-    renderDynamicField('module_' + idx + '_data_', {key:'embed_url', label:'嵌入页面 URL', type:'embed', show_if:{field:'media_type', value:'embed'}}, '', 'https://example.com/tool/index.html') +
+    renderDynamicField('module_' + idx + '_data_', {key:'embed_url', label:'嵌入页面链接', type:'embed', show_if:{field:'media_type', value:'embed'}}, '', 'https://example.com/tool/index.html') +
     '<div class="row g-2">' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">主按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryBtn"></div>' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">主按钮链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryLink"></div>' +
@@ -1786,7 +1993,7 @@ function addModule(type, variant, dataPreset) {
     '</div>';
   } else if (type === 'logo_cloud') {
     specialEditor =
-    '<div class="logo-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">Logo 列表</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="addLogoItem(' + idx + ')">+ 添加 Logo</button></div><input type="hidden" name="module_' + idx + '_logo_count" class="logo-item-count" value="1"><div class="logo-item-list">' + logoItemHtml(idx, 0) + '</div></div>' +
+    '<div class="logo-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">标志列表</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="addLogoItem(' + idx + ')">+ 添加标志</button></div><input type="hidden" name="module_' + idx + '_logo_count" class="logo-item-count" value="1"><div class="logo-item-list">' + logoItemHtml(idx, 0) + '</div></div>' +
     '<hr class="my-2">' +
     '<div class="row g-2">' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
@@ -1820,7 +2027,7 @@ function addModule(type, variant, dataPreset) {
       '</select>' +
     '</div>' +
     '<hr class="my-2">' +
-    '<div class="small fw-semibold mb-1 text-muted">Logo 卡片样式</div>' +
+    '<div class="small fw-semibold mb-1 text-muted">标志卡片样式</div>' +
     '<div class="row g-2">' +
       '<div class="col-6">' + cP('module_' + idx + '_data_logo_bg', '卡片背景色', '#ffffff') + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_logo_border', '边框大小', ['px','rem']) + '</div>' +
@@ -2186,6 +2393,7 @@ function addModule(type, variant, dataPreset) {
     '</div>';
   container.appendChild(div);
   initColorPickers(div);
+  if (typeof enhanceCompactSelects === 'function') enhanceCompactSelects(div);
 
   // 手风琴展开/收缩
   div.querySelector('.module-header').addEventListener('click', function(){
@@ -2303,9 +2511,106 @@ function moveModule(btn, dir) {
   }
 }
 
+function ensureNestedSortControls(root) {
+  root = root || document;
+  var configs = [
+    {item: '.schema-list-item', header: '.schema-list-item-header'},
+    {item: '.hero-slide-item', header: '.hero-slide-header'},
+    {item: '.feature-item', header: '.feature-item-header'},
+    {item: '.list-item', header: '.list-item-header'},
+    {item: '.id-image-item', header: null},
+    {item: '.id-spec-item', header: null}
+  ];
+  configs.forEach(function(cfg) {
+    root.querySelectorAll(cfg.item).forEach(function(item) {
+      var header = cfg.header ? item.querySelector(cfg.header) : item.firstElementChild;
+      if (!header || header.querySelector('.nested-sort-actions')) return;
+      var delBtn = header.querySelector('.module-action-del, .schema-list-remove, .btn-outline-danger');
+      var controls = document.createElement('span');
+      controls.className = 'nested-sort-actions d-inline-flex align-items-center gap-1 ms-auto me-1';
+      controls.innerHTML =
+        '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveNestedListItem(this,-1)">↑</button>' +
+        '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveNestedListItem(this,1)">↓</button>';
+      if (delBtn) header.insertBefore(controls, delBtn);
+      else header.appendChild(controls);
+    });
+  });
+}
+
+function moveNestedListItem(btn, dir) {
+  var item = btn.closest('.schema-list-item, .hero-slide-item, .feature-item, .id-image-item, .id-spec-item, .list-item');
+  if (!item || !item.parentElement) return;
+  var parent = item.parentElement;
+  var selector = item.classList.contains('schema-list-item') ? '.schema-list-item' :
+    item.classList.contains('hero-slide-item') ? '.hero-slide-item' :
+    item.classList.contains('feature-item') ? '.feature-item' :
+    item.classList.contains('id-image-item') ? '.id-image-item' :
+    item.classList.contains('id-spec-item') ? '.id-spec-item' : '.list-item';
+  var siblings = Array.from(parent.children).filter(function(el) { return el.matches(selector); });
+  var idx = siblings.indexOf(item);
+  if (dir < 0 && idx > 0) {
+    parent.insertBefore(item, siblings[idx - 1]);
+  } else if (dir > 0 && idx >= 0 && idx < siblings.length - 1) {
+    parent.insertBefore(siblings[idx + 1], item);
+  } else {
+    return;
+  }
+  item.classList.remove('collapsed');
+  reindexNestedListItem(item);
+}
+
+function reindexNestedListItem(item) {
+  var editor;
+  if ((editor = item.closest('.schema-list-editor'))) {
+    _schemaListReindex(editor);
+    updateConditionalFields(editor);
+    return;
+  }
+  if ((editor = item.closest('.hero-slides-editor'))) {
+    reindexHeroSlides(parseInt(editor.dataset.moduleIndex || '0', 10));
+    return;
+  }
+  if ((editor = item.closest('.feature-items-editor'))) {
+    reindexFeatureItems(parseInt(editor.dataset.moduleIndex || '0', 10));
+    return;
+  }
+  if ((editor = item.closest('.stat-items-editor'))) {
+    reindexStatItems(parseInt(editor.dataset.moduleIndex || '0', 10));
+    return;
+  }
+  if ((editor = item.closest('.logo-items-editor'))) {
+    reindexLogoItems(parseInt(editor.dataset.moduleIndex || '0', 10));
+    return;
+  }
+  if ((editor = item.closest('.step-items-editor'))) {
+    reindexStepItems(parseInt(editor.dataset.moduleIndex || '0', 10));
+    return;
+  }
+  if ((editor = item.closest('.id-images-editor'))) {
+    reindexIdImages(parseInt(editor.dataset.moduleIndex || '0', 10));
+    return;
+  }
+  if ((editor = item.closest('.id-specs-editor'))) {
+    reindexIdSpecs(parseInt(editor.dataset.moduleIndex || '0', 10));
+  }
+}
+
+function bindNestedSortObserver() {
+  var root = document.getElementById('selectedModules') || document;
+  ensureNestedSortControls(root);
+  if (window._nestedSortObserver && window._nestedSortObserverRoot === root) return;
+  if (window._nestedSortObserver) window._nestedSortObserver.disconnect();
+  window._nestedSortObserver = new MutationObserver(function(mutations) {
+    var shouldRefresh = mutations.some(function(m) { return m.addedNodes && m.addedNodes.length; });
+    if (shouldRefresh) ensureNestedSortControls(root);
+  });
+  window._nestedSortObserverRoot = root;
+  window._nestedSortObserver.observe(root, {childList: true, subtree: true});
+}
+
 function idImageHtml(modIdx) {
   var next = parseInt(document.querySelector('#selectedModules .id-images-editor[data-module-index="'+modIdx+'"] .id-image-count').value || '0', 10);
-  return '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="'+next+'"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 '+(next+1)+'</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();reindexIdImages('+modIdx+')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label><input type="hidden" name="module_'+modIdx+'_data_images_'+next+'_url" value=""><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="module_'+modIdx+'_data_images_'+next+'_url_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div><div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div><div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div></div></div>';
+  return '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="'+next+'"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 '+(next+1)+'</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();reindexIdImages('+modIdx+')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label><input type="hidden" name="module_'+modIdx+'_data_images_'+next+'_url" value=""><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="module_'+modIdx+'_data_images_'+next+'_url_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP/SVG，最大 12MB，上传后自动转 WebP</div><div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div><div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div></div></div>';
 }
 
 // 图片预览：选择文件后在当前字段中显示本地预览
@@ -2313,15 +2618,24 @@ function handleModuleImageUpload(fileInput) {
   var file = fileInput.files[0];
   var container = fileInput.closest('.hero-slide-body') || fileInput.closest('.mb-2');
   var preview = container ? container.querySelector('.module-image-preview') : null;
+  if (!preview && container) {
+    preview = document.createElement('div');
+    preview.className = 'mt-2 module-image-preview';
+    preview.style.display = 'none';
+    preview.innerHTML = "<div style=\"position:relative;display:inline-block\"><img src=\"\" style=\"max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer\" onclick=\"enlargeImage(this)\" onerror=\"this.parentElement.parentElement.style.display='none'\"><button type=\"button\" class=\"btn btn-sm\" onclick=\"clearModuleImage(this)\" style=\"position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center\" title=\"移除图片\">&times;</button></div>";
+    container.appendChild(preview);
+  }
   var img = preview ? preview.querySelector('img') : null;
   var urlText = container ? container.querySelector('.module-image-url-text') : null;
   if (!file || !preview || !img) return;
-  if (file.type.startsWith('image/')) {
+  var isImage = (file.type || '').indexOf('image/') === 0 || /\.svgz?$/i.test(file.name || '');
+  if (isImage) {
+    img.onload = function() { preview.style.display = ''; };
+    img.onerror = function() { preview.style.display = 'none'; };
     img.src = URL.createObjectURL(file);
     preview.style.display = '';
   }
   if (urlText) { urlText.textContent = file.name; urlText.style.display = ''; }
-  img.onerror = function() { preview.style.display = 'none'; };
 }
 
 // 图片预览：点击放大
@@ -2335,7 +2649,7 @@ function enlargeImage(img) {
     overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:pointer';
     overlay.onclick = function() { overlay.style.display = 'none'; };
     var lbImg = document.createElement('img');
-    lbImg.style.cssText = 'max-width:95vw;max-height:95vh;border-radius:6px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
+    lbImg.style.cssText = 'max-width:95vw;max-height:95vh;object-fit:contain;background-color:#fff;background-image:linear-gradient(45deg,#eef2f7 25%,transparent 25%),linear-gradient(-45deg,#eef2f7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef2f7 75%),linear-gradient(-45deg,transparent 75%,#eef2f7 75%);background-position:0 0,0 8px,8px -8px,-8px 0;background-size:16px 16px;border-radius:6px;padding:12px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
     overlay.appendChild(lbImg);
     document.body.appendChild(overlay);
   }
@@ -2627,10 +2941,13 @@ function initSchemaMounts() {
     var styleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
     if (styleMount) styleMount.innerHTML = generateSchemaStyleForm(prefix, schema, mdata);
     mount.dataset.mounted = '1';
+    if (typeof enhanceCompactSelects === 'function') enhanceCompactSelects(mount.closest('.module-item') || mount);
     updateConditionalFields(mount.closest('.module-item') || mount);
   });
 }
 initSchemaMounts();
+if (typeof enhanceCompactSelects === 'function') enhanceCompactSelects(document);
+bindNestedSortObserver();
 
 // ====== 数据集选取器（featured_picks 从数据集导入条目）======
 

@@ -25,7 +25,7 @@ from .translator import (generate_seo_description,
 from .builder import build_site, build_template_preview
 from .db import db
 from .models import LoginToken, Site, Template, User
-from .site_storage import (copy_seed_data, init_site_folder,
+from .site_storage import (copy_seed_data, init_site_folder, lang_root,
                             list_yaml_files, read_yaml, write_yaml)
 
 bp = Blueprint('core', __name__)
@@ -325,8 +325,8 @@ def inject_context():
         if not admin_languages:
             admin_languages = template_languages
         default_lang = (
-            site.default_language
-            or ctx['template_meta'].get('default_language')
+            ctx['template_meta'].get('default_language')
+            or site.default_language
             or (admin_languages[0].get('code') if admin_languages else 'zh-CN')
         )
         current_lang = request.args.get('lang', '').strip() or default_lang
@@ -842,13 +842,20 @@ def _seo_health_report(site, lang=None):
     这里检查的是店主能理解并能通过现有表单补齐的内容项；技术性 SEO
     文件由构建器自动生成，只检查最近构建输出是否存在。
     """
-    default_lang = site.default_language or 'zh-CN'
-    lang = lang or default_lang
-    storage_lang = lang if lang != default_lang else None
-    settings = read_yaml(site.id, 'settings.yaml') or {}
-    company = settings.get('company') or {}
-    tpl_html_dir = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'templates'
+    default_lang = 'zh-CN'
     meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    if meta_path.exists():
+        try:
+            meta_data = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) or {}
+            default_lang = meta_data.get('default_language') or default_lang
+        except Exception:
+            default_lang = site.default_language or default_lang
+    lang = lang or default_lang
+    storage_lang = _storage_lang(site, lang, default_lang)
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    company_key = _lang_key('company', site, lang, default_lang)
+    company = _merge_settings_section(settings.get('company'), settings.get(company_key))
+    tpl_html_dir = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'templates'
     meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
 
     checks = []
@@ -864,17 +871,17 @@ def _seo_health_report(site, lang=None):
     if company.get('name'):
         add('ok', '公司名称已填写', '页面标题、OG 站点名和结构化数据会使用公司名称。')
     else:
-        add('warn', '缺少公司名称', '公司名称是全站 SEO 的基础字段。', url_for('core.company', site=site.id))
+        add('warn', '缺少公司名称', '公司名称是全站 SEO 的基础字段。', url_for('core.company', site=site.id, lang=lang))
 
     if company.get('logo'):
         add('ok', 'Logo 已填写', '社交分享图和 Organization 结构化数据有默认图片。')
     else:
-        add('warn', '缺少 Logo', '没有页面分享图时会缺少默认 OG 图片。', url_for('core.company', site=site.id))
+        add('warn', '缺少 Logo', '没有页面分享图时会缺少默认 OG 图片。', url_for('core.company', site=site.id, lang=lang))
 
     if settings.get('slogan') or company.get('slogan') or company.get('description') or company.get('intro'):
         add('ok', '站点简介已填写', '页面 description 缺省时可以回退到站点简介。')
     else:
-        add('warn', '缺少站点简介', '建议在公司信息里补一句话简介，作为页面描述兜底。', url_for('core.company', site=site.id))
+        add('warn', '缺少站点简介', '建议在公司信息里补一句话简介，作为页面描述兜底。', url_for('core.company', site=site.id, lang=lang))
 
     pages = {}
     for page_file in list_yaml_files(site.id, 'pages', lang=storage_lang):
@@ -995,7 +1002,7 @@ def seo_page_update(page_key):
     _validate_key(page_key)
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     page = read_yaml(site.id, f'pages/{page_key}.yaml', default={}, lang=storage_lang) or {}
     if not isinstance(page, dict):
         page = {}
@@ -1019,10 +1026,11 @@ def seo_page_generate(page_key):
     _validate_key(page_key)
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     page = read_yaml(site.id, f'pages/{page_key}.yaml', default={}, lang=storage_lang) or {}
     settings = read_yaml(site.id, 'settings.yaml') or {}
-    company = settings.get('company') or {}
+    company_key = _lang_key('company', site, lang, default_lang)
+    company = _merge_settings_section(settings.get('company'), settings.get(company_key))
     company_name = company.get('name') or settings.get('title') or site.name
     page_title = page.get('title') or page_key
     fallback = _auto_page_description(page) or (
@@ -1068,7 +1076,7 @@ def seo_detail_update(dataset_key, item_key):
     _validate_key(item_key)
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     raw = _load_dataset_for_seo(site.id, dataset_key, storage_lang)
     item = _find_dataset_item(raw, item_key)
     if item is None:
@@ -1094,13 +1102,14 @@ def seo_detail_generate(dataset_key, item_key):
     _validate_key(item_key)
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     raw = _load_dataset_for_seo(site.id, dataset_key, storage_lang)
     item = _find_dataset_item(raw, item_key)
     if item is None:
         abort(404)
     settings = read_yaml(site.id, 'settings.yaml') or {}
-    company = settings.get('company') or {}
+    company_key = _lang_key('company', site, lang, default_lang)
+    company = _merge_settings_section(settings.get('company'), settings.get(company_key))
     company_name = company.get('name') or settings.get('title') or site.name
     page_title = item.get('seo_title') or item.get('title') or item.get('name') or str(item_key)
     fallback = _plain_text(
@@ -1127,38 +1136,49 @@ def company():
 
     is_fragment = request.args.get('_fragment') is not None
     lang, languages, default_lang = _get_panel_lang(site)
-    company_key = 'company' if lang == default_lang else f'company_{lang}'
-    contact_key = 'contact' if lang == default_lang else f'contact_{lang}'
+    company_key = _lang_key('company', site, lang, default_lang)
+    contact_key = _lang_key('contact', site, lang, default_lang)
 
     if request.method == 'POST':
+        settings.setdefault('company', {})
+        settings.setdefault('contact', {})
         settings.setdefault(company_key, {})
         settings.setdefault(contact_key, {})
-        for field in ('name', 'short_name', 'icp'):
+        for field in ('name', 'short_name', 'description'):
             settings[company_key][field] = request.form.get(f'company.{field}', '').strip()
+        settings['company']['icp'] = request.form.get('company.icp', '').strip()
+        if company_key != 'company':
+            for field in ('logo', 'favicon', 'icp'):
+                settings[company_key].pop(field, None)
         logo_upload = request.files.get('company_logo_file')
         if logo_upload and logo_upload.filename:
             try:
-                settings[company_key]['logo'] = _save_uploaded_image(site.id, logo_upload, prefix='company-logo')
+                settings['company']['logo'] = _save_uploaded_image(site.id, logo_upload, prefix='company-logo')
             except Exception as exc:
                 flash(f'Logo 上传失败: {exc}')
                 if is_fragment:
                     return redirect(url_for('core.company', _fragment='1', site=site.id, lang=lang))
                 return redirect(url_for('core.company', site=site.id, lang=lang))
         elif 'company.logo' in request.form:
-            settings[company_key]['logo'] = request.form.get('company.logo', '').strip()
+            settings['company']['logo'] = request.form.get('company.logo', '').strip()
         # Favicon 上传（favicon 通常较小，复用图片上传逻辑转 WebP）
         favicon_upload = request.files.get('company_favicon_file')
         if favicon_upload and favicon_upload.filename:
             try:
-                settings[company_key]['favicon'] = _save_uploaded_image(site.id, favicon_upload, prefix='company-favicon')
+                settings['company']['favicon'] = _save_uploaded_image(site.id, favicon_upload, prefix='company-favicon')
             except Exception as exc:
                 flash(f'Favicon 上传失败: {exc}')
                 if is_fragment:
                     return redirect(url_for('core.company', _fragment='1', site=site.id, lang=lang))
                 return redirect(url_for('core.company', site=site.id, lang=lang))
         elif 'company.favicon' in request.form:
-            settings[company_key]['favicon'] = request.form.get('company.favicon', '').strip()
-        for field in ('phone', 'email', 'address', 'wechat'):
+            settings['company']['favicon'] = request.form.get('company.favicon', '').strip()
+        for field in ('phone', 'email', 'wechat'):
+            settings['contact'][field] = request.form.get(f'contact.{field}', '').strip()
+        if contact_key != 'contact':
+            for field in ('phone', 'email', 'mobile', 'wechat'):
+                settings[contact_key].pop(field, None)
+        for field in ('address',):
             settings[contact_key][field] = request.form.get(f'contact.{field}', '').strip()
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
@@ -1166,8 +1186,8 @@ def company():
             return redirect(url_for('core.company', _fragment='1', site=site.id, lang=lang))
         return redirect(url_for('core.company', site=site.id, lang=lang))
 
-    current_company = settings.get(company_key) or settings.get('company', {})
-    current_contact = settings.get(contact_key) or settings.get('contact', {})
+    current_company = _merge_settings_section(settings.get('company'), settings.get(company_key))
+    current_contact = _merge_settings_section(settings.get('contact'), settings.get(contact_key))
     source_company = settings.get('company', {})
     source_contact = settings.get('contact', {})
 
@@ -1197,7 +1217,7 @@ def company():
 def products():
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     products = datasets.load(site.id, 'products', lang=storage_lang)
     if request.args.get('_fragment'):
         blocks = _get_available_blocks(site.template_name)
@@ -1214,7 +1234,7 @@ def products():
 def product_new():
     _, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     n = len(datasets.load(site.id, 'products', lang=storage_lang)) + 1
     new_id = datasets.add(site.id, 'products', {
         'name': '新产品', 'slug': f'product-{n}',
@@ -1228,7 +1248,7 @@ def product_new():
 def product_delete(product_id):
     _, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     datasets.remove(site.id, 'products', product_id, lang=storage_lang)
     flash('已删除')
     return redirect(url_for('core.products', site=site.id, lang=lang))
@@ -1238,7 +1258,7 @@ def product_delete(product_id):
 def product_edit(product_id):
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     product = datasets.find(site.id, 'products', product_id, lang=storage_lang)
     if not product:
         abort(404, f'产品不存在: id={product_id}')
@@ -1269,7 +1289,7 @@ def product_edit(product_id):
 def features():
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     items = datasets.load(site.id, 'features', lang=storage_lang)
     if request.args.get('_fragment'):
         blocks = _get_available_blocks(site.template_name)
@@ -1286,7 +1306,7 @@ def features():
 def feature_new():
     _, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     new_id = datasets.add(site.id, 'features',
                           {'icon': '', 'title': '新功能', 'desc': ''}, lang=storage_lang)
     return redirect(url_for('core.feature_edit', item_id=new_id, site=site.id, lang=lang))
@@ -1296,7 +1316,7 @@ def feature_new():
 def feature_delete(item_id):
     _, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     datasets.remove(site.id, 'features', item_id, lang=storage_lang)
     flash('已删除')
     return redirect(url_for('core.features', site=site.id, lang=lang))
@@ -1306,7 +1326,7 @@ def feature_delete(item_id):
 def feature_edit(item_id):
     user, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     item = datasets.find(site.id, 'features', item_id, lang=storage_lang)
     if not item:
         abort(404)
@@ -1325,7 +1345,7 @@ def feature_edit(item_id):
 def blog():
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     items = datasets.load(site.id, 'posts', lang=storage_lang)
     if request.args.get('_fragment'):
         blocks = _get_available_blocks(site.template_name)
@@ -1343,7 +1363,7 @@ def post_new():
     from datetime import date as _date
     _, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     n = len(datasets.load(site.id, 'posts', lang=storage_lang)) + 1
     new_id = datasets.add(site.id, 'posts', {
         'slug': f'post-{n}', 'title': '新文章', 'date': str(_date.today()),
@@ -1356,7 +1376,7 @@ def post_new():
 def post_delete(item_id):
     _, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     datasets.remove(site.id, 'posts', item_id, lang=storage_lang)
     flash('已删除')
     return redirect(url_for('core.blog', site=site.id, lang=lang))
@@ -1366,7 +1386,7 @@ def post_delete(item_id):
 def post_edit(item_id):
     user, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     item = datasets.find(site.id, 'posts', item_id, lang=storage_lang)
     if not item:
         abort(404)
@@ -1384,7 +1404,9 @@ def post_edit(item_id):
 @bp.route('/pages/home', methods=['GET', 'POST'])
 def page_home():
     user, site = _current_context()
-    page = read_yaml(site.id, 'pages/home.yaml') or {}
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = _storage_lang(site, lang, default_lang)
+    page = read_yaml(site.id, 'pages/home.yaml', lang=storage_lang) or {}
 
     # 检测格式: modules 数组 vs 旧固定 key
     is_modules_format = 'modules' in page
@@ -1415,14 +1437,13 @@ def page_home():
                         page[key]['limit'] = int(limit)
                     except ValueError:
                         pass
-        write_yaml(site.id, 'pages/home.yaml', page)
+        write_yaml(site.id, 'pages/home.yaml', page, lang=storage_lang)
         flash('已保存')
         if request.args.get('_fragment'):
-            return redirect(url_for('core.page_home', _fragment='1', site=site.id))
-        return redirect(url_for('core.page_home', site=site.id))
+            return redirect(url_for('core.page_home', _fragment='1', site=site.id, lang=lang))
+        return redirect(url_for('core.page_home', site=site.id, lang=lang))
 
     # 准备渲染上下文
-    lang, languages, default_lang = _get_panel_lang(site)
     from .icon_registry import icon_names
     from .style_registry import STYLE_REGISTRY
     blocks = _get_available_blocks(site.template_name)
@@ -1560,9 +1581,8 @@ def header_edit():
     # 当前启用的语言列表以 Site 模型为准，避免 settings.header.enabled_languages 旧缓存污染面板显示
     all_template_codes = [l['code'] for l in template_languages]
     enabled_languages = [c for c in (site.enabled_languages or all_template_codes) if c in all_template_codes]
-    visible_template_languages = [l for l in template_languages if l['code'] in enabled_languages]
-    if not visible_template_languages:
-        visible_template_languages = template_languages
+    # 复选框展示模板全部语言（不按 enabled 过滤），让管理员能看到并勾选新增的语言版本
+    visible_template_languages = list(template_languages)
 
     # 语言切换按钮样式列表
     lang_switcher_styles = [
@@ -1609,9 +1629,8 @@ def header_edit():
         current_header['variant'] = header_variant_keys[0] if header_variant_keys else 'logo_left_menu_right'
     # 显示仍以 Site.enabled_languages 为准；保存时会同步 settings.header.enabled_languages
     enabled_languages = [c for c in (site.enabled_languages or all_template_codes) if c in all_template_codes]
-    visible_template_languages = [l for l in template_languages if l['code'] in enabled_languages]
-    if not visible_template_languages:
-        visible_template_languages = template_languages
+    # 复选框展示模板全部语言（不按 enabled 过滤），让管理员能看到并勾选新增的语言版本
+    visible_template_languages = list(template_languages)
     if is_fragment:
         return render_template('dashboard/panel_header.html',
                                user=user, site=site,
@@ -1638,7 +1657,7 @@ def footer_variant_edit():
     settings = read_yaml(site.id, 'settings.yaml') or {}
     is_fragment = request.args.get('_fragment') is not None
     lang, languages, default_lang = _get_panel_lang(site)
-    footer_key = 'footer' if lang == default_lang else f'footer_{lang}'
+    footer_key = _lang_key('footer', site, lang, default_lang)
 
     # Footer 变体列表
     tpl_meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
@@ -2207,6 +2226,23 @@ def _default_lang_code(site):
     return 'zh-CN'
 
 
+def _preview_needs_rebuild(site_id, out):
+    """Return true when generated preview is missing or older than site YAML."""
+    index = out / 'index.html'
+    if not index.exists():
+        return True
+    try:
+        built_at = index.stat().st_mtime
+        root = Path(current_app.config['SITES_DIR']) / str(site_id)
+        return any(
+            path.stat().st_mtime > built_at
+            for path in root.rglob('*.yaml')
+            if not path.name.startswith('.tmp-')
+        )
+    except OSError:
+        return True
+
+
 @bp.route('/preview_site/<int:site_id>')
 def preview_site(site_id):
     """确保已构建，重定向到根 index.html（多语言站走 JS 浏览器语言检测）."""
@@ -2217,7 +2253,7 @@ def preview_site(site_id):
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
 
     # 构建条件：不存在任何产出。?_ 只是浏览器 cache-busting 参数，不触发重建。
-    if not (out / 'index.html').exists():
+    if _preview_needs_rebuild(site_id, out):
         build_site(site_id, base_url=f'/preview/{site_id}')
 
     # 返回根 index.html：多语言站走 JS 浏览器语言检测，单语言站直接渲染
@@ -2235,7 +2271,7 @@ def preview_or_build(site_id):
     # 优先返回根 index.html（多语言站含 JS 浏览器语言检测），
     # 不存在则回退到默认语言首页（单语言站点无根选择页）
     root_index = out / 'index.html'
-    if not root_index.exists():
+    if _preview_needs_rebuild(site_id, out):
         build_site(site_id, base_url=f'/preview/{site_id}')
 
     if (out / 'index.html').exists():
@@ -2259,13 +2295,18 @@ def preview(site_id, filepath='index.html'):
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
     # 根路径请求 → 返回根 index.html（多语言站走 JS 浏览器语言检测），不再跳默认语言
     if filepath == 'index.html':
-        if not (out / 'index.html').exists():
+        if _preview_needs_rebuild(site_id, out):
             try:
                 build_site(site_id, base_url=f'/preview/{site_id}')
             except Exception:
                 current_app.logger.exception('预览构建站点 %s 失败', site_id)
         if (out / 'index.html').exists():
             return _safe_send_from_directory(out, 'index.html')
+    elif _preview_needs_rebuild(site_id, out):
+        try:
+            build_site(site_id, base_url=f'/preview/{site_id}')
+        except Exception:
+            current_app.logger.exception('预览构建站点 %s 失败', site_id)
 
     # 先解析出最终目标文件，再判断是否需要重建
     full = out / filepath
@@ -2313,6 +2354,58 @@ def _get_panel_lang(site):
     if lang and lang in valid_codes:
         return lang, languages, default_lang
     return default_lang, languages, default_lang
+
+
+def _storage_lang(site, lang, default_lang):
+    """返回语言内容的实际存储路径参数.
+
+    与 builder._load_lang_overrides 的逻辑对齐:
+    - 非默认语言: 始终返回 lang 参数 (读写 lang/<code>/ 子目录)
+    - 默认语言: 如果 lang/<default_lang>/ 目录存在, 返回 lang 参数;
+      否则返回 None (读写根目录)
+
+    这是什么场景: 当站点根目录 pages/ 存的是旧默认语言 (如英文),
+    而新默认语言 (如中文) 存在于 lang/zh-CN/ 时, 后台面板需要从
+    语言子目录读写, 而不是从根目录读到旧语言内容.
+    """
+    if lang != default_lang:
+        return lang
+    if lang_root(site.id, lang).exists():
+        return lang
+    return None
+
+
+def _lang_key(base_key, site, lang, default_lang):
+    """返回 settings.yaml 中带语言后缀的 key (company/contact/footer).
+
+    与构建器对齐: 如果 lang/<lang>/ 目录存在, 始终用 "{key}_{lang}" 后缀 key.
+    否则默认语言用根 key, 非默认语言才带后缀.
+
+    为什么: 当根 company/contact 存的是旧默认语言 (如英文),
+    company_zh-CN/contact_zh-CN 存的是新默认语言 (如中文) 时,
+    构建器优先取 _zh-CN 版本, 面板也必须读写同一个 key.
+    """
+    if lang_root(site.id, lang).exists():
+        return f'{base_key}_{lang}'
+    if lang == default_lang:
+        return base_key
+    return f'{base_key}_{lang}'
+
+
+def _merge_settings_section(shared, localized):
+    """Merge shared settings with current-language overrides."""
+    if not isinstance(shared, dict):
+        shared = {}
+    if not isinstance(localized, dict):
+        localized = {}
+    shared_first_fields = {'logo', 'favicon', 'icp', 'phone', 'mobile', 'email', 'wechat'}
+    result = dict(shared)
+    for key, value in localized.items():
+        if key in shared_first_fields and result.get(key):
+            continue
+        if value not in (None, ''):
+            result[key] = value
+    return result
 
 
 def _render(template_name, **kwargs):
@@ -2368,6 +2461,19 @@ def api_richtext_upload_image():
     return jsonify({'ok': True, 'url': url})
 
 
+@bp.route('/api/richtext/upload-video', methods=['POST'])
+def api_richtext_upload_video():
+    """Upload a video for rich-text editors and return a site-local URL."""
+    _, site = _current_context()
+    upload = request.files.get('video') or request.files.get('media')
+    if not upload or not upload.filename:
+        return jsonify({'error': 'No video file provided'}), 400
+    url = _save_uploaded_media(site.id, upload, prefix='richtext-video')
+    if not url:
+        return jsonify({'error': 'Video upload failed or file type is not supported'}), 400
+    return jsonify({'ok': True, 'url': url})
+
+
 @bp.route('/api/site/<int:site_id>/dataset/<string:dataset_name>/items')
 def api_dataset_items(site_id, dataset_name):
     """返回某数据集下的条目摘要（供精选推荐等模块的"从数据集选取"功能调用）。
@@ -2379,7 +2485,7 @@ def api_dataset_items(site_id, dataset_name):
     if not user or site.id != site_id:
         abort(404)
     lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     try:
         items = datasets.load(site_id, dataset_name, lang=storage_lang)
     except Exception:
@@ -2409,7 +2515,7 @@ def dataset_panel(dataset_key):
     _validate_key(dataset_key)
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     items = datasets.load(site.id, dataset_key, lang=storage_lang)
     # 计算数据集的菜单层级路径，用于中间预览 URL
     settings = read_yaml(site.id, 'settings.yaml') or {}
@@ -2435,7 +2541,7 @@ def dataset_new(dataset_key):
     _validate_key(dataset_key)
     _, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     n = len(datasets.load(site.id, dataset_key, lang=storage_lang)) + 1
     new_id = datasets.add(site.id, dataset_key, {
         'title': f'新条目 {n}', 'slug': f'item-{n}',
@@ -2448,7 +2554,7 @@ def dataset_edit(dataset_key, item_id):
     _validate_key(dataset_key)
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
 
     item = datasets.find(site.id, dataset_key, item_id, lang=storage_lang)
     if not item:
@@ -2462,12 +2568,13 @@ def dataset_edit(dataset_key, item_id):
             if key not in ('id', 'slug', 'modules', 'csrf_token'):
                 fields[key] = val
         for key in request.form:
+            if key.startswith('detail_gallery_') or key in ('detail_gallery_count',):
+                continue
             # 跳过模块配置字段和 CSRF 令牌（不参与数据存储）
             if key.startswith('module_') or key in ('module_count', 'csrf_token'):
                 continue
             val = request.form.get(key, '').strip()
-            if val:
-                fields[key] = val
+            fields[key] = val
         # slug 唯一性校验
         new_slug = fields.get('slug', '').strip() or None
         if new_slug:
@@ -2492,6 +2599,29 @@ def dataset_edit(dataset_key, item_id):
                 tags_list = [t.strip() for t in raw_tags.replace(',', ' ').split() if t.strip()]
                 fields['tags'] = tags_list
         # 处理图片上传
+        if 'tags_visible' in fields:
+            fields['tags_visible'] = str(fields.get('tags_visible')).lower() != 'false'
+        if 'detail_gallery_count' in request.form or 'detail_gallery_visible' in request.form:
+            gallery_count = 0
+            try:
+                gallery_count = int(request.form.get('detail_gallery_count', '0'))
+            except (ValueError, TypeError):
+                gallery_count = 0
+            gallery_images = []
+            for gi in range(gallery_count):
+                url = request.form.get(f'detail_gallery_{gi}_url', '').strip()
+                upload = request.files.get(f'detail_gallery_{gi}_url_file')
+                if upload and upload.filename:
+                    try:
+                        url = _save_uploaded_image(site.id, upload, prefix=f'{dataset_key}-detail-gallery-{gi + 1}')
+                    except Exception as exc:
+                        current_app.logger.warning('细节图库图片上传失败: %s', exc)
+                if url:
+                    gallery_images.append({'url': url})
+            fields['detail_gallery'] = {
+                'visible': str(request.form.get('detail_gallery_visible', 'true')).lower() != 'false',
+                'images': gallery_images,
+            }
         for field_name in ('cover', 'image', 'photo', 'logo'):
             upload = request.files.get(field_name)
             if upload and upload.filename:
@@ -2573,7 +2703,7 @@ def dataset_delete(dataset_key, item_id):
     _validate_key(dataset_key)
     _, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
     datasets.remove(site.id, dataset_key, item_id, lang=storage_lang)
     flash('已删除')
     return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
@@ -2593,7 +2723,7 @@ def page_panel(page_key):
 
     lang, languages, default_lang = _get_panel_lang(site)
     # 非默认语言时使用 lang 参数进行读写；默认语言读写根目录
-    storage_lang = lang if lang != default_lang else None
+    storage_lang = _storage_lang(site, lang, default_lang)
 
     # POST：保存模块配置
     if request.method == 'POST':
@@ -2808,12 +2938,42 @@ def _parse_modules_form(form, existing_modules=None):
 
     # data-* 声明式 block 的 schema 表（按类型）：供下方通用 list/grid 条目解析。
     # 取不到（无站点上下文/扫描失败）则留空，回落到各 block 的硬编码解析分支。
+    def _merge_meta_lists_into_schema(schema, meta_fields):
+        if not isinstance(schema, dict):
+            return schema
+        merged = dict(schema)
+        fields = list(merged.get('fields') or [])
+        existing = {f.get('name') for f in fields if isinstance(f, dict)}
+        for mf in meta_fields or []:
+            if not isinstance(mf, dict):
+                continue
+            key = mf.get('key') or mf.get('name')
+            if not key or key in existing or mf.get('type') not in ('list', 'grid'):
+                continue
+            item_fields = []
+            for child in mf.get('item_fields') or mf.get('children') or []:
+                if not isinstance(child, dict):
+                    continue
+                c = dict(child)
+                c['name'] = c.get('name') or c.get('key') or ''
+                if c['name']:
+                    item_fields.append(c)
+            fields.append({
+                'name': key,
+                'type': mf.get('type'),
+                'label': mf.get('label') or key,
+                'children': item_fields,
+            })
+            existing.add(key)
+        merged['fields'] = fields
+        return merged
+
     schema_by_type = {}
     try:
         _tpl_name = _current_context()[1].template_name
         for b in _get_available_blocks(_tpl_name):
             if b.get('is_data_attr') and b.get('schema') is not None:
-                schema_by_type[b['name']] = b['schema']
+                schema_by_type[b['name']] = _merge_meta_lists_into_schema(b['schema'], b.get('fields') or [])
     except Exception:
         schema_by_type = {}
 
@@ -2856,12 +3016,25 @@ def _parse_modules_form(form, existing_modules=None):
         _schema = schema_by_type.get(m_type)
         if _schema is not None:
             # 递归遍历所有字段（穿透 group 的 children），确保嵌套 list/grid 也能被解析
+            def _schema_children(field):
+                children = field.get('children') or field.get('item_fields') or []
+                normalized = []
+                for child in children:
+                    if not isinstance(child, dict):
+                        continue
+                    c = dict(child)
+                    c['name'] = c.get('name') or c.get('key') or ''
+                    if c.get('name'):
+                        normalized.append(c)
+                return normalized
+
             def _iter_list_fields(fields):
                 for f in fields:
                     if f.get('type', '') in ('list', 'grid'):
                         yield f
-                    if f.get('children'):
-                        yield from _iter_list_fields(f['children'])
+                    children = _schema_children(f)
+                    if children:
+                        yield from _iter_list_fields(children)
 
             for lf in _iter_list_fields(_schema.get('fields', [])):
                 list_name = lf.get('name', '')
@@ -2882,7 +3055,7 @@ def _parse_modules_form(form, existing_modules=None):
                 except (ValueError, TypeError):
                     item_n = 0
                 # 子字段名 + 类型 + data-href 字段名
-                sub_specs = [(c.get('name', ''), c.get('type', ''), c.get('href_field', '')) for c in lf.get('children', [])]
+                sub_specs = [(c.get('name', ''), c.get('type', ''), c.get('href_field', '')) for c in _schema_children(lf)]
                 items = []
                 for j in range(item_n):
                     item_prefix = f'{idx}_data_{list_name}_{j}_' if is_alt_fmt else f'{idx}_{list_name}_{j}_'

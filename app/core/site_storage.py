@@ -22,6 +22,12 @@ import yaml
 from flask import abort, current_app
 
 
+def _is_content_yaml(path):
+    """Return true for real content YAML files, excluding atomic-write leftovers."""
+    name = Path(path).name
+    return name.endswith(('.yaml', '.yml')) and not name.startswith('.tmp-')
+
+
 def site_root(site_id):
     """获取站点的文件夹路径."""
     base = Path(current_app.config['SITES_DIR'])
@@ -132,6 +138,8 @@ def list_yaml_files(site_id, subdir, lang=None):
         lang_dir = lang_root(site_id, lang) / subdir
         if lang_dir.exists():
             for f in sorted(lang_dir.glob('*.yaml')):
+                if not _is_content_yaml(f):
+                    continue
                 seen.add(f.name)
                 items.append(f)
 
@@ -139,6 +147,8 @@ def list_yaml_files(site_id, subdir, lang=None):
     path = site_root(site_id) / subdir
     if path.exists():
         for f in sorted(path.glob('*.yaml')):
+            if not _is_content_yaml(f):
+                continue
             if f.name not in seen:
                 items.append(f)
 

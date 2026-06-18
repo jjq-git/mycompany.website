@@ -531,15 +531,24 @@ function handleModuleImageUpload(fileInput) {
   var file = fileInput.files[0];
   var container = fileInput.closest('.hero-slide-body') || fileInput.closest('.mb-2');
   var preview = container ? container.querySelector('.module-image-preview') : null;
+  if (!preview && container) {
+    preview = document.createElement('div');
+    preview.className = 'mt-2 module-image-preview';
+    preview.style.display = 'none';
+    preview.innerHTML = "<div style=\"position:relative;display:inline-block\"><img src=\"\" style=\"max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer\" onclick=\"enlargeImage(this)\" onerror=\"this.parentElement.parentElement.style.display='none'\"><button type=\"button\" class=\"btn btn-sm\" onclick=\"clearModuleImage(this)\" style=\"position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center\" title=\"移除图片\">&times;</button></div>";
+    container.appendChild(preview);
+  }
   var img = preview ? preview.querySelector('img') : null;
   var urlText = container ? container.querySelector('.module-image-url-text') : null;
   if (!file || !preview || !img) return;
-  if (file.type.startsWith('image/')) {
+  var isImage = (file.type || '').indexOf('image/') === 0 || /\.svgz?$/i.test(file.name || '');
+  if (isImage) {
+    img.onload = function() { preview.style.display = ''; };
+    img.onerror = function() { preview.style.display = 'none'; };
     img.src = URL.createObjectURL(file);
     preview.style.display = '';
   }
   if (urlText) { urlText.textContent = file.name; urlText.style.display = ''; }
-  img.onerror = function() { preview.style.display = 'none'; };
 }
 
 // 图片预览：点击放大
@@ -553,7 +562,7 @@ function enlargeImage(img) {
     overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:pointer';
     overlay.onclick = function() { overlay.style.display = 'none'; };
     var lbImg = document.createElement('img');
-    lbImg.style.cssText = 'max-width:95vw;max-height:95vh;border-radius:6px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
+    lbImg.style.cssText = 'max-width:95vw;max-height:95vh;object-fit:contain;background-color:#fff;background-image:linear-gradient(45deg,#eef2f7 25%,transparent 25%),linear-gradient(-45deg,#eef2f7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef2f7 75%),linear-gradient(-45deg,transparent 75%,#eef2f7 75%);background-position:0 0,0 8px,8px -8px,-8px 0;background-size:16px 16px;border-radius:6px;padding:12px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
     overlay.appendChild(lbImg);
     document.body.appendChild(overlay);
   }

@@ -6,395 +6,61 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>SEO 健康检查</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-seo.css') }}?v=20260616d">
   <style>
     :root {
+      --bs-primary: {{ admin_primary }};
+      --bs-primary-rgb: {{ admin_primary_rgb }};
+      --bs-primary-bg-subtle: {{ admin_primary_light }};
+      --bs-primary-border-subtle: {{ admin_primary_light }};
+      --bs-link-color: {{ admin_primary }};
+      --bs-link-hover-color: {{ admin_primary_hover }};
+      --theme-primary: {{ admin_primary }};
+      --theme-primary-hover: {{ admin_primary_hover }};
+      --theme-primary-active: {{ admin_primary_active }};
+      --theme-btn-bg: {{ admin_primary }};
+      --theme-btn-border-color: {{ admin_primary }};
+      --theme-btn-hover-bg: {{ admin_primary_hover }};
+      --theme-btn-hover-border-color: {{ admin_primary_hover }};
+      --theme-btn-active-bg: {{ admin_primary_active }};
+      --theme-btn-active-border-color: {{ admin_primary_active }};
+      --seo-primary-soft: rgba({{ admin_primary_rgb }}, .10);
+      --seo-primary-border: rgba({{ admin_primary_rgb }}, .28);
+
+      /* SEO 工作台中面色定义 */
       --seo-bg: #f6f7f9;
       --seo-panel: #fff;
       --seo-border: #dfe4ea;
       --seo-border-strong: #cbd5e1;
       --seo-muted: #64748b;
       --seo-ink: #172033;
-      --seo-primary: #2563eb;
-      --seo-primary-soft: #eff6ff;
     }
 
-    * {
-      box-sizing: border-box;
+    .btn-primary {
+      --bs-btn-bg: var(--theme-btn-bg);
+      --bs-btn-border-color: var(--theme-btn-border-color);
+      --bs-btn-hover-bg: var(--theme-btn-hover-bg);
+      --bs-btn-hover-border-color: var(--theme-btn-hover-border-color);
+      --bs-btn-active-bg: var(--theme-btn-active-bg);
+      --bs-btn-active-border-color: var(--theme-btn-active-border-color);
+      --bs-btn-disabled-bg: var(--theme-btn-bg);
+      --bs-btn-disabled-border-color: var(--theme-btn-border-color);
     }
 
-    body {
-      margin: 0;
-      color: var(--seo-ink);
-      background: var(--seo-bg);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    .btn-outline-secondary {
+      --bs-btn-color: var(--theme-primary);
+      --bs-btn-border-color: var(--seo-primary-border);
+      --bs-btn-hover-bg: var(--seo-primary-soft);
+      --bs-btn-hover-border-color: var(--theme-primary);
+      --bs-btn-hover-color: var(--theme-primary-active);
+      --bs-btn-active-bg: var(--seo-primary-soft);
+      --bs-btn-active-border-color: var(--theme-primary-active);
+      --bs-btn-active-color: var(--theme-primary-active);
     }
 
-    .seo-shell {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      max-width: 1440px;
-      min-height: 100vh;
-      margin: 0 auto;
-      padding: 18px;
-    }
-
-    .seo-header,
-    .seo-sidebar,
-    .seo-detail,
-    .seo-check-panel,
-    .seo-stat {
-      border: 1px solid var(--seo-border);
-      border-radius: 8px;
-      background: var(--seo-panel);
-    }
-
-    .seo-header {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 16px;
-      align-items: center;
-      padding: 16px 18px;
-    }
-
-    .seo-title {
-      margin: 0;
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 0;
-    }
-
-    .seo-subtitle,
-    .seo-help,
-    .seo-row-msg,
-    .seo-page-path {
-      color: var(--seo-muted);
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .seo-subtitle {
-      margin-top: 6px;
-      max-width: 820px;
-      font-size: 13px;
-    }
-
-    .seo-score {
-      display: grid;
-      grid-template-columns: auto auto;
-      gap: 12px;
-      align-items: center;
-    }
-
-    .seo-score-number {
-      min-width: 92px;
-      text-align: center;
-    }
-
-    .seo-score-number strong {
-      display: block;
-      color: var(--seo-primary);
-      font-size: 36px;
-      line-height: 1;
-    }
-
-    .seo-stat-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(74px, 1fr));
-      gap: 8px;
-    }
-
-    .seo-stat {
-      padding: 8px 10px;
-      text-align: center;
-    }
-
-    .seo-stat strong {
-      display: block;
-      font-size: 18px;
-      line-height: 1.1;
-    }
-
-    .seo-stat span {
-      color: var(--seo-muted);
-      font-size: 12px;
-    }
-
-    .seo-layout {
-      display: grid;
-      grid-template-columns: 300px minmax(0, 1fr);
-      gap: 14px;
-      align-items: start;
-      min-height: 0;
-    }
-
-    .seo-sidebar {
-      position: sticky;
-      top: 14px;
-      overflow: hidden;
-    }
-
-    .seo-sidebar-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 13px 14px;
-      border-bottom: 1px solid var(--seo-border);
-    }
-
-    .seo-section-title {
-      margin: 0;
-      font-size: 15px;
-      font-weight: 700;
-    }
-
-    .seo-page-nav {
-      display: flex;
-      flex-direction: column;
-      max-height: calc(100vh - 190px);
-      overflow: auto;
-      padding: 8px;
-      gap: 4px;
-    }
-
-    .seo-page-link {
-      width: 100%;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 8px;
-      align-items: center;
-      padding: 10px;
-      border: 1px solid transparent;
-      border-radius: 7px;
-      background: transparent;
-      color: var(--seo-ink);
-      text-align: left;
-    }
-
-    .seo-page-link[data-depth="1"] {
-      padding-left: 24px;
-    }
-
-    .seo-page-link[data-depth="2"] {
-      padding-left: 38px;
-    }
-
-    .seo-page-link[data-depth="3"] {
-      padding-left: 52px;
-    }
-
-    .seo-page-link:hover {
-      background: #f8fafc;
-      border-color: var(--seo-border);
-    }
-
-    .seo-page-link.active {
-      background: var(--seo-primary-soft);
-      border-color: #bfdbfe;
-    }
-
-    .seo-page-name {
-      overflow: hidden;
-      font-size: 13px;
-      font-weight: 650;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .seo-page-key {
-      display: block;
-      overflow: hidden;
-      color: var(--seo-muted);
-      font-size: 11px;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .seo-status-icon {
-      width: 24px;
-      height: 24px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex: 0 0 auto;
-      border-radius: 999px;
-      border: 1px solid currentColor;
-    }
-
-    .seo-status-icon svg {
-      width: 14px;
-      height: 14px;
-      display: block;
-    }
-
-    .seo-status-icon.ok {
-      color: #15803d;
-      background: #f0fdf4;
-    }
-
-    .seo-status-icon.auto {
-      color: #0369a1;
-      background: #f0f9ff;
-    }
-
-    .seo-status-icon.warn {
-      color: #a16207;
-      background: #fffbeb;
-    }
-
-    .seo-status-icon.info {
-      color: #64748b;
-      background: #f8fafc;
-    }
-
-    .seo-detail-status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--seo-muted);
-      font-size: 12px;
-      white-space: nowrap;
-    }
-
-    .seo-content {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      min-width: 0;
-    }
-
-    .seo-detail {
-      display: none;
-      padding: 18px;
-    }
-
-    .seo-detail.active {
-      display: block;
-    }
-
-    .seo-detail-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: flex-start;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--seo-border);
-    }
-
-    .seo-page-title {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: 0;
-      word-break: break-word;
-    }
-
-    .seo-editor-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 300px;
-      gap: 16px;
-      margin-top: 16px;
-    }
-
-    .seo-description {
-      min-height: 136px;
-      resize: vertical;
-    }
-
-    .seo-preview-box {
-      border: 1px solid var(--seo-border);
-      border-radius: 8px;
-      padding: 12px;
-      background: #f8fafc;
-    }
-
-    .seo-preview-title {
-      color: #1a0dab;
-      font-size: 15px;
-      line-height: 1.35;
-      word-break: break-word;
-    }
-
-    .seo-preview-url {
-      margin-top: 4px;
-      color: #047857;
-      font-size: 12px;
-      word-break: break-all;
-    }
-
-    .seo-preview-desc {
-      margin-top: 6px;
-      color: #4b5563;
-      font-size: 12px;
-      line-height: 1.45;
-      word-break: break-word;
-    }
-
-    .seo-actions {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-top: 14px;
-    }
-
-    .seo-check-panel {
-      padding: 16px;
-    }
-
-    .seo-check-list {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .seo-check {
-      border: 1px solid var(--seo-border);
-      border-radius: 8px;
-      padding: 10px;
-      background: #fff;
-    }
-
-    .seo-check .fw-semibold {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    @media (max-width: 980px) {
-      .seo-header,
-      .seo-layout,
-      .seo-editor-grid,
-      .seo-check-list {
-        grid-template-columns: 1fr;
-      }
-
-      .seo-sidebar {
-        position: static;
-      }
-
-      .seo-page-nav {
-        max-height: 260px;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .seo-shell {
-        padding: 12px;
-      }
-
-      .seo-score,
-      .seo-detail-head,
-      .seo-actions {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .seo-stat-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
+    .form-control:focus {
+      border-color: var(--theme-primary);
+      box-shadow: 0 0 0 .18rem rgba({{ admin_primary_rgb }}, .16);
     }
   </style>
 </head>
@@ -500,6 +166,8 @@
                 <label class="form-label small text-muted mb-1">页面简介</label>
                 <textarea class="form-control seo-description"
                           name="description"
+                          rows="6"
+                          style="height:120px"
                           maxlength="180"
                           placeholder="{{ row.auto_description }}"
                           oninput="seoSyncPreview(this)">{{ row.description }}</textarea>

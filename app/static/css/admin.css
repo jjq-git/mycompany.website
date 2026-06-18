@@ -2175,6 +2175,83 @@
 }
 
 /* ---- 联系方式模块显隐眼睛切换 ---- */
+.module-config .content-style-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  column-gap: 8px;
+  row-gap: 5px;
+}
+
+.module-config .content-style-panel > * {
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+
+.module-config .content-style-panel > .module-field-half {
+  flex-basis: calc(50% - 4px);
+  max-width: calc(50% - 4px);
+}
+
+.module-field-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 5px 8px;
+}
+
+.module-field-row > .module-field-half {
+  flex: 0 0 calc(50% - 4px);
+  max-width: calc(50% - 4px);
+}
+
+.seg-radio {
+  display: inline-flex;
+  width: 100%;
+  min-height: 30px;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid #d8dee8;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.seg-radio-option {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 6px 8px;
+  cursor: pointer;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.seg-radio-option:hover {
+  background: #eef2f7;
+  color: #334155;
+}
+
+.seg-radio-option.active {
+  background: var(--bs-primary);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(var(--bs-primary-rgb), 0.25);
+}
+
+@media (max-width: 640px) {
+  .module-config .content-style-panel > .module-field-half,
+  .module-field-row > .module-field-half {
+    flex-basis: 100%;
+    max-width: 100%;
+  }
+}
+
 .visibility-item {
   display: inline-flex;
   align-items: center;
@@ -2280,3 +2357,38 @@
 .rich-editor-body tr:nth-child(odd) td { background: #fff; }
 .rte-url-dialog-title { font-size: 13px; color: #343a40; }
 .rte-url-dialog-input:focus { border-color: var(--bs-primary, #0d6efd); box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15); }
+
+.module-image-preview {
+  min-height: 72px;
+}
+
+.module-image-preview img {
+  width: 180px !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 200px !important;
+  object-fit: contain;
+  background-color: #f8fafc;
+  background-image:
+    linear-gradient(45deg, #eef2f7 25%, transparent 25%),
+    linear-gradient(-45deg, #eef2f7 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #eef2f7 75%),
+    linear-gradient(-45deg, transparent 75%, #eef2f7 75%);
+  background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+  background-size: 12px 12px;
+}
+
+.module-visibility-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.module-visibility-field .form-label {
+  margin-bottom: 0 !important;
+}
+
+.module-visibility-field .eye-toggle-btn {
+  flex: 0 0 auto;
+}

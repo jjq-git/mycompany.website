@@ -213,6 +213,10 @@
   }
 
   function sel(name, ph, options, dv) {
+    var segmented = segmentedControl(name, options, dv, esc);
+    if (segmented) {
+      return '<label class="form-label small mb-1 text-muted">' + ph + '</label>' + segmented;
+    }
     var h = '<label class="form-label small mb-1 text-muted">' + ph + '</label><select class="form-select form-select-sm" name="' + name + '">';
     options.forEach(function(o) {
       h += '<option value="' + esc(o.value) + '"' + (String(dv || '') === String(o.value) ? ' selected' : '') + '>' + esc(o.label) + '</option>';
@@ -224,6 +228,48 @@
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+
+  function segmentedControl(name, options, value, escapeFn) {
+    var escFn = escapeFn || esc;
+    var opts = (options || []).map(function(opt) {
+      return {
+        value: String(typeof opt === 'object' ? opt.value : opt),
+        label: String(typeof opt === 'object' ? (opt.label || opt.text || opt.value) : opt)
+      };
+    });
+    if (opts.length < 2 || opts.length > 3) return '';
+    var current = String(value == null ? '' : value);
+    return '<div class="seg-radio" role="radiogroup">' +
+      '<input type="hidden" name="' + escFn(name) + '" value="' + escFn(current) + '">' +
+      opts.map(function(opt) {
+        var active = current === opt.value;
+        return '<button type="button" class="seg-radio-option' + (active ? ' active' : '') + '" role="radio" aria-checked="' + (active ? 'true' : 'false') + '" data-value="' + escFn(opt.value) + '" onclick="var g=this.closest(\'.seg-radio\');var i=g.querySelector(\'input[type=hidden]\');i.value=this.getAttribute(\'data-value\');g.querySelectorAll(\'.seg-radio-option\').forEach(function(b){b.classList.remove(\'active\');b.setAttribute(\'aria-checked\',\'false\');});this.classList.add(\'active\');this.setAttribute(\'aria-checked\',\'true\');i.dispatchEvent(new Event(\'change\',{bubbles:true}));">' + escFn(opt.label) + '</button>';
+      }).join('') +
+      '</div>';
+  }
+
+  function enhanceCompactSelects(root) {
+    root = root || document;
+    root.querySelectorAll('select.form-select').forEach(function(select) {
+      if (select.dataset.segmentedEnhanced === '1') return;
+      if (select.multiple || select.classList.contains('unit-picker') || select.classList.contains('rte-heading-select') || select.dataset.noSegmented === '1') return;
+      if (select.closest('.input-group')) return;
+      var options = Array.prototype.slice.call(select.options || []).filter(function(opt) {
+        return opt.value !== '';
+      });
+      if (options.length < 2 || options.length > 3) return;
+      select.dataset.segmentedEnhanced = '1';
+      var wrapper = document.createElement('div');
+      wrapper.innerHTML = segmentedControl(select.name, options.map(function(opt) {
+        return { value: opt.value, label: opt.textContent };
+      }), select.value, esc);
+      var segmented = wrapper.firstElementChild;
+      select.parentNode.insertBefore(segmented, select);
+      select.remove();
+    });
+  }
+
+  window.enhanceCompactSelects = enhanceCompactSelects;
 
   function schemaStyleForm(prefix, schema, mdata) {
     mdata = mdata || {};
@@ -239,14 +285,19 @@
       if (!def) return;
       var name = prefix + 'style_' + token;
       var val = (mdata && mdata['style_' + token] != null) ? mdata['style_' + token] : '';
-      html += '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + schemaEsc(def.label || token) + '</label>';
+      html += '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + schemaEsc(labelText({ key: token, label: def.label || token })) + '</label>';
       if (def.control === 'select' || def.control === 'switch') {
-        html += '<select class="form-select form-select-sm" name="' + schemaEsc(name) + '"><option value="">默认</option>';
-        (def.options || []).forEach(function(o) {
-          var ov = o.value, ol = o.text || o.value;
-          html += '<option value="' + schemaEsc(ov) + '"' + (String(val) === String(ov) ? ' selected' : '') + '>' + schemaEsc(ol) + '</option>';
-        });
-        html += '</select>';
+        var segmented = segmentedControl(name, def.options || [], val, schemaEsc);
+        if (segmented) {
+          html += segmented;
+        } else {
+          html += '<select class="form-select form-select-sm" name="' + schemaEsc(name) + '"><option value="">默认</option>';
+          (def.options || []).forEach(function(o) {
+            var ov = o.value, ol = o.text || o.value;
+            html += '<option value="' + schemaEsc(ov) + '"' + (String(val) === String(ov) ? ' selected' : '') + '>' + schemaEsc(ol) + '</option>';
+          });
+          html += '</select>';
+        }
       } else if (def.control === 'color') {
         html += '<div class="input-group input-group-sm">' +
           '<input type="color" class="form-control form-control-color" value="' + schemaEsc(val || '#888888') + '" oninput="this.nextElementSibling.value=this.value">' +
@@ -255,7 +306,7 @@
         html += '<input type="text" class="form-control form-control-sm" name="' + schemaEsc(name) + '" value="' + schemaEsc(val) + '" placeholder="背景图 URL" oninput="updateImagePreview(this)">' +
           '<label class="d-flex align-items-center gap-2 px-3 py-2 mt-1 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'">' +
           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传背景图' +
-          '<input type="file" name="' + schemaEsc(name) + '_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label>';
+          '<input type="file" name="' + schemaEsc(name) + '_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none"></label>';
       } else {
         html += '<input type="text" class="form-control form-control-sm" name="' + schemaEsc(name) + '" value="' + schemaEsc(val) + '">';
       }
@@ -267,6 +318,33 @@
   // 眼睛切换按钮（显隐控制），与 panel_page_edit.html 中 toggleVisibilityEye 配合
   var EYE_OPEN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
   var EYE_OFF = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72 1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+  window.EYE_OPEN_SVG = window.EYE_OPEN_SVG || EYE_OPEN;
+  window.EYE_OFF_SVG = window.EYE_OFF_SVG || EYE_OFF;
+  if (typeof window.toggleVisibilityEye !== 'function') {
+    window.toggleVisibilityEye = function(btn) {
+      var isVisible = btn.getAttribute('data-visible') === 'true';
+      var newVisible = !isVisible;
+      btn.setAttribute('data-visible', newVisible ? 'true' : 'false');
+      var hiddenInput = btn.parentElement.querySelector('input[type="hidden"]');
+      if (hiddenInput) hiddenInput.value = newVisible ? 'true' : 'false';
+      btn.innerHTML = newVisible ? window.EYE_OPEN_SVG : window.EYE_OFF_SVG;
+      btn.title = newVisible ? '点击隐藏' : '点击显示';
+    };
+  }
+  function isVisibilityField(field) {
+    var key = String(field.key || field.name || '');
+    var opts = field.options || [];
+    var values = opts.map(function(opt) { return String(typeof opt === 'object' ? opt.value : opt); });
+    var hasTrueFalse = values.indexOf('true') >= 0 && values.indexOf('false') >= 0;
+    return hasTrueFalse && (/^show_/i.test(key) || /_show_/i.test(key) || /visible/i.test(key));
+  }
+  function visibilityEye(name, value) {
+    var visible = value === '' || value == null ? true : (String(value) === 'true' || value === true);
+    return '<button type="button" class="eye-toggle-btn" data-visible="' + (visible ? 'true' : 'false') + '" onclick="toggleVisibilityEye(this)" title="' + (visible ? '点击隐藏' : '点击显示') + '">' +
+      (visible ? EYE_OPEN : EYE_OFF) +
+      '</button>' +
+      '<input type="hidden" name="' + esc(name) + '" value="' + (visible ? 'true' : 'false') + '">';
+  }
   function visToggle(name, label, dv) {
     var visible = dv === 'true';
     return '<div class="visibility-item">' +
@@ -278,6 +356,225 @@
       '</div>';
   }
 
+  function detailGalleryIcon(name) {
+    var icons = {
+      up: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>',
+      down: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+      trash: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+      chevron: '<svg class="detail-gallery-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .15s"><path d="m6 9 6 6 6-6"/></svg>'
+    };
+    return icons[name] || '';
+  }
+
+  function detailGalleryItemHtml(index, url, collapsed) {
+    var hasUrl = !!url;
+    return '<div class="border rounded mb-2 detail-gallery-item' + (collapsed ? ' collapsed' : '') + '" data-image-index="' + index + '">' +
+      '<div class="detail-gallery-item-header d-flex justify-content-between align-items-center px-2 py-2" style="cursor:pointer;background:#f8fafc;border-radius:4px 4px 0 0" onclick="window._toggleDetailGalleryItem(this)">' +
+        '<div class="d-flex align-items-center gap-2">' +
+          detailGalleryIcon('chevron') +
+          '<span class="small fw-semibold">图片 ' + (index + 1) + '</span>' +
+        '</div>' +
+        '<div class="d-flex align-items-center gap-1">' +
+          '<button type="button" class="module-action-btn" onclick="event.stopPropagation();window._moveDetailGalleryImage(this,-1)" title="上移" aria-label="上移">' + detailGalleryIcon('up') + '</button>' +
+          '<button type="button" class="module-action-btn" onclick="event.stopPropagation();window._moveDetailGalleryImage(this,1)" title="下移" aria-label="下移">' + detailGalleryIcon('down') + '</button>' +
+          '<button type="button" class="module-action-btn module-action-del" onclick="event.stopPropagation();this.closest(\'.detail-gallery-item\').remove();window._reindexDetailGalleryImages()" title="删除" aria-label="删除">' + detailGalleryIcon('trash') + '</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="detail-gallery-item-body p-2" style="' + (collapsed ? 'display:none;' : '') + '">' +
+        '<div class="mb-2">' +
+          '<label class="form-label small mb-1 text-muted">图片 URL</label>' +
+          '<input type="text" class="form-control form-control-sm detail-gallery-url" name="detail_gallery_' + index + '_url" value="' + esc(url || '') + '" oninput="window._syncDetailGalleryPreview(this)">' +
+          '<input type="file" class="form-control form-control-sm mt-1 detail-gallery-file" name="detail_gallery_' + index + '_url_file" accept="image/*" onchange="window._previewDetailGalleryFile(this)">' +
+          '<div class="form-text">上传后自动转 WebP 并覆盖 URL</div>' +
+        '</div>' +
+        '<div class="detail-gallery-preview" style="' + (hasUrl ? '' : 'display:none;') + 'margin-top:6px">' +
+          '<img src="' + esc(url || '') + '" alt="预览" style="max-width:160px;max-height:110px;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;background:#f8f9fa">' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  window._toggleDetailGalleryItem = function(header) {
+    var item = header && header.closest ? header.closest('.detail-gallery-item') : null;
+    if (!item) return;
+    var body = item.querySelector('.detail-gallery-item-body');
+    var isCollapsed = item.classList.toggle('collapsed');
+    if (body) body.style.display = isCollapsed ? 'none' : '';
+    var chevron = item.querySelector('.detail-gallery-chevron');
+    if (chevron) chevron.style.transform = isCollapsed ? 'rotate(-90deg)' : '';
+  };
+
+  window._moveDetailGalleryImage = function(btn, dir) {
+    var item = btn && btn.closest ? btn.closest('.detail-gallery-item') : null;
+    var list = item && item.parentElement;
+    if (!item || !list) return;
+    if (dir < 0 && item.previousElementSibling) {
+      list.insertBefore(item, item.previousElementSibling);
+    } else if (dir > 0 && item.nextElementSibling) {
+      list.insertBefore(item.nextElementSibling, item);
+    }
+    window._reindexDetailGalleryImages();
+  };
+
+  window._syncDetailGalleryPreview = function(input) {
+    var item = input && input.closest ? input.closest('.detail-gallery-item') : null;
+    if (!item) return;
+    var preview = item.querySelector('.detail-gallery-preview');
+    var img = preview ? preview.querySelector('img') : null;
+    var url = input.value || '';
+    if (!preview || !img) return;
+    if (url) {
+      img.src = url;
+      preview.style.display = '';
+    } else {
+      img.removeAttribute('src');
+      preview.style.display = 'none';
+    }
+  };
+
+  window._previewDetailGalleryFile = function(input) {
+    var file = input && input.files ? input.files[0] : null;
+    var item = input && input.closest ? input.closest('.detail-gallery-item') : null;
+    var preview = item ? item.querySelector('.detail-gallery-preview') : null;
+    var img = preview ? preview.querySelector('img') : null;
+    if (!file || !preview || !img) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      img.src = e.target.result;
+      preview.style.display = '';
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window._addDetailGalleryImage = function() {
+    var editor = document.querySelector('.detail-gallery-editor');
+    if (!editor) return;
+    var countEl = editor.querySelector('.detail-gallery-count');
+    var list = editor.querySelector('.detail-gallery-list');
+    var next = parseInt(countEl.value || '0', 10);
+    list.insertAdjacentHTML('beforeend', detailGalleryItemHtml(next, '', false));
+    countEl.value = next + 1;
+    window._reindexDetailGalleryImages();
+  };
+
+  window._reindexDetailGalleryImages = function() {
+    var editor = document.querySelector('.detail-gallery-editor');
+    if (!editor) return;
+    var items = editor.querySelectorAll('.detail-gallery-item');
+    var countEl = editor.querySelector('.detail-gallery-count');
+    if (countEl) countEl.value = items.length;
+    items.forEach(function(item, i) {
+      item.dataset.imageIndex = i;
+      var title = item.querySelector('.small.fw-semibold');
+      if (title) title.textContent = '图片 ' + (i + 1);
+      item.querySelectorAll('input[name]').forEach(function(el) {
+        el.name = el.name.replace(/detail_gallery_\d+_/, 'detail_gallery_' + i + '_');
+      });
+      var chevron = item.querySelector('.detail-gallery-chevron');
+      if (chevron) chevron.style.transform = item.classList.contains('collapsed') ? 'rotate(-90deg)' : '';
+    });
+  };
+
+  var FIELD_LABEL_MAP = {
+    'title': '标题',
+    'subtitle': '副标题',
+    'desc': '描述',
+    'description': '描述',
+    'excerpt': '摘要',
+    'summary': '摘要',
+    'body': '正文',
+    'content': '内容',
+    'tag': '标签',
+    'tags': '标签',
+    'name': '名称',
+    'category': '分类',
+    'price': '价格',
+    'date': '日期',
+    'slug': '标识 slug',
+    'image': '图片',
+    'cover': '封面图',
+    'photo': '图片',
+    'logo': '标志图片',
+    'icon': '图标',
+    'video': '视频',
+    'media': '媒体',
+    'media_type': '媒体类型',
+    'embed_url': '嵌入页面链接',
+    'link': '链接',
+    'url': '链接',
+    'href': '链接',
+    'alt': '替代文本',
+    'dataset': '数据来源',
+    'columns': '列数',
+    'rows': '行数',
+    'max_items': '最大显示数量',
+    'items_per_page': '每页条数',
+    'show_filters': '显示筛选',
+    'show_search': '显示搜索框',
+    'show_pagination': '显示分页',
+    'show_view_all': '显示查看全部',
+    'pagination_style': '分页样式',
+    'pager_align': '分页对齐',
+    'card_layout': '卡片布局',
+    'primarybtn': '主按钮文字',
+    'primarylink': '主按钮链接',
+    'secondarybtn': '副按钮文字',
+    'secondarylink': '副按钮链接',
+    'btn': '按钮文字',
+    'btn_text': '按钮文字',
+    'btn_url': '按钮链接',
+    'form_panel': '表单',
+    'map_panel': '地图',
+    'name_field': '姓名',
+    'email_field': '邮箱',
+    'phone_field': '电话',
+    'company_field': '公司',
+    'message_field': '留言',
+    'map_src': '地图链接',
+    'phone_card': '电话',
+    'mobile_card': '手机',
+    'email_card': '邮箱',
+    'address_card': '地址',
+    'hours_card': '营业时间',
+    'business_hours_card': '营业时间',
+    'business_hours': '营业时间',
+    'phone': '电话',
+    'mobile': '手机',
+    'email': '邮箱',
+    'address': '地址'
+  };
+
+  function labelText(field) {
+    var key = String(field.key || field.name || '');
+    var raw = String(field.label || '');
+    var normalizedKey = key.toLowerCase();
+    var normalizedRaw = raw.toLowerCase().replace(/[\s-]+/g, '_');
+    return FIELD_LABEL_MAP[normalizedKey] || FIELD_LABEL_MAP[normalizedRaw] || translateLabel(raw || key);
+  }
+
+  function translateLabel(label) {
+    return String(label || '')
+      .replace(/\bLogo\b/g, '标志')
+      .replace(/\bBanner\b/g, '横幅')
+      .replace(/\bURL\b/g, '链接');
+  }
+
+  function isHalfField(field) {
+    var key = String(field.key || field.name || '').toLowerCase();
+    var type = String(field.type || 'text').toLowerCase();
+    var label = String(field.label || '').toLowerCase();
+    if (isVisibilityField(field)) return true;
+    if (field.show_if && field.show_if.field) return false;
+    if (/^(group|list|grid|textarea|richtext|image|video|embed|audio|file)$/i.test(type)) return false;
+    if (/(url|src|href|link|action|address|description|summary|excerpt|content|body|message|image|cover|photo|logo|media|video)/i.test(key)) return false;
+    if (/(_text|_title|title|subtitle|desc)$/i.test(key)) return false;
+    if (/^(show_|hide_|enable_|enabled_|visible|is_)/i.test(key) || /(_show_|_visible|_enabled)$/i.test(key)) return true;
+    if (/(align|layout|style|columns|items_per_page|max_items|count|number|ratio|category|date|price|name)$/i.test(key)) return true;
+    if (/(color|bg|border|radius|width|height|size|gap|margin|padding|opacity|weight)$/i.test(key)) return true;
+    if (/(显示|隐藏|颜色|宽度|高度|字号|圆角|间距|对齐|排版|列数|数量|分类|日期|价格|名称)/.test(label)) return true;
+    return false;
+  }
+
   function renderField(prefix, field, value, placeholder) {
     var key = field.key, type = (field.type || 'text').toLowerCase(), html = '';
     var isImage = /(image|cover|background|media|photo|logo)/i.test(key);
@@ -286,15 +583,23 @@
     if (showIf && showIf.field) {
       wrapperAttrs += ' data-show-if-field="' + esc(showIf.field) + '" data-show-if-value="' + esc(showIf.value || '') + '"';
     }
-    html += '<div' + wrapperAttrs + '><label class="form-label small mb-1 text-muted">' + esc(field.label || key) + '</label>';
-    if (type === 'video') {
-      html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || 'Video URL') + '">';
-      html += '<label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'">Upload video<input type="file" name="' + prefix + key + '_file" accept="video/*" style="display:none"></label>';
-      html += '<div class="form-text mt-1">Supports MP4/WebM/Ogg/Mov up to the configured upload limit.</div>';
+    if (isVisibilityField(field)) {
+      wrapperAttrs = wrapperAttrs.replace('module-field', 'module-field module-visibility-field');
+    }
+    if (isHalfField(field)) {
+      wrapperAttrs = wrapperAttrs.replace('module-field', 'module-field module-field-half');
+    }
+    html += '<div' + wrapperAttrs + '><label class="form-label small mb-1 text-muted">' + esc(labelText(field)) + '</label>';
+    if (isVisibilityField(field)) {
+      html += visibilityEye(prefix + key, value);
+    } else if (type === 'video') {
+      html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '视频 URL') + '">';
+      html += '<label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'">上传视频<input type="file" name="' + prefix + key + '_file" accept="video/*" style="display:none"></label>';
+      html += '<div class="form-text mt-1">支持 MP4/WebM/Ogg/Mov，大小限制以后台上传配置为准。</div>';
     } else if (isImage) {
       // 图片字段：URL 输入框 + 上传 UI + 预览
       html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '" oninput="updateImagePreview(this)">';
-      html += '<label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="' + prefix + key + '_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label>';
+      html += '<label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="' + prefix + key + '_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none"></label>';
       html += '<div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>';
       html += '<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div>';
       html += '<div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div>';
@@ -302,6 +607,8 @@
       html += richEditorHtml(prefix + key, value || '');
     } else if (type === 'textarea') {
       html += '<textarea class="form-control form-control-sm" rows="4" name="' + prefix + key + '" placeholder="' + esc(placeholder || '') + '">' + esc(value || '') + '</textarea>';
+    } else if (type === 'select' && segmentedControl(prefix + key, field.options || [], value, esc)) {
+      html += segmentedControl(prefix + key, field.options || [], value, esc);
     } else if (type === 'select') {
       html += '<select class="form-select form-select-sm" name="' + prefix + key + '"><option value="">请选择</option>';
       (field.options || []).forEach(function(opt) {
@@ -336,6 +643,31 @@
     return html + '</div>';
   }
 
+  function renderFieldsGrouped(prefix, fields, values, placeholder) {
+    values = values || {};
+    var html = '';
+    var pendingHalf = [];
+    function flushPendingHalf() {
+      if (!pendingHalf.length) return;
+      html += '<div class="module-field-row">';
+      pendingHalf.forEach(function(f) {
+        html += renderField(prefix, f, values[f.key] || f.default || '', placeholder || '');
+      });
+      html += '</div>';
+      pendingHalf = [];
+    }
+    (fields || []).forEach(function(field) {
+      if (isHalfField(field)) {
+        pendingHalf.push(field);
+      } else {
+        flushPendingHalf();
+        html += renderField(prefix, field, values[field.key] || field.default || '', placeholder || '');
+      }
+    });
+    flushPendingHalf();
+    return html;
+  }
+
   function findNamedInput(root, name) {
     var inputs = root.querySelectorAll('[name]');
     for (var i = 0; i < inputs.length; i++) {
@@ -368,15 +700,24 @@
     var file = fileInput.files[0];
     var container = fileInput.closest('.hero-slide-body') || fileInput.closest('.mb-2');
     var preview = container ? container.querySelector('.module-image-preview') : null;
+    if (!preview && container) {
+      preview = document.createElement('div');
+      preview.className = 'mt-2 module-image-preview';
+      preview.style.display = 'none';
+      preview.innerHTML = "<div style=\"position:relative;display:inline-block\"><img src=\"\" style=\"max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer\" onclick=\"enlargeImage(this)\" onerror=\"this.parentElement.parentElement.style.display='none'\"><button type=\"button\" class=\"btn btn-sm\" onclick=\"clearModuleImage(this)\" style=\"position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center\" title=\"移除图片\">&times;</button></div>";
+      container.appendChild(preview);
+    }
     var img = preview ? preview.querySelector('img') : null;
     var urlText = container ? container.querySelector('.module-image-url-text') : null;
     if (!file || !preview || !img) return;
-    if (file.type.startsWith('image/')) {
+    var isImage = (file.type || '').indexOf('image/') === 0 || /\.svgz?$/i.test(file.name || '');
+    if (isImage) {
+      img.onload = function() { preview.style.display = ''; };
+      img.onerror = function() { preview.style.display = 'none'; };
       img.src = URL.createObjectURL(file);
       preview.style.display = '';
     }
     if (urlText) { urlText.textContent = file.name; urlText.style.display = ''; }
-    img.onerror = function() { preview.style.display = 'none'; };
   };
 
   // 图片预览：点击放大
@@ -390,7 +731,7 @@
       overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:pointer';
       overlay.onclick = function() { overlay.style.display = 'none'; };
       var lbImg = document.createElement('img');
-      lbImg.style.cssText = 'max-width:95vw;max-height:95vh;border-radius:6px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
+      lbImg.style.cssText = 'max-width:95vw;max-height:95vh;object-fit:contain;background-color:#fff;background-image:linear-gradient(45deg,#eef2f7 25%,transparent 25%),linear-gradient(-45deg,#eef2f7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef2f7 75%),linear-gradient(-45deg,transparent 75%,#eef2f7 75%);background-position:0 0,0 8px,8px -8px,-8px 0;background-size:16px 16px;border-radius:6px;padding:12px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
       overlay.appendChild(lbImg);
       document.body.appendChild(overlay);
     }
@@ -485,15 +826,18 @@
     // 动态字段 (根据 meta.yaml fields 生成)
     // 过滤掉由 specialEditor 自行渲染的字段（分页配置、columns 等），避免在通用表单区重复出现
     var pagerKeys = ['show_pagination', 'pagination_style', 'items_per_page', 'pager_align', 'show_view_all', 'pager'];
-    var desktopFields = fields.filter(function(f) {
+    var desktopFieldList = fields.filter(function(f) {
       return ['columns', 'max_items'].concat(pagerKeys).indexOf(f.key) === -1;
-    }).map(function(f) { return renderField('module_' + idx + '_data_', f, d[f.key] || f.default || '', ''); }).join('');
-    var tabletFields  = fields.filter(function(f) {
+    });
+    var desktopFields = renderFieldsGrouped('module_' + idx + '_data_', desktopFieldList, d, '');
+    var tabletFieldList = fields.filter(function(f) {
       return ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'].indexOf(f.key) === -1;
-    }).map(function(f) { return renderField('module_' + idx + '_resp_tablet_data_', f, '', '继承电脑端'); }).join('');
-    var mobileFields  = fields.filter(function(f) {
+    });
+    var tabletFields = renderFieldsGrouped('module_' + idx + '_resp_tablet_data_', tabletFieldList, {}, '继承电脑端');
+    var mobileFieldList = fields.filter(function(f) {
       return ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'].indexOf(f.key) === -1;
-    }).map(function(f) { return renderField('module_' + idx + '_resp_mobile_data_', f, '', '继承电脑端'); }).join('');
+    });
+    var mobileFields = renderFieldsGrouped('module_' + idx + '_resp_mobile_data_', mobileFieldList, {}, '继承电脑端');
 
     // 数据集来源选项
     var datasetNames = (window._moduleCtx && window._moduleCtx.datasetNames) || [];
@@ -508,6 +852,27 @@
     if (isDataModule) {
       var item = (window._moduleCtx && window._moduleCtx.editItem) || mdata || {};
       var tagsVal = (item.tags && Array.isArray(item.tags)) ? item.tags.join(', ') : (item.tags || '');
+      var tagsVisible = !(item.tags_visible === false || String(item.tags_visible) === 'false');
+      var detailGallery = (item.detail_gallery && typeof item.detail_gallery === 'object') ? item.detail_gallery : {};
+      var detailGalleryVisible = !(detailGallery.visible === false || String(detailGallery.visible) === 'false');
+      var detailImages = Array.isArray(detailGallery.images) ? detailGallery.images : [];
+      var detailGalleryHtml =
+        '<div class="detail-gallery-editor" data-module-index="' + idx + '">' +
+          '<div class="d-flex justify-content-between align-items-center mb-2">' +
+            '<div class="d-flex align-items-center gap-2">' +
+              '<div class="small fw-semibold text-primary">细节图库</div>' +
+              visibilityEye('detail_gallery_visible', detailGalleryVisible ? 'true' : 'false') +
+            '</div>' +
+            '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addDetailGalleryImage()">+ 添加图片</button>' +
+          '</div>' +
+          '<input type="hidden" name="detail_gallery_count" class="detail-gallery-count" value="' + detailImages.length + '">' +
+          '<div class="detail-gallery-list">' +
+            detailImages.map(function(img, ii) {
+              var url = (typeof img === 'object' ? (img.url || '') : (img || ''));
+              return detailGalleryItemHtml(ii, url, ii > 0);
+            }).join('') +
+          '</div>' +
+        '</div>';
       /* 封面图：取 item 顶层字段，与列表页缩略图一致（cover / image / photo 依次回退） */
       var coverVal = item.cover || item.image || item.photo || '';
       styleEditor = schemaStyleForm('module_' + idx + '_data_', meta.schema || {}, item);
@@ -520,10 +885,14 @@
         '<input type="file" class="form-control form-control-sm mt-1" name="cover" accept="image/*">' +
         (coverVal ? '<img src="' + esc(coverVal) + '" alt="预览" style="margin-top:6px;max-width:200px;max-height:120px;border-radius:6px;">' : '') +
         '<div class="form-text">仅显示在数据集列表中作为封面缩略图，不在详情页展示</div></div>' +
+        detailGalleryHtml +
+        '<hr class="my-2">' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">日期</label><input type="date" class="form-control form-control-sm" name="date" value="' + esc(item.date || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">名称</label><input type="text" class="form-control form-control-sm" name="name" value="' + esc(item.name || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">分类</label><input type="text" class="form-control form-control-sm" name="category" value="' + esc(item.category || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="title" value="' + esc(item.title || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">简述</label><textarea class="form-control form-control-sm" name="description" rows="2">' + esc(item.description || item.excerpt || item.summary || '') + '</textarea></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签</label><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="多个用逗号或空格分隔"><div class="form-text">如：LED, 展示道具, 近期项目</div></div>' +
+        '<div class="mb-2"><div class="d-flex align-items-center gap-2 mb-1"><label class="form-label small mb-0 text-muted">标签</label>' + visibilityEye('tags_visible', tagsVisible ? 'true' : 'false') + '</div><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="多个用逗号或空格分隔"><div class="form-text">如：LED, 展示道具, 近期项目</div></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">价格</label><input type="text" class="form-control form-control-sm" name="price" value="' + esc(item.price || '') + '" placeholder="如 ¥199 / $3/million"></div>' +
         '<hr class="my-2">' +
         /* ── 富文本编辑器（详细介绍） ── */
@@ -582,7 +951,7 @@
         '<div class="form-text">支持加粗、斜体、标题、列表、引用、分割线、链接、图片、文字颜色</div></div>' +
         '<hr class="my-2">';
       // 动态剩余字段
-      var skipKeys = ['id','slug','date','title','description','excerpt','summary','cover','image','photo','logo','tags','body','content','modules','csrf_token','name','category','price','specs','section_bg','inner_width','style_bg-color'];
+      var skipKeys = ['id','slug','date','title','description','excerpt','summary','cover','image','photo','logo','tags','tags_visible','detail_gallery','detail_images','body','content','modules','csrf_token','name','category','price','specs','section_bg','inner_width','style_bg-color'];
       Object.keys(item).forEach(function(k) {
         if (skipKeys.indexOf(k) >= 0 || /^module_/.test(k)) return;
         var v = item[k];
@@ -606,10 +975,10 @@
       styleEditor =
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2 mb-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_hero_width', 'Banner 外层宽度', ['px','%','vw','rem'], d.hero_width) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_hero_height', 'Banner 高度', ['px','vh','rem','%'], d.hero_height) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_hero_width', '横幅外层宽度', ['px','%','vw','rem'], d.hero_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_hero_height', '横幅高度', ['px','vh','rem','%'], d.hero_height) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_content_width', '内容区宽度', ['px','%','vw','rem'], d.content_width) + '</div>' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_banner_align', 'Banner 文字排版', [{value:'',label:'默认（全宽）'},{value:'center',label:'居中'},{value:'left',label:'居左'},{value:'right',label:'居右'}], d.banner_align) + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_banner_align', '横幅文字排版', [{value:'',label:'默认（全宽）'},{value:'center',label:'居中'},{value:'left',label:'居左'},{value:'right',label:'居右'}], d.banner_align) + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
         '<div class="input-group input-group-sm">' +
@@ -724,7 +1093,7 @@
       specialEditor =
         '<div class="small fw-semibold mb-1 text-muted">数据</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">数据来源</label>' +
-          '<select class="form-select form-select-sm" name="module_' + idx + '_data_dataset">' +
+          '<select class="form-select form-select-sm" data-no-segmented="1" name="module_' + idx + '_data_dataset">' +
           (dsOptionsHtml || '<option value="">暂无数据源</option>') +
           '</select></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">卡片布局</label>' +
@@ -975,9 +1344,9 @@
         '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (d.body || '') + '</div>' +
         '<textarea class="form-control form-control-sm d-none" name="module_' + idx + '_data_body">' + esc(d.body || '') + '</textarea></div>';
       specialEditor =
-        '<div class="small fw-semibold mb-1 text-muted">Content</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">Title</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">Body</label>' +
+        '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label>' +
         richEditorHtml('module_' + idx + '_data_body', d.body || '') +
         '</div>';
       styleEditor =
@@ -1103,7 +1472,7 @@
     /* ====== logo_cloud ====== */
     } else if (type === 'logo_cloud') {
       specialEditor =
-        '<div class="logo-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">Logo 列表</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addLogoItem(' + idx + ')">+ 添加 Logo</button></div><input type="hidden" name="module_' + idx + '_logo_count" class="logo-item-count" value="' + (d.logo_count || '1') + '"><div class="logo-item-list">' + (window._logoItemHtml ? window._logoItemHtml(idx, 0, d) : '') + '</div></div>' +
+        '<div class="logo-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">标志列表</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addLogoItem(' + idx + ')">+ 添加标志</button></div><input type="hidden" name="module_' + idx + '_logo_count" class="logo-item-count" value="' + (d.logo_count || '1') + '"><div class="logo-item-list">' + (window._logoItemHtml ? window._logoItemHtml(idx, 0, d) : '') + '</div></div>' +
         '<hr class="my-2">' +
         '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
@@ -1134,7 +1503,7 @@
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">Logo 卡片样式</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">标志卡片样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_logo_bg', '卡片背景色', d.logo_bg || '#ffffff') + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_logo_border', '边框大小', ['px','rem'], d.logo_border) + '</div>' +
@@ -1451,7 +1820,10 @@
 
     html += '</div>';
 
-    setTimeout(function() { updateConditionalFields(document); }, 0);
+    setTimeout(function() {
+      enhanceCompactSelects(document);
+      updateConditionalFields(document);
+    }, 0);
     return { html: html, borderStyle: borderStyle, headerBg: headerBg };
   }
 
@@ -1507,10 +1879,12 @@
 
   document.addEventListener('change', function(e) {
     if (!e.target || !e.target.name || e.target.name.slice(-10) !== 'media_type') return;
+    enhanceCompactSelects(e.target.closest('.device-config') || document);
     updateConditionalFields(e.target.closest('.device-config') || document);
   });
 
   document.addEventListener('DOMContentLoaded', function() {
+    enhanceCompactSelects(document);
     updateConditionalFields(document);
   });
 
@@ -1757,6 +2131,102 @@
     syncRteBody(rte);
   }
 
+  function makeRteToolbarButton(className, label, title, html) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm btn-light rte-btn ' + className;
+    btn.title = title;
+    btn.setAttribute('aria-label', title);
+    if (html) btn.innerHTML = html;
+    else btn.textContent = label;
+    return btn;
+  }
+
+  function ensureRteToolbarButton(wrapper, className, label, title, html) {
+    var btn = wrapper.querySelector('.' + className);
+    if (!btn) btn = makeRteToolbarButton(className, label, title, html);
+    btn.title = title;
+    btn.setAttribute('aria-label', title);
+    return btn;
+  }
+
+  function placeRteToolbarGroup(toolbar, anchor, nodes) {
+    if (!toolbar || !anchor) return;
+    var ref = anchor.nextSibling;
+    nodes.forEach(function(node) {
+      if (!node) return;
+      toolbar.insertBefore(node, ref);
+      ref = node.nextSibling;
+    });
+  }
+
+  function normalizeRteToolbar(toolbar) {
+    if (!toolbar) return;
+    var cmdTitles = {
+      bold: '加粗',
+      italic: '斜体',
+      underline: '下划线',
+      strikeThrough: '删除线',
+      justifyLeft: '左对齐',
+      justifyCenter: '居中',
+      justifyRight: '右对齐',
+      insertUnorderedList: '无序列表',
+      insertOrderedList: '有序列表',
+      formatBlock: '引用块',
+      insertHorizontalRule: '分割线',
+      removeFormat: '清除格式',
+      undo: '撤销',
+      redo: '重做'
+    };
+    toolbar.querySelectorAll('.rte-btn[data-cmd]').forEach(function(btn) {
+      var title = cmdTitles[btn.dataset.cmd];
+      if (!title) return;
+      btn.title = title;
+      btn.setAttribute('aria-label', title);
+    });
+    var heading = toolbar.querySelector('.rte-heading-select');
+    if (heading) heading.title = '标题样式';
+    var color = toolbar.querySelector('.rte-color-picker');
+    if (color) color.title = '文字颜色';
+    [
+      ['.rte-table-btn', '插入表格'],
+      ['.rte-table-settings-btn', '表格设置'],
+      ['.rte-link-btn', '插入链接'],
+      ['.rte-image-btn', '插入图片链接'],
+      ['.rte-upload-image-btn', '上传并插入图片'],
+      ['.rte-video-url-btn', '插入视频链接'],
+      ['.rte-upload-video-btn', '上传并插入视频']
+    ].forEach(function(item) {
+      var btn = toolbar.querySelector(item[0]);
+      if (!btn) return;
+      btn.title = item[1];
+      btn.setAttribute('aria-label', item[1]);
+    });
+  }
+
+  function finalizeRteToolbar(wrapper, toolbar) {
+    if (!wrapper || !toolbar) return;
+    var tableInsertBtn = toolbar.querySelector('.rte-table-btn');
+    var tableSettingsBtn = ensureRteToolbarButton(wrapper, 'rte-table-settings-btn', '▤', '表格设置');
+    if (tableInsertBtn) placeRteToolbarGroup(toolbar, tableInsertBtn, [tableSettingsBtn]);
+
+    var mediaSep = wrapper.querySelector('.rte-media-sep');
+    if (!mediaSep) {
+      mediaSep = document.createElement('span');
+      mediaSep.className = 'rte-sep rte-media-sep';
+    }
+    var linkBtn = ensureRteToolbarButton(wrapper, 'rte-link-btn', '链接', '插入链接');
+    var imageUrlBtn = ensureRteToolbarButton(wrapper, 'rte-image-btn', '图片', '插入图片链接');
+    var imageUploadBtn = ensureRteToolbarButton(wrapper, 'rte-upload-image-btn', '', '上传并插入图片', '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path></svg>');
+    var videoUrlBtn = ensureRteToolbarButton(wrapper, 'rte-video-url-btn', '视频', '插入视频链接');
+    var videoUploadBtn = ensureRteToolbarButton(wrapper, 'rte-upload-video-btn', '', '上传并插入视频', '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>');
+    var mediaAnchor = tableSettingsBtn || tableInsertBtn;
+    if (mediaAnchor) {
+      placeRteToolbarGroup(toolbar, mediaAnchor, [mediaSep, linkBtn, imageUrlBtn, imageUploadBtn, videoUrlBtn, videoUploadBtn]);
+    }
+    normalizeRteToolbar(toolbar);
+  }
+
   function ensureRteUploadControls(rte) {
     var wrapper = rte && rte.closest('.rte-wrapper');
     if (!wrapper) return;
@@ -1770,21 +2240,58 @@
       tableBtn.textContent = '▤';
       toolbar.appendChild(tableBtn);
     }
-    if (wrapper.querySelector('.rte-upload-image-btn')) return;
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'btn btn-sm btn-light rte-btn rte-upload-image-btn';
-    btn.title = 'Upload and insert image';
-    btn.setAttribute('aria-label', 'Upload image');
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path></svg>';
-    toolbar.appendChild(btn);
+    var mediaSep = wrapper.querySelector('.rte-media-sep');
+    if (!mediaSep) {
+      mediaSep = document.createElement('span');
+      mediaSep.className = 'rte-sep rte-media-sep';
+      toolbar.appendChild(mediaSep);
+    }
+    if (!wrapper.querySelector('.rte-upload-image-btn')) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-sm btn-light rte-btn rte-upload-image-btn';
+      btn.title = 'Upload and insert image';
+      btn.setAttribute('aria-label', 'Upload image');
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path></svg>';
+      toolbar.appendChild(btn);
+    }
+    if (!wrapper.querySelector('.rte-video-url-btn')) {
+      var videoUrlBtn = document.createElement('button');
+      videoUrlBtn.type = 'button';
+      videoUrlBtn.className = 'btn btn-sm btn-light rte-btn rte-video-url-btn';
+      videoUrlBtn.title = 'Insert video URL';
+      videoUrlBtn.setAttribute('aria-label', 'Insert video URL');
+      videoUrlBtn.textContent = 'VID';
+      toolbar.appendChild(videoUrlBtn);
+    }
+    if (!wrapper.querySelector('.rte-upload-video-btn')) {
+      var videoBtn = document.createElement('button');
+      videoBtn.type = 'button';
+      videoBtn.className = 'btn btn-sm btn-light rte-btn rte-upload-video-btn';
+      videoBtn.title = 'Upload and insert video';
+      videoBtn.setAttribute('aria-label', 'Upload video');
+      videoBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>';
+      toolbar.appendChild(videoBtn);
+    }
 
-    var input = document.createElement('input');
-    input.type = 'file';
-    input.className = 'rte-image-upload-input';
-    input.accept = 'image/*';
-    input.style.display = 'none';
-    wrapper.insertBefore(input, rte);
+    finalizeRteToolbar(wrapper, toolbar);
+
+    if (!wrapper.querySelector('.rte-image-upload-input')) {
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.className = 'rte-image-upload-input';
+      input.accept = 'image/*';
+      input.style.display = 'none';
+      wrapper.insertBefore(input, rte);
+    }
+    if (!wrapper.querySelector('.rte-video-upload-input')) {
+      var videoInput = document.createElement('input');
+      videoInput.type = 'file';
+      videoInput.className = 'rte-video-upload-input';
+      videoInput.accept = 'video/mp4,video/webm,video/ogg,video/quicktime';
+      videoInput.style.display = 'none';
+      wrapper.insertBefore(videoInput, rte);
+    }
 
     var status = document.createElement('div');
     status.className = 'rte-upload-status small text-muted mb-1';
@@ -1797,6 +2304,16 @@
     var safeUrl = String(url || '').replace(/"/g, '&quot;');
     if (!safeUrl) return;
     document.execCommand('insertHTML', false, '<img src="' + safeUrl + '" style="max-width:100%;border-radius:6px">');
+    syncRteBody(rte);
+  }
+
+  function insertRteVideo(rte, url) {
+    restoreRteSelection(rte);
+    var safeUrl = String(url || '').replace(/"/g, '&quot;');
+    if (!safeUrl) return;
+    document.execCommand('insertHTML', false,
+      '<video src="' + safeUrl + '" controls playsinline preload="metadata" style="max-width:100%;border-radius:6px;display:block;margin:8px 0"></video><p><br></p>'
+    );
     syncRteBody(rte);
   }
 
@@ -1845,6 +2362,13 @@
     return '/api/richtext/upload-image' + (site ? '?site=' + encodeURIComponent(site) : '');
   }
 
+  function richtextVideoUploadUrl() {
+    var site = '';
+    if (typeof currentSiteParam === 'function') site = currentSiteParam();
+    if (!site) site = new URLSearchParams(window.location.search).get('site') || '';
+    return '/api/richtext/upload-video' + (site ? '?site=' + encodeURIComponent(site) : '');
+  }
+
   document.addEventListener('focusin', function(e) {
     var rte = e.target.closest('.rte-editor');
     if (rte) {
@@ -1877,6 +2401,8 @@
 
     if (btn.classList.contains('rte-upload-image-btn')) {
       triggerRteImageUpload(btn);
+    } else if (btn.classList.contains('rte-upload-video-btn')) {
+      triggerRteVideoUpload(btn);
     } else if (btn.classList.contains('rte-table-btn')) {
       insertRteTableConfigured(rte);
     } else if (btn.classList.contains('rte-table-settings-btn')) {
@@ -1885,6 +2411,8 @@
       openRtePopover(rte, 'link');
     } else if (btn.classList.contains('rte-image-btn')) {
       openRtePopover(rte, 'image');
+    } else if (btn.classList.contains('rte-video-url-btn')) {
+      openRtePopover(rte, 'video');
     } else {
       rte.focus();
       document.execCommand(cmd, false, arg);
@@ -1902,6 +2430,73 @@
     var tag = e.target.value;
     document.execCommand('formatBlock', false, tag ? '<' + tag + '>' : '<p>');
     syncRteBody(rte);
+  });
+
+  function triggerRteVideoUpload(btn) {
+    var wrapper = btn.closest('.rte-wrapper');
+    var rte = wrapper ? wrapper.querySelector('.rte-editor') : _lastRteEditor;
+    if (!rte) return;
+    ensureRteUploadControls(rte);
+    saveRteSelection(rte);
+    var uploadInput = wrapper.querySelector('.rte-video-upload-input');
+    if (uploadInput) {
+      uploadInput.value = '';
+      uploadInput.click();
+    }
+  }
+
+  document.addEventListener('change', function(e) {
+    if (!e.target.classList.contains('rte-video-upload-input')) return;
+    var input = e.target;
+    var wrapper = input.closest('.rte-wrapper');
+    var rte = wrapper ? wrapper.querySelector('.rte-editor') : _lastRteEditor;
+    var status = wrapper ? wrapper.querySelector('.rte-upload-status') : null;
+    var file = input.files && input.files[0];
+    if (!rte || !file) return;
+
+    var fd = new FormData();
+    fd.append('video', file);
+    var csrfToken = getCsrfToken();
+    if (csrfToken) fd.append('csrf_token', csrfToken);
+    if (status) {
+      status.textContent = 'Uploading video...';
+      status.className = 'rte-upload-status small text-muted mb-1';
+      status.style.display = '';
+    }
+
+    fetch(richtextVideoUploadUrl(), {
+      method: 'POST',
+      body: fd,
+      headers: csrfToken ? { 'X-CSRFToken': csrfToken } : {}
+    })
+      .then(function(r) {
+        return r.text().then(function(text) {
+          var data = null;
+          try { data = text ? JSON.parse(text) : {}; }
+          catch (err) { throw new Error('Video upload failed (HTTP ' + r.status + ').'); }
+          return { ok: r.ok, data: data };
+        });
+      })
+      .then(function(result) {
+        if (!result.ok || !result.data || !result.data.url) {
+          throw new Error((result.data && result.data.error) || 'Video upload failed');
+        }
+        insertRteVideo(rte, result.data.url);
+        if (status) {
+          status.textContent = 'Video inserted.';
+          status.className = 'rte-upload-status small text-success mb-1';
+          setTimeout(function() { status.style.display = 'none'; }, 1800);
+        }
+      })
+      .catch(function(err) {
+        if (status) {
+          status.textContent = err.message || 'Video upload failed';
+          status.className = 'rte-upload-status small text-danger mb-1';
+          status.style.display = '';
+        } else {
+          alert(err.message || 'Video upload failed');
+        }
+      });
   });
 
   // ── 颜色选择器 ──
@@ -2076,7 +2671,12 @@
       ? (existing ? '编辑链接' : '插入链接')
       : '插入图片';
     inputEl.value = currentUrl;
-    inputEl.placeholder = mode === 'link' ? 'https://example.com' : 'https://example.com/pic.webp';
+    if (mode === 'video') {
+      titleEl.textContent = '插入视频链接';
+      inputEl.placeholder = 'https://example.com/video.mp4';
+    } else {
+      inputEl.placeholder = mode === 'link' ? 'https://example.com' : 'https://example.com/pic.webp';
+    }
     confirmEl.textContent = mode === 'link' && existing ? '更新' : '确定';
     overlay.style.display = 'flex';
     setTimeout(function(){ inputEl.focus(); inputEl.select(); }, 50);
@@ -2112,6 +2712,8 @@
       // execCommand('insertImage') 行为不可靠（选区/浏览器差异导致重复插入）。
       // 改用 insertHTML 注入 <img> 标签，一次精确插入。
       insertRteImage(rte, url);
+    } else if (state.mode === 'video' && url) {
+      insertRteVideo(rte, url);
     }
     syncRteBody(rte);
   });

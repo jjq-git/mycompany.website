@@ -13,40 +13,53 @@
       <div data-name="form_panel" data-type="group" data-hideable class="cf-form-col">
         <form class="cf-form" method="POST">
           <div data-name="name_field" data-type="group" data-hideable class="cf-field">
-            <label class="cf-label" data-i18n="contact.formName">姓名</label>
-            <input type="text" name="name" class="cf-input" required placeholder="姓名" data-i18n-placeholder="contact.formName">
+            <label class="cf-label" data-i18n="contact.formName">Name</label>
+            <input type="text" name="name" class="cf-input" required placeholder="Name" data-i18n-placeholder="contact.formName">
           </div>
           <div data-name="email_field" data-type="group" data-hideable class="cf-field">
-            <label class="cf-label" data-i18n="contact.formEmail">邮箱</label>
-            <input type="email" name="email" class="cf-input" required placeholder="邮箱" data-i18n-placeholder="contact.formEmail">
+            <label class="cf-label" data-i18n="contact.formEmail">Email</label>
+            <input type="email" name="email" class="cf-input" required placeholder="Email" data-i18n-placeholder="contact.formEmail">
           </div>
           <div data-name="phone_field" data-type="group" data-hideable class="cf-field">
-            <label class="cf-label" data-i18n="contact.formPhone">电话</label>
-            <input type="tel" name="phone" class="cf-input" placeholder="电话" data-i18n-placeholder="contact.formPhone">
+            <label class="cf-label" data-i18n="contact.formPhone">Phone</label>
+            <input type="tel" name="phone" class="cf-input" placeholder="Phone" data-i18n-placeholder="contact.formPhone">
           </div>
           <div data-name="company_field" data-type="group" data-hideable class="cf-field">
-            <label class="cf-label" data-i18n="contact.formCompany">公司</label>
-            <input type="text" name="company" class="cf-input" placeholder="公司" data-i18n-placeholder="contact.formCompany">
+            <label class="cf-label" data-i18n="contact.formCompany">Company</label>
+            <input type="text" name="company" class="cf-input" placeholder="Company" data-i18n-placeholder="contact.formCompany">
           </div>
           <div data-name="message_field" data-type="group" data-hideable class="cf-field">
-            <label class="cf-label" data-i18n="contact.formMessage">留言</label>
-            <textarea name="message" class="cf-input cf-textarea" rows="4" required placeholder="留言" data-i18n-placeholder="contact.formMessage"></textarea>
+            <label class="cf-label" data-i18n="contact.formMessage">Message</label>
+            <textarea name="message" class="cf-input cf-textarea" rows="4" required placeholder="Message" data-i18n-placeholder="contact.formMessage"></textarea>
           </div>
           <div class="cf-actions">
-            <button type="submit" class="cf-btn" data-i18n="contact.formSend">发送留言</button>
+            <button type="submit" class="cf-btn" data-i18n="contact.formSend">Send Message</button>
           </div>
+          <p class="cf-form-status" aria-live="polite" hidden></p>
         </form>
       </div>
     </div>
   </div>
+  <span class="js-form-missing-action" data-i18n="contact.formMissingAction" hidden>Please configure the form submission URL first.</span>
   <script>
     (function() {
       var section = document.currentScript.parentElement;
       var actionEl = section.querySelector('.js-form-action');
       var form = section.querySelector('.cf-form');
+      var missingActionEl = section.querySelector('.js-form-missing-action');
       if (actionEl && form) {
         var v = (actionEl.textContent || '').trim();
         if (v) form.action = v;
+      }
+      if (form && !form.getAttribute('action')) {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          var status = form.querySelector('.cf-form-status');
+          if (!status) return;
+          status.textContent = (missingActionEl && missingActionEl.textContent.trim())
+            || 'Please configure the form submission URL first.';
+          status.hidden = false;
+        });
       }
     })();
   </script>

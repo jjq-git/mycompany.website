@@ -54,6 +54,12 @@ template.html + module.data ──注入──▶ 干净静态 HTML（剥掉 dat
 - **CSS 变量默认值只写在 CSS 里**（`var(--cols, 3)`），HTML 与注册表不重复。
 - **Header / Footer 也是 block**：写在 `blocks/header/`、`blocks/footer/`，必显（不加 `data-hideable`）。其中导航菜单、语言切换不靠用户手填——用保留数据源 `data-source="menu"` / `"languages"` 由 builder 注入；页眉 / 页脚的不同排版走 block 变体（`variants/*.html`，对应 `settings.header.variant` / `settings.footer.variant`）。
 
+## 功能型 block 的阶段性约定
+
+- **联系表单（`contact_form`）提交留言功能先走第三方或用户自建接口**：当前阶段平台不内置访客留言收集、邮件通知、线索管理或公开提交 API。主题里的 `contact_form` 只负责渲染表单，并通过 `form_action` 字段把表单 `POST` 到店主配置的提交地址，例如 Formspree、Getform、Basin、Cloudflare Workers、Vercel Function 或企业自有后端接口。
+- `form_action` 为空时，模板必须避免把表单默认提交到当前静态/预览页面；应阻止提交并提示店主先配置表单提交地址，防止预览页出现 `405 METHOD NOT ALLOWED`。
+- 后续如果要做平台内置留言功能，需要另行设计公开提交接口、数据表、垃圾防护、通知机制、后台查看入口，以及静态发布后的域名/CORS/CSRF 策略。
+
 ## 不做
 
 - 不开放像素级样式微调。

@@ -610,23 +610,33 @@ function initFilterableGrids() {
   document.querySelectorAll('.filterable-grid[data-filter-id]').forEach(function(grid) {
     var filterId = grid.getAttribute('data-filter-id');
     var panel = document.querySelector('.dg-filter-panel[data-filter-for="' + filterId + '"]');
-    if (!panel) return;
+    var section = grid.closest('.section') || grid.parentElement;
+    var searchPanel = document.querySelector('.dg-search-panel[data-search-for="' + filterId + '"]');
 
-    var showFiltersEl = panel.querySelector('[data-filter-key="show_filters"]');
+    var showFiltersEl = panel ? panel.querySelector('[data-filter-key="show_filters"]') : null;
     var showFilters = !showFiltersEl || (showFiltersEl.textContent || '').trim() !== 'false';
-    if (!showFilters) {
+    if (panel && !showFilters) {
       panel.hidden = true;
-      return;
     }
 
     var cards = Array.prototype.slice.call(grid.querySelectorAll('.dg-card'));
     if (!cards.length) {
-      panel.hidden = true;
+      if (panel) panel.hidden = true;
+      if (searchPanel) searchPanel.hidden = true;
       return;
     }
 
-    var state = { category: '', tag: '' };
-    var allLabel = panel.getAttribute('data-all-label') || 'All';
+    var showSearchEl = searchPanel ? searchPanel.querySelector('[data-search-key="show_search"]') : null;
+    var showSearch = searchPanel && (!showSearchEl || (showSearchEl.textContent || '').trim() === 'true');
+    var searchInput = searchPanel ? searchPanel.querySelector('.dg-search-input') : null;
+    var searchCount = searchPanel ? searchPanel.querySelector('.dg-search-count') : null;
+    if (searchPanel) searchPanel.hidden = !showSearch;
+
+    var state = { category: '', tag: '', query: '' };
+    var allLabel = panel ? (panel.getAttribute('data-all-label') || 'All') : 'All';
+    cards.forEach(function(card) {
+      card._dgSearchText = (card.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    });
 
     function textOf(el) {
       return el ? (el.textContent || '').trim() : '';
@@ -667,10 +677,14 @@ function initFilterableGrids() {
       var data = cardData(card);
       var category = override && Object.prototype.hasOwnProperty.call(override, 'category') ? override.category : state.category;
       var tag = override && Object.prototype.hasOwnProperty.call(override, 'tag') ? override.tag : state.tag;
-      return (!category || data.category === category) && (!tag || data.tags.indexOf(tag) !== -1);
+      var query = override && Object.prototype.hasOwnProperty.call(override, 'query') ? override.query : state.query;
+      return (!category || data.category === category) &&
+        (!tag || data.tags.indexOf(tag) !== -1) &&
+        (!query || (card._dgSearchText || '').indexOf(query) !== -1);
     }
 
     function renderButtons(groupName, values) {
+      if (!panel || !showFilters) return;
       var target = panel.querySelector('[data-filter-group="' + groupName + '"]');
       if (!target) return;
       var buttons = [{ value: '', label: allLabel }].concat(values.map(function(value) {
@@ -689,6 +703,7 @@ function initFilterableGrids() {
     }
 
     function updateButtons(groupName) {
+      if (!panel || !showFilters) return;
       var target = panel.querySelector('[data-filter-group="' + groupName + '"]');
       if (!target) return;
       target.querySelectorAll('.dg-filter-option').forEach(function(button) {
@@ -712,7 +727,8 @@ function initFilterableGrids() {
       updateButtons('tag');
       var empty = document.querySelector('[data-filter-empty="' + filterId + '"]');
       if (empty) empty.hidden = shown !== 0;
-      resetDataGridPager(grid.parentElement.querySelector('.dg-pager'));
+      if (searchCount) searchCount.textContent = shown + ' results';
+      resetDataGridPager((section || grid.parentElement).querySelector('.dg-pager'));
     }
 
     var categories = unique(cards.map(function(card) { return cardData(card).category; }));
@@ -722,6 +738,12 @@ function initFilterableGrids() {
 
     renderButtons('category', categories);
     renderButtons('tag', tags);
+    if (showSearch && searchInput) {
+      searchInput.addEventListener('input', function() {
+        state.query = (searchInput.value || '').trim().toLowerCase();
+        apply();
+      });
+    }
     apply();
   });
 }
@@ -853,11 +875,119 @@ function initModuleLists() {
   });
 }
 
+function initDetailCarousels() {
+  function makeLightbox() {
+    var overlay = document.querySelector('.detail-lightbox');
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.className = 'detail-lightbox';
+    overlay.innerHTML =
+      '<button type="button" class="detail-lightbox-close" aria-label="Close image">&times;</button>' +
+      '<button type="button" class="detail-lightbox-nav detail-lightbox-prev" aria-label="Previous image">&#8249;</button>' +
+      '<img class="detail-lightbox-img" alt="">' +
+      '<button type="button" class="detail-lightbox-nav detail-lightbox-next" aria-label="Next image">&#8250;</button>';
+    document.body.appendChild(overlay);
+    overlay.querySelector('.detail-lightbox-close').addEventListener('click', function() {
+      overlay.classList.remove('open');
+    });
+    overlay.addEventListener('click', function(event) {
+      if (event.target === overlay) overlay.classList.remove('open');
+    });
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') overlay.classList.remove('open');
+    });
+    return overlay;
+  }
+
+  document.querySelectorAll('.item-detail-carousel').forEach(function(section) {
+    if (section.__detailCarouselReady) return;
+    section.__detailCarouselReady = true;
+
+    var images = Array.prototype.slice.call(section.querySelectorAll('.detail-gallery-img'));
+    if (!images.length) return;
+
+    var index = 0;
+    var prev = section.querySelector('.detail-carousel-prev');
+    var next = section.querySelector('.detail-carousel-next');
+    var zoom = section.querySelector('.detail-zoom-btn');
+    var thumbs = section.querySelector('.detail-thumbs');
+
+    function show(nextIndex) {
+      index = (nextIndex + images.length) % images.length;
+      images.forEach(function(img, i) {
+        img.classList.toggle('active', i === index);
+      });
+      if (thumbs) {
+        thumbs.querySelectorAll('button').forEach(function(btn, i) {
+          btn.classList.toggle('active', i === index);
+        });
+      }
+    }
+
+    function openZoom() {
+      var overlay = makeLightbox();
+      var lightboxImg = overlay.querySelector('.detail-lightbox-img');
+      var lbPrev = overlay.querySelector('.detail-lightbox-prev');
+      var lbNext = overlay.querySelector('.detail-lightbox-next');
+
+      function renderLightbox(nextIndex) {
+        index = (nextIndex + images.length) % images.length;
+        lightboxImg.src = images[index].currentSrc || images[index].src;
+        lightboxImg.alt = images[index].alt || '';
+        show(index);
+      }
+
+      lbPrev.onclick = function(event) {
+        event.stopPropagation();
+        renderLightbox(index - 1);
+      };
+      lbNext.onclick = function(event) {
+        event.stopPropagation();
+        renderLightbox(index + 1);
+      };
+      renderLightbox(index);
+      overlay.classList.add('open');
+    }
+
+    if (thumbs) {
+      thumbs.innerHTML = '';
+      images.forEach(function(img, i) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'detail-thumb';
+        btn.setAttribute('aria-label', 'Show image ' + (i + 1));
+        var thumb = document.createElement('img');
+        thumb.src = img.currentSrc || img.src;
+        thumb.alt = img.alt || '';
+        btn.appendChild(thumb);
+        btn.addEventListener('click', function() { show(i); });
+        thumbs.appendChild(btn);
+      });
+    }
+
+    if (prev) prev.addEventListener('click', function() { show(index - 1); });
+    if (next) next.addEventListener('click', function() { show(index + 1); });
+    if (zoom) zoom.addEventListener('click', openZoom);
+    images.forEach(function(img) {
+      img.addEventListener('click', openZoom);
+    });
+
+    if (images.length <= 1) {
+      [prev, next].forEach(function(btn) {
+        if (btn) btn.hidden = true;
+      });
+      if (thumbs) thumbs.hidden = true;
+    }
+    show(0);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   initDataGridPagers();
   initFilterableGrids();
   initViewAllButtons();
   initModuleLists();
+  initDetailCarousels();
 });
 
 // --- 回到顶部按钮：滚动超过 300px 时显示，点击平滑滚回顶部 ---

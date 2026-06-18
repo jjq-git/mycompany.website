@@ -90,6 +90,11 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
         # 新路径：开关开 + 是 data-* 声明式
         if enable_data_attr and schema is not None:
             data_dict = module.get('data') if isinstance(module.get('data'), dict) else {}
+            dataset_name = data_dict.get('dataset', '')
+            dataset_path = ((jinja_ctx.get('dataset_paths') or {}).get(dataset_name) or '')
+            base_prefix = (jinja_ctx.get('base_url', '') or '').rstrip('/')
+            if base_prefix and dataset_path.startswith('/') and not dataset_path.startswith(base_prefix + '/'):
+                dataset_path = base_prefix + dataset_path
             if block_type == 'item_data':
                 # 数据集详情页的上下文变量名因数据集而异（product / post / feature / item 等），
                 # 优先取 item，找不到再依次尝试 product / post / feature 等常见命名
@@ -107,6 +112,19 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
                         merged_item['tags'] = [t.strip() for t in tags.split(',') if t.strip()]
                     if merged_item.get('section_bg') and not merged_item.get('style_bg-color'):
                         merged_item['style_bg-color'] = merged_item.get('section_bg')
+                    detail_gallery = merged_item.get('detail_gallery')
+                    if isinstance(detail_gallery, dict):
+                        detail_visible = detail_gallery.get('visible')
+                        detail_images = detail_gallery.get('images')
+                        if detail_visible is False or str(detail_visible).lower() == 'false':
+                            merged_item['_hidden_detail_images'] = True
+                            merged_item['detail_images'] = []
+                        elif isinstance(detail_images, list):
+                            merged_item['detail_images'] = detail_images
+                    if not merged_item.get('detail_images'):
+                        merged_item['_hidden_detail_images'] = True
+                    if merged_item.get('tags_visible') is False or str(merged_item.get('tags_visible')).lower() == 'false':
+                        merged_item['_hidden_tags'] = True
                     # 模块 data 覆盖产品字段，但空值不覆盖已有字段
                     for k, v in data_dict.items():
                         if v not in (None, '', [], {}):
@@ -122,7 +140,10 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
                     'base_url': jinja_ctx.get('base_url', '') or '',
                     'lang': jinja_ctx.get('lang', '') or '',
                     'current_path': jinja_ctx.get('current_path', '') or '',
-                    'dataset': data_dict.get('dataset', ''),
+                    'dataset': dataset_name,
+                    'dataset_path': dataset_path,
+                    'default_alt': data_dict.get('alt') or data_dict.get('image_alt') or data_dict.get('cover_alt')
+                                   or data_dict.get('title') or data_dict.get('name') or '',
                 },
             }
             try:
@@ -157,6 +178,12 @@ def _load_yaml(path):
     if not path.exists():
         return {}
     return yaml.safe_load(path.read_text(encoding='utf-8')) or {}
+
+
+def _is_content_yaml(path):
+    """Return true for real content YAML files, excluding atomic-write leftovers."""
+    name = Path(path).name
+    return name.endswith(('.yaml', '.yml')) and not name.startswith('.tmp-')
 
 
 def _first_text(*values):
@@ -382,6 +409,47 @@ def _deep_merge(default, override):
     return result
 
 
+def _merge_language_settings_section(shared, override):
+    """Merge shared settings with language-specific text overrides."""
+    if not isinstance(shared, dict):
+        shared = {}
+    if not isinstance(override, dict):
+        override = {}
+    shared_first_fields = {'logo', 'favicon', 'icp', 'phone', 'mobile', 'email', 'wechat'}
+    result = dict(shared)
+    for key, value in override.items():
+        if key in shared_first_fields and result.get(key):
+            continue
+        if value not in (None, ''):
+            result[key] = value
+    return result
+
+
+def _language_override(settings, base_key, lang_code, default_lang, fallback_to_default=True):
+    """Return current language override, falling back to the real default language."""
+    settings = settings or {}
+    current = settings.get(f'{base_key}_{lang_code}')
+    if current:
+        return current
+    if fallback_to_default and lang_code != default_lang:
+        return settings.get(f'{base_key}_{default_lang}') or {}
+    return {}
+
+
+def _language_label_map(settings, lang_code, default_lang, fallback_to_default=True):
+    """Merge menu labels from default language and current language."""
+    labels = (settings or {}).get('menu_labels') or {}
+    default_labels = labels.get(default_lang) if isinstance(labels.get(default_lang), dict) else {}
+    current_labels = labels.get(lang_code) if isinstance(labels.get(lang_code), dict) else {}
+    if lang_code == default_lang:
+        return dict(default_labels or current_labels or {})
+    if not fallback_to_default:
+        return dict(current_labels or {})
+    merged = dict(default_labels or {})
+    merged.update(current_labels or {})
+    return merged
+
+
 def _gather_site_data(site_id, template_name=None):
     """收集店主网站的全部内容."""
     sites_dir = Path(current_app.config['SITES_DIR'])
@@ -398,6 +466,8 @@ def _gather_site_data(site_id, template_name=None):
         seed_pages_dir = Path(current_app.config['TEMPLATES_DIR']) / template_name / 'seed_data' / 'pages'
         if seed_pages_dir.exists():
             for f in seed_pages_dir.rglob('*.yaml'):
+                if not _is_content_yaml(f):
+                    continue
                 rel = f.relative_to(seed_pages_dir).as_posix()
                 page_key = rel[:-5] if rel.endswith('.yaml') else rel
                 pages[page_key] = _load_yaml(f)
@@ -405,6 +475,8 @@ def _gather_site_data(site_id, template_name=None):
     pages_dir = root / 'pages'
     if pages_dir.exists():
         for f in pages_dir.rglob('*.yaml'):
+            if not _is_content_yaml(f):
+                continue
             # 相对于 pages/ 的路径作为 key，如 'about'、'products/silent-booth'
             rel = f.relative_to(pages_dir).as_posix()
             page_key = rel[:-5] if rel.endswith('.yaml') else rel  # 去掉 .yaml 后缀
@@ -413,6 +485,8 @@ def _gather_site_data(site_id, template_name=None):
     data_dir = root / 'data'
     if data_dir.exists():
         for f in data_dir.rglob('*.yaml'):
+            if not _is_content_yaml(f):
+                continue
             rel = f.relative_to(data_dir).as_posix()
             dataset_key = rel[:-5] if rel.endswith('.yaml') else rel
             data[dataset_key] = _load_yaml(f)
@@ -424,12 +498,15 @@ def _load_lang_overrides(site_id, lang_code, default_lang, default_pages, defaul
     """加载语言特定 pages 和 data, 回退到默认语言.
 
     非默认语言: 先读 lang/<code>/ 下的文件, 不存在的 key 用默认语言数据.
-    默认语言: 直接用默认数据.
+    默认语言: 若存在 lang/<code>/, 也优先用该目录覆盖；否则直接用默认数据.
     """
-    if lang_code == default_lang:
-        return default_pages, default_data
+    from .site_storage import lang_root, read_yaml, list_yaml_files
 
-    from .site_storage import read_yaml, list_yaml_files
+    # Some imported sites keep the default language content under lang/<code>/
+    # while the root pages/data hold another language. Prefer the explicit
+    # language folder whenever it exists, even for the default language.
+    if lang_code == default_lang and not lang_root(site_id, lang_code).exists():
+        return default_pages, default_data
 
     # 加载语言特定 pages
     lang_pages = dict(default_pages)
@@ -473,10 +550,9 @@ def _load_seed_lang_overrides(seed, lang_code, default_lang, default_pages, defa
     非默认语言: 先加载默认数据, 再用 lang/<code>/ 下的同名文件覆盖.
     默认语言: 直接用默认数据.
     """
-    if lang_code == default_lang:
-        return default_pages, default_data
-
     lang_dir = seed / 'lang' / lang_code
+    if lang_code == default_lang and not lang_dir.exists():
+        return default_pages, default_data
 
     # 加载语言特定 pages (覆盖同名 key)
     lang_pages = dict(default_pages)
@@ -512,6 +588,7 @@ def _build_language_selector_page(output_root, base_url, settings, theme, year, 
     safe_base = escape(base_url.rstrip('/'))
     # 语言代码列表 JSON，供 JS 做浏览器语言匹配
     lang_codes_json = json.dumps([lang['code'] for lang in languages])
+    default_lang_json = json.dumps(meta.get('default_language') or (languages[0].get('code') if languages else ''))
 
     html = '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
     html += '<meta charset="UTF-8">\n'
@@ -521,7 +598,9 @@ def _build_language_selector_page(output_root, base_url, settings, theme, year, 
     # 用相对路径重定向（不用 base_url），兼容预览 /preview/<id>/ 和 CLI 构建 /
     html += '<script>'
     html += 'var L=' + lang_codes_json + ';'
+    html += 'var D=' + default_lang_json + ';'
     html += '(function(){'
+    html += 'if(D&&L.indexOf(D)!==-1){window.location.replace(D+"/");return;}'
     html += 'var u=(navigator.language||navigator.userLanguage||"");'
     html += 'var m=null;'
     html += 'for(var i=0;i<L.length;i++){if(L[i]===u){m=L[i];break;}}'
@@ -655,6 +734,11 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
     _common['settings']['menu'] = nav_menu
     menu_items = full_menu
     tasks = menu_lib.collect_render_tasks(menu_items, tpl_html_dir, data, pages)
+    dataset_paths = {
+        task.get('dataset_key'): task.get('current_path')
+        for task in tasks
+        if task.get('type') == 'list' and task.get('dataset_key') and task.get('current_path')
+    }
 
     failures = []
     for task in tasks:
@@ -664,6 +748,10 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
             # 准备渲染上下文
             ctx = dict(_common)
             ctx['current_path'] = task['current_path']
+            ctx['dataset_paths'] = {
+                key: _seo_url(ctx.get('base_url', ''), lang_code, path)
+                for key, path in dataset_paths.items()
+            }
 
             ctx['page_key'] = task['page_key']
             # #27: 语言切换器默认把当前 current_path 拼到目标语言, 但详情页的 slug 是
@@ -805,6 +893,12 @@ def build_site(site_id, base_url='', report=None):
         languages = meta.get('languages', [])
     # 提取 product_categories 和 products 供导航用
     default_lang = meta.get('default_language', languages[0]['code'] if languages else 'zh-CN')
+    default_pages_for_lang = pages
+    default_data_for_lang = data
+    if languages:
+        default_pages_for_lang, default_data_for_lang = _load_lang_overrides(
+            site_id, default_lang, default_lang, pages, data
+        )
 
     year = datetime.now().year
 
@@ -815,15 +909,19 @@ def build_site(site_id, base_url='', report=None):
         for lang_opt in languages:
             lang_code = lang_opt['code']
             t_data = translations.get(lang_code, {})
+            from .site_storage import lang_root
+            fallback_settings_to_default = lang_code == default_lang or not lang_root(site_id, lang_code).exists()
 
             # 加载语言特定数据，回退到默认语言
-            lang_pages, lang_data = _load_lang_overrides(site_id, lang_code, default_lang, pages, data)
+            lang_pages, lang_data = _load_lang_overrides(
+                site_id, lang_code, default_lang, default_pages_for_lang, default_data_for_lang
+            )
 
             # 语言特定菜单：menu_labels（新格式）优先于 menu_<lang>（旧格式）
             # 当两者同时存在时用新格式，否则旧格式向后兼容。
             lang_settings = dict(settings)
             menu_override_key = f'menu_{lang_code}'
-            label_map = (settings.get('menu_labels') or {}).get(lang_code, {})
+            label_map = _language_label_map(settings, lang_code, default_lang, fallback_settings_to_default)
             if menu_override_key in settings and settings.get(menu_override_key) and not label_map:
                 # 旧格式: 语言独立的完整菜单树（仅当该语言没有 menu_labels 时才用）
                 lang_settings['menu'] = menu_lib.ensure_home(
@@ -837,14 +935,19 @@ def build_site(site_id, base_url='', report=None):
                 lang_settings['menu'] = menu_lib.apply_labels(shared_menu, label_map)
             # else: 没有语言特定菜单, 保持 shared_menu 不变 (已在 settings['menu'] 中)
             footer_override_key = f'footer_{lang_code}'
-            if footer_override_key in settings and settings[footer_override_key]:
-                lang_settings['footer'] = settings[footer_override_key]
-            company_override_key = f'company_{lang_code}'
-            if company_override_key in settings and settings[company_override_key]:
-                lang_settings['company'] = settings[company_override_key]
-            contact_override_key = f'contact_{lang_code}'
-            if contact_override_key in settings and settings[contact_override_key]:
-                lang_settings['contact'] = settings[contact_override_key]
+            footer_override = _language_override(settings, 'footer', lang_code, default_lang, fallback_settings_to_default)
+            if footer_override:
+                lang_settings['footer'] = footer_override
+            company_override = _language_override(settings, 'company', lang_code, default_lang, fallback_settings_to_default)
+            if company_override:
+                lang_settings['company'] = _merge_language_settings_section(
+                    settings.get('company'), company_override
+                )
+            contact_override = _language_override(settings, 'contact', lang_code, default_lang, fallback_settings_to_default)
+            if contact_override:
+                lang_settings['contact'] = _merge_language_settings_section(
+                    settings.get('contact'), contact_override
+                )
 
             # 提取语言特定的产品分类和列表
             lang_products_categories = _extract_products_categories(lang_data)
@@ -993,31 +1096,45 @@ def build_template_preview(template_name, base_url=''):
     if languages:
         _build_language_selector_page(output_root, base_url, settings, theme, year, meta, translations)
         default_lang = meta.get('default_language', languages[0]['code'] if languages else 'zh-CN')
+        default_pages_for_lang, default_data_for_lang = _load_seed_lang_overrides(
+            seed, default_lang, default_lang, pages, data
+        )
         for lang_opt in languages:
             lang_code = lang_opt['code']
             t_data = translations.get(lang_code, {})
+            fallback_settings_to_default = lang_code == default_lang or not (seed / 'lang' / lang_code).exists()
 
             # 加载语言特定 pages/data（seed_data/lang/<code>/ 覆盖默认）
-            lang_pages, lang_data = _load_seed_lang_overrides(seed, lang_code, default_lang, pages, data)
+            lang_pages, lang_data = _load_seed_lang_overrides(
+                seed, lang_code, default_lang, default_pages_for_lang, default_data_for_lang
+            )
 
             # 语言特定 settings 覆盖（menu_en, footer_en, company_en, contact_en）
             lang_settings = dict(settings)
             menu_override_key = f'menu_{lang_code}'
-            if menu_override_key in settings and settings[menu_override_key]:
+            label_map = _language_label_map(settings, lang_code, default_lang, fallback_settings_to_default)
+            if menu_override_key in settings and settings[menu_override_key] and not label_map:
                 lang_settings['menu'] = menu_lib.ensure_home(
                     menu_lib.normalize_for_render(
                         menu_lib.upgrade_old_format(settings[menu_override_key], meta.get('datasets', []))
                     )
                 )
-            footer_override_key = f'footer_{lang_code}'
-            if footer_override_key in settings and settings[footer_override_key]:
-                lang_settings['footer'] = settings[footer_override_key]
-            company_override_key = f'company_{lang_code}'
-            if company_override_key in settings and settings[company_override_key]:
-                lang_settings['company'] = settings[company_override_key]
-            contact_override_key = f'contact_{lang_code}'
-            if contact_override_key in settings and settings[contact_override_key]:
-                lang_settings['contact'] = settings[contact_override_key]
+            elif label_map:
+                shared_menu = settings.get('menu', [])
+                lang_settings['menu'] = menu_lib.apply_labels(shared_menu, label_map)
+            footer_override = _language_override(settings, 'footer', lang_code, default_lang, fallback_settings_to_default)
+            if footer_override:
+                lang_settings['footer'] = footer_override
+            company_override = _language_override(settings, 'company', lang_code, default_lang, fallback_settings_to_default)
+            if company_override:
+                lang_settings['company'] = _merge_language_settings_section(
+                    settings.get('company'), company_override
+                )
+            contact_override = _language_override(settings, 'contact', lang_code, default_lang, fallback_settings_to_default)
+            if contact_override:
+                lang_settings['contact'] = _merge_language_settings_section(
+                    settings.get('contact'), contact_override
+                )
 
             # 提取语言特定的产品分类和列表
             lang_products_categories = _extract_products_categories(lang_data)

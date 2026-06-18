@@ -27,7 +27,7 @@
       <td class="muted">{{ p.mtime.strftime('%Y-%m-%d %H:%M') }}</td>
       <td>
         {% if p.label == 'home' %}
-        <a href="{{ url_for('core.page_home') }}">编辑</a>
+        <a href="{{ url_for('core.page_panel', page_key='home') }}">编辑</a>
         {% else %}
         <span class="muted">编辑（待支持）</span>
         {% endif %}

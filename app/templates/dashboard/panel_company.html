@@ -68,6 +68,11 @@
       <label class="form-label small mb-1">简称</label>
       <input class="form-control form-control-sm" name="company.short_name" value="{{ company.get('short_name', '') }}">
     </div>
+    <div class="mb-2">
+      <label class="form-label small mb-1">公司简介</label>
+      <textarea class="form-control form-control-sm" name="company.description" rows="2" maxlength="200" placeholder="一句话简介，用于页面 meta description 兜底和 SEO 分享摘要">{{ company.get('description', '') }}</textarea>
+      <div class="form-text">一句话介绍公司，80-160 字，SEO 和社交分享时作为默认页面简介。</div>
+    </div>
     <div class="mb-0">
       <label class="form-label small mb-1">备案号</label>
       <input class="form-control form-control-sm" name="company.icp" value="{{ company.get('icp', '') }}" placeholder="如：苏ICP备XXXXXXXX号">
@@ -134,7 +139,7 @@ function enlargeCompanyLogo(img) {
     overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:pointer';
     overlay.onclick = function() { overlay.style.display = 'none'; };
     var lbImg = document.createElement('img');
-    lbImg.style.cssText = 'max-width:95vw;max-height:95vh;border-radius:6px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
+    lbImg.style.cssText = 'max-width:95vw;max-height:95vh;object-fit:contain;background-color:#fff;background-image:linear-gradient(45deg,#eef2f7 25%,transparent 25%),linear-gradient(-45deg,#eef2f7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef2f7 75%),linear-gradient(-45deg,transparent 75%,#eef2f7 75%);background-position:0 0,0 8px,8px -8px,-8px 0;background-size:16px 16px;border-radius:6px;padding:12px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
     overlay.appendChild(lbImg);
     document.body.appendChild(overlay);
   }
@@ -234,7 +239,7 @@ function updateFaviconPreview(urlInput) {
   btn.addEventListener('click', function(){
     showCompanyTranslateConfirm(
       'AI 翻译',
-      '<p>将默认语言 <strong>' + (LANG_LABELS[DEFAULT_LANG] || DEFAULT_LANG) + '</strong> 的公司信息翻译到当前 <strong>' + (LANG_LABELS[CURRENT_LANG] || CURRENT_LANG) + '</strong>？</p><p class="text-muted small mb-0">只会翻译公司名称、简称和地址；电话、邮箱、Logo、备案号不会翻译。</p>',
+      '<p>将默认语言 <strong>' + (LANG_LABELS[DEFAULT_LANG] || DEFAULT_LANG) + '</strong> 的公司信息翻译到当前 <strong>' + (LANG_LABELS[CURRENT_LANG] || CURRENT_LANG) + '</strong>？</p><p class="text-muted small mb-0">会翻译公司名称、简称、简介和地址；电话、邮箱、Logo、备案号不会翻译。</p>',
       function(){ doCompanyTranslate(); }
     );
   });
@@ -242,12 +247,13 @@ function updateFaviconPreview(urlInput) {
   function sourceValue(name) {
     if (name === 'company.name') return SOURCE_COMPANY.name || null;
     if (name === 'company.short_name') return SOURCE_COMPANY.short_name || null;
+    if (name === 'company.description') return SOURCE_COMPANY.description || null;
     if (name === 'contact.address') return SOURCE_CONTACT.address || null;
     return null;
   }
 
   function doCompanyTranslate() {
-    var fieldNames = ['company.name', 'company.short_name', 'contact.address'];
+    var fieldNames = ['company.name', 'company.short_name', 'company.description', 'contact.address'];
     var texts = {};
     fieldNames.forEach(function(name){
       var value = sourceValue(name);

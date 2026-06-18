@@ -18,6 +18,7 @@
 其内容必须在**录入侧**做 HTML sanitize（白名单），否则是存储型 XSS 面。
 """
 import re
+from html import escape as html_escape
 
 from . import block_parser as bp
 from . import icon_registry
@@ -31,6 +32,29 @@ _TEXT_TYPES = {'text', 'textarea', 'richtext', 'url'}  # url 也走文本注入�
 _SAFE_HREF = re.compile(r'^(https?:|mailto:|tel:|/|#|\./|\.\./|[^:]*$)', re.I)
 # 颜色值白名单：#hex、rgb()/rgba()、hsl()/hsla()、css 关键字（字母）
 _SAFE_COLOR = re.compile(r'^(#[0-9a-f]{3,8}|rgba?\([\d.,%\s]+\)|hsla?\([\d.,%\s]+\)|[a-z]+)$', re.I)
+_IMG_TAG_RE = re.compile(r'<img\b[^>]*>', re.I)
+_ALT_ATTR_RE = re.compile(r'\s+alt\s*=\s*("([^"]*)"|\'([^\']*)\'|([^\s>]*))', re.I)
+
+
+def _richtext_with_image_alt(html, alt_text):
+    """给富文本里的 img 补 alt；已有非空 alt 不覆盖。"""
+    if not html or not alt_text:
+        return html
+    escaped_alt = html_escape(str(alt_text), quote=True)
+
+    def repl(match):
+        tag = match.group(0)
+        alt_match = _ALT_ATTR_RE.search(tag)
+        if alt_match:
+            current_alt = alt_match.group(2) or alt_match.group(3) or alt_match.group(4) or ''
+            if current_alt.strip():
+                return tag
+            return _ALT_ATTR_RE.sub(f' alt="{escaped_alt}"', tag, count=1)
+        if tag.endswith('/>'):
+            return tag[:-2].rstrip() + f' alt="{escaped_alt}">'
+        return tag[:-1].rstrip() + f' alt="{escaped_alt}">'
+
+    return _IMG_TAG_RE.sub(repl, str(html))
 
 
 def _set_text(node, value, raw_html=False):
@@ -228,7 +252,23 @@ def _process_field(node, field_def, data_dict, context):
     value = _field_value(field_def, data_dict)
 
     if dtype in bp.LEAF_TYPES:
+        if dtype == 'richtext' and value not in (None, ''):
+            alt_text = (
+                data_dict.get('alt') or data_dict.get('image_alt') or data_dict.get('imageAlt') or
+                data_dict.get('cover_alt') or data_dict.get(f'{field_def.name}_alt') or
+                data_dict.get('title') or data_dict.get('name') or
+                ((context or {}).get('vars') or {}).get('default_alt') or ''
+            )
+            value = _richtext_with_image_alt(value, alt_text)
         has_content = _inject_leaf(node, field_def, value)
+        if has_content and dtype in _MEDIA_SRC_ATTR and dtype == 'image' and node.tag == 'img':
+            alt_text = (
+                data_dict.get('alt') or data_dict.get('image_alt') or data_dict.get('imageAlt') or
+                data_dict.get('cover_alt') or data_dict.get(f'{field_def.name}_alt') or
+                data_dict.get('title') or data_dict.get('name') or
+                ((context or {}).get('vars') or {}).get('default_alt') or ''
+            )
+            node.attrs['alt'] = str(alt_text)
         _inject_href(node, data_dict, context)
         if not has_content:
             _hide(node)  # 叶子空值自动隐藏
@@ -250,6 +290,23 @@ def _inject_into_children(parent_node, field_defs, data_dict, context):
     """把 field_defs 对应的值注入 parent_node 的子树中匹配的元素（按 data-name 定位）。"""
     by_name = {f.name: f for f in field_defs}
     _walk_and_inject(parent_node, by_name, data_dict, context)
+
+
+def _append_class(node, class_name):
+    current = str(node.attrs.get('class') or '').strip()
+    parts = current.split() if current else []
+    if class_name not in parts:
+        parts.append(class_name)
+    node.attrs['class'] = ' '.join(parts)
+
+
+def _mark_filter_source_tags_visual_hidden(node):
+    classes = str(node.attrs.get('class') or '').split()
+    if 'filter-source-tags' in classes:
+        _append_class(node, 'dg-card-tags--visual-hidden')
+    for child in node.nodes:
+        if isinstance(child, bp._Node):
+            _mark_filter_source_tags_visual_hidden(child)
 
 
 def _walk_and_inject(node, by_name, data_dict, context):
@@ -321,6 +378,8 @@ def _expand_list(node, field_def, data_dict, context):
             item_data = item if isinstance(item, dict) else {}
             _inject_into_children(item_node, field_def.children, item_data, context)
             _inject_href(item_node, item_data, context)
+            if item_data.get('tags_visible') is False or str(item_data.get('tags_visible')).lower() == 'false':
+                _mark_filter_source_tags_visual_hidden(item_node)
         else:
             # 项模板根直接是叶子：item 可能是 dict（logo 墙 {logo,link}）
             # 或标量（tags 这类字符串列表，值即本身）
@@ -562,7 +621,7 @@ def render(block_html, schema, data_dict, context=None):
 
 
 # data-filter-* 等业务属性中支持 {变量} 模板替换
-_TEMPLATE_ATTRS = {'data-filter-id', 'data-filter-for', 'data-filter-empty'}
+_TEMPLATE_ATTRS = {'data-filter-id', 'data-filter-for', 'data-filter-empty', 'data-search-for'}
 
 
 def _fill_business_attr_templates(node, context):
