@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-media.css') }}?v=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-media.css') }}?v=2">
 
 <div class="media-panel" id="mediaPanel">
   <div class="d-flex align-items-center justify-content-between mb-3">
@@ -8,6 +8,7 @@
 
   <div class="media-tabs" role="tablist" aria-label="媒体分类">
     <button class="media-tab active" type="button" data-media-filter="all">全部</button>
+    <button class="media-tab" type="button" data-media-filter="unreferenced">未引用</button>
     <button class="media-tab" type="button" data-media-filter="image">图片</button>
     <button class="media-tab" type="button" data-media-filter="video">视频</button>
     <button class="media-tab" type="button" data-media-filter="package">网页包</button>
@@ -29,7 +30,7 @@
     <div class="media-list-pane">
       <div class="media-grid" id="mediaGrid">
         {% for file in files %}
-          <article class="media-card" data-category="{{ file.category }}" data-name="{{ file.api_name }}" data-display-name="{{ file.display_name }}" data-url="{{ file.url }}" data-ext="{{ file.ext }}" data-is-package="{{ '1' if file.is_package else '0' }}" data-size="{{ file.size_display }}" data-category-label="{{ file.category_label }}">
+          <article class="media-card" data-category="{{ file.category }}" data-name="{{ file.api_name }}" data-display-name="{{ file.display_name }}" data-url="{{ file.url }}" data-ext="{{ file.ext }}" data-is-package="{{ '1' if file.is_package else '0' }}" data-size="{{ file.size_display }}" data-category-label="{{ file.category_label }}" data-reference-count="{{ file.reference_count|default(0) }}">
             <button class="media-thumb" type="button" data-action="preview" title="预览">
               {% if file.category == 'image' %}
                 <img src="{{ file.url }}" alt="{{ file.display_name }}" loading="lazy">
@@ -72,6 +73,7 @@
     </div>
 
     <aside class="media-preview-card" aria-label="媒体预览">
+      <div class="media-preview-resizer" data-preview-resizer role="separator" aria-orientation="vertical" tabindex="0" title="拖拽调整预览宽度"></div>
       <div class="media-preview-head">
         <div>
           <div class="media-preview-label">预览</div>
@@ -96,7 +98,10 @@
 <div class="media-modal" id="mediaRenameModal" hidden>
   <div class="media-modal-dialog">
     <div class="media-modal-title">重命名</div>
-    <input class="form-control form-control-sm" id="mediaRenameInput" autocomplete="off">
+    <div class="media-rename-field">
+      <input class="form-control form-control-sm" id="mediaRenameInput" autocomplete="off">
+      <span class="media-rename-extension" id="mediaRenameExtension" hidden></span>
+    </div>
     <div class="media-ref-warning" id="mediaRenameWarning" hidden></div>
     <div class="d-flex gap-2 justify-content-end mt-3">
       <button class="btn btn-sm btn-light" type="button" data-rename-cancel>取消</button>
@@ -114,12 +119,17 @@
   var status = document.getElementById('mediaStatus');
   var uploadZone = document.getElementById('mediaUploadZone');
   var uploadInput = document.getElementById('mediaUploadInput');
+  var mediaCount = panel.querySelector('.media-count');
   var previewTitle = document.getElementById('mediaPreviewTitle');
   var previewBody = document.getElementById('mediaPreviewBody');
   var previewInfo = document.getElementById('mediaPreviewInfo');
   var renameModal = document.getElementById('mediaRenameModal');
   var renameInput = document.getElementById('mediaRenameInput');
+  var renameExtension = document.getElementById('mediaRenameExtension');
   var renameWarning = document.getElementById('mediaRenameWarning');
+  var managerLayout = panel.querySelector('.media-manager-layout');
+  var previewCard = panel.querySelector('.media-preview-card');
+  var previewResizer = panel.querySelector('[data-preview-resizer]');
   var renameTarget = null;
 
   function setStatus(text, type) {
@@ -147,10 +157,40 @@
       .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); });
   }
 
+  function updateMediaCount(count) {
+    if (mediaCount) mediaCount.textContent = count + ' 个资源';
+  }
+
+  function updateVisibleMediaCount() {
+    if (!mediaCount) return;
+    var visible = grid.querySelectorAll('.media-card:not([hidden])').length;
+    updateMediaCount(visible);
+  }
+
   function refsHtml(refs) {
-    return '<div class="mb-1">该资源正在被引用，不能重命名或删除。</div><ul>' +
+    return '<div class="mb-1">该资源正在被引用；重命名会自动更新这些 YAML 引用，删除仍会被阻止。</div><ul>' +
       refs.map(function(ref) { return '<li>' + String(ref).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }) + '</li>'; }).join('') +
       '</ul>';
+  }
+
+  function splitFilename(name) {
+    var match = String(name || '').match(/^(.*?)(\.[^.]*)$/);
+    if (!match) return { stem: name || '', ext: '' };
+    return { stem: match[1], ext: match[2] };
+  }
+
+  function setRenameValue(card) {
+    var displayName = card.dataset.displayName || '';
+    if (card.dataset.isPackage === '1') {
+      renameInput.value = displayName;
+      renameExtension.textContent = '';
+      renameExtension.hidden = true;
+      return;
+    }
+    var parts = splitFilename(displayName);
+    renameInput.value = parts.stem;
+    renameExtension.textContent = parts.ext;
+    renameExtension.hidden = !parts.ext;
   }
 
   function preview(card) {
@@ -188,20 +228,22 @@
     references(name).then(function(result) {
       var refs = result.data.refs || [];
       if (refs.length) {
-        setStatus('该资源正在被引用，不能重命名。', 'danger');
-        renameTarget = null;
-        renameInput.value = card.dataset.displayName || '';
+        setStatus('该资源正在被引用，重命名后会自动更新引用。', 'muted');
+        renameTarget = card;
+        setRenameValue(card);
         renameWarning.innerHTML = refsHtml(refs);
         renameWarning.hidden = false;
         renameModal.hidden = false;
-        renameInput.disabled = true;
-        renameModal.querySelector('[data-rename-submit]').disabled = true;
+        renameInput.disabled = false;
+        renameModal.querySelector('[data-rename-submit]').disabled = false;
+        renameInput.focus();
+        renameInput.select();
         return;
       }
       renameTarget = card;
       renameInput.disabled = false;
       renameModal.querySelector('[data-rename-submit]').disabled = false;
-      renameInput.value = card.dataset.isPackage === '1' ? card.dataset.displayName : card.dataset.displayName;
+      setRenameValue(card);
       renameWarning.hidden = true;
       renameWarning.innerHTML = '';
       renameModal.hidden = false;
@@ -213,7 +255,18 @@
   function submitRename() {
     if (!renameTarget) return;
     var newName = renameInput.value.trim();
+    if (renameTarget.dataset.isPackage !== '1') {
+      newName += renameExtension && !renameExtension.hidden ? renameExtension.textContent : '';
+    }
     if (!newName) return;
+    if (renameTarget.dataset.isPackage !== '1') {
+      var oldExt = (renameTarget.dataset.displayName.match(/(\.[^.]*)$/) || [''])[0].toLowerCase();
+      var newExt = (newName.match(/(\.[^.]*)$/) || [''])[0].toLowerCase();
+      if (oldExt !== newExt) {
+        setStatus('重命名不能修改文件后缀名', 'danger');
+        return;
+      }
+    }
     fetch('/api/media/rename?site={{ site.id }}', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -229,7 +282,8 @@
         throw new Error(result.data.error || '重命名失败');
       }
       renameModal.hidden = true;
-      setStatus('已重命名', 'success');
+      var updatedCount = (result.data.updated_refs || []).length;
+      setStatus(updatedCount ? ('已重命名，并更新 ' + updatedCount + ' 个引用') : '已重命名', 'success');
       refreshPanel();
     }).catch(function(err) {
       setStatus(err.message || '重命名失败', 'danger');
@@ -258,7 +312,7 @@
         if (!result.ok || result.data.ok === false) throw new Error(result.data.error || '删除失败');
         card.remove();
         setStatus('已删除', 'success');
-        if (!grid.querySelector('.media-card')) empty.hidden = false;
+        applyCurrentFilter();
       });
     }).catch(function(err) {
       setStatus(err.message || '删除失败', 'danger');
@@ -280,18 +334,65 @@
       .catch(function(err) { setStatus(err.message || '上传失败', 'danger'); });
   }
 
+  function applyCurrentFilter() {
+    var active = panel.querySelector('.media-tab.active');
+    var filter = active ? active.dataset.mediaFilter : 'all';
+    grid.querySelectorAll('.media-card').forEach(function(card) {
+      var show = filter === 'all' || card.dataset.category === filter;
+      if (filter === 'unreferenced') show = Number(card.dataset.referenceCount || 0) === 0;
+      card.hidden = !show;
+    });
+    updateVisibleMediaCount();
+    empty.hidden = grid.querySelectorAll('.media-card:not([hidden])').length > 0;
+  }
+
+  function clampPreviewWidth(width) {
+    if (!managerLayout) return width;
+    var rect = managerLayout.getBoundingClientRect();
+    var styles = window.getComputedStyle(managerLayout);
+    var gap = parseFloat(styles.columnGap || styles.gap || '16') || 16;
+    var maxByLayout = Math.max(360, rect.width - gap - 360);
+    return Math.max(360, Math.min(width, Math.min(1200, maxByLayout)));
+  }
+
+  function setPreviewWidth(width) {
+    if (!managerLayout) return;
+    managerLayout.style.setProperty('--media-preview-width', clampPreviewWidth(width) + 'px');
+  }
+
+  function initPreviewResize() {
+    if (!managerLayout || !previewCard || !previewResizer || !window.PointerEvent) return;
+    previewResizer.addEventListener('pointerdown', function(e) {
+      if (window.matchMedia('(max-width: 1280px)').matches) return;
+      e.preventDefault();
+      var startX = e.clientX;
+      var startWidth = previewCard.getBoundingClientRect().width;
+      previewResizer.setPointerCapture(e.pointerId);
+      document.body.classList.add('media-resizing');
+
+      function onMove(moveEvent) {
+        setPreviewWidth(startWidth + startX - moveEvent.clientX);
+      }
+
+      function onUp(upEvent) {
+        previewResizer.releasePointerCapture(upEvent.pointerId);
+        previewResizer.removeEventListener('pointermove', onMove);
+        previewResizer.removeEventListener('pointerup', onUp);
+        previewResizer.removeEventListener('pointercancel', onUp);
+        document.body.classList.remove('media-resizing');
+      }
+
+      previewResizer.addEventListener('pointermove', onMove);
+      previewResizer.addEventListener('pointerup', onUp);
+      previewResizer.addEventListener('pointercancel', onUp);
+    });
+  }
+
   panel.querySelectorAll('.media-tab').forEach(function(btn) {
     btn.addEventListener('click', function() {
       panel.querySelectorAll('.media-tab').forEach(function(item) { item.classList.remove('active'); });
       btn.classList.add('active');
-      var filter = btn.dataset.mediaFilter;
-      var visible = 0;
-      grid.querySelectorAll('.media-card').forEach(function(card) {
-        var show = filter === 'all' || card.dataset.category === filter;
-        card.hidden = !show;
-        if (show) visible++;
-      });
-      empty.hidden = visible > 0;
+      applyCurrentFilter();
     });
   });
 
@@ -327,5 +428,6 @@
     renameModal.hidden = true;
   });
   renameModal.querySelector('[data-rename-submit]').addEventListener('click', submitRename);
+  initPreviewResize();
 })();
 </script>

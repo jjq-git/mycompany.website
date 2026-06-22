@@ -896,8 +896,6 @@ def api_media_rename():
     if not old_name or not new_name:
         return jsonify({'error': '缺少文件名'}), 400
     refs = find_media_references(site.id, old_name)
-    if refs:
-        return jsonify({'ok': False, 'error': '文件已被引用，不能重命名', 'refs': refs, 'count': len(refs)}), 409
     try:
         new_api_name = rename_media_file(site.id, old_name, new_name)
     except Exception as exc:
@@ -912,12 +910,16 @@ def api_media_rename():
             'url': f'/media-packages/{package_name}/',
             'entry_url': f'/media-packages/{package_name}/',
             'category': 'package',
+            'updated_refs': refs,
+            'count': len(refs),
         })
     return jsonify({
         'ok': True,
         'name': new_api_name,
         'api_name': new_api_name,
         'url': f'/assets/uploads/{new_api_name}',
+        'updated_refs': refs,
+        'count': len(refs),
     })
 
 

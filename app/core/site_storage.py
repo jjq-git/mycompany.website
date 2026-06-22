@@ -289,6 +289,11 @@ def list_media_files(site_id):
                 'is_package': True,
             })
 
+    for item in items:
+        refs = find_media_references(site_id, item['api_name'])
+        item['reference_count'] = len(refs)
+        item['is_referenced'] = bool(refs)
+
     return sorted(items, key=lambda item: (item['category'], item['display_name'].lower()))
 
 
@@ -346,10 +351,71 @@ def find_media_references(site_id, name):
     return refs
 
 
+def _media_reference_urls(name, new_name):
+    if is_media_package_token(name):
+        old_pkg = _safe_package_name(media_package_name_from_token(name))
+        new_pkg = _safe_package_name(media_package_name_from_token(new_name))
+        return (
+            f'/media-packages/{old_pkg}/',
+            f'/media-packages/{new_pkg}/',
+        )
+
+    old_file = _safe_media_filename(name)
+    new_file = _safe_media_filename(new_name)
+    return (
+        f'/assets/uploads/{old_file}',
+        f'/assets/uploads/{new_file}',
+    )
+
+
+def _atomic_write_text(path, text):
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix='.tmp-', suffix=path.suffix)
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except Exception:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
+
+
+def _replace_media_references(site_id, refs, old_url, new_url):
+    root = site_root(site_id).resolve()
+    changed = []
+    originals = {}
+    try:
+        for ref in refs:
+            path = (root / ref).resolve()
+            try:
+                path.relative_to(root)
+            except ValueError:
+                abort(400, '非法引用路径')
+            if not path.exists() or not _is_content_yaml(path):
+                continue
+            text = path.read_text(encoding='utf-8')
+            new_text = text.replace(old_url, new_url)
+            if new_text == text:
+                continue
+            originals[path] = text
+            _atomic_write_text(path, new_text)
+            changed.append(str(path.relative_to(root)).replace('\\', '/'))
+    except Exception:
+        for path, text in originals.items():
+            try:
+                _atomic_write_text(path, text)
+            except Exception as rollback_exc:
+                current_app.logger.warning('media reference rollback failed for %s: %s', path, rollback_exc)
+        raise
+    return changed
+
+
 def rename_media_file(site_id, old_name, new_name):
-    """Rename an unreferenced upload file or media package."""
-    if find_media_references(site_id, old_name):
-        abort(409, '文件已被引用，不能重命名')
+    """Rename an upload file or media package and update YAML references."""
+    refs = find_media_references(site_id, old_name)
+    old_url, new_url = _media_reference_urls(old_name, new_name)
 
     if is_media_package_token(old_name):
         old_pkg = _safe_package_name(media_package_name_from_token(old_name))
@@ -359,15 +425,29 @@ def rename_media_file(site_id, old_name, new_name):
         if dst.exists():
             abort(409, '目标名称已存在')
         os.rename(src, dst)
+        try:
+            _replace_media_references(site_id, refs, old_url, new_url)
+        except Exception:
+            if dst.exists() and not src.exists():
+                os.rename(dst, src)
+            raise
         return media_package_token(new_pkg)
 
     old_file = _safe_media_filename(old_name)
     new_file = _safe_media_filename(new_name)
+    if Path(old_file).suffix.lower() != Path(new_file).suffix.lower():
+        abort(400, '重命名不能修改文件后缀名')
     src = get_media_file_path(site_id, old_file)
     dst = src.parent / new_file
     if dst.exists():
         abort(409, '目标名称已存在')
     os.rename(src, dst)
+    try:
+        _replace_media_references(site_id, refs, old_url, new_url)
+    except Exception:
+        if dst.exists() and not src.exists():
+            os.rename(dst, src)
+        raise
     return new_file
 
 

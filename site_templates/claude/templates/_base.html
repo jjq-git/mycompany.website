@@ -36,7 +36,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
   {% endif %}
 
-  <link rel="stylesheet" href="{{ base_url }}/static/css/main.css?v=20260615">
+  <link rel="stylesheet" href="{{ base_url }}/static/css/main.css?v=20260622">
   <!-- Favicon: 优先使用店主上传的图片，无则回退到内联 SVG 占位 -->
   {% if settings.company.favicon %}
   <link rel="icon" href="{{ settings.company.favicon }}">
@@ -620,9 +620,11 @@ function initFilterableGrids() {
     }
 
     var cards = Array.prototype.slice.call(grid.querySelectorAll('.dg-card'));
+    var empty = document.querySelector('[data-filter-empty="' + filterId + '"]');
     if (!cards.length) {
       if (panel) panel.hidden = true;
       if (searchPanel) searchPanel.hidden = true;
+      if (empty) empty.hidden = false;
       return;
     }
 
@@ -725,7 +727,6 @@ function initFilterableGrids() {
       });
       updateButtons('category');
       updateButtons('tag');
-      var empty = document.querySelector('[data-filter-empty="' + filterId + '"]');
       if (empty) empty.hidden = shown !== 0;
       if (searchCount) searchCount.textContent = shown + ' results';
       resetDataGridPager((section || grid.parentElement).querySelector('.dg-pager'));
@@ -911,6 +912,53 @@ function initDetailCarousels() {
     var next = section.querySelector('.detail-carousel-next');
     var zoom = section.querySelector('.detail-zoom-btn');
     var thumbs = section.querySelector('.detail-thumbs');
+    var thumbsPrev = null;
+    var thumbsNext = null;
+
+    function setupThumbScroller() {
+      if (!thumbs || thumbs.__thumbScrollerReady) return;
+      thumbs.__thumbScrollerReady = true;
+
+      var wrap = document.createElement('div');
+      wrap.className = 'detail-thumbs-wrap';
+
+      thumbsPrev = document.createElement('button');
+      thumbsPrev.type = 'button';
+      thumbsPrev.className = 'detail-thumbs-nav detail-thumbs-prev';
+      thumbsPrev.setAttribute('aria-label', 'Previous thumbnails');
+      thumbsPrev.innerHTML = '&#8249;';
+
+      thumbsNext = document.createElement('button');
+      thumbsNext.type = 'button';
+      thumbsNext.className = 'detail-thumbs-nav detail-thumbs-next';
+      thumbsNext.setAttribute('aria-label', 'Next thumbnails');
+      thumbsNext.innerHTML = '&#8250;';
+
+      thumbs.parentNode.insertBefore(wrap, thumbs);
+      wrap.appendChild(thumbsPrev);
+      wrap.appendChild(thumbs);
+      wrap.appendChild(thumbsNext);
+
+      function scrollThumbs(direction) {
+        var firstThumb = thumbs.querySelector('.detail-thumb');
+        var step = firstThumb ? firstThumb.offsetWidth + 12 : 88;
+        thumbs.scrollBy({ left: direction * step * 3, behavior: 'smooth' });
+      }
+
+      function updateThumbNav() {
+        var canScroll = thumbs.scrollWidth > thumbs.clientWidth + 1;
+        wrap.classList.toggle('is-scrollable', canScroll);
+        thumbsPrev.disabled = !canScroll || thumbs.scrollLeft <= 1;
+        thumbsNext.disabled = !canScroll || thumbs.scrollLeft + thumbs.clientWidth >= thumbs.scrollWidth - 1;
+      }
+
+      thumbsPrev.addEventListener('click', function() { scrollThumbs(-1); });
+      thumbsNext.addEventListener('click', function() { scrollThumbs(1); });
+      thumbs.addEventListener('scroll', updateThumbNav, { passive: true });
+      window.addEventListener('resize', updateThumbNav);
+      thumbs.__updateThumbNav = updateThumbNav;
+      window.requestAnimationFrame(updateThumbNav);
+    }
 
     function show(nextIndex) {
       index = (nextIndex + images.length) % images.length;
@@ -921,6 +969,11 @@ function initDetailCarousels() {
         thumbs.querySelectorAll('button').forEach(function(btn, i) {
           btn.classList.toggle('active', i === index);
         });
+        var activeThumb = thumbs.querySelector('.detail-thumb.active');
+        if (activeThumb) {
+          activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        }
+        if (thumbs.__updateThumbNav) window.requestAnimationFrame(thumbs.__updateThumbNav);
       }
     }
 
@@ -950,6 +1003,7 @@ function initDetailCarousels() {
     }
 
     if (thumbs) {
+      setupThumbScroller();
       thumbs.innerHTML = '';
       images.forEach(function(img, i) {
         var btn = document.createElement('button');
@@ -977,6 +1031,8 @@ function initDetailCarousels() {
         if (btn) btn.hidden = true;
       });
       if (thumbs) thumbs.hidden = true;
+      if (thumbsPrev) thumbsPrev.hidden = true;
+      if (thumbsNext) thumbsNext.hidden = true;
     }
     show(0);
   });

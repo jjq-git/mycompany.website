@@ -1,21 +1,41 @@
-<!-- Generic Detail - Claude 风格: 通用数据集详情页 -->
+<!-- Generic Detail - Claude style -->
 {% extends "_base.html" %}
-{% block title %}{{ item.title | default(item.name) }} — {{ settings.company.name or t.company }}{% endblock %}
+{% block title %}{{ item.title | default(item.name) }} - {{ settings.company.name or t.company }}{% endblock %}
 {% block description %}{{ item.description | default(item.summary, true) | default(item.excerpt, true) | default('') }}{% endblock %}
 
 {% block content %}
 
-{# ── 返回列表 ── #}
 {% set _path_parts = current_path.strip('/').split('/') %}
 {% set _list_path = _path_parts[:-1] | join('/') %}
-<!-- <div class="container">
-  <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="btn btn-text-link" style="margin: var(--space-md) 0; display: inline-flex; align-items: center; gap: 4px;">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-    {{ t.actions.viewAll | default('Back') }}
-  </a>
-</div> -->
+{% set _list_title = page.title | default(t.pages[page_key] | default(page_key | replace('-', ' ') | title)) %}
+{% set _item_title = item.title | default(item.name | default('')) %}
+{% set crumb = namespace(list_title=_list_title) %}
+{% macro resolve_list_title(items) %}
+  {% for item in items %}
+    {% if item.url and item.url.strip('/') == _list_path %}
+      {% set crumb.list_title = item.label %}
+    {% endif %}
+    {% if item.children %}
+      {{ resolve_list_title(item.children) }}
+    {% endif %}
+  {% endfor %}
+{% endmacro %}
+{{ resolve_list_title(settings.menu) }}
 
-{# ── 模块驱动的详情渲染 ── #}
+<nav class="detail-breadcrumb" aria-label="Breadcrumb">
+  <div class="container">
+    <div class="detail-breadcrumb-list">
+      <a href="{{ base_url }}/{{ lang }}/" class="detail-breadcrumb-item">首页</a>
+      <span class="detail-breadcrumb-separator">/</span>
+      <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="detail-breadcrumb-item">{{ crumb.list_title }}</a>
+      {% if _item_title %}
+      <span class="detail-breadcrumb-separator">/</span>
+      <span class="detail-breadcrumb-item active" aria-current="page">{{ _item_title }}</span>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
 {% set modules = item.modules | default([]) %}
 {% if modules %}
   {% for module in modules %}
@@ -28,5 +48,11 @@
     {{- render_block({'type': 'item_data', 'variant': 'default', 'data': {}}) }}
   </div>
 {% endif %}
+
+<div class="detail-back-section">
+  <div class="container">
+    <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="btn btn-text-link detail-back-button">← 返回</a>
+  </div>
+</div>
 
 {% endblock %}

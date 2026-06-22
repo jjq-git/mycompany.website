@@ -314,6 +314,9 @@ function richEditorSelectCommand(control, cmd, arg) {
   document.execCommand(cmd, false, arg || null);
   var textarea = editor.nextElementSibling;
   if (textarea) textarea.value = editor.innerHTML;
+  if (control && control.classList && control.classList.contains('rte-heading-select')) {
+    control.value = 'p';
+  }
   return false;
 }
 

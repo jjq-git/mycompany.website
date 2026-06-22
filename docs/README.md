@@ -28,6 +28,7 @@ mycompany.website 的设计文档。面向创始人 / 协作者，不面向编�
 | [dashboard/](dashboard/README.md) | 后台 UI + 数据层：内容管理、后台多语言、数据库  | 后端 / 前端   |
 | [cloud/](cloud/README.md) | 托管设施：子域、自定义域名、CDN / SSL                  | 后端 / 运维   |
 | [themes/](themes/README.md) | 主题开发：结构、布局、block、meta、settings         | 后端 / 设计师 |
+| [media-management-plan.md](media-management-plan.md) | 媒体管理功能方案：统一管理站点资源，支持重命名级联更新 | 后端 / 前端 |
 
 ## 实操手册
 

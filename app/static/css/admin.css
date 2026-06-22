@@ -749,9 +749,53 @@
 }
 
 /* 预览 iframe */
+.preview-frame-wrap {
+  position: relative;
+}
+
 .preview-frame.desktop { width: 100%; min-height: 100%; }
 .preview-frame.tablet { width: 768px; min-height: 600px; }
 .preview-frame.mobile { width: 375px; min-height: 667px; }
+
+.preview-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(232, 234, 237, 0.82);
+  backdrop-filter: blur(1px);
+}
+
+.preview-loading-overlay.show {
+  display: flex;
+}
+
+.preview-loading-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 260px;
+  max-width: min(380px, calc(100% - 32px));
+  padding: 16px 18px;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
+}
+
+.preview-loading-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.preview-loading-text {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #64748b;
+}
 
 .build-loading-overlay {
   position: fixed;

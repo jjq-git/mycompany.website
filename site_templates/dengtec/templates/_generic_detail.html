@@ -4,14 +4,37 @@
 
 {% block content %}
 
-{# 返回列表: 去掉路径末尾的 item slug，回到父级列表页 #}
 {% set _path_parts = current_path.strip('/').split('/') %}
 {% set _list_path = _path_parts[:-1] | join('/') %}
-<div class="container">
-  <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="btn btn-ghost" style="margin: var(--spacing-md) 0;">← {{ t.project.backToList | default('返回列表') }}</a>
-</div>
+{% set _list_title = page.title | default(t.pages[page_key] | default(page_key | replace('-', ' ') | title)) %}
+{% set _item_title = item.title | default(item.name | default('')) %}
+{% set crumb = namespace(list_title=_list_title) %}
+{% macro resolve_list_title(items) %}
+  {% for item in items %}
+    {% if item.url and item.url.strip('/') == _list_path %}
+      {% set crumb.list_title = item.label %}
+    {% endif %}
+    {% if item.children %}
+      {{ resolve_list_title(item.children) }}
+    {% endif %}
+  {% endfor %}
+{% endmacro %}
+{{ resolve_list_title(settings.menu) }}
 
-{# 模块驱动的详情渲染：所有详情模块统一交给 render_block 处理。 #}
+<nav class="breadcrumb detail-breadcrumb" aria-label="Breadcrumb">
+  <div class="container">
+    <div class="breadcrumb-list">
+      <a href="{{ base_url }}/{{ lang }}/" class="breadcrumb-item">首页</a>
+      <span class="breadcrumb-separator">/</span>
+      <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="breadcrumb-item">{{ crumb.list_title }}</a>
+      {% if _item_title %}
+      <span class="breadcrumb-separator">/</span>
+      <span class="breadcrumb-item active" aria-current="page">{{ _item_title }}</span>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
 {% set modules = item.modules or [] %}
 {% if modules %}
   {% for module in modules %}
@@ -24,5 +47,11 @@
     {{- render_block({'type': 'item_data', 'variant': 'default', 'data': {}}) }}
   </div>
 {% endif %}
+
+<div class="detail-back-section">
+  <div class="container">
+    <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="btn btn-ghost detail-back-button">← 返回</a>
+  </div>
+</div>
 
 {% endblock %}

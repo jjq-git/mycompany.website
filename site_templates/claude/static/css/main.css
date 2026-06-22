@@ -514,6 +514,50 @@ hr {
   color: var(--color-muted);
 }
 
+.detail-breadcrumb {
+  padding: var(--space-md) 0;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.detail-breadcrumb-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-caption);
+}
+
+.detail-breadcrumb-item {
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+.detail-breadcrumb-item[href]:hover {
+  color: var(--color-ink);
+}
+
+.detail-breadcrumb-item.active {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
+.detail-breadcrumb-separator {
+  color: var(--color-muted);
+  opacity: 0.55;
+}
+
+.detail-back-section {
+  padding: var(--space-xl) 0 var(--space-xxl);
+}
+
+.detail-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
 /* Icon Circular — 36px 圆形图标按钮 */
 .btn-icon-circular {
   width: 36px;
@@ -1845,7 +1889,7 @@ hr {
   font-weight: 400;
   line-height: var(--leading-display-lg);
   letter-spacing: var(--tracking-display-lg);
-  color: var(--color-ink);
+  color: var(--font-color, var(--color-ink));
   margin-bottom: var(--space-md);
 }
 .st-desc {
@@ -2358,12 +2402,49 @@ a.ci-value:hover { color: var(--color-primary); }
   bottom: var(--space-md);
   z-index: 2;
 }
+.detail-thumbs-wrap {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: var(--space-xs);
+}
 .detail-thumbs {
   display: flex;
   gap: var(--space-sm);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+.detail-thumbs::-webkit-scrollbar {
+  display: none;
+}
+.detail-thumbs-nav {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface-card);
+  color: var(--color-ink);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition: opacity var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
+}
+.detail-thumbs-nav:hover:not(:disabled) {
+  border-color: var(--color-primary);
+}
+.detail-thumbs-nav:disabled {
+  cursor: default;
+  opacity: 0.35;
 }
 .detail-thumb {
+  flex: 0 0 auto;
   width: 76px;
   height: 76px;
   padding: 0;

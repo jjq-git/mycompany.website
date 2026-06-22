@@ -75,6 +75,11 @@ STYLE_REGISTRY = {
         'control': 'color',
         'css_var': '--card-bg',
     },
+    'font-color': {
+        'label': '文字颜色',
+        'control': 'color',
+        'css_var': '--font-color',
+    },
     'card-radius': {
         'label': '卡片圆角',
         'control': 'select',
