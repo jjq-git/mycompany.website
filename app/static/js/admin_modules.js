@@ -229,6 +229,10 @@
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  function attrEsc(s) {
+    return schemaEsc(s).replace(/'/g, '&#39;');
+  }
+
   function segmentedControl(name, options, value, escapeFn) {
     var escFn = escapeFn || esc;
     var opts = (options || []).map(function(opt) {
@@ -592,6 +596,8 @@
     html += '<div' + wrapperAttrs + '><label class="form-label small mb-1 text-muted">' + esc(labelText(field)) + '</label>';
     if (isVisibilityField(field)) {
       html += visibilityEye(prefix + key, value);
+    } else if (type === 'list' || type === 'grid') {
+      html += schemaListEditor(prefix, field, value);
     } else if (type === 'video') {
       html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '视频 URL') + '">';
       html += '<label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'">上传视频<input type="file" name="' + prefix + key + '_file" accept="video/*" style="display:none"></label>';
@@ -642,6 +648,243 @@
     }
     return html + '</div>';
   }
+
+  function fieldChildren(field) {
+    return (field.children || field.item_fields || []).map(function(child) {
+      var copy = Object.assign({}, child);
+      copy.key = copy.key || copy.name;
+      return copy;
+    }).filter(function(child) {
+      return !!child.key;
+    });
+  }
+
+  function schemaFieldToFormField(field) {
+    var copy = Object.assign({}, field || {});
+    copy.key = copy.key || copy.name;
+    copy.label = copy.label || copy.key;
+    copy.children = (copy.children || copy.item_fields || []).map(schemaFieldToFormField).filter(function(child) {
+      return !!child.key;
+    });
+    copy.item_fields = copy.children;
+    return copy;
+  }
+
+  function schemaListEditor(prefix, field, value) {
+    var key = field.key || field.name;
+    var items = Array.isArray(value) ? value : [];
+    var children = fieldChildren(field);
+    var base = prefix.replace(/data_$/, '');
+    var html = '<div class="schema-list-editor" data-list-base="' + attrEsc(base) + '" data-list-name="' + attrEsc(key) + '" data-children="' + attrEsc(JSON.stringify(children)) + '">';
+    html += '<div class="d-flex justify-content-between align-items-center mb-2">' +
+      '<div class="small fw-semibold text-primary">' + esc(labelText(field)) + '</div>' +
+      '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加条目</button>' +
+      '</div>';
+    html += '<input type="hidden" class="schema-list-count" name="' + attrEsc(base + key + '_count') + '" value="' + items.length + '">';
+    html += '<div class="schema-list-items">';
+    items.forEach(function(item, i) {
+      html += schemaListItemHtml(base, key, i, children, item || {});
+    });
+    html += '</div></div>';
+    if (key === 'items' && window._moduleCtx && window._moduleCtx.currentModuleType === 'featured_picks') {
+      html = html.replace(
+        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加条目</button>',
+        '<button type="button" class="btn btn-sm btn-outline-info fp-import-btn" onclick="event.stopPropagation();window.openFeaturedImport(0, this)" style="font-size:11px;margin-right:4px" title="从已有数据集选取条目，自动填入标题、图片、描述和链接">📥 从数据集导入</button>' +
+        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加条目</button>'
+      );
+    }
+    return html;
+  }
+
+  function featuredPicksEditors(prefix, meta, values) {
+    meta = meta || findBlockMeta('featured_picks');
+    values = values || {};
+    var contentFields = ((meta.schema && meta.schema.fields) || []).map(schemaFieldToFormField).filter(function(f) {
+      return !!f.key;
+    });
+    if (window._moduleCtx) window._moduleCtx.currentModuleType = 'featured_picks';
+    var content = renderFieldsGrouped(prefix, contentFields, values, '');
+    if (window._moduleCtx) window._moduleCtx.currentModuleType = '';
+    return {
+      content: content,
+      style: schemaStyleForm(prefix, meta.schema || {}, values)
+    };
+  }
+
+  function schemaListItemHtml(base, listName, index, children, itemData) {
+    var itemPrefix = base + listName + '_' + index + '_';
+    var inner = '';
+    (children || []).forEach(function(child) {
+      inner += renderField(itemPrefix, child, itemData ? itemData[child.key] : '', '');
+    });
+    return '<div class="border rounded p-2 mb-2 schema-list-item collapsed" data-item-index="' + index + '">' +
+      '<div class="d-flex justify-content-between align-items-center mb-2 schema-list-item-header" data-schema-list-toggle="1" style="cursor:pointer;user-select:none">' +
+        '<span class="small fw-semibold d-flex align-items-center">' +
+          '<svg class="schema-list-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>' +
+          '条目 ' + (index + 1) +
+        '</span>' +
+        '<button type="button" class="module-action-btn module-action-del schema-list-remove" title="删除" aria-label="删除条目">✕</button>' +
+      '</div>' +
+      '<div class="schema-list-item-body">' + inner + '</div>' +
+    '</div>';
+  }
+
+  function schemaListReindex(editor) {
+    var base = editor.dataset.listBase || '';
+    var listName = editor.dataset.listName || '';
+    var prefixStr = base + listName + '_';
+    var re = new RegExp('^(' + prefixStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')\\d+_');
+    var items = editor.querySelectorAll('.schema-list-item');
+    var count = editor.querySelector('.schema-list-count');
+    if (count) count.value = items.length;
+    items.forEach(function(item, i) {
+      item.dataset.itemIndex = i;
+      var label = item.querySelector('.schema-list-item-header .small.fw-semibold');
+      if (label) {
+        var svg = label.querySelector('svg');
+        label.textContent = '条目 ' + (i + 1);
+        if (svg) label.insertBefore(svg, label.firstChild);
+      }
+      item.querySelectorAll('[name]').forEach(function(el) {
+        el.name = el.name.replace(re, function(_, prefix) { return prefix + i + '_'; });
+      });
+    });
+  }
+
+  window.schemaListAdd = function(btn) {
+    var editor = btn.closest('.schema-list-editor');
+    if (!editor) return;
+    var base = editor.dataset.listBase || '';
+    var listName = editor.dataset.listName || '';
+    var children = [];
+    try { children = JSON.parse(editor.dataset.children || '[]'); } catch (err) { children = []; }
+    var list = editor.querySelector('.schema-list-items');
+    var index = list ? list.querySelectorAll('.schema-list-item').length : 0;
+    if (list) list.insertAdjacentHTML('beforeend', schemaListItemHtml(base, listName, index, children, {}));
+    schemaListReindex(editor);
+    updateConditionalFields(editor);
+  };
+  window._schemaListItemHtml = schemaListItemHtml;
+  window._schemaListReindex = schemaListReindex;
+
+  if (!window.__adminModulesSchemaListEventsBound) {
+    window.__adminModulesSchemaListEventsBound = true;
+    document.addEventListener('click', function(event) {
+      var removeBtn = event.target.closest && event.target.closest('.schema-list-remove');
+      if (removeBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        var editor = removeBtn.closest('.schema-list-editor');
+        var item = removeBtn.closest('.schema-list-item');
+        if (item) item.remove();
+        if (editor) schemaListReindex(editor);
+        return;
+      }
+      var header = event.target.closest && event.target.closest('.schema-list-item-header[data-schema-list-toggle]');
+      if (header && !event.target.closest('button,a,input,select,textarea,label')) {
+        event.preventDefault();
+        event.stopPropagation();
+        var row = header.closest('.schema-list-item');
+        if (row) row.classList.toggle('collapsed');
+      }
+    }, true);
+  }
+
+  window.openFeaturedImport = window.openFeaturedImport || function(moduleIdx, btn) {
+    var datasets = (window._moduleCtx && window._moduleCtx.datasetNames) || window.datasetNames || [];
+    var select = document.getElementById('dsPickerDataset');
+    var items = document.getElementById('dsPickerItems');
+    if (!select || !items) {
+      window.alert('当前面板缺少数据集选择器，请刷新后台后重试');
+      return;
+    }
+    window._featuredImportButton = btn;
+    select.innerHTML = '<option value="">-- 请选择数据集 --</option>';
+    datasets.forEach(function(ds) {
+      select.innerHTML += '<option value="' + esc(ds.target || ds.value || ds.key || '') + '">' + esc(ds.label || ds.target || ds.value || ds.key || '') + '</option>';
+    });
+    items.innerHTML = '<div class="col-12 text-muted small text-center py-4">请先在上方选择一个数据集</div>';
+    var modalEl = document.getElementById('datasetPickerModal');
+    if (window.bootstrap && modalEl) {
+      window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
+  };
+
+  window.loadPickerDatasetItems = window.loadPickerDatasetItems || function(datasetName) {
+    var itemsEl = document.getElementById('dsPickerItems');
+    if (!itemsEl) return;
+    if (!datasetName) {
+      itemsEl.innerHTML = '<div class="col-12 text-muted small text-center py-4">请先在上方选择一个数据集</div>';
+      window._featuredPickerCache = [];
+      return;
+    }
+    var siteId = (window._moduleCtx && window._moduleCtx.siteId) || new URLSearchParams(window.location.search).get('site') || '';
+    itemsEl.innerHTML = '<div class="col-12 text-muted small text-center py-4">加载中...</div>';
+    fetch('/api/site/' + encodeURIComponent(siteId) + '/dataset/' + encodeURIComponent(datasetName) + '/items')
+      .then(function(resp) {
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return resp.json();
+      })
+      .then(function(data) {
+        var items = data.items || [];
+        window._featuredPickerCache = items;
+        if (!items.length) {
+          itemsEl.innerHTML = '<div class="col-12 text-muted small text-center py-4">该数据集暂无条目</div>';
+          return;
+        }
+        itemsEl.innerHTML = items.map(function(item, i) {
+          var cover = item.cover || item.image || item.photo || '';
+          return '<div class="col-4 col-md-3 mb-2">' +
+            '<div onclick="window.selectFeaturedItem(' + i + ')" style="cursor:pointer;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;height:100%">' +
+              (cover ? '<img src="' + esc(cover) + '" alt="" loading="lazy" style="width:100%;height:90px;object-fit:cover" onerror="this.style.display=\'none\'">' : '<div style="width:100%;height:90px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8">无图</div>') +
+              '<div style="padding:6px 8px"><div style="font-size:11px;font-weight:600;line-height:1.3;color:#1e293b">' + esc(item.title || item.name || item.slug || '') + '</div></div>' +
+            '</div></div>';
+        }).join('');
+      })
+      .catch(function(err) {
+        itemsEl.innerHTML = '<div class="col-12 text-danger small text-center py-4">加载失败: ' + esc(err.message || '未知错误') + '</div>';
+      });
+  };
+
+  window.selectFeaturedItem = window.selectFeaturedItem || function(index) {
+    var cache = window._featuredPickerCache || [];
+    var item = cache[index];
+    var btn = window._featuredImportButton;
+    if (!item || !btn) return;
+    var editor = btn.closest('.schema-list-editor');
+    if (!editor) return;
+    var base = editor.dataset.listBase || '';
+    var listName = editor.dataset.listName || '';
+    var children = [];
+    try { children = JSON.parse(editor.dataset.children || '[]'); } catch (err) { children = []; }
+    var dsName = (document.getElementById('dsPickerDataset') || {}).value || '';
+    var siteId = (window._moduleCtx && window._moduleCtx.siteId) || new URLSearchParams(window.location.search).get('site') || '';
+    var lang = (window._moduleCtx && window._moduleCtx.currentLang) || new URLSearchParams(window.location.search).get('lang') || '';
+    var link = item.slug && dsName && siteId ? ('/preview/' + siteId + '/' + (lang ? lang + '/' : '') + dsName + '/' + item.slug + '/') : '';
+    var itemData = {};
+    children.forEach(function(child) {
+      var name = child.key || child.name;
+      if (name === 'image') itemData[name] = item.cover || item.image || item.photo || '';
+      else if (name === 'title') itemData[name] = item.title || item.name || '';
+      else if (name === 'desc') itemData[name] = item.summary || item.excerpt || item.description || '';
+      else if (name === 'link') itemData[name] = link;
+    });
+    var list = editor.querySelector('.schema-list-items');
+    var next = list ? list.querySelectorAll('.schema-list-item').length : 0;
+    if (list) list.insertAdjacentHTML('beforeend', schemaListItemHtml(base, listName, next, children, itemData));
+    schemaListReindex(editor);
+    var added = list ? list.querySelector('.schema-list-item:last-child') : null;
+    if (added) {
+      added.classList.remove('collapsed');
+      var imgInput = added.querySelector('[name$="_image"]');
+      if (imgInput && typeof updateImagePreview === 'function') updateImagePreview(imgInput);
+    }
+    var modalEl = document.getElementById('datasetPickerModal');
+    if (window.bootstrap && modalEl) {
+      var modal = window.bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
+    }
+  };
 
   function renderFieldsGrouped(prefix, fields, values, placeholder) {
     values = values || {};
@@ -847,6 +1090,12 @@
     var borderStyle = '';
     var headerBg = '';
     var titleColor = '';
+
+    if (type === 'featured_picks') {
+      var featuredEditors = featuredPicksEditors('module_' + idx + '_data_', meta, d);
+      specialEditor = featuredEditors.content;
+      styleEditor = featuredEditors.style;
+    }
 
     /* ====== item_data (详情数据) 特殊处理 ====== */
     if (isDataModule) {
@@ -1873,6 +2122,9 @@
 
   /* ====== 对外暴露 ====== */
   window._buildModuleHTML = buildModuleHTML;
+  window._featuredPicksEditors = function(prefix, values) {
+    return featuredPicksEditors(prefix, findBlockMeta('featured_picks'), values || {});
+  };
   window._toggleModuleAccordion = toggleModuleAccordion;
   window.toggleModuleAccordion = toggleModuleAccordion;  // server 端 onclick 引用此名
   window._updateModuleConditionalFields = updateConditionalFields;
@@ -2382,6 +2634,16 @@
   document.addEventListener('mousedown', function(e) {
     if (e.target.closest('.rte-toolbar .rte-btn')) {
       e.preventDefault();
+      return;
+    }
+    var headingSelect = e.target.closest('.rte-heading-select');
+    if (headingSelect) {
+      var wrapper = headingSelect.closest('.rte-wrapper');
+      var rte = wrapper ? wrapper.querySelector('.rte-editor') : _lastRteEditor;
+      if (rte) {
+        _lastRteEditor = rte;
+        saveRteSelection(rte);
+      }
     }
   });
 
@@ -2430,6 +2692,8 @@
     var tag = e.target.value;
     document.execCommand('formatBlock', false, tag ? '<' + tag + '>' : '<p>');
     syncRteBody(rte);
+    saveRteSelection(rte);
+    e.target.value = '';
   });
 
   function triggerRteVideoUpload(btn) {

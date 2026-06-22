@@ -2833,11 +2833,15 @@ def dataset_panel(dataset_key):
     meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
     raw_menu = menu_lib.upgrade_old_format(menu_items, meta.get('datasets', []))
     preview_path = find_menu_path(raw_menu, dataset_key)
+    all_list_datasets = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu))
     blocks = _get_available_blocks(site.template_name)
+    from .icon_registry import icon_names
     return _render('dashboard/panel_data_list.html',
                    user=user, site=site,
                    dataset_key=dataset_key, items=items,
                    blocks=blocks,
+                   all_list_datasets=all_list_datasets,
+                   icon_list=icon_names(),
                    edit_prefix=f'_dataset/{dataset_key}',
                    current_lang=lang, languages=languages, default_lang=default_lang,
                    preview_path=preview_path,
@@ -2989,7 +2993,9 @@ def dataset_edit(dataset_key, item_id):
     meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
     raw_menu = menu_lib.upgrade_old_format(menu_items, meta.get('datasets', []))
     preview_path = find_menu_path(raw_menu, dataset_key)
+    all_list_datasets = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu))
     from .style_registry import STYLE_REGISTRY
+    from .icon_registry import icon_names
     return _render('dashboard/panel_data_list.html',
                    user=user, site=site,
                    dataset_key=dataset_key, items=[item],
@@ -2999,11 +3005,13 @@ def dataset_edit(dataset_key, item_id):
                    current_lang=lang, languages=languages, default_lang=default_lang,
                    active=dataset_key,
                    blocks=blocks,
+                   all_list_datasets=all_list_datasets,
                    is_list_page=is_list_page,
                    page_key=dataset_key,
                    preview_slug=slug,
                    preview_path=preview_path,
-                   style_registry=STYLE_REGISTRY)
+                   style_registry=STYLE_REGISTRY,
+                   icon_list=icon_names())
 
 @bp.route('/_dataset/<path:dataset_key>/<int:item_id>/delete', methods=['POST'])
 def dataset_delete(dataset_key, item_id):

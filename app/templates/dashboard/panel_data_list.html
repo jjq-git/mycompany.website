@@ -59,8 +59,9 @@
 </form>
 
 {# JS: 模块选择器交互 #}
-<script src="/static/js/admin_modules.js?v=30"></script>
+<script src="/static/js/admin_modules.js?v=36"></script>
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
+<script type="application/json" id="datasetNamesDsJson">{{ all_list_datasets | default([]) | tojson }}</script>
 <script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="iconListDsJson">{{ icon_list | default([]) | tojson }}</script>
 <script>
@@ -72,15 +73,19 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   var SITE_ID = '{{ site.id }}';
   var blockLibrary = JSON.parse(document.getElementById('blockLibraryDsJson').textContent || '[]');
   window.blockLibrary = blockLibrary;
+  var datasetNames = JSON.parse((document.getElementById('datasetNamesDsJson') || {}).textContent || '[]');
+  window.datasetNames = datasetNames;
   var styleRegistry = JSON.parse((document.getElementById('styleRegistryDsJson') || {}).textContent || '{}');
   var iconList = JSON.parse((document.getElementById('iconListDsJson') || {}).textContent || '[]');
 
   // ===== 设置共享模块上下文 =====
   window._moduleCtx = {
     blockLibrary: blockLibrary,
-    datasetNames: [],
+    datasetNames: datasetNames,
     editItem: window._dsEditItemJson,
     styleRegistry: styleRegistry,
+    siteId: SITE_ID,
+    currentLang: '{{ current_lang }}',
     isDatasetMode: true,
     containerId: 'selectedModulesDs'
   };
@@ -103,13 +108,13 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   window.backToPageEditor = function() {
     loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()).then(function() {
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
     });
   };
   window.loadDatasetList = function() {
     loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()).then(function() {
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
     });
   };
   window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getSiteQuery()); };
@@ -282,11 +287,33 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var frame = document.getElementById('previewFrame');
     if (frame) {
       frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/' + EDIT_SLUG + '/';
-      try { refreshPreview(); } catch(e) {}
+      try { refreshPreview({ build: false }); } catch(e) {}
     }
   }
 })();
 </script>
+
+<div class="modal fade" id="datasetPickerModal" tabindex="-1" aria-labelledby="dsPickerTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <span class="fw-semibold" id="dsPickerTitle">从数据集选取条目</span>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label small mb-1 text-muted">选择数据来源</label>
+          <select class="form-select form-select-sm" id="dsPickerDataset" onchange="window.loadPickerDatasetItems(this.value)">
+            <option value="">-- 请选择数据集 --</option>
+          </select>
+        </div>
+        <div id="dsPickerItems" class="row g-2" style="max-height:55vh;overflow-y:auto;min-height:80px">
+          <div class="col-12 text-muted small text-center py-4">请先在上方选择一个数据集</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% elif is_edit and edit_item %}
 {# ========== 编辑模式：简单表单（无 blocks） ========== #}
@@ -372,13 +399,13 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   window.backToPageEditor = function() {
     loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getQuery()).then(function() {
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
     });
   };
   window.loadDatasetList = function() {
     loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getQuery()).then(function() {
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
     });
   };
   window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getQuery()); };

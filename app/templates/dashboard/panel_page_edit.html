@@ -189,7 +189,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=30"></script>
+<script src="/static/js/admin_modules.js?v=36"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -202,6 +202,15 @@ var datasetNames = JSON.parse(document.getElementById('datasetNamesJson').textCo
 var styleRegistry = JSON.parse((document.getElementById('styleRegistryJson') || {}).textContent || '{}');
 // data-* 图标注册表的全部图标名，供 icon 字段生成下拉选择器
 var iconList = JSON.parse((document.getElementById('iconListJson') || {}).textContent || '[]');
+window._moduleCtx = {
+  blockLibrary: blockLibrary,
+  datasetNames: datasetNames,
+  styleRegistry: styleRegistry,
+  siteId: '{{ site.id }}',
+  currentLang: '{{ current_lang }}',
+  isDatasetMode: false,
+  containerId: 'selectedModules'
+};
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>'"]/g, function(ch) {
@@ -1530,16 +1539,14 @@ function addModule(type, variant, dataPreset) {
   // meta.is_data_attr/schema 由后端 scan_blocks 解析、随 blockLibraryJson 下发。
   if (meta.is_data_attr && meta.schema) {
     var mergedSchema = _getMergedSchema(meta);
-    specialEditor = generateSchemaForm('module_' + idx + '_data_', mergedSchema, {}, vT);
-    // featured_picks：在"＋ 添加条目"按钮前注入"从数据集导入"按钮
-    if (type === 'featured_picks') {
-      specialEditor = specialEditor.replace(
-        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="schemaListAdd(this)">+ 添加条目</button>',
-        '<button type="button" class="btn btn-sm btn-outline-info fp-import-btn" onclick="event.stopPropagation();openFeaturedImport(' + idx + ', this)" style="font-size:11px;margin-right:4px" title="从已有数据集选取条目，自动填入标题、图片、描述和链接">📥 从数据集导入</button>' +
-        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="schemaListAdd(this)">+ 添加条目</button>'
-      );
+    if (type === 'featured_picks' && typeof window._featuredPicksEditors === 'function') {
+      var fpEditors = window._featuredPicksEditors('module_' + idx + '_data_', dataPreset || {});
+      specialEditor = fpEditors.content;
+      styleEditor = fpEditors.style;
+    } else {
+      specialEditor = generateSchemaForm('module_' + idx + '_data_', mergedSchema, {}, vT);
+      styleEditor = generateSchemaStyleForm('module_' + idx + '_data_', mergedSchema, dataPreset);
     }
-    styleEditor = generateSchemaStyleForm('module_' + idx + '_data_', mergedSchema, dataPreset);
   } else if (type === 'hero_banner') {
     styleEditor =
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
@@ -2309,50 +2316,6 @@ function addModule(type, variant, dataPreset) {
     '<div class="row g-2">' +
       '<div class="col-6">' + uP('module_' + idx + '_data_number_font_size', '序号字体大小', ['px','rem']) + '</div>' +
     '</div>';
-  } else if (type === 'featured_picks') {
-    // 精选推荐：list 编辑器 + 从数据集导入按钮
-    var fpMeta = (window.blockLibrary || []).find(function(b) { return b.name === 'featured_picks'; }) || { fields: [] };
-    var fpItemsField = (fpMeta.fields || []).find(function(f) { return f.key === 'items'; });
-    if (fpItemsField) {
-      specialEditor = _schemaListEditor('module_' + idx + '_data_', fpItemsField, {});
-      // 在"+ 添加条目"按钮前面插入"从数据集导入"按钮（通过字符串替换注入到编辑器标题栏）
-      specialEditor = specialEditor.replace(
-        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="schemaListAdd(this)">+ 添加条目</button>',
-        '<button type="button" class="btn btn-sm btn-outline-info fp-import-btn" onclick="event.stopPropagation();openFeaturedImport(' + idx + ', this)" style="font-size:11px;margin-right:4px" title="从已有数据集选取条目，自动填入标题、图片、描述和链接">📥 从数据集导入</button>' +
-        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="schemaListAdd(this)">+ 添加条目</button>'
-      );
-    }
-    // 外层/内层样式：复用 section 标准字段
-    styleEditor =
-    '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem']) + '</div>' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_inner_width', '内层宽度', ['px','%','rem']) + '</div>' +
-    '</div>' +
-    '<div class="row g-2">' +
-      '<div class="col-6">' + uP('module_' + idx + '_data_border_radius', '圆角', ['px','rem']) + '</div>' +
-    '</div>' +
-    '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
-    '<div class="input-group input-group-sm">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" placeholder="↑ 上">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" placeholder="↓ 下">' +
-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
-        '<option value="px">px</option>' +
-        '<option value="rem">rem</option>' +
-      '</select>' +
-    '</div>' +
-    '<hr class="my-2">' +
-    '<div class="small fw-semibold mb-1 text-muted">内层边距</div>' +
-    '<div class="input-group input-group-sm">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" placeholder="↑ 上">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" placeholder="→ 右">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" placeholder="↓ 下">' +
-      '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" placeholder="← 左">' +
-      '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
-        '<option value="px">px</option>' +
-        '<option value="rem">rem</option>' +
-      '</select>' +
-    '</div>';
   }
   var div = document.createElement('div');
   div.className = 'card mb-2 module-item expanded';
@@ -2929,17 +2892,16 @@ function initSchemaMounts() {
     var dataEl = document.querySelector('.schema-mount-data[data-module-index="' + idx + '"][data-device="' + device + '"]');
     if (dataEl) { try { mdata = JSON.parse(dataEl.textContent || '{}') || {}; } catch (e) { mdata = {}; } }
     var prefix = device === 'desktop' ? 'module_' + idx + '_data_' : 'module_' + idx + '_resp_' + device + '_data_';
-    mount.innerHTML = generateSchemaForm(prefix, schema, mdata, function() { return ''; });
-    // featured_picks：给已保存模块的列表编辑器也注入"从数据集导入"按钮
-    if (typeEl.value === 'featured_picks') {
-      mount.innerHTML = mount.innerHTML.replace(
-        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="schemaListAdd(this)">+ 添加条目</button>',
-        '<button type="button" class="btn btn-sm btn-outline-info fp-import-btn" onclick="event.stopPropagation();openFeaturedImport(' + idx + ', this)" style="font-size:11px;margin-right:4px" title="从已有数据集选取条目，自动填入标题、图片、描述和链接">📥 从数据集导入</button>' +
-        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="schemaListAdd(this)">+ 添加条目</button>'
-      );
+    if (typeEl.value === 'featured_picks' && typeof window._featuredPicksEditors === 'function') {
+      var fpEditors = window._featuredPicksEditors(prefix, mdata);
+      mount.innerHTML = fpEditors.content;
+      var fpStyleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
+      if (fpStyleMount) fpStyleMount.innerHTML = fpEditors.style;
+    } else {
+      mount.innerHTML = generateSchemaForm(prefix, schema, mdata, function() { return ''; });
+      var styleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
+      if (styleMount) styleMount.innerHTML = generateSchemaStyleForm(prefix, schema, mdata);
     }
-    var styleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
-    if (styleMount) styleMount.innerHTML = generateSchemaStyleForm(prefix, schema, mdata);
     mount.dataset.mounted = '1';
     if (typeof enhanceCompactSelects === 'function') enhanceCompactSelects(mount.closest('.module-item') || mount);
     updateConditionalFields(mount.closest('.module-item') || mount);
