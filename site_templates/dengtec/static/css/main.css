@@ -5951,18 +5951,25 @@ h6 { font-size: var(--font-size-md); }
   --fp-badge-color: var(--badge-color, #ffffff);
 }
 
-/* ── 卡片网格 ── */
-.fp-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--fp-cols, 3), 1fr);
-  gap: var(--fp-card-gap, 1.5rem);
+/* ========== 轮播视口：裁剪溢出内容 ========== */
+.fp-viewport {
+  overflow: hidden;
+  position: relative;
   margin-top: var(--spacing-lg);
 }
 
-/* ── 单张卡片 ── */
+/* ========== 轮播轨道：flex 布局，transition 实现平滑滚动 ========== */
+.fp-track {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+/* ========== 单张卡片 ========== */
 .fp-card {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
+  box-sizing: border-box;
   background: var(--fp-card-bg, #ffffff);
   border: 1px solid var(--color-border, #e2e8f0);
   border-radius: var(--fp-card-radius, 12px);
@@ -5970,7 +5977,6 @@ h6 { font-size: var(--font-size-md); }
   text-decoration: none;
   color: inherit;
   transition: all 0.25s ease;
-  /* 无图片时卡片仍然好看 */
   min-height: 200px;
 }
 
@@ -5986,7 +5992,7 @@ h6 { font-size: var(--font-size-md); }
   cursor: pointer;
 }
 
-/* ── 图片区 ── */
+/* ========== 图片区 ========== */
 .fp-card-img-wrap {
   aspect-ratio: 16 / 10;
   overflow: hidden;
@@ -6013,7 +6019,7 @@ h6 { font-size: var(--font-size-md); }
   transform: scale(1.06);
 }
 
-/* ── 卡片正文 ── */
+/* ========== 卡片正文 ========== */
 .fp-card-body {
   padding: var(--spacing-md) var(--spacing-lg) var(--spacing-lg);
   flex: 1;
@@ -6022,7 +6028,7 @@ h6 { font-size: var(--font-size-md); }
   min-width: 0;
 }
 
-/* ── 角标 ── */
+/* ========== 角标 ========== */
 .fp-badge {
   display: inline-block;
   align-self: flex-start;
@@ -6037,7 +6043,7 @@ h6 { font-size: var(--font-size-md); }
   letter-spacing: 0.02em;
 }
 
-/* ── 标题 ── */
+/* ========== 标题 ========== */
 .fp-card-title {
   font-size: var(--font-size-md, 1.125rem);
   font-weight: var(--font-weight-semibold, 600);
@@ -6051,7 +6057,7 @@ h6 { font-size: var(--font-size-md); }
   -webkit-box-orient: vertical;
 }
 
-/* ── 描述 ── */
+/* ========== 描述 ========== */
 .fp-card-desc {
   font-size: var(--font-size-sm, 0.875rem);
   color: var(--color-text-secondary, #64748b);
@@ -6064,7 +6070,7 @@ h6 { font-size: var(--font-size-md); }
   -webkit-box-orient: vertical;
 }
 
-/* ── 链接指示箭头 ── */
+/* ========== 链接指示箭头 ========== */
 .fp-card-link-text {
   display: inline-flex;
   align-items: center;
@@ -6085,7 +6091,7 @@ h6 { font-size: var(--font-size-md); }
   display: none;
 }
 
-/* ── 水平布局（data-style --dir: row → 左图右文；row-reverse → 右图左文）── */
+/* ========== 水平布局（data-style --dir: row → 左图右文；row-reverse → 右图左文）========== */
 .fp-card--left,
 .fp-card--right {
   align-items: stretch;
@@ -6109,21 +6115,94 @@ h6 { font-size: var(--font-size-md); }
   padding: var(--spacing-lg);
 }
 
-/* ── 响应式：平板 ── */
+/* ========== 轮播箭头 ========== */
+.fp-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: #ffffff;
+  color: #333333;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  z-index: 10;
+  transition: opacity 0.3s ease, box-shadow 0.2s ease;
+  opacity: 0.85;
+}
+
+.fp-arrow:hover {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  opacity: 1;
+}
+
+.fp-arrow--left {
+  left: -22px;
+}
+
+.fp-arrow--right {
+  right: -22px;
+}
+
+/* ========== 圆点指示器 ========== */
+.fp-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--spacing-md);
+}
+
+.fp-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: #cccccc;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.fp-dot--active {
+  background: var(--color-primary, #067a7a);
+  transform: scale(1.3);
+}
+
+/* ========== 响应式：平板 ========== */
 @media (max-width: 1024px) {
-  .fp-grid {
-    --fp-cols-mq: var(--fp-cols, 3);
-    /* 3列 → 2列 */
-    grid-template-columns: repeat(min(var(--fp-cols-mq, 3), 2), 1fr);
-    gap: var(--spacing-md);
+  .fp-arrow {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+  .fp-arrow--left {
+    left: -18px;
+  }
+  .fp-arrow--right {
+    right: -18px;
   }
 }
 
-/* ── 响应式：手机 ── */
+/* ========== 响应式：手机 ========== */
 @media (max-width: 768px) {
-  .fp-grid {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-md);
+  .fp-arrow {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+  }
+  .fp-arrow--left {
+    left: -15px;
+  }
+  .fp-arrow--right {
+    right: -15px;
   }
 
   .fp-card--left,

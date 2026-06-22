@@ -1,4 +1,4 @@
-<!-- 精选推荐模块 - 从多个数据集手动精选条目，支持卡片布局、角标、每行个数等 -->
+<!-- 精选推荐模块 - 轮播布局，参考图片轮播模块实现 -->
 <section data-name="featured_picks" data-type="group" data-hideable
   data-style="cols,dir,bg,bg-color"
   class="section fp-section">
@@ -8,22 +8,35 @@
       <p data-name="desc" data-type="textarea" class="section-description"></p>
     </div>
 
-    <div data-name="items" data-type="list" class="fp-grid">
-      <a data-name="item" data-type="group" data-href="link" class="fp-card" target="_blank" rel="noopener">
-        <div class="fp-card-img-wrap">
-          <img data-name="image" data-type="image" src="" alt="" loading="lazy" class="fp-card-img">
-        </div>
-        <div class="fp-card-body">
-          <span data-name="badge" data-type="text" class="fp-badge"></span>
-          <span data-name="badge_color" data-type="text" class="fp-badge-color-val" hidden></span>
-          <span data-name="badge_bg" data-type="text" class="fp-badge-bg-val" hidden></span>
-          <h3 data-name="title" data-type="text" class="fp-card-title">卡片标题</h3>
-          <p data-name="desc" data-type="textarea" class="fp-card-desc">卡片描述文字，简要介绍推荐内容</p>
-          <!-- link：值注入到父级 <a data-href="link">，元素本身 hidden 不可见 -->
-          <span data-name="link" data-type="url" class="fp-link-val" hidden></span>
-          <span class="fp-card-link-text"><span data-i18n="actions.learnMore">了解更多</span><span aria-hidden="true">→</span></span>
-        </div>
-      </a>
+    <div class="fp-viewport">
+      <button class="fp-arrow fp-arrow--left" aria-label="上一页">‹</button>
+      <button class="fp-arrow fp-arrow--right" aria-label="下一页">›</button>
+      <div data-name="items" data-type="list" class="fp-track">
+        <a data-name="item" data-type="group" data-href="link" class="fp-card" target="_blank" rel="noopener">
+          <div class="fp-card-img-wrap">
+            <img data-name="image" data-type="image" src="" alt="" loading="lazy" class="fp-card-img">
+          </div>
+          <div class="fp-card-body">
+            <span data-name="badge" data-type="text" class="fp-badge"></span>
+            <span data-name="badge_color" data-type="text" class="fp-badge-color-val" hidden></span>
+            <span data-name="badge_bg" data-type="text" class="fp-badge-bg-val" hidden></span>
+            <h3 data-name="title" data-type="text" class="fp-card-title">卡片标题</h3>
+            <p data-name="desc" data-type="textarea" class="fp-card-desc">卡片描述文字，简要介绍推荐内容</p>
+            <!-- link：值注入到父级 <a data-href="link">，元素本身 hidden 不可见 -->
+            <span data-name="link" data-type="url" class="fp-link-val" hidden></span>
+            <span class="fp-card-link-text"><span data-i18n="actions.learnMore">了解更多</span><span aria-hidden="true">→</span></span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="fp-dots"></div>
+    <!-- 轮播配置：hidden div 供解析器注册 schema 字段，JS 运行时读取 -->
+    <div class="fp-config" hidden>
+      <span data-name="images_per_row" data-type="text" class="fp-cfg-row">3</span>
+      <span data-name="auto_scroll" data-type="text" class="fp-cfg-auto">true</span>
+      <span data-name="scroll_interval" data-type="text" class="fp-cfg-interval">4</span>
+      <span data-name="show_dots" data-type="text" class="fp-cfg-dots">true</span>
     </div>
   </div>
 
@@ -83,11 +96,101 @@
           card.removeAttribute('href');
           card.removeAttribute('target');
           card.style.cursor = 'default';
+        });
+      });
+
+      // ── 读取隐藏配置（参考 image_carousel 的 readCfg）──
+      var readCfg = function(cls, def) {
+        var el = section.querySelector('.fp-cfg-' + cls);
+        var v = el ? (el.textContent || '').trim() : '';
+        return v || def;
+      };
+      // 优先从内容字段 images_per_row 读取，兜底从 data-style --cols CSS 变量读取
+      var perRow = parseInt(readCfg('row', '')) || 3;
+      if (!perRow || perRow < 1) {
+        var styleAttr = section.getAttribute('style') || '';
+        var cm = styleAttr.match(/--cols:\s*(\S+?)(?:;|$)/);
+        if (cm) {
+          var rawCols = parseInt(cm[1].replace(/['"]/g, '').trim());
+          if (rawCols >= 1 && rawCols <= 6) perRow = rawCols;
+        }
+        if (!perRow || perRow < 1) perRow = 3;
+      }
+      var autoScroll = readCfg('auto', 'true') !== 'false';
+      var intervalMs = (parseInt(readCfg('interval', '4')) || 4) * 1000;
+      var showDots = readCfg('dots', 'true') !== 'false';
+
+      var track = section.querySelector('.fp-track');
+      var cards = track.querySelectorAll('.fp-card');
+      var dotsContainer = section.querySelector('.fp-dots');
+      var arrowLeft = section.querySelector('.fp-arrow--left');
+      var arrowRight = section.querySelector('.fp-arrow--right');
+      var total = cards.length;
+      if (!total) { applyLayout(); applyBadgeOverrides(); return; }
+
+      perRow = Math.min(perRow, total);
+      var totalPages = Math.max(1, total - perRow + 1);
+      var current = 0;
+      var autoTimer = null;
+
+      // 每张卡片宽度：均分视口
+      cards.forEach(function(c){ c.style.flex = '0 0 ' + (100 / perRow) + '%'; });
+
+      // 生成圆点导航（由 show_dots 控制是否显示）
+      if (showDots && totalPages > 1) {
+        for (var i = 0; i < totalPages; i++) {
+          var dot = document.createElement('button');
+          dot.className = 'fp-dot';
+          dot.setAttribute('aria-label', '第' + (i + 1) + '页');
+          dot.addEventListener('click', (function(idx){ return function(){ goTo(idx); resetAutoScroll(); }; })(i));
+          dotsContainer.appendChild(dot);
+        }
+      } else {
+        dotsContainer.style.display = 'none';
+      }
+
+      // 仅一页时隐藏箭头
+      if (totalPages <= 1) {
+        if (arrowLeft) arrowLeft.style.display = 'none';
+        if (arrowRight) arrowRight.style.display = 'none';
+      }
+
+      // 左右箭头点击（点击后重置自动滚动计时）
+      if (arrowLeft) arrowLeft.addEventListener('click', function(){ goTo(current > 0 ? current - 1 : totalPages - 1); resetAutoScroll(); });
+      if (arrowRight) arrowRight.addEventListener('click', function(){ goTo(current < totalPages - 1 ? current + 1 : 0); resetAutoScroll(); });
+
+      function updateUI() {
+        track.style.transform = 'translateX(' + (-current * (100 / perRow)) + '%)';
+        dotsContainer.querySelectorAll('.fp-dot').forEach(function(d, i){ d.classList.toggle('fp-dot--active', i === current); });
+        if (arrowLeft) arrowLeft.style.opacity = current === 0 ? '0.25' : '';
+        if (arrowRight) arrowRight.style.opacity = current === totalPages - 1 ? '0.25' : '';
+      }
+      function goTo(i) { current = Math.max(0, Math.min(i, totalPages - 1)); updateUI(); }
+      function next() { goTo(current < totalPages - 1 ? current + 1 : 0); }
+      function startAutoScroll() { if (!autoScroll || totalPages <= 1) return; stopAutoScroll(); autoTimer = setInterval(next, intervalMs); }
+      function stopAutoScroll() { if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } }
+      function resetAutoScroll() { stopAutoScroll(); startAutoScroll(); }
+
+      // 触摸滑动支持（移动端手势，滑动后重置自动滚动）
+      var touchStartX = 0, touchStartY = 0;
+      track.addEventListener('touchstart', function(e){
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }, {passive: true});
+      track.addEventListener('touchend', function(e){
+        var dx = e.changedTouches[0].clientX - touchStartX;
+        var dy = e.changedTouches[0].clientY - touchStartY;
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+          if (dx < 0) goTo(Math.min(current + 1, totalPages - 1));
+          else goTo(Math.max(current - 1, 0));
+          resetAutoScroll();
         }
       });
 
       applyLayout();
       applyBadgeOverrides();
+      updateUI();
+      startAutoScroll();
     })();
   </script>
 </section>

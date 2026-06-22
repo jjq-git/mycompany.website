@@ -57,6 +57,53 @@ fields:
         default: ""
         placeholder: 点击跳转链接，留空不可点
 
+  # ── 滚动行为 ──
+  - key: images_per_row
+    label: 每行显示几张
+    type: select
+    group: 滚动行为
+    default: "3"
+    options:
+      - value: "2"
+        label: "2 张"
+      - value: "3"
+        label: "3 张"
+      - value: "4"
+        label: "4 张"
+      - value: "5"
+        label: "5 张"
+      - value: "6"
+        label: "6 张"
+
+  - key: auto_scroll
+    label: 自动滚动
+    type: switch
+    group: 滚动行为
+    default: "true"
+
+  - key: scroll_interval
+    label: 滚动间隔(秒)
+    type: select
+    group: 滚动行为
+    default: "4"
+    options:
+      - value: "2"
+        label: "2 秒"
+      - value: "3"
+        label: "3 秒"
+      - value: "4"
+        label: "4 秒"
+      - value: "5"
+        label: "5 秒"
+      - value: "8"
+        label: "8 秒"
+
+  - key: show_dots
+    label: 显示圆点
+    type: switch
+    group: 滚动行为
+    default: "true"
+
   # ── 外层样式（标准 section 包裹层）──
   - key: outer_width
     label: 外层宽度

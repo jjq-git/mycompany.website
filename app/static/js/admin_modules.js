@@ -643,6 +643,14 @@
           '<label class="form-check-label" for="' + prefix + key + '_' + oi + '">' + esc(ol) + '</label>' +
           '</div>';
       });
+    } else if (type === 'switch') {
+      // switch → 开关控件（true/false），对齐 panel_page_edit.html 的 switch 渲染
+      var checked = String(value || field.default || 'true') !== 'false';
+      html += '<div class="form-check form-switch mb-0">' +
+        '<input class="form-check-input" type="checkbox" role="switch" ' + (checked ? 'checked' : '') +
+        ' onchange="var h=this.parentElement.querySelector(\'input[type=hidden]\');if(h)h.value=this.checked?\'true\':\'false\'">' +
+        '</div>' +
+        '<input type="hidden" name="' + prefix + key + '" value="' + (checked ? 'true' : 'false') + '">';
     } else {
       html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '">';
     }
@@ -670,9 +678,47 @@
     return copy;
   }
 
-  function schemaListEditor(prefix, field, value) {
+  function schemaInlineHalfChild(field) {
+    if (!field || field.type !== 'group' || field.hideable) return null;
+    var children = fieldChildren(field);
+    if (children.length !== 1) return null;
+    return isHalfField(children[0]) ? children[0] : null;
+  }
+
+  function schemaHideToggle(name, label, hiddenVal) {
+    var checked = hiddenVal !== 'true';
+    return '<div class="form-check form-switch">' +
+      '<input class="form-check-input" type="checkbox" role="switch" ' + (checked ? 'checked' : '') +
+      ' onchange="this.parentElement.querySelector(\'input[type=hidden]\').value=this.checked?\'false\':\'true\'">' +
+      '<label class="form-check-label small">' + esc(label) + '</label>' +
+      '<input type="hidden" name="' + esc(name) + '" value="' + esc(hiddenVal || 'false') + '">' +
+      '</div>';
+  }
+
+  function schemaDatasetField(prefix, field, mdata) {
     var key = field.key || field.name;
-    var items = Array.isArray(value) ? value : [];
+    if (field.source) {
+      return '<div class="small text-muted mb-2">「' + esc(labelText(field)) + '」内容来自 <b>' + esc(field.source) + '</b> 数据集，自动展示，无需手动编辑。</div>';
+    }
+    var datasets = (window._moduleCtx && window._moduleCtx.datasetNames) || window.datasetNames || [];
+    var val = (mdata && mdata.dataset != null) ? mdata.dataset : '';
+    var html = '<div class="mb-2"><label class="form-label small mb-1 text-muted">数据来源（' + esc(labelText(field)) + '）</label>' +
+      '<select class="form-select form-select-sm" data-no-segmented="1" name="' + esc(prefix + 'dataset') + '">' +
+      '<option value="">请选择数据集</option>';
+    datasets.forEach(function(ds) {
+      var target = ds.target || ds.value || ds.key || '';
+      html += '<option value="' + esc(target) + '"' + (String(val) === String(target) ? ' selected' : '') + '>' + esc(ds.label || target) + '</option>';
+    });
+    html += '</select></div>';
+    return html;
+  }
+
+  function schemaListEditor(prefix, field, value, mdata) {
+    var key = field.key || field.name;
+    if (field.source != null) {
+      return schemaDatasetField(prefix, field, mdata || {});
+    }
+    var items = Array.isArray(value) ? value : ((mdata && Array.isArray(mdata[key])) ? mdata[key] : []);
     var children = fieldChildren(field);
     var base = prefix.replace(/data_$/, '');
     var html = '<div class="schema-list-editor" data-list-base="' + attrEsc(base) + '" data-list-name="' + attrEsc(key) + '" data-children="' + attrEsc(JSON.stringify(children)) + '">';
@@ -696,18 +742,167 @@
     return html;
   }
 
+  function renderSchemaGroup(prefix, field, values) {
+    values = values || {};
+    var key = field.key || field.name || '';
+    var children = fieldChildren(field);
+    var html = '';
+    if (children.length) {
+      if (field.hideable) {
+        html += '<div class="mb-2 pb-2" style="border-bottom:1px solid #e2e8f0">' +
+          '<div class="d-flex align-items-center justify-content-between">' +
+          '<label class="form-label small mb-0 text-muted fw-semibold">' + esc(labelText(field)) + '</label>' +
+          '<div>' + schemaHideToggle(prefix + '_hidden_' + key, '显示', values['_hidden_' + key] || 'false') + '</div>' +
+          '</div></div>';
+      }
+      html += '<div class="mb-2">';
+      children.forEach(function(child) {
+        if (child.type === 'group') {
+          html += renderSchemaGroup(prefix, child, values);
+        } else if (child.type === 'list' || child.type === 'grid') {
+          html += schemaListEditor(prefix, child, values[child.key], values);
+        } else {
+          html += renderField(prefix, child, values[child.key] || child.default || '', '');
+        }
+      });
+      html += '</div>';
+    } else if (field.hideable) {
+      html += '<div class="d-flex align-items-center gap-2 mb-2" style="white-space:nowrap">' +
+        '<span class="small">' + esc(labelText(field)) + '</span>' +
+        schemaHideToggle(prefix + '_hidden_' + key, '显示', values['_hidden_' + key] || 'false') +
+        '</div>';
+    }
+    return html;
+  }
+
+  function renderSchemaForm(prefix, schema, values) {
+    values = values || {};
+    var html = '';
+    if (schema && schema.from_source) {
+      html += '<div class="alert alert-info py-2 px-3 mb-3" style="font-size:12px;line-height:1.5">' +
+        '<div class="fw-semibold mb-1">此模块数据来自网站设置</div>' +
+        '<div>数据源：<code>' + esc(schema.from_source) + '</code>，请在「网站设置」中修改。</div>' +
+        '</div>';
+    }
+    var pendingHalf = [];
+    function flushPendingHalf() {
+      if (!pendingHalf.length) return;
+      html += '<div class="module-field-row">';
+      pendingHalf.forEach(function(field) {
+        html += renderField(prefix, field, values[field.key] || field.default || '', '');
+      });
+      html += '</div>';
+      pendingHalf = [];
+    }
+    ((schema && schema.fields) || []).forEach(function(field) {
+      if (field.type === 'list' || field.type === 'grid') {
+        flushPendingHalf();
+        html += schemaListEditor(prefix, field, values[field.key], values);
+      } else if (field.type === 'group') {
+        var inlineChild = schemaInlineHalfChild(field);
+        if (inlineChild) {
+          pendingHalf.push(inlineChild);
+        } else {
+          flushPendingHalf();
+          html += renderSchemaGroup(prefix, field, values);
+        }
+      } else if (isHalfField(field)) {
+        pendingHalf.push(field);
+      } else {
+        flushPendingHalf();
+        html += renderField(prefix, field, values[field.key] || field.default || '', '');
+      }
+    });
+    flushPendingHalf();
+    if (schema && schema.hideable) {
+      var hiddenVal = values._hidden === true || values._hidden === 'true' ? 'true' : 'false';
+      html += '<div class="mt-2 pt-2 border-top">' + schemaHideToggle(prefix + '_hidden', '整块显示', hiddenVal) + '</div>';
+    }
+    return html;
+  }
+
+  function getMergedSchema(meta) {
+    var schema = (meta && meta.schema) || {};
+    var metaFields = (meta && meta.fields) || [];
+    var metaFieldMap = {};
+    metaFields.forEach(function(f) { metaFieldMap[f.key] = f; });
+    var schemaFieldMap = {};
+    (schema.fields || []).forEach(function(sf) { schemaFieldMap[sf.name || sf.key] = sf; });
+    var conditionalControllerMap = {};
+    metaFields.forEach(function(f) {
+      if (f.show_if && f.show_if.field) conditionalControllerMap[f.show_if.field] = true;
+    });
+
+    function mergeField(sf) {
+      var name = sf.name || sf.key;
+      var mf = metaFieldMap[name];
+      var children = (sf.children || sf.item_fields || []).map(mergeField);
+      var merged = Object.assign({}, sf, {
+        name: name,
+        key: name,
+        children: children,
+        item_fields: children
+      });
+      if (mf) {
+        merged.type = mf.type || merged.type;
+        merged.options = mf.options || merged.options;
+        merged.label = mf.label || merged.label;
+        merged.show_if = mf.show_if || merged.show_if;
+        if ((mf.children || mf.item_fields || []).length && !children.length) {
+          merged.children = (mf.children || mf.item_fields || []).map(mergeField);
+          merged.item_fields = merged.children;
+        }
+      }
+      merged.label = merged.label || name;
+      return merged;
+    }
+
+    function metaToSchemaField(mf) {
+      return mergeField({
+        name: mf.key,
+        key: mf.key,
+        type: mf.type || 'text',
+        label: mf.label || mf.key,
+        children: mf.item_fields || mf.children || []
+      });
+    }
+
+    var mergedFields = [];
+    metaFields.forEach(function(mf) {
+      if (!conditionalControllerMap[mf.key]) return;
+      if (schemaFieldMap[mf.key]) return;
+      mergedFields.push(metaToSchemaField(mf));
+    });
+    (schema.fields || []).forEach(function(sf) {
+      mergedFields.push(mergeField(sf));
+    });
+    metaFields.forEach(function(mf) {
+      if (schemaFieldMap[mf.key]) return;
+      if (mf.type === 'list' || mf.type === 'grid') mergedFields.push(metaToSchemaField(mf));
+    });
+
+    return {
+      root_type: schema.root_type,
+      root_tag: schema.root_tag,
+      hideable: schema.hideable,
+      href_field: schema.href_field,
+      style_tokens: schema.style_tokens || [],
+      element_style_tokens: schema.element_style_tokens || [],
+      from_source: schema.from_source,
+      fields: mergedFields.map(schemaFieldToFormField)
+    };
+  }
+
   function featuredPicksEditors(prefix, meta, values) {
     meta = meta || findBlockMeta('featured_picks');
     values = values || {};
-    var contentFields = ((meta.schema && meta.schema.fields) || []).map(schemaFieldToFormField).filter(function(f) {
-      return !!f.key;
-    });
+    var mergedSchema = getMergedSchema(meta);
     if (window._moduleCtx) window._moduleCtx.currentModuleType = 'featured_picks';
-    var content = renderFieldsGrouped(prefix, contentFields, values, '');
+    var content = renderSchemaForm(prefix, mergedSchema, values);
     if (window._moduleCtx) window._moduleCtx.currentModuleType = '';
     return {
       content: content,
-      style: schemaStyleForm(prefix, meta.schema || {}, values)
+      style: schemaStyleForm(prefix, mergedSchema, values)
     };
   }
 
@@ -1090,11 +1285,18 @@
     var borderStyle = '';
     var headerBg = '';
     var titleColor = '';
+    var schemaManaged = !!(!isDataModule && meta.is_data_attr && meta.schema);
 
-    if (type === 'featured_picks') {
-      var featuredEditors = featuredPicksEditors('module_' + idx + '_data_', meta, d);
-      specialEditor = featuredEditors.content;
-      styleEditor = featuredEditors.style;
+    if (schemaManaged) {
+      var mergedSchema = getMergedSchema(meta);
+      if (type === 'featured_picks') {
+        var featuredEditors = featuredPicksEditors('module_' + idx + '_data_', meta, d);
+        specialEditor = featuredEditors.content;
+        styleEditor = featuredEditors.style;
+      } else {
+        specialEditor = renderSchemaForm('module_' + idx + '_data_', mergedSchema, d);
+        styleEditor = schemaStyleForm('module_' + idx + '_data_', mergedSchema, d);
+      }
     }
 
     /* ====== item_data (详情数据) 特殊处理 ====== */
@@ -1217,7 +1419,7 @@
     }
 
     /* ====== hero_banner ====== */
-    if (type === 'hero_banner') {
+    if (!schemaManaged && type === 'hero_banner') {
       specialEditor =
         '<hr class="my-2">' +
         '<div class="hero-slides-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">轮播媒体项</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addHeroSlide(' + idx + ')">+ 添加媒体项</button></div><input type="hidden" name="module_' + idx + '_slide_count" class="hero-slide-count" value="' + (d.slide_count || '1') + '"><div class="hero-slide-list">' + (window._heroSlideHtml ? window._heroSlideHtml(idx, 0, d) : '') + '</div></div>';

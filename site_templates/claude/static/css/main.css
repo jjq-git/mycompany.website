@@ -3174,18 +3174,25 @@ a.ci-value:hover { color: var(--color-primary); }
   --fp-badge-color: var(--badge-color, var(--color-on-primary, #ffffff));
 }
 
-/* ── 卡片网格 ── */
-.fp-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--fp-cols, 3), 1fr);
-  gap: var(--fp-card-gap, var(--space-lg));
+/* ========== 轮播视口：裁剪溢出内容 ========== */
+.fp-viewport {
+  overflow: hidden;
+  position: relative;
   margin-top: var(--space-lg);
 }
 
-/* ── 单张卡片：Claude 的精致极简风格 ── */
+/* ========== 轮播轨道：flex 布局，transition 实现平滑滚动 ========== */
+.fp-track {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+/* ========== 单张卡片：Claude 的精致极简风格 ========== */
 .fp-card {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
+  box-sizing: border-box;
   background: var(--fp-card-bg, var(--color-canvas, #faf9f5));
   border: 1px solid var(--color-border, #e6dfd8);
   border-radius: var(--fp-card-radius, var(--radius-lg, 12px));
@@ -3203,7 +3210,7 @@ a.ci-value:hover { color: var(--color-primary); }
   color: inherit;
 }
 
-/* ── 图片区 ── */
+/* ========== 图片区 ========== */
 .fp-card-img-wrap {
   aspect-ratio: 4 / 3;
   overflow: hidden;
@@ -3224,7 +3231,7 @@ a.ci-value:hover { color: var(--color-primary); }
   transform: scale(1.04);
 }
 
-/* ── 卡片正文 ── */
+/* ========== 卡片正文 ========== */
 .fp-card-body {
   padding: var(--space-md) var(--space-lg) var(--space-lg);
   flex: 1;
@@ -3233,7 +3240,7 @@ a.ci-value:hover { color: var(--color-primary); }
   min-width: 0;
 }
 
-/* ── 角标：Claude 的圆角胶囊标签 ── */
+/* ========== 角标：Claude 的圆角胶囊标签 ========== */
 .fp-badge {
   display: inline-block;
   align-self: flex-start;
@@ -3250,7 +3257,7 @@ a.ci-value:hover { color: var(--color-primary); }
   margin-bottom: var(--space-sm, 0.75rem);
 }
 
-/* ── 标题：无衬线正文层级 ── */
+/* ========== 标题：无衬线正文层级 ========== */
 .fp-card-title {
   font-family: var(--font-sans, 'Inter', sans-serif);
   font-size: var(--text-title-md, 1.125rem);
@@ -3265,7 +3272,7 @@ a.ci-value:hover { color: var(--color-primary); }
   -webkit-box-orient: vertical;
 }
 
-/* ── 描述 ── */
+/* ========== 描述 ========== */
 .fp-card-desc {
   font-family: var(--font-sans, 'Inter', sans-serif);
   font-size: var(--text-body-sm, 0.875rem);
@@ -3279,7 +3286,7 @@ a.ci-value:hover { color: var(--color-primary); }
   -webkit-box-orient: vertical;
 }
 
-/* ── 链接指示 ── */
+/* ========== 链接指示 ========== */
 .fp-card-link-text {
   display: inline-flex;
   align-items: center;
@@ -3302,7 +3309,7 @@ a.ci-value:hover { color: var(--color-primary); }
   display: none;
 }
 
-/* ── 水平布局（--dir: row → 左图右文；row-reverse → 右图文左）── */
+/* ========== 水平布局（--dir: row → 左图右文；row-reverse → 右图左文）========== */
 .fp-card--left,
 .fp-card--right {
   align-items: stretch;
@@ -3326,18 +3333,94 @@ a.ci-value:hover { color: var(--color-primary); }
   padding: var(--space-lg);
 }
 
-/* ── 响应式 ── */
+/* ========== 轮播箭头 ========== */
+.fp-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-canvas, #ffffff);
+  color: var(--color-text, #333333);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  z-index: 10;
+  transition: opacity 0.3s ease, box-shadow 0.2s ease;
+  opacity: 0.85;
+}
+
+.fp-arrow:hover {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  opacity: 1;
+}
+
+.fp-arrow--left {
+  left: -22px;
+}
+
+.fp-arrow--right {
+  right: -22px;
+}
+
+/* ========== 圆点指示器 ========== */
+.fp-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--space-md);
+}
+
+.fp-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: #cccccc;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.fp-dot--active {
+  background: var(--color-primary, #cc785c);
+  transform: scale(1.3);
+}
+
+/* ========== 响应式：平板 ========== */
 @media (max-width: 1024px) {
-  .fp-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-md);
+  .fp-arrow {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+  .fp-arrow--left {
+    left: -18px;
+  }
+  .fp-arrow--right {
+    right: -18px;
   }
 }
 
+/* ========== 响应式：手机 ========== */
 @media (max-width: 768px) {
-  .fp-grid {
-    grid-template-columns: 1fr;
-    gap: var(--space-md);
+  .fp-arrow {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+  }
+  .fp-arrow--left {
+    left: -15px;
+  }
+  .fp-arrow--right {
+    right: -15px;
   }
 
   .fp-card--left,
