@@ -706,22 +706,172 @@
     'phone': '电话',
     'mobile': '手机',
     'email': '邮箱',
-    'address': '地址'
+    'address': '地址',
+    'heading': '标题',
+    'subheading': '副标题',
+    'eyebrow': '眉标',
+    'kicker': '眉标',
+    'text': '文字',
+    'text_area': '文字区域',
+    'badge': '徽标文字',
+    'badge_color': '徽标文字颜色',
+    'badge_bg': '徽标背景色',
+    'label': '标签',
+    'number': '数字',
+    'suffix': '后缀',
+    'background_image': '背景图',
+    'aria_label': '辅助标签',
+    'items': '条目',
+    'item': '条目',
+    'slides': '轮播图',
+    'slide': '轮播项',
+    'features': '功能点',
+    'feature': '功能点',
+    'stats': '数据项',
+    'stat': '数据项',
+    'steps': '步骤',
+    'step': '步骤',
+    'question': '问题',
+    'answer': '回答',
+    'show_dots': '显示圆点',
+    'auto_scroll': '自动滚动',
+    'scroll_interval': '滚动间隔',
+    'pager': '分页',
+    'primary_btn': '主按钮文字',
+    'primary_btn_link': '主按钮链接',
+    'primary_link': '主按钮链接',
+    'secondary_btn': '副按钮文字',
+    'secondary_btn_link': '副按钮链接',
+    'secondary_link': '副按钮链接',
+    'cta': '行动按钮',
+    'cta_text': '行动按钮文字',
+    'cta_link': '行动按钮链接',
+    'cta_url': '行动按钮链接',
+    'button': '按钮文字',
+    'button_text': '按钮文字',
+    'button_link': '按钮链接',
+    'button_url': '按钮链接',
+    'search': '搜索',
+    'filters': '筛选',
+    'filter_fields': '筛选字段',
+    'all_label': '全部选项文字',
+    'results_label': '结果文字',
+    'prev_label': '上一页文字',
+    'next_label': '下一页文字',
+    'view_all_text': '查看全部文字',
+    'view_all_link': '查看全部链接',
+    'form_action': '表单提交地址',
+    'platform_api_url': '平台接口地址',
+    'site_id': '站点 ID',
+    'hidden': '隐藏'
   };
+
+  function normalizeLabelKey(value) {
+    return String(value || '')
+      .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+      .replace(/[\s-]+/g, '_')
+      .replace(/__+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .toLowerCase();
+  }
 
   function labelText(field) {
     var key = String(field.key || field.name || '');
     var raw = String(field.label || '');
-    var normalizedKey = key.toLowerCase();
-    var normalizedRaw = raw.toLowerCase().replace(/[\s-]+/g, '_');
+    var normalizedKey = normalizeLabelKey(key);
+    var normalizedRaw = normalizeLabelKey(raw);
     return FIELD_LABEL_MAP[normalizedKey] || FIELD_LABEL_MAP[normalizedRaw] || translateLabel(raw || key);
   }
 
   function translateLabel(label) {
-    return String(label || '')
-      .replace(/\bLogo\b/g, '标志')
-      .replace(/\bBanner\b/g, '横幅')
-      .replace(/\bURL\b/g, '链接');
+    var text = String(label || '').trim();
+    if (!text || /[\u4e00-\u9fff]/.test(text)) return text;
+    var normalized = normalizeLabelKey(text);
+    if (FIELD_LABEL_MAP[normalized]) return FIELD_LABEL_MAP[normalized];
+    var tokenMap = {
+      show: '显示',
+      hide: '隐藏',
+      enable: '启用',
+      enabled: '启用',
+      visible: '可见',
+      primary: '主',
+      secondary: '副',
+      button: '按钮',
+      btn: '按钮',
+      cta: '行动按钮',
+      link: '链接',
+      url: '链接',
+      href: '链接',
+      text: '文字',
+      title: '标题',
+      heading: '标题',
+      subtitle: '副标题',
+      subheading: '副标题',
+      desc: '描述',
+      description: '描述',
+      summary: '摘要',
+      image: '图片',
+      cover: '封面图',
+      background: '背景',
+      bg: '背景',
+      color: '颜色',
+      badge: '徽标',
+      label: '标签',
+      icon: '图标',
+      media: '媒体',
+      video: '视频',
+      form: '表单',
+      map: '地图',
+      panel: '面板',
+      card: '卡片',
+      field: '字段',
+      item: '条目',
+      items: '条目',
+      list: '列表',
+      grid: '网格',
+      search: '搜索',
+      filter: '筛选',
+      filters: '筛选',
+      pagination: '分页',
+      pager: '分页',
+      align: '对齐',
+      layout: '布局',
+      style: '样式',
+      columns: '列数',
+      rows: '行数',
+      count: '数量',
+      number: '数字',
+      suffix: '后缀',
+      date: '日期',
+      price: '价格',
+      category: '分类',
+      name: '名称',
+      phone: '电话',
+      mobile: '手机',
+      email: '邮箱',
+      address: '地址',
+      message: '留言',
+      company: '公司',
+      hours: '营业时间',
+      business: '营业',
+      action: '提交地址',
+      api: '接口',
+      platform: '平台',
+      site: '站点',
+      id: 'ID',
+      src: '链接',
+      source: '来源',
+      all: '全部',
+      results: '结果',
+      prev: '上一页',
+      next: '下一页',
+      scroll: '滚动',
+      interval: '间隔',
+      dots: '圆点'
+    };
+    return normalized.split('_').filter(Boolean).map(function(part) {
+      return tokenMap[part] || part;
+    }).join('') || text;
   }
 
   function isHalfField(field) {

@@ -104,7 +104,7 @@
               {% else %}
               {% set prefix = 'module_' ~ i ~ '_data_' %}
               <div class="mb-2">
-                <label class="form-label small mb-1 text-muted">{{ key }}</label>
+                <label class="form-label small mb-1 text-muted" data-field-label-key="{{ key }}">{{ key }}</label>
                 <input type="text" class="form-control form-control-sm"
                        name="{{ prefix }}{{ key }}" value="{{ val }}">
                 {% if 'image' in key|lower or 'cover' in key|lower or 'background' in key|lower or 'media' in key|lower or 'photo' in key|lower or 'logo' in key|lower %}
@@ -129,7 +129,7 @@
               {% for key, val in mdata.items() %}
               {% if key not in ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'] %}
               <div class="mb-2">
-                <label class="form-label small mb-1 text-muted">{{ key }}</label>
+                <label class="form-label small mb-1 text-muted" data-field-label-key="{{ key }}">{{ key }}</label>
                 {% set tval = mdata_tablet.get(key, '') %}
                 <input type="text" class="form-control form-control-sm"
                        name="module_{{ i }}_resp_tablet_data_{{ key }}"
@@ -158,7 +158,7 @@
               {% for key, val in mdata.items() %}
               {% if key not in ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'] %}
               <div class="mb-2">
-                <label class="form-label small mb-1 text-muted">{{ key }}</label>
+                <label class="form-label small mb-1 text-muted" data-field-label-key="{{ key }}">{{ key }}</label>
                 {% set mval = mdata_mobile.get(key, '') %}
                 <input type="text" class="form-control form-control-sm"
                        name="module_{{ i }}_resp_mobile_data_{{ key }}"
@@ -189,7 +189,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=40"></script>
+<script src="/static/js/admin_modules.js?v=41"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -253,22 +253,35 @@ function segmentedControl(name, options, value, escFn) {
 
 // 字段名 → 中文显示名（后续迁移到模板 data-label 属性 + block_parser 透传）
 var FIELD_LABEL_MAP = {
+  'heading': '标题',
+  'subheading': '副标题',
   'title': '标题',
   'subtitle': '副标题',
+  'eyebrow': '眉标',
+  'kicker': '眉标',
   'desc': '描述',
   'description': '描述',
   'excerpt': '摘要',
   'summary': '摘要',
   'body': '正文',
   'content': '内容',
+  'text': '文字',
+  'text_area': '文字区域',
   'tag': '标签',
   'tags': '标签',
+  'badge': '徽标文字',
+  'badge_color': '徽标文字颜色',
+  'badge_bg': '徽标背景色',
   'name': '名称',
+  'label': '标签',
   'category': '分类',
   'price': '价格',
   'date': '日期',
   'slug': '标识 slug',
+  'number': '数字',
+  'suffix': '后缀',
   'image': '图片',
+  'background_image': '背景图',
   'cover': '封面图',
   'photo': '图片',
   'logo': '标志图片',
@@ -281,7 +294,20 @@ var FIELD_LABEL_MAP = {
   'url': '链接',
   'href': '链接',
   'alt': '替代文本',
+  'aria_label': '辅助标签',
   'dataset': '数据来源',
+  'items': '条目',
+  'item': '条目',
+  'slides': '轮播图',
+  'slide': '轮播项',
+  'features': '功能点',
+  'feature': '功能点',
+  'stats': '数据项',
+  'stat': '数据项',
+  'steps': '步骤',
+  'step': '步骤',
+  'question': '问题',
+  'answer': '回答',
   'columns': '列数',
   'rows': '行数',
   'max_items': '最大显示数量',
@@ -290,17 +316,45 @@ var FIELD_LABEL_MAP = {
   'show_search': '显示搜索框',
   'show_pagination': '显示分页',
   'show_view_all': '显示查看全部',
+  'show_dots': '显示圆点',
+  'auto_scroll': '自动滚动',
+  'scroll_interval': '滚动间隔',
   'pagination_style': '分页样式',
   'pager_align': '分页对齐',
+  'pager': '分页',
   'card_layout': '卡片布局',
+  'primary_btn': '主按钮文字',
   'primarybtn': '主按钮文字',
+  'primary_btn_link': '主按钮链接',
+  'primary_link': '主按钮链接',
   'primarylink': '主按钮链接',
+  'secondary_btn': '副按钮文字',
   'secondarybtn': '副按钮文字',
+  'secondary_btn_link': '副按钮链接',
+  'secondary_link': '副按钮链接',
   'secondarylink': '副按钮链接',
+  'cta': '行动按钮',
+  'cta_text': '行动按钮文字',
+  'cta_link': '行动按钮链接',
+  'cta_url': '行动按钮链接',
   'btn': '按钮文字',
   'btn_text': '按钮文字',
   'btn_url': '按钮链接',
+  'button': '按钮文字',
+  'button_text': '按钮文字',
+  'button_link': '按钮链接',
+  'button_url': '按钮链接',
+  'search': '搜索',
+  'filters': '筛选',
+  'filter_fields': '筛选字段',
+  'all_label': '全部选项文字',
+  'results_label': '结果文字',
+  'prev_label': '上一页文字',
+  'next_label': '下一页文字',
+  'view_all_text': '查看全部文字',
+  'view_all_link': '查看全部链接',
   'form_panel': '表单',
+  'form_action': '表单提交地址',
   'map_panel': '地图',
   'name_field': '姓名',
   'email_field': '邮箱',
@@ -308,6 +362,8 @@ var FIELD_LABEL_MAP = {
   'company_field': '公司',
   'message_field': '留言',
   'map_src': '地图链接',
+  'platform_api_url': '平台接口地址',
+  'site_id': '站点 ID',
   'phone_card': '电话',
   'mobile_card': '手机',
   'email_card': '邮箱',
@@ -318,21 +374,125 @@ var FIELD_LABEL_MAP = {
   'phone': '电话',
   'mobile': '手机',
   'email': '邮箱',
-  'address': '地址'
+  'address': '地址',
+  'hidden': '隐藏'
 };
+
+function _normalizeFieldLabelKey(value) {
+  return String(value || '')
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/[\s-]+/g, '_')
+    .replace(/__+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase();
+}
+
 function _schemaLabel(field) {
   var key = String(field.name || field.key || '');
   var raw = String(field.label || '');
-  var normalizedKey = key.toLowerCase();
-  var normalizedRaw = raw.toLowerCase().replace(/[\s-]+/g, '_');
+  var normalizedKey = _normalizeFieldLabelKey(key);
+  var normalizedRaw = _normalizeFieldLabelKey(raw);
   return FIELD_LABEL_MAP[normalizedKey] || FIELD_LABEL_MAP[normalizedRaw] || translateFieldLabel(raw || key);
 }
 
 function translateFieldLabel(label) {
-  return String(label || '')
-    .replace(/\bLogo\b/g, '标志')
-    .replace(/\bBanner\b/g, '横幅')
-    .replace(/\bURL\b/g, '链接');
+  var text = String(label || '').trim();
+  if (!text || /[\u4e00-\u9fff]/.test(text)) return text;
+  var normalized = _normalizeFieldLabelKey(text);
+  if (FIELD_LABEL_MAP[normalized]) return FIELD_LABEL_MAP[normalized];
+
+  var parts = normalized.split('_').filter(Boolean);
+  var tokenMap = {
+    'show': '显示',
+    'hide': '隐藏',
+    'enable': '启用',
+    'enabled': '启用',
+    'visible': '可见',
+    'primary': '主',
+    'secondary': '副',
+    'button': '按钮',
+    'btn': '按钮',
+    'cta': '行动按钮',
+    'link': '链接',
+    'url': '链接',
+    'href': '链接',
+    'text': '文字',
+    'title': '标题',
+    'heading': '标题',
+    'subtitle': '副标题',
+    'subheading': '副标题',
+    'desc': '描述',
+    'description': '描述',
+    'summary': '摘要',
+    'image': '图片',
+    'cover': '封面图',
+    'background': '背景',
+    'bg': '背景',
+    'color': '颜色',
+    'badge': '徽标',
+    'label': '标签',
+    'icon': '图标',
+    'media': '媒体',
+    'video': '视频',
+    'form': '表单',
+    'map': '地图',
+    'panel': '面板',
+    'card': '卡片',
+    'field': '字段',
+    'item': '条目',
+    'items': '条目',
+    'list': '列表',
+    'grid': '网格',
+    'search': '搜索',
+    'filter': '筛选',
+    'filters': '筛选',
+    'pagination': '分页',
+    'pager': '分页',
+    'align': '对齐',
+    'layout': '布局',
+    'style': '样式',
+    'columns': '列数',
+    'rows': '行数',
+    'count': '数量',
+    'number': '数字',
+    'suffix': '后缀',
+    'date': '日期',
+    'price': '价格',
+    'category': '分类',
+    'name': '名称',
+    'phone': '电话',
+    'mobile': '手机',
+    'email': '邮箱',
+    'address': '地址',
+    'message': '留言',
+    'company': '公司',
+    'hours': '营业时间',
+    'business': '营业',
+    'action': '提交地址',
+    'api': '接口',
+    'platform': '平台',
+    'site': '站点',
+    'id': 'ID',
+    'src': '链接',
+    'source': '来源',
+    'all': '全部',
+    'results': '结果',
+    'prev': '上一页',
+    'next': '下一页',
+    'scroll': '滚动',
+    'interval': '间隔',
+    'dots': '圆点'
+  };
+  var translated = parts.map(function(part) {
+    return tokenMap[part] || part;
+  }).join('');
+  return translated || text;
+}
+
+function applyFieldLabelTranslations(root) {
+  (root || document).querySelectorAll('[data-field-label-key]').forEach(function(label) {
+    label.textContent = _schemaLabel({ name: label.getAttribute('data-field-label-key') || label.textContent });
+  });
 }
 
 function _schemaIsVisibilityField(field) {
@@ -2899,6 +3059,7 @@ function initSchemaMounts() {
   });
 }
 initSchemaMounts();
+applyFieldLabelTranslations(document);
 if (typeof enhanceCompactSelects === 'function') enhanceCompactSelects(document);
 bindNestedSortObserver();
 
@@ -3331,13 +3492,41 @@ function _fpSetItemField(itemEl, fieldName, value) {
 <div class="text-muted small">
   {% for key, val in page.items() %}
   <div class="mb-2">
-    <label class="form-label small mb-1 text-muted">{{ key }}</label>
+    <label class="form-label small mb-1 text-muted" data-field-label-key="{{ key }}">{{ key }}</label>
     <input class="form-control form-control-sm" value="{{ val }}" readonly>
   </div>
   {% endfor %}
 </div>
 
 <script>
+(function(){
+  var map = {
+    title: '标题', subtitle: '副标题', heading: '标题', subheading: '副标题',
+    desc: '描述', description: '描述', summary: '摘要', content: '内容', body: '正文',
+    image: '图片', cover: '封面图', photo: '图片', logo: '标志图片', icon: '图标',
+    link: '链接', url: '链接', href: '链接', name: '名称', label: '标签',
+    category: '分类', price: '价格', date: '日期', phone: '电话', mobile: '手机',
+    email: '邮箱', address: '地址', company: '公司', message: '留言'
+  };
+  var tokenMap = {
+    show: '显示', hide: '隐藏', primary: '主', secondary: '副', btn: '按钮',
+    button: '按钮', text: '文字', link: '链接', url: '链接', image: '图片',
+    title: '标题', desc: '描述', form: '表单', map: '地图', panel: '面板',
+    card: '卡片', field: '字段', items: '条目', item: '条目'
+  };
+  function norm(value) {
+    return String(value || '').replace(/([a-z0-9])([A-Z])/g, '$1_$2').replace(/[\s-]+/g, '_').toLowerCase();
+  }
+  function label(value) {
+    var key = norm(value);
+    if (map[key]) return map[key];
+    return key.split('_').filter(Boolean).map(function(part) { return tokenMap[part] || part; }).join('') || value;
+  }
+  document.querySelectorAll('[data-field-label-key]').forEach(function(el) {
+    el.textContent = label(el.getAttribute('data-field-label-key'));
+  });
+})();
+
 document.getElementById('migrateForm').addEventListener('submit', function(e){
   e.preventDefault();
   var formData = new FormData(this);
