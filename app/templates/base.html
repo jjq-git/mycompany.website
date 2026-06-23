@@ -327,6 +327,15 @@
               </svg>
               媒体管理
             </a>
+            <a class="left-nav-item {% if active == 'messages' %}active{% endif %}" href="{{ url_for('core.messages') }}"
+              data-panel="messages" style="padding-left:32px" title="留言管理">
+              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              留言管理
+              {% if unread_count is defined and unread_count > 0 %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}
+            </a>
           </div>
         </div>
         <a class="left-nav-item {% if active == 'header' %}active{% endif %}" href="{{ url_for('core.header_edit') }}"
@@ -1511,6 +1520,26 @@
         if (mediaPanelFooter) mediaPanelFooter.style.display = 'none';
         var mediaPanel = document.getElementById('rightPanel');
         if (mediaPanel && !mediaPanel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
+          togglePanelCollapse();
+        }
+        return;
+      }
+      if (link.dataset.panel === 'messages') {
+        var msgSiteParam = currentSiteParam();
+        var msgQuery = [];
+        if (msgSiteParam) msgQuery.push('site=' + encodeURIComponent(msgSiteParam));
+        var msgUrl = '{{ url_for("core.messages") }}' + (msgQuery.length ? '?embed=1&' + msgQuery.join('&') : '?embed=1');
+        openPreviewTab('messages', '留言管理', msgUrl, false, '正在加载留言管理...');
+        var msgPanelTitle = document.getElementById('rightPanelTitle');
+        var msgPanelBody = document.getElementById('rightPanelBody');
+        var msgPanelFooter = document.getElementById('rightPanelFooter');
+        if (msgPanelTitle) msgPanelTitle.textContent = '留言管理';
+        if (msgPanelBody) {
+          msgPanelBody.innerHTML = '<div class="p-3 text-muted small">留言管理已在中间栏打开。</div>';
+        }
+        if (msgPanelFooter) msgPanelFooter.style.display = 'none';
+        var msgPanel = document.getElementById('rightPanel');
+        if (msgPanel && !msgPanel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
           togglePanelCollapse();
         }
         return;

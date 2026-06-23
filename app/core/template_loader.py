@@ -93,27 +93,75 @@ def scan_blocks(template_name):
                     is_data_attr = False
                     schema = None
 
-        # 自动从 data-style 派生样式变体（select/switch 类 control），
-        # 与 meta.yaml 声明的结构变体合并：meta.yaml 优先（供手动覆盖）。
+        # 自动从 data-style 派生样式变体（select/switch 类 control）。
+        # 主 template.html 和 variants/*.html 都可能声明 data-style；meta.yaml 声明
+        # 的结构变体优先，可覆盖同 key 的样式变体。
         meta_variants = meta.get('variants', [])
         meta_variant_keys = {v['key'] for v in meta_variants if isinstance(v, dict)}
         style_variants = []
-        if schema is not None:
-            all_tokens = list(schema.style_tokens or [])
-            for t in getattr(schema, 'element_style_tokens', []) or []:
-                if t not in all_tokens:
-                    all_tokens.append(t)
-            for token in all_tokens:
+
+        def _append_tokens_from_schema(parsed_schema, tokens):
+            if parsed_schema is None:
+                return
+            for t in list(parsed_schema.style_tokens or []):
+                if t not in tokens:
+                    tokens.append(t)
+            for t in getattr(parsed_schema, 'element_style_tokens', []) or []:
+                if t not in tokens:
+                    tokens.append(t)
+
+        def _style_variants_for_tokens(tokens, base_variant=None, base_label=''):
+            variants = []
+            for token in tokens:
                 sdef = style_registry.get_style_def(token)
                 if not sdef or sdef.get('control') not in ('select', 'switch'):
                     continue
                 for opt in sdef.get('options', []):
-                    style_variants.append({
-                        'key': f'{token}_{opt["value"]}',
-                        'label': opt.get('text', opt['value']),
+                    opt_value = opt['value']
+                    key = f'{token}_{opt_value}'
+                    label = opt.get('text', opt_value)
+                    if base_variant:
+                        key = f'{base_variant}_{key}'
+                        label = f'{base_label or base_variant} / {label}'
+                    variant = {
+                        'key': key,
+                        'label': label,
                         'source': 'style',
-                        'data_preset': {f'style_{token}': opt['value']},
-                    })
+                        'data_preset': {f'style_{token}': opt_value},
+                    }
+                    if base_variant:
+                        variant['base_variant'] = base_variant
+                    variants.append(variant)
+            return variants
+
+        all_tokens = []
+        _append_tokens_from_schema(schema, all_tokens)
+        style_variants.extend(_style_variants_for_tokens(all_tokens))
+
+        variants_dir = block_dir / 'variants'
+        if variants_dir.exists():
+            meta_variant_labels = {
+                v.get('key'): v.get('label', v.get('key'))
+                for v in meta_variants
+                if isinstance(v, dict) and v.get('key')
+            }
+            for variant_tpl in sorted(variants_dir.glob('*.html')):
+                try:
+                    variant_html = variant_tpl.read_text(encoding='utf-8')
+                    if block_parser.is_data_attr_block(variant_html):
+                        variant_tokens = []
+                        _append_tokens_from_schema(block_parser.parse(variant_html), variant_tokens)
+                        base_variant = variant_tpl.stem
+                        style_variants.extend(_style_variants_for_tokens(
+                            variant_tokens,
+                            base_variant=base_variant,
+                            base_label=meta_variant_labels.get(base_variant, base_variant),
+                        ))
+                except Exception:
+                    current_app.logger.exception(
+                        '解析 block 变体样式失败: %s/%s/%s',
+                        template_name, block_dir.name, variant_tpl.name
+                    )
         all_variants = meta_variants + [
             v for v in style_variants if v['key'] not in meta_variant_keys
         ]

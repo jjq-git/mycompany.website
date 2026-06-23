@@ -864,23 +864,7 @@ function _schemaListToggle(header) {
   if (item) item.classList.toggle('collapsed');
 }
 
-if (!window._schemaListDelegatedEventsBound) {
-  window._schemaListDelegatedEventsBound = true;
-  document.addEventListener('click', function(e) {
-    var removeBtn = e.target.closest && e.target.closest('.schema-list-remove');
-    if (removeBtn) {
-      e.preventDefault();
-      e.stopPropagation();
-      schemaListRemove(removeBtn);
-      return;
-    }
-    var header = e.target.closest && e.target.closest('.schema-list-item-header[data-schema-list-toggle]');
-    if (header && !e.target.closest('button,a,input,select,textarea,label')) {
-      e.preventDefault();
-      _schemaListToggle(header);
-    }
-  }, true);
-}
+{# schema-list-item 点击展开/折叠由 admin_modules.js 统一处理，避免重复注册导致 toggle 两次抵消 #}
 
 /* 删除条目后重排 index + 重命名子字段 name */
 function _schemaListReindex(editor) {
@@ -2091,7 +2075,7 @@ function addModule(type, variant, dataPreset) {
       '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle"></div>' +
     '</div>' +
     '<div class="row g-2">' +
-      '<div class="col-12"><label class="form-label small mb-1 text-muted">表单提交地址 <span class="text-muted" style="font-weight:normal;">（如 Formspree / Getform 等服务地址）</span></label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_form_action" placeholder="如 https://formspree.io/f/your-form-id"></div>' +
+      '<div class="col-12"><label class="form-label small mb-1 text-muted">表单提交地址 <span class="text-muted" style="font-weight:normal;">（留空使用平台内置留言，或填外部服务地址）</span></label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_form_action" placeholder="留空则使用平台内置留言，或填入外部服务地址"></div>' +
     '</div>' +
     '<hr class="my-2">' +
     '<div class="small fw-semibold mb-2 text-muted">表单字段</div>' +
@@ -2922,10 +2906,12 @@ var _fpImportModuleIdx = -1;      // 当前正在导入的目标模块 idx
 function openFeaturedImport(moduleIdx, addBtn) {
   _fpImportModuleIdx = moduleIdx;
 
-  // 填充数据集下拉
+  // 填充数据集下拉，同时构建 target → 完整菜单路径的映射（含父级 group target）
   var sel = document.getElementById('dsPickerDataset');
   sel.innerHTML = '<option value="">-- 请选择数据集 --</option>';
+  window._datasetPathMap = {};
   (datasetNames || []).forEach(function(ds) {
+    window._datasetPathMap[ds.target] = ds.path || ds.target;
     sel.innerHTML += '<option value="' + _schemaEsc(ds.target) + '">' + _schemaEsc(ds.label || ds.target) + '</option>';
   });
   sel.value = '';
@@ -3022,16 +3008,19 @@ function selectFeaturedItem(cacheIdx) {
 
   var dsSel = document.getElementById('dsPickerDataset');
   var dsName = dsSel ? dsSel.value : '';
+  // 用完整菜单路径（含父级 group target）生成链接
+  // 如 products/led-strip 而非仅 led-strip
+  var dsPath = (window._datasetPathMap && window._datasetPathMap[dsName]) || dsName;
   // 直接读 URL 的 lang 参数：有就加到链接里
-  // 编辑中文版（无 lang 参数）→ /preview/5/blog/slug/
-  // 编辑英文版（?lang=en）→ /preview/5/en/blog/slug/
+  // 编辑中文版（无 lang 参数）→ /preview/5/products/led-strip/slug/
+  // 编辑英文版（?lang=en）→ /preview/5/en/products/led-strip/slug/
   var dsLang = urlParams.get('lang') || '';
 
   var link = '';
   if (item.slug && dsName && dsSite) {
     link = '/preview/' + dsSite + '/';
     if (dsLang) link += dsLang + '/';
-    link += dsName + '/' + item.slug + '/';
+    link += dsPath + '/' + item.slug + '/';
   }
 
   // 构建预填数据的条目数据对象（key 名对齐 children[].name）

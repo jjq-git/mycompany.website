@@ -995,8 +995,12 @@
     }
     window._featuredImportButton = btn;
     select.innerHTML = '<option value="">-- 请选择数据集 --</option>';
+    // 构建 target → 完整菜单路径映射（含父级 group target）
+    window._datasetPathMap = {};
     datasets.forEach(function(ds) {
-      select.innerHTML += '<option value="' + esc(ds.target || ds.value || ds.key || '') + '">' + esc(ds.label || ds.target || ds.value || ds.key || '') + '</option>';
+      var target = ds.target || ds.value || ds.key || '';
+      window._datasetPathMap[target] = ds.path || target;
+      select.innerHTML += '<option value="' + esc(target) + '">' + esc(ds.label || ds.target || ds.value || ds.key || '') + '</option>';
     });
     items.innerHTML = '<div class="col-12 text-muted small text-center py-4">请先在上方选择一个数据集</div>';
     var modalEl = document.getElementById('datasetPickerModal');
@@ -1055,7 +1059,9 @@
     var dsName = (document.getElementById('dsPickerDataset') || {}).value || '';
     var siteId = (window._moduleCtx && window._moduleCtx.siteId) || new URLSearchParams(window.location.search).get('site') || '';
     var lang = (window._moduleCtx && window._moduleCtx.currentLang) || new URLSearchParams(window.location.search).get('lang') || '';
-    var link = item.slug && dsName && siteId ? ('/preview/' + siteId + '/' + (lang ? lang + '/' : '') + dsName + '/' + item.slug + '/') : '';
+    // 用完整菜单路径（含父级 group target）生成链接
+    var dsPath = (window._datasetPathMap && window._datasetPathMap[dsName]) || dsName;
+    var link = item.slug && dsName && siteId ? ('/preview/' + siteId + '/' + (lang ? lang + '/' : '') + dsPath + '/' + item.slug + '/') : '';
     var itemData = {};
     children.forEach(function(child) {
       var name = child.key || child.name;
@@ -2063,7 +2069,7 @@
           '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-12"><label class="form-label small mb-1 text-muted">表单提交地址</label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_form_action" value="' + esc(d.form_action || '') + '" placeholder="如 https://formspree.io/f/your-form-id"></div>' +
+          '<div class="col-12"><label class="form-label small mb-1 text-muted">表单提交地址</label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_form_action" value="' + esc(d.form_action || '') + '" placeholder="留空则使用平台内置留言，或填入外部服务地址"></div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-2 text-muted">表单字段</div>' +
@@ -2365,8 +2371,11 @@
   }
 
   function restoreRteSelection(rte, range) {
-    rte.focus();
+    // 先捕获 range，再 focus —— rte.focus() 会同步触发 focusin 事件处理器，
+    // 后者调用 saveRteSelection() 把 _rteSavedRange 覆盖为编辑器开头位置（0），
+    // 如果先 focus 再取值会导致视频/图片/链接始终插在顶部而非光标位置。
     var targetRange = range || _rteSavedRange;
+    rte.focus();
     if (!targetRange) return;
     var sel = window.getSelection();
     try {
@@ -2765,11 +2774,68 @@
     restoreRteSelection(rte);
     var safeUrl = String(url || '').replace(/"/g, '&quot;');
     if (!safeUrl) return;
-    document.execCommand('insertHTML', false,
-      '<video src="' + safeUrl + '" controls playsinline preload="metadata" style="max-width:100%;border-radius:6px;display:block;margin:8px 0"></video><p><br></p>'
-    );
+    // 用 contenteditable="false" 包裹视频为不可编辑原子单元。
+    // 删除按钮放在视频上方的小工具栏中，避免被浏览器原生控件遮挡。
+    var wrapper = document.createElement('div');
+    wrapper.setAttribute('contenteditable', 'false');
+    wrapper.className = 'rte-media-wrapper';
+    wrapper.style.cssText = 'display:inline-block;max-width:100%;margin:8px 0;user-select:none;vertical-align:top';
+
+    // 视频上方的小工具栏
+    var toolbar = document.createElement('div');
+    toolbar.className = 'rte-media-toolbar';
+    toolbar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
+      'padding:3px 6px;background:#f5f5f5;border:1px solid #e0e0e0;border-bottom:none;' +
+      'border-radius:6px 6px 0 0;font-size:11px;color:#888';
+    toolbar.innerHTML = '<span>🎬 视频</span>';
+
+    var delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'rte-media-del';
+    delBtn.setAttribute('contenteditable', 'false');
+    delBtn.textContent = '✕ 删除';
+    delBtn.style.cssText = 'border:1px solid #ddd;background:#fff;color:#e74c3c;' +
+      'border-radius:3px;cursor:pointer;font-size:11px;padding:1px 8px;line-height:1.6';
+    toolbar.appendChild(delBtn);
+    wrapper.appendChild(toolbar);
+
+    var video = document.createElement('video');
+    video.src = safeUrl;
+    video.setAttribute('controls', '');
+    video.setAttribute('playsinline', '');
+    video.setAttribute('preload', 'metadata');
+    video.style.cssText = 'max-width:100%;display:block;border-radius:0 0 6px 6px';
+    wrapper.appendChild(video);
+
+    // 用 Range.insertNode 直接插入 DOM 节点，避免 execCommand insertHTML
+    // 被浏览器 sanitize 掉 contenteditable 属性导致 wrapper 退化为可编辑元素。
+    var sel = window.getSelection();
+    if (sel.rangeCount) {
+      var range = sel.getRangeAt(0);
+      if (rte.contains(range.commonAncestorContainer)) {
+        range.insertNode(wrapper);
+        range.setStartAfter(wrapper);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
     syncRteBody(rte);
   }
+
+
+  // 注册在 document 上用事件委托，因为 wrapper 是动态 DOM 节点。
+  document.addEventListener('click', function(e) {
+    var delBtn = e.target.closest('.rte-media-del');
+    if (!delBtn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var wrapper = delBtn.closest('.rte-media-wrapper');
+    if (!wrapper) return;
+    var rte = wrapper.closest('.rte-editor');
+    wrapper.remove();
+    if (rte) syncRteBody(rte);
+  });
 
   function ensureAllRteUploadControls() {
     document.querySelectorAll('.rte-editor').forEach(ensureRteUploadControls);

@@ -126,11 +126,15 @@ def filter_hidden_for_nav(items):
     return result
 
 
-def collect_list_targets(items, result=None):
-    """递归收集菜单里所有 list 类型项的 {target, label}。
+def collect_list_targets(items, result=None, parent_targets=None):
+    """递归收集菜单里所有 list 类型项的 {target, label, path}。
 
     #22: 此前 routes.py 里以 _collect_list_targets/_collect_targets 内联复制了 3 份
     (逻辑逐字相同, 命名还不一致), 统一抽到这里。
+
+    parent_targets: 上级 group 类型的 target 列表，用于构建完整菜单路径。
+    如 产品(group, target=products) > Led灯条(list, target=led-strip)
+    → target='led-strip', path='products/led-strip'
     """
     if result is None:
         result = []
@@ -138,9 +142,19 @@ def collect_list_targets(items, result=None):
         if not isinstance(it, dict):
             continue
         if it.get('type') == 'list' and it.get('target'):
-            result.append({'target': it['target'], 'label': it.get('label', it['target'])})
+            # 将父级 group target 与当前 list target 拼接成完整菜单路径
+            path_parts = (parent_targets or []) + [it['target']]
+            result.append({
+                'target': it['target'],
+                'label': it.get('label', it['target']),
+                'path': '/'.join(path_parts),
+            })
         if it.get('children'):
-            collect_list_targets(it['children'], result)
+            # 递归进入子级时，若当前项是 group 且有 target，则追加到父路径
+            child_parents = list(parent_targets or [])
+            if it.get('type') == 'group' and it.get('target'):
+                child_parents.append(it['target'])
+            collect_list_targets(it['children'], result, child_parents)
     return result
 
 

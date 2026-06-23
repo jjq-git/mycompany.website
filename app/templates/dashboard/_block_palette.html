@@ -63,25 +63,105 @@
   // 变体缩略图（v 为变体对象，含 source/data_preset 等元数据）
   function buildVariantThumb(blockType, variantKey, v) {
     v = v || {};
+    function miniGrid(count, extraClass) {
+      var cols = '';
+      for (var i = 0; i < count; i++) cols += '<div class="mini-col"></div>';
+      return '<div class="mini-grid ' + (extraClass || '') + '">' + cols + '</div>';
+    }
+    function miniStats(count) {
+      var stats = '';
+      for (var i = 0; i < count; i++) stats += '<div class="mini-stat"><div class="mini-num"></div><div class="mini-label"></div></div>';
+      return '<div class="mini-stat-grid">' + stats + '</div>';
+    }
+    function miniLogos(count) {
+      var logos = '';
+      for (var i = 0; i < count; i++) logos += '<div class="mini-logo"></div>';
+      return '<div class="mini-logo-grid">' + logos + '</div>';
+    }
+    function miniCarousel(count) {
+      var cards = '';
+      for (var i = 0; i < count; i++) cards += '<div class="mini-carousel-card"><div class="mini-img"></div><div class="mini-line"></div></div>';
+      return '<div class="mini-carousel">' + cards + '</div>';
+    }
+    function miniCards(count, gap, radius) {
+      var cards = '';
+      for (var i = 0; i < count; i++) cards += '<div class="mini-card" style="' + (radius ? 'border-radius:' + radius : '') + '"><div class="mini-img"></div><div class="mini-line"></div><div class="mini-line short"></div></div>';
+      return '<div class="mini-card-grid" style="' + (gap ? 'gap:' + gap : '') + '">' + cards + '</div>';
+    }
+    function miniDataCards(count) {
+      var cards = '';
+      for (var i = 0; i < count; i++) cards += '<div class="mini-data-card"><div class="mini-img"></div><div class="mini-body"><div class="mini-line"></div><div class="mini-line short"></div><div class="mini-tag"></div></div></div>';
+      return '<div class="mini-data-grid">' + cards + '</div>';
+    }
+    function miniFeatureCards(count) {
+      var cards = '';
+      for (var i = 0; i < count; i++) cards += '<div class="mini-feature-card"><div class="mini-icon"></div><div class="mini-line"></div><div class="mini-line short"></div></div>';
+      return '<div class="mini-feature-grid">' + cards + '</div>';
+    }
+    function miniStepCards(count, numbered) {
+      var cards = '';
+      for (var i = 0; i < count; i++) cards += '<div class="mini-step-card"><div class="' + (numbered ? 'mini-step-num' : 'mini-step-dot') + '"></div><div class="mini-line"></div><div class="mini-line short"></div></div>';
+      return '<div class="mini-step-grid">' + cards + '</div>';
+    }
+    function miniMediaText(dir) {
+      var vertical = dir === 'column';
+      var reverse = dir === 'row-reverse';
+      var cls = vertical ? ' mini-card-vertical' : (reverse ? ' mini-card-reverse' : '');
+      return '<div class="mini-card-horizontal' + cls + '"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:80%;height:5px"></div><div class="mini-line" style="width:70%;height:3px"></div><div class="mini-line" style="width:55%;height:3px"></div></div></div>';
+    }
+    function miniHeroDir(dir) {
+      var cls = dir === 'column' ? ' mini-hero-dir-vertical' : (dir === 'row-reverse' ? ' mini-hero-dir-reverse' : '');
+      return '<div class="mini-hero-dir' + cls + '"><div class="mini-hero-copy"><div class="mini-title"></div><div class="mini-sub"></div><div class="mini-actions"></div></div><div class="mini-hero-media"></div></div>';
+    }
+    function miniHeroAlign(align) {
+      var itemStyle = align === 'right' ? 'align-items:flex-end;text-align:right' : (align === 'left' ? 'align-items:flex-start;text-align:left' : 'align-items:center;text-align:center');
+      return '<div class="mini-hero-text-overlay"><div class="mini-hero-align-copy" style="' + itemStyle + '"><div class="mini-title"></div><div class="mini-sub"></div><div class="mini-btn"></div></div></div>';
+    }
+    function miniContactFormLayout(dir) {
+      var cls = dir === 'column' ? ' mini-contact-form-vertical' : (dir === 'row-reverse' ? ' mini-contact-form-reverse' : '');
+      return '<div class="mini-contact-form' + cls + '"><div class="mini-map"></div><div class="mini-form-panel"><div class="mini-field"></div><div class="mini-field"></div><div class="mini-field tall"></div><div class="mini-btn"></div></div></div>';
+    }
+    function miniContactInfoCards() {
+      var cards = '';
+      for (var i = 0; i < 3; i++) cards += '<div class="mini-contact-card"><div class="mini-icon"></div><div class="mini-line"></div><div class="mini-line short"></div></div>';
+      return '<div class="mini-contact-card-grid">' + cards + '</div>';
+    }
     // 样式型变体：按 token 类型泛化生成缩略图，不再逐个 block 硬编码
     if (v.source === 'style') {
       var colsMatch = variantKey.match(/^cols_(\d+)$/);
-      if (colsMatch) {
-        var n = parseInt(colsMatch[1]);
-        var cols = ''; for (var i = 0; i < n; i++) cols += '<div class="mini-col"></div>';
-        return '<div class="mini-grid">' + cols + '</div>';
+      var nestedColsMatch = variantKey.match(/_cols_(\d+)$/);
+      if (colsMatch || nestedColsMatch) {
+        var n = parseInt((colsMatch || nestedColsMatch)[1]);
+        if (blockType === 'data_grid') return miniDataCards(n);
+        if (blockType === 'feature_grid') return miniFeatureCards(n);
+        if (blockType === 'process_steps') return miniStepCards(n, variantKey.indexOf('numbered_') === 0);
+        if (blockType === 'stat_counter') return miniStats(n);
+        if (blockType === 'logo_cloud') return miniLogos(n);
+        if (blockType === 'featured_picks' || blockType === 'image_carousel') return miniCarousel(n);
+        return miniGrid(n);
       }
       var textAlignMatch = variantKey.match(/^text-align_(.+)$/);
       if (textAlignMatch) {
         var align = textAlignMatch[1];
-        return '<div class="mini-text-block" style="text-align:' + align + '"><div class="mini-w80" style="margin-' + (align === 'right' ? 'left' : align === 'center' ? 'left' : 'right') + ':auto"></div><div class="mini-w70"></div><div class="mini-w60"></div></div>';
+        if (blockType === 'hero_banner') return miniHeroAlign(align);
+        var style = align === 'center' ? 'align-items:center' : (align === 'right' ? 'align-items:flex-end' : 'align-items:flex-start');
+        return '<div class="mini-text-block" style="' + style + '"><div class="mini-w80"></div><div class="mini-w70"></div><div class="mini-w60"></div></div>';
       }
       var dirMatch = variantKey.match(/^dir_(.+)$/);
-      if (dirMatch) {
-        var flip = dirMatch[1] === 'row-reverse';
-        var imgStyle = flip ? 'order:2' : '';
-        var textStyle = flip ? 'order:1' : '';
-        return '<div class="mini-card-horizontal"><div class="mini-img" style="' + imgStyle + '"></div><div class="mini-text" style="' + textStyle + '"><div class="mini-line" style="width:80%;height:5px"></div><div class="mini-line" style="width:70%;height:3px"></div></div></div>';
+      var nestedDirMatch = variantKey.match(/_dir_(.+)$/);
+      if (dirMatch || nestedDirMatch) {
+        var dirValue = (dirMatch || nestedDirMatch)[1];
+        if (blockType === 'hero_banner') return miniHeroDir(dirValue);
+        if (blockType === 'contact_form') return miniContactFormLayout(dirValue);
+        return miniMediaText(dirValue);
+      }
+      var gapMatch = variantKey.match(/^card-gap_(.+)$/);
+      if (gapMatch) {
+        return miniCards(4, gapMatch[1], '');
+      }
+      var radiusMatch = variantKey.match(/^card-radius_(.+)$/);
+      if (radiusMatch) {
+        return miniCards(4, '', radiusMatch[1]);
       }
       // 未知样式变体回退
       return '<div class="mini-section-title"><div class="mini-tag"></div><div class="mini-title-line"></div><div class="mini-desc"></div></div>';
@@ -105,10 +185,32 @@
         bento: function(){ return '<div class="mini-bento"><div class="mini-cell"></div><div class="mini-cell"></div><div class="mini-cell"></div><div class="mini-cell"></div></div>'; }
       },
       data_grid: {
-        grid_3: function(){ return '<div class="mini-grid"><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div></div>'; }
+        grid_3: function(){ return miniDataCards(3); },
+        default: function(){ return miniDataCards(3); }
+      },
+      feature_grid: {
+        default: function(){ return miniFeatureCards(3); }
+      },
+      featured_picks: {
+        default: function(){ return miniCarousel(3); }
+      },
+      text_content: {
+        default: function(){ return '<div class="mini-text-block"><div class="mini-w80"></div><div class="mini-w90"></div><div class="mini-w70"></div><div class="mini-w60"></div></div>'; }
+      },
+      stat_counter: {
+        default: function(){ return miniStats(4); }
+      },
+      logo_cloud: {
+        default: function(){ return miniLogos(5); }
+      },
+      contact_form: {
+        default: function(){ return miniContactFormLayout('row'); }
+      },
+      item_detail: {
+        default: function(){ return miniMediaText('row'); }
       },
       contact_info: {
-        cards: function(){ return '<div class="mini-grid"><div class="mini-col"></div><div class="mini-col"></div><div class="mini-col"></div></div>'; },
+        cards: function(){ return miniContactInfoCards(); },
         list: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-thumb"></div><div class="mini-line"></div></div>'; return '<div class="mini-list-v">'+h+'</div>'; }
       },
       process_steps: {
@@ -117,7 +219,7 @@
         numbered: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-num"></div><div class="mini-line"></div></div>'; return '<div class="mini-steps-numbered">'+h+'</div>'; }
       },
       image_carousel: {
-        default: function(){ var imgs=''; for(var i=0;i<4;i++) imgs+='<div class="mini-col" style="aspect-ratio:4/3"></div>'; return '<div class="mini-grid">'+imgs+'</div>'; }
+        default: function(){ return miniCarousel(4); }
       }
     };
     var blockBuilders = builders[blockType];
@@ -132,6 +234,51 @@
       return '<div class="mini-list-v">'+rows+'</div>';
     }
     return '<div class="mini-section-title"><div class="mini-tag"></div><div class="mini-title-line"></div><div class="mini-desc"></div></div>';
+  }
+
+  function variantDisplayLabel(blockType, v) {
+    if (!v) return '';
+    var key = v.key || '';
+    var colsMatch = key.match(/(?:^|_)cols_(\d+)$/);
+    if (colsMatch) {
+      var colsLabel = (blockType === 'image_carousel' || blockType === 'featured_picks') ? colsMatch[1] + '张/屏' : colsMatch[1] + '列';
+      if (v.base_variant) {
+        var baseNames = { numbered: '数字序号', horizontal: '横向排列', vertical: '纵向时间轴' };
+        return (baseNames[v.base_variant] || v.base_variant) + ' / ' + colsLabel;
+      }
+      return colsLabel;
+    }
+    var commonStructural = {
+      contact_info: {
+        cards: '卡片网格',
+        list: '纵向列表'
+      },
+      process_steps: {
+        horizontal: '横向排列',
+        vertical: '纵向时间轴',
+        numbered: '数字序号'
+      }
+    };
+    if (commonStructural[blockType] && commonStructural[blockType][key]) {
+      return commonStructural[blockType][key];
+    }
+    if (blockType === 'contact_form') {
+      var contactLabels = {
+        dir_row: '地图左表单右',
+        'dir_row-reverse': '表单左地图右',
+        dir_column: '地图上表单下'
+      };
+      if (contactLabels[key]) return contactLabels[key];
+    }
+    if (blockType === 'hero_banner') {
+      var heroLabels = {
+        dir_row: '媒体左文案右',
+        'dir_row-reverse': '文案左媒体右',
+        dir_column: '媒体上文案下'
+      };
+      if (heroLabels[key]) return heroLabels[key];
+    }
+    return v.label || v.key;
   }
 
   function getBlockLibrary() {
@@ -210,7 +357,11 @@
 
     // 建立变体元数据索引（避免 onclick 中传 JSON 的转义地狱）
     blk.variants.forEach(function(v) {
-      _variantMeta[v.key] = { source: v.source || 'structural', data_preset: v.data_preset || null };
+      _variantMeta[v.key] = {
+        source: v.source || 'structural',
+        data_preset: v.data_preset || null,
+        base_variant: v.base_variant || null
+      };
     });
 
     var html = '<div class="variant-section-title">' + blk.name + ' — ' + variantCount + ' 种排版变体</div>';
@@ -218,7 +369,7 @@
     blk.variants.forEach(function(v) {
       html += '<div class="variant-preview-card" data-block-type="' + blk.type + '" data-variant="' + v.key + '" onclick="window._selectVariant(this, \'' + blk.type + '\', \'' + v.key + '\')">';
       html += '<div class="variant-preview-thumb">' + buildVariantThumb(blk.type, v.key, v) + '</div>';
-      html += '<div class="variant-preview-label">' + (v.label || v.key) + '</div>';
+      html += '<div class="variant-preview-label">' + variantDisplayLabel(blk.type, v) + '</div>';
       html += '</div>';
     });
     html += '</div>';
@@ -241,7 +392,7 @@
     var vlabel = variantKey;
     if (blk) {
       var v = blk.variants.find(function(x) { return x.key === variantKey; });
-      if (v) vlabel = v.label || v.key;
+      if (v) vlabel = variantDisplayLabel(blockType, v);
     }
     var btn = document.getElementById('confirmAddBtn');
     if (btn) btn.disabled = false;
@@ -259,7 +410,8 @@
     if (hasVariants && !selectedVariantKey) return;
 
     var type = selectedBlockType;
-    var variant = selectedVariantKey || 'default';
+    var meta = _variantMeta[selectedVariantKey] || {};
+    var variant = meta.base_variant || selectedVariantKey || 'default';
     var dataPreset = selectedDataPreset;
     // 关闭弹框
     var modalEl = document.getElementById('blockPaletteModal');
