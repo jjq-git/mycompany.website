@@ -288,7 +288,7 @@ Bootstrap 5.3 覆盖大部分样式，自定义只做三栏布局和组件微调
 | --- | --- |
 | 左侧栏 | 站点页面列表（`_sidebar.html`，240px） |
 | 中间预览 | iframe 实时预览（`/dashboard/preview/<site_id>/<page_name>`），设备切换器（电脑/平板/手机） |
-| 右侧面板 | 手风琴式模块卡片列表（上移/下移/换变体/删除）+ 「添加模块」滑出面板（`_block_palette.html`）+ 底部悬浮保存栏 |
+| 右侧面板 | 手风琴式模块卡片列表（上移/下移/换变体/删除）+ 「添加模块」Bootstrap modal（通用 `_block_palette.html` / `#blockPaletteModal`）+ 底部悬浮保存栏 |
 
 ### 5.2 模块列表（手风琴卡片）
 
@@ -319,7 +319,7 @@ generateSchemaForm(prefix, schema, mdata)  → 递归生成所有字段的编辑
 
 ### 5.5 变体系统
 
-每个 block 可声明多个变体（`meta.yaml` 的 `variants` 字段 + 自动从 style_tokens 派生的样式变体）。变体切换通过 `openVariantSwitch(idx)` → `_block_palette.html` 弹框实现。`addModule(type, variant, dataPreset)` 接收预设数据（如 `{style_cols: '3'}`）初始化新模块。
+每个 block 可声明多个变体（`meta.yaml` 的 `variants` 字段 + 自动从 `data-style` / `style_tokens` 派生的样式变体）。`template.html` 和 `variants/*.html` 中声明的 `data-style` 都会参与扫描；`meta.yaml` 结构变体优先于同 key 的自动样式变体。变体切换通过 `openVariantSwitch(idx)` → `_block_palette.html` / `#blockPaletteModal` 弹框实现。`addModule(type, variant, dataPreset)` 接收预设数据（如 `{style_cols: '3'}`）初始化新模块。
 
 ### 5.6 共享模块代码（admin_modules.js）
 
