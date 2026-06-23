@@ -1,0 +1,43 @@
+title: "Products"
+description: "Browse Nova AI models, developer tools, and enterprise products."
+modules:
+  - type: section_title
+    variant: null
+    order: 1
+    data:
+      tag: "Products"
+      title: "Choose the right AI product"
+      desc: "Filter by category or tag, compare prices, and open detail pages from the product dataset."
+      btn_text: ""
+      btn_url: ""
+
+  - type: data_grid
+    variant: null
+    order: 2
+    data:
+      title: "Product catalog"
+      dataset: products
+      max_items: 24
+      show_filters: "true"
+      show_pagination: "true"
+      pagination_style: "page_numbers"
+      items_per_page: "6"
+      pager_align: "center"
+
+  - type: highlight_card
+    variant: null
+    order: 3
+    data:
+      image_position: right
+      tag: "Enterprise Ready"
+      title: "Governance for production AI"
+      desc: "Move from prototypes to managed workflows with permissions, evaluations, logging, and cost controls."
+      image: "/static/img/highlight-enterprise.svg"
+      features:
+        - text: "Centralized model and key management"
+        - text: "Audit trails and usage reporting"
+        - text: "Evaluation suites for release checks"
+      primaryBtn: "Contact Sales"
+      primaryLink: "/contact/"
+      secondaryBtn: "View Pricing"
+      secondaryLink: "/pricing/"
