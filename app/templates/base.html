@@ -1241,7 +1241,7 @@
       activeTabKey = key;
       renderPreviewTabs();
       updatePreviewUrlBar(url);
-      setPreviewChromeMode(key === 'seo' || key === 'media');
+      setPreviewChromeMode(key === 'seo' || key === 'media' || key === 'messages');
       var frame = document.getElementById('previewFrame');
       if (frame) {
         frame.dataset.previewUrl = url;

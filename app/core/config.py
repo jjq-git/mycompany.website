@@ -58,7 +58,7 @@ def load_config(override=None):
         'OUTPUT_DIR': str(ROOT / 'output'),
 
         # 平台
-        'PLATFORM_DOMAIN': os.environ.get('PLATFORM_DOMAIN', 'mycompany.website'),
+        'PLATFORM_DOMAIN': os.environ.get('PLATFORM_DOMAIN', ''),  # 生产部署时必须在 .env 中设置真实域名
 
         # data-* 声明式 block 总开关。已转 9/14 个 block + 现有模块编辑器统一走 schema
         # 表单（新旧键名一致），默认开。设 ENABLE_DATA_ATTR_BLOCKS=0 可回退到旧 Jinja2

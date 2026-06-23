@@ -25,7 +25,7 @@ warn()  { echo -e "${YELLOW}[auto-reload]${NC} $(date '+%H:%M:%S') $*"; }
 
 # ── 配置 ─────────────────────────────────────────────────────────────
 POLL_INTERVAL=${POLL_INTERVAL:-10}      # 检查间隔（秒）
-BRANCH=${BRANCH:-dev-20260527}         # 监控的分支
+BRANCH=${BRANCH:-jan}                 # 监控的分支
 FLASK_HOST=${FLASK_HOST:-0.0.0.0}
 FLASK_PORT=${FLASK_PORT:-5000}
 

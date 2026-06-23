@@ -29,11 +29,12 @@ _SCHEMA_CACHE = {}
 def _get_platform_base_url():
     """返回平台后端的基础 URL, 供静态站点 contact_form 表单提交.
 
-    生产环境从 PLATFORM_DOMAIN 配置拼 https 地址, 开发环境回退 localhost.
+    开发环境始终回退 localhost, 避免把表单指到生产域名.
+    生产环境从 PLATFORM_DOMAIN 配置拼 https 地址.
     """
-    domain = current_app.config.get('PLATFORM_DOMAIN', '')
-    if current_app.debug and not domain:
+    if current_app.debug:
         return 'http://localhost:5000'
+    domain = current_app.config.get('PLATFORM_DOMAIN', '')
     if domain:
         return f'https://{domain}'
     return 'http://localhost:5000'
@@ -226,7 +227,7 @@ def _site_base_url(site=None, base_url=''):
     if base:
         return base
     if site is not None and getattr(site, 'slug', None):
-        domain = current_app.config.get('PLATFORM_DOMAIN', 'mycompany.website').strip().strip('/')
+        domain = current_app.config.get('PLATFORM_DOMAIN', '').strip().strip('/')
         return f'https://{site.slug}.{domain}'
     return ''
 

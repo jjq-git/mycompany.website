@@ -504,7 +504,7 @@ def inject_context():
         # 收集所有层级中 type=list 的菜单项（供数据网格模块选择数据源）
         ctx['all_list_datasets'] = menu_lib.collect_list_targets(normalized)  # #22
 
-    ctx['platform_domain'] = current_app.config.get('PLATFORM_DOMAIN', 'mycompany.website')
+    ctx['platform_domain'] = current_app.config.get('PLATFORM_DOMAIN', '')
 
     # 主题主色（用于覆盖 Bootstrap 默认蓝色 #0d6efd）
     if site and site_id:
@@ -1648,7 +1648,8 @@ def message_mark_read(msg_id):
     if msg:
         msg.is_read = True
         db.session.commit()
-    return redirect(url_for('core.messages'))
+    embed = request.form.get('_embed', '')
+    return redirect(url_for('core.messages', embed=embed) if embed else url_for('core.messages'))
 
 
 @bp.route('/messages/<int:msg_id>/spam', methods=['POST'])
@@ -1660,7 +1661,8 @@ def message_mark_spam(msg_id):
         msg.is_spam = True
         db.session.commit()
         flash('已标记为垃圾')
-    return redirect(url_for('core.messages'))
+    embed = request.form.get('_embed', '')
+    return redirect(url_for('core.messages', embed=embed) if embed else url_for('core.messages'))
 
 
 @bp.route('/products')
