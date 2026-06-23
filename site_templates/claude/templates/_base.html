@@ -450,7 +450,7 @@ document.addEventListener('click', function(e) {
 
     <div class="footer-bottom">
       {% set copyright_text = footer_cfg.get('copyright') or settings.company.name or t.company %}
-      <span class="footer-bottom__copyright">&copy; {{ year }} {{ copyright_text }}. All rights reserved.</span>
+      <span class="footer-bottom__copyright">&copy; {{ year }} {{ copyright_text }}. {{ t.get('footer', {}).get('copyright', 'All rights reserved.') if t else 'All rights reserved.' }}</span>
       {% set icp_text = footer_cfg.get('icp') or (settings.company and settings.company.icp) %}
       {% if icp_text %}<span class="footer-bottom__copyright">{{ icp_text }}</span>{% endif %}
     </div>
@@ -635,7 +635,13 @@ function initFilterableGrids() {
     if (searchPanel) searchPanel.hidden = !showSearch;
 
     var state = { category: '', tag: '', query: '' };
-    var allLabel = panel ? (panel.getAttribute('data-all-label') || 'All') : 'All';
+    var filterLabels = {
+      'zh-CN': { all: '全部' },
+      'zh-TW': { all: '全部' },
+      'en': { all: 'All' }
+    };
+    var pageLang = document.documentElement.getAttribute('lang') || 'en';
+    var allLabel = panel ? (panel.getAttribute('data-all-label') || (filterLabels[pageLang] || filterLabels.en).all) : (filterLabels[pageLang] || filterLabels.en).all;
     cards.forEach(function(card) {
       card._dgSearchText = (card.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
     });

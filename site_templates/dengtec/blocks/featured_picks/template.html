@@ -9,8 +9,6 @@
     </div>
 
     <div class="fp-viewport">
-      <button class="fp-arrow fp-arrow--left" aria-label="上一页">‹</button>
-      <button class="fp-arrow fp-arrow--right" aria-label="下一页">›</button>
       <div data-name="items" data-type="list" class="fp-track">
         <a data-name="item" data-type="group" data-href="link" class="fp-card" target="_blank" rel="noopener">
           <div class="fp-card-img-wrap">
@@ -22,7 +20,6 @@
             <span data-name="badge_bg" data-type="text" class="fp-badge-bg-val" hidden></span>
             <h3 data-name="title" data-type="text" class="fp-card-title">卡片标题</h3>
             <p data-name="desc" data-type="textarea" class="fp-card-desc">卡片描述文字，简要介绍推荐内容</p>
-            <!-- link：值注入到父级 <a data-href="link">，元素本身 hidden 不可见 -->
             <span data-name="link" data-type="url" class="fp-link-val" hidden></span>
             <span class="fp-card-link-text"><span data-i18n="actions.learnMore">了解更多</span><span aria-hidden="true">→</span></span>
           </div>
@@ -31,9 +28,7 @@
     </div>
 
     <div class="fp-dots"></div>
-    <!-- 轮播配置：hidden div 供解析器注册 schema 字段，JS 运行时读取 -->
     <div class="fp-config" hidden>
-      <span data-name="images_per_row" data-type="text" class="fp-cfg-row">3</span>
       <span data-name="auto_scroll" data-type="text" class="fp-cfg-auto">true</span>
       <span data-name="scroll_interval" data-type="text" class="fp-cfg-interval">4</span>
       <span data-name="show_dots" data-type="text" class="fp-cfg-dots">true</span>
@@ -44,10 +39,9 @@
     (function(){
       var section = document.currentScript.parentElement;
 
-      // 从 data-style 注入的 --dir CSS 变量读取布局模式，应用对应 class
       function applyLayout() {
         var style = section.getAttribute('style') || '';
-        var layout = 'column'; // 默认上图下文（对齐 --dir 的 column 值）
+        var layout = 'column';
         var m = style.match(/--dir:\s*(\S+?)(?:;|$)/);
         if (m) {
           var raw = m[1].replace(/['"]/g, '').replace(/;.*$/, '').trim();
@@ -59,62 +53,42 @@
         });
       }
 
-      // 逐条目应用角标颜色覆盖（每张卡片的角标可以有独立配色）
       function applyBadgeOverrides() {
         section.querySelectorAll('.fp-card').forEach(function(card) {
           var badge = card.querySelector('.fp-badge');
           var colorEl = card.querySelector('.fp-badge-color-val');
           var bgEl = card.querySelector('.fp-badge-bg-val');
           if (!badge) return;
-
-          // 空文本 → 隐藏角标
           var text = (badge.textContent || '').trim();
-          if (!text) {
-            badge.style.display = 'none';
-            return;
-          }
+          if (!text) { badge.style.display = 'none'; return; }
           badge.style.display = '';
-
-          // 逐条目覆盖颜色（留空则走 CSS 变量默认值）
-          if (colorEl && colorEl.textContent.trim()) {
-            badge.style.color = colorEl.textContent.trim();
-          }
-          if (bgEl && bgEl.textContent.trim()) {
-            badge.style.background = bgEl.textContent.trim();
-          }
-
-          // 清理注入值后的隐藏 span（避免残留文本节点）
+          if (colorEl && colorEl.textContent.trim()) badge.style.color = colorEl.textContent.trim();
+          if (bgEl && bgEl.textContent.trim()) badge.style.background = bgEl.textContent.trim();
           if (colorEl) colorEl.remove();
           if (bgEl) bgEl.remove();
         });
       }
 
-      // 无链接时移除 href，卡片退化为纯展示
       section.querySelectorAll('.fp-card').forEach(function(card) {
         var href = card.getAttribute('href');
         if (!href || href === '#' || href === '/') {
-          card.removeAttribute('href');
-          card.removeAttribute('target');
-          card.style.cursor = 'default';
-        });
+          card.removeAttribute('href'); card.removeAttribute('target'); card.style.cursor = 'default';
+        }
       });
 
-      // ── 读取隐藏配置（参考 image_carousel 的 readCfg）──
       var readCfg = function(cls, def) {
         var el = section.querySelector('.fp-cfg-' + cls);
         var v = el ? (el.textContent || '').trim() : '';
         return v || def;
       };
-      // 优先从内容字段 images_per_row 读取，兜底从 data-style --cols CSS 变量读取
-      var perRow = parseInt(readCfg('row', '')) || 3;
-      if (!perRow || perRow < 1) {
-        var styleAttr = section.getAttribute('style') || '';
-        var cm = styleAttr.match(/--cols:\s*(\S+?)(?:;|$)/);
-        if (cm) {
-          var rawCols = parseInt(cm[1].replace(/['"]/g, '').trim());
-          if (rawCols >= 1 && rawCols <= 6) perRow = rawCols;
-        }
-        if (!perRow || perRow < 1) perRow = 3;
+
+      // 每行张数：从 data-style --cols 读取，兜底 3
+      var perRow = 3;
+      var styleAttr = section.getAttribute('style') || '';
+      var cm = styleAttr.match(/--cols:\s*(\S+?)(?:;|$)/);
+      if (cm) {
+        var rawCols = parseInt(cm[1].replace(/['"]/g, '').trim());
+        if (rawCols >= 1 && rawCols <= 6) perRow = rawCols;
       }
       var autoScroll = readCfg('auto', 'true') !== 'false';
       var intervalMs = (parseInt(readCfg('interval', '4')) || 4) * 1000;
@@ -133,10 +107,19 @@
       var current = 0;
       var autoTimer = null;
 
-      // 每张卡片宽度：均分视口
-      cards.forEach(function(c){ c.style.flex = '0 0 ' + (100 / perRow) + '%'; });
+      // ── CSS gap 值（dengtec: 1.5rem = 24px 默认，与 CSS --fp-card-gap 一致）──
+      var gapPx = 24;
 
-      // 生成圆点导航（由 show_dots 控制是否显示）
+      // 每张卡片 = 均分视口宽度并扣除 gap 占位
+      var basisExpr = 'calc(' + (100/perRow).toFixed(4) + '% - ' + ((perRow-1)*gapPx/perRow) + 'px)';
+      for (var i = 0; i < cards.length; i++) {
+        cards[i].style.flex = '0 0 ' + basisExpr;
+      }
+
+      // 每次滑动 = 一张卡 + 一个 gap
+      var stepPercent = (100/perRow).toFixed(4);
+      var stepGap = (gapPx/perRow);
+
       if (showDots && totalPages > 1) {
         for (var i = 0; i < totalPages; i++) {
           var dot = document.createElement('button');
@@ -149,18 +132,16 @@
         dotsContainer.style.display = 'none';
       }
 
-      // 仅一页时隐藏箭头
       if (totalPages <= 1) {
         if (arrowLeft) arrowLeft.style.display = 'none';
         if (arrowRight) arrowRight.style.display = 'none';
       }
 
-      // 左右箭头点击（点击后重置自动滚动计时）
       if (arrowLeft) arrowLeft.addEventListener('click', function(){ goTo(current > 0 ? current - 1 : totalPages - 1); resetAutoScroll(); });
       if (arrowRight) arrowRight.addEventListener('click', function(){ goTo(current < totalPages - 1 ? current + 1 : 0); resetAutoScroll(); });
 
       function updateUI() {
-        track.style.transform = 'translateX(' + (-current * (100 / perRow)) + '%)';
+        track.style.transform = 'translateX(calc(' + (-current) + ' * (' + stepPercent + '% + ' + stepGap + 'px)))';
         dotsContainer.querySelectorAll('.fp-dot').forEach(function(d, i){ d.classList.toggle('fp-dot--active', i === current); });
         if (arrowLeft) arrowLeft.style.opacity = current === 0 ? '0.25' : '';
         if (arrowRight) arrowRight.style.opacity = current === totalPages - 1 ? '0.25' : '';
@@ -171,11 +152,9 @@
       function stopAutoScroll() { if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } }
       function resetAutoScroll() { stopAutoScroll(); startAutoScroll(); }
 
-      // 触摸滑动支持（移动端手势，滑动后重置自动滚动）
       var touchStartX = 0, touchStartY = 0;
       track.addEventListener('touchstart', function(e){
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
+        touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY;
       }, {passive: true});
       track.addEventListener('touchend', function(e){
         var dx = e.changedTouches[0].clientX - touchStartX;

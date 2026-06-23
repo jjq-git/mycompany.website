@@ -21,11 +21,11 @@
   /* Colors - Neutral */
   --color-bg: #ffffff;
   --color-bg-secondary: #f8fafc;
-  --color-bg-dark: #0f172a;
+  --color-bg-dark: #000;
   --color-bg-darker: #020617;
   --color-text: #1e293b;
   --color-text-secondary: #64748b;
-  --color-text-light: #94a3b8;
+  --color-text-light: #bdbdbd;
   --color-text-inverse: #ffffff;
   --color-border: #e2e8f0;
   --color-border-dark: #cbd5e1;
@@ -1694,7 +1694,7 @@ h6 { font-size: var(--font-size-md); }
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 2;
-  text-align: center;
+  text-align: var(--text-align, center);
   width: 100%;
   max-width: 900px;
   padding: var(--spacing-xl);
@@ -1723,7 +1723,20 @@ h6 { font-size: var(--font-size-md); }
   align-items: center;
   justify-content: center;
   gap: var(--spacing-md);
+  width: 100%;
 }
+.hero-banner[style*="--text-align: left"] .hero-banner-subtitle,
+.hero-banner[style*="--text-align:left"] .hero-banner-subtitle { margin-left: 0; margin-right: auto; }
+.hero-banner[style*="--text-align: center"] .hero-banner-subtitle,
+.hero-banner[style*="--text-align:center"] .hero-banner-subtitle { margin-left: auto; margin-right: auto; }
+.hero-banner[style*="--text-align: right"] .hero-banner-subtitle,
+.hero-banner[style*="--text-align:right"] .hero-banner-subtitle { margin-left: auto; margin-right: 0; }
+.hero-banner[style*="--text-align: left"] .hero-banner-actions,
+.hero-banner[style*="--text-align:left"] .hero-banner-actions { justify-content: flex-start; }
+.hero-banner[style*="--text-align: center"] .hero-banner-actions,
+.hero-banner[style*="--text-align:center"] .hero-banner-actions { justify-content: center; }
+.hero-banner[style*="--text-align: right"] .hero-banner-actions,
+.hero-banner[style*="--text-align:right"] .hero-banner-actions { justify-content: flex-end; }
 
 .hero-banner-actions .btn-primary {
   background-color: var(--color-primary);
@@ -5961,6 +5974,7 @@ h6 { font-size: var(--font-size-md); }
 /* ========== 轮播轨道：flex 布局，transition 实现平滑滚动 ========== */
 .fp-track {
   display: flex;
+  gap: var(--fp-card-gap);
   transition: transform 0.5s ease;
 }
 

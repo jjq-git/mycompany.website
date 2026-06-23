@@ -13,7 +13,7 @@
         <span class="module-list-search-icon" aria-hidden="true">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         </span>
-        <input class="module-list-search dg-search-input" type="search" placeholder="Search..." autocomplete="off">
+        <input class="module-list-search dg-search-input" type="search" data-i18n-placeholder="filters.search" placeholder="Search..." autocomplete="off">
       </label>
       <span class="module-list-count dg-search-count"></span>
     </div>
@@ -22,11 +22,11 @@
     <div data-name="filters" data-type="group" class="dg-filter-panel" data-filter-for="{dataset}">
       <span data-name="show_filters" data-type="text" data-filter-key="show_filters" hidden>true</span>
       <div class="dg-filter-group">
-        <span class="dg-filter-label">Category</span>
+        <span class="dg-filter-label" data-i18n="filters.category">Category</span>
         <div class="dg-filter-options" data-filter-group="category"></div>
       </div>
       <div class="dg-filter-group">
-        <span class="dg-filter-label">Tags</span>
+        <span class="dg-filter-label" data-i18n="filters.tags">Tags</span>
         <div class="dg-filter-options" data-filter-group="tag"></div>
       </div>
     </div>
@@ -55,7 +55,7 @@
     </div>
 
     <!-- 筛选空状态 -->
-    <p class="dg-empty-state" data-filter-empty="{dataset}" hidden>&#26080;&#25968;&#25454;</p>
+    <p class="dg-empty-state" data-filter-empty="{dataset}" data-i18n="filters.empty" hidden>No data</p>
 
     <!-- 分页配置区：data-name span 由 block_renderer 注入值并清除 data-name 属性，
          data-pager-key 不被渲染器清理，JS 据此读取配置；span 文本空时 JS 用默认值兜底 -->
@@ -64,14 +64,14 @@
       <span data-name="pagination_style" data-type="text" data-pager-key="pagination_style" hidden>load_more</span>
       <span data-name="items_per_page" data-type="text" data-pager-key="items_per_page" hidden>6</span>
       <span data-name="pager_align" data-type="text" data-pager-key="pager_align" hidden>center</span>
-      <button class="btn btn-outline-primary dg-load-more" style="display:none" onclick="loadMoreDataGrid(this)">加载更多 <span class="dg-remaining"></span></button>
+      <button class="btn btn-outline-primary dg-load-more" style="display:none" onclick="loadMoreDataGrid(this)"><span data-i18n="actions.loadMore">Load More</span> <span class="dg-remaining"></span></button>
       <div class="dg-page-numbers" style="display:none"></div>
     </div>
 
     <!-- 查看全部：读取 show_view_all 控制显隐，链接到数据集列表页 -->
     <span data-name="show_view_all" data-type="text" data-view-key="show_view_all" hidden>true</span>
     <div class="text-center dg-view-all" style="margin-top: 2rem;">
-      <a data-href-template="{dataset_path}" class="view-all-link">查看全部 →</a>
+      <a data-href-template="{dataset_path}" class="view-all-link"><span data-i18n="actions.viewAll">View All</span> →</a>
     </div>
   </div>
 </section>

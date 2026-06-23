@@ -1,5 +1,5 @@
 <!-- 图片轮播模块 - 横向滚动展示图片 -->
-<section data-name="image_carousel" data-type="group" class="section ic-section">
+<section data-name="image_carousel" data-type="group" data-style="cols" class="section ic-section">
   <div class="container">
     <div class="section-header">
       <h2 data-name="title" data-type="text" class="section-title">标题</h2>
@@ -36,6 +36,12 @@
         return v || def;
       };
       var perRow = parseInt(readCfg('row', '4')) || 4;
+      var styleAttr = section.getAttribute('style') || '';
+      var colsMatch = styleAttr.match(/--cols:\s*(\S+?)(?:;|$)/);
+      if (colsMatch) {
+        var styleCols = parseInt(colsMatch[1].replace(/['"]/g, '').trim());
+        if (styleCols >= 1 && styleCols <= 6) perRow = styleCols;
+      }
       var autoScroll = readCfg('auto', 'true') !== 'false';
       var intervalMs = (parseInt(readCfg('interval', '4')) || 4) * 1000;
       var showDots = readCfg('dots', 'true') !== 'false';

@@ -1654,10 +1654,10 @@ hr {
 .hero-banner-content {
   position: relative; z-index: 2;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  text-align: center;
+  text-align: var(--text-align, center);
   min-height: 77vh;
   padding: var(--space-section) var(--space-lg);
-  max-width: 900px; margin: 0 auto;
+  max-width: var(--container-max); margin: 0 auto;
 }
 .hero-banner-title {
   font-family: var(--font-display);
@@ -1676,7 +1676,26 @@ hr {
 }
 .hero-banner-actions {
   display: flex; gap: var(--space-sm); flex-wrap: wrap; justify-content: center;
+  width: 100%;
 }
+.hero-banner[style*="--text-align: left"] .hero-banner-content,
+.hero-banner[style*="--text-align:left"] .hero-banner-content { align-items: flex-start; }
+.hero-banner[style*="--text-align: center"] .hero-banner-content,
+.hero-banner[style*="--text-align:center"] .hero-banner-content { align-items: center; }
+.hero-banner[style*="--text-align: right"] .hero-banner-content,
+.hero-banner[style*="--text-align:right"] .hero-banner-content { align-items: flex-end; }
+.hero-banner[style*="--text-align: left"] .hero-banner-subtitle,
+.hero-banner[style*="--text-align:left"] .hero-banner-subtitle { margin-left: 0; margin-right: auto; }
+.hero-banner[style*="--text-align: center"] .hero-banner-subtitle,
+.hero-banner[style*="--text-align:center"] .hero-banner-subtitle { margin-left: auto; margin-right: auto; }
+.hero-banner[style*="--text-align: right"] .hero-banner-subtitle,
+.hero-banner[style*="--text-align:right"] .hero-banner-subtitle { margin-left: auto; margin-right: 0; }
+.hero-banner[style*="--text-align: left"] .hero-banner-actions,
+.hero-banner[style*="--text-align:left"] .hero-banner-actions { justify-content: flex-start; }
+.hero-banner[style*="--text-align: center"] .hero-banner-actions,
+.hero-banner[style*="--text-align:center"] .hero-banner-actions { justify-content: center; }
+.hero-banner[style*="--text-align: right"] .hero-banner-actions,
+.hero-banner[style*="--text-align:right"] .hero-banner-actions { justify-content: flex-end; }
 .hero-banner-actions .btn-primary {
   background-color: var(--color-primary);
   color: var(--color-on-primary);
@@ -3184,6 +3203,7 @@ a.ci-value:hover { color: var(--color-primary); }
 /* ========== 轮播轨道：flex 布局，transition 实现平滑滚动 ========== */
 .fp-track {
   display: flex;
+  gap: var(--fp-card-gap);
   transition: transform 0.5s ease;
 }
 

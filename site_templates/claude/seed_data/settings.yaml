@@ -55,8 +55,11 @@ footer:
     type: menu
   variant: columns_social
 footer_zh-CN:
+  variant: columns_social
   columns:
-  - links:
+  - type: menu
+    title: 产品
+    links:
     - label: Claude Opus
       url: /products/claude-opus/
     - label: Claude Sonnet
@@ -65,31 +68,29 @@ footer_zh-CN:
       url: /products/claude-code/
     - label: 定价
       url: /pricing/
-    title: 产品
-    type: menu
-  - links:
+  - type: menu
+    title: 公司
+    links:
     - label: 关于我们
       url: /about/
     - label: 博客
       url: /posts/
     - label: 联系我们
       url: /contact/
-    title: 公司
-    type: menu
-  - links:
+  - type: menu
+    title: 资源
+    links:
     - label: 文档
       url: '#'
     - label: API 参考
       url: '#'
     - label: 服务状态
       url: '#'
-    title: 资源
-    type: menu
-  variant: columns_social
 header:
   enabled_languages:
-  - en
   - zh-CN
+  - zh-TW
+  - en
   language_switcher:
     enabled: true
     style: vertical_dropdown
@@ -122,3 +123,72 @@ social:
   linkedin: https://linkedin.com/
   twitter: https://twitter.com/
 theme: {}
+menu_labels:
+  en:
+    __home__: Home
+    products: Products
+    portfolio: Solutions
+    pricing: Pricing
+    about: About
+    posts: Blog
+    contact: Contact
+  zh-CN:
+    __home__: 首页
+    products: 产品
+    portfolio: 解决方案
+    pricing: 定价
+    about: 关于我们
+    posts: 博客
+    contact: 联系我们
+  zh-TW:
+    __home__: 首頁
+    products: 產品
+    portfolio: 解決方案
+    pricing: 定價
+    about: 關於我們
+    posts: 部落格
+    contact: 聯絡我們
+company_zh-TW:
+  icp: ''
+  logo: /static/img/logo-nova.svg
+  name: Nova AI
+  short_name: Nova
+contact_zh-TW:
+  address: 548 Market St, San Francisco, CA 94104
+  business_hours: 週一至週五 9:00-18:00
+  email: hello@nova-ai.example.com
+  mobile: ''
+  phone: +1 (415) 555-0172
+  weekend: ''
+footer_zh-TW:
+  variant: columns_social
+  columns:
+  - type: menu
+    title: 產品
+    links:
+    - label: Claude Opus
+      url: /products/claude-opus/
+    - label: Claude Sonnet
+      url: /products/claude-sonnet/
+    - label: Claude Code
+      url: /products/claude-code/
+    - label: 定價
+      url: /pricing/
+  - type: menu
+    title: 公司
+    links:
+    - label: 關於我們
+      url: /about/
+    - label: 部落格
+      url: /posts/
+    - label: 聯絡我們
+      url: /contact/
+  - type: menu
+    title: 資源
+    links:
+    - label: 文件
+      url: '#'
+    - label: API 參考
+      url: '#'
+    - label: 服務狀態
+      url: '#'
