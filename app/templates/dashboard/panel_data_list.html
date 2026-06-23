@@ -59,11 +59,12 @@
 </form>
 
 {# JS: 模块选择器交互 #}
-<script src="/static/js/admin_modules.js?v=38"></script>
+<script src="/static/js/admin_modules.js?v=40"></script>
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesDsJson">{{ all_list_datasets | default([]) | tojson }}</script>
 <script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="iconListDsJson">{{ icon_list | default([]) | tojson }}</script>
+<script type="application/json" id="iconRegistryDsJson">{{ icon_registry | default({}) | tojson }}</script>
 <script>
 window._dsEditItemJson = {{ edit_item | tojson }};
 </script>
@@ -77,6 +78,8 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   window.datasetNames = datasetNames;
   var styleRegistry = JSON.parse((document.getElementById('styleRegistryDsJson') || {}).textContent || '{}');
   var iconList = JSON.parse((document.getElementById('iconListDsJson') || {}).textContent || '[]');
+  var iconRegistry = JSON.parse((document.getElementById('iconRegistryDsJson') || {}).textContent || '{}');
+  window.iconRegistry = iconRegistry;
 
   // ===== 设置共享模块上下文 =====
   window._moduleCtx = {
@@ -84,6 +87,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     datasetNames: datasetNames,
     editItem: window._dsEditItemJson,
     styleRegistry: styleRegistry,
+    iconRegistry: iconRegistry,
     siteId: SITE_ID,
     currentLang: '{{ current_lang }}',
     isDatasetMode: true,

@@ -1743,6 +1743,10 @@
   overflow: hidden;
 }
 
+.module-item.card.icon-picker-open {
+  overflow: visible;
+}
+
 .module-item.card .module-header {
   cursor: grab;
   padding: 7px 10px !important;
@@ -2710,4 +2714,131 @@
 
 .module-visibility-field .eye-toggle-btn {
   flex: 0 0 auto;
+}
+
+.icon-picker {
+  position: relative;
+}
+
+.icon-picker-trigger {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 32px;
+  gap: 8px;
+  padding: 5px 9px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background: #fff;
+  color: #334155;
+  font-size: 12px;
+  text-align: left;
+}
+
+.icon-picker-trigger:hover,
+.icon-picker.open .icon-picker-trigger {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.12rem rgba(var(--bs-primary-rgb), 0.14);
+}
+
+.icon-picker-preview,
+.icon-picker-option-preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: var(--bs-primary);
+}
+
+.icon-picker-preview {
+  width: 22px;
+  height: 22px;
+}
+
+.icon-picker-preview svg,
+.icon-picker-option-preview svg {
+  width: 18px;
+  height: 18px;
+}
+
+.icon-picker-label {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon-picker-caret {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.icon-picker-menu {
+  position: absolute;
+  z-index: 1060;
+  display: none;
+  width: 100%;
+  min-width: 220px;
+  max-height: 280px;
+  margin-top: 4px;
+  padding: 8px;
+  border: 1px solid #d8dee8;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+}
+
+.icon-picker.open .icon-picker-menu {
+  display: block;
+}
+
+.icon-picker-search {
+  margin-bottom: 6px;
+}
+
+.icon-picker-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  max-height: 220px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.icon-picker-option {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 7px;
+  padding: 6px 7px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #475569;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.icon-picker-option:hover {
+  background: #f1f5f9;
+}
+
+.icon-picker-option.active {
+  border-color: rgba(var(--bs-primary-rgb), 0.28);
+  background: rgba(var(--bs-primary-rgb), 0.08);
+  color: var(--bs-primary);
+}
+
+.icon-picker-option-preview {
+  width: 20px;
+  height: 20px;
+}
+
+.icon-picker-option-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

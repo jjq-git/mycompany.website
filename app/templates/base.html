@@ -1316,20 +1316,21 @@
             if (rpt) rpt.textContent = titleEl.textContent.trim();
             titleEl.textContent = '';
           }
-          runPanelScripts(body);
-          // 将保存按钮移到面板底部悬浮栏
-          var saveBar = body.querySelector('.panel-save-bar');
-          if (saveBar && footer) {
-            var form = saveBar.closest('form');
-            var btn = saveBar.querySelector('button[type="submit"]');
-            if (btn && form) {
-              if (!form.id) form.id = '_panelForm_' + Date.now();
-              btn.setAttribute('form', form.id);
+          return runPanelScripts(body).then(function() {
+            // 将保存按钮移到面板底部悬浮栏
+            var saveBar = body.querySelector('.panel-save-bar');
+            if (saveBar && footer) {
+              var form = saveBar.closest('form');
+              var btn = saveBar.querySelector('button[type="submit"]');
+              if (btn && form) {
+                if (!form.id) form.id = '_panelForm_' + Date.now();
+                btn.setAttribute('form', form.id);
+              }
+              footer.innerHTML = '';
+              footer.appendChild(saveBar);
+              footer.style.display = '';
             }
-            footer.innerHTML = '';
-            footer.appendChild(saveBar);
-            footer.style.display = '';
-          }
+          });
         })
         .catch(error => { body.innerHTML = '<div class="p-3 text-danger">加载失败</div>'; throw error; });
     }
@@ -1339,40 +1340,47 @@
     window._loadedExternalScripts = _loadedExternalScripts;
 
     function runPanelScripts(container) {
-      container.querySelectorAll('script').forEach(function(oldScript) {
-        // application/json 数据脚本不需要执行，跳过
+      var scripts = Array.from(container.querySelectorAll('script'));
+      var chain = Promise.resolve();
+      scripts.forEach(function(oldScript) {
+        chain = chain.then(function() {
+          // Skip JSON data script tags.
         if ((oldScript.type || '').indexOf('json') >= 0) return;
 
-        // 外部脚本（带 src）：首次加载时创建新元素触发执行，后续跳过
+          // Load external scripts before running later inline scripts.
         if (oldScript.src && oldScript.src.trim()) {
           var src = oldScript.src.trim();
-          if (_loadedExternalScripts[src]) return;  // 已加载过，跳过
+          if (_loadedExternalScripts[src]) {
+            oldScript.remove();
+            return;
+          }
           _loadedExternalScripts[src] = true;
-          var extScript = document.createElement('script');
-          extScript.src = src;
-          // 用 appendChild(head) 而不是 replaceWith —— 外部脚本异步加载，
-          // replaceWith 对行内脚本的同步报错可能导致 DOMException 无法被 try/catch
-          document.head.appendChild(extScript);
-          oldScript.remove();
-          return;
+          return new Promise(function(resolve) {
+            var extScript = document.createElement('script');
+            extScript.src = src;
+            extScript.onload = function() { oldScript.remove(); resolve(); };
+            extScript.onerror = function() { oldScript.remove(); resolve(); };
+            document.head.appendChild(extScript);
+          });
         }
 
-        // 内联脚本：用间接 eval（全局作用域）触发执行。
-        // 避免 replaceWith 抛出 DOMException 而这种异常在某些浏览器下无法被 try/catch 捕获。
+          // Run inline scripts in global scope.
         var code = oldScript.textContent;
         try {
-          (0, eval)(code);  // 间接 eval → 全局作用域，等价于 <script> 执行
+          (0, eval)(code);
         } catch (e) {
           console.warn('面板内联脚本执行失败:', e);
         }
-        // 执行后清空原脚本内容并移除元素，避免后续重复执行
+          // Remove the original tag after execution.
         oldScript.textContent = '';
         oldScript.remove();
+        });
       });
-      // 颜色选择器自动转换
-      if (typeof initColorPickers === 'function') initColorPickers(container);
-      // 单位选择器根据已保存的值自动匹配
-      initUnitPickers(container);
+      return chain.then(function() {
+        // Initialize controls after all panel scripts have run.
+        if (typeof initColorPickers === 'function') initColorPickers(container);
+        initUnitPickers(container);
+      });
     }
 
     // 根据输入框的值（如 100%、2rem）反向匹配单位选择器的选中项
@@ -1444,20 +1452,21 @@
             if (rpt) rpt.textContent = titleEl.textContent.trim();
             titleEl.textContent = '';
           }
-          runPanelScripts(body);
-          var saveBar = body.querySelector('.panel-save-bar');
-          if (saveBar && footer) {
-            var newForm = saveBar.closest('form');
-            var newBtn = saveBar.querySelector('button[type="submit"]');
-            if (newBtn && newForm) {
-              if (!newForm.id) newForm.id = '_panelForm_' + Date.now();
-              newBtn.setAttribute('form', newForm.id);
+          return runPanelScripts(body).then(function() {
+            var saveBar = body.querySelector('.panel-save-bar');
+            if (saveBar && footer) {
+              var newForm = saveBar.closest('form');
+              var newBtn = saveBar.querySelector('button[type="submit"]');
+              if (newBtn && newForm) {
+                if (!newForm.id) newForm.id = '_panelForm_' + Date.now();
+                newBtn.setAttribute('form', newForm.id);
+              }
+              footer.innerHTML = '';
+              footer.appendChild(saveBar);
+              footer.style.display = '';
             }
-            footer.innerHTML = '';
-            footer.appendChild(saveBar);
-            footer.style.display = '';
-          }
-          refreshPreview();
+            refreshPreview();
+          });
         })
         .catch(err => { body.innerHTML = '<div class="p-3 text-danger">保存失败</div>'; });
     });

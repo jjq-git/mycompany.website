@@ -189,11 +189,12 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=38"></script>
+<script src="/static/js/admin_modules.js?v=40"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="iconListJson">{{ icon_list | default([]) | tojson }}</script>
+<script type="application/json" id="iconRegistryJson">{{ icon_registry | default({}) | tojson }}</script>
 <script>
 var blockLibrary = JSON.parse(document.getElementById('blockLibraryJson').textContent || '[]');
 window.blockLibrary = blockLibrary;
@@ -202,10 +203,13 @@ var datasetNames = JSON.parse(document.getElementById('datasetNamesJson').textCo
 var styleRegistry = JSON.parse((document.getElementById('styleRegistryJson') || {}).textContent || '{}');
 // data-* 图标注册表的全部图标名，供 icon 字段生成下拉选择器
 var iconList = JSON.parse((document.getElementById('iconListJson') || {}).textContent || '[]');
+var iconRegistry = JSON.parse((document.getElementById('iconRegistryJson') || {}).textContent || '{}');
+window.iconRegistry = iconRegistry;
 window._moduleCtx = {
   blockLibrary: blockLibrary,
   datasetNames: datasetNames,
   styleRegistry: styleRegistry,
+  iconRegistry: iconRegistry,
   siteId: '{{ site.id }}',
   currentLang: '{{ current_lang }}',
   isDatasetMode: false,
@@ -501,8 +505,7 @@ function _schemaFieldHtml(prefix, field, mdata) {
     var urlPlaceholder = field.type === 'audio' ? '音频链接' : '嵌入页面链接';
     html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="' + _schemaEsc(urlPlaceholder) + '">';
   } else if (field.type === 'icon') {
-    // icon → 下拉选择器（图标名来自 icon_registry，渲染时查表注入 SVG）
-    html += '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">' + _schemaIconOptions(val) + '</select>';
+    html += (window._iconPickerHtml ? window._iconPickerHtml(name, val) : '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">' + _schemaIconOptions(val) + '</select>');
   } else if (field.type === 'select') {
     var schemaSegmented = segmentedControl(name, field.options || [], val, _schemaEsc);
     if (schemaSegmented) {
@@ -1130,7 +1133,8 @@ function reindexFeatureItems(moduleIndex) {
 
 // ======= 统计项编辑器 (stat_counter) =======
 function statItemHtml(moduleIndex, statIndex) {
-  var p = 'module_' + moduleIndex + '_stat_' + statIndex + '_';
+  if (window._statItemHtml) return window._statItemHtml(moduleIndex, statIndex, {});
+  var p = 'module_' + moduleIndex + '_stats_' + statIndex + '_';
   var icons = [
     ['users', '👥 用户/客户'], ['briefcase', '💼 项目/案例'], ['building', '🏢 公司/工厂'],
     ['check', '✅ 认证/合规'], ['shield-check', '🛡️ 品质保证'], ['star', '⭐ 好评/荣誉'],
@@ -1143,13 +1147,14 @@ function statItemHtml(moduleIndex, statIndex) {
     '<span class="small fw-semibold">统计项 ' + (statIndex + 1) + '</span>' +
     '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.list-item\').remove();reindexStatItems(' + moduleIndex + ')" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>' +
     '</div><div class="list-item-body">' +
-    '<div class="mb-2"><label class="form-label small mb-1 text-muted">图标</label><select class="form-select form-select-sm" name="' + p + 'icon">' + iconOptions + '</select></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">图标</label>' + (window._iconPickerHtml ? window._iconPickerHtml(p + 'icon', '') : '<select class="form-select form-select-sm" name="' + p + 'icon">' + iconOptions + '</select>') + '</div>' +
     '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">数字</label><input type="number" class="form-control form-control-sm" name="' + p + 'number" placeholder="如 500"></div>' +
     '<div class="col-6"><label class="form-label small mb-1 text-muted">后缀</label><input type="text" class="form-control form-control-sm" name="' + p + 'suffix" placeholder="如 +"></div></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签</label><input type="text" class="form-control form-control-sm" name="' + p + 'label" placeholder="如 服务客户"></div>' +
     '</div></div>';
 }
 function addStatItem(moduleIndex) {
+  if (window._addStatItem) return window._addStatItem(moduleIndex);
   var editor = document.querySelector('.stat-items-editor[data-module-index="' + moduleIndex + '"]');
   if (!editor) return;
   var count = editor.querySelector('.stat-item-count');
@@ -1159,6 +1164,7 @@ function addStatItem(moduleIndex) {
   count.value = next + 1;
 }
 function reindexStatItems(moduleIndex) {
+  if (window._reindexStatItems) return window._reindexStatItems(moduleIndex);
   var editor = document.querySelector('.stat-items-editor[data-module-index="' + moduleIndex + '"]');
   if (!editor) return;
   var items = editor.querySelectorAll('.list-item');
@@ -1168,7 +1174,7 @@ function reindexStatItems(moduleIndex) {
     var label = item.querySelector('.small.fw-semibold');
     if (label) label.textContent = '统计项 ' + (idx + 1);
     item.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el) {
-      el.name = el.name.replace(/module_\d+_stat_\d+_/, 'module_' + moduleIndex + '_stat_' + idx + '_');
+      el.name = el.name.replace(/module_\d+_stats_\d+_/, 'module_' + moduleIndex + '_stats_' + idx + '_');
     });
   });
 }
@@ -1955,7 +1961,7 @@ function addModule(type, variant, dataPreset) {
     '<div class="id-specs-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">规格参数</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="addIdSpec(' + idx + ')">+ 添加规格</button></div><input type="hidden" name="module_' + idx + '_data_specs_count" class="id-spec-count" value="0"><div class="id-spec-list"></div></div>';
   } else if (type === 'stat_counter') {
     specialEditor =
-    '<div class="stat-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">统计项</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="addStatItem(' + idx + ')">+ 添加统计项</button></div><input type="hidden" name="module_' + idx + '_stat_count" class="stat-item-count" value="1"><div class="stat-item-list">' + statItemHtml(idx, 0) + '</div></div>' +
+    '<div class="stat-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">统计项</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="addStatItem(' + idx + ')">+ 添加统计项</button></div><input type="hidden" name="module_' + idx + '_stats_count" class="stat-item-count" value="1"><div class="stat-item-list">' + statItemHtml(idx, 0) + '</div></div>' +
     '<hr class="my-2">' +
     '<div class="row g-2">' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
@@ -2711,21 +2717,22 @@ function submitModuleFormAjax(form, event) {
       var panel = document.getElementById('rightPanelBody');
       var footer = document.getElementById('rightPanelFooter');
       panel.innerHTML = html;
-      runPanelScripts(panel);
-      // 移动保存按钮到 footer
-      var saveBar = panel.querySelector('.panel-save-bar');
-      if (saveBar && footer) {
-        var newForm = saveBar.closest('form');
-        var newBtn = saveBar.querySelector('button[type="submit"]');
-        if (newBtn && newForm) {
-          if (!newForm.id) newForm.id = '_panelForm_' + Date.now();
-          newBtn.setAttribute('form', newForm.id);
+      return runPanelScripts(panel).then(function() {
+        // 移动保存按钮到 footer
+        var saveBar = panel.querySelector('.panel-save-bar');
+        if (saveBar && footer) {
+          var newForm = saveBar.closest('form');
+          var newBtn = saveBar.querySelector('button[type="submit"]');
+          if (newBtn && newForm) {
+            if (!newForm.id) newForm.id = '_panelForm_' + Date.now();
+            newBtn.setAttribute('form', newForm.id);
+          }
+          footer.innerHTML = '';
+          footer.appendChild(saveBar);
+          footer.style.display = '';
         }
-        footer.innerHTML = '';
-        footer.appendChild(saveBar);
-        footer.style.display = '';
-      }
-      refreshPreview();
+        refreshPreview();
+      });
     })
     .catch(function(err) {
       console.error('Save failed:', err);
@@ -3339,8 +3346,9 @@ document.getElementById('migrateForm').addEventListener('submit', function(e){
     .then(html => {
       var panel = document.getElementById('rightPanelBody');
       panel.innerHTML = html;
-      runPanelScripts(panel);
-      refreshPreview();
+      return runPanelScripts(panel).then(function() {
+        refreshPreview();
+      });
     });
 });
 </script>

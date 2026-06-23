@@ -224,6 +224,117 @@
     return h + '</select>';
   }
 
+  function iconRegistry() {
+    return (window._moduleCtx && window._moduleCtx.iconRegistry) || window.iconRegistry || {};
+  }
+
+  function iconNames() {
+    var names = [];
+    if (typeof iconList !== 'undefined' && Array.isArray(iconList)) names = iconList.slice();
+    if (!names.length) names = Object.keys(iconRegistry());
+    return names.filter(function(name, idx) {
+      return name && names.indexOf(name) === idx;
+    }).sort();
+  }
+
+  function iconSvg(name) {
+    return iconRegistry()[String(name || '')] || '';
+  }
+
+  function iconPickerHtml(name, value) {
+    var current = String(value || '');
+    var currentLabel = current || '（无图标）';
+    var html = '<div class="icon-picker" data-value="' + esc(current) + '">' +
+      '<input type="hidden" name="' + esc(name) + '" value="' + esc(current) + '">' +
+      '<button type="button" class="icon-picker-trigger" onclick="window._toggleIconPicker(this,event)">' +
+        '<span class="icon-picker-preview">' + (current ? iconSvg(current) : '') + '</span>' +
+        '<span class="icon-picker-label">' + esc(currentLabel) + '</span>' +
+        '<span class="icon-picker-caret">▾</span>' +
+      '</button>' +
+      '<div class="icon-picker-menu" onclick="event.stopPropagation()">' +
+        '<input type="text" class="form-control form-control-sm icon-picker-search" placeholder="搜索图标" oninput="window._filterIconPicker(this)">' +
+        '<div class="icon-picker-options">' +
+          '<button type="button" class="icon-picker-option' + (!current ? ' active' : '') + '" data-value="" onclick="window._selectIconPicker(this,event)">' +
+            '<span class="icon-picker-option-preview"></span><span class="icon-picker-option-label">（无图标）</span>' +
+          '</button>';
+    iconNames().forEach(function(iconName) {
+      var active = current === String(iconName);
+      html += '<button type="button" class="icon-picker-option' + (active ? ' active' : '') + '" data-value="' + esc(iconName) + '" data-label="' + esc(iconName).toLowerCase() + '" onclick="window._selectIconPicker(this,event)">' +
+        '<span class="icon-picker-option-preview">' + iconSvg(iconName) + '</span>' +
+        '<span class="icon-picker-option-label">' + esc(iconName) + '</span>' +
+      '</button>';
+    });
+    html += '</div></div></div>';
+    return html;
+  }
+
+  window._iconPickerHtml = iconPickerHtml;
+
+  window._toggleIconPicker = function(trigger, event) {
+    if (event) event.stopPropagation();
+    var picker = trigger && trigger.closest ? trigger.closest('.icon-picker') : null;
+    if (!picker) return;
+    document.querySelectorAll('.icon-picker.open').forEach(function(openPicker) {
+      if (openPicker !== picker) {
+        openPicker.classList.remove('open');
+        var openItem = openPicker.closest('.module-item');
+        if (openItem) openItem.classList.remove('icon-picker-open');
+      }
+    });
+    picker.classList.toggle('open');
+    var item = picker.closest('.module-item');
+    if (item) item.classList.toggle('icon-picker-open', picker.classList.contains('open'));
+    if (picker.classList.contains('open')) {
+      var search = picker.querySelector('.icon-picker-search');
+      if (search) {
+        search.value = '';
+        window._filterIconPicker(search);
+        setTimeout(function() { search.focus(); }, 0);
+      }
+    }
+  };
+
+  window._selectIconPicker = function(option, event) {
+    if (event) event.stopPropagation();
+    var picker = option && option.closest ? option.closest('.icon-picker') : null;
+    if (!picker) return;
+    var value = option.getAttribute('data-value') || '';
+    var input = picker.querySelector('input[type="hidden"]');
+    var preview = picker.querySelector('.icon-picker-preview');
+    var label = picker.querySelector('.icon-picker-label');
+    if (input) {
+      input.value = value;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    if (preview) preview.innerHTML = value ? iconSvg(value) : '';
+    if (label) label.textContent = value || '（无图标）';
+    picker.dataset.value = value;
+    picker.querySelectorAll('.icon-picker-option').forEach(function(btn) {
+      btn.classList.toggle('active', (btn.getAttribute('data-value') || '') === value);
+    });
+    picker.classList.remove('open');
+    var item = picker.closest('.module-item');
+    if (item) item.classList.remove('icon-picker-open');
+  };
+
+  window._filterIconPicker = function(input) {
+    var picker = input && input.closest ? input.closest('.icon-picker') : null;
+    if (!picker) return;
+    var q = String(input.value || '').trim().toLowerCase();
+    picker.querySelectorAll('.icon-picker-option').forEach(function(option) {
+      var label = option.getAttribute('data-label') || option.textContent.toLowerCase();
+      option.style.display = !q || label.indexOf(q) >= 0 ? '' : 'none';
+    });
+  };
+
+  document.addEventListener('click', function() {
+    document.querySelectorAll('.icon-picker.open').forEach(function(picker) {
+      picker.classList.remove('open');
+      var item = picker.closest('.module-item');
+      if (item) item.classList.remove('icon-picker-open');
+    });
+  });
+
   function schemaEsc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -479,6 +590,56 @@
     });
   };
 
+  function statItemData(mdata, statIndex) {
+    var stats = mdata && Array.isArray(mdata.stats) ? mdata.stats : [];
+    return stats[statIndex] || {};
+  }
+
+  window._statItemHtml = function(moduleIndex, statIndex, mdata) {
+    var p = 'module_' + moduleIndex + '_stats_' + statIndex + '_';
+    var item = statItemData(mdata, statIndex);
+    return '<div class="border rounded p-2 mb-2 list-item" data-item-index="' + statIndex + '">' +
+      '<div class="d-flex justify-content-between align-items-center mb-2 list-item-header" style="cursor:pointer; user-select:none;" onclick="this.closest(\'.list-item\').classList.toggle(\'collapsed\')">' +
+        '<span class="small fw-semibold">统计项 ' + (statIndex + 1) + '</span>' +
+        '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.list-item\').remove();window._reindexStatItems(' + moduleIndex + ')" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>' +
+      '</div>' +
+      '<div class="list-item-body">' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">图标</label>' + iconPickerHtml(p + 'icon', item.icon || '') + '</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">数字</label><input type="number" class="form-control form-control-sm" name="' + p + 'number" value="' + esc(item.number || '') + '" placeholder="如 500"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">后缀</label><input type="text" class="form-control form-control-sm" name="' + p + 'suffix" value="' + esc(item.suffix || '') + '" placeholder="如 +"></div>' +
+        '</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签</label><input type="text" class="form-control form-control-sm" name="' + p + 'label" value="' + esc(item.label || '') + '" placeholder="如 服务客户"></div>' +
+      '</div>' +
+    '</div>';
+  };
+
+  window._addStatItem = function(moduleIndex) {
+    var editor = document.querySelector('.stat-items-editor[data-module-index="' + moduleIndex + '"]');
+    if (!editor) return;
+    var count = editor.querySelector('.stat-item-count');
+    var list = editor.querySelector('.stat-item-list');
+    var next = parseInt(count.value || '0', 10);
+    list.insertAdjacentHTML('beforeend', window._statItemHtml(moduleIndex, next, {}));
+    count.value = next + 1;
+  };
+
+  window._reindexStatItems = function(moduleIndex) {
+    var editor = document.querySelector('.stat-items-editor[data-module-index="' + moduleIndex + '"]');
+    if (!editor) return;
+    var items = editor.querySelectorAll('.list-item');
+    var count = editor.querySelector('.stat-item-count');
+    if (count) count.value = items.length;
+    items.forEach(function(item, idx) {
+      item.dataset.itemIndex = idx;
+      var label = item.querySelector('.small.fw-semibold');
+      if (label) label.textContent = '统计项 ' + (idx + 1);
+      item.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el) {
+        el.name = el.name.replace(/module_\d+_stats_\d+_/, 'module_' + moduleIndex + '_stats_' + idx + '_');
+      });
+    });
+  };
+
   var FIELD_LABEL_MAP = {
     'title': '标题',
     'subtitle': '副标题',
@@ -624,13 +785,7 @@
       });
       html += '</select>';
     } else if (type === 'icon') {
-      // icon 字段 → 下拉选择器（图标名来自 iconList 全局变量，与 panel_page_edit.html 一致）
-      html += '<select class="form-select form-select-sm" name="' + prefix + key + '"><option value="">（无图标）</option>';
-      var icons = (typeof iconList !== 'undefined' && Array.isArray(iconList)) ? iconList : [];
-      icons.forEach(function(name) {
-        html += '<option value="' + esc(name) + '"' + (String(value || '') === String(name) ? ' selected' : '') + '>' + esc(name) + '</option>';
-      });
-      html += '</select>';
+      html += iconPickerHtml(prefix + key, value);
     } else if (type === 'number') {
       html += '<input type="number" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '">';
     } else if (type === 'radio') {
@@ -1907,8 +2062,9 @@
 
     /* ====== stat_counter ====== */
     } else if (type === 'stat_counter') {
+      var statItems = Array.isArray(d.stats) && d.stats.length ? d.stats : [{}];
       specialEditor =
-        '<div class="stat-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">统计项</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addStatItem(' + idx + ')">+ 添加统计项</button></div><input type="hidden" name="module_' + idx + '_stat_count" class="stat-item-count" value="' + (d.stat_count || '1') + '"><div class="stat-item-list">' + (window._statItemHtml ? window._statItemHtml(idx, 0, d) : '') + '</div></div>' +
+        '<div class="stat-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">统计项</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addStatItem(' + idx + ')">+ 添加统计项</button></div><input type="hidden" name="module_' + idx + '_stats_count" class="stat-item-count" value="' + statItems.length + '"><div class="stat-item-list">' + statItems.map(function(_, si) { return window._statItemHtml(idx, si, d); }).join('') + '</div></div>' +
         '<hr class="my-2">' +
         '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +

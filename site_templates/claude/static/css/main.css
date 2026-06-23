@@ -2033,18 +2033,27 @@ hr {
    ============================================ */
 /* 全宽主色带，与线上 about-stats 风格一致 */
 section:has(.sc-grid) {
-  padding-top: 0;
-  padding-bottom: 0;
+  /* padding-top: 0;
+  padding-bottom: 0; */
   background: var(--color-primary);
 }
+section:has(.sc-grid) .container {
+  background: transparent;
+}
+section:has(.sc-grid) .section-header .section-title,
+section:has(.sc-grid) .section-header .section-description {
+  color: rgba(255,255,255,0.9);
+}
 .sc-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--cols, 4), 1fr);
-  gap: 2rem;
-  padding: 3.5rem 0;
+  display: flex;
+  justify-content: space-between;
+  /* padding: 3.5rem 0; */
   text-align: center;
 }
-.sc-card { text-align: center; }
+.sc-card { 
+  /* flex: 1;  */
+  text-align: center; 
+}
 .sc-icon {
   width: 48px; height: 48px;
   display: inline-flex; align-items: center; justify-content: center;
@@ -2070,11 +2079,13 @@ section:has(.sc-grid) {
 }
 
 @media (max-width: 768px) {
-  .sc-grid { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; padding: 2.5rem 0; }
+  .sc-grid { flex-wrap: wrap; gap: 1.5rem; padding: 2.5rem 0; }
+  .sc-card { flex: 1 1 40%; }
   .sc-number { font-size: 2rem; }
 }
 @media (max-width: 480px) {
-  .sc-grid { grid-template-columns: 1fr; }
+  .sc-grid { flex-direction: column; }
+  .sc-card { flex: none; }
 }
 
 /* ============================================

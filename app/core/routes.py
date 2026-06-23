@@ -1896,7 +1896,7 @@ def page_home():
         return redirect(url_for('core.page_home', site=site.id, lang=lang))
 
     # 准备渲染上下文
-    from .icon_registry import icon_names
+    from .icon_registry import ICON_REGISTRY, icon_names
     from .style_registry import STYLE_REGISTRY
     blocks = _get_available_blocks(site.template_name)
     if is_modules_format:
@@ -1926,6 +1926,7 @@ def page_home():
                            all_list_datasets=all_list_datasets,
                            style_registry=STYLE_REGISTRY,
                            icon_list=icon_names(),
+                           icon_registry=ICON_REGISTRY,
                            active='pages_home',
                            current_lang=lang,
                            languages=languages,
@@ -2218,14 +2219,13 @@ def menu_edit():
                 menu_labels[code] = old_labels
             del settings[old_key]
             migrated = True
-    # 兜底: 对尚无 menu_labels 的语言，用当前 menu 的标签初始化
+    # 兜底: 只对默认语言用当前 menu 标签初始化 menu_labels，避免把简体中文
+    # 错误复制到繁体中文等非默认语言（_language_label_map 已做 fallback 合并）
     if migrated or not menu_labels:
         fallback_labels = menu_lib.extract_labels(settings.get('menu', []))
         if fallback_labels:
-            for lopt in (languages or []):
-                code = lopt['code']
-                if code not in menu_labels or not menu_labels[code]:
-                    menu_labels[code] = dict(fallback_labels)
+            if default_lang not in menu_labels or not menu_labels[default_lang]:
+                menu_labels[default_lang] = dict(fallback_labels)
             migrated = True
     if migrated:
         settings['menu_labels'] = menu_labels
@@ -2878,9 +2878,10 @@ def _render(template_name, **kwargs):
     #19: 原来按 ?_fragment 分两支但两支完全相同(伪分支), docstring 也误导。
     fragment 与整页用的是同一个 template_name, 调用方自行传不同模板名, 这里不分支。
     """
-    from .icon_registry import icon_names
+    from .icon_registry import ICON_REGISTRY, icon_names
     from .style_registry import STYLE_REGISTRY
     kwargs.setdefault('icon_list', icon_names())
+    kwargs.setdefault('icon_registry', ICON_REGISTRY)
     kwargs.setdefault('style_registry', STYLE_REGISTRY)
     return render_template(template_name, **kwargs)
 

@@ -33,7 +33,7 @@
 
     <!-- 卡片列表：data-source 空=用户自由选数据集；filterable-grid class 触发 JS 筛选 -->
     <div data-name="items" data-type="list" data-source="" class="dg-list filterable-grid" data-filter-id="{dataset}">
-      <a data-name="item" data-type="group" data-href-template="{base_url}/{lang}{current_path}{slug}/" class="dg-card">
+      <a data-name="item" data-type="group" data-href-template="{dataset_path}{slug}/" class="dg-card">
         <div class="dg-card-image">
           <img data-name="cover" data-fallback="image,photo,logo" data-type="image" src="" alt="" loading="lazy">
           <!-- ⚠ JS 数据源：initFilterableGrids() 扫描 .filter-source-category 生成分类筛选按钮 -->
@@ -71,7 +71,7 @@
     <!-- 查看全部：读取 show_view_all 控制显隐，链接到数据集列表页 -->
     <span data-name="show_view_all" data-type="text" data-view-key="show_view_all" hidden>true</span>
     <div class="text-center dg-view-all" style="margin-top: 2rem;">
-      <a data-href-template="{base_url}/{lang}{current_path}" class="btn btn-primary">查看全部</a>
+      <a data-href-template="{dataset_path}" class="btn btn-primary">查看全部</a>
     </div>
   </div>
 </section>
