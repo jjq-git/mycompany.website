@@ -26,6 +26,7 @@ from .translator import (generate_seo_description,
                          translate_json)
 from .builder import build_site, build_template_preview
 from .db import db
+from .template_loader import scan_templates
 from flask_cors import cross_origin
 # CSRF 豁免：静态站点公开 API 无法提供 CSRF token, 需要豁免
 # csrf 是 app/__init__.py 模块级变量, 在 create_app() 调用时已初始化
@@ -2430,6 +2431,7 @@ def _validate_key(key):
 @bp.route('/templates')
 def templates_gallery():
     user = _current_user()
+    scan_templates()
     query = Site.query
     if user and user.role != 'admin':
         query = query.filter_by(owner_id=user.id)
