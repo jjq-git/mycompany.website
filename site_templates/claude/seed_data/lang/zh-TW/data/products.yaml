@@ -1,127 +1,72 @@
 categories:
-- name: AI 模型
-  slug: ai-models
-- name: 開發者工具
-  slug: developer-tools
-- name: 企業能力
-  slug: enterprise
+- name: 靜音倉
+  slug: silent-booth
+- name: 乾冰機
+  slug: dry-ice
+- name: 展示道具
+  slug: display-props
 items:
-- slug: claude-opus
-  name: Claude Opus
-  category: AI 模型
+- slug: silent-booth
+  name: 靜音倉
+  category: 靜音倉
   cover: /static/img/product-model.svg
   image: /static/img/product-model.svg
-  price: 每百萬輸入 token 起價 $15
-  summary: 面向複雜分析、多步驟推理和專家級任務的高能力模型。
-  description: Claude Opus 適合最困難的問題，擅長深度推理、複雜程式碼生成、細緻分析和多步驟規劃。
+  summary: 專業隔音艙，適用於辦公空間、錄音室和會議室，模組化設計，隔音性能優異。
+  description: 德恩基靜音倉採用模組化組裝設計，隔音性能行業領先。適合開放辦公區、錄音棚、呼叫中心和私人會議艙。支援自訂尺寸、通風系統和內飾風格。
   tags:
-  - 推理
-  - 程式碼生成
-  - 企業
+  - 隔音
+  - 辦公
+  - 模組化
   specs:
-  - name: 適合場景
-    value: 深度推理
-  - name: 響應速度
-    value: 標准
-- slug: claude-sonnet
-  name: Claude Sonnet
-  category: AI 模型
+  - name: 隔音等級
+    value: ≥30dB
+  - name: 組裝時間
+    value: 2-4 小時
+- slug: dry-ice-machine
+  name: 乾冰機
+  category: 乾冰機
   cover: /static/img/product-model.svg
   image: /static/img/product-model.svg
-  price: 每百萬輸入 token 起價 $3
-  summary: 適合生產應用、智慧代理流程和日常知識工作的均衡模型。
-  description: Claude Sonnet 在智慧程度和速度之間取得平衡，適合大多數專業任務和生產工作負載。
+  summary: 重型乾冰煙霧機，適用於舞台演出、劇場製作和大型活動。
+  description: 德恩基乾冰機產生濃密的地面煙霧效果，貼地擴散且無化學殘留。被劇場、演唱會場館和活動公司所信賴，性能穩定可靠。
   tags:
-  - 均衡
-  - 生產
-  - 通用
+  - 舞台
+  - 煙霧
+  - 劇場
   specs:
-  - name: 適合場景
-    value: 生產工作負載
-  - name: 響應速度
-    value: 快速
-- slug: claude-haiku
-  name: Claude Haiku
-  category: AI 模型
+  - name: 煙霧輸出
+    value: 5000 立方英尺/分
+  - name: 乾冰容量
+    value: 15kg
+- slug: props-display
+  name: 展示道具
+  category: 展示道具
   cover: /static/img/product-model.svg
   image: /static/img/product-model.svg
-  price: 每百萬輸入 token 起價 $0.25
-  summary: 面向實時介面、高吞吐自動化和輕量任務的高速模型。
-  description: Claude Haiku 專為速度和成本效率設計，適合聊天介面、實時審核和高频處理流程。
+  summary: 客製零售展示架、展覽展台和產品陳列方案，服務品牌和零售商。
+  description: 從概念設計到最終安裝，德恩基為零售門市、貿易展、博物館和品牌體驗中心提供高品質展示道具。材料涵蓋金屬、壓克力、木材並支援 LED 融合。
   tags:
-  - 高速
-  - 實時
-  - 輕量
+  - 零售
+  - 展覽
+  - 客製
   specs:
-  - name: 適合場景
-    value: 實時體驗
-  - name: 響應速度
-    value: 非常快
-- slug: claude-code
-  name: Claude Code
-  category: 開發者工具
-  cover: /static/img/product-code.svg
-  image: /static/img/product-code.svg
-  price: 提供團隊方案
-  summary: 理解程式碼庫、终端上下文、測試和評審流程的编碼助手。
-  description: Claude Code 幫助團隊實现功能、定位問題、謹慎重構，並在開發流程中補齊文件和測試。
+  - name: 材料
+    value: 金屬 / 壓克力 / 木材
+  - name: 交期
+    value: 15-30 天
+- slug: led-display
+  name: LED 顯示方案
+  category: 展示道具
+  cover: /static/img/product-model.svg
+  image: /static/img/product-model.svg
+  summary: 室內外商用 LED 顯示屏系統，適用於廣告和資訊發佈。
+  description: 高亮度、低能耗的商用 LED 顯示面板，應用於門市招牌、商場導視、體育場螢幕和企業大廳展示。
   tags:
-  - 程式碼生成
-  - 開發者
-  - 智慧代理
+  - LED
+  - 數位顯示
+  - 商用
   specs:
-  - name: 集成
-    value: IDE、终端、CI
-  - name: 用途
-    value: 软件交付
-- slug: vision-analyzer
-  name: Vision Analyzer
-  category: 開發者工具
-  cover: /static/img/product-vision.svg
-  image: /static/img/product-vision.svg
-  price: 按量计费
-  summary: 從截圖、圖表、表单和產品圖片中提取結構化洞察。
-  description: Vision Analyzer 結合文字和圖像理解能力，適合商品資訊補全、文件處理和品質審查。
-  tags:
-  - 多模態
-  - 自動化
-  - 分析
-  specs:
-  - name: 輸入
-    value: 圖片和文字
-  - name: 輸出
-    value: 結構化資料
-- slug: enterprise-console
-  name: Enterprise Console
-  category: 企業能力
-  cover: /static/img/product-enterprise.svg
-  image: /static/img/product-enterprise.svg
-  price: 定制报價
-  summary: 集中管理模型、智慧代理、權限、金鑰、預算和審计記錄。
-  description: Enterprise Console 為安全和平台團隊提供生產 AI 系統的統一營運介面。
-  tags:
-  - 企業
-  - 安全
-  - 治理
-  specs:
-  - name: 控制项
-    value: 角色和預算
-  - name: 报告
-    value: 審计日志
-- slug: safety-evaluation-suite
-  name: Safety Evaluation Suite
-  category: 企業能力
-  cover: /static/img/product-enterprise.svg
-  image: /static/img/product-enterprise.svg
-  price: 定制报價
-  summary: 重複运行安全、准确性、偏差、策略合規和回归检測評估。
-  description: Safety Evaluation Suite 幫助團隊在上線前測試模型行為，並在發布後持續監控品質。
-  tags:
-  - 安全
-  - 評估
-  - 企業
-  specs:
-  - name: 报告
-    value: 按场景生成
-  - name: 部署
-    value: 云端或私有化
+  - name: 像素間距
+    value: P1.5-P10
+  - name: 亮度
+    value: ≥1000 nits
