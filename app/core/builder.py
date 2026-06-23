@@ -26,6 +26,19 @@ from .models import Site
 _SCHEMA_CACHE = {}
 
 
+def _get_platform_base_url():
+    """返回平台后端的基础 URL, 供静态站点 contact_form 表单提交.
+
+    生产环境从 PLATFORM_DOMAIN 配置拼 https 地址, 开发环境回退 localhost.
+    """
+    domain = current_app.config.get('PLATFORM_DOMAIN', '')
+    if current_app.debug and not domain:
+        return 'http://localhost:5000'
+    if domain:
+        return f'https://{domain}'
+    return 'http://localhost:5000'
+
+
 def _load_block_for_render(tpl_root, template_name, block_type, variant):
     """加载 block 模板并判断走新/旧路径，带缓存。
 
@@ -90,6 +103,10 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
         # 新路径：开关开 + 是 data-* 声明式
         if enable_data_attr and schema is not None:
             data_dict = module.get('data') if isinstance(module.get('data'), dict) else {}
+            # contact_form 内置留言：注入平台 API 地址和站点 ID, 供模板 JS 使用
+            if block_type == 'contact_form':
+                data_dict['platform_api_url'] = jinja_ctx.get('platform_api_url', '')
+                data_dict['site_id'] = str(jinja_ctx.get('site_id', ''))
             dataset_name = data_dict.get('dataset', '')
             dataset_path = ((jinja_ctx.get('dataset_paths') or {}).get(dataset_name) or '')
             base_prefix = (jinja_ctx.get('base_url', '') or '').rstrip('/')
@@ -409,6 +426,16 @@ def _deep_merge(default, override):
     return result
 
 
+def _merge_page_content(default, override):
+    """Merge language-specific page text without dropping inherited modules."""
+    if not isinstance(default, dict) or not isinstance(override, dict):
+        return override if override not in (None, {}) else default
+    clean_override = dict(override)
+    if clean_override.get('modules') == [] and default.get('modules'):
+        clean_override.pop('modules')
+    return _deep_merge(default, clean_override)
+
+
 def _merge_language_settings_section(shared, override):
     """Merge shared settings with language-specific text overrides."""
     if not isinstance(shared, dict):
@@ -516,7 +543,7 @@ def _load_lang_overrides(site_id, lang_code, default_lang, default_pages, defaul
             page_key = f.stem
             content = read_yaml(site_id, f'pages/{f.name}', lang=lang_code)
             if content:
-                lang_pages[page_key] = content
+                lang_pages[page_key] = _merge_page_content(lang_pages.get(page_key, {}), content)
 
     # 加载语言特定 data
     lang_data = dict(default_data)
@@ -559,7 +586,7 @@ def _load_seed_lang_overrides(seed, lang_code, default_lang, default_pages, defa
     pages_dir = lang_dir / 'pages'
     if pages_dir.exists():
         for f in pages_dir.glob('*.yaml'):
-            lang_pages[f.stem] = _load_yaml(f)
+            lang_pages[f.stem] = _merge_page_content(lang_pages.get(f.stem, {}), _load_yaml(f))
 
     # 加载语言特定 data (覆盖同名 key)
     lang_data = dict(default_data)
@@ -909,8 +936,7 @@ def build_site(site_id, base_url='', report=None):
         for lang_opt in languages:
             lang_code = lang_opt['code']
             t_data = translations.get(lang_code, {})
-            from .site_storage import lang_root
-            fallback_settings_to_default = lang_code == default_lang or not lang_root(site_id, lang_code).exists()
+            fallback_settings_to_default = lang_code == default_lang
 
             # 加载语言特定数据，回退到默认语言
             lang_pages, lang_data = _load_lang_overrides(
@@ -968,6 +994,9 @@ def build_site(site_id, base_url='', report=None):
                 'posts': lang_data.get('posts', []),
                 'features': lang_data.get('features', []),
                 'all_datasets': lang_data,
+                # contact_form 内置留言所需：平台 API 地址 + 站点 ID
+                'site_id': site_id,
+                'platform_api_url': _get_platform_base_url(),
             }
 
             _all_failures.extend(
@@ -994,6 +1023,9 @@ def build_site(site_id, base_url='', report=None):
             'posts': data.get('posts', []),
             'features': data.get('features', []),
             'all_datasets': data,
+            # contact_form 内置留言所需：平台 API 地址 + 站点 ID
+            'site_id': site_id,
+            'platform_api_url': _get_platform_base_url(),
         }
         _all_failures.extend(
             _render_for_language(env, tpl_html_dir, output_root, '', common, pages, data, meta, seo_records)
@@ -1096,17 +1128,14 @@ def build_template_preview(template_name, base_url=''):
     if languages:
         _build_language_selector_page(output_root, base_url, settings, theme, year, meta, translations)
         default_lang = meta.get('default_language', languages[0]['code'] if languages else 'zh-CN')
-        default_pages_for_lang, default_data_for_lang = _load_seed_lang_overrides(
-            seed, default_lang, default_lang, pages, data
-        )
         for lang_opt in languages:
             lang_code = lang_opt['code']
             t_data = translations.get(lang_code, {})
-            fallback_settings_to_default = lang_code == default_lang or not (seed / 'lang' / lang_code).exists()
+            fallback_settings_to_default = lang_code == default_lang
 
             # 加载语言特定 pages/data（seed_data/lang/<code>/ 覆盖默认）
             lang_pages, lang_data = _load_seed_lang_overrides(
-                seed, lang_code, default_lang, default_pages_for_lang, default_data_for_lang
+                seed, lang_code, default_lang, pages, data
             )
 
             # 语言特定 settings 覆盖（menu_en, footer_en, company_en, contact_en）
@@ -1152,6 +1181,8 @@ def build_template_preview(template_name, base_url=''):
                 'posts': lang_data.get('posts', []),
                 'features': lang_data.get('features', []),
                 'all_datasets': lang_data,
+                'site_id': 0,  # 预览无真实站点, 留 0
+                'platform_api_url': _get_platform_base_url(),
             }
             _render_for_language(env, tpl_html_dir, output_root, lang_code, common, lang_pages, lang_data, meta, seo_records)
     else:
@@ -1166,6 +1197,8 @@ def build_template_preview(template_name, base_url=''):
             'portfolio': data.get('portfolio', []),
             'posts': data.get('posts', []),
             'features': data.get('features', []),
+            'site_id': 0,  # 预览无真实站点
+            'platform_api_url': _get_platform_base_url(),
         }
         _render_for_language(env, tpl_html_dir, output_root, '', common, pages, data, meta, seo_records)
 

@@ -1,4 +1,4 @@
-"""店主后台路由.
+﻿"""店主后台路由.
 
 MVP 登录：邮箱魔法链接，不存密码。开发环境默认把登录链接打印到控制台，
 并在页面提示中展示，方便本地调试；接入邮件服务后替换发送逻辑即可。
@@ -26,7 +26,11 @@ from .translator import (generate_seo_description,
                          translate_json)
 from .builder import build_site, build_template_preview
 from .db import db
-from .models import LoginToken, Site, Template, User
+from flask_cors import cross_origin
+# CSRF 豁免：静态站点公开 API 无法提供 CSRF token, 需要豁免
+# csrf 是 app/__init__.py 模块级变量, 在 create_app() 调用时已初始化
+from app import csrf
+from .models import ContactMessage, LoginToken, Site, Template, User
 from .site_storage import (copy_seed_data, init_site_folder, lang_root,
                             list_media_files, list_yaml_files, read_yaml,
                             rename_media_file, delete_media_file,
@@ -90,6 +94,8 @@ AUTH_EXEMPT_ENDPOINTS = {
     'core.site_asset',
     'core.media_package_index',
     'core.media_package_asset',
+    # api_contact_submit 是公开留言接收端点, 静态站点访客无需登录
+    'core.api_contact_submit',
 }
 
 
@@ -702,6 +708,22 @@ def site_asset(filename):
     静态导出时由 output/assets 直接承载。
     """
     assets_root = None
+    referer = request.headers.get('Referer', '')
+    m = re.search(r'/preview(?:/(?:site|or_build))?/(\d+)', referer)
+    if m:
+        site = Site.query.get(int(m.group(1)))
+        if site:
+            site_assets = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
+            if (site_assets / filename).exists():
+                return _safe_send_from_directory(site_assets, filename)
+
+    site_id = session.get('current_site_id')
+    if site_id is not None:
+        site = Site.query.get(int(site_id))
+        if site:
+            site_assets = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
+            if (site_assets / filename).exists():
+                return _safe_send_from_directory(site_assets, filename)
 
     # 1. 模板预览 session（最优先：CSS 背景图 Referer 是 main.css，不包含 /preview/）
     tpl_name = session.get('current_template_preview')
@@ -858,6 +880,78 @@ def api_media_references():
         return jsonify({'error': '缺少文件名'}), 400
     refs = find_media_references(site.id, name)
     return jsonify({'filename': name, 'refs': refs, 'count': len(refs)})
+
+
+@bp.route('/api/contact/<int:site_id>', methods=['POST', 'OPTIONS'])
+@csrf.exempt
+@cross_origin(origins='*')
+def api_contact_submit(site_id):
+    """公开留言接收端点 —— 供静态站点 contact_form 表单 POST 提交.
+
+    CSRF 豁免原因：静态 HTML 页面无法生成 CSRF token, 且此端点无登录态、只写公开数据.
+    CORS 开放原因：静态站点可能托管在不同域（CDN / 自定义域名）.
+    反垃圾：蜜罐字段 __hp + 同站速率限制.
+    """
+    # ---- OPTIONS 预检 ----
+    if request.method == 'OPTIONS':
+        return jsonify({'ok': True})
+
+    # ---- 蜜罐反垃圾：bot 会填充隐藏字段, 人类看不到 ----
+    if request.form.get('__hp', '').strip():
+        return jsonify({'ok': True})  # 静默丢弃, 不让 bot 知道被拦截
+
+    # ---- 字段提取 ----
+    name = request.form.get('name', '').strip()
+    email = request.form.get('email', '').strip()
+    phone = request.form.get('phone', '').strip()
+    company = request.form.get('company', '').strip()
+    message_text = request.form.get('message', '').strip()
+    internal_site_id = request.form.get('__site_id', '').strip()
+
+    # ---- 基本校验 ----
+    if not name or not email or not message_text:
+        return jsonify({'error': '请填写姓名、邮箱和留言内容'}), 400
+
+    if len(message_text) > 5000:
+        return jsonify({'error': '留言内容过长（上限 5000 字符）'}), 400
+
+    if '@' not in email:
+        return jsonify({'error': '邮箱格式不正确'}), 400
+
+    # ---- 站点校验：优先用隐藏字段, 兜底 URL 参数 ----
+    try:
+        resolved_site_id = int(internal_site_id) if internal_site_id else site_id
+    except (ValueError, TypeError):
+        resolved_site_id = site_id
+
+    site = Site.query.get(resolved_site_id)
+    if not site:
+        return jsonify({'error': '站点不存在'}), 404
+
+    # ---- 速率限制：同站每分钟最多 10 条 ----
+    one_min_ago = datetime.now(timezone.utc) - timedelta(minutes=1)
+    recent = ContactMessage.query.filter(
+        ContactMessage.site_id == resolved_site_id,
+        ContactMessage.created_at >= one_min_ago
+    ).count()
+    if recent > 10:
+        return jsonify({'error': '提交过于频繁，请稍后再试'}), 429
+
+    # ---- 存储 ----
+    msg = ContactMessage(
+        site_id=resolved_site_id,
+        name=name,
+        email=email,
+        phone=phone or None,
+        company=company or None,
+        message=message_text,
+        ip_address=request.remote_addr,
+    )
+    db.session.add(msg)
+    db.session.commit()
+
+    current_app.logger.info('新留言: site_id=%d name=%s email=%s', resolved_site_id, name, email)
+    return jsonify({'ok': True})
 
 
 @bp.route('/api/media/upload', methods=['POST'])
@@ -1521,6 +1615,52 @@ def company():
                            languages=languages,
                            default_lang=default_lang,
                            active='company')
+
+
+# ---- 留言管理 ----
+
+@bp.route('/messages')
+def messages():
+    """店主后台：留言列表页, 按时间倒序展示非垃圾留言.
+
+    支持 ?embed=1 参数: 在中间栏 iframe 内展示时, 使用无外壳的嵌入版模板.
+    """
+    user, site = _current_context()
+    msgs = ContactMessage.query.filter_by(site_id=site.id, is_spam=False)\
+        .order_by(ContactMessage.created_at.desc()).all()
+    # 未读计数, 供侧边栏 badge 使用
+    unread_count = ContactMessage.query.filter_by(site_id=site.id, is_read=False, is_spam=False).count()
+    # 中间栏嵌入模式: 去掉外壳 (侧栏/顶栏), 只渲染内容区域
+    if request.args.get('embed') == '1':
+        return render_template('dashboard/messages_embed.html',
+                               user=user, site=site, messages=msgs,
+                               unread_count=unread_count, active='messages')
+    return render_template('dashboard/messages.html',
+                           user=user, site=site, messages=msgs,
+                           unread_count=unread_count, active='messages')
+
+
+@bp.route('/messages/<int:msg_id>/read', methods=['POST'])
+def message_mark_read(msg_id):
+    """标记留言为已读."""
+    _, site = _current_context()
+    msg = ContactMessage.query.filter_by(id=msg_id, site_id=site.id).first()
+    if msg:
+        msg.is_read = True
+        db.session.commit()
+    return redirect(url_for('core.messages'))
+
+
+@bp.route('/messages/<int:msg_id>/spam', methods=['POST'])
+def message_mark_spam(msg_id):
+    """软删除：标记留言为垃圾."""
+    _, site = _current_context()
+    msg = ContactMessage.query.filter_by(id=msg_id, site_id=site.id).first()
+    if msg:
+        msg.is_spam = True
+        db.session.commit()
+        flash('已标记为垃圾')
+    return redirect(url_for('core.messages'))
 
 
 @bp.route('/products')
@@ -2271,6 +2411,11 @@ SLUG_PATTERN = re.compile(r'^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$')
 # 字符集放宽到下划线 + 允许单字符, 覆盖现有所有 key(about/contact/home/
 # portfolio/posts/pricing/products/features), 零误伤。
 _KEY_PATTERN = re.compile(r'^[a-z0-9][a-z0-9_-]{0,40}$')
+VISIBLE_TEMPLATE_NAMES = ('claude', 'dengtec')
+
+
+def _visible_templates_query():
+    return Template.query.filter(Template.name.in_(VISIBLE_TEMPLATE_NAMES)).order_by(Template.name)
 
 
 def _validate_key(key):
@@ -2287,7 +2432,7 @@ def templates_gallery():
     if user and user.role != 'admin':
         query = query.filter_by(owner_id=user.id)
     site = query.order_by(Site.id.desc()).first()
-    templates = Template.query.order_by(Template.name).all()
+    templates = _visible_templates_query().all()
     if request.args.get('_fragment'):
         return render_template('dashboard/panel_templates.html',
                                user=user, site=site, templates=templates)
@@ -2300,7 +2445,7 @@ def templates_gallery():
 def template_preview(template_name, filepath='index.html'):
     """模板预览 —— 用模板 seed_data 渲染."""
     session['current_template_preview'] = template_name  # 后续 /assets/ 请求需要定位资源目录
-    if not Template.query.filter_by(name=template_name).first():
+    if template_name not in VISIBLE_TEMPLATE_NAMES or not Template.query.filter_by(name=template_name).first():
         abort(404)
     out = build_template_preview(
         template_name,
@@ -2317,8 +2462,8 @@ def template_preview(template_name, filepath='index.html'):
 def site_new():
     from .models import SLUG_RESERVED
     template_name = request.args.get('template')
-    template = Template.query.filter_by(name=template_name).first() if template_name else None
-    templates = Template.query.order_by(Template.name).all()
+    template = _visible_templates_query().filter_by(name=template_name).first() if template_name else None
+    templates = _visible_templates_query().all()
 
     def template_language_options(tpl_name):
         meta_path = Path(current_app.config['TEMPLATES_DIR']) / tpl_name / 'meta.yaml'
@@ -2359,9 +2504,9 @@ def site_new():
         form['enabled_languages'] = request.form.getlist('enabled_lang')
 
         # 解析模板：未选时使用第一个可用模板
-        selected_template = Template.query.filter_by(name=form['template_name']).first()
+        selected_template = _visible_templates_query().filter_by(name=form['template_name']).first()
         if not selected_template:
-            selected_template = Template.query.order_by(Template.name).first()
+            selected_template = _visible_templates_query().first()
         selected_languages, selected_default_lang = (
             template_language_options(selected_template.name) if selected_template else ([], 'zh-CN')
         )
@@ -2603,6 +2748,13 @@ def preview(site_id, filepath='index.html'):
     site = Site.query.get_or_404(site_id)
     _require_site_access(site)
     out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
+    parts = [part for part in str(filepath).replace('\\', '/').split('/') if part]
+    if parts:
+        asset_index = 0 if parts[0] == 'assets' else (1 if len(parts) > 1 and parts[1] == 'assets' else -1)
+        if asset_index >= 0:
+            asset_path = '/'.join(parts[asset_index + 1:])
+            return _safe_send_from_directory(out / 'assets', asset_path)
+
     # 根路径请求 → 返回根 index.html（多语言站走 JS 浏览器语言检测），不再跳默认语言
     if filepath == 'index.html':
         if _preview_needs_rebuild(site_id, out):

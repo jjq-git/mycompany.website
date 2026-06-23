@@ -1,0 +1,94 @@
+<!-- 留言管理嵌入版 —— 在中间栏 iframe 内展示, 不含侧栏/顶栏外壳 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>留言管理</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<style>
+  body { padding: 0; margin: 0; background: var(--bg, #f8fafc); font-size: 14px; }
+  .embed-page { padding: 20px 24px; max-width: 100%; }
+  .embed-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .embed-subtitle { font-size: 13px; color: #64748b; margin-bottom: 16px; }
+  .msg-table td, .msg-table th { vertical-align: middle; }
+  .msg-preview { cursor: pointer; }
+  .msg-detail { display: none; margin-top: 8px; padding: 10px 14px; background: #f8fafc; border-radius: 6px; white-space: pre-wrap; font-weight: normal; font-size: 13px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="embed-page">
+  <div style="display: flex; align-items: baseline; justify-content: space-between;">
+    <div>
+      <h1 class="embed-title">留言管理</h1>
+      <p class="embed-subtitle">共 {{ messages|length }} 条留言{% if unread_count is defined and unread_count > 0 %}，其中 <strong style="color: #067a7a;">{{ unread_count }}</strong> 条未读{% endif %}</p>
+    </div>
+  </div>
+
+  {% with flash_msgs = get_flashed_messages() %}
+    {% for m in flash_msgs %}
+      <div class="card" style="background: #ecfdf5; border-color: #a7f3d0; color: #065f46; margin-bottom: 12px;">{{ m }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {% if messages %}
+  <table class="table msg-table" style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+    <thead>
+      <tr>
+        <th style="width: 48px;">状态</th>
+        <th style="width: 90px;">姓名</th>
+        <th style="width: 180px;">邮箱</th>
+        <th style="width: 130px;">电话</th>
+        <th style="width: 110px;">公司</th>
+        <th>留言内容</th>
+        <th style="width: 110px;">时间</th>
+        <th style="width: 100px;">操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for msg in messages %}
+      <tr style="{% if not msg.is_read %}font-weight: 600;{% endif %}">
+        <td>
+          {% if not msg.is_read %}
+            <span class="badge" style="background: #067a7a; color: #fff;">未读</span>
+          {% else %}
+            <span class="badge" style="background: #e2e8f0; color: #64748b;">已读</span>
+          {% endif %}
+        </td>
+        <td>{{ msg.name }}</td>
+        <td>{{ msg.email }}</td>
+        <td>{{ msg.phone or '-' }}</td>
+        <td>{{ msg.company or '-' }}</td>
+        <td style="max-width: 280px;">
+          <span class="msg-preview" onclick="var d = this.nextElementSibling; d.style.display = d.style.display === 'block' ? 'none' : 'block';">{{ msg.message[:60] }}{% if msg.message|length > 60 %}...{% endif %}</span>
+          <div class="msg-detail">{{ msg.message }}</div>
+        </td>
+        <td style="font-size: 13px; white-space: nowrap; color: #94a3b8;">{{ msg.created_at.strftime('%m-%d %H:%M') if msg.created_at else '-' }}</td>
+        <td>
+          {% if not msg.is_read %}
+          <form method="post" action="{{ url_for('core.message_mark_read', msg_id=msg.id) }}" style="display: inline; margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn" type="submit" style="font-size: 12px; padding: 2px 8px;">已读</button>
+          </form>
+          {% endif %}
+          <form method="post" action="{{ url_for('core.message_mark_spam', msg_id=msg.id) }}"
+                onsubmit="return confirm('确认标记为垃圾？')" style="display: inline; margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn" type="submit" style="font-size: 12px; padding: 2px 8px; color: #ef4444;">垃圾</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="card empty">
+    <p>暂无留言</p>
+    <p style="font-size: 13px; color: #94a3b8;">访客通过网站联系表单提交的留言会显示在这里</p>
+  </div>
+  {% endif %}
+</div>
+</body>
+</html>

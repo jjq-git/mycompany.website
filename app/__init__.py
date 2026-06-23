@@ -13,10 +13,14 @@ csrf = CSRFProtect()
 
 
 def create_app(config_override=None):
-    # 修正 Windows 上 Python mimetypes 对 SVG 的错误 MIME 类型（image/svg → image/svg+xml）
-    # 浏览器在 <img> 标签中遇到 image/svg 会拒绝渲染，必须用正确的 image/svg+xml
+    # 修正 Windows 上 Python mimetypes 对静态媒体类型识别不完整的问题。
+    # 浏览器在 <img>/<video> 标签中遇到错误 MIME 时可能拒绝渲染。
     import mimetypes
     mimetypes.add_type('image/svg+xml', '.svg')
+    mimetypes.add_type('image/webp', '.webp')
+    mimetypes.add_type('video/mp4', '.mp4')
+    mimetypes.add_type('video/webm', '.webm')
+    mimetypes.add_type('video/ogg', '.ogg')
 
     # static_folder=None 阻止 Werkzeug SharedDataMiddleware 在 WSGI 层拦截 /static/
     # 改为自定义路由接管，优先从模板目录 serve，兜底 app/static/
@@ -177,7 +181,7 @@ def _register_context_processors(app):
 
     @app.context_processor
     def inject_template_meta():
-        from .core.models import Site
+        from .core.models import ContactMessage, Site
         from .core.translator import is_configured as translator_ready
         from flask import request
         # #32: translation_enabled 与 template_meta 无关, 移出 try ——
@@ -191,6 +195,10 @@ def _register_context_processors(app):
                 result['template_meta'] = (
                     _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
                 )
+                # 留言未读数, 供侧边栏 badge 使用
+                result['unread_count'] = ContactMessage.query.filter_by(
+                    site_id=site.id, is_read=False, is_spam=False
+                ).count()
         except Exception:
             # 不再静默吞: meta 读取失败要留痕, 但不影响 translation_enabled
             app.logger.exception('注入 template_meta 失败')
