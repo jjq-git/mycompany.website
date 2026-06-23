@@ -504,7 +504,7 @@ def inject_context():
         # 收集所有层级中 type=list 的菜单项（供数据网格模块选择数据源）
         ctx['all_list_datasets'] = menu_lib.collect_list_targets(normalized)  # #22
 
-    ctx['platform_domain'] = current_app.config.get('PLATFORM_DOMAIN', '')
+    ctx['platform_domain'] = current_app.config.get('PLATFORM_DOMAIN', '') or 'mycompany.website'
 
     # 主题主色（用于覆盖 Bootstrap 默认蓝色 #0d6efd）
     if site and site_id:
@@ -3447,6 +3447,7 @@ def _parse_modules_form(form, existing_modules=None):
             if b.get('is_data_attr') and b.get('schema') is not None:
                 schema_by_type[b['name']] = _merge_meta_lists_into_schema(b['schema'], b.get('fields') or [])
     except Exception:
+        current_app.logger.exception('_parse_modules_form: 构建 schema_by_type 失败，通用 list 解析将不生效——新添加的列表条目可能丢失')
         schema_by_type = {}
 
     modules = []
@@ -3761,13 +3762,13 @@ def _parse_modules_form(form, existing_modules=None):
         if m_type == 'feature_grid' and 'features' not in handled_lists:
             feature_count = 0
             try:
-                feature_count = int(form.get(f'{idx}_feature_count', '0'))
+                feature_count = int(form.get(f'{idx}_features_count', '0'))
             except (ValueError, TypeError):
                 feature_count = 0
 
             features = []
             for fi in range(feature_count):
-                prefix = f'{idx}_feature_{fi}_'
+                prefix = f'{idx}_features_{fi}_'
                 item = {}
                 for field in ('icon', 'title', 'desc'):
                     value = form.get(f'{prefix}{field}', '').strip()
@@ -3791,12 +3792,12 @@ def _parse_modules_form(form, existing_modules=None):
         if m_type == 'stat_counter' and 'stats' not in handled_lists:
             stat_count = 0
             try:
-                stat_count = int(form.get(f'{idx}_stat_count', '0'))
+                stat_count = int(form.get(f'{idx}_stats_count', '0'))
             except (ValueError, TypeError):
                 stat_count = 0
             stats = []
             for si in range(stat_count):
-                prefix = f'{idx}_stat_{si}_'
+                prefix = f'{idx}_stats_{si}_'
                 item = {}
                 for field in ('icon', 'number', 'suffix', 'label'):
                     value = form.get(f'{prefix}{field}', '').strip()
@@ -3811,12 +3812,12 @@ def _parse_modules_form(form, existing_modules=None):
         if m_type == 'logo_cloud' and 'logos' not in handled_lists:
             logo_count = 0
             try:
-                logo_count = int(form.get(f'{idx}_logo_count', '0'))
+                logo_count = int(form.get(f'{idx}_logos_count', '0'))
             except (ValueError, TypeError):
                 logo_count = 0
             logos = []
             for li in range(logo_count):
-                prefix = f'{idx}_logo_{li}_'
+                prefix = f'{idx}_logos_{li}_'
                 item = {}
                 # 键名对齐 data-* 模板：图片存 logo、链接存 link（renderer 读这两个 key）
                 for field in ('logo', 'link'):

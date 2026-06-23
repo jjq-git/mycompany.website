@@ -56,9 +56,7 @@ template.html + module.data ──注入──▶ 干净静态 HTML（剥掉 dat
 
 ## 功能型 block 的阶段性约定
 
-- **联系表单（`contact_form`）提交留言功能先走第三方或用户自建接口**：当前阶段平台不内置访客留言收集、邮件通知、线索管理或公开提交 API。主题里的 `contact_form` 只负责渲染表单，并通过 `form_action` 字段把表单 `POST` 到店主配置的提交地址，例如 Formspree、Getform、Basin、Cloudflare Workers、Vercel Function 或企业自有后端接口。
-- `form_action` 为空时，模板必须避免把表单默认提交到当前静态/预览页面；应阻止提交并提示店主先配置表单提交地址，防止预览页出现 `405 METHOD NOT ALLOWED`。
-- 后续如果要做平台内置留言功能，需要另行设计公开提交接口、数据表、垃圾防护、通知机制、后台查看入口，以及静态发布后的域名/CORS/CSRF 策略。
+- **联系表单（`contact_form`）已内置留言系统**：`form_action` 留空时表单自动提交到平台后端 API（`/api/contact/<site_id>`），留言存入 `contact_messages` 表，店主在后台"留言管理"页面查看。反垃圾：蜜罐隐藏字段 + 速率限制（每分钟 10 条）。CORS 开放、CSRF 豁免（静态站点无法生成 token）。`form_action` 填了第三方 URL 则仍走外部提交（兼容原有行为）。
 
 ## 不做
 

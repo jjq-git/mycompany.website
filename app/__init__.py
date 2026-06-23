@@ -186,7 +186,10 @@ def _register_context_processors(app):
         from flask import request
         # #32: translation_enabled 与 template_meta 无关, 移出 try ——
         # 原先 meta 读取出错会把 except 兜底成 translation_enabled=False, 误关翻译入口。
-        result = {'translation_enabled': translator_ready()}
+        result = {
+            'translation_enabled': translator_ready(),
+            'platform_domain': app.config.get('PLATFORM_DOMAIN', '') or 'mycompany.website',
+        }
         try:
             site_id = request.args.get('site', type=int)
             site = Site.query.get(site_id) if site_id else Site.query.order_by(Site.id.desc()).first()

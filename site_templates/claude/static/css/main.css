@@ -2031,37 +2031,50 @@ hr {
 /* ============================================
    stat_counter (sc-*)
    ============================================ */
+/* 全宽主色带，与线上 about-stats 风格一致 */
+section:has(.sc-grid) {
+  padding-top: 0;
+  padding-bottom: 0;
+  background: var(--color-primary);
+}
 .sc-grid {
   display: grid;
   grid-template-columns: repeat(var(--cols, 4), 1fr);
-  gap: var(--space-xxl);
+  gap: 2rem;
+  padding: 3.5rem 0;
+  text-align: center;
 }
 .sc-card { text-align: center; }
 .sc-icon {
-  width: 40px; height: 40px;
+  width: 48px; height: 48px;
   display: inline-flex; align-items: center; justify-content: center;
-  border-radius: var(--radius-md);
-  background-color: var(--color-surface-card);
-  color: var(--color-primary);
-  margin-bottom: var(--space-md);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 1rem;
 }
+.sc-icon svg { width: 24px; height: 24px; }
 .sc-number {
-  font-family: var(--font-display);
-  font-size: var(--text-display-md);
-  font-weight: 400;
-  line-height: var(--leading-display-md);
-  letter-spacing: var(--tracking-display-md);
-  color: var(--color-ink);
+  font-size: 2.5rem; font-weight: 800; line-height: 1;
+  color: #fff;
+  margin-bottom: 0.25rem;
 }
 .sc-suffix {
-  font-family: var(--font-display);
-  color: var(--color-primary);
-  font-size: var(--text-display-sm);
+  font-size: 1.25rem; font-weight: 700;
+  color: rgba(255,255,255,0.6);
 }
 .sc-label {
-  font-size: var(--text-body-sm);
-  color: var(--color-muted);
-  margin-top: var(--space-xs);
+  font-size: 0.9rem; font-weight: 500;
+  color: rgba(255,255,255,0.8);
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .sc-grid { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; padding: 2.5rem 0; }
+  .sc-number { font-size: 2rem; }
+}
+@media (max-width: 480px) {
+  .sc-grid { grid-template-columns: 1fr; }
 }
 
 /* ============================================
@@ -2219,23 +2232,72 @@ a.ci-value:hover { color: var(--color-primary); }
    process_steps (ps-*)
    ============================================ */
 .ps-track {
-  display: flex; gap: var(--space-lg); justify-content: center;
-  flex-wrap: wrap;
+  display: grid;
+  gap: var(--space-lg);
+  max-width: 100%;
 }
 .ps-track--horizontal {
-  flex-direction: row;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  overflow-x: auto;
+}
+.ps-track--vertical {
+  grid-template-columns: 1fr;
+  gap: 0;
+  width: 500px;
+  margin: 0 auto;
 }
 .ps-step {
-  flex: 1; min-width: 200px; max-width: 300px;
+  position: relative;
   text-align: center;
 }
+.ps-track--vertical .ps-step {
+  display: flex;
+  gap: var(--space-lg);
+  text-align: left;
+  padding-bottom: var(--space-lg);
+  border-left: 2px solid var(--color-border, #e2e8f0);
+  padding-left: var(--space-lg);
+  margin-left: var(--space-sm);
+}
+.ps-track--vertical .ps-step:last-child {
+  border-left-color: transparent;
+  padding-bottom: 0;
+}
 .ps-marker {
-  width: 48px; height: 48px;
   display: flex; align-items: center; justify-content: center;
-  border-radius: var(--radius-full);
-  background-color: var(--color-primary);
+  margin-bottom: var(--space-sm);
+  position: relative;
+}
+.ps-track--vertical .ps-marker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateX(-50%);
+  margin-bottom: 0;
+}
+.ps-number {
+  display: flex; align-items: center; justify-content: center;
+  width: 2rem; height: 2rem;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: var(--text-body-sm);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.ps-track--vertical .ps-number {
+  width: 1.5rem; height: 1.5rem;
+  font-size: var(--text-caption);
+}
+.ps-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 2.5rem; height: 2.5rem;
+  border-radius: 50%;
+  background: var(--color-primary);
   color: var(--color-on-primary);
-  margin: 0 auto var(--space-md);
+  flex-shrink: 0;
+  margin: 0 auto var(--space-sm);
 }
 .ps-icon svg {
   width: 24px; height: 24px;
@@ -2250,6 +2312,41 @@ a.ci-value:hover { color: var(--color-primary); }
   font-size: var(--text-body-sm);
   color: var(--color-muted);
   line-height: var(--leading-body);
+}
+
+/* 横向步骤间的连接线 */
+.ps-track--horizontal .ps-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 1.25rem;   /* 对齐 marker icon 中心 */
+  right: -0.75rem;
+  width: 1.5rem;
+  height: 2px;
+  background: var(--color-border, #e2e8f0);
+}
+
+/* 数字序号变体：CSS counter 自增 1/2/3... */
+.ps-track--numbered {
+  counter-reset: ps-counter;
+}
+.ps-track--numbered .ps-step {
+  counter-increment: ps-counter;
+}
+.ps-track--numbered .ps-number::before {
+  content: counter(ps-counter);
+}
+
+@media (max-width: 768px) {
+  .ps-track--horizontal {
+    grid-auto-flow: row;
+    overflow-x: visible;
+  }
+  .ps-track--horizontal .ps-step:not(:last-child)::after {
+    display: none;
+  }
+  .ps-track--vertical {
+    width: 100%;
+  }
 }
 
 /* ============================================
@@ -2844,7 +2941,6 @@ a.ci-value:hover { color: var(--color-primary); }
 /* Tablet: 768-1024px */
 @media (max-width: 1024px) {
   .services-grid { grid-template-columns: repeat(2, 1fr); }
-  .sc-grid { grid-template-columns: repeat(2, 1fr); }
   .lc-grid { grid-template-columns: repeat(3, 1fr); }
   .dg-list { grid-template-columns: repeat(2, 1fr); }
   .hl-grid { gap: var(--space-xl); }
@@ -2867,7 +2963,6 @@ a.ci-value:hover { color: var(--color-primary); }
 
   .hl-grid { flex-direction: column; gap: var(--space-lg); }
   .services-grid { grid-template-columns: 1fr; }
-  .sc-grid { grid-template-columns: 1fr; }
   .lc-grid { grid-template-columns: repeat(2, 1fr); }
   .dg-list { grid-template-columns: 1fr; }
   .id-grid { grid-template-columns: 1fr; }
@@ -2905,7 +3000,6 @@ a.ci-value:hover { color: var(--color-primary); }
   .ci-grid { grid-template-columns: 1fr; }
   .lc-grid { grid-template-columns: 1fr; }
   .st-block { padding: var(--space-lg) 0; }
-  .sc-number { font-size: var(--text-display-sm); }
 }
 
 /* ====== Image Carousel (ic-) ====== */

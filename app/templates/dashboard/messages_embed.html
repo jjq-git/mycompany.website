@@ -126,6 +126,7 @@
     .msg-action:hover { background: #f1f5f9; color: #475569; }
     .msg-action.btn-read:hover { background: #ecfdf5; color: #059669; border-color: #d1fae5; }
     .msg-action.btn-spam:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+    .msg-action.btn-reply:hover { background: #eff6ff; color: #2563eb; border-color: #dbeafe; }
 
     .msg-detail-row {
       display: none; padding: 12px 12px 12px 60px; border-bottom: 1px solid #f1f5f9;
@@ -159,6 +160,11 @@
         <span class="media-count">{{ messages|length }} 条留言</span>
       </div>
 
+      <div class="inbox-tabs">
+        <button class="inbox-tab active" data-filter="all">全部</button>
+        <button class="inbox-tab" data-filter="unread">未读 <span class="badge">{{ unread_count if unread_count else 0 }}</span></button>
+      </div>
+
       {% with flash_msgs = get_flashed_messages() %}
         {% for m in flash_msgs %}<div class="flash-toast">{{ m }}</div>{% endfor %}
       {% endwith %}
@@ -181,6 +187,9 @@
             <span class="msg-time">{{ msg.created_at.strftime('%m-%d %H:%M') if msg.created_at else '-' }}</span>
           </div>
           <div class="msg-actions">
+            <a class="msg-action btn-reply" href="mailto:{{ msg.email }}?subject=Re: {{ msg.message[:40] | urlencode if False else '' }}您的留言" title="回复" style="text-decoration:none;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+            </a>
             {% if not msg.is_read %}
             <form method="post" action="{{ url_for('core.message_mark_read', msg_id=msg.id) }}" style="margin:0;">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

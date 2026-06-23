@@ -241,6 +241,16 @@ def _inject_href(node, data_dict, context=None):
         return
     href_val = data_dict.get(href_field)
     if href_val:
+        # 以 / 开头的站内相对路径拼上 base_url/lang，保证预览和发布都正确
+        # （与 _base.html 中 menu_href 宏的 base_url/lang/href 拼接模式一致）
+        if isinstance(href_val, str) and href_val.startswith('/') and not href_val.startswith('//'):
+            vars_ctx = ((context or {}).get('vars') or {})
+            base = (vars_ctx.get('base_url') or '').rstrip('/')
+            lang = vars_ctx.get('lang') or ''
+            if base and lang:
+                href_val = f'{base}/{lang}{href_val}'
+            elif base:
+                href_val = f'{base}{href_val}'
         safe = _safe_href(href_val)
         if safe:
             node.attrs['href'] = safe  # 序列化时统一转义

@@ -7,10 +7,10 @@
 #
 # 脚本会持续运行:
 #   1. 每 10 秒 git fetch，检查是否有新提交
-#   2. 有新提交 → git pull → 停止旧 Flask → 启动新 Flask
+#   2. 有新提交 → git pull → 同步模板表 → 停止旧 Flask → 启动新 Flask
 #   3. Flask 进程崩溃 → 自动重启
 #
-# 停止: kill $(cat /tmp/mycompany-auto-reload.pid)
+# 停止: kill $(cat /var/www/mycompany.website/auto-reload.pid)
 
 set -e
 
@@ -28,6 +28,10 @@ POLL_INTERVAL=${POLL_INTERVAL:-10}      # 检查间隔（秒）
 BRANCH=${BRANCH:-jan}                 # 监控的分支
 FLASK_HOST=${FLASK_HOST:-0.0.0.0}
 FLASK_PORT=${FLASK_PORT:-5000}
+FLASK_DEBUG=${FLASK_DEBUG:-0}
+LOG_FILE=${LOG_FILE:-flask_runtime.log}
+VENV_DIR=${VENV_DIR:-.venv}
+PID_FILE=${PID_FILE:-auto-reload.pid}
 
 # ── 找到项目目录 ──────────────────────────────────────────────────────
 PROJECT_DIR=""
@@ -50,9 +54,49 @@ fi
 
 info "项目目录: $PROJECT_DIR"
 cd "$PROJECT_DIR"
+git config --global --add safe.directory "$PROJECT_DIR" 2>/dev/null || true
 
 # 记录 PID
-echo $$ > /tmp/mycompany-auto-reload.pid
+echo $$ > "$PID_FILE"
+
+# ── 函数：准备运行环境 ───────────────────────────────────────────────
+ensure_runtime() {
+    cd "$PROJECT_DIR"
+    if [ ! -d "$VENV_DIR" ]; then
+        info "创建 Python 虚拟环境: $VENV_DIR"
+        python3 -m venv "$VENV_DIR"
+    fi
+    "$VENV_DIR/bin/python" -m pip install -r requirements.txt >/tmp/mycompany-pip-install.log 2>&1 || {
+        warn "依赖安装失败，查看日志: tail -80 /tmp/mycompany-pip-install.log"
+        return 1
+    }
+    if [ ! -f .env ]; then
+        info "生成 .env"
+        local secret
+        secret=$("$VENV_DIR/bin/python" -c 'import secrets; print(secrets.token_urlsafe(48))')
+        umask 077
+        cat > .env <<ENV
+SECRET_KEY=$secret
+FLASK_HOST=$FLASK_HOST
+FLASK_PORT=$FLASK_PORT
+FLASK_DEBUG=$FLASK_DEBUG
+ENV
+    fi
+}
+
+# ── 函数：同步模板元信息到数据库 ───────────────────────────────────
+scan_templates() {
+    cd "$PROJECT_DIR"
+    info "同步模板库到数据库..."
+    set -a
+    . ./.env
+    set +a
+    export FLASK_HOST FLASK_PORT FLASK_DEBUG
+    "$VENV_DIR/bin/python" -m flask --app run scan-templates || {
+        warn "模板同步失败"
+        return 1
+    }
+}
 
 # ── 函数：停止旧 Flask 进程 ───────────────────────────────────────────
 stop_flask() {
@@ -73,9 +117,15 @@ stop_flask() {
 # ── 函数：启动 Flask ─────────────────────────────────────────────────
 start_flask() {
     stop_flask
+    ensure_runtime || return 1
+    scan_templates || return 1
     info "启动 Flask (host=$FLASK_HOST port=$FLASK_PORT)..."
     cd "$PROJECT_DIR"
-    nohup python3 run.py >> /tmp/mycompany-flask.log 2>&1 &
+    set -a
+    . ./.env
+    set +a
+    export FLASK_HOST FLASK_PORT FLASK_DEBUG
+    nohup "$VENV_DIR/bin/python" run.py > "$LOG_FILE" 2>&1 &
     local new_pid=$!
     sleep 3
     if kill -0 $new_pid 2>/dev/null; then
@@ -83,7 +133,7 @@ start_flask() {
         info "Flask 启动成功 PID=$new_pid | $latest"
         info "访问: http://192.168.1.38:$FLASK_PORT/"
     else
-        warn "Flask 启动失败！查看日志: tail /tmp/mycompany-flask.log"
+        warn "Flask 启动失败！查看日志: tail -80 $PROJECT_DIR/$LOG_FILE"
     fi
 }
 
@@ -101,7 +151,7 @@ while true; do
     sleep "$POLL_INTERVAL"
 
     # 检查 Flask 是否还在运行
-    local flask_pid=$(pgrep -f "python.*run.py" 2>/dev/null | head -1 || true)
+    flask_pid=$(pgrep -f "python.*run.py" 2>/dev/null | head -1 || true)
     if [ -z "$flask_pid" ]; then
         warn "Flask 进程已退出，自动重启..."
         start_flask
@@ -118,9 +168,14 @@ while true; do
 
     if [ -n "$NEW_COMMIT" ] && [ "$NEW_COMMIT" != "$LAST_COMMIT" ]; then
         info "检测到新提交: ${NEW_COMMIT:0:7} (旧: ${LAST_COMMIT:0:7})"
+        if ! git diff --quiet 2>/dev/null || ! git diff --cached --quiet 2>/dev/null; then
+            warn "检测到服务器本地改动，先 stash 后再部署"
+            git stash push --include-untracked -m "auto-stash before deploy $(date +%Y%m%d-%H%M%S)" >/dev/null
+        fi
         git merge "origin/$BRANCH" --ff-only 2>/dev/null || {
-            warn "fast-forward 失败，尝试 reset..."
-            git reset --hard "origin/$BRANCH"
+            warn "fast-forward 失败，跳过本轮部署；请手动检查服务器 Git 状态"
+            LAST_COMMIT=$(git rev-parse "$BRANCH" 2>/dev/null || echo "")
+            continue
         }
         info "代码已更新: $(git log -1 --format='%h %s')"
         LAST_COMMIT="$NEW_COMMIT"
