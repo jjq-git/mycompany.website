@@ -116,38 +116,38 @@
     return '<div class="rte-wrapper">' +
       '<div class="rich-toolbar rte-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
       /* 格式按钮 */
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="bold" title="加粗" style="font-size:12px;line-height:1"><b>B</b></button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="italic" title="斜体" style="font-size:12px;line-height:1"><i>I</i></button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="underline" title="下划线" style="font-size:12px;line-height:1"><u>U</u></button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="strikeThrough" title="删除线" style="font-size:12px;line-height:1"><s>S</s></button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="bold" title="加粗" style="font-size:12px;line-height:1"><b>B</b></button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="italic" title="斜体" style="font-size:12px;line-height:1"><i>I</i></button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="underline" title="下划线" style="font-size:12px;line-height:1"><u>U</u></button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="strikeThrough" title="删除线" style="font-size:12px;line-height:1"><s>S</s></button>' +
       '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
       /* 标题按钮 */
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="formatBlock" data-arg="h2" title="大标题" style="font-size:12px;line-height:1">H2</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="formatBlock" data-arg="h3" title="小标题" style="font-size:12px;line-height:1">H3</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="formatBlock" data-arg="p" title="正文段落" style="font-size:12px;line-height:1">P</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="formatBlock" data-arg="h2" title="大标题" style="font-size:12px;line-height:1">H2</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="formatBlock" data-arg="h3" title="小标题" style="font-size:12px;line-height:1">H3</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="formatBlock" data-arg="p" title="正文段落" style="font-size:12px;line-height:1">P</button>' +
       '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
       /* 对齐 */
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="justifyLeft" title="左对齐" style="font-size:12px;line-height:1">≡</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="justifyCenter" title="居中" style="font-size:12px;line-height:1">≡</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="justifyRight" title="右对齐" style="font-size:12px;line-height:1">≡</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyLeft" title="左对齐" style="font-size:12px;line-height:1">≡</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyCenter" title="居中" style="font-size:12px;line-height:1">≡</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyRight" title="右对齐" style="font-size:12px;line-height:1">≡</button>' +
       '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
       /* 列表 */
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="insertUnorderedList" title="无序列表" style="font-size:12px;line-height:1">•≡</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="insertOrderedList" title="有序列表" style="font-size:12px;line-height:1">OL</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn rte-table-btn" title="插入表格" style="font-size:12px;line-height:1">TB</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn rte-link-btn" title="插入链接" style="font-size:12px;line-height:1">🔗</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertUnorderedList" title="无序列表" style="font-size:12px;line-height:1">•≡</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertOrderedList" title="有序列表" style="font-size:12px;line-height:1">OL</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-btn" title="插入表格" style="font-size:12px;line-height:1">TB</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn rte-link-btn" title="插入链接" style="font-size:12px;line-height:1">🔗</button>' +
       '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
       /* 块级 */
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="formatBlock" data-arg="blockquote" title="引用块" style="font-size:12px;line-height:1">❝</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="insertHorizontalRule" title="分割线" style="font-size:12px;line-height:1">—</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="formatBlock" data-arg="blockquote" title="引用块" style="font-size:12px;line-height:1">❝</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertHorizontalRule" title="分割线" style="font-size:12px;line-height:1">—</button>' +
       '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
       /* 文字颜色 */
       '<input type="color" class="rte-color-picker" value="#141413" style="width:28px;height:28px;border:1px solid #dee2e6;border-radius:4px;padding:2px;cursor:pointer" title="文字颜色">' +
       '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
       /* 清除格式 + 撤销/重做 */
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="removeFormat" title="清除格式" style="font-size:12px;line-height:1">✕</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="undo" title="撤销" style="font-size:12px;line-height:1">↩</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="redo" title="重做" style="font-size:12px;line-height:1">↪</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="removeFormat" title="清除格式" style="font-size:12px;line-height:1">✕</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="undo" title="撤销" style="font-size:12px;line-height:1">↩</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="redo" title="重做" style="font-size:12px;line-height:1">↪</button>' +
       '</div>' +
       '<div contenteditable="true" class="rich-editor-body form-control form-control-sm rte-editor" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto;line-height:1.7;font-size:13px;outline:none" data-placeholder="">' + (value || '') + '</div>' +
       '<textarea class="form-control form-control-sm d-none" name="' + esc(name) + '">' + esc(value || '') + '</textarea>' +
@@ -2668,7 +2668,7 @@
   function makeRteToolbarButton(className, label, title, html) {
     var btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'btn btn-sm btn-outline-secondary py-1 px-2 rte-btn ' + className;
+    btn.className = 'btn btn-sm btn-light rte-btn ' + className;
     btn.style.cssText = 'font-size:12px;line-height:1';
     btn.title = title;
     btn.setAttribute('aria-label', title);
@@ -2761,7 +2761,7 @@
     if (!wrapper.querySelector('.rte-table-settings-btn')) {
       var tableBtn = document.createElement('button');
       tableBtn.type = 'button';
-      tableBtn.className = 'btn btn-sm btn-outline-secondary py-1 px-2 rte-btn rte-table-settings-btn';
+      tableBtn.className = 'btn btn-sm btn-light rte-btn rte-table-settings-btn';
       tableBtn.style.cssText = 'font-size:12px;line-height:1';
       tableBtn.title = '表格设置';
       tableBtn.textContent = 'T';
@@ -2776,7 +2776,7 @@
     if (!wrapper.querySelector('.rte-upload-image-btn')) {
       var btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'btn btn-sm btn-outline-secondary py-1 px-2 rte-btn rte-upload-image-btn';
+      btn.className = 'btn btn-sm btn-light rte-btn rte-upload-image-btn';
       btn.style.cssText = 'font-size:12px;line-height:1';
       btn.title = '上传并插入图片';
       btn.setAttribute('aria-label', '上传图片');
@@ -2786,7 +2786,7 @@
     if (!wrapper.querySelector('.rte-video-url-btn')) {
       var videoUrlBtn = document.createElement('button');
       videoUrlBtn.type = 'button';
-      videoUrlBtn.className = 'btn btn-sm btn-outline-secondary py-1 px-2 rte-btn rte-video-url-btn';
+      videoUrlBtn.className = 'btn btn-sm btn-light rte-btn rte-video-url-btn';
       videoUrlBtn.style.cssText = 'font-size:12px;line-height:1';
       videoUrlBtn.title = '插入视频链接';
       videoUrlBtn.setAttribute('aria-label', '插入视频链接');
@@ -2796,7 +2796,7 @@
     if (!wrapper.querySelector('.rte-upload-video-btn')) {
       var videoBtn = document.createElement('button');
       videoBtn.type = 'button';
-      videoBtn.className = 'btn btn-sm btn-outline-secondary py-1 px-2 rte-btn rte-upload-video-btn';
+      videoBtn.className = 'btn btn-sm btn-light rte-btn rte-upload-video-btn';
       videoBtn.style.cssText = 'font-size:12px;line-height:1';
       videoBtn.title = '上传并插入视频';
       videoBtn.setAttribute('aria-label', '上传视频');
