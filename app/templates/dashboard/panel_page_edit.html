@@ -588,43 +588,6 @@ function updateConditionalFields(root) {
   });
 }
 
-function richEditorHtml(name, value) {
-  var icons = {
-    bold: '<svg viewBox="0 0 24 24"><path d="M7 5h7a4 4 0 0 1 0 8H7z"/><path d="M7 13h8a4 4 0 0 1 0 8H7z"/></svg>',
-    italic: '<svg viewBox="0 0 24 24"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg>',
-    underline: '<svg viewBox="0 0 24 24"><path d="M6 4v6a6 6 0 0 0 12 0V4"/><path d="M4 21h16"/></svg>',
-    strike: '<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M16 6.5A4.5 4.5 0 0 0 8 9c0 1 .4 1.8 1.2 2.4"/><path d="M9 17.5a5 5 0 0 0 7.7-2.2"/></svg>',
-    left: '<svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 10h10"/><path d="M4 14h16"/><path d="M4 18h10"/></svg>',
-    center: '<svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M7 10h10"/><path d="M4 14h16"/><path d="M7 18h10"/></svg>',
-    right: '<svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M10 10h10"/><path d="M4 14h16"/><path d="M10 18h10"/></svg>',
-    ul: '<svg viewBox="0 0 24 24"><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>',
-    ol: '<svg viewBox="0 0 24 24"><path d="M10 6h10"/><path d="M10 12h10"/><path d="M10 18h10"/><path d="M4 5h1v4"/><path d="M3.5 9h3"/><path d="M3.5 12.5A1.5 1.5 0 0 1 5 11h0a1.5 1.5 0 0 1 .9 2.7L4 16h3"/><path d="M4 19h1.5a1.5 1.5 0 1 0 0-3H4"/></svg>',
-    link: '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.2 1.2"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.2-1.2"/></svg>',
-    clear: '<svg viewBox="0 0 24 24"><path d="m7 21 10-10"/><path d="m12 3 9 9-6 6H6l-3-3z"/></svg>',
-    undo: '<svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-1"/></svg>',
-    redo: '<svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h1"/></svg>'
-  };
-  function btn(cmd, title, icon, extra) {
-    return '<button type="button" class="btn btn-sm btn-light rte-btn ' + (extra || '') + '" data-cmd="' + cmd + '" title="' + title + '" aria-label="' + title + '">' + icon + '</button>';
-  }
-  return '<div class="rte-wrapper">' +
-    '<div class="rich-toolbar rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">' +
-    btn('bold', '加粗', icons.bold) + btn('italic', '斜体', icons.italic) + btn('underline', '下划线', icons.underline) + btn('strikeThrough', '删除线', icons.strike) +
-    '<span class="rte-sep"></span>' +
-    '<select class="form-select form-select-sm rte-heading-select" style="width:auto;font-size:12px" title="标题"><option value="">正文</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option></select>' +
-    '<span class="rte-sep"></span>' +
-    btn('justifyLeft', '左对齐', icons.left) + btn('justifyCenter', '居中', icons.center) + btn('justifyRight', '右对齐', icons.right) +
-    '<span class="rte-sep"></span>' +
-    btn('insertUnorderedList', '无序列表', icons.ul) + btn('insertOrderedList', '有序列表', icons.ol) +
-    '<button type="button" class="btn btn-sm btn-light rte-btn rte-link-btn" title="链接" aria-label="链接">' + icons.link + '</button>' +
-    '<span class="rte-sep"></span>' +
-    '<input type="color" class="rte-color-picker" value="#141413" title="文字颜色">' +
-    btn('removeFormat', '清除格式', icons.clear) + btn('undo', '撤销', icons.undo) + btn('redo', '重做', icons.redo) +
-    '</div>' +
-    '<div contenteditable="true" class="rich-editor-body form-control form-control-sm rte-editor" style="min-height:120px;max-height:300px;overflow-y:auto;line-height:1.7;font-size:13px;outline:none" data-placeholder="">' + (value || '') + '</div>' +
-    '<textarea class="form-control form-control-sm d-none" name="' + escapeHtml(name) + '">' + escapeHtml(value || '') + '</textarea>' +
-    '</div>';
-}
 function isDescriptionKey(key) {
   return /(description|summary|excerpt|desc|intro|message)/i.test(String(key || ''));
 }
