@@ -244,6 +244,46 @@
       if (e.key === 'Escape') finish(false);
     });
   }
+  function preview(card) {
+    // 切换激活状态，高亮当前选中的媒体卡片
+    grid.querySelectorAll('.media-card.active').forEach(function(c) { c.classList.remove('active'); });
+    card.classList.add('active');
+
+    var name = card.dataset.name;
+    var displayName = card.dataset.displayName;
+    var url = card.dataset.url;
+    var category = card.dataset.category;
+    var categoryLabel = card.dataset.categoryLabel;
+    var size = card.dataset.size;
+
+    // 更新预览标题
+    previewTitle.textContent = displayName;
+
+    // 根据媒体类型渲染预览内容
+    if (category === 'image') {
+      previewBody.innerHTML = '<img src="' + url + '" alt="' + displayName + '" style="max-width:100%;height:auto;border-radius:4px;">';
+    } else if (category === 'video') {
+      previewBody.innerHTML = '<video src="' + url + '" controls style="max-width:100%;height:auto;border-radius:4px;"></video>';
+    } else if (category === 'package') {
+      previewBody.innerHTML = '<iframe src="' + url + '" style="width:100%;height:400px;border:1px solid var(--border-color, #e0e0e0);border-radius:4px;"></iframe>';
+    } else if (category === 'document') {
+      previewBody.innerHTML = '<div class="media-preview-placeholder"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h6"/></svg><div>文档文件，点击下载查看</div></div>';
+    } else {
+      previewBody.innerHTML = '<div class="media-preview-placeholder"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><div>不支持预览此文件类型</div></div>';
+    }
+
+    // 更新信息面板（类型、大小、路径）
+    previewInfo.hidden = false;
+    var typeEl = previewInfo.querySelector('[data-preview-type]');
+    var sizeEl = previewInfo.querySelector('[data-preview-size]');
+    if (typeEl) typeEl.textContent = categoryLabel;
+    if (sizeEl) sizeEl.textContent = size;
+    if (previewUrlCode) {
+      previewUrlCode.textContent = url;
+      previewUrlCode.dataset.name = name;
+    }
+  }
+
   function deleteCard(card) {
     var name = card.dataset.name;
     references(name).then(function(result) {
