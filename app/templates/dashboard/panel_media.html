@@ -414,20 +414,56 @@
     return toShow > 0;
   }
 
-  // 滚动加载：用 IntersectionObserver 监听哨兵元素
+  // 滚动加载：用 IntersectionObserver + scroll 事件双保险
   var sentinel = document.getElementById('mediaScrollSentinel');
+  var scrollPane = grid.closest('.media-list-pane') || document.querySelector('.media-list-pane');
+  var loadingMore = false;  // 防止重复触发
+
+  function tryLoadMore() {
+    if (loadingMore) return;
+    loadingMore = true;
+    var hasMore = showMoreCards();
+    // 用 rAF 确保 DOM 已更新，再用 setTimeout 释放锁
+    requestAnimationFrame(function() {
+      setTimeout(function() { loadingMore = false; }, 100);
+    });
+    if (hasMore && sentinel) {
+      // 确保哨兵始终在列表末尾，触发下次滚动检测
+      sentinel.scrollIntoView({ block: 'end' });
+    }
+  }
+
+  // 方案一：IntersectionObserver（现代浏览器）
   if (sentinel && 'IntersectionObserver' in window) {
     var observer = new IntersectionObserver(function(entries) {
       entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          showMoreCards();
-        }
+        if (entry.isIntersecting) tryLoadMore();
       });
-    }, { root: null, rootMargin: '200px' });
-    // 先观察 grid 的父容器滚动区；不滚动时 observer(null) 使用 viewport
-    var scrollPane = grid.closest('.media-list-pane');
+    }, { root: null, rootMargin: '300px', threshold: 0 });
     observer.observe(sentinel);
   }
+
+  // 方案二：scroll 事件兜底（IntersectionObserver 在某些嵌套滚动场景不触发）
+  if (scrollPane) {
+    var scrollTimer = null;
+    scrollPane.addEventListener('scroll', function() {
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(function() {
+        if (!sentinel) return;
+        var rect = sentinel.getBoundingClientRect();
+        var containerRect = scrollPane.getBoundingClientRect();
+        // 哨兵接近可视区域底部时加载更多
+        if (rect.top < containerRect.bottom + 400) tryLoadMore();
+      }, 150);
+    }, { passive: true });
+  }
+
+  // 初始检查：如果内容不足以填满视口，立即加载更多
+  setTimeout(function() {
+    if (!sentinel) return;
+    var rect = sentinel.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 200) tryLoadMore();
+  }, 300);
 
   function clampPreviewWidth(width) {
     if (!managerLayout) return width;

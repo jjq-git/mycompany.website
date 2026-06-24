@@ -386,8 +386,9 @@ def _uploaded_image_or_form(site_id, form_field, file_field=None, prefix='image'
 
 
 def _field_looks_like_image(field):
+    """匹配媒体字段（图片+视频+音频+嵌入），供 _parse_modules_form 处理上传文件。"""
     name = (field or '').lower()
-    return any(part in name for part in ('image', 'cover', 'background', 'media', 'photo', 'logo'))
+    return any(part in name for part in ('image', 'cover', 'background', 'media', 'photo', 'logo', 'video', 'audio', 'embed'))
 
 
 def _current_user():
@@ -1390,7 +1391,7 @@ def _seo_health_report(site, lang=None):
             if not (item.get('summary') or item.get('description') or item.get('excerpt')):
                 add('warn', f'{dataset_key} / {item_title} 缺少摘要',
                     '详情页 description 和 llms.txt 摘要会变弱，建议补一段简短说明。',
-                    url_for('core.dataset_edit', dataset_key=dataset_key, item_id=item.get('id'), site=site.id, lang=lang))
+                    url_for('core.dataset_edit', dataset_key=dataset_key, item_id=item.get('id'), _fragment='1', site=site.id, lang=lang))
 
     if list_pages_without_description:
         add('info', f'{len(list_pages_without_description)} 个列表页缺少简介',

@@ -1,4 +1,4 @@
-﻿/* admin_modules.js —鍏变韩模块琛ㄥ崟娓叉煋
+/* admin_modules.js —鍏变韩模块琛ㄥ崟娓叉煋
  *
  * 页面编辑鍣?(panel_page_edit.html) 鍜屾暟鎹泦编辑闈㈡澘 (panel_data_list.html)
  * 鍏辩敤姝ゆ枃浠躲€傛瘡涓ā鏉垮湪浣跨敤鍓嶅畾涔夊ソ:
@@ -404,7 +404,7 @@
       } else if (def.control === 'color') {
         html += '<div class="input-group input-group-sm">' +
           '<input type="color" class="form-control form-control-color" value="' + schemaEsc(val || '#888888') + '" oninput="this.nextElementSibling.value=this.value">' +
-          '<input type="text" class="form-control form-control-sm" name="' + schemaEsc(name) + '" value="' + schemaEsc(val) + '" placeholder="濡?#f5f7fa"></div>';
+          '<input type="text" class="form-control form-control-sm" name="' + schemaEsc(name) + '" value="' + schemaEsc(val) + '" placeholder="如 #f5f7fa"></div>';
       } else if (def.control === 'image') {
         html += mediaUploadHtml(name, val || '', 'image', '鑳屾櫙鍥?URL');
       } else {
@@ -1482,9 +1482,9 @@
       specialEditor =
         '<div class="small fw-semibold mb-1 text-muted">基础字段</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm font-monospace" name="slug" value="' + esc(item.slug || '') + '" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="濡?my-post"><div class="form-text">鑻辨枃+数字+杩炲瓧绗︼紝鍞竴鏍囪瘑</div></div>' +
-        /* 鈹€鈹€ 灏侀潰鍥撅細浣嶄簬日期涓婃柟锛屽彧显示鍦ㄦ暟鎹泦列表缂╃暐鍥撅紝涓嶅湪详情椤靛睍绀?鈹€鈹€ */
+        /* ==== 灏侀潰鍥撅細浣嶄簬日期涓婃柟锛屽彧显示鍦ㄦ暟鎹泦列表缂╃暐鍥撅紝涓嶅湪详情椤靛睍绀?==== */
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">封面图/label>' +
-        '<input type="text" class="form-control form-control-sm" name="cover" value="' + esc(coverVal) + '" placeholder="图片 URL 鎴栦笂浼?>' +
+        '<input type="text" class="form-control form-control-sm" name="cover" value="' + esc(coverVal) + '" placeholder="图片 URL 或上传">' +
         '<input type="file" class="form-control form-control-sm mt-1" name="cover" accept="image/*">' +
         (coverVal ? '<img src="' + esc(coverVal) + '" alt="预览" style="margin-top:6px;max-width:200px;max-height:120px;border-radius:6px;">' : '') +
         '<div class="form-text">浠呮樉绀哄湪数据闆嗗垪琛ㄤ腑浣滀负灏侀潰缂╃暐鍥撅紝涓嶅湪详情椤靛睍绀?/div></div>' +
@@ -1734,7 +1734,7 @@
           '</select></div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鍖哄潡标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>';
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>';
       styleEditor =
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2">' +
@@ -1755,8 +1755,8 @@
     } else if (type === 'feature_grid') {
       var featCount = d.feature_count || '1';
       specialEditor =
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鍖哄潡标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title) + '" placeholder="濡?浜у搧鐗圭偣"></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle) + '" placeholder="濡?涓轰粈涔堥€夋嫨鎴戜滑"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title) + '" placeholder="濡?浜у搧鐗圭偣"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle) + '" placeholder="濡?涓轰粈涔堥€夋嫨鎴戜滑"></div>' +
         '<div class="feature-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">鍔熻兘鍗＄墖</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addFeatureItem(' + idx + ')">+ 添加鍔熻兘鍗＄墖</button></div><input type="hidden" name="module_' + idx + '_feature_count" class="feature-item-count" value="' + featCount + '"><div class="feature-item-list">' + (window._featureItemHtml ? window._featureItemHtml(idx, 0, d) : '') + '</div></div>';
       styleEditor =
         '<div class="small fw-semibold mb-1 text-muted mt-2">外层样式</div>' +
@@ -2058,8 +2058,8 @@
         '<div class="stat-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">统计项/div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addStatItem(' + idx + ')">+ 添加统计项</button></div><input type="hidden" name="module_' + idx + '_stats_count" class="stat-item-count" value="' + statItems.length + '"><div class="stat-item-list">' + statItems.map(function(_, si) { return window._statItemHtml(idx, si, d); }).join('') + '</div></div>' +
         '<hr class="my-2">' +
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
         '</div>';
       styleEditor =
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
@@ -2079,8 +2079,8 @@
         '<div class="logo-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">标志列表</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addLogoItem(' + idx + ')">+ 添加鏍囧織</button></div><input type="hidden" name="module_' + idx + '_logo_count" class="logo-item-count" value="' + (d.logo_count || '1') + '"><div class="logo-item-list">' + (window._logoItemHtml ? window._logoItemHtml(idx, 0, d) : '') + '</div></div>' +
         '<hr class="my-2">' +
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + sel('module_' + idx + '_data_columns', '姣忚鍒楁暟', [{value:'4',label:'鍥涘垪'},{value:'5',label:'浜斿垪'},{value:'6',label:'鍏垪'}], d.columns || '4') + '</div>' +
@@ -2127,8 +2127,8 @@
         '<div class="step-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">步骤列表</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addStepItem(' + idx + ')">+ 添加姝ラ</button></div><input type="hidden" name="module_' + idx + '_step_count" class="step-item-count" value="' + (d.step_count || '1') + '"><div class="step-item-list">' + (window._stepItemHtml ? window._stepItemHtml(idx, 0, d) : '') + '</div></div>' +
         '<hr class="my-2">' +
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + sel('module_' + idx + '_data_direction', '鎺掑垪方向', [{value:'horizontal',label:'妯悜'},{value:'vertical',label:'绾靛悜'}], d.direction || 'horizontal') + '</div>' +
@@ -2175,8 +2175,8 @@
     } else if (type === 'contact_info') {
       specialEditor =
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-2 text-muted">显示控制锛堟暟鎹潵自动綉绔欒缃腑鐨勮仈绯绘柟寮忥級</div>' +
@@ -2212,8 +2212,8 @@
     } else if (type === 'contact_form') {
       specialEditor =
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-12"><label class="form-label small mb-1 text-muted">琛ㄥ崟鎻愪氦地址</label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_form_action" value="' + esc(d.form_action || '') + '" placeholder="鐣欑┖鍒欎娇鐢ㄥ钩鍙板唴缃暀瑷€锛屾垨濉叆澶栭儴鏈嶅姟地址"></div>' +
@@ -2236,7 +2236,7 @@
           visToggle('module_' + idx + '_data_show_map', '显示鍦板浘', (d.show_map || 'false')) +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-12"><label class="form-label small mb-1 text-muted">鍦板浘宓屽叆地址</label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_map_src" value="' + esc(d.map_src || '') + '" placeholder="浠庨珮寰?Google 鍦板浘鑾峰彇鐨勫祵鍏ラ摼鎺ワ紙iframe src锛?></div>' +
+          '<div class="col-12"><label class="form-label small mb-1 text-muted">地图嵌入地址</label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_map_src" value="' + esc(d.map_src || '') + '" placeholder="浠庨珮寰?Google 鍦板浘鑾峰彇鐨勫祵鍏ラ摼鎺ワ紙iframe src锛?></div>' +
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + sel('module_' + idx + '_data_layout', 'Layout', [{value:'form_left',label:'Form left / map right'},{value:'form_right',label:'Map left / form right'}], d.layout || 'form_left') + '</div>' +
@@ -2246,7 +2246,7 @@
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg) + '</div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">澶栧眰宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="濡?1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">--</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="濡?1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">--</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">内容眰样式</div>' +
@@ -3280,7 +3280,7 @@
     syncRteBody(rte);
   });
 
-  /* 鈹€鈹€ URL 对齐瘽妗嗭紙链接 / 图片鍏辩敤锛岄〉闈㈠眳涓伄缃╋級 鈹€鈹€ */
+  /* ==== URL 对齐瘽妗嗭紙链接 / 图片鍏辩敤锛岄〉闈㈠眳涓伄缃╋級 ==== */
   var _rteDialogState = { rte: null, mode: '', existingLink: null, range: null };
 
   function ensureRteUrlOverlay(wrapper) {
