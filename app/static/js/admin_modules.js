@@ -828,7 +828,7 @@
     if (key === 'items' && window._moduleCtx && window._moduleCtx.currentModuleType === 'featured_picks') {
       html = html.replace(
         '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加条Ŀ</button>',
-        '<button type="button" class="btn btn-sm btn-outline-info fp-import-btn" onclick="event.stopPropagation();window.openFeaturedImport(0, this)" style="font-size:11px;margin-right:4px" title="浠庡凡鏈夋暟鎹泦閫夊彇鏉＄洰锛岃嚜鍔ㄥ～鍏ユ爣棰樸€佸浘鐗囥€佹弿杩板拰链接">馃摜 浠庢暟鎹泦瀵煎叆</button>' +
+        '<button type="button" class="btn btn-sm btn-outline-info fp-import-btn" onclick="event.stopPropagation();window.openFeaturedImport(0, this)" style="font-size:11px;margin-right:4px" title="从已有数据集选取条目锛岃嚜鍔ㄥ～鍏ユ爣棰樸€佸浘鐗囥€佹弿杩板拰链接">馃摜 浠庢暟鎹泦瀵煎叆</button>' +
         '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加条Ŀ</button>'
       );
     }
@@ -1700,7 +1700,7 @@
           (dsOptionsHtml || '<option value="">暂无数据源/option>') +
           '</select></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">卡片布局</label>' +
-          '<select class="form-select form-select-sm" name="module_' + idx + '_data_card_layout"><option value="image_top"' + (d.card_layout !== 'image_left' ? ' selected' : '') + '>涓婂浘涓嬫枃</option><option value="image_left"' + (d.card_layout === 'image_left' ? ' selected' : '') + '>宸﹀浘鍙虫枃</option></select></div>' +
+          '<select class="form-select form-select-sm" name="module_' + idx + '_data_card_layout"><option value="image_top"' + (d.card_layout !== 'image_left' ? ' selected' : '') + '>上图下文</option><option value="image_left"' + (d.card_layout === 'image_left' ? ' selected' : '') + '>宸﹀浘鍙虫枃</option></select></div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
         // Row 1: 显示分页 —toggle 寮€鍏?
@@ -1722,7 +1722,7 @@
         '<div class="mb-2">' +
           '<label class="form-label small mb-1 text-muted">每页显示数量</label>' +
           '<select class="form-select form-select-sm" name="module_' + idx + '_data_items_per_page">' +
-            ['3','4','6','8','10','12','18','24'].map(function(n) { return '<option value="' + n + '"' + ((d.items_per_page || '6') === n ? ' selected' : '') + '>' + n + ' 鏉?椤?/option>'; }).join('') +
+            ['3','4','6','8','10','12','18','24'].map(function(n) { return '<option value="' + n + '"' + ((d.items_per_page || '6') === n ? ' selected' : '') + '>' + n + ' 条/页</option>'; }).join('') +
           '</select></div>' +
         // Row 4: 分页对齐 —涓嬫媺选择
         '<div class="mb-2">' +
@@ -2009,11 +2009,11 @@
           return '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="' + ii + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 ' + (ii + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();window._reindexIdImages(' + idx + ')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片 URL</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_images_' + ii + '_url" value="' + esc(url) + '"><input type="file" class="form-control form-control-sm mt-1" name="module_' + idx + '_data_images_' + ii + '_url_file" accept="image/*"><div class="form-text">上传后自动转 WebP 并覆盖 URL</div></div></div>';
         }).join('') +
         '</div></div><hr class="my-2">' +
-        '<div class="id-specs-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">瑙勬牸鍙傛暟</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addIdSpec(' + idx + ')">+ 添加瑙勬牸</button></div><input type="hidden" name="module_' + idx + '_data_specs_count" class="id-spec-count" value="' + specList.length + '"><div class="id-spec-list">' +
+        '<div class="id-specs-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">规格鍙傛暟</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addIdSpec(' + idx + ')">+ 添加规格</button></div><input type="hidden" name="module_' + idx + '_data_specs_count" class="id-spec-count" value="' + specList.length + '"><div class="id-spec-list">' +
         specList.map(function(spec, si) {
           var name = (typeof spec === 'object' ? (spec.name || spec.label || spec.key || '') : '');
           var value = (typeof spec === 'object' ? (spec.value || '') : '');
-          return '<div class="border rounded p-2 mb-2 id-spec-item" data-spec-index="' + si + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">瑙勬牸 ' + (si + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-spec-item\').remove();window._reindexIdSpecs(' + idx + ')">删除</button></div><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">鍙傛暟鍚</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_specs_' + si + '_name" value="' + esc(name) + '"></div><div class="col-6"><label class="form-label small mb-1 text-muted">鍙傛暟鍊?</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_specs_' + si + '_value" value="' + esc(value) + '"></div></div></div>';
+          return '<div class="border rounded p-2 mb-2 id-spec-item" data-spec-index="' + si + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">规格 ' + (si + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-spec-item\').remove();window._reindexIdSpecs(' + idx + ')">删除</button></div><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">鍙傛暟鍚</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_specs_' + si + '_name" value="' + esc(name) + '"></div><div class="col-6"><label class="form-label small mb-1 text-muted">鍙傛暟鍊?</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_specs_' + si + '_value" value="' + esc(value) + '"></div></div></div>';
         }).join('') +
         '</div></div>';
       styleEditor =
