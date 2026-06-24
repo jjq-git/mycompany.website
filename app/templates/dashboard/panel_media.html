@@ -76,9 +76,7 @@
       </div>
 
       <div class="media-empty" id="mediaEmpty" {% if files %}hidden{% endif %}>暂无媒体文件</div>
-      <div class="media-load-more" id="mediaLoadMore" {% if files|length <= 30 %}hidden{% endif %} style="text-align:center;padding:12px 0">
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="mediaLoadMoreBtn">加载更多 (<span id="mediaVisibleCount">30</span> / <span id="mediaTotalCount">{{ files|length }}</span>)</button>
-      </div>
+      <div class="media-scroll-sentinel" id="mediaScrollSentinel" style="height:1px;width:100%"></div>
     </div>
 
     <aside class="media-preview-card" aria-label="媒体预览">
@@ -394,44 +392,41 @@
     empty.hidden = matchingCards.length > 0;
   }
 
-  function updateLoadMoreButton(totalCount) {
-    var loadMore = document.getElementById('mediaLoadMore');
-    var loadMoreBtn = document.getElementById('mediaLoadMoreBtn');
-    var totalEl = document.getElementById('mediaTotalCount');
-    var visEl = document.getElementById('mediaVisibleCount');
-    if (!loadMore || !loadMoreBtn) return;
-    if (visibleCount >= totalCount) {
-      loadMore.hidden = true;
-    } else {
-      loadMore.hidden = false;
-      if (visEl) visEl.textContent = visibleCount;
-      if (totalEl) totalEl.textContent = totalCount;
-    }
-  }
-
-  // 加载更多按钮点击事件
-  var loadMoreBtn = document.getElementById('mediaLoadMoreBtn');
-  if (loadMoreBtn) {
-    loadMoreBtn.addEventListener('click', function() {
-      var allCards = grid.querySelectorAll('.media-card');
-      var hidden = [];
-      allCards.forEach(function(c) {
-        if (!c.hidden) return;
-        // 只计算匹配当前筛选的
+  function showMoreCards() {
+    var allCards = grid.querySelectorAll('.media-card');
+    var hidden = [];
+    allCards.forEach(function(c) {
+      if (c.hidden) {
         var active = panel.querySelector('.media-tab.active');
         var filter = active ? active.dataset.mediaFilter : 'all';
         var show = filter === 'all' || c.dataset.category === filter;
         if (filter === 'unreferenced') show = Number(c.dataset.referenceCount || 0) === 0;
         if (show) hidden.push(c);
-      });
-      var toShow = Math.min(PAGE_SIZE, hidden.length);
-      for (var i = 0; i < toShow; i++) {
-        hidden[i].hidden = false;
       }
-      visibleCount += toShow;
-      updateLoadMoreButton(hidden.length + visibleCount - toShow + toShow);
-      updateVisibleMediaCount();
     });
+    if (!hidden.length) return false;
+    var toShow = Math.min(PAGE_SIZE, hidden.length);
+    for (var i = 0; i < toShow; i++) {
+      hidden[i].hidden = false;
+    }
+    visibleCount += toShow;
+    updateVisibleMediaCount();
+    return toShow > 0;
+  }
+
+  // 滚动加载：用 IntersectionObserver 监听哨兵元素
+  var sentinel = document.getElementById('mediaScrollSentinel');
+  if (sentinel && 'IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          showMoreCards();
+        }
+      });
+    }, { root: null, rootMargin: '200px' });
+    // 先观察 grid 的父容器滚动区；不滚动时 observer(null) 使用 viewport
+    var scrollPane = grid.closest('.media-list-pane');
+    observer.observe(sentinel);
   }
 
   function clampPreviewWidth(width) {

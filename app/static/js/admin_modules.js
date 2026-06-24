@@ -1,11 +1,11 @@
-﻿/* admin_modules.js 鈥?鍏变韩模块琛ㄥ崟娓叉煋
+﻿/* admin_modules.js —鍏变韩模块琛ㄥ崟娓叉煋
  *
  * 椤甸潰编辑鍣?(panel_page_edit.html) 鍜屾暟鎹泦编辑闈㈡澘 (panel_data_list.html)
  * 鍏辩敤姝ゆ枃浠躲€傛瘡涓ā鏉垮湪浣跨敤鍓嶅畾涔夊ソ:
- *   window._moduleCtx.blockLibrary 鈥?模块搴撳垪琛?
- *   window._moduleCtx.datasetNames 鈥?鏁版嵁闆嗛€夐」 (鍙€?
- *   window._moduleCtx.editItem   鈥?当前编辑鏉＄洰 (item_data 模式, 鍙€?
- *   window._moduleCtx.isDatasetMode 鈥?鏄惁涓烘暟鎹泦编辑模式
+ *   window._moduleCtx.blockLibrary —模块搴撳垪琛?
+ *   window._moduleCtx.datasetNames —鏁版嵁闆嗛€夐」 (鍙€?
+ *   window._moduleCtx.editItem   —当前编辑鏉＄洰 (item_data 模式, 鍙€?
+ *   window._moduleCtx.isDatasetMode —鏄惁涓烘暟鎹泦编辑模式
  *
  * 鐒跺悗璋冪敤 window._buildModuleHTML(type, idx, mdata) 鐢熸垚模块 HTML銆?
  * 返回鍊? { html, borderStyle, headerBg }
@@ -115,32 +115,32 @@
   function richEditorHtml(name, value) {
     return '<div class="rte-wrapper">' +
       '<div class="rich-toolbar rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="bold" title="Bold"><b>B</b></button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="italic" title="Italic"><i>I</i></button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="underline" title="Underline"><u>U</u></button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="strikeThrough" title="Strike"><s>S</s></button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="bold" title="加粗"><b>B</b></button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="italic" title="斜体"><i>I</i></button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="underline" title="下划线"><u>U</u></button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="strikeThrough" title="删除线"><s>S</s></button>' +
       '<span class="rte-sep"></span>' +
-      '<select class="form-select form-select-sm rte-heading-select" style="width:auto;font-size:12px" title="Heading">' +
+      '<select class="form-select form-select-sm rte-heading-select" style="width:auto;font-size:12px" title="标题">' +
         '<option value="">标题</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option>' +
       '</select>' +
       '<span class="rte-sep"></span>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyLeft" title="Align left">鈽?/button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyCenter" title="Align center">鈮?/button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyRight" title="Align right">鈽?/button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyLeft" title="左对齐">L</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyCenter" title="居中">C</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyRight" title="右对齐">R</button>' +
       '<span class="rte-sep"></span>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertUnorderedList" title="Bullet list">鈥⑩墶</button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertOrderedList" title="Numbered list">1鈮?/button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-btn" title="Table">鈻?/button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-settings-btn" title="Table settings">鈻?/button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertUnorderedList" title="无序列表">UL</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertOrderedList" title="有序列表">OL</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-btn" title="插入表格">⊞</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-settings-btn" title="表格设置">⚙</button>' +
       '<span class="rte-sep"></span>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="formatBlock" data-arg="blockquote" title="Quote">鉂?/button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertHorizontalRule" title="Horizontal rule">鈥?/button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="formatBlock" data-arg="blockquote" title="引用">❝</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertHorizontalRule" title="分割线">—</button>' +
       '<span class="rte-sep"></span>' +
-      '<input type="color" class="rte-color-picker" value="#141413" style="width:28px;height:28px;border:1px solid #dee2e6;border-radius:4px;padding:2px;cursor:pointer" title="Text color">' +
+      '<input type="color" class="rte-color-picker" value="#141413" style="width:28px;height:28px;border:1px solid #dee2e6;border-radius:4px;padding:2px;cursor:pointer" title="文字颜色">' +
       '<span class="rte-sep"></span>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="removeFormat" title="Clear format">鉁?/button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="undo" title="Undo">鈫?/button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="redo" title="Redo">鈫?/button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="removeFormat" title="清除格式">✕</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="undo" title="撤销">↩</button>' +
+      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="redo" title="重做">↪</button>' +
       '</div>' +
       '<div contenteditable="true" class="rich-editor-body form-control form-control-sm rte-editor" style="min-height:150px;max-height:400px;overflow-y:auto;line-height:1.7;font-size:13px;outline:none" data-placeholder="">' + (value || '') + '</div>' +
       '<textarea class="form-control form-control-sm d-none" name="' + esc(name) + '">' + esc(value || '') + '</textarea>' +
@@ -163,7 +163,7 @@
       '<div class="input-group input-group-sm">' +
       '<input type="text" class="form-control form-control-sm" name="' + name + '" value="' + esc(dv || '') + '" placeholder="' + esc(ph) + '" style="width:60%">' +
       '<select class="form-select form-select-sm unit-picker" style="width:40%" onchange="var i=this.parentElement.querySelector(\'[name=&quot;' + name + '&quot;]\');if(i){var v=i.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)i.value=v+u;}">' +
-      '<option value="">鈥?/option>' + opts + '</select></div>';
+      '<option value="">--</option>' + opts + '</select></div>';
   }
 
   function sel(name, ph, options, dv) {
@@ -679,7 +679,7 @@
     if (/^(show_|hide_|enable_|enabled_|visible|is_)/i.test(key) || /(_show_|_visible|_enabled)$/i.test(key)) return true;
     if (/(align|layout|style|columns|items_per_page|max_items|count|number|ratio|category|date|price|name)$/i.test(key)) return true;
     if (/(color|bg|border|radius|width|height|size|gap|margin|padding|opacity|weight)$/i.test(key)) return true;
-    if (/(显示|隐藏|颜色|宽度|高度|瀛楀彿|鍦嗚|闂磋窛|瀵归綈|鎺掔増|鍒楁暟|鏁伴噺|分类|日期|价格|名称)/.test(label)) return true;
+    if (/(显示|隐藏|颜色|宽度|高度|瀛楀彿|鍦嗚|闂磋窛|对齐|鎺掔増|鍒楁暟|鏁伴噺|分类|日期|价格|名称)/.test(label)) return true;
     return false;
   }
 
@@ -737,7 +737,7 @@
           '</div>';
       });
     } else if (type === 'switch') {
-      // switch 鈫?寮€鍏虫帶浠讹紙true/false锛夛紝瀵归綈 panel_page_edit.html 鐨?switch 娓叉煋
+      // switch ↪寮€鍏虫帶浠讹紙true/false锛夛紝对齐 panel_page_edit.html 鐨?switch 娓叉煋
       var checked = String(value || field.default || 'true') !== 'false';
       html += '<div class="form-check form-switch mb-0">' +
         '<input class="form-check-input" type="checkbox" role="switch" ' + (checked ? 'checked' : '') +
@@ -873,8 +873,8 @@
     var html = '';
     if (schema && schema.from_source) {
       html += '<div class="alert alert-info py-2 px-3 mb-3" style="font-size:12px;line-height:1.5">' +
-        '<div class="fw-semibold mb-1">姝ゆā鍧楁暟鎹潵自动綉绔欒缃?/div>' +
-        '<div>鏁版嵁婧愶細<code>' + esc(schema.from_source) + '</code>锛岃鍦ㄣ€岀綉绔欒缃€嶄腑修改銆?/div>' +
+        '<div class="fw-semibold mb-1">此模块数据来自网站设置/div>' +
+        '<div>数据源：<code>' + esc(schema.from_source) + '</code>锛岃鍦ㄣ€岀綉绔欒缃€嶄腑修改銆?/div>' +
         '</div>';
     }
     var pendingHalf = [];
@@ -1011,7 +1011,7 @@
           '<svg class="schema-list-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>' +
           '鏉＄洰 ' + (index + 1) +
         '</span>' +
-        '<button type="button" class="module-action-btn module-action-del schema-list-remove" title="删除" aria-label="删除条目">鉁?/button>' +
+        '<button type="button" class="module-action-btn module-action-del schema-list-remove" title="删除" aria-label="删除条目">✕</button>' +
       '</div>' +
       '<div class="schema-list-item-body">' + inner + '</div>' +
     '</div>';
@@ -1088,7 +1088,7 @@
     }
     window._featuredImportButton = btn;
     select.innerHTML = '<option value="">-- 请选择数据集--</option>';
-    // 鏋勫缓 target 鈫?瀹屾暣鑿滃崟璺緞鏄犲皠锛堝惈鐖剁骇 group target锛?
+    // 鏋勫缓 target ↪瀹屾暣鑿滃崟璺緞鏄犲皠锛堝惈鐖剁骇 group target锛?
     window._datasetPathMap = {};
     datasets.forEach(function(ds) {
       var target = ds.target || ds.value || ds.key || '';
@@ -1361,13 +1361,13 @@
     overlay.classList.remove('show');
   });
 
-  /* ====== 瀵瑰鏆撮湶 ====== */
+  /* ====== 对外暴露 ====== */
   window._cn = cn;
   window._un = un;
   window._esc = esc;
   window._renderField = renderField;
 
-  // 模块图标鏄犲皠 鈥?涓?_block_icons.html 涓?block_icon 瀹忎繚鎸佷竴自动?
+  // 模块图标鏄犲皠 —涓?_block_icons.html 涓?block_icon 瀹忎繚鎸佷竴自动?
   function getBlockIconHTML(type) {
     var icons = {
       'hero_banner': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>',
@@ -1476,13 +1476,13 @@
             }).join('') +
           '</div>' +
         '</div>';
-      /* 灏侀潰鍥撅細鍙?item 椤跺眰瀛楁锛屼笌鍒楄〃椤电缉鐣ュ浘涓€自动达紙cover / image / photo 渚濇鍥為€€锛?*/
+      /* 灏侀潰鍥撅細鍙?item 椤跺眰瀛楁锛屼笌列表椤电缉鐣ュ浘涓€自动达紙cover / image / photo 渚濇鍥為€€锛?*/
       var coverVal = item.cover || item.image || item.photo || '';
       styleEditor = schemaStyleForm('module_' + idx + '_data_', meta.schema || {}, item);
       specialEditor =
         '<div class="small fw-semibold mb-1 text-muted">基础字段</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm font-monospace" name="slug" value="' + esc(item.slug || '') + '" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="濡?my-post"><div class="form-text">鑻辨枃+数字+杩炲瓧绗︼紝鍞竴鏍囪瘑</div></div>' +
-        /* 鈹€鈹€ 灏侀潰鍥撅細浣嶄簬日期涓婃柟锛屽彧显示鍦ㄦ暟鎹泦鍒楄〃缂╃暐鍥撅紝涓嶅湪详情椤靛睍绀?鈹€鈹€ */
+        /* 鈹€鈹€ 灏侀潰鍥撅細浣嶄簬日期涓婃柟锛屽彧显示鍦ㄦ暟鎹泦列表缂╃暐鍥撅紝涓嶅湪详情椤靛睍绀?鈹€鈹€ */
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">封面图/label>' +
         '<input type="text" class="form-control form-control-sm" name="cover" value="' + esc(coverVal) + '" placeholder="图片 URL 鎴栦笂浼?>' +
         '<input type="file" class="form-control form-control-sm mt-1" name="cover" accept="image/*">' +
@@ -1494,48 +1494,48 @@
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">名称</label><input type="text" class="form-control form-control-sm" name="name" value="' + esc(item.name || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">分类</label><input type="text" class="form-control form-control-sm" name="category" value="' + esc(item.category || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="title" value="' + esc(item.title || '') + '"></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">简介/label>' + richEditorHtml('description', item.description || item.excerpt || item.summary || '') + '</div>' +
-        '<div class="mb-2"><div class="d-flex align-items-center gap-2 mb-1"><label class="form-label small mb-0 text-muted">标签</label>' + visibilityEye('tags_visible', tagsVisible ? 'true' : 'false') + '</div><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="澶氫釜鐢ㄩ€楀彿鎴栫┖鏍煎垎闅?><div class="form-text">濡傦細LED, 灞曠ず閬撳叿, 杩戞湡椤圭洰</div></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">价格</label><input type="text" class="form-control form-control-sm" name="price" value="' + esc(item.price || '') + '" placeholder="濡?楼199 / $3/million"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">简介</label>' + richEditorHtml('description', item.description || item.excerpt || item.summary || '') + '</div>' +
+        '<div class="mb-2"><div class="d-flex align-items-center gap-2 mb-1"><label class="form-label small mb-0 text-muted">标签</label>' + visibilityEye('tags_visible', tagsVisible ? 'true' : 'false') + '</div><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="多个用逗号或空格分隔><div class="form-text">例如：LED, 展示道具, 近期项目</div></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">价格</label><input type="text" class="form-control form-control-sm" name="price" value="' + esc(item.price || '') + '" placeholder="例如 ¥199 / $3/million"></div>' +
         '<hr class="my-2">' +
-        /* 鈹€鈹€ 瀵屾枃鏈紪杈戝櫒锛堣缁嗕粙缁嶏級 鈹€鈹€ */
+        /* /* 富文本编辑器（详细介绍） */ */
         '<div class="mb-2 rte-wrapper"><label class="form-label small mb-1 text-muted">详细介绍</label>' +
         '<div class="rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">' +
-          /* 鏍煎紡按钮 */
+          /* 格式按钮 */
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="bold" title="加粗"><b>B</b></button>' +
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="italic" title="斜体"><i>I</i></button>' +
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="underline" title="下划线"><u>U</u></button>' +
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="strikeThrough" title="删除线"><s>S</s></button>' +
           '<span class="rte-sep"></span>' +
-          /* 标题涓嬫媺 */
+          /* 标题下拉 */
           '<select class="form-select form-select-sm rte-heading-select" style="width:auto;font-size:12px">' +
             '<option value="">正文</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option>' +
           '</select>' +
           '<span class="rte-sep"></span>' +
-          /* 瀵归綈 */
-          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyLeft" title="左对齐">鈽?/button>' +
-          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyCenter" title="居中">鈮?/button>' +
-          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyRight" title="右对齐">鈽?/button>' +
+          /* 对齐 */
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyLeft" title="左对齐">L</button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyCenter" title="居中">C</button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyRight" title="右对齐">R</button>' +
           '<span class="rte-sep"></span>' +
-          /* 鍒楄〃 */
-          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertUnorderedList" title="无序列表">鈥⑩墶</button>' +
-          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertOrderedList" title="有序列表">1鈮?/button>' +
-          '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-btn" title="插入表格">鈻?/button>' +
+          /* 列表 */
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertUnorderedList" title="无序列表">UL</button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertOrderedList" title="有序列表">OL</button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-btn" title="插入表格">⊞</button>' +
           '<span class="rte-sep"></span>' +
-          /* 鍧楃骇 */
-          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="formatBlock" data-arg="blockquote" title="引用块">鉂?/button>' +
-          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertHorizontalRule" title="分割线">鈥?/button>' +
+          /* 块级 */
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="formatBlock" data-arg="blockquote" title="引用块">❝</button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertHorizontalRule" title="分割线">—</button>' +
           '<span class="rte-sep"></span>' +
-          /* 鏂囧瓧颜色 */
+          /* 文字颜色 */
           '<input type="color" class="rte-color-picker" title="文字颜色" value="#141413" style="width:28px;height:28px;border:1px solid #dee2e6;border-radius:4px;padding:2px;cursor:pointer">' +
           '<span class="rte-sep"></span>' +
-          /* 清除鏍煎紡 */
-          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="removeFormat" title="清除格式">鉁?/button>' +
-          /* 鎾ら攢/閲嶅仛 */
-          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="undo" title="撤销">鈫?/button>' +
-          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="redo" title="重做">鈫?/button>' +
+          /* 清除格式 */
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="removeFormat" title="清除格式">✕</button>' +
+          /* 撤销/重做 */
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="undo" title="撤销">↩</button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="redo" title="重做">↪</button>' +
         '</div>' +
-        /* URL 寮瑰嚭妗嗭紙链接 / 图片鍏辩敤锛屽墽涓伄缃╋級 */
+        /* URL 弹出框（链接 / 图片共用，剧中遮罩） */
         '<div class="rte-url-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.35);align-items:center;justify-content:center">' +
           '<div class="rte-url-dialog" style="background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);padding:20px;width:420px;max-width:90vw">' +
             '<div class="rte-url-dialog-title small fw-semibold mb-3" style="font-size:13px;color:#343a40"></div>' +
@@ -1548,7 +1548,7 @@
         '</div>' +
         '<div contenteditable="true" class="form-control form-control-sm rte-editor" ' +
           'style="min-height:180px;max-height:450px;overflow-y:auto;line-height:1.7;font-size:13px;outline:none" ' +
-          'data-placeholder="鍦ㄦ输入详细介绍鈥?>' + (item.body || item.content || '') + '</div>' +
+          'data-placeholder="鍦ㄦ输入详细介绍—>' + (item.body || item.content || '') + '</div>' +
         '<textarea name="body" hidden>' + esc(item.body || item.content || '') + '</textarea>' +
         '<input type="hidden" name="rte_clicked_editor_idx" value="">' +
         '<div class="form-text">鏀寔鍔犵矖銆佹枩浣撱€佹爣棰樸€佸垪琛ㄣ€佸紩鐢ㄣ€佸垎鍓茬嚎銆侀摼鎺ャ€佸浘鐗囥€佹枃瀛楅鑹?/div></div>' +
@@ -1574,7 +1574,7 @@
     if (!schemaManaged && type === 'hero_banner') {
       specialEditor =
         '<hr class="my-2">' +
-        '<div class="hero-slides-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">轮播媒体项/div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addHeroSlide(' + idx + ')">+ 添加濯掍綋椤?/button></div><input type="hidden" name="module_' + idx + '_slide_count" class="hero-slide-count" value="' + (d.slide_count || '1') + '"><div class="hero-slide-list">' + (window._heroSlideHtml ? window._heroSlideHtml(idx, 0, d) : '') + '</div></div>';
+        '<div class="hero-slides-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">轮播媒体项/div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addHeroSlide(' + idx + ')">+ 添加濯掍綋椤</button></div><input type="hidden" name="module_' + idx + '_slide_count" class="hero-slide-count" value="' + (d.slide_count || '1') + '"><div class="hero-slide-list">' + (window._heroSlideHtml ? window._heroSlideHtml(idx, 0, d) : '') + '</div></div>';
       styleEditor =
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2 mb-2">' +
@@ -1585,10 +1585,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
             '<option value="px">px</option>' +
             '<option value="rem">rem</option>' +
@@ -1611,7 +1611,7 @@
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_btn_font_size', '按钮瀛椾綋大小', ['px','rem'], d.btn_font_size) + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_btn_text_color', '按钮鏂囧瓧颜色', d.btn_text_color || '#ffffff') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_btn_text_color', '按钮文字颜色', d.btn_text_color || '#ffffff') + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_btn_bg', 'Color', d.btn_bg || '#067a7a') + '</div>' +
@@ -1639,18 +1639,18 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top || '1rem') + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom || '1rem') + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top || '1rem') + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom || '1rem') + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small fw-semibold mb-1 text-muted mt-2">内容眰样式</div>' +
@@ -1659,16 +1659,16 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">鏂囧瓧鎺掔増</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_text_align', '瀵归綈鏂瑰紡', [{value:'center',label:'灞呬腑'},{value:'left',label:'灞呭乏'},{value:'right',label:'灞呭彸'}], d.text_align || 'center') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_text_align', '对齐鏂瑰紡', [{value:'center',label:'灞呬腑'},{value:'left',label:'灞呭乏'},{value:'right',label:'灞呭彸'}], d.text_align || 'center') + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">瀛椾綋样式</div>' +
@@ -1703,7 +1703,7 @@
           '<select class="form-select form-select-sm" name="module_' + idx + '_data_card_layout"><option value="image_top"' + (d.card_layout !== 'image_left' ? ' selected' : '') + '>涓婂浘涓嬫枃</option><option value="image_left"' + (d.card_layout === 'image_left' ? ' selected' : '') + '>宸﹀浘鍙虫枃</option></select></div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
-        // Row 1: 显示分页 鈥?toggle 寮€鍏?
+        // Row 1: 显示分页 —toggle 寮€鍏?
         '<div class="form-check form-switch mb-3">' +
           '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_pagination"' +
           (d.show_pagination !== 'false' ? ' checked' : '') +
@@ -1711,20 +1711,20 @@
           '<label class="form-check-label small" for="module_' + idx + '_show_pagination">显示分页</label>' +
           '<input type="hidden" name="module_' + idx + '_data_show_pagination" value="' + (d.show_pagination !== 'false' ? 'true' : 'false') + '">' +
         '</div>' +
-        // Row 2: 分页样式 鈥?涓嬫媺选择
+        // Row 2: 分页样式 —涓嬫媺选择
         '<div class="mb-2">' +
           '<label class="form-label small mb-1 text-muted">分页样式</label>' +
           '<select class="form-select form-select-sm" name="module_' + idx + '_data_pagination_style">' +
             '<option value="load_more"' + (d.pagination_style !== 'page_numbers' ? ' selected' : '') + '>加载更多</option>' +
             '<option value="page_numbers"' + (d.pagination_style === 'page_numbers' ? ' selected' : '') + '>页码导航</option>' +
           '</select></div>' +
-        // Row 3: 每页显示数量 鈥?涓嬫媺选择
+        // Row 3: 每页显示数量 —涓嬫媺选择
         '<div class="mb-2">' +
           '<label class="form-label small mb-1 text-muted">每页显示数量</label>' +
           '<select class="form-select form-select-sm" name="module_' + idx + '_data_items_per_page">' +
             ['3','4','6','8','10','12','18','24'].map(function(n) { return '<option value="' + n + '"' + ((d.items_per_page || '6') === n ? ' selected' : '') + '>' + n + ' 鏉?椤?/option>'; }).join('') +
           '</select></div>' +
-        // Row 4: 分页对齐 鈥?涓嬫媺选择
+        // Row 4: 分页对齐 —涓嬫媺选择
         '<div class="mb-2">' +
           '<label class="form-label small mb-1 text-muted">分页对齐</label>' +
           '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align">' +
@@ -1744,10 +1744,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>';
 
@@ -1766,18 +1766,18 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top || '1rem') + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom || '1rem') + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top || '1rem') + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom || '1rem') + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small fw-semibold mb-1 text-muted mt-2">内容眰样式</div>' +
@@ -1791,18 +1791,18 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">标题鍖哄杈硅窛</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_top" value="' + esc(d.header_margin_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_right" value="' + esc(d.header_margin_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_bottom" value="' + esc(d.header_margin_bottom || '4rem') + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_left" value="' + esc(d.header_margin_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_top" value="' + esc(d.header_margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_right" value="' + esc(d.header_margin_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_bottom" value="' + esc(d.header_margin_bottom || '4rem') + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_left" value="' + esc(d.header_margin_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">标题鍖哄唴杈硅窛</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_top" value="' + esc(d.header_padding_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_right" value="' + esc(d.header_padding_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_bottom" value="' + esc(d.header_padding_bottom || '2rem') + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_left" value="' + esc(d.header_padding_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_top" value="' + esc(d.header_padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_right" value="' + esc(d.header_padding_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_bottom" value="' + esc(d.header_padding_bottom || '2rem') + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_left" value="' + esc(d.header_padding_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">涓绘爣棰?/div>' +
@@ -1826,18 +1826,18 @@
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">显示杈规</label><select class="form-select form-select-sm" name="module_' + idx + '_data_card_show_border"><option value=""' + (d.card_show_border !== '0' ? ' selected' : '') + '>默认锛堟樉绀猴級</option><option value="0"' + (d.card_show_border === '0' ? ' selected' : '') + '>隐藏杈规</option></select></div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍗＄墖鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_top" value="' + esc(d.card_padding_top || '2rem') + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_right" value="' + esc(d.card_padding_right || '1.5rem') + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_bottom" value="' + esc(d.card_padding_bottom || '2rem') + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_left" value="' + esc(d.card_padding_left || '1.5rem') + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_top" value="' + esc(d.card_padding_top || '2rem') + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_right" value="' + esc(d.card_padding_right || '1.5rem') + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_bottom" value="' + esc(d.card_padding_bottom || '2rem') + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_left" value="' + esc(d.card_padding_left || '1.5rem') + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍗＄墖鍦嗚</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_top_left" value="' + esc(d.card_radius_top_left || '12px') + '" placeholder="鈫?宸︿笂">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_top_right" value="' + esc(d.card_radius_top_right || '12px') + '" placeholder="鈫?鍙充笂">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_bottom_right" value="' + esc(d.card_radius_bottom_right || '12px') + '" placeholder="鈫?鍙充笅">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_bottom_left" value="' + esc(d.card_radius_bottom_left || '12px') + '" placeholder="鈫?宸︿笅">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_top_left" value="' + esc(d.card_radius_top_left || '12px') + '" placeholder="↪宸︿笂">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_top_right" value="' + esc(d.card_radius_top_right || '12px') + '" placeholder="↪鍙充笂">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_bottom_right" value="' + esc(d.card_radius_bottom_right || '12px') + '" placeholder="↪鍙充笅">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_bottom_left" value="' + esc(d.card_radius_bottom_left || '12px') + '" placeholder="↪宸︿笅">' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option><option value=\"%\">%</option></select>' +
         '</div>' +
         '<div class="small fw-semibold mb-1 text-muted mt-2">图标样式</div>' +
@@ -1886,8 +1886,8 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="鈫?涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -1898,10 +1898,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -1935,14 +1935,14 @@
           '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'h3\');event.preventDefault()" title="小标题" style="font-size:12px;line-height:1">H3</button>' +
           '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'p\');event.preventDefault()" title="正文段落" style="font-size:12px;line-height:1">P</button>' +
           '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyLeft\')" title="左对齐" style="font-size:12px;line-height:1">鈽?/button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyCenter\')" title="居中" style="font-size:12px;line-height:1">鈮?/button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyRight\')" title="右对齐" style="font-size:12px;line-height:1">鈽?/button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyLeft\')" title="左对齐" style="font-size:12px;line-height:1">≡</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyCenter\')" title="居中" style="font-size:12px;line-height:1">≡</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyRight\')" title="右对齐" style="font-size:12px;line-height:1">≡</button>' +
           '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertUnorderedList\')" title="无序列表" style="font-size:12px;line-height:1">鈥⑩墶</button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertOrderedList\')" title="有序列表" style="font-size:12px;line-height:1">1鈮?/button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorTable(this,event)" title="插入表格" style="font-size:12px;line-height:1">鈻?/button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorLink(this,event)" title="插入链接" style="font-size:12px;line-height:1">馃敆</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertUnorderedList\')" title="无序列表" style="font-size:12px;line-height:1">•≡</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertOrderedList\')" title="有序列表" style="font-size:12px;line-height:1">OL</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorTable(this,event)" title="插入表格" style="font-size:12px;line-height:1">TB</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorLink(this,event)" title="插入链接" style="font-size:12px;line-height:1">🔗</button>' +
         '</div>' +
         '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (d.body || '') + '</div>' +
         '<textarea class="form-control form-control-sm d-none" name="module_' + idx + '_data_body">' + esc(d.body || '') + '</textarea></div>';
@@ -1956,7 +1956,7 @@
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">鏂囧瓧鎺掔増</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_text_align', '瀵归綈鏂瑰紡', [{value:'left',label:'灞呭乏'},{value:'center',label:'灞呬腑'},{value:'right',label:'灞呭彸'}], d.text_align || 'left') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_text_align', '对齐鏂瑰紡', [{value:'left',label:'灞呭乏'},{value:'center',label:'灞呬腑'},{value:'right',label:'灞呭彸'}], d.text_align || 'left') + '</div>' +
           '<div class="col-6">' + sel('module_' + idx + '_data_columns', '鍒嗘爮', [{value:'1',label:'鍗曟爮'},{value:'2',label:'鍙屾爮'}], d.columns || '1') + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -1968,18 +1968,18 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -2003,7 +2003,7 @@
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label>' + richEditorHtml('module_' + idx + '_data_desc', d.desc || d.description || '') + '</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签锛堥€楀彿鍒嗛殧锛?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tags" value="' + esc(Array.isArray(d.tags) ? d.tags.join(', ') : (d.tags || '')) + '"></div>' +
         '<hr class="my-2">' +
-        '<div class="id-images-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">图片鍒楄〃</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addIdImage(' + idx + ')">+ 添加图片</button></div><input type="hidden" name="module_' + idx + '_data_images_count" class="id-image-count" value="' + imgList.length + '"><div class="id-image-list">' +
+        '<div class="id-images-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">图片列表</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addIdImage(' + idx + ')">+ 添加图片</button></div><input type="hidden" name="module_' + idx + '_data_images_count" class="id-image-count" value="' + imgList.length + '"><div class="id-image-list">' +
         imgList.map(function(img, ii) {
           var url = (typeof img === 'object' ? (img.url || '') : (img || ''));
           return '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="' + ii + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 ' + (ii + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();window._reindexIdImages(' + idx + ')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片 URL</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_images_' + ii + '_url" value="' + esc(url) + '"><input type="file" class="form-control form-control-sm mt-1" name="module_' + idx + '_data_images_' + ii + '_url_file" accept="image/*"><div class="form-text">上传鍚庤嚜鍔ㄨ浆 WebP 骞惰鐩?URL</div></div></div>';
@@ -2030,10 +2030,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -2055,7 +2055,7 @@
     } else if (type === 'stat_counter') {
       var statItems = Array.isArray(d.stats) && d.stats.length ? d.stats : [{}];
       specialEditor =
-        '<div class="stat-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">统计项/div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addStatItem(' + idx + ')">+ 添加统计项/button></div><input type="hidden" name="module_' + idx + '_stats_count" class="stat-item-count" value="' + statItems.length + '"><div class="stat-item-list">' + statItems.map(function(_, si) { return window._statItemHtml(idx, si, d); }).join('') + '</div></div>' +
+        '<div class="stat-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">统计项/div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addStatItem(' + idx + ')">+ 添加统计项</button></div><input type="hidden" name="module_' + idx + '_stats_count" class="stat-item-count" value="' + statItems.length + '"><div class="stat-item-list">' + statItems.map(function(_, si) { return window._statItemHtml(idx, si, d); }).join('') + '</div></div>' +
         '<hr class="my-2">' +
         '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
@@ -2100,10 +2100,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -2148,10 +2148,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -2192,7 +2192,7 @@
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg) + '</div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">澶栧眰宽度 <span class="text-muted" style="font-weight:normal;">锛堢暀绌轰笉闄愬埗宽度锛?/span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="濡?1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">鈥?/option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">澶栧眰宽度 <span class="text-muted" style="font-weight:normal;">锛堢暀绌轰笉闄愬埗宽度锛?</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="濡?1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">--</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">内容眰样式</div>' +
@@ -2201,10 +2201,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>';
 
@@ -2246,7 +2246,7 @@
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg) + '</div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">澶栧眰宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="濡?1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">鈥?/option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">澶栧眰宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="濡?1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">--</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">内容眰样式</div>' +
@@ -2255,10 +2255,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -2269,7 +2269,7 @@
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_input_border', '输入妗嗚竟妗嗚壊', d.input_border) + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_text_color', '鏂囧瓧颜色', d.text_color) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_text_color', '文字颜色', d.text_color) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_input_radius', 'Size', ['px','rem','%'], d.input_radius) + '</div>' +
@@ -2285,18 +2285,18 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">琛ㄥ崟鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_top" value="' + esc(d.form_padding_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_right" value="' + esc(d.form_padding_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_bottom" value="' + esc(d.form_padding_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_left" value="' + esc(d.form_padding_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_top" value="' + esc(d.form_padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_right" value="' + esc(d.form_padding_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_bottom" value="' + esc(d.form_padding_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_left" value="' + esc(d.form_padding_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">琛ㄥ崟外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_top" value="' + esc(d.form_margin_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_right" value="' + esc(d.form_margin_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_bottom" value="' + esc(d.form_margin_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_left" value="' + esc(d.form_margin_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_top" value="' + esc(d.form_margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_right" value="' + esc(d.form_margin_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_bottom" value="' + esc(d.form_margin_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_left" value="' + esc(d.form_margin_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -2314,18 +2314,18 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">按钮鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_top" value="' + esc(d.btn_padding_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_right" value="' + esc(d.btn_padding_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_bottom" value="' + esc(d.btn_padding_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_left" value="' + esc(d.btn_padding_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_top" value="' + esc(d.btn_padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_right" value="' + esc(d.btn_padding_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_bottom" value="' + esc(d.btn_padding_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_left" value="' + esc(d.btn_padding_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">按钮外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_top" value="' + esc(d.btn_margin_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_right" value="' + esc(d.btn_margin_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_bottom" value="' + esc(d.btn_margin_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_left" value="' + esc(d.btn_margin_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_top" value="' + esc(d.btn_margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_right" value="' + esc(d.btn_margin_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_bottom" value="' + esc(d.btn_margin_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_left" value="' + esc(d.btn_margin_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -2338,18 +2338,18 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍦板浘外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_top" value="' + esc(d.map_margin_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_right" value="' + esc(d.map_margin_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_bottom" value="' + esc(d.map_margin_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_left" value="' + esc(d.map_margin_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_top" value="' + esc(d.map_margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_right" value="' + esc(d.map_margin_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_bottom" value="' + esc(d.map_margin_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_left" value="' + esc(d.map_margin_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍦板浘鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_top" value="' + esc(d.map_padding_top) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_right" value="' + esc(d.map_padding_right) + '" placeholder="鈫?鍙?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_bottom" value="' + esc(d.map_padding_bottom) + '" placeholder="鈫?涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_left" value="' + esc(d.map_padding_left) + '" placeholder="鈫?宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_top" value="' + esc(d.map_padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_right" value="' + esc(d.map_padding_right) + '" placeholder="↪鍙?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_bottom" value="' + esc(d.map_padding_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_left" value="' + esc(d.map_padding_left) + '" placeholder="↪宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small fw-semibold mb-1 mt-2 text-muted">琛ㄥ崟鏄鹃殣</div>' +
@@ -2358,14 +2358,14 @@
         '</div>';
     }
 
-    /* ====== 鏋勫缓 HTML (缁撴瀯涓?Jinja 妯℃澘瀵归綈) ====== */
+    /* ====== 鏋勫缓 HTML (缁撴瀯涓?Jinja 妯℃澘对齐) ====== */
     var html =
       '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="' + headerBg + 'cursor:pointer">' +
         '<span class="small fw-semibold d-flex align-items-center gap-1 ' + titleColor + '">' + getBlockIconHTML(type) + ' ' + esc(displayName) + '</span>' +
         '<div class="d-flex gap-1 flex-shrink-0 flex-nowrap">' +
-          '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();window._moveModule(this, -1)">鈫?/button>' +
-          '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();window._moveModule(this, 1)">鈫?/button>' +
-          '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();window._reindexModules()">鉁?/button>' +
+          '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();window._moveModule(this, -1)">↩</button>' +
+          '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();window._moveModule(this, 1)">↩</button>' +
+          '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();window._reindexModules()">✕</button>' +
         '</div>' +
       '</div>' +
       '<input type="hidden" name="module_' + idx + '_type" value="' + esc(type) + '">' +
@@ -2475,7 +2475,7 @@
     }
   }
 
-  /* ====== 瀵瑰鏆撮湶 ====== */
+  /* ====== 对外暴露 ====== */
   window._buildModuleHTML = buildModuleHTML;
   window._featuredPicksEditors = function(prefix, values) {
     return featuredPicksEditors(prefix, findBlockMeta('featured_picks'), values || {});
@@ -2499,7 +2499,7 @@
    * 鏍稿績绛栫暐锛?
    *   1. 濮旀墭 mousedown 鍦?.rte-toolbar 涓?preventDefault锛岄樆姝㈡寜閽偣鍑诲自动寸紪杈戝櫒澶辩劍
    *   2. 濮旀墭 click 鎵ц execCommand锛岄€氳繃 _lastRteEditor 鎵惧埌瀵瑰簲鐨勭紪杈戝櫒
-   *   3. 颜色选择鍣ㄥ拰标题涓嬫媺鐢?change/input 浜嬩欢
+   *   3. 颜色选择鍣ㄥ拰标题下拉鐢?change/input 浜嬩欢
    */
   if (!window.__adminModulesRteBound) {
   window.__adminModulesRteBound = true;
@@ -2518,7 +2518,7 @@
   }
 
   function restoreRteSelection(rte, range) {
-    // 鍏堟崟鑾?range锛屽啀 focus 鈥斺€?rte.focus() 浼氬悓姝ヨЕ鍙?focusin 浜嬩欢澶勭悊鍣紝
+    // 鍏堟崟鑾?range锛屽啀 focus —斺€?rte.focus() 浼氬悓姝ヨЕ鍙?focusin 浜嬩欢澶勭悊鍣紝
     // 鍚庤€呰皟鐢?saveRteSelection() 鎶?_rteSavedRange 瑕嗙洊涓虹紪杈戝櫒寮€澶翠綅缃紙0锛夛紝
     // 濡傛灉鍏?focus 鍐嶅彇鍊间細瀵艰嚧视频/图片/链接濮嬬粓鎻掑湪椤堕儴鑰岄潪鍏夋爣浣嶇疆銆?
     var targetRange = range || _rteSavedRange;
@@ -2785,7 +2785,7 @@
     var heading = toolbar.querySelector('.rte-heading-select');
     if (heading) heading.title = '标题样式';
     var color = toolbar.querySelector('.rte-color-picker');
-    if (color) color.title = '鏂囧瓧颜色';
+    if (color) color.title = '文字颜色';
     [
       ['.rte-table-btn', '鎻掑叆表格'],
       ['.rte-table-settings-btn', '表格设置'],
@@ -2928,7 +2928,7 @@
     delBtn.type = 'button';
     delBtn.className = 'rte-media-del';
     delBtn.setAttribute('contenteditable', 'false');
-    delBtn.textContent = '鉁?删除';
+    delBtn.textContent = '✕?删除';
     delBtn.style.cssText = 'border:1px solid #ddd;background:#fff;color:#e74c3c;' +
       'border-radius:3px;cursor:pointer;font-size:11px;padding:1px 8px;line-height:1.6';
     toolbar.appendChild(delBtn);
@@ -3085,7 +3085,7 @@
     }
   });
 
-  // 鈹€鈹€ 标题涓嬫媺 鈹€鈹€
+  // 鈹€鈹€ 标题下拉 鈹€鈹€
   document.addEventListener('change', function(e) {
     if (!e.target.classList.contains('rte-heading-select')) return;
     var rte = e.target.closest('.rte-wrapper').querySelector('.rte-editor');
@@ -3177,7 +3177,7 @@
     syncRteBody(rte);
   });
 
-  // 鈹€鈹€ 编辑鍣ㄥ唴瀹瑰彉鏇?鈫?鍚屾 textarea 鈹€鈹€
+  // 鈹€鈹€ 编辑鍣ㄥ唴瀹瑰彉鏇?↪鍚屾 textarea 鈹€鈹€
   document.addEventListener('input', function(e) {
     var rte = e.target.closest('.rte-editor');
     if (rte) {

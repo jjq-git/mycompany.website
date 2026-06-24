@@ -1390,7 +1390,7 @@ def _seo_health_report(site, lang=None):
             if not (item.get('summary') or item.get('description') or item.get('excerpt')):
                 add('warn', f'{dataset_key} / {item_title} 缺少摘要',
                     '详情页 description 和 llms.txt 摘要会变弱，建议补一段简短说明。',
-                    url_for('core.dataset_panel', dataset_key=dataset_key, site=site.id, lang=lang))
+                    url_for('core.dataset_edit', dataset_key=dataset_key, item_id=item.get('id'), site=site.id, lang=lang))
 
     if list_pages_without_description:
         add('info', f'{len(list_pages_without_description)} 个列表页缺少简介',
@@ -3915,11 +3915,13 @@ def _parse_modules_form(form, existing_modules=None):
                 data['steps'] = steps
 
 
+        # 处理模块顶层图片字段：扫描 data 中所有字段，找到图片字段（image/cover 等），
+        # 从 request.files 中取对应 _file 后缀的文件。跳过 _convert_webp 等辅助字段。
+        # 注意：data 里可能混入了 image_file（文件输入框的值）和 image_convert_webp
+        # （勾选框值），需要按后缀精确过滤，避免误把文件名或 'true' 当作图片 URL。
         for field in list(data.keys()):
-            # 跳过 file 后缀的字段（如 image_file），它们来自 mediaUploadHtml
-            # 的文件输入框值（文件名），不是图片字段。真正需要处理的图片字段
-            # 是 image/cover/background 等不带 _file 后缀的键名。
-            if field.endswith('_file'):
+            # 跳过文件输入框值和 WebP 转换标记——它们不是图片 URL
+            if field.endswith('_file') or field.endswith('_convert_webp'):
                 continue
             if _field_looks_like_image(field):
                 upload = request.files.get(f'{idx}_data_{field}_file')
