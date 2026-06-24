@@ -640,12 +640,7 @@ function mediaUploadHtml(name, value, type, placeholder) {
   var preview = value
     ? (isVideo ? '<video src="' + safeValue + '" muted></video>' : '<img src="' + safeValue + '" alt="">')
     : icon;
-  return '<div class="module-media-url-row">' +
-      '<input type="text" class="form-control form-control-sm" name="' + safeName + '" value="' + safeValue + '" placeholder="' + (_schemaEsc ? _schemaEsc(placeholder || '') : escapeHtml(placeholder || '')) + '" oninput="updateImagePreview(this)">' +
-      '<button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>' +
-      (isVideo ? '' : '<input type="hidden" name="' + safeName + '_convert_webp" value="false"><label class="module-convert-check"><input type="checkbox" name="' + safeName + '_convert_webp" value="true" checked><span></span>WebP</label>') +
-    '</div>' +
-    '<div class="module-media-tools mt-1">' +
+  return '<div class="module-media-tools mt-1">' +
       '<label class="module-media-picker' + (value ? ' has-media' : '') + '" title="点击上传">' +
         preview +
         (value ? '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' : '') +
@@ -653,7 +648,12 @@ function mediaUploadHtml(name, value, type, placeholder) {
         (value ? '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>' : '') +
       '</label>' +
     '</div>' +
-    '<div class="form-text mt-1">' + (isVideo ? '支持 MP4/WebM/OGG/MOV。' : '默认转 WebP，取消勾选则保留原格式。') + '</div>';
+    '<div class="form-text mt-1">' + (isVideo ? '支持 MP4/WebM/OGG/MOV。' : '默认转 WebP，取消勾选则保留原格式。') + '</div>' +
+    '<div class="module-media-url-row">' +
+      '<input type="text" class="form-control form-control-sm" name="' + safeName + '" value="' + safeValue + '" placeholder="' + (_schemaEsc ? _schemaEsc(placeholder || '') : escapeHtml(placeholder || '')) + '" oninput="updateImagePreview(this)">' +
+      '<button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>' +
+      (isVideo ? '' : '<input type="hidden" name="' + safeName + '_convert_webp" value="false"><label class="module-convert-check"><input type="checkbox" name="' + safeName + '_convert_webp" value="true" checked><span></span>WebP</label>') +
+    '</div>';
 }
 
 /* 单个内容字段 → 编辑控件 */
