@@ -56,7 +56,7 @@
       </div>
       <div class="text-muted small mt-1">{{ check.detail }}</div>
       {% if check.status != 'ok' and check.action_url %}
-      {% if check.status != 'ok' and check.action_url %}
+      <a class="seo-check-link" href="{{ check.action_url }}" target="_top">去处理</a>
       {% endif %}
     </div>
     {% endfor %}

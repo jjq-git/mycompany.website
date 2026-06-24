@@ -2921,18 +2921,7 @@ document.addEventListener('change', function(e) {
   if (v) inp.value = v + unit;
 });
 
-// 富文本编辑器粘贴时自动清除格式（只保留纯文本和换行）
-document.addEventListener('paste', function(e) {
-  var editor = e.target.closest('.rich-editor-body');
-  if (!editor) return;
-  e.preventDefault();
-  var text = (e.clipboardData || window.clipboardData).getData('text/plain');
-  // 将换行转为 <div>（匹配 contenteditable 在 Chrome 中的默认行为）
-  var html = text.split('\n').map(function(line) {
-    return '<div>' + (line || '<br>') + '</div>';
-  }).join('');
-  document.execCommand('insertHTML', false, html);
-});
+// 粘贴处理已统一由 admin_modules.js 中的 rte-editor paste 处理器负责，此处不再重复注册
 
 function insertRichEditorLink(btn, event) {
   if (event) event.preventDefault();

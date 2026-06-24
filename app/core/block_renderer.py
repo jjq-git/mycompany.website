@@ -34,6 +34,8 @@ _SAFE_HREF = re.compile(r'^(https?:|mailto:|tel:|/|#|\./|\.\./|[^:]*$)', re.I)
 _SAFE_COLOR = re.compile(r'^(#[0-9a-f]{3,8}|rgba?\([\d.,%\s]+\)|hsla?\([\d.,%\s]+\)|[a-z]+)$', re.I)
 _IMG_TAG_RE = re.compile(r'<img\b[^>]*>', re.I)
 _ALT_ATTR_RE = re.compile(r'\s+alt\s*=\s*("([^"]*)"|\'([^\']*)\'|([^\s>]*))', re.I)
+# 检测文本是否包含 HTML 标签（用于判断 textarea 内容是否来自富文本编辑器）
+_HTML_TAG_RE = re.compile(r'<(p|div|br|h[1-6]|ul|ol|li|a|img|span|strong|em|b|i|u|s|table|blockquote|hr)\b', re.I)
 
 
 def _richtext_with_image_alt(html, alt_text):
@@ -199,7 +201,13 @@ def _inject_leaf(node, field_def, value):
             has_content = False
     elif dtype in _TEXT_TYPES:
         if has_content:
-            _set_text(node, value, raw_html=(dtype == 'richtext'))
+            # richtext 始终按 innerHTML 注入；textarea 字段如果在
+            # 编辑器中使用了富文本（isDescriptionKey 匹配），内容可能
+            # 包含 HTML 标签，需要同样按 raw_html 处理，避免标签被转义显示。
+            is_html = dtype == 'richtext' or (dtype == 'textarea' and bool(
+                _HTML_TAG_RE.search(str(value))
+            ))
+            _set_text(node, value, raw_html=is_html)
         else:
             # 用户未填 → 清空文字并隐藏。模板内的占位文字（"标签文字"等）是
             # 编辑器示意，不应输出到成品站点。此前 default_text 回退导致
