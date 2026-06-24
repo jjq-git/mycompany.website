@@ -1874,30 +1874,6 @@
         '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label>' +
-        '<div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'bold\',false,null);event.preventDefault()" title="加粗" style="font-size:12px;line-height:1"><b>B</b></button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'italic\',false,null);event.preventDefault()" title="斜体" style="font-size:12px;line-height:1"><i>I</i></button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'underline\',false,null);event.preventDefault()" title="下划线" style="font-size:12px;line-height:1"><u>U</u></button>' +
-          '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'h2\');event.preventDefault()" title="大标题" style="font-size:12px;line-height:1">H2</button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'h3\');event.preventDefault()" title="小标题" style="font-size:12px;line-height:1">H3</button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'p\');event.preventDefault()" title="正文段落" style="font-size:12px;line-height:1">P</button>' +
-          '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyLeft\')" title="左对齐" style="font-size:12px;line-height:1">≡</button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyCenter\')" title="居中" style="font-size:12px;line-height:1">≡</button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyRight\')" title="右对齐" style="font-size:12px;line-height:1">≡</button>' +
-          '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertUnorderedList\')" title="无序列表" style="font-size:12px;line-height:1">•≡</button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertOrderedList\')" title="有序列表" style="font-size:12px;line-height:1">OL</button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorTable(this,event)" title="插入表格" style="font-size:12px;line-height:1">TB</button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorLink(this,event)" title="插入链接" style="font-size:12px;line-height:1">🔗</button>' +
-        '</div>' +
-        '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (d.body || '') + '</div>' +
-        '<textarea class="form-control form-control-sm d-none" name="module_' + idx + '_data_body">' + esc(d.body || '') + '</textarea></div>';
-      specialEditor =
-        '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label>' +
         richEditorHtml('module_' + idx + '_data_body', d.body || '') +
         '</div>';
       styleEditor =
