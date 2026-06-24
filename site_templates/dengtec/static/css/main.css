@@ -5440,6 +5440,7 @@ h6 { font-size: var(--font-size-md); }
 .dg-search-panel.module-list-toolbar {
   width: 100%;
   margin: 0 0 var(--spacing-xl, 1.5rem);
+  justify-content: flex-start;  /* 搜索框和计数文字紧凑排列，不撑满整行 */
 }
 
 .dg-filter-group {
@@ -6980,6 +6981,17 @@ a.ci-value:hover {
   border-radius: 8px;
   background: var(--color-surface, #ffffff);
   color: var(--text-secondary, #64748b);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* 搜索框聚焦态：边框高亮 + 微阴影，图标颜色同步 */
+.module-list-search-wrap:focus-within {
+  border-color: var(--color-primary, #1a6bff);
+  box-shadow: 0 0 0 3px rgba(26, 107, 255, 0.15);
+}
+
+.module-list-search-wrap:focus-within .module-list-search-icon {
+  color: var(--color-primary, #1a6bff);
 }
 
 .module-list-search-icon {

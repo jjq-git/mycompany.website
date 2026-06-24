@@ -140,8 +140,24 @@ def _check_upload_size(file_storage, max_bytes, label='文件'):
     return size
 
 
-def _save_uploaded_image(site_id, file_storage, prefix='image'):
-    """保存上传图片到 sites/<id>/assets/uploads/ 并转换为 WebP，返回站点内绝对路径.
+def _upload_convert_webp_enabled(file_storage):
+    """Return whether this upload field should convert raster images to WebP."""
+    field_name = getattr(file_storage, 'name', '') or ''
+    candidates = []
+    if field_name:
+        candidates.append(f'{field_name}_convert_webp')
+        if field_name.endswith('_file'):
+            candidates.append(f'{field_name[:-5]}_convert_webp')
+    candidates.append('convert_webp')
+    for name in candidates:
+        if name in request.form:
+            values = request.form.getlist(name)
+            return any(value == 'true' for value in values) if values else request.form.get(name) != 'false'
+    return True
+
+
+def _save_uploaded_image(site_id, file_storage, prefix='image', convert_webp=None):
+    """保存上传图片到 sites/<id>/assets/uploads/，默认转换为 WebP，返回站点内绝对路径.
 
     返回示例: /assets/uploads/product-cover-20260509153000.webp
     """
@@ -160,10 +176,13 @@ def _save_uploaded_image(site_id, file_storage, prefix='image'):
     ts = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
     hex_part = secrets.token_hex(4)
 
-    # SVG 是矢量格式，保留原格式直接写入，不经过 Pillow 转换
-    if suffix == 'svg':
-        _check_upload_size(file_storage, MAX_IMAGE_BYTES, label='SVG')
-        filename = f"{safe_prefix}-{ts}-{hex_part}.svg"
+    if convert_webp is None:
+        convert_webp = _upload_convert_webp_enabled(file_storage)
+
+    # SVG 和取消转换的图片都保留原格式直接写入。
+    if suffix == 'svg' or not convert_webp:
+        _check_upload_size(file_storage, MAX_IMAGE_BYTES, label='图片')
+        filename = f"{safe_prefix}-{ts}-{hex_part}.{suffix}"
         output_path = uploads_dir / filename
         file_storage.save(str(output_path))
         return f'/assets/uploads/{filename}'
@@ -836,22 +855,57 @@ def not_found(error):
 
 @bp.route('/')
 def index():
-    return overview()
+    user, site = _current_context()
+    return render_template('base.html', user=user, site=site, active='')
 
 
 @bp.route('/overview')
 def overview():
-    user, site = _current_context()
-    settings = read_yaml(site.id, 'settings.yaml') or {}
+    return redirect(url_for('core.index'))
 
-    products = datasets.load(site.id, 'products')
-    pages = list_yaml_files(site.id, 'pages')
-    counts = {'products': len(products), 'pages': len(pages)}
-    if request.args.get('_fragment'):
-        return render_template('dashboard/panel_overview.html',
-                               user=user, site=site, counts=counts)
-    return render_template('dashboard/overview.html',
-                           user=user, site=site, counts=counts, active='overview')
+
+@bp.route('/company/workspace')
+def company_workspace():
+    """Open company settings in the center workspace instead of the side panel."""
+    user, site = _current_context()
+    lang, languages, default_lang = _get_panel_lang(site)
+    settings = read_yaml(site.id, 'settings.yaml', default={}, lang=lang) or {}
+    company_key = _lang_key('company', site, lang, default_lang)
+    contact_key = _lang_key('contact', site, lang, default_lang)
+    current_company = _merge_settings_section(settings.get('company'), settings.get(company_key))
+    source_company = settings.get('company', {})
+    current_contact = _merge_settings_section(settings.get('contact'), settings.get(contact_key))
+    source_contact = settings.get('contact', {})
+    return render_template('dashboard/settings_workspace.html',
+                           title='公司信息',
+                           panel_template='dashboard/panel_company.html',
+                           user=user, site=site, active='company',
+                           company=current_company,
+                           contact=current_contact,
+                           source_company=source_company,
+                           source_contact=source_contact,
+                           current_lang=lang,
+                           languages=languages,
+                           default_lang=default_lang,
+                           settings_workspace=True)
+
+
+@bp.route('/theme/workspace')
+def theme_workspace():
+    """Open theme settings in the center workspace instead of the side panel."""
+    user, site = _current_context()
+    settings = read_yaml(site.id, 'settings.yaml', default={}) or {}
+    tpl_meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    tpl_meta = _yaml.safe_load(tpl_meta_path.read_text(encoding='utf-8')) if tpl_meta_path.exists() else {}
+    default_theme = tpl_meta.get('default_theme') or {}
+    theme = settings.get('theme') or {}
+    return render_template('dashboard/settings_workspace.html',
+                           title='主题颜色',
+                           panel_template='dashboard/panel_theme.html',
+                           user=user, site=site, active='theme',
+                           theme=theme,
+                           default_theme=default_theme,
+                           settings_workspace=True)
 
 
 @bp.route('/media')
@@ -1561,6 +1615,8 @@ def company():
                 settings['company']['logo'] = _save_uploaded_image(site.id, logo_upload, prefix='company-logo')
             except Exception as exc:
                 flash(f'Logo 上传失败: {exc}')
+                if request.form.get('_workspace') == '1':
+                    return redirect(url_for('core.company_workspace', site=site.id, lang=lang))
                 if is_fragment:
                     return redirect(url_for('core.company', _fragment='1', site=site.id, lang=lang))
                 return redirect(url_for('core.company', site=site.id, lang=lang))
@@ -1573,6 +1629,8 @@ def company():
                 settings['company']['favicon'] = _save_uploaded_image(site.id, favicon_upload, prefix='company-favicon')
             except Exception as exc:
                 flash(f'Favicon 上传失败: {exc}')
+                if request.form.get('_workspace') == '1':
+                    return redirect(url_for('core.company_workspace', site=site.id, lang=lang))
                 if is_fragment:
                     return redirect(url_for('core.company', _fragment='1', site=site.id, lang=lang))
                 return redirect(url_for('core.company', site=site.id, lang=lang))
@@ -1587,6 +1645,8 @@ def company():
             settings[contact_key][field] = request.form.get(f'contact.{field}', '').strip()
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
+        if request.form.get('_workspace') == '1':
+            return redirect(url_for('core.company_workspace', site=site.id, lang=lang))
         if is_fragment:
             return redirect(url_for('core.company', _fragment='1', site=site.id, lang=lang))
         return redirect(url_for('core.company', site=site.id, lang=lang))
@@ -1936,17 +1996,7 @@ def page_home():
 
 @bp.route('/pages')
 def pages():
-    user, site = _current_context()
-    files = list_yaml_files(site.id, 'pages')
-    rows = []
-    for f in files:
-        rows.append({
-            'label': f.stem,  # home, about, contact...
-            'path': f'pages/{f.name}',
-            'mtime': datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc),
-        })
-    return render_template('dashboard/pages.html',
-                           user=user, site=site, pages=rows, active='pages')
+    return redirect(url_for('core.index'))
 
 
 @bp.route('/account')
@@ -2395,6 +2445,8 @@ def theme_edit():
             theme.pop(old_key, None)
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
+        if request.form.get('_workspace') == '1':
+            return redirect(url_for('core.theme_workspace', site=site.id))
         if is_fragment:
             return redirect(url_for('core.theme_edit', _fragment='1', site=site.id))
         return redirect(url_for('core.theme_edit', site=site.id))

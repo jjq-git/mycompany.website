@@ -293,8 +293,10 @@ def list_media_files(site_id):
         refs = find_media_references(site_id, item['api_name'])
         item['reference_count'] = len(refs)
         item['is_referenced'] = bool(refs)
+        item['can_delete'] = not refs
 
-    return sorted(items, key=lambda item: (item['category'], item['display_name'].lower()))
+    category_order = {'image': 0, 'video': 1, 'package': 2, 'document': 3, 'other': 4}
+    return sorted(items, key=lambda item: (category_order.get(item['category'], 9), -item.get('mtime', 0), item['display_name'].lower()))
 
 
 def get_media_file_path(site_id, filename):

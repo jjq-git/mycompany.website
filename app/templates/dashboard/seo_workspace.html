@@ -211,6 +211,9 @@
                 {{ check.title }}
               </div>
               <div class="seo-help mt-1">{{ check.detail }}</div>
+              {% if check.status != 'ok' and check.url %}
+              <a class="seo-check-link" href="{{ check.url }}" target="_top">去处理</a>
+              {% endif %}
             </div>
             {% endfor %}
           </div>

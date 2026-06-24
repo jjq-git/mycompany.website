@@ -18,8 +18,9 @@
 </div>
 {% endif %}
 
-<form method="post" action="{{ url_for('core.company', _fragment='1', site=site.id, lang=current_lang) }}" enctype="multipart/form-data" id="companyForm">
+<form method="post" action="{{ url_for('core.company', site=site.id, lang=current_lang) if settings_workspace|default(false) else url_for('core.company', _fragment='1', site=site.id, lang=current_lang) }}" enctype="multipart/form-data" id="companyForm">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if settings_workspace|default(false) %}<input type="hidden" name="_workspace" value="1">{% endif %}
   <div class="panel-section">
     <div class="panel-section-title">基本信息</div>
     {% set current_logo = company.get('logo', '') %}

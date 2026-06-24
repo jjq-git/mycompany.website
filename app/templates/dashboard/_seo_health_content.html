@@ -1,8 +1,8 @@
-<div class="panel-section">
+﻿<div class="panel-section">
   <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
     <div>
-      <div class="panel-section-title mb-1">健康评分</div>
-      <div class="text-muted small">系统自动生成技术 SEO，这里只检查内容是否足够完整。</div>
+      <div class="panel-section-title mb-1">鍋ュ悍璇勫垎</div>
+      <div class="text-muted small">绯荤粺鑷姩鐢熸垚鎶€鏈?SEO锛岃繖閲屽彧妫€鏌ュ唴瀹规槸鍚﹁冻澶熷畬鏁淬€?/div>
     </div>
     <div class="text-end">
       <div class="fs-3 fw-bold text-primary">{{ report.score }}</div>
@@ -13,53 +13,52 @@
     <div class="col-4">
       <div class="border rounded p-2 text-center">
         <div class="fw-semibold text-success">{{ report.ok_count }}</div>
-        <div class="text-muted small">正常</div>
+        <div class="text-muted small">姝ｅ父</div>
       </div>
     </div>
     <div class="col-4">
       <div class="border rounded p-2 text-center">
         <div class="fw-semibold text-warning">{{ report.warn_count }}</div>
-        <div class="text-muted small">建议处理</div>
+        <div class="text-muted small">寤鸿澶勭悊</div>
       </div>
     </div>
     <div class="col-4">
       <div class="border rounded p-2 text-center">
         <div class="fw-semibold text-secondary">{{ report.info_count }}</div>
-        <div class="text-muted small">可优化</div>
+        <div class="text-muted small">鍙紭鍖?/div>
       </div>
     </div>
   </div>
 </div>
 
 <div class="panel-section">
-  <div class="panel-section-title">页面 SEO</div>
+  <div class="panel-section-title">椤甸潰 SEO</div>
   <div class="text-muted small mb-2">
-    集中查看会发布的页面标题和简介状态。系统会自动生成技术标签，简介可手动改写，也可{% if report.ai_configured %}由 AI 生成{% else %}先用本地摘要生成（配置 AI 后可自动润色）{% endif %}。
-  </div>
+    闆嗕腑鏌ョ湅浼氬彂甯冪殑椤甸潰鏍囬鍜岀畝浠嬬姸鎬併€傜郴缁熶細鑷姩鐢熸垚鎶€鏈爣绛撅紝绠€浠嬪彲鎵嬪姩鏀瑰啓锛屼篃鍙瘂% if report.ai_configured %}鐢?AI 鐢熸垚{% else %}鍏堢敤鏈湴鎽樿鐢熸垚锛堥厤缃?AI 鍚庡彲鑷姩娑﹁壊锛墈% endif %}銆?  </div>
   <button type="button" class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#seoHealthModal">
-    打开 SEO 健康检查
-  </button>
+    鎵撳紑 SEO 鍋ュ悍妫€鏌?  </button>
 </div>
 
 <div class="panel-section">
-  <div class="panel-section-title">系统检查</div>
+  <div class="panel-section-title">绯荤粺妫€鏌?/div>
   <div class="d-flex flex-column gap-2">
     {% for check in report.checks %}
-    {% if not check.action_url %}
     <div class="border rounded p-2">
       <div class="fw-semibold small">
         {% if check.status == 'ok' %}
-        <span class="badge text-bg-success me-1">正常</span>
+        <span class="badge text-bg-success me-1">姝ｅ父</span>
         {% elif check.status == 'warn' %}
-        <span class="badge text-bg-warning me-1">建议</span>
+        <span class="badge text-bg-warning me-1">寤鸿</span>
         {% else %}
-        <span class="badge text-bg-secondary me-1">优化</span>
+        <span class="badge text-bg-secondary me-1">浼樺寲</span>
         {% endif %}
         {{ check.title }}
       </div>
       <div class="text-muted small mt-1">{{ check.detail }}</div>
+      {% if check.status != 'ok' and check.action_url %}
+      {% if check.status != 'ok' and check.action_url %}
+      {% endif %}
     </div>
-    {% endif %}
     {% endfor %}
   </div>
 </div>
@@ -68,11 +67,11 @@
   <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header py-2">
-        <h6 class="modal-title mb-0">SEO 健康检查</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+        <h6 class="modal-title mb-0">SEO 鍋ュ悍妫€鏌?/h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="鍏抽棴"></button>
       </div>
       <div class="modal-body">
-        <div class="small text-muted mb-3">这里只列出菜单中实际发布的页面。标题和简介用于搜索结果、社交分享和 AI 检索摘要。{% if not report.ai_configured %}当前未配置 AI Key，生成按钮会先使用本地摘要兜底。{% endif %}</div>
+        <div class="small text-muted mb-3">杩欓噷鍙垪鍑鸿彍鍗曚腑瀹為檯鍙戝竷鐨勯〉闈€傛爣棰樺拰绠€浠嬬敤浜庢悳绱㈢粨鏋溿€佺ぞ浜ゅ垎浜拰 AI 妫€绱㈡憳瑕併€倇% if not report.ai_configured %}褰撳墠鏈厤缃?AI Key锛岀敓鎴愭寜閽細鍏堜娇鐢ㄦ湰鍦版憳瑕佸厹搴曘€倇% endif %}</div>
         <div class="d-flex flex-column gap-3">
           {% for row in report.pages %}
           <form class="seo-page-row border rounded p-3" data-page-key="{{ row.key }}" data-generate-url="{{ row.generate_url }}" data-save-url="{{ row.save_url }}">
@@ -80,31 +79,31 @@
             <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
               <div>
                 <div class="fw-semibold">{{ row.title }}</div>
-                <div class="text-muted small">/{{ row.key }}/ · {{ row.status_detail }}</div>
+                <div class="text-muted small">/{{ row.key }}/ 路 {{ row.status_detail }}</div>
               </div>
               {% if row.status == 'ok' %}
-              <span class="badge text-bg-success">已设置</span>
+              <span class="badge text-bg-success">宸茶缃?/span>
               {% elif row.status == 'auto' %}
-              <span class="badge text-bg-info">可自动生成</span>
+              <span class="badge text-bg-info">鍙嚜鍔ㄧ敓鎴?/span>
               {% else %}
-              <span class="badge text-bg-warning">需处理</span>
+              <span class="badge text-bg-warning">闇€澶勭悊</span>
               {% endif %}
             </div>
             <div class="row g-2">
               <div class="col-md-4">
-                <label class="form-label small mb-1 text-muted">页面标题</label>
+                <label class="form-label small mb-1 text-muted">椤甸潰鏍囬</label>
                 <input class="form-control form-control-sm" name="title" value="{{ row.title }}">
               </div>
               <div class="col-md-8">
-                <label class="form-label small mb-1 text-muted">页面简介</label>
+                <label class="form-label small mb-1 text-muted">椤甸潰绠€浠?/label>
                 <textarea class="form-control form-control-sm seo-description" name="description" rows="2" placeholder="{{ row.auto_description }}">{{ row.description }}</textarea>
               </div>
             </div>
             <div class="d-flex align-items-center justify-content-between mt-2 gap-2">
               <div class="small text-muted seo-row-msg"></div>
               <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="seoGenerateDescription(this)">{% if report.ai_configured %}AI 生成{% else %}自动生成{% endif %}</button>
-                <button type="button" class="btn btn-sm btn-primary" onclick="seoSavePage(this)">保存</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="seoGenerateDescription(this)">{% if report.ai_configured %}AI 鐢熸垚{% else %}鑷姩鐢熸垚{% endif %}</button>
+                <button type="button" class="btn btn-sm btn-primary" onclick="seoSavePage(this)">淇濆瓨</button>
               </div>
             </div>
           </form>
@@ -129,32 +128,32 @@ function seoSetMsg(row, text, ok) {
 function seoGenerateDescription(btn) {
   var row = seoRowOf(btn);
   if (!row) return;
-  seoSetMsg(row, '生成中...', true);
+  seoSetMsg(row, '鐢熸垚涓?..', true);
   var url = (row.dataset.generateUrl || '').replace(/&amp;/g, '&');
   fetch(url, { method: 'POST' })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      if (!data.ok) throw new Error(data.error || '生成失败');
+      if (!data.ok) throw new Error(data.error || '鐢熸垚澶辫触');
       var textarea = row.querySelector('.seo-description');
       if (textarea) textarea.value = data.description || '';
-      var source = data.source === 'ai' ? 'AI 已生成' : '已用本地摘要生成';
-      if (data.warning) source += '（' + data.warning + '）';
-      seoSetMsg(row, source + '，可继续修改后保存', true);
+      var source = data.source === 'ai' ? 'AI 宸茬敓鎴? : '宸茬敤鏈湴鎽樿鐢熸垚';
+      if (data.warning) source += '锛? + data.warning + '锛?;
+      seoSetMsg(row, source + '锛屽彲缁х画淇敼鍚庝繚瀛?, true);
     })
-    .catch(function(err) { seoSetMsg(row, err.message || '生成失败', false); });
+    .catch(function(err) { seoSetMsg(row, err.message || '鐢熸垚澶辫触', false); });
 }
 function seoSavePage(btn) {
   var row = seoRowOf(btn);
   if (!row) return;
-  seoSetMsg(row, '保存中...', true);
+  seoSetMsg(row, '淇濆瓨涓?..', true);
   var url = (row.dataset.saveUrl || '').replace(/&amp;/g, '&');
   fetch(url, { method: 'POST', body: new FormData(row) })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      if (!data.ok) throw new Error(data.error || '保存失败');
-      seoSetMsg(row, '已保存', true);
+      if (!data.ok) throw new Error(data.error || '淇濆瓨澶辫触');
+      seoSetMsg(row, '宸蹭繚瀛?, true);
       if (typeof refreshPreview === 'function') refreshPreview();
     })
-    .catch(function(err) { seoSetMsg(row, err.message || '保存失败', false); });
+    .catch(function(err) { seoSetMsg(row, err.message || '淇濆瓨澶辫触', false); });
 }
 </script>

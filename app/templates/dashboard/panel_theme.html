@@ -7,8 +7,9 @@
     <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
   {% endfor %}
 {% endwith %}
-<form method="post" action="{{ url_for('core.theme_edit', _fragment='1', site=site.id) }}" id="themeForm">
+<form method="post" action="{{ url_for('core.theme_edit', site=site.id) if settings_workspace|default(false) else url_for('core.theme_edit', _fragment='1', site=site.id) }}" id="themeForm">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if settings_workspace|default(false) %}<input type="hidden" name="_workspace" value="1">{% endif %}
   <div class="panel-section">
     <div class="panel-section-title">颜色配置</div>
   {% for key, label, default_key in [('color-primary','主色','color-primary'),('color-bg','背景','color-bg'),('color-surface','面板色','color-surface'),('color-text','文字色','color-text'),('color-text-secondary','次要文字','color-text-secondary'),('color-border','边框色','color-border')] %}
@@ -46,6 +47,7 @@ function syncColorFromText(key) {
   }
 }
 document.getElementById('themeForm').addEventListener('submit', function(e) {
+  if (!document.getElementById('rightPanelBody')) return;
   e.preventDefault();
   var formData = new FormData(this);
   fetch(this.action, {method: 'POST', body: formData})

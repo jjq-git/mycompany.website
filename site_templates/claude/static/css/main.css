@@ -2845,6 +2845,7 @@ a.ci-value:hover { color: var(--color-primary); }
 .dg-search-panel.module-list-toolbar {
   width: 100%;
   margin: 0 0 var(--space-lg, 3rem);
+  justify-content: flex-start;  /* 搜索框和计数文字紧凑排列，不撑满整行 */
 }
 
 .dg-filter-panel {
@@ -3187,6 +3188,17 @@ a.ci-value:hover { color: var(--color-primary); }
   border-radius: var(--radius-md, 8px);
   background: var(--color-canvas, #faf9f5);
   color: var(--color-text-secondary, #6c6a64);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* 搜索框聚焦态：边框高亮 + 微阴影，图标颜色同步 */
+.module-list-search-wrap:focus-within {
+  border-color: var(--color-primary, #cc785c);
+  box-shadow: 0 0 0 3px rgba(204, 120, 92, 0.15);
+}
+
+.module-list-search-wrap:focus-within .module-list-search-icon {
+  color: var(--color-primary, #cc785c);
 }
 
 .module-list-search-icon {

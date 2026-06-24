@@ -12,7 +12,7 @@
 {# AI 翻译栏 — 独立一行，与语言标签区分 #}
 <div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
   {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
-  <span class="text-muted text-nowrap">🌐 AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
+  <span class="text-muted text-nowrap">?? AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
   <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:11px;">从默认语言翻译</button>
   <span class="text-muted text-nowrap" style="font-size:10px;">翻译后请手动检查并保存</span>
 </div>
@@ -65,7 +65,7 @@
           <div class="d-flex gap-1">
             <button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)">↑</button>
 	            <button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)">↓</button>
-	            <button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch({{ i }})">⇄</button>
+	            <button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch({{ i }})">?</button>
 	            <button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest('.module-item').remove();reindexModules()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"/>
@@ -189,7 +189,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=41"></script>
+<script src="/static/js/admin_modules.js?v=44"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -243,10 +243,13 @@ function segmentedControl(name, options, value, escFn) {
   if (opts.length < 2 || opts.length > 3) return '';
   var current = String(value == null ? '' : value);
   return '<div class="seg-radio" role="radiogroup">' +
-    '<input type="hidden" name="' + escFn(name) + '" value="' + escFn(current) + '">' +
     opts.map(function(opt) {
       var active = current === opt.value;
-      return '<button type="button" class="seg-radio-option' + (active ? ' active' : '') + '" role="radio" aria-checked="' + (active ? 'true' : 'false') + '" data-value="' + escFn(opt.value) + '" onclick="var g=this.closest(\'.seg-radio\');var i=g.querySelector(\'input[type=hidden]\');i.value=this.getAttribute(\'data-value\');g.querySelectorAll(\'.seg-radio-option\').forEach(function(b){b.classList.remove(\'active\');b.setAttribute(\'aria-checked\',\'false\');});this.classList.add(\'active\');this.setAttribute(\'aria-checked\',\'true\');i.dispatchEvent(new Event(\'change\',{bubbles:true}));">' + escFn(opt.label) + '</button>';
+      var id = (name + '_' + opt.value).replace(/[^a-zA-Z0-9_-]/g, '_');
+      return '<label class="seg-radio-option' + (active ? ' active' : '') + '" role="radio" aria-checked="' + (active ? 'true' : 'false') + '" for="' + escFn(id) + '">' +
+        '<input type="radio" id="' + escFn(id) + '" name="' + escFn(name) + '" value="' + escFn(opt.value) + '"' + (active ? ' checked' : '') + ' onchange="var input=this;var g=input.closest(\'.seg-radio\');g.querySelectorAll(\'.seg-radio-option\').forEach(function(b){b.classList.toggle(\'active\', b.contains(input));b.setAttribute(\'aria-checked\', b.contains(input)?\'true\':\'false\');});">' +
+        '<span class="seg-radio-dot" aria-hidden="true"></span><span class="seg-radio-label">' + escFn(opt.label) + '</span>' +
+        '</label>';
     }).join('') +
     '</div>';
 }
@@ -586,35 +589,71 @@ function updateConditionalFields(root) {
 }
 
 function richEditorHtml(name, value) {
+  var icons = {
+    bold: '<svg viewBox="0 0 24 24"><path d="M7 5h7a4 4 0 0 1 0 8H7z"/><path d="M7 13h8a4 4 0 0 1 0 8H7z"/></svg>',
+    italic: '<svg viewBox="0 0 24 24"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg>',
+    underline: '<svg viewBox="0 0 24 24"><path d="M6 4v6a6 6 0 0 0 12 0V4"/><path d="M4 21h16"/></svg>',
+    strike: '<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M16 6.5A4.5 4.5 0 0 0 8 9c0 1 .4 1.8 1.2 2.4"/><path d="M9 17.5a5 5 0 0 0 7.7-2.2"/></svg>',
+    left: '<svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 10h10"/><path d="M4 14h16"/><path d="M4 18h10"/></svg>',
+    center: '<svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M7 10h10"/><path d="M4 14h16"/><path d="M7 18h10"/></svg>',
+    right: '<svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M10 10h10"/><path d="M4 14h16"/><path d="M10 18h10"/></svg>',
+    ul: '<svg viewBox="0 0 24 24"><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>',
+    ol: '<svg viewBox="0 0 24 24"><path d="M10 6h10"/><path d="M10 12h10"/><path d="M10 18h10"/><path d="M4 5h1v4"/><path d="M3.5 9h3"/><path d="M3.5 12.5A1.5 1.5 0 0 1 5 11h0a1.5 1.5 0 0 1 .9 2.7L4 16h3"/><path d="M4 19h1.5a1.5 1.5 0 1 0 0-3H4"/></svg>',
+    link: '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.2 1.2"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.2-1.2"/></svg>',
+    clear: '<svg viewBox="0 0 24 24"><path d="m7 21 10-10"/><path d="m12 3 9 9-6 6H6l-3-3z"/></svg>',
+    undo: '<svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-1"/></svg>',
+    redo: '<svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h1"/></svg>'
+  };
+  function btn(cmd, title, icon, extra) {
+    return '<button type="button" class="btn btn-sm btn-light rte-btn ' + (extra || '') + '" data-cmd="' + cmd + '" title="' + title + '" aria-label="' + title + '">' + icon + '</button>';
+  }
   return '<div class="rte-wrapper">' +
     '<div class="rich-toolbar rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">' +
-    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="bold" title="Bold"><b>B</b></button>' +
-    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="italic" title="Italic"><i>I</i></button>' +
-    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="underline" title="Underline"><u>U</u></button>' +
-    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="strikeThrough" title="Strike"><s>S</s></button>' +
+    btn('bold', '加粗', icons.bold) + btn('italic', '斜体', icons.italic) + btn('underline', '下划线', icons.underline) + btn('strikeThrough', '删除线', icons.strike) +
     '<span class="rte-sep"></span>' +
-    '<select class="form-select form-select-sm rte-heading-select" style="width:auto;font-size:12px" title="Heading"><option value="">标题</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option></select>' +
+    '<select class="form-select form-select-sm rte-heading-select" style="width:auto;font-size:12px" title="标题"><option value="">正文</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option></select>' +
     '<span class="rte-sep"></span>' +
-    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyLeft" title="Align left">☰</button>' +
-    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyCenter" title="Align center">≡</button>' +
-    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyRight" title="Align right">☷</button>' +
+    btn('justifyLeft', '左对齐', icons.left) + btn('justifyCenter', '居中', icons.center) + btn('justifyRight', '右对齐', icons.right) +
     '<span class="rte-sep"></span>' +
-    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertUnorderedList" title="Bullet list">•≡</button>' +
-    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertOrderedList" title="Numbered list">1≡</button>' +
-    '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-btn" title="Table">▦</button>' +
+    btn('insertUnorderedList', '无序列表', icons.ul) + btn('insertOrderedList', '有序列表', icons.ol) +
+    '<button type="button" class="btn btn-sm btn-light rte-btn rte-link-btn" title="链接" aria-label="链接">' + icons.link + '</button>' +
     '<span class="rte-sep"></span>' +
-    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="formatBlock" data-arg="blockquote" title="Quote">❝</button>' +
-    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertHorizontalRule" title="Horizontal rule">—</button>' +
-    '<span class="rte-sep"></span>' +
-    '<input type="color" class="rte-color-picker" value="#141413" style="width:28px;height:28px;border:1px solid #dee2e6;border-radius:4px;padding:2px;cursor:pointer" title="Text color">' +
-    '<span class="rte-sep"></span>' +
-    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="removeFormat" title="Clear format">✕</button>' +
-    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="undo" title="Undo">↩</button>' +
-    '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="redo" title="Redo">↪</button>' +
+    '<input type="color" class="rte-color-picker" value="#141413" title="文字颜色">' +
+    btn('removeFormat', '清除格式', icons.clear) + btn('undo', '撤销', icons.undo) + btn('redo', '重做', icons.redo) +
     '</div>' +
-    '<div contenteditable="true" class="rich-editor-body form-control form-control-sm rte-editor" style="min-height:150px;max-height:400px;overflow-y:auto;line-height:1.7;font-size:13px;outline:none" data-placeholder="">' + (value || '') + '</div>' +
+    '<div contenteditable="true" class="rich-editor-body form-control form-control-sm rte-editor" style="min-height:120px;max-height:300px;overflow-y:auto;line-height:1.7;font-size:13px;outline:none" data-placeholder="">' + (value || '') + '</div>' +
     '<textarea class="form-control form-control-sm d-none" name="' + escapeHtml(name) + '">' + escapeHtml(value || '') + '</textarea>' +
     '</div>';
+}
+function isDescriptionKey(key) {
+  return /(description|summary|excerpt|desc|intro|message)/i.test(String(key || ''));
+}
+
+function mediaUploadHtml(name, value, type, placeholder) {
+  var isVideo = type === 'video';
+  var safeName = _schemaEsc ? _schemaEsc(name) : escapeHtml(name);
+  var safeValue = _schemaEsc ? _schemaEsc(value || '') : escapeHtml(value || '');
+  var accept = isVideo ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*,.svg,.svgz';
+  var icon = isVideo
+    ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>'
+    : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+  var preview = value
+    ? (isVideo ? '<video src="' + safeValue + '" muted></video>' : '<img src="' + safeValue + '" alt="">')
+    : icon;
+  return '<div class="module-media-url-row">' +
+      '<input type="text" class="form-control form-control-sm" name="' + safeName + '" value="' + safeValue + '" placeholder="' + (_schemaEsc ? _schemaEsc(placeholder || '') : escapeHtml(placeholder || '')) + '" oninput="updateImagePreview(this)">' +
+      '<button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>' +
+      (isVideo ? '' : '<input type="hidden" name="' + safeName + '_convert_webp" value="false"><label class="module-convert-check"><input type="checkbox" name="' + safeName + '_convert_webp" value="true" checked><span></span>WebP</label>') +
+    '</div>' +
+    '<div class="module-media-tools mt-1">' +
+      '<label class="module-media-picker' + (value ? ' has-media' : '') + '" title="点击上传">' +
+        preview +
+        (value ? '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' : '') +
+        '<input type="file" name="' + safeName + '_file" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
+        (value ? '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>' : '') +
+      '</label>' +
+    '</div>' +
+    '<div class="form-text mt-1">' + (isVideo ? '支持 MP4/WebM/OGG/MOV。' : '默认转 WebP，取消勾选则保留原格式。') + '</div>';
 }
 
 /* 单个内容字段 → 编辑控件 */
@@ -638,29 +677,13 @@ function _schemaFieldHtml(prefix, field, mdata) {
     html += _schemaVisibilityEye(name, val);
   } else if (field.type === 'richtext') {
     html += richEditorHtml(name, val || '');
+  } else if (field.type === 'textarea' && isDescriptionKey(field.name)) {
+    html += richEditorHtml(name, val || '');
   } else if (field.type === 'textarea') {
     html += '<textarea class="form-control form-control-sm" name="' + _schemaEsc(name) + '" rows="4" placeholder="' + _schemaEsc(label) + '">' + _schemaEsc(val) + '</textarea>';
   } else if (field.type === 'image' || field.type === 'video') {
-    // 图片/视频：URL 输入 + 上传按钮 + 预览
     var mediaPlaceholder = field.type === 'video' ? '视频链接' : '图片链接';
-    html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="' + _schemaEsc(mediaPlaceholder) + '" oninput="updateImagePreview(this)">';
-    var accept = field.type === 'video' ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*,.svg,.svgz';
-    var uploadLabel = field.type === 'video' ? '上传视频' : '上传图片';
-    var helpText = field.type === 'video' ? '支持 MP4/WebM/OGG/MOV，最大 12MB' : '支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP';
-    html += '<label class="d-flex align-items-center gap-2 px-3 py-2 mt-1 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'">' +
-      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>' + uploadLabel +
-      '<input type="file" name="' + _schemaEsc(name) + '_file" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none"></label>' +
-      '<div class="form-text mt-1">' + helpText + '</div>';
-    // URL 文字提示
-    var urlVisible = val ? '' : 'display:none';
-    html += '<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;' + urlVisible + '">' + _schemaEsc(val) + '</div>';
-    // 预览区
-    var previewVisible = val ? '' : 'display:none';
-    html += '<div class="mt-2 module-image-preview" style="' + previewVisible + '">' +
-      '<div style="position:relative;display:inline-block">' +
-      '<img src="' + _schemaEsc(val) + '" style="width:180px;height:auto;max-width:100%;max-height:200px;object-fit:contain;background:#f8fafc;border-radius:4px;border:1px solid #dee2e6;cursor:pointer;display:block" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'">' +
-      '<button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除文件">&times;</button>' +
-      '</div></div>';
+    html += mediaUploadHtml(name, val, field.type, mediaPlaceholder);
   } else if (field.type === 'embed' || field.type === 'audio') {
     var urlPlaceholder = field.type === 'audio' ? '音频链接' : '嵌入页面链接';
     html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="' + _schemaEsc(urlPlaceholder) + '">';
@@ -904,19 +927,7 @@ function generateSchemaStyleForm(prefix, schema, mdata) {
         '<input type="color" class="form-control form-control-color" value="' + _schemaEsc(val || '#888888') + '" oninput="this.nextElementSibling.value=this.value">' +
         '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="如 #f5f7fa"></div>';
     } else if (def.control === 'image') {
-      html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="背景图 URL" oninput="updateImagePreview(this)">';
-      html += '<label class="d-flex align-items-center gap-2 px-3 py-2 mt-1 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'">' +
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传背景图' +
-        '<input type="file" name="' + _schemaEsc(name) + '_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none"></label>' +
-        '<div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>';
-      var urlVisible = val ? '' : 'display:none';
-      html += '<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;' + urlVisible + '">' + _schemaEsc(val) + '</div>';
-      var previewVisible = val ? '' : 'display:none';
-      html += '<div class="mt-2 module-image-preview" style="' + previewVisible + '">' +
-        '<div style="position:relative;display:inline-block">' +
-        '<img src="' + _schemaEsc(val) + '" style="width:120px;height:auto;max-width:100%;max-height:90px;object-fit:contain;background:#f8fafc;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'">' +
-        '<button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除背景图">&times;</button>' +
-        '</div></div>';
+      html += mediaUploadHtml(name, val || '', 'image', '背景图 URL');
     } else {
       html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '">';
     }
@@ -1105,6 +1116,8 @@ function renderDynamicField(prefix, field, value, placeholder) {
 
   if (type === 'richtext') {
     html += richEditorHtml(prefix + key, value || '');
+  } else if (type === 'textarea' && isDescriptionKey(key)) {
+    html += richEditorHtml(prefix + key, value || '');
   } else if (type === 'textarea') {
     html += '<textarea class="form-control form-control-sm" rows="4" name="' + prefix + key + '" placeholder="' + escapeHtml(placeholder || '') + '">' + escapeHtml(value || '') + '</textarea>';
   } else if (type === 'select') {
@@ -1132,15 +1145,9 @@ function renderDynamicField(prefix, field, value, placeholder) {
     else if (needsSpacingUnit) unitOptions = '<option value="px">px</option><option value="rem">rem</option>';
     html += '<div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '" style="width:60%"><select class="form-select form-select-sm unit-picker" data-target="' + prefix + key + '" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name="' + prefix + key + '"]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}">' + unitOptions + '</select></div>';
   } else if (/(image|cover|background|media|photo|logo)/i.test(key)) {
-    html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '" oninput="updateImagePreview(this)">';
+    html += mediaUploadHtml(prefix + key, value || '', type === 'video' ? 'video' : 'image', placeholder || '');
   } else {
     html += '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '">';
-  }
-  if (/(image|cover|background|media|photo|logo)/i.test(key)) {
-    html += '<label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="' + prefix + key + '_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none"></label>';
-    html += '<div class="form-text mt-1">支持 JPG/PNG/GIF/WebP/SVG，最大 12MB，上传后自动转 WebP</div>';
-    html += '<div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div>';
-    html += '<div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="width:120px;height:auto;max-width:100%;max-height:90px;object-fit:contain;background:#f8fafc;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div>';
   }
   return html + '</div>';
 }
@@ -1176,14 +1183,14 @@ function renderHiddenControl(idx, device, label) {
 
 function heroSlideHtml(moduleIndex, slideIndex) {
   var p = 'module_' + moduleIndex + '_slide_' + slideIndex + '_';
+  var mediaField = mediaUploadHtml(p + 'media', '', 'image', '媒体 URL');
   return '<div class="border rounded p-2 mb-2 hero-slide-item collapsed" data-slide-index="' + slideIndex + '">' +
     '<div class="d-flex justify-content-between align-items-center mb-2 hero-slide-header" style="cursor:pointer; user-select:none;" onclick="this.closest(\'.hero-slide-item\').classList.toggle(\'collapsed\')">' +
     '<span class="small fw-semibold d-flex align-items-center"><svg class="hero-slide-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>媒体 ' + (slideIndex + 1) + '</span>' +
     '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation(); this.closest(\'.hero-slide-item\').remove(); reindexHeroSlides(' + moduleIndex + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
     '<div class="hero-slide-body">' +
-    '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">媒体类型</label><select class="form-select form-select-sm" name="' + p + 'type"><option value="image">图片</option><option value="video">视频</option></select></div>' +
-    '<div class="col-6"><label class="form-label small mb-1 text-muted">上传图片/视频</label><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片/视频<input type="file" name="' + p + 'file" accept="image/*,.svg,.svgz,video/mp4,video/webm,video/ogg,video/quicktime" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP/SVG/MP4/WebM/OGG/MOV，最大 12MB</div></div></div>' +
-    '<div class="mb-2 mt-2"><label class="form-label small mb-1 text-muted">媒体 URL</label><input type="text" class="form-control form-control-sm" name="' + p + 'media" oninput="updateImagePreview(this)"></div><div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除文件">&times;</button></div></div></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">媒体类型</label><select class="form-select form-select-sm" name="' + p + 'type"><option value="image">图片</option><option value="video">视频</option></select></div>' +
+    '<div class="mb-2 mt-2"><label class="form-label small mb-1 text-muted">媒体</label>' + mediaField + '</div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="' + p + 'title"></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">副标题</label><input type="text" class="form-control form-control-sm" name="' + p + 'subtitle"></div>' +
     '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">主按钮文字</label><input type="text" class="form-control form-control-sm" name="' + p + 'primaryBtn"></div>' +
@@ -1225,26 +1232,26 @@ function reindexHeroSlides(moduleIndex) {
 function featureItemHtml(moduleIndex, featureIndex) {
   var p = 'module_' + moduleIndex + '_feature_' + featureIndex + '_';
   var icons = [
-    ['circuit',   '⚡ 电路板'],
-    ['code',      '💻 代码开发'],
-    ['structure', '📐 层次结构'],
-    ['sensor',    '📡 传感器'],
-    ['interactive','🖱️ 互动系统'],
-    ['audio',     '🎵 音视频'],
-    ['cpu',       '🔲 处理器/芯片'],
-    ['settings',  '⚙️ 设置/配置'],
-    ['shield',    '🛡️ 安全防护'],
-    ['zap',       '⚡ 闪电/高效'],
-    ['wifi',      '📶 无线连接'],
-    ['globe',     '🌐 全球/网络'],
-    ['package',   '📦 产品包装'],
-    ['tool',      '🔧 工具/制作'],
-    ['bar-chart', '📊 数据图表'],
-    ['monitor',   '🖥️ 显示屏'],
-    ['camera',    '📷 摄像/视频'],
-    ['light',     '💡 灯光照明'],
-    ['bluetooth', '🔷 蓝牙'],
-    ['touch',     '✋ 触控交互'],
+    ['circuit',   '? 电路板'],
+    ['code',      '?? 代码开发'],
+    ['structure', '?? 层次结构'],
+    ['sensor',    '?? 传感器'],
+    ['interactive','??? 互动系统'],
+    ['audio',     '?? 音视频'],
+    ['cpu',       '?? 处理器/芯片'],
+    ['settings',  '?? 设置/配置'],
+    ['shield',    '??? 安全防护'],
+    ['zap',       '? 闪电/高效'],
+    ['wifi',      '?? 无线连接'],
+    ['globe',     '?? 全球/网络'],
+    ['package',   '?? 产品包装'],
+    ['tool',      '?? 工具/制作'],
+    ['bar-chart', '?? 数据图表'],
+    ['monitor',   '??? 显示屏'],
+    ['camera',    '?? 摄像/视频'],
+    ['light',     '?? 灯光照明'],
+    ['bluetooth', '?? 蓝牙'],
+    ['touch',     '? 触控交互'],
   ];
   var iconOptionsHtml = '<option value="">请选择图标</option>';
   icons.forEach(function(pair) {
@@ -1258,7 +1265,7 @@ function featureItemHtml(moduleIndex, featureIndex) {
     '<div class="feature-item-body">' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">图标</label><select class="form-select form-select-sm" name="' + p + 'icon">' + iconOptionsHtml + '</select></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="' + p + 'title" placeholder="功能标题"></div>' +
-    '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label><textarea class="form-control form-control-sm" rows="2" name="' + p + 'desc" placeholder="简短描述该功能"></textarea></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label>' + richEditorHtml(p + 'desc', '') + '</div>' +
     '</div></div>';
 }
 
@@ -1296,9 +1303,9 @@ function statItemHtml(moduleIndex, statIndex) {
   if (window._statItemHtml) return window._statItemHtml(moduleIndex, statIndex, {});
   var p = 'module_' + moduleIndex + '_stats_' + statIndex + '_';
   var icons = [
-    ['users', '👥 用户/客户'], ['briefcase', '💼 项目/案例'], ['building', '🏢 公司/工厂'],
-    ['check', '✅ 认证/合规'], ['shield-check', '🛡️ 品质保证'], ['star', '⭐ 好评/荣誉'],
-    ['award', '🏆 奖项'], ['clock', '🕐 历史/时长'], ['history', '📋 经验']
+    ['users', '?? 用户/客户'], ['briefcase', '?? 项目/案例'], ['building', '?? 公司/工厂'],
+    ['check', '? 认证/合规'], ['shield-check', '??? 品质保证'], ['star', '? 好评/荣誉'],
+    ['award', '?? 奖项'], ['clock', '?? 历史/时长'], ['history', '?? 经验']
   ];
   var iconOptions = '<option value="">请选择图标</option>';
   icons.forEach(function(pair) { iconOptions += '<option value="' + pair[0] + '">' + pair[1] + '</option>'; });
@@ -1347,7 +1354,7 @@ function logoItemHtml(moduleIndex, logoIndex) {
     '<span class="small fw-semibold">标志 ' + (logoIndex + 1) + '</span>' +
     '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.list-item\').remove();reindexLogoItems(' + moduleIndex + ')" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>' +
     '</div><div class="list-item-body">' +
-    '<div class="mb-2"><label class="form-label small mb-1 text-muted">标志图片</label><input type="hidden" name="' + p + 'image" value=""><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="' + p + 'image_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP/SVG，最大 12MB，上传后自动转 WebP</div><div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div><div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">标志图片</label>' + mediaUploadHtml(p + 'image', '', 'image', '图片 URL') + '</div>' +
     '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">品牌名称</label><input type="text" class="form-control form-control-sm" name="' + p + 'name"></div>' +
     '<div class="col-6"><label class="form-label small mb-1 text-muted">链接（可选）</label><input type="text" class="form-control form-control-sm" name="' + p + 'link" placeholder="https://"></div></div>' +
     '</div></div>';
@@ -1380,9 +1387,9 @@ function reindexLogoItems(moduleIndex) {
 function stepItemHtml(moduleIndex, stepIndex) {
   var p = 'module_' + moduleIndex + '_step_' + stepIndex + '_';
   var icons = [
-    ['search', '🔍 搜索/调研'], ['edit', '✏️ 编辑/设计'], ['check', '✅ 完成/确认'], ['check-circle', '✔️ 审核'],
-    ['truck', '🚚 物流/交付'], ['shipping', '📦 发货'], ['settings', '⚙️ 配置/设置'], ['gear', '🔧 定制'],
-    ['chat', '💬 沟通'], ['message', '📝 咨询']
+    ['search', '?? 搜索/调研'], ['edit', '?? 编辑/设计'], ['check', '? 完成/确认'], ['check-circle', '?? 审核'],
+    ['truck', '?? 物流/交付'], ['shipping', '?? 发货'], ['settings', '?? 配置/设置'], ['gear', '?? 定制'],
+    ['chat', '?? 沟通'], ['message', '?? 咨询']
   ];
   var iconOptions = '<option value="">请选择图标</option>';
   icons.forEach(function(pair) { iconOptions += '<option value="' + pair[0] + '">' + pair[1] + '</option>'; });
@@ -1392,7 +1399,7 @@ function stepItemHtml(moduleIndex, stepIndex) {
     '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.list-item\').remove();reindexStepItems(' + moduleIndex + ')" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>' +
     '</div><div class="list-item-body">' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="' + p + 'title" placeholder="步骤名称"></div>' +
-    '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label><textarea class="form-control form-control-sm" rows="2" name="' + p + 'desc" placeholder="步骤说明"></textarea></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label>' + richEditorHtml(p + 'desc', '') + '</div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">图标</label><select class="form-select form-select-sm" name="' + p + 'icon">' + iconOptions + '</select></div>' +
     '</div></div>';
 }
@@ -1801,7 +1808,7 @@ function addModule(type, variant, dataPreset) {
     '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag" placeholder="模块上方小标签"></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
-    '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述文字</label><textarea class="form-control form-control-sm" rows="3" name="module_' + idx + '_data_desc"></textarea></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述文字</label>' + richEditorHtml('module_' + idx + '_data_desc', '') + '</div>' +
     '<hr class="my-2">' +
     '<div class="small fw-semibold mb-1 text-muted">按钮</div>' +
     '<div class="row g-2">' +
@@ -1985,7 +1992,7 @@ function addModule(type, variant, dataPreset) {
     '<hr class="my-2">' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag"></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
-    '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label><textarea class="form-control form-control-sm" rows="3" name="module_' + idx + '_data_desc"></textarea></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label>' + richEditorHtml('module_' + idx + '_data_desc', '') + '</div>' +
     renderDynamicField('module_' + idx + '_data_', {key:'media_type', label:'媒体类型', type:'select', options:[{value:'image', label:'图片'}, {value:'video', label:'视频'}, {value:'embed', label:'嵌入页面'}]}, 'image', '') +
     renderDynamicField('module_' + idx + '_data_', {key:'image', label:'图片', type:'image', show_if:{field:'media_type', value:'image'}}, '', '') +
     renderDynamicField('module_' + idx + '_data_', {key:'video', label:'视频', type:'video', show_if:{field:'media_type', value:'video'}}, '', '') +
@@ -2009,14 +2016,14 @@ function addModule(type, variant, dataPreset) {
       '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'h3\');event.preventDefault()" title="小标题" style="font-size:12px;line-height:1">H3</button>' +
       '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'p\');event.preventDefault()" title="正文段落" style="font-size:12px;line-height:1">P</button>' +
       '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'justifyLeft\')" title="左对齐" style="font-size:12px;line-height:1">☰</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'justifyLeft\')" title="左对齐" style="font-size:12px;line-height:1">?</button>' +
       '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'justifyCenter\')" title="居中" style="font-size:12px;line-height:1">≡</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'justifyRight\')" title="右对齐" style="font-size:12px;line-height:1">☷</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'justifyRight\')" title="右对齐" style="font-size:12px;line-height:1">?</button>' +
       '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'insertUnorderedList\')" title="无序列表" style="font-size:12px;line-height:1">•≡</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'insertUnorderedList\')" title="无序列表" style="font-size:12px;line-height:1">?≡</button>' +
       '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'insertOrderedList\')" title="有序列表" style="font-size:12px;line-height:1">1≡</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorTable(this,event)" title="插入表格" style="font-size:12px;line-height:1">▦</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorLink(this,event)" title="插入链接" style="font-size:12px;line-height:1">🔗</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorTable(this,event)" title="插入表格" style="font-size:12px;line-height:1">?</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorLink(this,event)" title="插入链接" style="font-size:12px;line-height:1">??</button>' +
     '</div>' +
     '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML"></div>' +
     '<textarea class="form-control form-control-sm d-none" name="module_' + idx + '_data_body"></textarea></div>';
@@ -2113,7 +2120,7 @@ function addModule(type, variant, dataPreset) {
     specialEditor =
     '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
-    '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label><textarea class="form-control form-control-sm" rows="3" name="module_' + idx + '_data_desc"></textarea></div>' +
+    '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label>' + richEditorHtml('module_' + idx + '_data_desc', '') + '</div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签（逗号分隔）</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tags"></div>' +
     '<hr class="my-2">' +
     '<div class="id-images-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">图片列表</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="addIdImage(' + idx + ')">+ 添加图片</button></div><input type="hidden" name="module_' + idx + '_data_images_count" class="id-image-count" value="0"><div class="id-image-list"></div></div>' +
@@ -2477,8 +2484,8 @@ function addModule(type, variant, dataPreset) {
       '<div class="d-flex gap-1">' +
 	        '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)">↑</button>' +
 	        '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)">↓</button>' +
-	        '<button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch(' + idx + ')">⇄</button>' +
-	        '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();reindexModules()">✕</button>' +
+	        '<button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch(' + idx + ')">?</button>' +
+	        '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();reindexModules()">?</button>' +
 	      '</div>' +
     '</div>' +
     '<input type="hidden" name="module_' + idx + '_type" value="' + type + '">' +
@@ -2723,32 +2730,38 @@ function bindNestedSortObserver() {
 
 function idImageHtml(modIdx) {
   var next = parseInt(document.querySelector('#selectedModules .id-images-editor[data-module-index="'+modIdx+'"] .id-image-count').value || '0', 10);
-  return '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="'+next+'"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 '+(next+1)+'</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();reindexIdImages('+modIdx+')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label><input type="hidden" name="module_'+modIdx+'_data_images_'+next+'_url" value=""><label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor=\'#94a3b8\';this.style.background=\'#f1f5f9\'" onmouseleave="this.style.borderColor=\'#cbd5e1\';this.style.background=\'#f8fafc\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="module_'+modIdx+'_data_images_'+next+'_url_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none"></label><div class="form-text mt-1">支持 JPG/PNG/GIF/WebP/SVG，最大 12MB，上传后自动转 WebP</div><div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;display:none"></div><div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display=\'none\'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div></div></div>';
+  return '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="'+next+'"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 '+(next+1)+'</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();reindexIdImages('+modIdx+')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label>' + mediaUploadHtml('module_'+modIdx+'_data_images_'+next+'_url', '', 'image', '图片 URL') + '</div></div>';
 }
 
 // 图片预览：选择文件后在当前字段中显示本地预览
+function moduleMediaPlaceholderIcon(accept) {
+  var isVideo = /video/i.test(accept || '');
+  return isVideo
+    ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>'
+    : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+}
+
+function renderModuleMediaPicker(picker, src, fileName, accept) {
+  if (!picker) return;
+  var existingFile = picker.querySelector('input[type=file]');
+  fileName = fileName || (existingFile ? existingFile.name : '');
+  accept = accept || (existingFile ? existingFile.getAttribute('accept') : 'image/*,.svg,.svgz') || 'image/*,.svg,.svgz';
+  var safeSrc = src ? String(src).replace(/"/g, '&quot;') : '';
+  var isVideo = /video/i.test(accept || '') || /\.(mp4|webm|ogg|mov)$/i.test(safeSrc);
+  picker.classList.toggle('has-media', !!src);
+  picker.innerHTML = src
+    ? (isVideo ? '<video src="' + safeSrc + '" muted></video>' : '<img src="' + safeSrc + '" alt="">') +
+      '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' +
+      '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
+      '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>'
+    : moduleMediaPlaceholderIcon(accept) + '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">';
+}
 function handleModuleImageUpload(fileInput) {
   var file = fileInput.files[0];
   var container = fileInput.closest('.hero-slide-body') || fileInput.closest('.mb-2');
-  var preview = container ? container.querySelector('.module-image-preview') : null;
-  if (!preview && container) {
-    preview = document.createElement('div');
-    preview.className = 'mt-2 module-image-preview';
-    preview.style.display = 'none';
-    preview.innerHTML = "<div style=\"position:relative;display:inline-block\"><img src=\"\" style=\"max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer\" onclick=\"enlargeImage(this)\" onerror=\"this.parentElement.parentElement.style.display='none'\"><button type=\"button\" class=\"btn btn-sm\" onclick=\"clearModuleImage(this)\" style=\"position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center\" title=\"移除图片\">&times;</button></div>";
-    container.appendChild(preview);
-  }
-  var img = preview ? preview.querySelector('img') : null;
-  var urlText = container ? container.querySelector('.module-image-url-text') : null;
-  if (!file || !preview || !img) return;
-  var isImage = (file.type || '').indexOf('image/') === 0 || /\.svgz?$/i.test(file.name || '');
-  if (isImage) {
-    img.onload = function() { preview.style.display = ''; };
-    img.onerror = function() { preview.style.display = 'none'; };
-    img.src = URL.createObjectURL(file);
-    preview.style.display = '';
-  }
-  if (urlText) { urlText.textContent = file.name; urlText.style.display = ''; }
+  var picker = container ? container.querySelector('.module-media-picker') : null;
+  if (!file || !picker) return;
+  renderModuleMediaPicker(picker, URL.createObjectURL(file), fileInput.name, fileInput.getAttribute('accept') || '');
 }
 
 // 图片预览：点击放大
@@ -2774,32 +2787,21 @@ function enlargeImage(img) {
 function clearModuleImage(btn) {
   var container = btn.closest('.hero-slide-body') || btn.closest('.mb-2');
   if (!container) return;
-  var urlInput = container.querySelector('input[type="hidden"]') || container.querySelector('input[type="text"]');
+  var urlInput = container.querySelector('input[type="text"][name]') || container.querySelector('input[type="hidden"][name]:not([name$="_convert_webp"])');
   var fileInput = container.querySelector('input[type="file"]');
-  var urlText = container.querySelector('.module-image-url-text');
-  var preview = container.querySelector('.module-image-preview');
-  var img = preview ? preview.querySelector('img') : null;
+  var picker = container.querySelector('.module-media-picker');
   if (urlInput) urlInput.value = '';
   if (fileInput) fileInput.value = '';
-  if (urlText) { urlText.textContent = ''; urlText.style.display = 'none'; }
-  if (img) img.src = '';
-  if (preview) preview.style.display = 'none';
+  renderModuleMediaPicker(picker, '', fileInput ? fileInput.name : '', fileInput ? fileInput.getAttribute('accept') : '');
 }
 
 // 图片预览：URL 输入框变化时更新预览
 function updateImagePreview(urlInput) {
   var container = urlInput.closest('.hero-slide-body') || urlInput.closest('.mb-2');
-  var preview = container ? container.querySelector('.module-image-preview') : null;
-  var img = preview ? preview.querySelector('img') : null;
-  if (!preview || !img) return;
-  var url = urlInput.value.trim();
-  if (url) {
-    img.src = url;
-    preview.style.display = '';
-  } else {
-    preview.style.display = 'none';
-    img.src = '';
-  }
+  var picker = container ? container.querySelector('.module-media-picker') : null;
+  if (!picker) return;
+  var fileInput = picker.querySelector('input[type=file]');
+  renderModuleMediaPicker(picker, urlInput.value.trim(), fileInput ? fileInput.name : '', fileInput ? fileInput.getAttribute('accept') : '');
 }
 
 function addIdImage(modIdx) {
@@ -3084,7 +3086,7 @@ function openFeaturedImport(moduleIdx, addBtn) {
   });
   sel.value = '';
   document.getElementById('dsPickerItems').innerHTML =
-    '<div class="col-12 text-muted small text-center py-4">👆 请先在上方选择一个数据集</div>';
+    '<div class="col-12 text-muted small text-center py-4">?? 请先在上方选择一个数据集</div>';
   dsPickerCache = [];
   dsPickerTargetItem = addBtn;  // 存 addBtn 引用，选中后用它触发新增
 
@@ -3096,7 +3098,7 @@ function openFeaturedImport(moduleIdx, addBtn) {
 function loadPickerDatasetItems(datasetName) {
   if (!datasetName) {
     document.getElementById('dsPickerItems').innerHTML =
-      '<div class="col-12 text-muted small text-center py-4">👆 请先在上方选择一个数据集</div>';
+      '<div class="col-12 text-muted small text-center py-4">?? 请先在上方选择一个数据集</div>';
     dsPickerCache = [];
     return;
   }
@@ -3128,7 +3130,7 @@ function loadPickerDatasetItems(datasetName) {
         var cover = item.cover || '';
         var covHtml = cover
           ? '<img src="' + _schemaEsc(cover) + '" alt="" loading="lazy" style="width:100%;height:90px;object-fit:cover;border-radius:4px 4px 0 0" onerror="this.style.display=\'none\'">'
-          : '<div style="width:100%;height:90px;background:#f1f5f9;border-radius:4px 4px 0 0;display:flex;align-items:center;justify-content:center;font-size:24px;color:#cbd5e1">📄</div>';
+          : '<div style="width:100%;height:90px;background:#f1f5f9;border-radius:4px 4px 0 0;display:flex;align-items:center;justify-content:center;font-size:24px;color:#cbd5e1">??</div>';
         html += '<div class="col-4 col-md-3 mb-2">' +
           '<div onclick="selectFeaturedItem(' + i + ')" ' +
           'style="cursor:pointer;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;transition:all .15s;height:100%" ' +
@@ -3445,13 +3447,13 @@ function _fpSetItemField(itemEl, fieldName, value) {
 .module-item.expanded .module-config { display: block !important; }
 .device-config { padding: 4px 8px; }
 .feature-item-header .small::before { content: '▼'; margin-right: 4px; font-size: 10px; }
-.feature-item.collapsed .feature-item-header .small::before { content: '▶'; }
+.feature-item.collapsed .feature-item-header .small::before { content: '?'; }
 .feature-item.collapsed .feature-item-body { display: none; }
 .hero-slide-header .small::before { content: '▼'; margin-right: 4px; font-size: 10px; }
-.hero-slide-item.collapsed .hero-slide-header .small::before { content: '▶'; }
+.hero-slide-item.collapsed .hero-slide-header .small::before { content: '?'; }
 .hero-slide-item.collapsed .hero-slide-body { display: none; }
 .list-item-header .small::before { content: '▼'; margin-right: 4px; font-size: 10px; }
-.list-item.collapsed .list-item-header .small::before { content: '▶'; }
+.list-item.collapsed .list-item-header .small::before { content: '?'; }
 .list-item.collapsed .list-item-body { display: none; }
 </style>
 
@@ -3471,7 +3473,7 @@ function _fpSetItemField(itemEl, fieldName, value) {
           </select>
         </div>
         <div id="dsPickerItems" class="row g-2" style="max-height:55vh;overflow-y:auto;min-height:80px">
-          <div class="col-12 text-muted small text-center py-4">👆 请先在上方选择一个数据集</div>
+          <div class="col-12 text-muted small text-center py-4">?? 请先在上方选择一个数据集</div>
         </div>
       </div>
     </div>

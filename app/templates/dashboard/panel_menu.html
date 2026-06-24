@@ -54,19 +54,14 @@
       if (!Array.isArray(item.children)) item.children = [];
       const isHome = item.type === 'home';
       const childCount = item.children.length;
+      if (item._collapsed === undefined) item._collapsed = true;
       const isCollapsed = item._collapsed === true;
       const row = document.createElement('div');
       row.className = 'menu-tree-row';
       row.dataset.depth = depth;
       row._item = item;
 
-      // 折叠按钮（仅在有子菜单时显示）
-      var collapseHtml = '';
-      if (childCount > 0) {
-        collapseHtml = '<button type="button" class="menu-tree-btn menu-tree-collapse-toggle toggle-collapse" title="' + (isCollapsed ? '展开' : '折叠') + '子菜单">' + (isCollapsed ? '▶' : '▼') + '</button>';
-      } else {
-        collapseHtml = '<span class="menu-tree-collapse-spacer"></span>';
-      }
+      var collapseHtml = '<button type="button" class="menu-tree-btn menu-tree-collapse-toggle toggle-collapse" title="' + (isCollapsed ? '展开编辑' : '收起编辑') + '">' + (isCollapsed ? '▶' : '▼') + '</button>';
 
       // 子菜单计数徽章
       var badgeHtml = childCount > 0 ? '<span class="menu-tree-child-count">' + childCount + '</span>' : '';
