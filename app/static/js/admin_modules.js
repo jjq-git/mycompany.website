@@ -114,45 +114,42 @@
 
   function richEditorHtml(name, value) {
     return '<div class="rte-wrapper">' +
-      '<div class="rich-toolbar rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">' +
+      '<div class="rich-toolbar rte-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
       /* 格式按钮 */
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="bold" title="加粗"><b>B</b></button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="italic" title="斜体"><i>I</i></button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="underline" title="下划线"><u>U</u></button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="strikeThrough" title="删除线"><s>S</s></button>' +
-      '<span class="rte-sep"></span>' +
-      /* 标题下拉 */
-      '<select class="form-select form-select-sm rte-heading-select" style="width:auto;font-size:12px" title="标题">' +
-        '<option value="">正文</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option>' +
-      '</select>' +
-      '<span class="rte-sep"></span>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="bold" title="加粗" style="font-size:12px;line-height:1"><b>B</b></button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="italic" title="斜体" style="font-size:12px;line-height:1"><i>I</i></button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="underline" title="下划线" style="font-size:12px;line-height:1"><u>U</u></button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="strikeThrough" title="删除线" style="font-size:12px;line-height:1"><s>S</s></button>' +
+      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
+      /* 标题按钮 */
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="formatBlock" data-arg="h2" title="大标题" style="font-size:12px;line-height:1">H2</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="formatBlock" data-arg="h3" title="小标题" style="font-size:12px;line-height:1">H3</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="formatBlock" data-arg="p" title="正文段落" style="font-size:12px;line-height:1">P</button>' +
+      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
       /* 对齐 */
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyLeft" title="左对齐">≡</button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyCenter" title="居中">≡</button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyRight" title="右对齐">≡</button>' +
-      '<span class="rte-sep"></span>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="justifyLeft" title="左对齐" style="font-size:12px;line-height:1">≡</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="justifyCenter" title="居中" style="font-size:12px;line-height:1">≡</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="justifyRight" title="右对齐" style="font-size:12px;line-height:1">≡</button>' +
+      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
       /* 列表 */
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertUnorderedList" title="无序列表">•≡</button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertOrderedList" title="有序列表">1.</button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-btn" title="插入表格">⊞</button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-settings-btn" title="表格设置">⚙</button>' +
-      '<span class="rte-sep"></span>' +
-      /* 链接/图片 */
-      '<button type="button" class="btn btn-sm btn-light rte-btn rte-link-btn" title="插入链接">🔗</button>' +
-      '<span class="rte-sep"></span>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="insertUnorderedList" title="无序列表" style="font-size:12px;line-height:1">•≡</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="insertOrderedList" title="有序列表" style="font-size:12px;line-height:1">OL</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn rte-table-btn" title="插入表格" style="font-size:12px;line-height:1">TB</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn rte-link-btn" title="插入链接" style="font-size:12px;line-height:1">🔗</button>' +
+      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
       /* 块级 */
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="formatBlock" data-arg="blockquote" title="引用块">❝</button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertHorizontalRule" title="分割线">—</button>' +
-      '<span class="rte-sep"></span>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="formatBlock" data-arg="blockquote" title="引用块" style="font-size:12px;line-height:1">❝</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="insertHorizontalRule" title="分割线" style="font-size:12px;line-height:1">—</button>' +
+      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
       /* 文字颜色 */
       '<input type="color" class="rte-color-picker" value="#141413" style="width:28px;height:28px;border:1px solid #dee2e6;border-radius:4px;padding:2px;cursor:pointer" title="文字颜色">' +
-      '<span class="rte-sep"></span>' +
+      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
       /* 清除格式 + 撤销/重做 */
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="removeFormat" title="清除格式">✕</button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="undo" title="撤销">↩</button>' +
-      '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="redo" title="重做">↪</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="removeFormat" title="清除格式" style="font-size:12px;line-height:1">✕</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="undo" title="撤销" style="font-size:12px;line-height:1">↩</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rte-btn" data-cmd="redo" title="重做" style="font-size:12px;line-height:1">↪</button>' +
       '</div>' +
-      '<div contenteditable="true" class="rich-editor-body form-control form-control-sm rte-editor" style="min-height:150px;max-height:400px;overflow-y:auto;line-height:1.7;font-size:13px;outline:none" data-placeholder="">' + (value || '') + '</div>' +
+      '<div contenteditable="true" class="rich-editor-body form-control form-control-sm rte-editor" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto;line-height:1.7;font-size:13px;outline:none" data-placeholder="">' + (value || '') + '</div>' +
       '<textarea class="form-control form-control-sm d-none" name="' + esc(name) + '">' + esc(value || '') + '</textarea>' +
       '</div>';
   }
@@ -2695,7 +2692,8 @@
   function makeRteToolbarButton(className, label, title, html) {
     var btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'btn btn-sm btn-light rte-btn ' + className;
+    btn.className = 'btn btn-sm btn-outline-secondary py-1 px-2 rte-btn ' + className;
+    btn.style.cssText = 'font-size:12px;line-height:1';
     btn.title = title;
     btn.setAttribute('aria-label', title);
     if (html) btn.innerHTML = html;
@@ -2724,8 +2722,11 @@
   function normalizeRteToolbar(toolbar) {
     if (!toolbar) return;
     var cmdTitles = {
-      bold: 'Bold', italic: 'Italic', underline: 'Underline', strikeThrough: 'Strike', justifyLeft: 'Align left', justifyCenter: 'Align center', justifyRight: 'Align right',
-      insertUnorderedList: 'Bullet list', insertOrderedList: 'Numbered list', formatBlock: 'Quote', insertHorizontalRule: 'Horizontal rule', removeFormat: 'Clear format', undo: 'Undo', redo: 'Redo'
+      bold: '加粗', italic: '斜体', underline: '下划线', strikeThrough: '删除线',
+      justifyLeft: '左对齐', justifyCenter: '居中', justifyRight: '右对齐',
+      insertUnorderedList: '无序列表', insertOrderedList: '有序列表',
+      formatBlock: '引用块', insertHorizontalRule: '分割线',
+      removeFormat: '清除格式', undo: '撤销', redo: '重做'
     };
     toolbar.querySelectorAll('.rte-btn[data-cmd]').forEach(function(btn) {
       var title = cmdTitles[btn.dataset.cmd];
@@ -2742,9 +2743,9 @@
       ['.rte-table-settings-btn', '表格设置'],
       ['.rte-link-btn', '插入链接'],
       ['.rte-image-btn', '插入图片链接'],
-      ['.rte-upload-image-btn', 'Upload image'],
+      ['.rte-upload-image-btn', '上传图片'],
       ['.rte-video-url-btn', '插入视频链接'],
-      ['.rte-upload-video-btn', 'Upload video']
+      ['.rte-upload-video-btn', '上传视频']
     ].forEach(function(item) {
       var btn = toolbar.querySelector(item[0]);
       if (!btn) return;
@@ -2756,7 +2757,7 @@
   function finalizeRteToolbar(wrapper, toolbar) {
     if (!wrapper || !toolbar) return;
     var tableInsertBtn = toolbar.querySelector('.rte-table-btn');
-    var tableSettingsBtn = ensureRteToolbarButton(wrapper, 'rte-table-settings-btn', 'T', 'Table settings');
+    var tableSettingsBtn = ensureRteToolbarButton(wrapper, 'rte-table-settings-btn', 'T', '表格设置');
     if (tableInsertBtn) placeRteToolbarGroup(toolbar, tableInsertBtn, [tableSettingsBtn]);
 
     var mediaSep = wrapper.querySelector('.rte-media-sep');
@@ -2764,11 +2765,11 @@
       mediaSep = document.createElement('span');
       mediaSep.className = 'rte-sep rte-media-sep';
     }
-    var linkBtn = ensureRteToolbarButton(wrapper, 'rte-link-btn', 'L', 'Insert link');
-    var imageUrlBtn = ensureRteToolbarButton(wrapper, 'rte-image-btn', 'P', 'Insert image URL');
-    var imageUploadBtn = ensureRteToolbarButton(wrapper, 'rte-upload-image-btn', 'I', 'Upload image');
-    var videoUrlBtn = ensureRteToolbarButton(wrapper, 'rte-video-url-btn', 'V', 'Insert video URL');
-    var videoUploadBtn = ensureRteToolbarButton(wrapper, 'rte-upload-video-btn', 'V', 'Upload video');
+    var linkBtn = ensureRteToolbarButton(wrapper, 'rte-link-btn', 'L', '插入链接');
+    var imageUrlBtn = ensureRteToolbarButton(wrapper, 'rte-image-btn', 'P', '插入图片链接');
+    var imageUploadBtn = ensureRteToolbarButton(wrapper, 'rte-upload-image-btn', 'I', '上传图片');
+    var videoUrlBtn = ensureRteToolbarButton(wrapper, 'rte-video-url-btn', 'V', '插入视频链接');
+    var videoUploadBtn = ensureRteToolbarButton(wrapper, 'rte-upload-video-btn', 'V', '上传视频');
     var mediaAnchor = tableSettingsBtn || tableInsertBtn;
     if (mediaAnchor) {
       placeRteToolbarGroup(toolbar, mediaAnchor, [mediaSep, linkBtn, imageUrlBtn, imageUploadBtn, videoUrlBtn, videoUploadBtn]);
@@ -2784,8 +2785,9 @@
     if (!wrapper.querySelector('.rte-table-settings-btn')) {
       var tableBtn = document.createElement('button');
       tableBtn.type = 'button';
-      tableBtn.className = 'btn btn-sm btn-light rte-btn rte-table-settings-btn';
-      tableBtn.title = 'Table settings';
+      tableBtn.className = 'btn btn-sm btn-outline-secondary py-1 px-2 rte-btn rte-table-settings-btn';
+      tableBtn.style.cssText = 'font-size:12px;line-height:1';
+      tableBtn.title = '表格设置';
       tableBtn.textContent = 'T';
       toolbar.appendChild(tableBtn);
     }
@@ -2798,27 +2800,30 @@
     if (!wrapper.querySelector('.rte-upload-image-btn')) {
       var btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'btn btn-sm btn-light rte-btn rte-upload-image-btn';
-      btn.title = 'Upload and insert image';
-      btn.setAttribute('aria-label', 'Upload image');
+      btn.className = 'btn btn-sm btn-outline-secondary py-1 px-2 rte-btn rte-upload-image-btn';
+      btn.style.cssText = 'font-size:12px;line-height:1';
+      btn.title = '上传并插入图片';
+      btn.setAttribute('aria-label', '上传图片');
       btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path></svg>';
       toolbar.appendChild(btn);
     }
     if (!wrapper.querySelector('.rte-video-url-btn')) {
       var videoUrlBtn = document.createElement('button');
       videoUrlBtn.type = 'button';
-      videoUrlBtn.className = 'btn btn-sm btn-light rte-btn rte-video-url-btn';
-      videoUrlBtn.title = 'Insert video URL';
-      videoUrlBtn.setAttribute('aria-label', 'Insert video URL');
+      videoUrlBtn.className = 'btn btn-sm btn-outline-secondary py-1 px-2 rte-btn rte-video-url-btn';
+      videoUrlBtn.style.cssText = 'font-size:12px;line-height:1';
+      videoUrlBtn.title = '插入视频链接';
+      videoUrlBtn.setAttribute('aria-label', '插入视频链接');
       videoUrlBtn.textContent = 'VID';
       toolbar.appendChild(videoUrlBtn);
     }
     if (!wrapper.querySelector('.rte-upload-video-btn')) {
       var videoBtn = document.createElement('button');
       videoBtn.type = 'button';
-      videoBtn.className = 'btn btn-sm btn-light rte-btn rte-upload-video-btn';
-      videoBtn.title = 'Upload and insert video';
-      videoBtn.setAttribute('aria-label', 'Upload video');
+      videoBtn.className = 'btn btn-sm btn-outline-secondary py-1 px-2 rte-btn rte-upload-video-btn';
+      videoBtn.style.cssText = 'font-size:12px;line-height:1';
+      videoBtn.title = '上传并插入视频';
+      videoBtn.setAttribute('aria-label', '上传视频');
       videoBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>';
       toolbar.appendChild(videoBtn);
     }
@@ -3077,7 +3082,7 @@
     var csrfToken = getCsrfToken();
     if (csrfToken) fd.append('csrf_token', csrfToken);
     if (status) {
-      status.textContent = 'Uploading video...';
+      status.textContent = '视频上传中...';
       status.className = 'rte-upload-status small text-muted mb-1';
       status.style.display = '';
     }
@@ -3091,28 +3096,28 @@
         return r.text().then(function(text) {
           var data = null;
           try { data = text ? JSON.parse(text) : {}; }
-          catch (err) { throw new Error('Video upload failed (HTTP ' + r.status + ').'); }
+          catch (err) { throw new Error('视频上传失败 (HTTP ' + r.status + ')'); }
           return { ok: r.ok, data: data };
         });
       })
       .then(function(result) {
         if (!result.ok || !result.data || !result.data.url) {
-          throw new Error((result.data && result.data.error) || 'Video upload failed');
+          throw new Error((result.data && result.data.error) || '视频上传失败');
         }
         insertRteVideo(rte, result.data.url);
         if (status) {
-          status.textContent = 'Video inserted.';
+          status.textContent = '视频已插入';
           status.className = 'rte-upload-status small text-success mb-1';
           setTimeout(function() { status.style.display = 'none'; }, 1800);
         }
       })
       .catch(function(err) {
         if (status) {
-          status.textContent = err.message || 'Video upload failed';
+          status.textContent = err.message || '视频上传失败';
           status.className = 'rte-upload-status small text-danger mb-1';
           status.style.display = '';
         } else {
-          alert(err.message || 'Video upload failed');
+          alert(err.message || '视频上传失败');
         }
       });
   });
@@ -3173,7 +3178,7 @@
     var csrfToken = getCsrfToken();
     if (csrfToken) fd.append('csrf_token', csrfToken);
     if (status) {
-      status.textContent = 'Uploading image...';
+      status.textContent = '图片上传中...';
       status.className = 'rte-upload-status small text-muted mb-1';
       status.style.display = '';
     }
@@ -3189,31 +3194,31 @@
           try {
             data = text ? JSON.parse(text) : {};
           } catch (err) {
-            if (r.status === 401) throw new Error('Please log in again.');
-            if (r.status === 404) throw new Error('Upload API not found. Please restart the Flask server and refresh the admin page.');
-            throw new Error('Upload failed (HTTP ' + r.status + '). Please refresh the page and try again.');
+            if (r.status === 401) throw new Error('请重新登录');
+            if (r.status === 404) throw new Error('上传接口未找到，请重启 Flask 服务器并刷新管理页面');
+            throw new Error('上传失败 (HTTP ' + r.status + ')，请刷新页面后重试');
           }
           return { ok: r.ok, data: data };
         });
       })
       .then(function(result) {
         if (!result.ok || !result.data || !result.data.url) {
-          throw new Error((result.data && result.data.error) || 'Upload failed');
+          throw new Error((result.data && result.data.error) || '上传失败');
         }
         insertRteImage(rte, result.data.url);
         if (status) {
-          status.textContent = 'Image inserted.';
+          status.textContent = '图片已插入';
           status.className = 'rte-upload-status small text-success mb-1';
           setTimeout(function() { status.style.display = 'none'; }, 1800);
         }
       })
       .catch(function(err) {
         if (status) {
-          status.textContent = err.message || 'Upload failed';
+          status.textContent = err.message || '上传失败';
           status.className = 'rte-upload-status small text-danger mb-1';
           status.style.display = '';
         } else {
-          alert(err.message || 'Upload failed');
+          alert(err.message || '上传失败');
         }
       });
   });
