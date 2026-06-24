@@ -93,7 +93,7 @@
     if (!editor) return false;
     var size = window.prompt('表格琛屽垪锛屼緥濡?3x3', '3x3');
     if (size === null) return false;
-    var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,锛? ]\s*(\d+)\s*$/);
+    var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,\x2c ]\s*(\d+)\s*$/);
     var rows = match ? parseInt(match[1], 10) : 3;
     var cols = match ? parseInt(match[2], 10) : 3;
     rows = Math.max(1, Math.min(rows || 3, 20));
@@ -1498,7 +1498,7 @@
         '<div class="mb-2"><div class="d-flex align-items-center gap-2 mb-1"><label class="form-label small mb-0 text-muted">标签</label>' + visibilityEye('tags_visible', tagsVisible ? 'true' : 'false') + '</div><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="多个用逗号或空格分隔"><div class="form-text">例如：LED, 展示道具, 近期项目</div></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">价格</label><input type="text" class="form-control form-control-sm" name="price" value="' + esc(item.price || '') + '" placeholder="例如 ¥199 / $3/million"></div>' +
         '<hr class="my-2">' +
-        /* /* 富文本编辑器（详细介绍） */ */
+        /* 富文本编辑器（详细介绍） */
         '<div class="mb-2 rte-wrapper"><label class="form-label small mb-1 text-muted">详细介绍</label>' +
         '<div class="rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">' +
           /* 格式按钮 */
@@ -2589,7 +2589,7 @@
   function insertRteTable(rte) {
     var size = window.prompt('表格琛屽垪锛屼緥濡?3x3', '3x3');
     if (size === null) return;
-    var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,锛? ]\s*(\d+)\s*$/);
+    var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,\x2c ]\s*(\d+)\s*$/);
     var rows = match ? parseInt(match[1], 10) : 3;
     var cols = match ? parseInt(match[2], 10) : 3;
     rows = Math.max(1, Math.min(rows || 3, 20));
@@ -2689,7 +2689,7 @@
   function insertRteTableConfigured(rte) {
     var size = window.prompt('Table size, for example 2x2', '2x2');
     if (size === null) return;
-    var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,锛? ]\s*(\d+)\s*$/);
+    var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,\x2c ]\s*(\d+)\s*$/);
     var rows = match ? parseInt(match[1], 10) : 2;
     var cols = match ? parseInt(match[2], 10) : 2;
     rows = Math.max(1, Math.min(rows || 2, 20));
