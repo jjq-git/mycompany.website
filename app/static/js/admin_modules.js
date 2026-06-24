@@ -381,7 +381,7 @@
     ((schema && schema.style_tokens) || []).concat((schema && schema.element_style_tokens) || []).forEach(function(token) {
       if (tokens.indexOf(token) === -1) tokens.push(token);
     });
-    if (!tokens.length) return '<div class="small text-muted">璇ユā鍧楁棤鍙皟样式</div>';
+    if (!tokens.length) return '<div class="small text-muted">该模块无可调样式</div>';
     var html = '';
     tokens.forEach(function(token) {
       var def = registry[token];
@@ -412,7 +412,7 @@
       }
       html += '</div>';
     });
-    return html || '<div class="small text-muted">璇ユā鍧楁棤鍙皟样式</div>';
+    return html || '<div class="small text-muted">该模块无可调样式</div>';
   }
 
   // 鐪肩潧切换按ť锛堟樉闅愭帶鍒讹級锛屼笌 panel_page_edit.html 涓toggleVisibilityEye 閰嶅悎
@@ -485,7 +485,7 @@
           '<label class="form-label small mb-1 text-muted">图片 URL</label>' +
           '<input type="text" class="form-control form-control-sm detail-gallery-url" name="detail_gallery_' + index + '_url" value="' + esc(url || '') + '" oninput="window._syncDetailGalleryPreview(this)">' +
           '<input type="file" class="form-control form-control-sm mt-1 detail-gallery-file" name="detail_gallery_' + index + '_url_file" accept="image/*" onchange="window._previewDetailGalleryFile(this)">' +
-          '<div class="form-text">上传鍚庤嚜鍔ㄨ浆 WebP 骞惰鐩?URL</div>' +
+          '<div class="form-text">上传后自动转 WebP 并覆盖 URL</div>' +
         '</div>' +
         '<div class="detail-gallery-preview" style="' + (hasUrl ? '' : 'display:none;') + 'margin-top:6px">' +
           '<img src="' + esc(url || '') + '" alt="预览" style="max-width:160px;max-height:110px;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;background:#f8f9fa">' +
@@ -817,7 +817,7 @@
     var html = '<div class="schema-list-editor" data-list-base="' + attrEsc(base) + '" data-list-name="' + attrEsc(key) + '" data-children="' + attrEsc(JSON.stringify(children)) + '">';
     html += '<div class="d-flex justify-content-between align-items-center mb-2">' +
       '<div class="small fw-semibold text-primary">' + esc(labelText(field)) + '</div>' +
-      '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加条目</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加条Ŀ</button>' +
       '</div>';
     html += '<input type="hidden" class="schema-list-count" name="' + attrEsc(base + key + '_count') + '" value="' + items.length + '">';
     html += '<div class="schema-list-items">';
@@ -827,9 +827,9 @@
     html += '</div></div>';
     if (key === 'items' && window._moduleCtx && window._moduleCtx.currentModuleType === 'featured_picks') {
       html = html.replace(
-        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加条目</button>',
+        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加条Ŀ</button>',
         '<button type="button" class="btn btn-sm btn-outline-info fp-import-btn" onclick="event.stopPropagation();window.openFeaturedImport(0, this)" style="font-size:11px;margin-right:4px" title="浠庡凡鏈夋暟鎹泦閫夊彇鏉＄洰锛岃嚜鍔ㄥ～鍏ユ爣棰樸€佸浘鐗囥€佹弿杩板拰链接">馃摜 浠庢暟鎹泦瀵煎叆</button>' +
-        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加条目</button>'
+        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加条Ŀ</button>'
       );
     }
     return html;
@@ -1011,7 +1011,7 @@
           '<svg class="schema-list-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>' +
           '鏉＄洰 ' + (index + 1) +
         '</span>' +
-        '<button type="button" class="module-action-btn module-action-del schema-list-remove" title="删除" aria-label="删除条目">✕</button>' +
+        '<button type="button" class="module-action-btn module-action-del schema-list-remove" title="删除" aria-label="删除条Ŀ">✕</button>' +
       '</div>' +
       '<div class="schema-list-item-body">' + inner + '</div>' +
     '</div>';
@@ -1121,7 +1121,7 @@
         var items = data.items || [];
         window._featuredPickerCache = items;
         if (!items.length) {
-          itemsEl.innerHTML = '<div class="col-12 text-muted small text-center py-4">该数据集暂无条目</div>';
+          itemsEl.innerHTML = '<div class="col-12 text-muted small text-center py-4">该数据集暂无条Ŀ</div>';
           return;
         }
         itemsEl.innerHTML = items.map(function(item, i) {
@@ -1495,7 +1495,7 @@
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">分类</label><input type="text" class="form-control form-control-sm" name="category" value="' + esc(item.category || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="title" value="' + esc(item.title || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">简介</label>' + richEditorHtml('description', item.description || item.excerpt || item.summary || '') + '</div>' +
-        '<div class="mb-2"><div class="d-flex align-items-center gap-2 mb-1"><label class="form-label small mb-0 text-muted">标签</label>' + visibilityEye('tags_visible', tagsVisible ? 'true' : 'false') + '</div><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="多个用逗号或空格分隔"><div class="form-text">例如：LED, 展示道具, 近期项目</div></div>' +
+        '<div class="mb-2"><div class="d-flex align-items-center gap-2 mb-1"><label class="form-label small mb-0 text-muted">标签</label>' + visibilityEye('tags_visible', tagsVisible ? 'true' : 'false') + '</div><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="多个用逗号或空格分隔"><div class="form-text">例如：LED, 展示道具, 近期项Ŀ</div></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">价格</label><input type="text" class="form-control form-control-sm" name="price" value="' + esc(item.price || '') + '" placeholder="例如 ¥199 / $3/million"></div>' +
         '<hr class="my-2">' +
         /* 富文本编辑器（详细介绍） */
@@ -1581,7 +1581,7 @@
           '<div class="col-6">' + un('module_' + idx + '_data_hero_width', '模块外层宽度', ['px','%','vw','rem'], d.hero_width) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_hero_height', '妯箙高度', ['px','vh','rem','%'], d.hero_height) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_content_width', 'Size', ['px','%','vw','rem'], d.content_width) + '</div>' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_banner_align', '妯箙文字鎺掔増', [{value:'',label:'默认锛堝叏瀹斤級'},{value:'center',label:'居中'},{value:'left',label:'居左'},{value:'right',label:'居右'}], d.banner_align) + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_banner_align', '模块文字排版', [{value:'',label:'默认（全宽）'},{value:'center',label:'居中'},{value:'left',label:'居左'},{value:'right',label:'居右'}], d.banner_align) + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
         '<div class="input-group input-group-sm">' +
@@ -1597,10 +1597,10 @@
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">遮罩层/div>' +
         '<div class="row g-2 mb-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">启用遮罩</label><select class="form-select form-select-sm" name="module_' + idx + '_data_overlay_enabled"><option value="true"' + (d.overlay_enabled !== 'false' ? ' selected' : '') + '>鍚敤</option><option value="false"' + (d.overlay_enabled === 'false' ? ' selected' : '') + '>不启用/option></select></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">启用遮罩</label><select class="form-select form-select-sm" name="module_' + idx + '_data_overlay_enabled"><option value="true"' + (d.overlay_enabled !== 'false' ? ' selected' : '') + '>启用</option><option value="false"' + (d.overlay_enabled === 'false' ? ' selected' : '') + '>不启用</option></select></div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">閰嶈壊</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">配色</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_title_font_size', '标题瀛椾綋大小', ['px','rem'], d.title_font_size) + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color || '#ffffff') + '</div>' +
@@ -1628,16 +1628,16 @@
         '<div class="small fw-semibold mb-1 text-muted">按ť</div>' +
         '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">按ť文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_text" value="' + esc(d.btn_text || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">按ť链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_url" value="' + esc(d.btn_url || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鎵撳紑鏂瑰紡</label><select class="form-select form-select-sm" name="module_' + idx + '_data_btn_target"><option value=""' + (d.btn_target !== '_blank' ? ' selected' : '') + '>当前绐楀彛</option><option value="_blank"' + (d.btn_target === '_blank' ? ' selected' : '') + '>鏂扮獥鍙?/option></select></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">按钮链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_url" value="' + esc(d.btn_url || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">打开方式</label><select class="form-select form-select-sm" name="module_' + idx + '_data_btn_target"><option value=""' + (d.btn_target !== '_blank' ? ' selected' : '') + '>当前绐楀彛</option><option value="_blank"' + (d.btn_target === '_blank' ? ' selected' : '') + '>鏂扮獥鍙?/option></select></div>' +
         '</div>';
       styleEditor =
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="↪右>' +
@@ -1666,9 +1666,9 @@
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">文字鎺掔増</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">文字排版</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_text_align', '对齐鏂瑰紡', [{value:'center',label:'居中'},{value:'left',label:'居左'},{value:'right',label:'居右'}], d.text_align || 'center') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_text_align', '对齐方式', [{value:'center',label:'居中'},{value:'left',label:'居左'},{value:'right',label:'居右'}], d.text_align || 'center') + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">瀛椾綋样式</div>' +
@@ -1697,7 +1697,7 @@
         '<div class="small fw-semibold mb-1 text-muted">数据</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">数据来源</label>' +
           '<select class="form-select form-select-sm" data-no-segmented="1" name="module_' + idx + '_data_dataset">' +
-          (dsOptionsHtml || '<option value="">鏆傛棤数据婧?/option>') +
+          (dsOptionsHtml || '<option value="">暂无数据源/option>') +
           '</select></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">卡片布局</label>' +
           '<select class="form-select form-select-sm" name="module_' + idx + '_data_card_layout"><option value="image_top"' + (d.card_layout !== 'image_left' ? ' selected' : '') + '>涓婂浘涓嬫枃</option><option value="image_left"' + (d.card_layout === 'image_left' ? ' selected' : '') + '>宸﹀浘鍙虫枃</option></select></div>' +
@@ -1739,10 +1739,10 @@
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="↪右>' +
@@ -1762,9 +1762,9 @@
         '<div class="small fw-semibold mb-1 text-muted mt-2">外层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="↪右>' +
@@ -1786,7 +1786,7 @@
         '</div>' +
         '<div class="small fw-semibold mb-1 text-muted mt-2">标题区样式</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_header_bg', '标题鍖鸿儗鏅壊', d.header_bg) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_header_bg', '标题区背景色', d.header_bg) + '</div>' +
           '<div class="col-6">' + sel('module_' + idx + '_data_header_align', 'Option', [{value:'',label:'Default'},{value:'left',label:'Left'},{value:'center',label:'Center'},{value:'right',label:'Right'}], d.header_align || 'center') + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">标题区边距</div>' +
@@ -1811,20 +1811,20 @@
           '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color || '#1e293b') + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_title_margin_bottom', '标题涓嬪边距', ['px','rem'], d.title_margin_bottom || '0.5rem') + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍓爣棰?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">副标题</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_subtitle_size', 'Size', ['px','rem'], d.subtitle_size || '1.125rem') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_subtitle_color', 'Color', d.subtitle_color || '#64748b') + '</div>' +
         '</div>' +
         '<div class="small fw-semibold mb-1 text-muted mt-2">缃戞牸样式</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_grid_gap', '鍗＄墖间距', ['px','rem'], d.grid_gap || '2rem') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_grid_gap', '卡片间距', ['px','rem'], d.grid_gap || '2rem') + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_grid_row_gap', 'Size', ['px','rem'], d.grid_row_gap) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_grid_column_gap', 'Size', ['px','rem'], d.grid_column_gap) + '</div>' +
         '</div>' +
-        '<div class="small fw-semibold mb-1 text-muted mt-2">鍗＄墖样式</div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">卡片样式</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">显示边框</label><select class="form-select form-select-sm" name="module_' + idx + '_data_card_show_border"><option value=""' + (d.card_show_border !== '0' ? ' selected' : '') + '>默认锛堟樉绀猴級</option><option value="0"' + (d.card_show_border === '0' ? ' selected' : '') + '>隐藏边框</option></select></div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍗＄墖内边距</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片内边距</div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_top" value="' + esc(d.card_padding_top || '2rem') + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_right" value="' + esc(d.card_padding_right || '1.5rem') + '" placeholder="↪右>' +
@@ -1832,12 +1832,12 @@
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_left" value="' + esc(d.card_padding_left || '1.5rem') + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍗＄墖圆角</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片圆角</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_top_left" value="' + esc(d.card_radius_top_left || '12px') + '" placeholder="↪宸︿笂">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_top_right" value="' + esc(d.card_radius_top_right || '12px') + '" placeholder="↪鍙充笂">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_bottom_right" value="' + esc(d.card_radius_bottom_right || '12px') + '" placeholder="↪鍙充笅">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_bottom_left" value="' + esc(d.card_radius_bottom_left || '12px') + '" placeholder="↪宸︿笅">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_top_left" value="' + esc(d.card_radius_top_left || '12px') + '" placeholder="↪左上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_top_right" value="' + esc(d.card_radius_top_right || '12px') + '" placeholder="↪右上">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_bottom_right" value="' + esc(d.card_radius_bottom_right || '12px') + '" placeholder="↪右下">' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_bottom_left" value="' + esc(d.card_radius_bottom_left || '12px') + '" placeholder="↪左下">' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option><option value=\"%\">%</option></select>' +
         '</div>' +
         '<div class="small fw-semibold mb-1 text-muted mt-2">图标样式</div>' +
@@ -1848,18 +1848,18 @@
           '<div class="col-6">' + un('module_' + idx + '_data_icon_width', 'Size', ['px','rem'], d.icon_width || '56px') + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_icon_height', 'Size', ['px','rem'], d.icon_height || '56px') + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_icon_radius', '图标圆角', ['px','%'], d.icon_radius || '8px') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_icon_margin_right', '图标鍙冲边距', ['px','rem'], d.icon_margin_right) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_margin_right', '图标右边距', ['px','rem'], d.icon_margin_right) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_icon_margin_bottom', '图标涓嬪边距', ['px','rem'], d.icon_margin_bottom || '0.25rem') + '</div>' +
         '</div>' +
-        '<div class="small fw-semibold mb-1 text-muted mt-2">鍗＄墖文字样式</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍗＄墖标题</div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">卡片文字样式</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片标题</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_card_title_size', '标题瀛楀彿', ['px','rem'], d.card_title_size || '1rem') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_card_title_color', '标题颜色', d.card_title_color || '#1e293b') + '</div>' +
           '<div class="col-6">' + sel('module_' + idx + '_data_card_title_weight', '标题瀛楅噸', [{value:'',label:'默认'},{value:'400',label:'400'},{value:'500',label:'500'},{value:'600',label:'600'},{value:'700',label:'700'}], d.card_title_weight || '600') + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_card_title_margin_bottom', '标题涓嬪边距', ['px','rem'], d.card_title_margin_bottom || '0.5rem') + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍗＄墖描述</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">卡片描述</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_card_desc_size', '描述瀛楀彿', ['px','rem'], d.card_desc_size || '0.875rem') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_card_desc_color', '描述颜色', d.card_desc_color || '#64748b') + '</div>' +
@@ -1882,9 +1882,9 @@
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓>' +
@@ -1907,13 +1907,13 @@
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">图文布局</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_image_position', '鍥炬枃宸﹀彸位置', [{value:'left',label:'鍥惧乏鏂囧彸'},{value:'right',label:'鏂囧乏鍥惧彸'}], d.image_position || 'left') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_image_position', '图文左右位置', [{value:'left',label:'图左文右'},{value:'right',label:'文左图右'}], d.image_position || 'left') + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">閰嶈壊</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">配色</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_text_bg', '鏂囨湰鍖鸿儗鏅壊', d.text_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_text_color', '鏂囨湰鍖哄瓧浣撹壊', d.text_color || '#333333') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_text_bg', '鏂囨湰区背景色', d.text_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_text_color', '鏂囨湰区字体色', d.text_color || '#333333') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_tag_bg', 'Color', d.tag_bg || '#067a7a') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_tag_color', 'Color', d.tag_color || '#ffffff') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_btn_bg', 'Color', d.btn_bg || '#067a7a') + '</div>' +
@@ -1954,19 +1954,19 @@
         '</div>';
       styleEditor =
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">文字鎺掔増</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">文字排版</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_text_align', '对齐鏂瑰紡', [{value:'left',label:'居左'},{value:'center',label:'居中'},{value:'right',label:'居右'}], d.text_align || 'left') + '</div>' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_columns', '鍒嗘爮', [{value:'1',label:'鍗曟爮'},{value:'2',label:'鍙屾爮'}], d.columns || '1') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_text_align', '对齐方式', [{value:'left',label:'居左'},{value:'center',label:'居中'},{value:'right',label:'居右'}], d.text_align || 'left') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_columns', '分栏', [{value:'1',label:'单栏'},{value:'2',label:'双栏'}], d.columns || '1') + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="↪右>' +
@@ -2006,7 +2006,7 @@
         '<div class="id-images-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">图片列表</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addIdImage(' + idx + ')">+ 添加图片</button></div><input type="hidden" name="module_' + idx + '_data_images_count" class="id-image-count" value="' + imgList.length + '"><div class="id-image-list">' +
         imgList.map(function(img, ii) {
           var url = (typeof img === 'object' ? (img.url || '') : (img || ''));
-          return '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="' + ii + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 ' + (ii + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();window._reindexIdImages(' + idx + ')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片 URL</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_images_' + ii + '_url" value="' + esc(url) + '"><input type="file" class="form-control form-control-sm mt-1" name="module_' + idx + '_data_images_' + ii + '_url_file" accept="image/*"><div class="form-text">上传鍚庤嚜鍔ㄨ浆 WebP 骞惰鐩?URL</div></div></div>';
+          return '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="' + ii + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 ' + (ii + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();window._reindexIdImages(' + idx + ')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片 URL</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_images_' + ii + '_url" value="' + esc(url) + '"><input type="file" class="form-control form-control-sm mt-1" name="module_' + idx + '_data_images_' + ii + '_url_file" accept="image/*"><div class="form-text">上传后自动转 WebP 并覆盖 URL</div></div></div>';
         }).join('') +
         '</div></div><hr class="my-2">' +
         '<div class="id-specs-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">瑙勬牸鍙傛暟</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addIdSpec(' + idx + ')">+ 添加瑙勬牸</button></div><input type="hidden" name="module_' + idx + '_data_specs_count" class="id-spec-count" value="' + specList.length + '"><div class="id-spec-list">' +
@@ -2025,7 +2025,7 @@
         '<div class="small fw-semibold mb-1 text-muted">内容眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_inner_bg', 'Color', d.inner_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
@@ -2043,10 +2043,10 @@
           '<div class="col-6">' + un('module_' + idx + '_data_img_height', '图片高度', ['px','rem','%'], d.img_height) + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">閰嶈壊</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">配色</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_text_bg', '鏂囨湰鍖鸿儗鏅壊', d.text_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_text_color', '鏂囨湰鍖哄瓧浣撹壊', d.text_color || '#333333') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_text_bg', '鏂囨湰区背景色', d.text_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_text_color', '鏂囨湰区字体色', d.text_color || '#333333') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_tag_bg', 'Color', d.tag_bg || '#067a7a') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_tag_color', 'Color', d.tag_color || '#ffffff') + '</div>' +
         '</div>';
@@ -2065,12 +2065,12 @@
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#f5f7fa') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_columns', '姣忚鍒楁暟', [{value:'4',label:'鍥涘垪'},{value:'3',label:'涓夊垪'},{value:'6',label:'鍏垪'}], d.columns || '4') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_columns', '每行列数', [{value:'4',label:'四列'},{value:'3',label:'三列'},{value:'6',label:'六列'}], d.columns || '4') + '</div>' +
         '</div>';
 
     /* ====== logo_cloud ====== */
@@ -2083,8 +2083,8 @@
           '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_columns', '姣忚鍒楁暟', [{value:'4',label:'鍥涘垪'},{value:'5',label:'浜斿垪'},{value:'6',label:'鍏垪'}], d.columns || '4') + '</div>' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_grayscale', '鐏板害婊ら暅', [{value:'true',label:'寮€鍚紙hover鏃舵仮澶嶅僵鑹诧級'},{value:'false',label:'关闭锛堜繚鎸佸師鑹诧級'}], d.grayscale || 'true') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_columns', '每行列数', [{value:'4',label:'四列'},{value:'5',label:'五列'},{value:'6',label:'六列'}], d.columns || '4') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_grayscale', '灰度滤镜', [{value:'true',label:'开启（hover时恢复彩色）'},{value:'false',label:'关闭（保持原色）'}], d.grayscale || 'true') + '</div>' +
         '</div>';
       styleEditor =
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
@@ -2095,7 +2095,7 @@
         '<div class="small fw-semibold mb-1 text-muted">内容眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_inner_bg', 'Color', d.inner_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
@@ -2107,7 +2107,7 @@
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鏍囧織鍗＄墖样式</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">标志卡片样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_logo_bg', 'Color', d.logo_bg || '#ffffff') + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_logo_border', '边框大小', ['px','rem'], d.logo_border) + '</div>' +
@@ -2117,8 +2117,8 @@
           '<div class="col-6">' + un('module_' + idx + '_data_logo_radius', '圆角', ['px','rem','%'], d.logo_radius) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_logo_width', '鍗＄墖宽度', ['px','rem','%'], d.logo_width) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_logo_height', '鍗＄墖高度', ['px','rem','%'], d.logo_height) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_logo_width', '卡片宽度', ['px','rem','%'], d.logo_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_logo_height', '卡片高度', ['px','rem','%'], d.logo_height) + '</div>' +
         '</div>';
 
     /* ====== process_steps ====== */
@@ -2131,7 +2131,7 @@
           '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_direction', '鎺掑垪方向', [{value:'horizontal',label:'妯悜'},{value:'vertical',label:'绾靛悜'}], d.direction || 'horizontal') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_direction', '排列方向', [{value:'horizontal',label:'横向'},{value:'vertical',label:'纵向'}], d.direction || 'horizontal') + '</div>' +
           '<div class="col-6">' + sel('module_' + idx + '_data_step_style', '姝ラ样式', [{value:'number',label:'数字搴忓彿'},{value:'icon',label:'图标'}], d.step_style || 'number') + '</div>' +
         '</div>';
       styleEditor =
@@ -2143,7 +2143,7 @@
         '<div class="small fw-semibold mb-1 text-muted">内容眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_inner_bg', 'Color', d.inner_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
@@ -2155,7 +2155,7 @@
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">閰嶈壊</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">配色</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_title_font_size', '标题瀛椾綋大小', ['px','rem'], d.title_font_size) + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color || '#1a1a1a') + '</div>' +
@@ -2179,7 +2179,7 @@
           '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-2 text-muted">显示控制锛堟暟鎹潵自动綉绔欒缃腑鐨勮仈绯绘柟寮忥級</div>' +
+        '<div class="small fw-semibold mb-2 text-muted">显示控制（数据来自网站设置中的联系方式）</div>' +
         '<div class="d-flex flex-wrap gap-2">' +
           visToggle('module_' + idx + '_data_show_phone', '电话', (d.show_phone || 'true')) +
           visToggle('module_' + idx + '_data_show_mobile', '手机', (d.show_mobile || 'true')) +
@@ -2192,7 +2192,7 @@
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg) + '</div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">澶栧眰宽度 <span class="text-muted" style="font-weight:normal;">锛堢暀绌轰笉闄愬埗宽度锛?</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="濡?1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">--</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">锛堢暀绌轰笉闄愬埗宽度锛?</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="濡?1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">--</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">内容眰样式</div>' +
@@ -2216,7 +2216,7 @@
           '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-12"><label class="form-label small mb-1 text-muted">琛ㄥ崟鎻愪氦地址</label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_form_action" value="' + esc(d.form_action || '') + '" placeholder="鐣欑┖鍒欎娇鐢ㄥ钩鍙板唴缃暀瑷€锛屾垨濉叆澶栭儴鏈嶅姟地址"></div>' +
+          '<div class="col-12"><label class="form-label small mb-1 text-muted">表单提交地址</label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_form_action" value="' + esc(d.form_action || '') + '" placeholder="鐣欑┖鍒欎娇鐢ㄥ钩鍙板唴缃暀瑷€锛屾垨濉叆澶栭儴鏈嶅姟地址"></div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-2 text-muted">琛ㄥ崟瀛楁</div>' +
@@ -2228,7 +2228,7 @@
           visToggle('module_' + idx + '_data_show_message', '鐣欒█', (d.show_message || 'true')) +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">提交按ť文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_submit_text" value="' + esc(d.submit_text || '') + '" placeholder="鍙戦€佺暀瑷€"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">提交按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_submit_text" value="' + esc(d.submit_text || '') + '" placeholder="鍙戦€佺暀瑷€"></div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-2 text-muted">地图（高德/Google 嵌入）</div>' +
@@ -2240,7 +2240,7 @@
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + sel('module_' + idx + '_data_layout', 'Layout', [{value:'form_left',label:'Form left / map right'},{value:'form_right',label:'Map left / form right'}], d.layout || 'form_left') + '</div>' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_map_width_ratio', '鍦板浘鍗犳瘮', [{value:'30',label:'30%'},{value:'35',label:'35%'},{value:'40',label:'40%'},{value:'45',label:'45%'},{value:'50',label:'50%'},{value:'60',label:'60%'},{value:'70',label:'70%'},{value:'100',label:'100%'}], d.map_width_ratio || '40') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_map_width_ratio', '地图占比', [{value:'30',label:'30%'},{value:'35',label:'35%'},{value:'40',label:'40%'},{value:'45',label:'45%'},{value:'50',label:'50%'},{value:'60',label:'60%'},{value:'70',label:'70%'},{value:'100',label:'100%'}], d.map_width_ratio || '40') + '</div>' +
         '</div>';
       styleEditor =
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
@@ -2265,7 +2265,7 @@
         '<div class="small fw-semibold mb-1 text-muted">琛ㄥ崟样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_form_bg', 'Color', d.form_bg) + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_input_bg', '输入妗嗚儗鏅壊', d.input_bg) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_input_bg', '输入框背景色', d.input_bg) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_input_border', '输入妗嗚竟妗嗚壊', d.input_border) + '</div>' +
@@ -2280,8 +2280,8 @@
           '<div class="col-6">' + un('module_' + idx + '_data_input_height', 'Size', ['px','rem'], d.input_height) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_field_gap', '瀛楁间距', ['px','rem'], d.field_gap) + '</div>' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_label_style', '标签鎺掔増', [{value:'top',label:'标签鍦ㄤ笂'},{value:'left',label:'标签鍦ㄥ乏'},{value:'hidden',label:'隐藏标签'}], d.label_style || 'top') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_field_gap', '字段间距', ['px','rem'], d.field_gap) + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_label_style', '标签排版', [{value:'top',label:'标签在上'},{value:'left',label:'标签在左'},{value:'hidden',label:'隐藏标签'}], d.label_style || 'top') + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">琛ㄥ崟内边距</div>' +
         '<div class="input-group input-group-sm">' +
@@ -2291,7 +2291,7 @@
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_left" value="' + esc(d.form_padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">琛ㄥ崟外观竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">琛ㄥ崟外边距</div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_top" value="' + esc(d.form_margin_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_right" value="' + esc(d.form_margin_right) + '" placeholder="↪右>' +
@@ -2310,7 +2310,7 @@
           '<div class="col-6">' + un('module_' + idx + '_data_btn_radius', '按ť圆角', ['px','rem','%'], d.btn_radius) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_btn_align', '按ť位置', [{value:'left',label:'闈犲乏'},{value:'center',label:'居中'},{value:'right',label:'闈犲彸'}], d.btn_align || 'left') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_btn_align', '按钮位置', [{value:'left',label:'靠左'},{value:'center',label:'居中'},{value:'right',label:'闈犲彸'}], d.btn_align || 'left') + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">按ť内边距</div>' +
         '<div class="input-group input-group-sm">' +
@@ -2329,14 +2329,14 @@
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鍦板浘样式</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">地图样式</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_map_height', '鍦板浘高度', ['px','rem','vh'], d.map_height) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_map_height', '地图高度', ['px','rem','vh'], d.map_height) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_map_radius', '鍦板浘圆角', ['px','rem','%'], d.map_radius) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_map_radius', '地图圆角', ['px','rem','%'], d.map_radius) + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍦板浘外观竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">地图外边距</div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_top" value="' + esc(d.map_margin_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_right" value="' + esc(d.map_margin_right) + '" placeholder="↪右>' +
@@ -2344,7 +2344,7 @@
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_left" value="' + esc(d.map_margin_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍦板浘内边距</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">地图内边距</div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_top" value="' + esc(d.map_padding_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_right" value="' + esc(d.map_padding_right) + '" placeholder="↪右>' +
@@ -2352,7 +2352,7 @@
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_left" value="' + esc(d.map_padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
-        '<div class="small fw-semibold mb-1 mt-2 text-muted">琛ㄥ崟鏄鹃殣</div>' +
+        '<div class="small fw-semibold mb-1 mt-2 text-muted">表单显隐</div>' +
         '<div class="d-flex flex-wrap gap-2">' +
           visToggle('module_' + idx + '_data_show_form', '显示琛ㄥ崟', (d.show_form || 'true')) +
         '</div>';
@@ -3385,7 +3385,7 @@
     syncRteBody(rte);
   });
 
-  // 取消 / 鐐瑰嚮閬僵关闭
+  // 取消 / 鐐瑰嚮遮罩关闭
   // 鐢?closest 鍖归厤取消按ť锛堝彲鑳借鐐瑰嚮鐨勬槸按ť鍐呯殑鏂囨湰鑺傜偣锛?
   document.addEventListener('click', function(e) {
     if (e.target.closest('.rte-url-dialog-cancel')) {
