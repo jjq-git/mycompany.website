@@ -1,26 +1,26 @@
-﻿{# 鏁版嵁闆嗗垪琛ㄩ潰鏉?鈥?閫氱敤 CRUD + 妯″潡閫夋嫨鍣ㄧ紪杈?+ 璇︽儏棰勮 #}
+{# 数据集列表面板 — 通用 CRUD + 模块选择器编辑 + 详情预览 #}
 {% from 'dashboard/_block_icons.html' import block_icon %}
 {% set is_edit = edit_item_id is defined %}
 
 <div class="d-flex align-items-center justify-content-between mb-2">
-  <span class="fw-semibold">{{ dataset_key | title }}{% if is_edit %} 路 缂栬緫 #{{ edit_item_id }}{% endif %}</span>
+  <span class="fw-semibold">{{ dataset_key | title }}{% if is_edit %} · 编辑 #{{ edit_item_id }}{% endif %}</span>
   <div class="d-flex gap-1">
-    <button class="btn btn-outline-secondary btn-sm" onclick="backToPageEditor()">鈫?杩斿洖</button>
+    <button class="btn btn-outline-secondary btn-sm" onclick="backToPageEditor()">← 返回</button>
     {% if not is_edit %}
-    <button class="btn btn-primary btn-sm" onclick="addDataItem()">+ 鏂板缓</button>
+    <button class="btn btn-primary btn-sm" onclick="addDataItem()">+ 新建</button>
     {% else %}
-    <button class="btn btn-outline-secondary btn-sm" onclick="loadDatasetList()">鈫?杩斿洖鍒楄〃</button>
+    <button class="btn btn-outline-secondary btn-sm" onclick="loadDatasetList()">← 返回列表</button>
     {% endif %}
   </div>
 </div>
 {% if translation_enabled and is_edit and languages and languages|length > 1 and current_lang != default_lang %}
-{# AI 缈昏瘧鏍?鈥?鐙珛涓€琛岋紝涓庤瑷€鏍囩鍖哄垎 #}
+{# AI 翻译栏 — 独立一行，与语言标签区分 #}
 <div class="dataset-ai-translate-bar d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
-  <span class="text-muted text-nowrap">馃寪 AI 缈昏瘧锛氬綋鍓嶅唴瀹?鈫?/span>
+  <span class="text-muted text-nowrap">🌐 AI 翻译：当前内容 →</span>
   {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
-  <span class="text-muted text-nowrap">AI 缈昏瘧锛歿{ default_lang }} 鈫?{{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
-  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:11px;">寮€濮嬬炕璇?/button>
-  <span class="text-muted text-nowrap" style="font-size:10px;">缈昏瘧鍚庤鎵嬪姩妫€鏌ュ苟淇濆瓨</span>
+  <span class="text-muted text-nowrap">AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
+  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:11px;">开始翻译</button>
+  <span class="text-muted text-nowrap" style="font-size:10px;">翻译后请手动检查并保存</span>
 </div>
 {% endif %}
 
@@ -31,40 +31,38 @@
 {% endwith %}
 
 {% if is_edit and edit_item and blocks is defined %}
-{# ========== 缂栬緫妯″紡锛氭ā鍧楅€夋嫨鍣?========== #}
+{# ========== 编辑模式：模块选择器 ========== #}
 
-{# ---- 娣诲姞妯″潡鎸夐挳 ---- #}
+{# ---- 添加模块按钮 ---- #}
 <div class="mb-3">
   <button class="btn btn-outline-primary btn-sm w-100 panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal">
-    + 娣诲姞妯″潡
+    + 添加模块
   </button>
 </div>
 
-{# ---- 鍙敤妯″潡寮规锛堥€氱敤缁勪欢锛?---- #}
+{# ---- 可用模块弹框（通用组件） ---- #}
 {% include 'dashboard/_block_palette.html' %}
 
-{# ---- 宸查€夋ā鍧楀垪琛?---- #}
+{# ---- 已选模块列表 ---- #}
 <form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" data-page-key="{{ dataset_key }}" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div>
-    <div class="small text-muted mb-2">宸查€夋ā鍧楋紙鐐瑰嚮绠ご鎺掑簭 | 鐐瑰嚮灞曞紑閰嶇疆锛?/div>
+    <div class="small text-muted mb-2">已选模块（点击箭头排序 | 点击展开配置）</div>
     <div id="selectedModulesDs">
     </div>
 
     <input type="hidden" name="module_count" id="moduleCountDs" value="0">
   </div>
   <div class="panel-save-bar">
-    <button type="submit" class="btn btn-primary btn-sm w-100">淇濆瓨</button>
+    <button type="submit" class="btn btn-primary btn-sm w-100">保存</button>
   </div>
 </form>
 
-{# JS: 妯″潡閫夋嫨鍣ㄤ氦浜?#}
+{# JS: 模块选择器交互 #}
 <script src="/static/js/admin_modules.js?v=44"></script>
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
-<script type="application/json" id="datasetNamesDsJson">{{ all_list_datasets | default([]) | tojson }}</script>
 <script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="iconListDsJson">{{ icon_list | default([]) | tojson }}</script>
-<script type="application/json" id="iconRegistryDsJson">{{ icon_registry | default({}) | tojson }}</script>
 <script>
 window._dsEditItemJson = {{ edit_item | tojson }};
 </script>
@@ -74,27 +72,20 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   var SITE_ID = '{{ site.id }}';
   var blockLibrary = JSON.parse(document.getElementById('blockLibraryDsJson').textContent || '[]');
   window.blockLibrary = blockLibrary;
-  var datasetNames = JSON.parse((document.getElementById('datasetNamesDsJson') || {}).textContent || '[]');
-  window.datasetNames = datasetNames;
   var styleRegistry = JSON.parse((document.getElementById('styleRegistryDsJson') || {}).textContent || '{}');
   var iconList = JSON.parse((document.getElementById('iconListDsJson') || {}).textContent || '[]');
-  var iconRegistry = JSON.parse((document.getElementById('iconRegistryDsJson') || {}).textContent || '{}');
-  window.iconRegistry = iconRegistry;
 
-  // ===== 璁剧疆鍏变韩妯″潡涓婁笅鏂?=====
+  // ===== 设置共享模块上下文 =====
   window._moduleCtx = {
     blockLibrary: blockLibrary,
-    datasetNames: datasetNames,
+    datasetNames: [],
     editItem: window._dsEditItemJson,
     styleRegistry: styleRegistry,
-    iconRegistry: iconRegistry,
-    siteId: SITE_ID,
-    currentLang: '{{ current_lang }}',
     isDatasetMode: true,
     containerId: 'selectedModulesDs'
   };
 
-  // ===== 杈呭姪鍑芥暟 =====
+  // ===== 辅助函数 =====
   window.syncColor = function(colorInput) {
     var textInput = colorInput.parentElement.querySelector('input[type="text"]');
     if (textInput) textInput.value = colorInput.value;
@@ -112,13 +103,13 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   window.backToPageEditor = function() {
     loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()).then(function() {
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
     });
   };
   window.loadDatasetList = function() {
     loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()).then(function() {
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
     });
   };
   window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getSiteQuery()); };
@@ -128,13 +119,13 @@ window._dsEditItemJson = {{ edit_item | tojson }};
       .catch(function() { location.reload(); });
   };
   window.deleteDataItem = function(id) {
-    if (!confirm('纭鍒犻櫎锛?)) return;
+    if (!confirm('确认删除？')) return;
     fetch('/_dataset/' + DATASET_KEY + '/' + id + '/delete?site=' + SITE_ID, {method: 'POST'})
       .then(function() { loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()); })
       .catch(function() { location.reload(); });
   };
 
-  /* ====== 鍐呭/鏍峰紡 Tab 鍒囨崲 ====== */
+  /* ====== 内容/样式 Tab 切换 ====== */
   window._switchContentStyleTab = function(btn, tabName) {
     var item = btn.closest('.module-item');
     item.querySelectorAll('.content-style-tab').forEach(function(t) { t.classList.remove('active'); });
@@ -144,7 +135,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     if (target) target.style.display = '';
   };
 
-  /* ====== 妯″潡鎺掑簭/鍒犻櫎閽╁瓙 ====== */
+  /* ====== 模块排序/删除钩子 ====== */
   window._moveModule = function(btn, dir) {
     var item = btn.closest('.module-item');
     if (!item) return;
@@ -177,14 +168,14 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   }
   window._reindexModules = reindexModulesDs;
 
-  /* ====== item_detail 鍥剧墖/瑙勬牸缂栬緫閽╁瓙 ====== */
+  /* ====== item_detail 图片/规格编辑钩子 ====== */
   window._addIdImage = function(modIdx) {
     var editor = document.querySelector('#selectedModulesDs .id-images-editor[data-module-index="' + modIdx + '"]');
     if (!editor) return;
     var countEl = editor.querySelector('.id-image-count');
     var list = editor.querySelector('.id-image-list');
     var next = parseInt(countEl.value || '0', 10);
-    var html = '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="' + next + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">鍥剧墖 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();window._reindexIdImages(' + modIdx + ')" title="鍒犻櫎"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">鍥剧墖 URL</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_images_' + next + '_url"><input type="file" class="form-control form-control-sm mt-1" name="module_' + modIdx + '_data_images_' + next + '_url_file" accept="image/*"><div class="form-text">涓婁紶鍚庤嚜鍔ㄨ浆 WebP 骞惰鐩?URL</div></div></div>';
+    var html = '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="' + next + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();window._reindexIdImages(' + modIdx + ')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片 URL</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_images_' + next + '_url"><input type="file" class="form-control form-control-sm mt-1" name="module_' + modIdx + '_data_images_' + next + '_url_file" accept="image/*"><div class="form-text">上传后自动转 WebP 并覆盖 URL</div></div></div>';
     list.insertAdjacentHTML('beforeend', html);
     countEl.value = next + 1;
   };
@@ -196,7 +187,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     editor.querySelector('.id-image-count').value = items.length;
     items.forEach(function(item, i) {
       item.dataset.imageIndex = i;
-      item.querySelector('.small.fw-semibold').textContent = '鍥剧墖 ' + (i + 1);
+      item.querySelector('.small.fw-semibold').textContent = '图片 ' + (i + 1);
       item.querySelectorAll('input[name], textarea[name]').forEach(function(el) {
         el.name = el.name.replace(/module_\d+_data_images_\d+_/, 'module_' + modIdx + '_data_images_' + i + '_');
       });
@@ -209,7 +200,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var countEl = editor.querySelector('.id-spec-count');
     var list = editor.querySelector('.id-spec-list');
     var next = parseInt(countEl.value || '0', 10);
-    var html = '<div class="border rounded p-2 mb-2 id-spec-item" data-spec-index="' + next + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">瑙勬牸 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-spec-item\').remove();window._reindexIdSpecs(' + modIdx + ')" title="鍒犻櫎"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></div><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">鍙傛暟鍚?/label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_specs_' + next + '_name"></div><div class="col-6"><label class="form-label small mb-1 text-muted">鍙傛暟鍊?/label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_specs_' + next + '_value"></div></div></div>';
+    var html = '<div class="border rounded p-2 mb-2 id-spec-item" data-spec-index="' + next + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">规格 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-spec-item\').remove();window._reindexIdSpecs(' + modIdx + ')">删除</button></div><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">参数名</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_specs_' + next + '_name"></div><div class="col-6"><label class="form-label small mb-1 text-muted">参数值</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_specs_' + next + '_value"></div></div></div>';
     list.insertAdjacentHTML('beforeend', html);
     countEl.value = next + 1;
   };
@@ -221,14 +212,14 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     editor.querySelector('.id-spec-count').value = items.length;
     items.forEach(function(item, i) {
       item.dataset.specIndex = i;
-      item.querySelector('.small.fw-semibold').textContent = '瑙勬牸 ' + (i + 1);
+      item.querySelector('.small.fw-semibold').textContent = '规格 ' + (i + 1);
       item.querySelectorAll('input[name], textarea[name]').forEach(function(el) {
         el.name = el.name.replace(/module_\d+_data_specs_\d+_/, 'module_' + modIdx + '_data_specs_' + i + '_');
       });
     });
   };
 
-  /* ====== 娣诲姞妯″潡 (浣跨敤鍏变韩 buildModuleHTML) ====== */
+  /* ====== 添加模块 (使用共享 buildModuleHTML) ====== */
   window.addModuleDs = function(type, variant, savedData) {
     var container = document.getElementById('selectedModulesDs');
     var countEl = document.getElementById('moduleCountDs');
@@ -236,14 +227,14 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     countEl.value = idx + 1;
 
     var mdata = savedData || {};
-    // 鏇存柊缂栬緫椤逛笂涓嬫枃渚?item_data 浣跨敤
+    // 更新编辑项上下文供 item_data 使用
     if (type === 'item_data') {
       window._moduleCtx.editItem = window._dsEditItemJson || mdata || {};
     }
 
     var result = window._buildModuleHTML(type, idx, mdata);
 
-    // 鍒涘缓澶栧眰 module-item div
+    // 创建外层 module-item div
     var div = document.createElement('div');
     div.className = 'card mb-2 module-item expanded';
     div.dataset.moduleIndex = idx;
@@ -253,10 +244,10 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 
     container.appendChild(div);
 
-    // 鍒濆鍖栭鑹查€夋嫨鍣?
+    // 初始化颜色选择器
     if (typeof initColorPickers === 'function') initColorPickers(div);
 
-    // 鎵嬮鐞村睍寮€/鏀剁缉
+    // 手风琴展开/收缩
     div.querySelector('.module-header').addEventListener('click', function() {
       window._toggleModuleAccordion(div);
     });
@@ -264,19 +255,19 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     reindexModulesDs();
   };
 
-  // ===== 妯″潡閫夋嫨鍥炶皟 =====
+  // ===== 模块选择回调 =====
   window.onBlockPaletteConfirm = function(type, variant, dataPreset) {
     window.addModuleDs(type, variant || 'default', dataPreset);
   };
 
-  // ===== 鎭㈠宸蹭繚瀛樼殑妯″潡 =====
+  // ===== 恢复已保存的模块 =====
   (function(){
     var savedModules = {{ (edit_item.modules | default([])) | tojson }};
     if (savedModules && savedModules.length > 0) {
       savedModules.forEach(function(mod) {
         window.addModuleDs(mod.type, mod.variant || 'default', mod.data || {});
       });
-      // 濡傛灉娌℃湁 item_data锛岃拷鍔犱竴涓?
+      // 如果没有 item_data，追加一个
       if (!savedModules.find(function(m) { return m.type === 'item_data'; })) {
         window.addModuleDs('item_data', 'default');
       }
@@ -285,108 +276,42 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     }
   })();
 
-  // 缂栬緫妯″紡锛氫腑闂撮瑙堝姞杞借鎯呴〉
+  // 编辑模式：中间预览加载详情页
   var EDIT_SLUG = '{{ preview_slug | default(edit_item.slug if edit_item else "") }}';
   if (EDIT_SLUG) {
     var frame = document.getElementById('previewFrame');
     if (frame) {
       frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/' + EDIT_SLUG + '/';
-      try { refreshPreview({ build: false }); } catch(e) {}
+      try { refreshPreview(); } catch(e) {}
     }
   }
 })();
 </script>
 
-<div class="modal fade" id="datasetPickerModal" tabindex="-1" aria-labelledby="dsPickerTitle" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header py-2">
-        <span class="fw-semibold" id="dsPickerTitle">浠庢暟鎹泦閫夊彇鏉＄洰</span>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="鍏抽棴"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-2">
-          <label class="form-label small mb-1 text-muted">閫夋嫨鏁版嵁鏉ユ簮</label>
-          <select class="form-select form-select-sm" id="dsPickerDataset" onchange="window.loadPickerDatasetItems(this.value)">
-            <option value="">-- 璇烽€夋嫨鏁版嵁闆?--</option>
-          </select>
-        </div>
-        <div id="dsPickerItems" class="row g-2" style="max-height:55vh;overflow-y:auto;min-height:80px">
-          <div class="col-12 text-muted small text-center py-4">璇峰厛鍦ㄤ笂鏂归€夋嫨涓€涓暟鎹泦</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 {% elif is_edit and edit_item %}
-{# ========== 缂栬緫妯″紡锛氱畝鍗曡〃鍗曪紙鏃?blocks锛?========== #}
+{# ========== 编辑模式：简单表单（无 blocks） ========== #}
 <form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label>
-    <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="濡?my-post">
+    <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="如 my-post">
   </div>
-  <div class="mb-2"><label class="form-label small mb-1 text-muted">鏃ユ湡</label><input type="date" class="form-control form-control-sm" name="date" value="{{ edit_item.date or '' }}"></div>
-  <div class="mb-2"><label class="form-label small mb-1 text-muted">鏍囬</label><input type="text" class="form-control form-control-sm" name="title" value="{{ edit_item.title or '' }}"></div>
-  {% set desc_val = edit_item.description or edit_item.excerpt or edit_item.summary or '' %}
+  <div class="mb-2"><label class="form-label small mb-1 text-muted">日期</label><input type="date" class="form-control form-control-sm" name="date" value="{{ edit_item.date or '' }}"></div>
+  <div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="title" value="{{ edit_item.title or '' }}"></div>
+  <div class="mb-2"><label class="form-label small mb-1 text-muted">简述</label><textarea class="form-control form-control-sm" name="description" rows="2">{{ edit_item.description or edit_item.excerpt or edit_item.summary or '' }}</textarea></div>
   <div class="mb-2">
-    <label class="form-label small mb-1 text-muted">绠€杩?/label>
-    <div class="rte-wrapper">
-      <div class="rich-toolbar rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">
-        <button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="bold" title="鍔犵矖"><b>B</b></button>
-        <button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="italic" title="鏂滀綋"><i>I</i></button>
-        <button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="underline" title="涓嬪垝绾?><u>U</u></button>
-        <span class="rte-sep"></span>
-        <button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertUnorderedList" title="鏃犲簭鍒楄〃">鈥?/button>
-        <button type="button" class="btn btn-sm btn-light rte-btn rte-link-btn" title="閾炬帴">鈫?/button>
-        <button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="removeFormat" title="娓呴櫎鏍煎紡">脳</button>
-      </div>
-      <div contenteditable="true" class="rich-editor-body form-control form-control-sm rte-editor" style="min-height:120px;max-height:260px;overflow-y:auto;line-height:1.7;font-size:13px;outline:none">{{ desc_val | safe }}</div>
-      <textarea class="form-control form-control-sm d-none" name="description">{{ desc_val }}</textarea>
-    </div>
-  </div>
-  <div class="mb-2">
-    <label class="form-label small mb-1 text-muted">棰勮鍥?/label>
+    <label class="form-label small mb-1 text-muted">预览图</label>
     {% set cover_val = edit_item.cover or edit_item.image or edit_item.photo or '' %}
-    <div class="module-media-url-row">
-      <input type="text" class="form-control form-control-sm" name="image" value="{{ cover_val }}" placeholder="图片 URL" oninput="updateImagePreview(this)">
-      <button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
-      <input type="hidden" name="image_convert_webp" value="false">
-      <label class="module-convert-check"><input type="checkbox" name="image_convert_webp" value="true" checked><span></span>WebP</label>
-    </div>
-    <div class="module-media-tools mt-1">
-      <label class="module-media-picker{% if cover_val %} has-media{% endif %}" title="点击上传">
-        {% if cover_val %}<img src="{{ cover_val }}" alt=""><span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>{% else %}
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-        {% endif %}
-        <input type="file" name="image" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none">
-        {% if cover_val %}<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>{% endif %}
-      </label>
-    </div>
-    <div class="form-text mt-1">默认转 WebP，取消勾选则保留原格式。</div>
+    <input type="text" class="form-control form-control-sm" name="image" value="{{ cover_val }}" placeholder="图片 URL 或上传">
+    <input type="file" class="form-control form-control-sm mt-1" name="image" accept="image/*">
+    {% if cover_val %}<img src="{{ cover_val }}" alt="预览" style="margin-top:6px;max-width:200px;max-height:120px;border-radius:6px;">{% endif %}
   </div>
   <div class="mb-2">
-    <label class="form-label small mb-1 text-muted">鏍囩</label>
+    <label class="form-label small mb-1 text-muted">标签</label>
     {% set tags_val = edit_item.tags | join(', ') if edit_item.tags is iterable and edit_item.tags is not string else (edit_item.tags or '') %}
-    <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val }}" placeholder="澶氫釜鐢ㄩ€楀彿鎴栫┖鏍煎垎闅?>
+    <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val }}" placeholder="多个用逗号或空格分隔">
   </div>
-  {% set body_val = edit_item.body or edit_item.content or '' %}
-  <div class="mb-2 rte-wrapper">
-    <label class="form-label small mb-1 text-muted">璇︾粏浠嬬粛</label>
-    <div class="rte-toolbar d-flex flex-wrap align-items-center gap-1">
-      <button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="bold" title="Bold">B</button>
-      <button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="italic" title="Italic">I</button>
-      <button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="underline" title="Underline">U</button>
-      <span class="rte-sep"></span>
-      <button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertUnorderedList" title="Bullet list">鈥?/button>
-      <button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertOrderedList" title="Numbered list">1.</button>
-      <span class="rte-sep"></span>
-      <button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="removeFormat" title="Clear format">脳</button>
-    </div>
-    <div contenteditable="true" class="rich-editor-body form-control form-control-sm rte-editor" style="min-height:200px;max-height:460px;overflow-y:auto;line-height:1.7;font-size:13px;outline:none">{{ body_val|safe }}</div>
-    <textarea class="form-control form-control-sm d-none" name="body">{{ body_val }}</textarea>
-  </div>
+  <div class="mb-2"><label class="form-label small mb-1 text-muted">详细介绍</label><textarea class="form-control form-control-sm" name="body" rows="10" style="min-height:200px; font-family:monospace; white-space:pre-wrap;">{{ edit_item.body or edit_item.content or '' }}</textarea></div>
   {% for key, val in edit_item.items() if key not in ('id', 'slug', 'date', 'title', 'description', 'excerpt', 'summary', 'cover', 'image', 'photo', 'logo', 'tags', 'body', 'content') %}
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">{{ key }}</label>
@@ -396,14 +321,14 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   </div>
   {% endfor %}
   <div class="panel-save-bar">
-    <button type="submit" class="btn btn-primary btn-sm w-100">淇濆瓨</button>
+    <button type="submit" class="btn btn-primary btn-sm w-100">保存</button>
   </div>
 </form>
 {% elif items %}
 <div class="table-responsive">
   <table class="table table-sm table-hover" style="font-size:12px">
     <thead class="table-light">
-      <tr><th>#</th><th style="width:50px">灏侀潰</th><th>鍚嶇О</th><th>Slug</th><th>鏃ユ湡</th><th></th></tr>
+      <tr><th>#</th><th style="width:50px">封面</th><th>名称</th><th>Slug</th><th>日期</th><th></th></tr>
     </thead>
     <tbody>
       {% for it in items %}
@@ -412,19 +337,19 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         <td>
           {% set thumb = it.cover or it.image or it.photo or '' %}
           {% if thumb %}<img src="{{ thumb }}" alt="" style="width:40px;height:30px;object-fit:cover;border-radius:4px;">
-          {% else %}<span class="text-muted" style="font-size:18px">馃柤锔?/span>{% endif %}
+          {% else %}<span class="text-muted" style="font-size:18px">🖼️</span>{% endif %}
         </td>
         <td><strong>{{ it.title or it.name }}</strong></td>
         <td class="text-muted"><code style="font-size:11px">{{ it.slug }}</code></td>
         <td class="text-muted small">{{ it.date or '' }}</td>
-        <td><button class="btn" onclick="event.stopPropagation(); deleteDataItem({{ it.id }})" title="鍒犻櫎"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></td>
+        <td><button class="btn btn-sm btn-outline-danger" style="font-size:10px" onclick="event.stopPropagation(); deleteDataItem({{ it.id }})">删除</button></td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 {% else %}
-<div class="text-center text-muted py-5"><p>杩樻病鏈夋暟鎹?/p><button class="btn btn-primary btn-sm" onclick="addDataItem()">+ 鏂板缓绗竴鏉?/button></div>
+<div class="text-center text-muted py-5"><p>还没有数据</p><button class="btn btn-primary btn-sm" onclick="addDataItem()">+ 新建第一条</button></div>
 {% endif %}
 
 <script>
@@ -447,13 +372,13 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   window.backToPageEditor = function() {
     loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getQuery()).then(function() {
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
     });
   };
   window.loadDatasetList = function() {
     loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getQuery()).then(function() {
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
     });
   };
   window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getQuery()); };
@@ -463,7 +388,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
       .catch(function() { location.reload(); });
   };
   window.deleteDataItem = function(id) {
-    if (!confirm('纭鍒犻櫎锛?)) return;
+    if (!confirm('确认删除？')) return;
     fetch('/_dataset/' + DATASET_KEY + '/' + id + '/delete' + getFetchQuery(), {method: 'POST'})
       .then(function() { loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getQuery()); })
       .catch(function() { location.reload(); });
@@ -471,7 +396,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 })();
 </script>
 
-{# 鍏滃簳锛氱‘淇濆叧閿嚱鏁板湪浠讳綍娓叉煋璺緞涓嬮兘鍙敤 #}
+{# 兜底：确保关键函数在任何渲染路径下都可用 #}
 <script>
 (function() {
   var dsKey = '{{ dataset_key }}';
@@ -637,7 +562,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   var STORAGE_KEY = 'pending_translation_{{ dataset_key }}';
   var CURRENT_LANG = '{{ current_lang }}';
 
-  // 椤甸潰鍔犺浇鏃舵鏌ユ槸鍚︽湁寰呮仮澶嶇殑璇戞枃
+  // 页面加载时检查是否有待恢复的译文
   (function restorePending() {
     var raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return;
@@ -663,7 +588,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     });
   })();
 
-  // 缈昏瘧鎸夐挳
+  // 翻译按钮
   var btn = document.getElementById('aiTranslateBtn');
   if (!btn) return;
 
@@ -673,8 +598,8 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     {{ languages | tojson }}.forEach(function(l){ langLabels[l.code] = l.name; });
 
     showTranslateConfirm(
-      'AI 缈昏瘧',
-      '<p>灏嗗綋鍓?<strong>' + CURRENT_LANG + '</strong> 鍐呭缈昏瘧涓?<strong>' + langLabels[targetLang] + '</strong>锛?/p><p class="text-muted small mb-0">缈昏瘧瀹屾垚鍚庤鍒囨崲鍒伴《閮ㄨ瑷€鐗堟湰鎵嬪姩淇濆瓨銆?/p>',
+      'AI 翻译',
+      '<p>将当前 <strong>' + CURRENT_LANG + '</strong> 内容翻译为 <strong>' + langLabels[targetLang] + '</strong>？</p><p class="text-muted small mb-0">翻译完成后请切换到顶部语言版本手动保存。</p>',
       function() { doTranslate(targetLang, langLabels); }
     );
   });
@@ -699,12 +624,12 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     });
 
     if (Object.keys(texts).length === 0) {
-      showTranslateMsg('AI 缈昏瘧', '鏈壘鍒板彲缈昏瘧鐨勬枃鏈瓧娈?);
+      showTranslateMsg('AI 翻译', '未找到可翻译的文本字段');
       return;
     }
 
     btn.disabled = true;
-    btn.textContent = '缈昏瘧涓?..';
+    btn.textContent = '翻译中...';
 
     fetch('/api/translate', {
       method: 'POST',
@@ -713,8 +638,8 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     })
     .then(function(r){ return r.json(); })
     .then(function(data){
-      if (data.error) { showTranslateMsg('缈昏瘧澶辫触', data.error); return; }
-      if (!data.translated) { showTranslateMsg('缈昏瘧澶辫触', '缈昏瘧缁撴灉涓虹┖'); return; }
+      if (data.error) { showTranslateMsg('翻译失败', data.error); return; }
+      if (!data.translated) { showTranslateMsg('翻译失败', '翻译结果为空'); return; }
 
       var t = data.translated;
       var translatedMap = {};
@@ -729,7 +654,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         translations: translatedMap
       }));
 
-      // 鍚屾椂濉叆褰撳墠琛ㄥ崟锛堟柟渚块瑙堬級
+      // 同时填入当前表单（方便预览）
       Object.keys(translatedMap).forEach(function(key){
         var el = document.querySelector('[name="' + key + '"], #' + key);
         if (el) {
@@ -742,9 +667,9 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         }
       });
 
-      showTranslateMsg('缈昏瘧瀹屾垚',
-        '<p>璇戞枃宸茬炕璇戯紝鍗冲皢鍒囨崲鍒?<strong>' + langLabels[targetLang] + '</strong> 缂栬緫銆?/p>');
-      // 鑷姩鍒囨崲鍒扮洰鏍囪瑷€鐗堟湰
+      showTranslateMsg('翻译完成',
+        '<p>译文已翻译，即将切换到 <strong>' + langLabels[targetLang] + '</strong> 编辑。</p>');
+      // 自动切换到目标语言版本
       var modalEl2 = document.getElementById('translateModal');
       var bsModal = bootstrap.Modal.getInstance(modalEl2);
       if (bsModal) {
@@ -758,15 +683,15 @@ window._dsEditItemJson = {{ edit_item | tojson }};
       }
     })
     .catch(function(err){
-      showTranslateMsg('缈昏瘧澶辫触', err.message || '缃戠粶閿欒');
+      showTranslateMsg('翻译失败', err.message || '网络错误');
     })
     .finally(function(){
       btn.disabled = false;
-      btn.textContent = '寮€濮嬬炕璇?;
+      btn.textContent = '开始翻译';
     });
   }
 
-  // Bootstrap 寮规杈呭姪
+  // Bootstrap 弹框辅助
   function showTranslateConfirm(title, body, onConfirm) {
     var modalEl = document.getElementById('translateModal');
     if (!modalEl) { onConfirm(); return; }
@@ -793,18 +718,18 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 })();
 </script>
 
-{# Bootstrap 缈昏瘧鎻愮ず寮规 #}
+{# Bootstrap 翻译提示弹框 #}
 <div class="modal fade" id="translateModal" tabindex="-1">
   <div class="modal-dialog modal-sm modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="translateModalTitle">AI 缈昏瘧</h5>
+        <h5 class="modal-title" id="translateModalTitle">AI 翻译</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body" id="translateModalBody"></div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary btn-sm" id="translateModalCancel" data-bs-dismiss="modal">鍙栨秷</button>
-        <button type="button" class="btn btn-primary btn-sm" id="translateModalConfirm">纭</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="translateModalCancel" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary btn-sm" id="translateModalConfirm">确认</button>
       </div>
     </div>
   </div>
