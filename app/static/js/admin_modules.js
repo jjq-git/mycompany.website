@@ -415,7 +415,7 @@
     return html || '<div class="small text-muted">璇ユā鍧楁棤鍙皟样式</div>';
   }
 
-  // 鐪肩潧切换按钮锛堟樉闅愭帶鍒讹級锛屼笌 panel_page_edit.html 涓?toggleVisibilityEye 閰嶅悎
+  // 鐪肩潧切换按ť锛堟樉闅愭帶鍒讹級锛屼笌 panel_page_edit.html 涓toggleVisibilityEye 閰嶅悎
   var EYE_OPEN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
   var EYE_OFF = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72 1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
   window.EYE_OPEN_SVG = window.EYE_OPEN_SVG || EYE_OPEN;
@@ -1367,7 +1367,7 @@
   window._esc = esc;
   window._renderField = renderField;
 
-  // 模块图标鏄犲皠 —涓?_block_icons.html 涓?block_icon 瀹忎繚鎸佷竴自动?
+  // 模块图标鏄犲皠 —涓_block_icons.html 涓block_icon 瀹忎繚鎸佷竴自动?
   function getBlockIconHTML(type) {
     var icons = {
       'hero_banner': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>',
@@ -1398,7 +1398,7 @@
   }
 
   /* ====== 涓诲嚱鏁? buildModuleHTML ======
-   * type:   模块绫诲瀷鍚?
+   * type:   模块绫诲瀷鍚
    * idx:    模块搴忓彿 (0-based)
    * mdata:  宸蹭繚瀛樼殑模块数据 (鏂版ā鍧椾紶 {})
    * 返回:   { html, borderStyle, headerBg }
@@ -1476,18 +1476,18 @@
             }).join('') +
           '</div>' +
         '</div>';
-      /* 灏侀潰鍥撅細鍙?item 椤跺眰瀛楁锛屼笌列表椤电缉鐣ュ浘涓€自动达紙cover / image / photo 渚濇鍥為€€锛?*/
+      /* 灏侀潰鍥撅細鍙?item 椤跺眰瀛楁锛屼笌列表椤电缉鐣ュ浘涓自动达紙cover / image / photo 渚濇鍥為€€锛?*/
       var coverVal = item.cover || item.image || item.photo || '';
       styleEditor = schemaStyleForm('module_' + idx + '_data_', meta.schema || {}, item);
       specialEditor =
         '<div class="small fw-semibold mb-1 text-muted">基础字段</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm font-monospace" name="slug" value="' + esc(item.slug || '') + '" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="濡?my-post"><div class="form-text">鑻辨枃+数字+杩炲瓧绗︼紝鍞竴鏍囪瘑</div></div>' +
         /* ==== 灏侀潰鍥撅細浣嶄簬日期涓婃柟锛屽彧显示鍦ㄦ暟鎹泦列表缂╃暐鍥撅紝涓嶅湪详情椤靛睍绀?==== */
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">封面图/label>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">封面图</label>' +
         '<input type="text" class="form-control form-control-sm" name="cover" value="' + esc(coverVal) + '" placeholder="图片 URL 或上传">' +
         '<input type="file" class="form-control form-control-sm mt-1" name="cover" accept="image/*">' +
         (coverVal ? '<img src="' + esc(coverVal) + '" alt="预览" style="margin-top:6px;max-width:200px;max-height:120px;border-radius:6px;">' : '') +
-        '<div class="form-text">浠呮樉绀哄湪数据闆嗗垪琛ㄤ腑浣滀负灏侀潰缂╃暐鍥撅紝涓嶅湪详情椤靛睍绀?/div></div>' +
+        '<div class="form-text">仅显示在数据集列表中作为封面缩略图</div>' +
         detailGalleryHtml +
         '<hr class="my-2">' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">日期</label><input type="date" class="form-control form-control-sm" name="date" value="' + esc(item.date || '') + '"></div>' +
@@ -1501,7 +1501,7 @@
         /* 富文本编辑器（详细介绍） */
         '<div class="mb-2 rte-wrapper"><label class="form-label small mb-1 text-muted">详细介绍</label>' +
         '<div class="rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">' +
-          /* 格式按钮 */
+          /* 格式按ť */
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="bold" title="加粗"><b>B</b></button>' +
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="italic" title="斜体"><i>I</i></button>' +
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="underline" title="下划线"><u>U</u></button>' +
@@ -1551,7 +1551,7 @@
           'data-placeholder="在此输入详细介绍...">' + (item.body || item.content || '') + '</div>' +
         '<textarea name="body" hidden>' + esc(item.body || item.content || '') + '</textarea>' +
         '<input type="hidden" name="rte_clicked_editor_idx" value="">' +
-        '<div class="form-text">鏀寔鍔犵矖銆佹枩浣撱€佹爣棰樸€佸垪琛ㄣ€佸紩鐢ㄣ€佸垎鍓茬嚎銆侀摼鎺ャ€佸浘鐗囥€佹枃瀛楅鑹?/div></div>' +
+        '<div class="form-text">支持加粗、斜体、标题、列表、引用、分割线、链接、图片、文字颜色</div>' +
         '<hr class="my-2">';
       // 鍔ㄦ€佸墿浣欏瓧娈?
       var skipKeys = ['id','slug','date','title','description','excerpt','summary','cover','image','photo','logo','tags','tags_visible','detail_gallery','detail_images','body','content','modules','csrf_token','name','category','price','specs','section_bg','inner_width','style_bg-color'];
@@ -1585,10 +1585,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});">' +
             '<option value="px">px</option>' +
             '<option value="rem">rem</option>' +
@@ -1597,7 +1597,7 @@
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">遮罩层/div>' +
         '<div class="row g-2 mb-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍚敤閬僵</label><select class="form-select form-select-sm" name="module_' + idx + '_data_overlay_enabled"><option value="true"' + (d.overlay_enabled !== 'false' ? ' selected' : '') + '>鍚敤</option><option value="false"' + (d.overlay_enabled === 'false' ? ' selected' : '') + '>涓嶅惎鐢?/option></select></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">启用遮罩</label><select class="form-select form-select-sm" name="module_' + idx + '_data_overlay_enabled"><option value="true"' + (d.overlay_enabled !== 'false' ? ' selected' : '') + '>鍚敤</option><option value="false"' + (d.overlay_enabled === 'false' ? ' selected' : '') + '>不启用/option></select></div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">閰嶈壊</div>' +
@@ -1610,8 +1610,8 @@
           '<div class="col-6">' + cn('module_' + idx + '_data_subtitle_color', 'Color', d.subtitle_color || '#cccccc') + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_btn_font_size', '按钮瀛椾綋大小', ['px','rem'], d.btn_font_size) + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_btn_text_color', '按钮文字颜色', d.btn_text_color || '#ffffff') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_btn_font_size', '按ť瀛椾綋大小', ['px','rem'], d.btn_font_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_btn_text_color', '按ť文字颜色', d.btn_text_color || '#ffffff') + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_btn_bg', 'Color', d.btn_bg || '#067a7a') + '</div>' +
@@ -1625,10 +1625,10 @@
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述文字</label>' + richEditorHtml('module_' + idx + '_data_desc', d.desc || '') + '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">按钮</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">按ť</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_text" value="' + esc(d.btn_text || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">按钮链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_url" value="' + esc(d.btn_url || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">按ť文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_text" value="' + esc(d.btn_text || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">按ť链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_url" value="' + esc(d.btn_url || '') + '"></div>' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">鎵撳紑鏂瑰紡</label><select class="form-select form-select-sm" name="module_' + idx + '_data_btn_target"><option value=""' + (d.btn_target !== '_blank' ? ' selected' : '') + '>当前绐楀彛</option><option value="_blank"' + (d.btn_target === '_blank' ? ' selected' : '') + '>鏂扮獥鍙?/option></select></div>' +
         '</div>';
       styleEditor =
@@ -1639,18 +1639,18 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top || '1rem') + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top || '1rem') + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom || '1rem') + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom || '1rem') + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small fw-semibold mb-1 text-muted mt-2">内容眰样式</div>' +
@@ -1659,10 +1659,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -1681,7 +1681,7 @@
           '<div class="col-6">' + cn('module_' + idx + '_data_tag_color', 'Color', d.tag_color || '#ffffff') + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">按钮颜色</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">按ť颜色</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_btn_bg', 'Color', d.btn_bg || '#067a7a') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_btn_color', 'Color', d.btn_color || '#ffffff') + '</div>' +
@@ -1744,10 +1744,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>';
 
@@ -1766,18 +1766,18 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top || '1rem') + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top || '1rem') + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom || '1rem') + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom || '1rem') + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small fw-semibold mb-1 text-muted mt-2">内容眰样式</div>' +
@@ -1791,18 +1791,18 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">标题区边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_top" value="' + esc(d.header_margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_top" value="' + esc(d.header_margin_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_right" value="' + esc(d.header_margin_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_bottom" value="' + esc(d.header_margin_bottom || '4rem') + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_left" value="' + esc(d.header_margin_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_bottom" value="' + esc(d.header_margin_bottom || '4rem') + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_left" value="' + esc(d.header_margin_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">标题区内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_top" value="' + esc(d.header_padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_top" value="' + esc(d.header_padding_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_right" value="' + esc(d.header_padding_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_bottom" value="' + esc(d.header_padding_bottom || '2rem') + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_left" value="' + esc(d.header_padding_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_bottom" value="' + esc(d.header_padding_bottom || '2rem') + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_left" value="' + esc(d.header_padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">涓绘爣棰?/div>' +
@@ -1826,10 +1826,10 @@
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">显示边框</label><select class="form-select form-select-sm" name="module_' + idx + '_data_card_show_border"><option value=""' + (d.card_show_border !== '0' ? ' selected' : '') + '>默认锛堟樉绀猴級</option><option value="0"' + (d.card_show_border === '0' ? ' selected' : '') + '>隐藏边框</option></select></div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍗＄墖内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_top" value="' + esc(d.card_padding_top || '2rem') + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_top" value="' + esc(d.card_padding_top || '2rem') + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_right" value="' + esc(d.card_padding_right || '1.5rem') + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_bottom" value="' + esc(d.card_padding_bottom || '2rem') + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_left" value="' + esc(d.card_padding_left || '1.5rem') + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_bottom" value="' + esc(d.card_padding_bottom || '2rem') + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_left" value="' + esc(d.card_padding_left || '1.5rem') + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍗＄墖圆角</div>' +
@@ -1875,8 +1875,8 @@
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label>' + richEditorHtml('module_' + idx + '_data_desc', d.desc || '') + '</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label>' + mediaUploadHtml('module_' + idx + '_data_image', d.image || '', 'image', '图片 URL') + '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">涓绘寜閽枃瀛?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryBtn" value="' + esc(d.primaryBtn || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">涓绘寜閽摼鎺?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryLink" value="' + esc(d.primaryLink || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">涓绘寜閽枃瀛?</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryBtn" value="' + esc(d.primaryBtn || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">涓绘寜閽摼鎺?</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryLink" value="' + esc(d.primaryLink || '') + '"></div>' +
         '</div>';
       styleEditor =
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
@@ -1886,8 +1886,8 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -1898,10 +1898,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -1968,18 +1968,18 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -2013,7 +2013,7 @@
         specList.map(function(spec, si) {
           var name = (typeof spec === 'object' ? (spec.name || spec.label || spec.key || '') : '');
           var value = (typeof spec === 'object' ? (spec.value || '') : '');
-          return '<div class="border rounded p-2 mb-2 id-spec-item" data-spec-index="' + si + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">瑙勬牸 ' + (si + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-spec-item\').remove();window._reindexIdSpecs(' + idx + ')">删除</button></div><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">鍙傛暟鍚?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_specs_' + si + '_name" value="' + esc(name) + '"></div><div class="col-6"><label class="form-label small mb-1 text-muted">鍙傛暟鍊?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_specs_' + si + '_value" value="' + esc(value) + '"></div></div></div>';
+          return '<div class="border rounded p-2 mb-2 id-spec-item" data-spec-index="' + si + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">瑙勬牸 ' + (si + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-spec-item\').remove();window._reindexIdSpecs(' + idx + ')">删除</button></div><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">鍙傛暟鍚</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_specs_' + si + '_name" value="' + esc(name) + '"></div><div class="col-6"><label class="form-label small mb-1 text-muted">鍙傛暟鍊?</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_specs_' + si + '_value" value="' + esc(value) + '"></div></div></div>';
         }).join('') +
         '</div></div>';
       styleEditor =
@@ -2030,10 +2030,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -2100,10 +2100,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -2148,10 +2148,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -2201,10 +2201,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>';
 
@@ -2228,7 +2228,7 @@
           visToggle('module_' + idx + '_data_show_message', '鐣欒█', (d.show_message || 'true')) +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">提交按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_submit_text" value="' + esc(d.submit_text || '') + '" placeholder="鍙戦€佺暀瑷€"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">提交按ť文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_submit_text" value="' + esc(d.submit_text || '') + '" placeholder="鍙戦€佺暀瑷€"></div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-2 text-muted">地图（高德/Google 嵌入）</div>' +
@@ -2236,7 +2236,7 @@
           visToggle('module_' + idx + '_data_show_map', '显示鍦板浘', (d.show_map || 'false')) +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-12"><label class="form-label small mb-1 text-muted">地图嵌入地址</label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_map_src" value="' + esc(d.map_src || '') + '" placeholder="浠庨珮寰?Google 鍦板浘鑾峰彇鐨勫祵鍏ラ摼鎺ワ紙iframe src锛?></div>' +
+          '<div class="col-12"><label class="form-label small mb-1 text-muted">地图嵌入地址</label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_map_src" value="' + esc(d.map_src || '') + '" placeholder="浠庨珮寰Google 鍦板浘鑾峰彇鐨勫祵鍏ラ摼鎺ワ紙iframe src锛?></div>' +
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + sel('module_' + idx + '_data_layout', 'Layout', [{value:'form_left',label:'Form left / map right'},{value:'form_right',label:'Map left / form right'}], d.layout || 'form_left') + '</div>' +
@@ -2255,10 +2255,10 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_top" value="' + esc(d.padding_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_right" value="' + esc(d.padding_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_bottom" value="' + esc(d.padding_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -2285,47 +2285,47 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">琛ㄥ崟内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_top" value="' + esc(d.form_padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_top" value="' + esc(d.form_padding_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_right" value="' + esc(d.form_padding_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_bottom" value="' + esc(d.form_padding_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_left" value="' + esc(d.form_padding_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_bottom" value="' + esc(d.form_padding_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_left" value="' + esc(d.form_padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">琛ㄥ崟外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_top" value="' + esc(d.form_margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_top" value="' + esc(d.form_margin_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_right" value="' + esc(d.form_margin_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_bottom" value="' + esc(d.form_margin_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_left" value="' + esc(d.form_margin_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_bottom" value="' + esc(d.form_margin_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_left" value="' + esc(d.form_margin_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">按钮样式</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">按ť样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_btn_bg', 'Color', d.btn_bg) + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_btn_color', 'Color', d.btn_color) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_btn_size', '按钮文字大小', ['px','rem','em'], d.btn_size) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_btn_radius', '按钮圆角', ['px','rem','%'], d.btn_radius) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_btn_size', '按ť文字大小', ['px','rem','em'], d.btn_size) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_btn_radius', '按ť圆角', ['px','rem','%'], d.btn_radius) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_btn_align', '按钮位置', [{value:'left',label:'闈犲乏'},{value:'center',label:'居中'},{value:'right',label:'闈犲彸'}], d.btn_align || 'left') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_btn_align', '按ť位置', [{value:'left',label:'闈犲乏'},{value:'center',label:'居中'},{value:'right',label:'闈犲彸'}], d.btn_align || 'left') + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">按钮内边距</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">按ť内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_top" value="' + esc(d.btn_padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_top" value="' + esc(d.btn_padding_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_right" value="' + esc(d.btn_padding_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_bottom" value="' + esc(d.btn_padding_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_left" value="' + esc(d.btn_padding_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_bottom" value="' + esc(d.btn_padding_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_left" value="' + esc(d.btn_padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">按钮外边距</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">按ť外边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_top" value="' + esc(d.btn_margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_top" value="' + esc(d.btn_margin_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_right" value="' + esc(d.btn_margin_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_bottom" value="' + esc(d.btn_margin_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_left" value="' + esc(d.btn_margin_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_bottom" value="' + esc(d.btn_margin_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_left" value="' + esc(d.btn_margin_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
@@ -2338,18 +2338,18 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍦板浘外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_top" value="' + esc(d.map_margin_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_top" value="' + esc(d.map_margin_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_right" value="' + esc(d.map_margin_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_bottom" value="' + esc(d.map_margin_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_left" value="' + esc(d.map_margin_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_bottom" value="' + esc(d.map_margin_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_left" value="' + esc(d.map_margin_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍦板浘内边距</div>' +
         '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_top" value="' + esc(d.map_padding_top) + '" placeholder="↪涓?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_top" value="' + esc(d.map_padding_top) + '" placeholder="↪涓>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_right" value="' + esc(d.map_padding_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_bottom" value="' + esc(d.map_padding_bottom) + '" placeholder="↪涓?>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_left" value="' + esc(d.map_padding_left) + '" placeholder="↪宸?>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_bottom" value="' + esc(d.map_padding_bottom) + '" placeholder="↪涓>' +
+          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_padding_left" value="' + esc(d.map_padding_left) + '" placeholder="↪宸>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<div class="small fw-semibold mb-1 mt-2 text-muted">琛ㄥ崟鏄鹃殣</div>' +
@@ -2358,7 +2358,7 @@
         '</div>';
     }
 
-    /* ====== 鏋勫缓 HTML (缁撴瀯涓?Jinja 妯℃澘对齐) ====== */
+    /* ====== 鏋勫缓 HTML (缁撴瀯涓Jinja 妯℃澘对齐) ====== */
     var html =
       '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="' + headerBg + 'cursor:pointer">' +
         '<span class="small fw-semibold d-flex align-items-center gap-1 ' + titleColor + '">' + getBlockIconHTML(type) + ' ' + esc(displayName) + '</span>' +
@@ -2373,7 +2373,7 @@
       '<div class="module-config p-2 border-top" style="display:block">';
 
     if (!isDataModule) {
-      // 鐢佃剳绔細tab 按钮 + 涓や釜闈㈡澘锛堢粨鏋勪笌 Jinja 妯℃澘涓€自动达級
+      // 鐢佃剳绔細tab 按ť + 涓や釜闈㈡澘锛堢粨鏋勪笌 Jinja 妯℃澘涓自动达級
       html += '<div class="device-config device-desktop">' +
         '<div class="d-flex mb-2">' +
           '<button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="window._switchContentStyleTab(this, \'content\')">内容</button>' +
@@ -2399,7 +2399,7 @@
       '</div>';
     }
 
-    // 平板端?/ 手机绔紙缁撴瀯涓?Jinja 妯℃澘涓€自动达紝涓?.device-desktop 鍚岀骇锛?
+    // 平板端?/ 手机绔紙缁撴瀯涓Jinja 妯℃澘涓自动达紝涓.device-desktop 鍚岀骇锛?
     if (!isDataModule) {
       html +=
         '<div class="device-config device-tablet" style="display:none">' +
@@ -2434,7 +2434,7 @@
   /* ====== 鎵嬮鐞村睍寮€/鏀剁缉 ======
    *
    * server 绔覆鏌撶殑模块澶翠娇鐢?onclick="toggleModuleAccordion(...)" 璋冪敤姝ゅ嚱鏁帮紝
-   * 鍥犳蹇呴』鍚屾椂鏆撮湶涓?window.toggleModuleAccordion锛堜笉甯︿笅鍒掔嚎锛夈€?
+   * 鍥犳蹇呴』鍚屾椂鏆撮湶涓window.toggleModuleAccordion锛堜笉甯︿笅鍒掔嚎锛夈€?
    *
    * 鍏煎 page editor 鍜?dataset editor 涓ょ闈㈡澘涓婁笅鏂囷細
    *   - 鏄惧紡鎺у埗 .module-config 鐨?display锛坧age editor 鐢紝涓嶈蛋 CSS !important锛?
@@ -2497,7 +2497,7 @@
 
   /* ====== 瀵屾枃鏈紪杈戝櫒 (RTE) ======
    * 鏍稿績绛栫暐锛?
-   *   1. 濮旀墭 mousedown 鍦?.rte-toolbar 涓?preventDefault锛岄樆姝㈡寜閽偣鍑诲自动寸紪杈戝櫒澶辩劍
+   *   1. 濮旀墭 mousedown 鍦?.rte-toolbar 涓preventDefault锛岄樆姝㈡寜閽偣鍑诲自动寸紪杈戝櫒澶辩劍
    *   2. 濮旀墭 click 鎵ц execCommand锛岄€氳繃 _lastRteEditor 鎵惧埌瀵瑰簲鐨勭紪杈戝櫒
    *   3. 颜色选择鍣ㄥ拰标题下拉鐢?change/input 浜嬩欢
    */
@@ -2910,13 +2910,13 @@
     var safeUrl = String(url || '').replace(/"/g, '&quot;');
     if (!safeUrl) return;
     // 鐢?contenteditable="false" 鍖呰９视频涓轰笉鍙紪杈戝師瀛愬崟鍏冦€?
-    // 删除按钮鏀惧湪视频涓婃柟鐨勫皬宸ュ叿鏍忎腑锛岄伩鍏嶈娴忚鍣ㄥ師鐢熸帶浠堕伄鎸°€?
+    // 删除按ť鏀惧湪视频涓婃柟鐨勫皬宸ュ叿鏍忎腑锛岄伩鍏嶈娴忚鍣ㄥ師鐢熸帶浠堕伄鎸°€?
     var wrapper = document.createElement('div');
     wrapper.setAttribute('contenteditable', 'false');
     wrapper.className = 'rte-media-wrapper';
     wrapper.style.cssText = 'display:inline-block;max-width:100%;margin:8px 0;user-select:none;vertical-align:top';
 
-    // 视频涓婃柟鐨勫皬宸ュ叿鏍?
+    // 视频涓婃柟鐨勫皬宸ュ叿鏍
     var toolbar = document.createElement('div');
     toolbar.className = 'rte-media-toolbar';
     toolbar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
@@ -2959,7 +2959,7 @@
   }
 
 
-  // 娉ㄥ唽鍦?document 涓婄敤浜嬩欢濮旀墭锛屽洜涓?wrapper 鏄姩鎬?DOM 鑺傜偣銆?
+  // 娉ㄥ唽鍦?document 涓婄敤浜嬩欢濮旀墭锛屽洜涓wrapper 鏄姩鎬?DOM 鑺傜偣銆?
   document.addEventListener('click', function(e) {
     var delBtn = e.target.closest('.rte-media-del');
     if (!delBtn) return;
@@ -3033,7 +3033,7 @@
     }
   });
 
-  // 鈹€鈹€ 宸ュ叿鏍?mousedown锛氶樆姝㈡寜閽伔璧扮劍鐐?鈹€鈹€
+  // 鈹€鈹€ 宸ュ叿鏍mousedown锛氶樆姝㈡寜閽伔璧扮劍鐐?鈹€鈹€
   document.addEventListener('mousedown', function(e) {
     if (e.target.closest('.rte-toolbar .rte-btn')) {
       e.preventDefault();
@@ -3050,7 +3050,7 @@
     }
   });
 
-  // 鈹€鈹€ 宸ュ叿鏍?click锛氭墽琛屽懡浠?鈹€鈹€
+  // 鈹€鈹€ 宸ュ叿鏍click锛氭墽琛屽懡浠?鈹€鈹€
   document.addEventListener('click', function(e) {
     var btn = e.target.closest('.rte-btn');
     if (!btn) return;
@@ -3386,7 +3386,7 @@
   });
 
   // 取消 / 鐐瑰嚮閬僵关闭
-  // 鐢?closest 鍖归厤取消按钮锛堝彲鑳借鐐瑰嚮鐨勬槸按钮鍐呯殑鏂囨湰鑺傜偣锛?
+  // 鐢?closest 鍖归厤取消按ť锛堝彲鑳借鐐瑰嚮鐨勬槸按ť鍐呯殑鏂囨湰鑺傜偣锛?
   document.addEventListener('click', function(e) {
     if (e.target.closest('.rte-url-dialog-cancel')) {
       var overlay = e.target.closest('.rte-url-overlay');
