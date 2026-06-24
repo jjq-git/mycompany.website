@@ -1,16 +1,16 @@
-﻿/* admin_modules.js 鈥?鍏变韩妯″潡琛ㄥ崟娓叉煋
+﻿/* admin_modules.js 鈥?鍏变韩模块琛ㄥ崟娓叉煋
  *
- * 椤甸潰缂栬緫鍣?(panel_page_edit.html) 鍜屾暟鎹泦缂栬緫闈㈡澘 (panel_data_list.html)
- * 鍏辩敤姝ゆ枃浠躲€傛瘡涓ā鏉垮湪浣跨敤鍓嶅畾涔夊ソ:
- *   window._moduleCtx.blockLibrary 鈥?妯″潡搴撳垪琛?
- *   window._moduleCtx.datasetNames 鈥?鏁版嵁闆嗛€夐」 (鍙€?
- *   window._moduleCtx.editItem   鈥?褰撳墠缂栬緫鏉＄洰 (item_data 妯″紡, 鍙€?
- *   window._moduleCtx.isDatasetMode 鈥?鏄惁涓烘暟鎹泦缂栬緫妯″紡
+ * 椤甸潰编辑鍣?(panel_page_edit.html) 鍜屾暟鎹泦编辑闈㈡澘 (panel_data_list.html)
+ * 鍏辩敤姝ゆ枃浠躲€傛瘡涓ā鏉垮湪浣跨敤鍓嶅畾涔夊ソ:
+ *   window._moduleCtx.blockLibrary 鈥?模块搴撳垪琛?
+ *   window._moduleCtx.datasetNames 鈥?鏁版嵁闆嗛€夐」 (鍙€?
+ *   window._moduleCtx.editItem   鈥?当前编辑鏉＄洰 (item_data 妯″紡, 鍙€?
+ *   window._moduleCtx.isDatasetMode 鈥?鏄惁涓烘暟鎹泦编辑妯″紡
  *
- * 鐒跺悗璋冪敤 window._buildModuleHTML(type, idx, mdata) 鐢熸垚妯″潡 HTML銆?
+ * 鐒跺悗璋冪敤 window._buildModuleHTML(type, idx, mdata) 鐢熸垚模块 HTML銆?
  * 杩斿洖鍊? { html, borderStyle, headerBg }
- *   - html: 妯″潡鍐呴儴 HTML (涓嶅惈 .module-item 澶栨)
- *   - borderStyle / headerBg: 澶栨鍜屽唴鏍囬鏍忔牱寮?
+ *   - html: 模块鍐呴儴 HTML (涓嶅惈 .module-item 澶栨)
+ *   - borderStyle / headerBg: 澶栨鍜屽唴标题鏍忔牱寮?
  */
 
 ;(function() {
@@ -34,7 +34,7 @@
     if (sel && sel.rangeCount && editor.contains(sel.getRangeAt(0).commonAncestorContainer)) {
       range = sel.getRangeAt(0).cloneRange();
     }
-    var url = window.prompt('閾炬帴鍦板潃');
+    var url = window.prompt('链接鍦板潃');
     if (!url) return false;
     editor.focus();
     var link = document.createElement('a');
@@ -91,7 +91,7 @@
     var wrapper = btn && btn.closest ? btn.closest('.mb-2') : null;
     var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
     if (!editor) return false;
-    var size = window.prompt('琛ㄦ牸琛屽垪锛屼緥濡?3x3', '3x3');
+    var size = window.prompt('表格琛屽垪锛屼緥濡?3x3', '3x3');
     if (size === null) return false;
     var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,锛? ]\s*(\d+)\s*$/);
     var rows = match ? parseInt(match[1], 10) : 3;
@@ -113,52 +113,6 @@
   };
 
   function richEditorHtml(name, value) {
-    return '<div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'bold\')" title="鍔犵矖" style="font-size:12px;line-height:1"><b>B</b></button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'italic\')" title="鏂滀綋" style="font-size:12px;line-height:1"><i>I</i></button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'underline\')" title="涓嬪垝绾? style="font-size:12px;line-height:1"><u>U</u></button>' +
-      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'formatBlock\',\'h2\')" title="澶ф爣棰? style="font-size:12px;line-height:1">H2</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'formatBlock\',\'h3\')" title="灏忔爣棰? style="font-size:12px;line-height:1">H3</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'formatBlock\',\'p\')" title="姝ｆ枃娈佃惤" style="font-size:12px;line-height:1">P</button>' +
-      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyLeft\')" title="宸﹀榻? style="font-size:12px;line-height:1">鈽?/button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyCenter\')" title="灞呬腑" style="font-size:12px;line-height:1">鈮?/button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyRight\')" title="鍙冲榻? style="font-size:12px;line-height:1">鈽?/button>' +
-      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertUnorderedList\')" title="鏃犲簭鍒楄〃" style="font-size:12px;line-height:1">鈥⑩墶</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertOrderedList\')" title="鏈夊簭鍒楄〃" style="font-size:12px;line-height:1">1鈮?/button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorTable(this,event)" title="鎻掑叆琛ㄦ牸" style="font-size:12px;line-height:1">鈻?/button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorLink(this,event)" title="鎻掑叆閾炬帴" style="font-size:12px;line-height:1">馃敆</button>' +
-      '</div>' +
-      '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (value || '') + '</div>' +
-      '<textarea class="form-control form-control-sm d-none" name="' + esc(name) + '">' + esc(value || '') + '</textarea>';
-  }
-
-  function richEditorHtml(name, value) {
-    return '<div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'bold\')" title="Bold" style="font-size:12px;line-height:1"><b>B</b></button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'italic\')" title="Italic" style="font-size:12px;line-height:1"><i>I</i></button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'underline\')" title="Underline" style="font-size:12px;line-height:1"><u>U</u></button>' +
-      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'formatBlock\',\'h2\')" title="Heading 2" style="font-size:12px;line-height:1">H2</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'formatBlock\',\'h3\')" title="Heading 3" style="font-size:12px;line-height:1">H3</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'formatBlock\',\'p\')" title="鏍囬" style="font-size:12px;line-height:1">P</button>' +
-      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyLeft\')" title="Align left" style="font-size:12px;line-height:1">L</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyCenter\')" title="Align center" style="font-size:12px;line-height:1">C</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyRight\')" title="Align right" style="font-size:12px;line-height:1">R</button>' +
-      '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertUnorderedList\')" title="Bullet list" style="font-size:12px;line-height:1">UL</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertOrderedList\')" title="Numbered list" style="font-size:12px;line-height:1">OL</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorTable(this,event)" title="Table" style="font-size:12px;line-height:1">TB</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorLink(this,event)" title="Link" style="font-size:12px;line-height:1">LK</button>' +
-      '</div>' +
-      '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (value || '') + '</div>' +
-      '<textarea class="form-control form-control-sm d-none" name="' + esc(name) + '">' + esc(value || '') + '</textarea>';
-  }
-
-  function richEditorHtml(name, value) {
     return '<div class="rte-wrapper">' +
       '<div class="rich-toolbar rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">' +
       '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="bold" title="Bold"><b>B</b></button>' +
@@ -167,7 +121,7 @@
       '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="strikeThrough" title="Strike"><s>S</s></button>' +
       '<span class="rte-sep"></span>' +
       '<select class="form-select form-select-sm rte-heading-select" style="width:auto;font-size:12px" title="Heading">' +
-        '<option value="">鏍囬</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option>' +
+        '<option value="">标题</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option>' +
       '</select>' +
       '<span class="rte-sep"></span>' +
       '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyLeft" title="Align left">鈽?/button>' +
@@ -249,13 +203,13 @@
       '<button type="button" class="icon-picker-trigger" onclick="window._toggleIconPicker(this,event)">' +
         '<span class="icon-picker-preview">' + (current ? iconSvg(current) : '') + '</span>' +
         '<span class="icon-picker-label">' + esc(currentLabel) + '</span>' +
-        '<span class="icon-picker-caret">鈻?/span>' +
+        '<span class="icon-picker-caret">▾</span>' +
       '</button>' +
       '<div class="icon-picker-menu" onclick="event.stopPropagation()">' +
-        '<input type="text" class="form-control form-control-sm icon-picker-search" placeholder="鎼滅储鍥炬爣" oninput="window._filterIconPicker(this)">' +
+        '<input type="text" class="form-control form-control-sm icon-picker-search" placeholder="搜索图标" oninput="window._filterIconPicker(this)">' +
         '<div class="icon-picker-options">' +
           '<button type="button" class="icon-picker-option' + (!current ? ' active' : '') + '" data-value="" onclick="window._selectIconPicker(this,event)">' +
-            '<span class="icon-picker-option-preview"></span><span class="icon-picker-option-label">锛堟棤鍥炬爣锛?/span>' +
+            '<span class="icon-picker-option-preview"></span><span class="icon-picker-option-label">（无图标）</span>' +
           '</button>';
     iconNames().forEach(function(iconName) {
       var active = current === String(iconName);
@@ -383,15 +337,15 @@
       : icon;
     return '<div class="module-media-url-row">' +
         '<input type="text" class="form-control form-control-sm" name="' + safeName + '" value="' + safeValue + '" placeholder="' + esc(placeholder || '') + '" oninput="updateImagePreview(this)">' +
-        '<button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="浠庡獟浣撳簱閫夋嫨"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>' +
+        '<button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="浠庡獟浣撳簱选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>' +
         (isVideo ? '' : '<input type="hidden" name="' + safeName + '_convert_webp" value="false"><label class="module-convert-check"><input type="checkbox" name="' + safeName + '_convert_webp" value="true" checked><span></span>WebP</label>') +
       '</div>' +
       '<div class="module-media-tools mt-1">' +
-        '<label class="module-media-picker' + (value ? ' has-media' : '') + '" title="鐐瑰嚮涓婁紶">' +
+        '<label class="module-media-picker' + (value ? ' has-media' : '') + '" title="鐐瑰嚮上传">' +
           preview +
           (value ? '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' : '') +
           '<input type="file" name="' + safeName + '_file" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
-          (value ? '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="鍒犻櫎鍚庨噸鏂颁笂浼?>脳</button>' : '') +
+          (value ? '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除鍚庨噸鏂颁笂浼?>脳</button>' : '') +
         '</label>' +
       '</div>' +
       '<div class="form-text mt-1">' + (isVideo ? 'Supports MP4/WebM/OGG/MOV.' : 'WebP is enabled by default; uncheck to keep the original format.') + '</div>';
@@ -427,7 +381,7 @@
     ((schema && schema.style_tokens) || []).concat((schema && schema.element_style_tokens) || []).forEach(function(token) {
       if (tokens.indexOf(token) === -1) tokens.push(token);
     });
-    if (!tokens.length) return '<div class="small text-muted">璇ユā鍧楁棤鍙皟鏍峰紡</div>';
+    if (!tokens.length) return '<div class="small text-muted">璇ユā鍧楁棤鍙皟样式</div>';
     var html = '';
     tokens.forEach(function(token) {
       var def = registry[token];
@@ -440,7 +394,7 @@
         if (segmented) {
           html += segmented;
         } else {
-          html += '<select class="form-select form-select-sm" name="' + schemaEsc(name) + '"><option value="">榛樿</option>';
+          html += '<select class="form-select form-select-sm" name="' + schemaEsc(name) + '"><option value="">默认</option>';
           (def.options || []).forEach(function(o) {
             var ov = o.value, ol = o.text || o.value;
             html += '<option value="' + schemaEsc(ov) + '"' + (String(val) === String(ov) ? ' selected' : '') + '>' + schemaEsc(ol) + '</option>';
@@ -458,10 +412,10 @@
       }
       html += '</div>';
     });
-    return html || '<div class="small text-muted">璇ユā鍧楁棤鍙皟鏍峰紡</div>';
+    return html || '<div class="small text-muted">璇ユā鍧楁棤鍙皟样式</div>';
   }
 
-  // 鐪肩潧鍒囨崲鎸夐挳锛堟樉闅愭帶鍒讹級锛屼笌 panel_page_edit.html 涓?toggleVisibilityEye 閰嶅悎
+  // 鐪肩潧切换按钮锛堟樉闅愭帶鍒讹級锛屼笌 panel_page_edit.html 涓?toggleVisibilityEye 閰嶅悎
   var EYE_OPEN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
   var EYE_OFF = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72 1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
   window.EYE_OPEN_SVG = window.EYE_OPEN_SVG || EYE_OPEN;
@@ -518,23 +472,23 @@
       '<div class="detail-gallery-item-header d-flex justify-content-between align-items-center px-2 py-2" style="cursor:pointer;background:#f8fafc;border-radius:4px 4px 0 0" onclick="window._toggleDetailGalleryItem(this)">' +
         '<div class="d-flex align-items-center gap-2">' +
           detailGalleryIcon('chevron') +
-          '<span class="small fw-semibold">鍥剧墖 ' + (index + 1) + '</span>' +
+          '<span class="small fw-semibold">图片 ' + (index + 1) + '</span>' +
         '</div>' +
         '<div class="d-flex align-items-center gap-1">' +
           '<button type="button" class="module-action-btn" onclick="event.stopPropagation();window._moveDetailGalleryImage(this,-1)" title="涓婄Щ" aria-label="涓婄Щ">' + detailGalleryIcon('up') + '</button>' +
           '<button type="button" class="module-action-btn" onclick="event.stopPropagation();window._moveDetailGalleryImage(this,1)" title="涓嬬Щ" aria-label="涓嬬Щ">' + detailGalleryIcon('down') + '</button>' +
-          '<button type="button" class="module-action-btn module-action-del" onclick="event.stopPropagation();this.closest(\'.detail-gallery-item\').remove();window._reindexDetailGalleryImages()" title="鍒犻櫎" aria-label="鍒犻櫎">' + detailGalleryIcon('trash') + '</button>' +
+          '<button type="button" class="module-action-btn module-action-del" onclick="event.stopPropagation();this.closest(\'.detail-gallery-item\').remove();window._reindexDetailGalleryImages()" title="删除" aria-label="删除">' + detailGalleryIcon('trash') + '</button>' +
         '</div>' +
       '</div>' +
       '<div class="detail-gallery-item-body p-2" style="' + (collapsed ? 'display:none;' : '') + '">' +
         '<div class="mb-2">' +
-          '<label class="form-label small mb-1 text-muted">鍥剧墖 URL</label>' +
+          '<label class="form-label small mb-1 text-muted">图片 URL</label>' +
           '<input type="text" class="form-control form-control-sm detail-gallery-url" name="detail_gallery_' + index + '_url" value="' + esc(url || '') + '" oninput="window._syncDetailGalleryPreview(this)">' +
           '<input type="file" class="form-control form-control-sm mt-1 detail-gallery-file" name="detail_gallery_' + index + '_url_file" accept="image/*" onchange="window._previewDetailGalleryFile(this)">' +
-          '<div class="form-text">涓婁紶鍚庤嚜鍔ㄨ浆 WebP 骞惰鐩?URL</div>' +
+          '<div class="form-text">上传鍚庤嚜鍔ㄨ浆 WebP 骞惰鐩?URL</div>' +
         '</div>' +
         '<div class="detail-gallery-preview" style="' + (hasUrl ? '' : 'display:none;') + 'margin-top:6px">' +
-          '<img src="' + esc(url || '') + '" alt="棰勮" style="max-width:160px;max-height:110px;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;background:#f8f9fa">' +
+          '<img src="' + esc(url || '') + '" alt="预览" style="max-width:160px;max-height:110px;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;background:#f8f9fa">' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -612,7 +566,7 @@
     items.forEach(function(item, i) {
       item.dataset.imageIndex = i;
       var title = item.querySelector('.small.fw-semibold');
-      if (title) title.textContent = '鍥剧墖 ' + (i + 1);
+      if (title) title.textContent = '图片 ' + (i + 1);
       item.querySelectorAll('input[name]').forEach(function(el) {
         el.name = el.name.replace(/detail_gallery_\d+_/, 'detail_gallery_' + i + '_');
       });
@@ -631,16 +585,16 @@
     var item = statItemData(mdata, statIndex);
     return '<div class="border rounded p-2 mb-2 list-item" data-item-index="' + statIndex + '">' +
       '<div class="d-flex justify-content-between align-items-center mb-2 list-item-header" style="cursor:pointer; user-select:none;" onclick="this.closest(\'.list-item\').classList.toggle(\'collapsed\')">' +
-        '<span class="small fw-semibold">缁熻椤?' + (statIndex + 1) + '</span>' +
-        '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.list-item\').remove();window._reindexStatItems(' + moduleIndex + ')" title="鍒犻櫎"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>' +
+        '<span class="small fw-semibold">缁熻椤?' + (statIndex + 1) + '</span>' +
+        '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.list-item\').remove();window._reindexStatItems(' + moduleIndex + ')" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>' +
       '</div>' +
       '<div class="list-item-body">' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鍥炬爣</label>' + iconPickerHtml(p + 'icon', item.icon || '') + '</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">图标</label>' + iconPickerHtml(p + 'icon', item.icon || '') + '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">鏁板瓧</label><input type="number" class="form-control form-control-sm" name="' + p + 'number" value="' + esc(item.number || '') + '" placeholder="濡?500"></div>' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">鍚庣紑</label><input type="text" class="form-control form-control-sm" name="' + p + 'suffix" value="' + esc(item.suffix || '') + '" placeholder="濡?+"></div>' +
         '</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏍囩</label><input type="text" class="form-control form-control-sm" name="' + p + 'label" value="' + esc(item.label || '') + '" placeholder="濡?鏈嶅姟瀹㈡埛"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏍囩</label><input type="text" class="form-control form-control-sm" name="' + p + 'label" value="' + esc(item.label || '') + '" placeholder="濡?鏈嶅姟瀹㈡埛"></div>' +
       '</div>' +
     '</div>';
   };
@@ -664,7 +618,7 @@
     items.forEach(function(item, idx) {
       item.dataset.itemIndex = idx;
       var label = item.querySelector('.small.fw-semibold');
-      if (label) label.textContent = '缁熻椤?' + (idx + 1);
+      if (label) label.textContent = '缁熻椤?' + (idx + 1);
       item.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el) {
         el.name = el.name.replace(/module_\d+_stats_\d+_/, 'module_' + moduleIndex + '_stats_' + idx + '_');
       });
@@ -725,7 +679,7 @@
     if (/^(show_|hide_|enable_|enabled_|visible|is_)/i.test(key) || /(_show_|_visible|_enabled)$/i.test(key)) return true;
     if (/(align|layout|style|columns|items_per_page|max_items|count|number|ratio|category|date|price|name)$/i.test(key)) return true;
     if (/(color|bg|border|radius|width|height|size|gap|margin|padding|opacity|weight)$/i.test(key)) return true;
-    if (/(鏄剧ず|闅愯棌|棰滆壊|瀹藉害|楂樺害|瀛楀彿|鍦嗚|闂磋窛|瀵归綈|鎺掔増|鍒楁暟|鏁伴噺|鍒嗙被|鏃ユ湡|浠锋牸|鍚嶇О)/.test(label)) return true;
+    if (/(鏄剧ず|闅愯棌|颜色|宽度|高度|瀛楀彿|鍦嗚|闂磋窛|瀵归綈|鎺掔増|鍒楁暟|鏁伴噺|鍒嗙被|鏃ユ湡|浠锋牸|鍚嶇О)/.test(label)) return true;
     return false;
   }
 
@@ -749,7 +703,7 @@
     } else if (type === 'list' || type === 'grid') {
       html += schemaListEditor(prefix, field, value);
     } else if (type === 'video') {
-      html += mediaUploadHtml(prefix + key, value || '', 'video', placeholder || '瑙嗛 URL');
+      html += mediaUploadHtml(prefix + key, value || '', 'video', placeholder || '视频 URL');
     } else if (isImage) {
       html += mediaUploadHtml(prefix + key, value || '', 'image', placeholder || '');
     } else if (type === 'richtext') {
@@ -863,7 +817,7 @@
     var html = '<div class="schema-list-editor" data-list-base="' + attrEsc(base) + '" data-list-name="' + attrEsc(key) + '" data-children="' + attrEsc(JSON.stringify(children)) + '">';
     html += '<div class="d-flex justify-content-between align-items-center mb-2">' +
       '<div class="small fw-semibold text-primary">' + esc(labelText(field)) + '</div>' +
-      '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 娣诲姞鏉＄洰</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加鏉＄洰</button>' +
       '</div>';
     html += '<input type="hidden" class="schema-list-count" name="' + attrEsc(base + key + '_count') + '" value="' + items.length + '">';
     html += '<div class="schema-list-items">';
@@ -873,9 +827,9 @@
     html += '</div></div>';
     if (key === 'items' && window._moduleCtx && window._moduleCtx.currentModuleType === 'featured_picks') {
       html = html.replace(
-        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 娣诲姞鏉＄洰</button>',
-        '<button type="button" class="btn btn-sm btn-outline-info fp-import-btn" onclick="event.stopPropagation();window.openFeaturedImport(0, this)" style="font-size:11px;margin-right:4px" title="浠庡凡鏈夋暟鎹泦閫夊彇鏉＄洰锛岃嚜鍔ㄥ～鍏ユ爣棰樸€佸浘鐗囥€佹弿杩板拰閾炬帴">馃摜 浠庢暟鎹泦瀵煎叆</button>' +
-        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 娣诲姞鏉＄洰</button>'
+        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加鏉＄洰</button>',
+        '<button type="button" class="btn btn-sm btn-outline-info fp-import-btn" onclick="event.stopPropagation();window.openFeaturedImport(0, this)" style="font-size:11px;margin-right:4px" title="浠庡凡鏈夋暟鎹泦閫夊彇鏉＄洰锛岃嚜鍔ㄥ～鍏ユ爣棰樸€佸浘鐗囥€佹弿杩板拰链接">馃摜 浠庢暟鎹泦瀵煎叆</button>' +
+        '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加鏉＄洰</button>'
       );
     }
     return html;
@@ -919,8 +873,8 @@
     var html = '';
     if (schema && schema.from_source) {
       html += '<div class="alert alert-info py-2 px-3 mb-3" style="font-size:12px;line-height:1.5">' +
-        '<div class="fw-semibold mb-1">姝ゆā鍧楁暟鎹潵鑷綉绔欒缃?/div>' +
-        '<div>鏁版嵁婧愶細<code>' + esc(schema.from_source) + '</code>锛岃鍦ㄣ€岀綉绔欒缃€嶄腑淇敼銆?/div>' +
+        '<div class="fw-semibold mb-1">姝ゆā鍧楁暟鎹潵自动綉绔欒缃?/div>' +
+        '<div>鏁版嵁婧愶細<code>' + esc(schema.from_source) + '</code>锛岃鍦ㄣ€岀綉绔欒缃€嶄腑淇敼銆?/div>' +
         '</div>';
     }
     var pendingHalf = [];
@@ -1057,7 +1011,7 @@
           '<svg class="schema-list-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>' +
           '鏉＄洰 ' + (index + 1) +
         '</span>' +
-        '<button type="button" class="module-action-btn module-action-del schema-list-remove" title="鍒犻櫎" aria-label="鍒犻櫎鏉＄洰">鉁?/button>' +
+        '<button type="button" class="module-action-btn module-action-del schema-list-remove" title="删除" aria-label="删除鏉＄洰">鉁?/button>' +
       '</div>' +
       '<div class="schema-list-item-body">' + inner + '</div>' +
     '</div>';
@@ -1129,19 +1083,19 @@
     var select = document.getElementById('dsPickerDataset');
     var items = document.getElementById('dsPickerItems');
     if (!select || !items) {
-      window.alert('褰撳墠闈㈡澘缂哄皯鏁版嵁闆嗛€夋嫨鍣紝璇峰埛鏂板悗鍙板悗閲嶈瘯');
+      window.alert('当前闈㈡澘缂哄皯鏁版嵁闆嗛€夋嫨鍣紝璇峰埛鏂板悗鍙板悗閲嶈瘯');
       return;
     }
     window._featuredImportButton = btn;
     select.innerHTML = '<option value="">-- 璇烽€夋嫨鏁版嵁闆?--</option>';
-    // 鏋勫缓 target 鈫?瀹屾暣鑿滃崟璺緞鏄犲皠锛堝惈鐖剁骇 group target锛?
+    // 鏋勫缓 target 鈫?瀹屾暣鑿滃崟璺緞鏄犲皠锛堝惈鐖剁骇 group target锛?
     window._datasetPathMap = {};
     datasets.forEach(function(ds) {
       var target = ds.target || ds.value || ds.key || '';
       window._datasetPathMap[target] = ds.path || target;
       select.innerHTML += '<option value="' + esc(target) + '">' + esc(ds.label || ds.target || ds.value || ds.key || '') + '</option>';
     });
-    items.innerHTML = '<div class="col-12 text-muted small text-center py-4">璇峰厛鍦ㄤ笂鏂归€夋嫨涓€涓暟鎹泦</div>';
+    items.innerHTML = '<div class="col-12 text-muted small text-center py-4">璇峰厛鍦ㄤ笂鏂归€夋嫨涓€涓暟鎹泦</div>';
     var modalEl = document.getElementById('datasetPickerModal');
     if (window.bootstrap && modalEl) {
       window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
@@ -1152,12 +1106,12 @@
     var itemsEl = document.getElementById('dsPickerItems');
     if (!itemsEl) return;
     if (!datasetName) {
-      itemsEl.innerHTML = '<div class="col-12 text-muted small text-center py-4">璇峰厛鍦ㄤ笂鏂归€夋嫨涓€涓暟鎹泦</div>';
+      itemsEl.innerHTML = '<div class="col-12 text-muted small text-center py-4">璇峰厛鍦ㄤ笂鏂归€夋嫨涓€涓暟鎹泦</div>';
       window._featuredPickerCache = [];
       return;
     }
     var siteId = (window._moduleCtx && window._moduleCtx.siteId) || new URLSearchParams(window.location.search).get('site') || '';
-    itemsEl.innerHTML = '<div class="col-12 text-muted small text-center py-4">鍔犺浇涓?..</div>';
+    itemsEl.innerHTML = '<div class="col-12 text-muted small text-center py-4">加载涓?..</div>';
     fetch('/api/site/' + encodeURIComponent(siteId) + '/dataset/' + encodeURIComponent(datasetName) + '/items')
       .then(function(resp) {
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
@@ -1167,7 +1121,7 @@
         var items = data.items || [];
         window._featuredPickerCache = items;
         if (!items.length) {
-          itemsEl.innerHTML = '<div class="col-12 text-muted small text-center py-4">璇ユ暟鎹泦鏆傛棤鏉＄洰</div>';
+          itemsEl.innerHTML = '<div class="col-12 text-muted small text-center py-4">璇ユ暟鎹泦鏆傛棤鏉＄洰</div>';
           return;
         }
         itemsEl.innerHTML = items.map(function(item, i) {
@@ -1180,7 +1134,7 @@
         }).join('');
       })
       .catch(function(err) {
-        itemsEl.innerHTML = '<div class="col-12 text-danger small text-center py-4">鍔犺浇澶辫触: ' + esc(err.message || '鏈煡閿欒') + '</div>';
+        itemsEl.innerHTML = '<div class="col-12 text-danger small text-center py-4">加载失败: ' + esc(err.message || '鏈煡错误') + '</div>';
       });
   };
 
@@ -1198,7 +1152,7 @@
     var dsName = (document.getElementById('dsPickerDataset') || {}).value || '';
     var siteId = (window._moduleCtx && window._moduleCtx.siteId) || new URLSearchParams(window.location.search).get('site') || '';
     var lang = (window._moduleCtx && window._moduleCtx.currentLang) || new URLSearchParams(window.location.search).get('lang') || '';
-    // 鐢ㄥ畬鏁磋彍鍗曡矾寰勶紙鍚埗绾?group target锛夌敓鎴愰摼鎺?
+    // 鐢ㄥ畬鏁磋彍鍗曡矾寰勶紙鍚埗绾?group target锛夌敓鎴愰摼鎺?
     var dsPath = (window._datasetPathMap && window._datasetPathMap[dsName]) || dsName;
     var link = item.slug && dsName && siteId ? ('/preview/' + siteId + '/' + (lang ? lang + '/' : '') + dsPath + '/' + item.slug + '/') : '';
     var itemData = {};
@@ -1278,7 +1232,7 @@
     });
   }
 
-  // 鍥剧墖涓婁紶锛氶€夋嫨鏂囦欢鍚庢湰鍦伴瑙堬紙鍏ㄥ眬鍑芥暟锛屼緵鍔ㄦ€佺敓鎴愮殑 onchange 璋冪敤锛?
+  // 图片上传锛氶€夋嫨鏂囦欢鍚庢湰鍦伴瑙堬紙鍏ㄥ眬鍑芥暟锛屼緵鍔ㄦ€佺敓鎴愮殑 onchange 璋冪敤锛?
   function moduleMediaPlaceholderIcon(accept) {
     var isVideo = /video/i.test(accept || '');
     return isVideo
@@ -1309,7 +1263,7 @@
     renderModuleMediaPicker(picker, URL.createObjectURL(file), fileInput.name, fileInput.getAttribute('accept') || '');
   };
 
-  // 鍥剧墖棰勮锛氱偣鍑绘斁澶?
+  // 图片预览锛氱偣鍑绘斁澶?
   window.enlargeImage = function(img) {
     var src = img.src;
     if (!src) return;
@@ -1328,7 +1282,7 @@
     overlay.style.display = 'flex';
   };
 
-  // 鍥剧墖棰勮锛氬垹闄ゆ寜閽竻闄ゅ浘鐗?
+  // 图片预览锛氬垹闄ゆ寜閽竻闄ゅ浘鐗?
   window.clearModuleImage = function(btn) {
     var container = btn.closest('.hero-slide-body') || btn.closest('.mb-2');
     if (!container) return;
@@ -1340,7 +1294,7 @@
     renderModuleMediaPicker(picker, '', fileInput ? fileInput.name : '', fileInput ? fileInput.getAttribute('accept') : '');
   };
 
-  // 鍥剧墖棰勮锛歎RL 杈撳叆妗嗗彉鍖栨椂鏇存柊棰勮
+  // 图片预览锛歎RL 输入妗嗗彉鍖栨椂鏇存柊预览
   window.updateImagePreview = function(urlInput) {
     var container = urlInput.closest('.hero-slide-body') || urlInput.closest('.mb-2');
     var picker = container ? container.querySelector('.module-media-picker') : null;
@@ -1359,8 +1313,8 @@
       overlay.id = 'moduleMediaLibraryOverlay';
       overlay.className = 'module-media-library-overlay';
       overlay.innerHTML = '<div class="module-media-library-dialog">' +
-        '<div class="module-media-library-head"><strong>閫夋嫨濯掍綋</strong><button type="button" class="module-media-library-close" title="鍏抽棴">脳</button></div>' +
-        '<div class="module-media-library-grid"><div class="text-muted small p-3">鍔犺浇涓?..</div></div>' +
+        '<div class="module-media-library-head"><strong>选择濯掍綋</strong><button type="button" class="module-media-library-close" title="关闭">脳</button></div>' +
+        '<div class="module-media-library-grid"><div class="text-muted small p-3">加载涓?..</div></div>' +
         '</div>';
       document.body.appendChild(overlay);
       overlay.addEventListener('click', function(e) {
@@ -1372,7 +1326,7 @@
     overlay._targetInput = urlInput;
     overlay.classList.add('show');
     var grid = overlay.querySelector('.module-media-library-grid');
-    grid.innerHTML = '<div class="text-muted small p-3">鍔犺浇涓?..</div>';
+    grid.innerHTML = '<div class="text-muted small p-3">加载涓?..</div>';
     var site = (typeof currentSiteParam === 'function' && currentSiteParam()) || new URLSearchParams(window.location.search).get('site') || '';
     fetch('/media?_fragment=1' + (site ? '&site=' + encodeURIComponent(site) : ''))
       .then(function(r) { return r.text(); })
@@ -1389,7 +1343,7 @@
             (isImage ? '<img src="' + attrEsc(url) + '" alt="">' : '<span class="module-media-library-video">鈻?/span>') +
             '<span>' + schemaEsc(name) + '</span></button>';
         }).join('');
-        grid.innerHTML = items || '<div class="text-muted small p-3">濯掍綋搴撴殏鏃犲彲閫夊浘鐗囨垨瑙嗛</div>';
+        grid.innerHTML = items || '<div class="text-muted small p-3">濯掍綋搴撴殏鏃犲彲閫夊浘鐗囨垨视频</div>';
       })
       .catch(function() {
         grid.innerHTML = '<div class="text-danger small p-3">濯掍綋搴撳姞杞藉け璐?/div>';
@@ -1407,13 +1361,13 @@
     overlay.classList.remove('show');
   });
 
-  /* ====== 瀵瑰鏆撮湶 ====== */
+  /* ====== 瀵瑰鏆撮湶 ====== */
   window._cn = cn;
   window._un = un;
   window._esc = esc;
   window._renderField = renderField;
 
-  // 妯″潡鍥炬爣鏄犲皠 鈥?涓?_block_icons.html 涓?block_icon 瀹忎繚鎸佷竴鑷?
+  // 模块图标鏄犲皠 鈥?涓?_block_icons.html 涓?block_icon 瀹忎繚鎸佷竴自动?
   function getBlockIconHTML(type) {
     var icons = {
       'hero_banner': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>',
@@ -1444,9 +1398,9 @@
   }
 
   /* ====== 涓诲嚱鏁? buildModuleHTML ======
-   * type:   妯″潡绫诲瀷鍚?
-   * idx:    妯″潡搴忓彿 (0-based)
-   * mdata:  宸蹭繚瀛樼殑妯″潡鏁版嵁 (鏂版ā鍧椾紶 {})
+   * type:   模块绫诲瀷鍚?
+   * idx:    模块搴忓彿 (0-based)
+   * mdata:  宸蹭繚瀛樼殑模块鏁版嵁 (鏂版ā鍧椾紶 {})
    * 杩斿洖:   { html, borderStyle, headerBg }
    */
 
@@ -1460,7 +1414,7 @@
     var isDsMode = !!(window._moduleCtx && window._moduleCtx.isDatasetMode);
 
     // 鍔ㄦ€佸瓧娈?(鏍规嵁 meta.yaml fields 鐢熸垚)
-    // 杩囨护鎺夌敱 specialEditor 鑷娓叉煋鐨勫瓧娈碉紙鍒嗛〉閰嶇疆銆乧olumns 绛夛級锛岄伩鍏嶅湪閫氱敤琛ㄥ崟鍖洪噸澶嶅嚭鐜?
+    // 杩囨护鎺夌敱 specialEditor 自动娓叉煋鐨勫瓧娈碉紙分页配置銆乧olumns 绛夛級锛岄伩鍏嶅湪閫氱敤琛ㄥ崟鍖洪噸澶嶅嚭鐜?
     var pagerKeys = ['show_pagination', 'pagination_style', 'items_per_page', 'pager_align', 'show_view_all', 'pager'];
     var desktopFieldList = fields.filter(function(f) {
       return ['columns', 'max_items'].concat(pagerKeys).indexOf(f.key) === -1;
@@ -1497,7 +1451,7 @@
       }
     }
 
-    /* ====== item_data (璇︽儏鏁版嵁) 鐗规畩澶勭悊 ====== */
+    /* ====== item_data (详情鏁版嵁) 鐗规畩澶勭悊 ====== */
     if (isDataModule) {
       var item = (window._moduleCtx && window._moduleCtx.editItem) || mdata || {};
       var tagsVal = (item.tags && Array.isArray(item.tags)) ? item.tags.join(', ') : (item.tags || '');
@@ -1512,7 +1466,7 @@
               '<div class="small fw-semibold text-primary">缁嗚妭鍥惧簱</div>' +
               visibilityEye('detail_gallery_visible', detailGalleryVisible ? 'true' : 'false') +
             '</div>' +
-            '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addDetailGalleryImage()">+ 娣诲姞鍥剧墖</button>' +
+            '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addDetailGalleryImage()">+ 添加图片</button>' +
           '</div>' +
           '<input type="hidden" name="detail_gallery_count" class="detail-gallery-count" value="' + detailImages.length + '">' +
           '<div class="detail-gallery-list">' +
@@ -1522,82 +1476,82 @@
             }).join('') +
           '</div>' +
         '</div>';
-      /* 灏侀潰鍥撅細鍙?item 椤跺眰瀛楁锛屼笌鍒楄〃椤电缉鐣ュ浘涓€鑷达紙cover / image / photo 渚濇鍥為€€锛?*/
+      /* 灏侀潰鍥撅細鍙?item 椤跺眰瀛楁锛屼笌鍒楄〃椤电缉鐣ュ浘涓€自动达紙cover / image / photo 渚濇鍥為€€锛?*/
       var coverVal = item.cover || item.image || item.photo || '';
       styleEditor = schemaStyleForm('module_' + idx + '_data_', meta.schema || {}, item);
       specialEditor =
-        '<div class="small fw-semibold mb-1 text-muted">鍩虹瀛楁</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm font-monospace" name="slug" value="' + esc(item.slug || '') + '" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="濡?my-post"><div class="form-text">鑻辨枃+鏁板瓧+杩炲瓧绗︼紝鍞竴鏍囪瘑</div></div>' +
-        /* 鈹€鈹€ 灏侀潰鍥撅細浣嶄簬鏃ユ湡涓婃柟锛屽彧鏄剧ず鍦ㄦ暟鎹泦鍒楄〃缂╃暐鍥撅紝涓嶅湪璇︽儏椤靛睍绀?鈹€鈹€ */
+        '<div class="small fw-semibold mb-1 text-muted">鍩虹瀛楁</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm font-monospace" name="slug" value="' + esc(item.slug || '') + '" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="濡?my-post"><div class="form-text">鑻辨枃+鏁板瓧+杩炲瓧绗︼紝鍞竴鏍囪瘑</div></div>' +
+        /* 鈹€鈹€ 灏侀潰鍥撅細浣嶄簬鏃ユ湡涓婃柟锛屽彧鏄剧ず鍦ㄦ暟鎹泦鍒楄〃缂╃暐鍥撅紝涓嶅湪详情椤靛睍绀?鈹€鈹€ */
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">灏侀潰鍥?/label>' +
-        '<input type="text" class="form-control form-control-sm" name="cover" value="' + esc(coverVal) + '" placeholder="鍥剧墖 URL 鎴栦笂浼?>' +
+        '<input type="text" class="form-control form-control-sm" name="cover" value="' + esc(coverVal) + '" placeholder="图片 URL 鎴栦笂浼?>' +
         '<input type="file" class="form-control form-control-sm mt-1" name="cover" accept="image/*">' +
-        (coverVal ? '<img src="' + esc(coverVal) + '" alt="棰勮" style="margin-top:6px;max-width:200px;max-height:120px;border-radius:6px;">' : '') +
-        '<div class="form-text">浠呮樉绀哄湪鏁版嵁闆嗗垪琛ㄤ腑浣滀负灏侀潰缂╃暐鍥撅紝涓嶅湪璇︽儏椤靛睍绀?/div></div>' +
+        (coverVal ? '<img src="' + esc(coverVal) + '" alt="预览" style="margin-top:6px;max-width:200px;max-height:120px;border-radius:6px;">' : '') +
+        '<div class="form-text">浠呮樉绀哄湪鏁版嵁闆嗗垪琛ㄤ腑浣滀负灏侀潰缂╃暐鍥撅紝涓嶅湪详情椤靛睍绀?/div></div>' +
         detailGalleryHtml +
         '<hr class="my-2">' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏃ユ湡</label><input type="date" class="form-control form-control-sm" name="date" value="' + esc(item.date || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">鍚嶇О</label><input type="text" class="form-control form-control-sm" name="name" value="' + esc(item.name || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">鍒嗙被</label><input type="text" class="form-control form-control-sm" name="category" value="' + esc(item.category || '') + '"></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏍囬</label><input type="text" class="form-control form-control-sm" name="title" value="' + esc(item.title || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="title" value="' + esc(item.title || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">绠€杩?/label>' + richEditorHtml('description', item.description || item.excerpt || item.summary || '') + '</div>' +
-        '<div class="mb-2"><div class="d-flex align-items-center gap-2 mb-1"><label class="form-label small mb-0 text-muted">鏍囩</label>' + visibilityEye('tags_visible', tagsVisible ? 'true' : 'false') + '</div><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="澶氫釜鐢ㄩ€楀彿鎴栫┖鏍煎垎闅?><div class="form-text">濡傦細LED, 灞曠ず閬撳叿, 杩戞湡椤圭洰</div></div>' +
+        '<div class="mb-2"><div class="d-flex align-items-center gap-2 mb-1"><label class="form-label small mb-0 text-muted">鏍囩</label>' + visibilityEye('tags_visible', tagsVisible ? 'true' : 'false') + '</div><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="澶氫釜鐢ㄩ€楀彿鎴栫┖鏍煎垎闅?><div class="form-text">濡傦細LED, 灞曠ず閬撳叿, 杩戞湡椤圭洰</div></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">浠锋牸</label><input type="text" class="form-control form-control-sm" name="price" value="' + esc(item.price || '') + '" placeholder="濡?楼199 / $3/million"></div>' +
         '<hr class="my-2">' +
-        /* 鈹€鈹€ 瀵屾枃鏈紪杈戝櫒锛堣缁嗕粙缁嶏級 鈹€鈹€ */
-        '<div class="mb-2 rte-wrapper"><label class="form-label small mb-1 text-muted">璇︾粏浠嬬粛</label>' +
+        /* 鈹€鈹€ 瀵屾枃鏈紪杈戝櫒锛堣缁嗕粙缁嶏級 鈹€鈹€ */
+        '<div class="mb-2 rte-wrapper"><label class="form-label small mb-1 text-muted">详细介绍</label>' +
         '<div class="rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">' +
-          /* 鏍煎紡鎸夐挳 */
+          /* 鏍煎紡按钮 */
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="bold" title="鍔犵矖"><b>B</b></button>' +
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="italic" title="鏂滀綋"><i>I</i></button>' +
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="underline" title="涓嬪垝绾?><u>U</u></button>' +
-          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="strikeThrough" title="鍒犻櫎绾?><s>S</s></button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="strikeThrough" title="删除绾?><s>S</s></button>' +
           '<span class="rte-sep"></span>' +
-          /* 鏍囬涓嬫媺 */
+          /* 标题涓嬫媺 */
           '<select class="form-select form-select-sm rte-heading-select" style="width:auto;font-size:12px">' +
-            '<option value="">姝ｆ枃</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option>' +
+            '<option value="">正文</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option>' +
           '</select>' +
           '<span class="rte-sep"></span>' +
           /* 瀵归綈 */
-          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyLeft" title="宸﹀榻?>鈽?/button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyLeft" title="宸﹀榻?>鈽?/button>' +
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyCenter" title="灞呬腑">鈮?/button>' +
-          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyRight" title="鍙冲榻?>鈽?/button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="justifyRight" title="鍙冲榻?>鈽?/button>' +
           '<span class="rte-sep"></span>' +
           /* 鍒楄〃 */
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertUnorderedList" title="鏃犲簭鍒楄〃">鈥⑩墶</button>' +
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertOrderedList" title="鏈夊簭鍒楄〃">1鈮?/button>' +
-          '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-btn" title="鎻掑叆琛ㄦ牸">鈻?/button>' +
+          '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-btn" title="鎻掑叆表格">鈻?/button>' +
           '<span class="rte-sep"></span>' +
           /* 鍧楃骇 */
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="formatBlock" data-arg="blockquote" title="寮曠敤鍧?>鉂?/button>' +
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="insertHorizontalRule" title="鍒嗗壊绾?>鈥?/button>' +
           '<span class="rte-sep"></span>' +
-          /* 鏂囧瓧棰滆壊 */
-          '<input type="color" class="rte-color-picker" title="鏂囧瓧棰滆壊" value="#141413" style="width:28px;height:28px;border:1px solid #dee2e6;border-radius:4px;padding:2px;cursor:pointer">' +
+          /* 鏂囧瓧颜色 */
+          '<input type="color" class="rte-color-picker" title="鏂囧瓧颜色" value="#141413" style="width:28px;height:28px;border:1px solid #dee2e6;border-radius:4px;padding:2px;cursor:pointer">' +
           '<span class="rte-sep"></span>' +
-          /* 娓呴櫎鏍煎紡 */
-          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="removeFormat" title="娓呴櫎鏍煎紡">鉁?/button>' +
+          /* 清除鏍煎紡 */
+          '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="removeFormat" title="清除鏍煎紡">鉁?/button>' +
           /* 鎾ら攢/閲嶅仛 */
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="undo" title="鎾ら攢">鈫?/button>' +
           '<button type="button" class="btn btn-sm btn-light rte-btn" data-cmd="redo" title="閲嶅仛">鈫?/button>' +
         '</div>' +
-        /* URL 寮瑰嚭妗嗭紙閾炬帴 / 鍥剧墖鍏辩敤锛屽墽涓伄缃╋級 */
+        /* URL 寮瑰嚭妗嗭紙链接 / 图片鍏辩敤锛屽墽涓伄缃╋級 */
         '<div class="rte-url-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.35);align-items:center;justify-content:center">' +
           '<div class="rte-url-dialog" style="background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);padding:20px;width:420px;max-width:90vw">' +
             '<div class="rte-url-dialog-title small fw-semibold mb-3" style="font-size:13px;color:#343a40"></div>' +
             '<input type="text" class="form-control form-control-sm rte-url-dialog-input" placeholder="https://">' +
             '<div class="d-flex gap-2 mt-3 justify-content-end">' +
-              '<button type="button" class="btn btn-sm btn-outline-secondary rte-url-dialog-cancel">鍙栨秷</button>' +
-              '<button type="button" class="btn btn-sm btn-primary rte-url-dialog-confirm">纭畾</button>' +
+              '<button type="button" class="btn btn-sm btn-outline-secondary rte-url-dialog-cancel">取消</button>' +
+              '<button type="button" class="btn btn-sm btn-primary rte-url-dialog-confirm">确认畾</button>' +
             '</div>' +
           '</div>' +
         '</div>' +
         '<div contenteditable="true" class="form-control form-control-sm rte-editor" ' +
           'style="min-height:180px;max-height:450px;overflow-y:auto;line-height:1.7;font-size:13px;outline:none" ' +
-          'data-placeholder="鍦ㄦ杈撳叆璇︾粏浠嬬粛鈥?>' + (item.body || item.content || '') + '</div>' +
+          'data-placeholder="鍦ㄦ输入详细介绍鈥?>' + (item.body || item.content || '') + '</div>' +
         '<textarea name="body" hidden>' + esc(item.body || item.content || '') + '</textarea>' +
         '<input type="hidden" name="rte_clicked_editor_idx" value="">' +
-        '<div class="form-text">鏀寔鍔犵矖銆佹枩浣撱€佹爣棰樸€佸垪琛ㄣ€佸紩鐢ㄣ€佸垎鍓茬嚎銆侀摼鎺ャ€佸浘鐗囥€佹枃瀛楅鑹?/div></div>' +
+        '<div class="form-text">鏀寔鍔犵矖銆佹枩浣撱€佹爣棰樸€佸垪琛ㄣ€佸紩鐢ㄣ€佸垎鍓茬嚎銆侀摼鎺ャ€佸浘鐗囥€佹枃瀛楅鑹?/div></div>' +
         '<hr class="my-2">';
       // 鍔ㄦ€佸墿浣欏瓧娈?
       var skipKeys = ['id','slug','date','title','description','excerpt','summary','cover','image','photo','logo','tags','tags_visible','detail_gallery','detail_images','body','content','modules','csrf_token','name','category','price','specs','section_bg','inner_width','style_bg-color'];
@@ -1620,14 +1574,14 @@
     if (!schemaManaged && type === 'hero_banner') {
       specialEditor =
         '<hr class="my-2">' +
-        '<div class="hero-slides-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">杞挱濯掍綋椤?/div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addHeroSlide(' + idx + ')">+ 娣诲姞濯掍綋椤?/button></div><input type="hidden" name="module_' + idx + '_slide_count" class="hero-slide-count" value="' + (d.slide_count || '1') + '"><div class="hero-slide-list">' + (window._heroSlideHtml ? window._heroSlideHtml(idx, 0, d) : '') + '</div></div>';
+        '<div class="hero-slides-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">杞挱濯掍綋椤?/div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addHeroSlide(' + idx + ')">+ 添加濯掍綋椤?/button></div><input type="hidden" name="module_' + idx + '_slide_count" class="hero-slide-count" value="' + (d.slide_count || '1') + '"><div class="hero-slide-list">' + (window._heroSlideHtml ? window._heroSlideHtml(idx, 0, d) : '') + '</div></div>';
       styleEditor =
-        '<div class="small fw-semibold mb-1 text-muted">澶栧眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">澶栧眰样式</div>' +
         '<div class="row g-2 mb-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_hero_width', '妯箙澶栧眰瀹藉害', ['px','%','vw','rem'], d.hero_width) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_hero_height', '妯箙楂樺害', ['px','vh','rem','%'], d.hero_height) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_hero_width', '妯箙澶栧眰宽度', ['px','%','vw','rem'], d.hero_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_hero_height', '妯箙高度', ['px','vh','rem','%'], d.hero_height) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_content_width', 'Size', ['px','%','vw','rem'], d.content_width) + '</div>' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_banner_align', '妯箙鏂囧瓧鎺掔増', [{value:'',label:'榛樿锛堝叏瀹斤級'},{value:'center',label:'灞呬腑'},{value:'left',label:'灞呭乏'},{value:'right',label:'灞呭彸'}], d.banner_align) + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_banner_align', '妯箙鏂囧瓧鎺掔増', [{value:'',label:'默认锛堝叏瀹斤級'},{value:'center',label:'灞呬腑'},{value:'left',label:'灞呭乏'},{value:'right',label:'灞呭彸'}], d.banner_align) + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
@@ -1641,23 +1595,23 @@
           '</select>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">閬僵灞?/div>' +
+        '<div class="small fw-semibold mb-1 text-muted">閬僵灞?/div>' +
         '<div class="row g-2 mb-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍚敤閬僵</label><select class="form-select form-select-sm" name="module_' + idx + '_data_overlay_enabled"><option value="true"' + (d.overlay_enabled !== 'false' ? ' selected' : '') + '>鍚敤</option><option value="false"' + (d.overlay_enabled === 'false' ? ' selected' : '') + '>涓嶅惎鐢?/option></select></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍚敤閬僵</label><select class="form-select form-select-sm" name="module_' + idx + '_data_overlay_enabled"><option value="true"' + (d.overlay_enabled !== 'false' ? ' selected' : '') + '>鍚敤</option><option value="false"' + (d.overlay_enabled === 'false' ? ' selected' : '') + '>涓嶅惎鐢?/option></select></div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">閰嶈壊</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_title_font_size', '鏍囬瀛椾綋澶у皬', ['px','rem'], d.title_font_size) + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '鏍囬棰滆壊', d.title_color || '#ffffff') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_title_font_size', '标题瀛椾綋大小', ['px','rem'], d.title_font_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color || '#ffffff') + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_subtitle_font_size', 'Size', ['px','rem'], d.subtitle_font_size) + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_subtitle_color', 'Color', d.subtitle_color || '#cccccc') + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_btn_font_size', '鎸夐挳瀛椾綋澶у皬', ['px','rem'], d.btn_font_size) + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_btn_text_color', '鎸夐挳鏂囧瓧棰滆壊', d.btn_text_color || '#ffffff') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_btn_font_size', '按钮瀛椾綋大小', ['px','rem'], d.btn_font_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_btn_text_color', '按钮鏂囧瓧颜色', d.btn_text_color || '#ffffff') + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_btn_bg', 'Color', d.btn_bg || '#067a7a') + '</div>' +
@@ -1666,24 +1620,24 @@
     /* ====== section_title ====== */
     } else if (type === 'section_title') {
       specialEditor =
-        '<div class="small fw-semibold mb-1 text-muted">鍐呭</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏍囩鏂囧瓧</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag" value="' + esc(d.tag || '') + '" placeholder="妯″潡涓婃柟灏忔爣绛?></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏍囬</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鎻忚堪鏂囧瓧</label>' + richEditorHtml('module_' + idx + '_data_desc', d.desc || '') + '</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏍囩鏂囧瓧</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag" value="' + esc(d.tag || '') + '" placeholder="模块涓婃柟灏忔爣绛?></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述鏂囧瓧</label>' + richEditorHtml('module_' + idx + '_data_desc', d.desc || '') + '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鎸夐挳</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">按钮</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鎸夐挳鏂囧瓧</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_text" value="' + esc(d.btn_text || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鎸夐挳閾炬帴</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_url" value="' + esc(d.btn_url || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鎵撳紑鏂瑰紡</label><select class="form-select form-select-sm" name="module_' + idx + '_data_btn_target"><option value=""' + (d.btn_target !== '_blank' ? ' selected' : '') + '>褰撳墠绐楀彛</option><option value="_blank"' + (d.btn_target === '_blank' ? ' selected' : '') + '>鏂扮獥鍙?/option></select></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">按钮鏂囧瓧</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_text" value="' + esc(d.btn_text || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">按钮链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_url" value="' + esc(d.btn_url || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">鎵撳紑鏂瑰紡</label><select class="form-select form-select-sm" name="module_' + idx + '_data_btn_target"><option value=""' + (d.btn_target !== '_blank' ? ' selected' : '') + '>当前绐楀彛</option><option value="_blank"' + (d.btn_target === '_blank' ? ' selected' : '') + '>鏂扮獥鍙?/option></select></div>' +
         '</div>';
       styleEditor =
-        '<div class="small fw-semibold mb-1 text-muted">澶栧眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">澶栧眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰瀹藉害', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">澶栬竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="鈫?涓?>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="鈫?鍙?>' +
@@ -1699,9 +1653,9 @@
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="鈫?宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
-        '<div class="small fw-semibold mb-1 text-muted mt-2">鍐呭眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">内容眰样式</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '鍐呭眰瀹藉害', ['px','%','rem'], d.inner_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
@@ -1717,17 +1671,17 @@
           '<div class="col-6">' + sel('module_' + idx + '_data_text_align', '瀵归綈鏂瑰紡', [{value:'center',label:'灞呬腑'},{value:'left',label:'灞呭乏'},{value:'right',label:'灞呭彸'}], d.text_align || 'center') + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">瀛椾綋鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">瀛椾綋样式</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '鏍囬棰滆壊', d.title_color || '#1e293b') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_title_size', '鏍囬瀛楀彿', ['px','rem'], d.title_size) + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_desc_color', '鎻忚堪棰滆壊', d.desc_color || '#64748b') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_desc_size', '鎻忚堪瀛楀彿', ['px','rem'], d.desc_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color || '#1e293b') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_title_size', '标题瀛楀彿', ['px','rem'], d.title_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_desc_color', '描述颜色', d.desc_color || '#64748b') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_desc_size', '描述瀛楀彿', ['px','rem'], d.desc_size) + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_tag_bg', 'Color', d.tag_bg || '#067a7a') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_tag_color', 'Color', d.tag_color || '#ffffff') + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鎸夐挳棰滆壊</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">按钮颜色</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_btn_bg', 'Color', d.btn_bg || '#067a7a') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_btn_color', 'Color', d.btn_color || '#ffffff') + '</div>' +
@@ -1745,50 +1699,50 @@
           '<select class="form-select form-select-sm" data-no-segmented="1" name="module_' + idx + '_data_dataset">' +
           (dsOptionsHtml || '<option value="">鏆傛棤鏁版嵁婧?/option>') +
           '</select></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鍗＄墖甯冨眬</label>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鍗＄墖布局</label>' +
           '<select class="form-select form-select-sm" name="module_' + idx + '_data_card_layout"><option value="image_top"' + (d.card_layout !== 'image_left' ? ' selected' : '') + '>涓婂浘涓嬫枃</option><option value="image_left"' + (d.card_layout === 'image_left' ? ' selected' : '') + '>宸﹀浘鍙虫枃</option></select></div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鍒嗛〉</div>' +
-        // Row 1: 鏄剧ず鍒嗛〉 鈥?toggle 寮€鍏?
+        '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
+        // Row 1: 鏄剧ず分页 鈥?toggle 寮€鍏?
         '<div class="form-check form-switch mb-3">' +
           '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_pagination"' +
           (d.show_pagination !== 'false' ? ' checked' : '') +
           ' onchange="this.nextElementSibling.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
-          '<label class="form-check-label small" for="module_' + idx + '_show_pagination">鏄剧ず鍒嗛〉</label>' +
+          '<label class="form-check-label small" for="module_' + idx + '_show_pagination">鏄剧ず分页</label>' +
           '<input type="hidden" name="module_' + idx + '_data_show_pagination" value="' + (d.show_pagination !== 'false' ? 'true' : 'false') + '">' +
         '</div>' +
-        // Row 2: 鍒嗛〉鏍峰紡 鈥?涓嬫媺閫夋嫨
+        // Row 2: 分页样式 鈥?涓嬫媺选择
         '<div class="mb-2">' +
-          '<label class="form-label small mb-1 text-muted">鍒嗛〉鏍峰紡</label>' +
+          '<label class="form-label small mb-1 text-muted">分页样式</label>' +
           '<select class="form-select form-select-sm" name="module_' + idx + '_data_pagination_style">' +
-            '<option value="load_more"' + (d.pagination_style !== 'page_numbers' ? ' selected' : '') + '>鍔犺浇鏇村</option>' +
+            '<option value="load_more"' + (d.pagination_style !== 'page_numbers' ? ' selected' : '') + '>加载更多</option>' +
             '<option value="page_numbers"' + (d.pagination_style === 'page_numbers' ? ' selected' : '') + '>椤电爜瀵艰埅</option>' +
           '</select></div>' +
-        // Row 3: 姣忛〉鏄剧ず鏁伴噺 鈥?涓嬫媺閫夋嫨
+        // Row 3: 姣忛〉鏄剧ず鏁伴噺 鈥?涓嬫媺选择
         '<div class="mb-2">' +
           '<label class="form-label small mb-1 text-muted">姣忛〉鏄剧ず鏁伴噺</label>' +
           '<select class="form-select form-select-sm" name="module_' + idx + '_data_items_per_page">' +
             ['3','4','6','8','10','12','18','24'].map(function(n) { return '<option value="' + n + '"' + ((d.items_per_page || '6') === n ? ' selected' : '') + '>' + n + ' 鏉?椤?/option>'; }).join('') +
           '</select></div>' +
-        // Row 4: 鍒嗛〉瀵归綈 鈥?涓嬫媺閫夋嫨
+        // Row 4: 分页瀵归綈 鈥?涓嬫媺选择
         '<div class="mb-2">' +
-          '<label class="form-label small mb-1 text-muted">鍒嗛〉瀵归綈</label>' +
+          '<label class="form-label small mb-1 text-muted">分页瀵归綈</label>' +
           '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align">' +
             '<option value="center"' + (d.pager_align === 'center' || !d.pager_align ? ' selected' : '') + '>灞呬腑</option>' +
             '<option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>灞呭乏</option>' +
             '<option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>灞呭彸</option>' +
           '</select></div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鍐呭</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鍖哄潡鏍囬</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>';
+        '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鍖哄潡标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>';
       styleEditor =
-        '<div class="small fw-semibold mb-1 text-muted">澶栧眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">澶栧眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰瀹藉害', ['px','%','rem'], d.outer_width) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '鍐呭眰瀹藉害', ['px','%','rem'], d.inner_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">澶栬竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="鈫?涓?>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="鈫?鍙?>' +
@@ -1801,16 +1755,16 @@
     } else if (type === 'feature_grid') {
       var featCount = d.feature_count || '1';
       specialEditor =
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鍖哄潡鏍囬</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title) + '" placeholder="濡?浜у搧鐗圭偣"></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle) + '" placeholder="濡?涓轰粈涔堥€夋嫨鎴戜滑"></div>' +
-        '<div class="feature-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">鍔熻兘鍗＄墖</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addFeatureItem(' + idx + ')">+ 娣诲姞鍔熻兘鍗＄墖</button></div><input type="hidden" name="module_' + idx + '_feature_count" class="feature-item-count" value="' + featCount + '"><div class="feature-item-list">' + (window._featureItemHtml ? window._featureItemHtml(idx, 0, d) : '') + '</div></div>';
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鍖哄潡标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title) + '" placeholder="濡?浜у搧鐗圭偣"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle) + '" placeholder="濡?涓轰粈涔堥€夋嫨鎴戜滑"></div>' +
+        '<div class="feature-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">鍔熻兘鍗＄墖</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addFeatureItem(' + idx + ')">+ 添加鍔熻兘鍗＄墖</button></div><input type="hidden" name="module_' + idx + '_feature_count" class="feature-item-count" value="' + featCount + '"><div class="feature-item-list">' + (window._featureItemHtml ? window._featureItemHtml(idx, 0, d) : '') + '</div></div>';
       styleEditor =
-        '<div class="small fw-semibold mb-1 text-muted mt-2">澶栧眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">澶栧眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰瀹藉害', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">澶栬竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="鈫?涓?>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="鈫?鍙?>' +
@@ -1826,16 +1780,16 @@
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_padding_left" value="' + esc(d.padding_left) + '" placeholder="鈫?宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
-        '<div class="small fw-semibold mb-1 text-muted mt-2">鍐呭眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">内容眰样式</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '鍐呭眰瀹藉害', ['px','%','rem'], d.inner_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
-        '<div class="small fw-semibold mb-1 text-muted mt-2">鏍囬鍖烘牱寮?/div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">标题鍖烘牱寮?/div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_header_bg', '鏍囬鍖鸿儗鏅壊', d.header_bg) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_header_bg', '标题鍖鸿儗鏅壊', d.header_bg) + '</div>' +
           '<div class="col-6">' + sel('module_' + idx + '_data_header_align', 'Option', [{value:'',label:'Default'},{value:'left',label:'Left'},{value:'center',label:'Center'},{value:'right',label:'Right'}], d.header_align || 'center') + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鏍囬鍖哄杈硅窛</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">标题鍖哄杈硅窛</div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_top" value="' + esc(d.header_margin_top) + '" placeholder="鈫?涓?>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_right" value="' + esc(d.header_margin_right) + '" placeholder="鈫?鍙?>' +
@@ -1843,7 +1797,7 @@
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_margin_left" value="' + esc(d.header_margin_left) + '" placeholder="鈫?宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鏍囬鍖哄唴杈硅窛</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">标题鍖哄唴杈硅窛</div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_top" value="' + esc(d.header_padding_top) + '" placeholder="鈫?涓?>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_header_padding_right" value="' + esc(d.header_padding_right) + '" placeholder="鈫?鍙?>' +
@@ -1853,23 +1807,23 @@
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">涓绘爣棰?/div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_title_size', '鏍囬瀛楀彿', ['px','rem'], d.title_size || '2.25rem') + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '鏍囬棰滆壊', d.title_color || '#1e293b') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_title_margin_bottom', '鏍囬涓嬪杈硅窛', ['px','rem'], d.title_margin_bottom || '0.5rem') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_title_size', '标题瀛楀彿', ['px','rem'], d.title_size || '2.25rem') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color || '#1e293b') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_title_margin_bottom', '标题涓嬪杈硅窛', ['px','rem'], d.title_margin_bottom || '0.5rem') + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍓爣棰?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍓爣棰?/div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_subtitle_size', 'Size', ['px','rem'], d.subtitle_size || '1.125rem') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_subtitle_color', 'Color', d.subtitle_color || '#64748b') + '</div>' +
         '</div>' +
-        '<div class="small fw-semibold mb-1 text-muted mt-2">缃戞牸鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">缃戞牸样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_grid_gap', '鍗＄墖闂磋窛', ['px','rem'], d.grid_gap || '2rem') + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_grid_row_gap', 'Size', ['px','rem'], d.grid_row_gap) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_grid_column_gap', 'Size', ['px','rem'], d.grid_column_gap) + '</div>' +
         '</div>' +
-        '<div class="small fw-semibold mb-1 text-muted mt-2">鍗＄墖鏍峰紡</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏄剧ず杈规</label><select class="form-select form-select-sm" name="module_' + idx + '_data_card_show_border"><option value=""' + (d.card_show_border !== '0' ? ' selected' : '') + '>榛樿锛堟樉绀猴級</option><option value="0"' + (d.card_show_border === '0' ? ' selected' : '') + '>闅愯棌杈规</option></select></div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">鍗＄墖样式</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏄剧ず杈规</label><select class="form-select form-select-sm" name="module_' + idx + '_data_card_show_border"><option value=""' + (d.card_show_border !== '0' ? ' selected' : '') + '>默认锛堟樉绀猴級</option><option value="0"' + (d.card_show_border === '0' ? ' selected' : '') + '>闅愯棌杈规</option></select></div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍗＄墖鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_top" value="' + esc(d.card_padding_top || '2rem') + '" placeholder="鈫?涓?>' +
@@ -1878,7 +1832,7 @@
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_padding_left" value="' + esc(d.card_padding_left || '1.5rem') + '" placeholder="鈫?宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍗＄墖鍦嗚</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍗＄墖鍦嗚</div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_top_left" value="' + esc(d.card_radius_top_left || '12px') + '" placeholder="鈫?宸︿笂">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_top_right" value="' + esc(d.card_radius_top_right || '12px') + '" placeholder="鈫?鍙充笂">' +
@@ -1886,61 +1840,61 @@
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_card_radius_bottom_left" value="' + esc(d.card_radius_bottom_left || '12px') + '" placeholder="鈫?宸︿笅">' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option><option value=\"%\">%</option></select>' +
         '</div>' +
-        '<div class="small fw-semibold mb-1 text-muted mt-2">鍥炬爣鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">图标样式</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_icon_size', '鍥炬爣澶у皬', ['px','rem'], d.icon_size || '56px') + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_icon_color', '鍥炬爣棰滆壊', d.icon_color || '#067a7a') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_size', '图标大小', ['px','rem'], d.icon_size || '56px') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_icon_color', '图标颜色', d.icon_color || '#067a7a') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_icon_bg', 'Color', d.icon_bg) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_icon_width', 'Size', ['px','rem'], d.icon_width || '56px') + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_icon_height', 'Size', ['px','rem'], d.icon_height || '56px') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_icon_radius', '鍥炬爣鍦嗚', ['px','%'], d.icon_radius || '8px') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_icon_margin_right', '鍥炬爣鍙冲杈硅窛', ['px','rem'], d.icon_margin_right) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_icon_margin_bottom', '鍥炬爣涓嬪杈硅窛', ['px','rem'], d.icon_margin_bottom || '0.25rem') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_radius', '图标鍦嗚', ['px','%'], d.icon_radius || '8px') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_margin_right', '图标鍙冲杈硅窛', ['px','rem'], d.icon_margin_right) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_icon_margin_bottom', '图标涓嬪杈硅窛', ['px','rem'], d.icon_margin_bottom || '0.25rem') + '</div>' +
         '</div>' +
-        '<div class="small fw-semibold mb-1 text-muted mt-2">鍗＄墖鏂囧瓧鏍峰紡</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍗＄墖鏍囬</div>' +
+        '<div class="small fw-semibold mb-1 text-muted mt-2">鍗＄墖鏂囧瓧样式</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍗＄墖标题</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_card_title_size', '鏍囬瀛楀彿', ['px','rem'], d.card_title_size || '1rem') + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_card_title_color', '鏍囬棰滆壊', d.card_title_color || '#1e293b') + '</div>' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_card_title_weight', '鏍囬瀛楅噸', [{value:'',label:'榛樿'},{value:'400',label:'400'},{value:'500',label:'500'},{value:'600',label:'600'},{value:'700',label:'700'}], d.card_title_weight || '600') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_card_title_margin_bottom', '鏍囬涓嬪杈硅窛', ['px','rem'], d.card_title_margin_bottom || '0.5rem') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_title_size', '标题瀛楀彿', ['px','rem'], d.card_title_size || '1rem') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_card_title_color', '标题颜色', d.card_title_color || '#1e293b') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_card_title_weight', '标题瀛楅噸', [{value:'',label:'默认'},{value:'400',label:'400'},{value:'500',label:'500'},{value:'600',label:'600'},{value:'700',label:'700'}], d.card_title_weight || '600') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_title_margin_bottom', '标题涓嬪杈硅窛', ['px','rem'], d.card_title_margin_bottom || '0.5rem') + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍗＄墖鎻忚堪</div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍗＄墖描述</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_card_desc_size', '鎻忚堪瀛楀彿', ['px','rem'], d.card_desc_size || '0.875rem') + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_card_desc_color', '鎻忚堪棰滆壊', d.card_desc_color || '#64748b') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_card_desc_line_height', '鎻忚堪琛岄珮', ['rem',''], d.card_desc_line_height || '1.6') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_desc_size', '描述瀛楀彿', ['px','rem'], d.card_desc_size || '0.875rem') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_card_desc_color', '描述颜色', d.card_desc_color || '#64748b') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_card_desc_line_height', '描述琛岄珮', ['rem',''], d.card_desc_line_height || '1.6') + '</div>' +
         '</div>';
 
     /* ====== highlight_card ====== */
     } else if (type === 'highlight_card') {
       specialEditor =
         '<hr class="my-2">' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏍囩鏂囧瓧</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag" value="' + esc(d.tag || '') + '"></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏍囬</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鎻忚堪</label>' + richEditorHtml('module_' + idx + '_data_desc', d.desc || '') + '</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鍥剧墖</label>' + mediaUploadHtml('module_' + idx + '_data_image', d.image || '', 'image', '鍥剧墖 URL') + '</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏍囩鏂囧瓧</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag" value="' + esc(d.tag || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label>' + richEditorHtml('module_' + idx + '_data_desc', d.desc || '') + '</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label>' + mediaUploadHtml('module_' + idx + '_data_image', d.image || '', 'image', '图片 URL') + '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">涓绘寜閽枃瀛?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryBtn" value="' + esc(d.primaryBtn || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">涓绘寜閽摼鎺?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryLink" value="' + esc(d.primaryLink || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">涓绘寜閽枃瀛?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryBtn" value="' + esc(d.primaryBtn || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">涓绘寜閽摼鎺?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryLink" value="' + esc(d.primaryLink || '') + '"></div>' +
         '</div>';
       styleEditor =
-        '<div class="small fw-semibold mb-1 text-muted">澶栧眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">澶栧眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰瀹藉害', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">澶栬竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="鈫?涓?>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="鈫?涓?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鍐呭眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">内容眰样式</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '鍐呭眰瀹藉害', ['px','%','rem'], d.inner_width) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_border_radius', '鍦嗚', ['px','rem','%'], d.border_radius) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_border_radius', '鍦嗚', ['px','rem','%'], d.border_radius) + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
@@ -1951,14 +1905,14 @@
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鍥炬枃甯冨眬</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">鍥炬枃布局</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + sel('module_' + idx + '_data_image_position', '鍥炬枃宸﹀彸浣嶇疆', [{value:'left',label:'鍥惧乏鏂囧彸'},{value:'right',label:'鏂囧乏鍥惧彸'}], d.image_position || 'left') + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">閰嶈壊</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_text_bg', '鏂囨湰鍖鸿儗鏅壊', d.text_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_text_bg', '鏂囨湰鍖鸿儗鏅壊', d.text_bg || '#ffffff') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_text_color', '鏂囨湰鍖哄瓧浣撹壊', d.text_color || '#333333') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_tag_bg', 'Color', d.tag_bg || '#067a7a') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_tag_color', 'Color', d.tag_color || '#ffffff') + '</div>' +
@@ -1969,9 +1923,9 @@
     /* ====== text_content ====== */
     } else if (type === 'text_content') {
       specialEditor =
-        '<div class="small fw-semibold mb-1 text-muted">鍐呭</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏍囬</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">姝ｆ枃</label>' +
+        '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label>' +
         '<div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
           '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'bold\',false,null);event.preventDefault()" title="鍔犵矖" style="font-size:12px;line-height:1"><b>B</b></button>' +
           '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'italic\',false,null);event.preventDefault()" title="鏂滀綋" style="font-size:12px;line-height:1"><i>I</i></button>' +
@@ -1979,23 +1933,23 @@
           '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
           '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'h2\');event.preventDefault()" title="澶ф爣棰? style="font-size:12px;line-height:1">H2</button>' +
           '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'h3\');event.preventDefault()" title="灏忔爣棰? style="font-size:12px;line-height:1">H3</button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'p\');event.preventDefault()" title="姝ｆ枃娈佃惤" style="font-size:12px;line-height:1">P</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'formatBlock\',false,\'p\');event.preventDefault()" title="正文娈佃惤" style="font-size:12px;line-height:1">P</button>' +
           '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyLeft\')" title="宸﹀榻? style="font-size:12px;line-height:1">鈽?/button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyLeft\')" title="宸﹀榻? style="font-size:12px;line-height:1">鈽?/button>' +
           '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyCenter\')" title="灞呬腑" style="font-size:12px;line-height:1">鈮?/button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyRight\')" title="鍙冲榻? style="font-size:12px;line-height:1">鈽?/button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'justifyRight\')" title="鍙冲榻? style="font-size:12px;line-height:1">鈽?/button>' +
           '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
           '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertUnorderedList\')" title="鏃犲簭鍒楄〃" style="font-size:12px;line-height:1">鈥⑩墶</button>' +
           '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._richEditorCommand(this,event,\'insertOrderedList\')" title="鏈夊簭鍒楄〃" style="font-size:12px;line-height:1">1鈮?/button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorTable(this,event)" title="鎻掑叆琛ㄦ牸" style="font-size:12px;line-height:1">鈻?/button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorLink(this,event)" title="鎻掑叆閾炬帴" style="font-size:12px;line-height:1">馃敆</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorTable(this,event)" title="鎻掑叆表格" style="font-size:12px;line-height:1">鈻?/button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return window._insertRichEditorLink(this,event)" title="鎻掑叆链接" style="font-size:12px;line-height:1">馃敆</button>' +
         '</div>' +
         '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (d.body || '') + '</div>' +
         '<textarea class="form-control form-control-sm d-none" name="module_' + idx + '_data_body">' + esc(d.body || '') + '</textarea></div>';
       specialEditor =
-        '<div class="small fw-semibold mb-1 text-muted">鍐呭</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏍囬</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">姝ｆ枃</label>' +
+        '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label>' +
         richEditorHtml('module_' + idx + '_data_body', d.body || '') +
         '</div>';
       styleEditor =
@@ -2006,13 +1960,13 @@
           '<div class="col-6">' + sel('module_' + idx + '_data_columns', '鍒嗘爮', [{value:'1',label:'鍗曟爮'},{value:'2',label:'鍙屾爮'}], d.columns || '1') + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">澶栧眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">澶栧眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰瀹藉害', ['px','%','rem'], d.outer_width) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '鍐呭眰瀹藉害', ['px','%','rem'], d.inner_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">澶栬竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="鈫?涓?>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="鈫?鍙?>' +
@@ -2029,14 +1983,14 @@
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鏂囧瓧鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">鏂囧瓧样式</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '鏍囬棰滆壊', d.title_color || '#1e293b') + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_body_color', '姝ｆ枃棰滆壊', d.body_color || '#475569') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color || '#1e293b') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_body_color', '正文颜色', d.body_color || '#475569') + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_title_size', '鏍囬瀛楀彿', ['px','rem'], d.title_size) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_body_size', '姝ｆ枃瀛楀彿', ['px','rem'], d.body_size) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_title_size', '标题瀛楀彿', ['px','rem'], d.title_size) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_body_size', '正文瀛楀彿', ['px','rem'], d.body_size) + '</div>' +
         '</div>';
 
     /* ====== item_detail ====== */
@@ -2044,35 +1998,35 @@
       var imgList = Array.isArray(d.images) ? d.images : [];
       var specList = Array.isArray(d.specs) ? d.specs : [];
       specialEditor =
-        '<div class="small fw-semibold mb-1 text-muted">鍐呭</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏍囬</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鎻忚堪</label>' + richEditorHtml('module_' + idx + '_data_desc', d.desc || d.description || '') + '</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏍囩锛堥€楀彿鍒嗛殧锛?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tags" value="' + esc(Array.isArray(d.tags) ? d.tags.join(', ') : (d.tags || '')) + '"></div>' +
+        '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label>' + richEditorHtml('module_' + idx + '_data_desc', d.desc || d.description || '') + '</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">鏍囩锛堥€楀彿鍒嗛殧锛?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tags" value="' + esc(Array.isArray(d.tags) ? d.tags.join(', ') : (d.tags || '')) + '"></div>' +
         '<hr class="my-2">' +
-        '<div class="id-images-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">鍥剧墖鍒楄〃</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addIdImage(' + idx + ')">+ 娣诲姞鍥剧墖</button></div><input type="hidden" name="module_' + idx + '_data_images_count" class="id-image-count" value="' + imgList.length + '"><div class="id-image-list">' +
+        '<div class="id-images-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">图片鍒楄〃</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addIdImage(' + idx + ')">+ 添加图片</button></div><input type="hidden" name="module_' + idx + '_data_images_count" class="id-image-count" value="' + imgList.length + '"><div class="id-image-list">' +
         imgList.map(function(img, ii) {
           var url = (typeof img === 'object' ? (img.url || '') : (img || ''));
-          return '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="' + ii + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">鍥剧墖 ' + (ii + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();window._reindexIdImages(' + idx + ')">鍒犻櫎</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">鍥剧墖 URL</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_images_' + ii + '_url" value="' + esc(url) + '"><input type="file" class="form-control form-control-sm mt-1" name="module_' + idx + '_data_images_' + ii + '_url_file" accept="image/*"><div class="form-text">涓婁紶鍚庤嚜鍔ㄨ浆 WebP 骞惰鐩?URL</div></div></div>';
+          return '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="' + ii + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 ' + (ii + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();window._reindexIdImages(' + idx + ')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片 URL</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_images_' + ii + '_url" value="' + esc(url) + '"><input type="file" class="form-control form-control-sm mt-1" name="module_' + idx + '_data_images_' + ii + '_url_file" accept="image/*"><div class="form-text">上传鍚庤嚜鍔ㄨ浆 WebP 骞惰鐩?URL</div></div></div>';
         }).join('') +
         '</div></div><hr class="my-2">' +
-        '<div class="id-specs-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">瑙勬牸鍙傛暟</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addIdSpec(' + idx + ')">+ 娣诲姞瑙勬牸</button></div><input type="hidden" name="module_' + idx + '_data_specs_count" class="id-spec-count" value="' + specList.length + '"><div class="id-spec-list">' +
+        '<div class="id-specs-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">瑙勬牸鍙傛暟</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addIdSpec(' + idx + ')">+ 添加瑙勬牸</button></div><input type="hidden" name="module_' + idx + '_data_specs_count" class="id-spec-count" value="' + specList.length + '"><div class="id-spec-list">' +
         specList.map(function(spec, si) {
           var name = (typeof spec === 'object' ? (spec.name || spec.label || spec.key || '') : '');
           var value = (typeof spec === 'object' ? (spec.value || '') : '');
-          return '<div class="border rounded p-2 mb-2 id-spec-item" data-spec-index="' + si + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">瑙勬牸 ' + (si + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-spec-item\').remove();window._reindexIdSpecs(' + idx + ')">鍒犻櫎</button></div><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">鍙傛暟鍚?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_specs_' + si + '_name" value="' + esc(name) + '"></div><div class="col-6"><label class="form-label small mb-1 text-muted">鍙傛暟鍊?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_specs_' + si + '_value" value="' + esc(value) + '"></div></div></div>';
+          return '<div class="border rounded p-2 mb-2 id-spec-item" data-spec-index="' + si + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">瑙勬牸 ' + (si + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-spec-item\').remove();window._reindexIdSpecs(' + idx + ')">删除</button></div><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">鍙傛暟鍚?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_specs_' + si + '_name" value="' + esc(name) + '"></div><div class="col-6"><label class="form-label small mb-1 text-muted">鍙傛暟鍊?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_specs_' + si + '_value" value="' + esc(value) + '"></div></div></div>';
         }).join('') +
         '</div></div>';
       styleEditor =
-        '<div class="small fw-semibold mb-1 text-muted">澶栧眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">澶栧眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#ffffff') + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鍐呭眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">内容眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_inner_bg', 'Color', d.inner_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰瀹藉害', ['px','%','rem'], d.outer_width) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '鍐呭眰瀹藉害', ['px','%','rem'], d.inner_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
@@ -2083,15 +2037,15 @@
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鍥剧墖鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">图片样式</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_img_border_radius', '鍥剧墖鍦嗚', ['px','rem','%'], d.img_border_radius) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_img_height', '鍥剧墖楂樺害', ['px','rem','%'], d.img_height) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_img_border_radius', '图片鍦嗚', ['px','rem','%'], d.img_border_radius) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_img_height', '图片高度', ['px','rem','%'], d.img_height) + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">閰嶈壊</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_text_bg', '鏂囨湰鍖鸿儗鏅壊', d.text_bg || '#ffffff') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_text_bg', '鏂囨湰鍖鸿儗鏅壊', d.text_bg || '#ffffff') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_text_color', '鏂囨湰鍖哄瓧浣撹壊', d.text_color || '#333333') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_tag_bg', 'Color', d.tag_bg || '#067a7a') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_tag_color', 'Color', d.tag_color || '#ffffff') + '</div>' +
@@ -2101,48 +2055,48 @@
     } else if (type === 'stat_counter') {
       var statItems = Array.isArray(d.stats) && d.stats.length ? d.stats : [{}];
       specialEditor =
-        '<div class="stat-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">缁熻椤?/div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addStatItem(' + idx + ')">+ 娣诲姞缁熻椤?/button></div><input type="hidden" name="module_' + idx + '_stats_count" class="stat-item-count" value="' + statItems.length + '"><div class="stat-item-list">' + statItems.map(function(_, si) { return window._statItemHtml(idx, si, d); }).join('') + '</div></div>' +
+        '<div class="stat-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">缁熻椤?/div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addStatItem(' + idx + ')">+ 添加缁熻椤?/button></div><input type="hidden" name="module_' + idx + '_stats_count" class="stat-item-count" value="' + statItems.length + '"><div class="stat-item-list">' + statItems.map(function(_, si) { return window._statItemHtml(idx, si, d); }).join('') + '</div></div>' +
         '<hr class="my-2">' +
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鏍囬</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
         '</div>';
       styleEditor =
-        '<div class="small fw-semibold mb-1 text-muted">澶栧眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">澶栧眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#f5f7fa') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰瀹藉害', ['px','%','rem'], d.outer_width) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '鍐呭眰瀹藉害', ['px','%','rem'], d.inner_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_columns', '姣忚鍒楁暟', [{value:'4',label:'鍥涘垪'},{value:'3',label:'涓夊垪'},{value:'6',label:'鍏垪'}], d.columns || '4') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_columns', '姣忚鍒楁暟', [{value:'4',label:'鍥涘垪'},{value:'3',label:'涓夊垪'},{value:'6',label:'鍏垪'}], d.columns || '4') + '</div>' +
         '</div>';
 
     /* ====== logo_cloud ====== */
     } else if (type === 'logo_cloud') {
       specialEditor =
-        '<div class="logo-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">鏍囧織鍒楄〃</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addLogoItem(' + idx + ')">+ 娣诲姞鏍囧織</button></div><input type="hidden" name="module_' + idx + '_logo_count" class="logo-item-count" value="' + (d.logo_count || '1') + '"><div class="logo-item-list">' + (window._logoItemHtml ? window._logoItemHtml(idx, 0, d) : '') + '</div></div>' +
+        '<div class="logo-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">鏍囧織鍒楄〃</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addLogoItem(' + idx + ')">+ 添加鏍囧織</button></div><input type="hidden" name="module_' + idx + '_logo_count" class="logo-item-count" value="' + (d.logo_count || '1') + '"><div class="logo-item-list">' + (window._logoItemHtml ? window._logoItemHtml(idx, 0, d) : '') + '</div></div>' +
         '<hr class="my-2">' +
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鏍囬</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_columns', '姣忚鍒楁暟', [{value:'4',label:'鍥涘垪'},{value:'5',label:'浜斿垪'},{value:'6',label:'鍏垪'}], d.columns || '4') + '</div>' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_grayscale', '鐏板害婊ら暅', [{value:'true',label:'寮€鍚紙hover鏃舵仮澶嶅僵鑹诧級'},{value:'false',label:'鍏抽棴锛堜繚鎸佸師鑹诧級'}], d.grayscale || 'true') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_columns', '姣忚鍒楁暟', [{value:'4',label:'鍥涘垪'},{value:'5',label:'浜斿垪'},{value:'6',label:'鍏垪'}], d.columns || '4') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_grayscale', '鐏板害婊ら暅', [{value:'true',label:'寮€鍚紙hover鏃舵仮澶嶅僵鑹诧級'},{value:'false',label:'关闭锛堜繚鎸佸師鑹诧級'}], d.grayscale || 'true') + '</div>' +
         '</div>';
       styleEditor =
-        '<div class="small fw-semibold mb-1 text-muted">澶栧眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">澶栧眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#f5f7fa') + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鍐呭眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">内容眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_inner_bg', 'Color', d.inner_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰瀹藉害', ['px','%','rem'], d.outer_width) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '鍐呭眰瀹藉害', ['px','%','rem'], d.inner_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
@@ -2153,44 +2107,44 @@
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鏍囧織鍗＄墖鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">鏍囧織鍗＄墖样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_logo_bg', 'Color', d.logo_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_logo_border', '杈规澶у皬', ['px','rem'], d.logo_border) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_logo_border', '杈规大小', ['px','rem'], d.logo_border) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_logo_border_color', '杈规棰滆壊', d.logo_border_color || '#e5e7eb') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_logo_radius', '鍦嗚', ['px','rem','%'], d.logo_radius) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_logo_border_color', '杈规颜色', d.logo_border_color || '#e5e7eb') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_logo_radius', '鍦嗚', ['px','rem','%'], d.logo_radius) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_logo_width', '鍗＄墖瀹藉害', ['px','rem','%'], d.logo_width) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_logo_height', '鍗＄墖楂樺害', ['px','rem','%'], d.logo_height) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_logo_width', '鍗＄墖宽度', ['px','rem','%'], d.logo_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_logo_height', '鍗＄墖高度', ['px','rem','%'], d.logo_height) + '</div>' +
         '</div>';
 
     /* ====== process_steps ====== */
     } else if (type === 'process_steps') {
       specialEditor =
-        '<div class="step-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">姝ラ鍒楄〃</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addStepItem(' + idx + ')">+ 娣诲姞姝ラ</button></div><input type="hidden" name="module_' + idx + '_step_count" class="step-item-count" value="' + (d.step_count || '1') + '"><div class="step-item-list">' + (window._stepItemHtml ? window._stepItemHtml(idx, 0, d) : '') + '</div></div>' +
+        '<div class="step-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">姝ラ鍒楄〃</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addStepItem(' + idx + ')">+ 添加姝ラ</button></div><input type="hidden" name="module_' + idx + '_step_count" class="step-item-count" value="' + (d.step_count || '1') + '"><div class="step-item-list">' + (window._stepItemHtml ? window._stepItemHtml(idx, 0, d) : '') + '</div></div>' +
         '<hr class="my-2">' +
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鏍囬</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_direction', '鎺掑垪鏂瑰悜', [{value:'horizontal',label:'妯悜'},{value:'vertical',label:'绾靛悜'}], d.direction || 'horizontal') + '</div>' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_step_style', '姝ラ鏍峰紡', [{value:'number',label:'鏁板瓧搴忓彿'},{value:'icon',label:'鍥炬爣'}], d.step_style || 'number') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_direction', '鎺掑垪方向', [{value:'horizontal',label:'妯悜'},{value:'vertical',label:'绾靛悜'}], d.direction || 'horizontal') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_step_style', '姝ラ样式', [{value:'number',label:'鏁板瓧搴忓彿'},{value:'icon',label:'图标'}], d.step_style || 'number') + '</div>' +
         '</div>';
       styleEditor =
-        '<div class="small fw-semibold mb-1 text-muted">澶栧眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">澶栧眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#f5f7fa') + '</div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鍐呭眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">内容眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_inner_bg', 'Color', d.inner_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰瀹藉害', ['px','%','rem'], d.outer_width) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '鍐呭眰瀹藉害', ['px','%','rem'], d.inner_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '澶栧眰宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
@@ -2203,47 +2157,47 @@
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">閰嶈壊</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_title_font_size', '鏍囬瀛椾綋澶у皬', ['px','rem'], d.title_font_size) + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '鏍囬棰滆壊', d.title_color || '#1a1a1a') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_title_font_size', '标题瀛椾綋大小', ['px','rem'], d.title_font_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color || '#1a1a1a') + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_desc_font_size', '鎻忚堪瀛椾綋澶у皬', ['px','rem'], d.desc_font_size) + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_desc_color', '鎻忚堪棰滆壊', d.desc_color || '#666666') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_desc_font_size', '描述瀛椾綋大小', ['px','rem'], d.desc_font_size) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_desc_color', '描述颜色', d.desc_color || '#666666') + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_icon_color', '鍥炬爣棰滆壊', d.icon_color || '#067a7a') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_icon_color', '图标颜色', d.icon_color || '#067a7a') + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_number_bg', 'Color', d.number_bg || '#067a7a') + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_number_font_size', '搴忓彿瀛椾綋澶у皬', ['px','rem'], d.number_font_size) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_number_font_size', '搴忓彿瀛椾綋大小', ['px','rem'], d.number_font_size) + '</div>' +
         '</div>';
     /* ====== contact_info ====== */
     } else if (type === 'contact_info') {
       specialEditor =
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鏍囬</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-2 text-muted">鏄剧ず鎺у埗锛堟暟鎹潵鑷綉绔欒缃腑鐨勮仈绯绘柟寮忥級</div>' +
+        '<div class="small fw-semibold mb-2 text-muted">鏄剧ず鎺у埗锛堟暟鎹潵自动綉绔欒缃腑鐨勮仈绯绘柟寮忥級</div>' +
         '<div class="d-flex flex-wrap gap-2">' +
           visToggle('module_' + idx + '_data_show_phone', '鐢佃瘽', (d.show_phone || 'true')) +
           visToggle('module_' + idx + '_data_show_mobile', '鎵嬫満', (d.show_mobile || 'true')) +
-          visToggle('module_' + idx + '_data_show_email', '閭', (d.show_email || 'true')) +
+          visToggle('module_' + idx + '_data_show_email', '閭', (d.show_email || 'true')) +
           visToggle('module_' + idx + '_data_show_address', '鍦板潃', (d.show_address || 'true')) +
           visToggle('module_' + idx + '_data_show_business_hours', '钀ヤ笟鏃堕棿', (d.show_business_hours || 'false')) +
         '</div>' +
         '';
       styleEditor =
-        '<div class="small fw-semibold mb-1 text-muted">澶栧眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">澶栧眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg) + '</div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">澶栧眰瀹藉害 <span class="text-muted" style="font-weight:normal;">锛堢暀绌轰笉闄愬埗瀹藉害锛?/span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="濡?1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">鈥?/option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">澶栧眰宽度 <span class="text-muted" style="font-weight:normal;">锛堢暀绌轰笉闄愬埗宽度锛?/span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="濡?1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">鈥?/option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鍐呭眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">内容眰样式</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '鍐呭眰瀹藉害', ['px','%','rem'], d.inner_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
@@ -2258,23 +2212,23 @@
     } else if (type === 'contact_form') {
       specialEditor =
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鏍囬</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">鍖哄潡鍓爣棰?/label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-12"><label class="form-label small mb-1 text-muted">琛ㄥ崟鎻愪氦鍦板潃</label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_form_action" value="' + esc(d.form_action || '') + '" placeholder="鐣欑┖鍒欎娇鐢ㄥ钩鍙板唴缃暀瑷€锛屾垨濉叆澶栭儴鏈嶅姟鍦板潃"></div>' +
+          '<div class="col-12"><label class="form-label small mb-1 text-muted">琛ㄥ崟鎻愪氦鍦板潃</label><input type="url" class="form-control form-control-sm" name="module_' + idx + '_data_form_action" value="' + esc(d.form_action || '') + '" placeholder="鐣欑┖鍒欎娇鐢ㄥ钩鍙板唴缃暀瑷€锛屾垨濉叆澶栭儴鏈嶅姟鍦板潃"></div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-2 text-muted">琛ㄥ崟瀛楁</div>' +
+        '<div class="small fw-semibold mb-2 text-muted">琛ㄥ崟瀛楁</div>' +
         '<div class="d-flex flex-wrap gap-2">' +
           visToggle('module_' + idx + '_data_show_name', '濮撳悕', (d.show_name || 'true')) +
-          visToggle('module_' + idx + '_data_show_email', '閭', (d.show_email || 'true')) +
+          visToggle('module_' + idx + '_data_show_email', '閭', (d.show_email || 'true')) +
           visToggle('module_' + idx + '_data_show_phone', '鐢佃瘽', (d.show_phone || 'true')) +
-          visToggle('module_' + idx + '_data_show_company', '鍏徃', (d.show_company || 'false')) +
+          visToggle('module_' + idx + '_data_show_company', '鍏徃', (d.show_company || 'false')) +
           visToggle('module_' + idx + '_data_show_message', '鐣欒█', (d.show_message || 'true')) +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">鎻愪氦鎸夐挳鏂囧瓧</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_submit_text" value="' + esc(d.submit_text || '') + '" placeholder="鍙戦€佺暀瑷€"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">鎻愪氦按钮鏂囧瓧</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_submit_text" value="' + esc(d.submit_text || '') + '" placeholder="鍙戦€佺暀瑷€"></div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-2 text-muted">鍦板浘锛堥珮寰?Google 宓屽叆锛?/div>' +
@@ -2289,15 +2243,15 @@
           '<div class="col-6">' + sel('module_' + idx + '_data_map_width_ratio', '鍦板浘鍗犳瘮', [{value:'30',label:'30%'},{value:'35',label:'35%'},{value:'40',label:'40%'},{value:'45',label:'45%'},{value:'50',label:'50%'},{value:'60',label:'60%'},{value:'70',label:'70%'},{value:'100',label:'100%'}], d.map_width_ratio || '40') + '</div>' +
         '</div>';
       styleEditor =
-        '<div class="small fw-semibold mb-1 text-muted">澶栧眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">澶栧眰样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg) + '</div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">澶栧眰瀹藉害</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="濡?1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">鈥?/option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">澶栧眰宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="濡?1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">鈥?/option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鍐呭眰鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">内容眰样式</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '鍐呭眰瀹藉害', ['px','%','rem'], d.inner_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容眰宽度', ['px','%','rem'], d.inner_width) + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
@@ -2308,26 +2262,26 @@
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">琛ㄥ崟鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">琛ㄥ崟样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_form_bg', 'Color', d.form_bg) + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_input_bg', '杈撳叆妗嗚儗鏅壊', d.input_bg) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_input_bg', '输入妗嗚儗鏅壊', d.input_bg) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_input_border', '杈撳叆妗嗚竟妗嗚壊', d.input_border) + '</div>' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_text_color', '鏂囧瓧棰滆壊', d.text_color) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_input_border', '输入妗嗚竟妗嗚壊', d.input_border) + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_text_color', '鏂囧瓧颜色', d.text_color) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + un('module_' + idx + '_data_input_radius', 'Size', ['px','rem','%'], d.input_radius) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_form_radius', '琛ㄥ崟鍦嗚', ['px','rem','%'], d.form_radius) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_form_radius', '琛ㄥ崟鍦嗚', ['px','rem','%'], d.form_radius) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_title_size', '鏍囬瀛楀彿', ['px','rem','em'], d.title_size) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_title_size', '标题瀛楀彿', ['px','rem','em'], d.title_size) + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_input_height', 'Size', ['px','rem'], d.input_height) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_field_gap', '瀛楁闂磋窛', ['px','rem'], d.field_gap) + '</div>' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_label_style', '鏍囩鎺掔増', [{value:'top',label:'鏍囩鍦ㄤ笂'},{value:'left',label:'鏍囩鍦ㄥ乏'},{value:'hidden',label:'闅愯棌鏍囩'}], d.label_style || 'top') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_field_gap', '瀛楁闂磋窛', ['px','rem'], d.field_gap) + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_label_style', '鏍囩鎺掔増', [{value:'top',label:'鏍囩鍦ㄤ笂'},{value:'left',label:'鏍囩鍦ㄥ乏'},{value:'hidden',label:'闅愯棌鏍囩'}], d.label_style || 'top') + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:11px">琛ㄥ崟鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
@@ -2337,7 +2291,7 @@
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_padding_left" value="' + esc(d.form_padding_left) + '" placeholder="鈫?宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">琛ㄥ崟澶栬竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">琛ㄥ崟外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_top" value="' + esc(d.form_margin_top) + '" placeholder="鈫?涓?>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_form_margin_right" value="' + esc(d.form_margin_right) + '" placeholder="鈫?鍙?>' +
@@ -2346,19 +2300,19 @@
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鎸夐挳鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">按钮样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_btn_bg', 'Color', d.btn_bg) + '</div>' +
           '<div class="col-6">' + cn('module_' + idx + '_data_btn_color', 'Color', d.btn_color) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_btn_size', '鎸夐挳鏂囧瓧澶у皬', ['px','rem','em'], d.btn_size) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_btn_radius', '鎸夐挳鍦嗚', ['px','rem','%'], d.btn_radius) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_btn_size', '按钮鏂囧瓧大小', ['px','rem','em'], d.btn_size) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_btn_radius', '按钮鍦嗚', ['px','rem','%'], d.btn_radius) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + sel('module_' + idx + '_data_btn_align', '鎸夐挳浣嶇疆', [{value:'left',label:'闈犲乏'},{value:'center',label:'灞呬腑'},{value:'right',label:'闈犲彸'}], d.btn_align || 'left') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_btn_align', '按钮浣嶇疆', [{value:'left',label:'闈犲乏'},{value:'center',label:'灞呬腑'},{value:'right',label:'闈犲彸'}], d.btn_align || 'left') + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鎸夐挳鍐呰竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">按钮鍐呰竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_top" value="' + esc(d.btn_padding_top) + '" placeholder="鈫?涓?>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_right" value="' + esc(d.btn_padding_right) + '" placeholder="鈫?鍙?>' +
@@ -2366,7 +2320,7 @@
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_padding_left" value="' + esc(d.btn_padding_left) + '" placeholder="鈫?宸?>' +
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鎸夐挳澶栬竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">按钮外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_top" value="' + esc(d.btn_margin_top) + '" placeholder="鈫?涓?>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_btn_margin_right" value="' + esc(d.btn_margin_right) + '" placeholder="鈫?鍙?>' +
@@ -2375,14 +2329,14 @@
           '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
         '</div>' +
         '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">鍦板浘鏍峰紡</div>' +
+        '<div class="small fw-semibold mb-1 text-muted">鍦板浘样式</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_map_height', '鍦板浘楂樺害', ['px','rem','vh'], d.map_height) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_map_height', '鍦板浘高度', ['px','rem','vh'], d.map_height) + '</div>' +
         '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6">' + un('module_' + idx + '_data_map_radius', '鍦板浘鍦嗚', ['px','rem','%'], d.map_radius) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_map_radius', '鍦板浘鍦嗚', ['px','rem','%'], d.map_radius) + '</div>' +
         '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍦板浘澶栬竟璺?/div>' +
+        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">鍦板浘外观竟璺?/div>' +
         '<div class="input-group input-group-sm">' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_top" value="' + esc(d.map_margin_top) + '" placeholder="鈫?涓?>' +
           '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_map_margin_right" value="' + esc(d.map_margin_right) + '" placeholder="鈫?鍙?>' +
@@ -2411,7 +2365,7 @@
         '<div class="d-flex gap-1 flex-shrink-0 flex-nowrap">' +
           '<button type="button" class="module-action-btn" title="涓婄Щ" onclick="event.stopPropagation();window._moveModule(this, -1)">鈫?/button>' +
           '<button type="button" class="module-action-btn" title="涓嬬Щ" onclick="event.stopPropagation();window._moveModule(this, 1)">鈫?/button>' +
-          '<button type="button" class="module-action-btn module-action-del" title="鍒犻櫎" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();window._reindexModules()">鉁?/button>' +
+          '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();window._reindexModules()">鉁?/button>' +
         '</div>' +
       '</div>' +
       '<input type="hidden" name="module_' + idx + '_type" value="' + esc(type) + '">' +
@@ -2419,11 +2373,11 @@
       '<div class="module-config p-2 border-top" style="display:block">';
 
     if (!isDataModule) {
-      // 鐢佃剳绔細tab 鎸夐挳 + 涓や釜闈㈡澘锛堢粨鏋勪笌 Jinja 妯℃澘涓€鑷达級
+      // 鐢佃剳绔細tab 按钮 + 涓や釜闈㈡澘锛堢粨鏋勪笌 Jinja 妯℃澘涓€自动达級
       html += '<div class="device-config device-desktop">' +
         '<div class="d-flex mb-2">' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="window._switchContentStyleTab(this, \'content\')">鍐呭</button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="window._switchContentStyleTab(this, \'style\')">鏍峰紡</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="window._switchContentStyleTab(this, \'content\')">内容</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="window._switchContentStyleTab(this, \'style\')">样式</button>' +
         '</div>' +
         '<div class="content-style-panel panel-content">' +
           (specialEditor || desktopFields) +
@@ -2437,24 +2391,24 @@
     if (isDataModule) {
       html += '<div class="device-config device-desktop">' +
         '<div class="d-flex mb-2">' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="window._switchContentStyleTab(this, \'content\')">鍐呭</button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="window._switchContentStyleTab(this, \'style\')">鏍峰紡</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="window._switchContentStyleTab(this, \'content\')">内容</button>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="window._switchContentStyleTab(this, \'style\')">样式</button>' +
         '</div>' +
         '<div class="content-style-panel panel-content">' + specialEditor + '</div>' +
         '<div class="content-style-panel panel-style" style="display:none">' + styleEditor + '</div>' +
       '</div>';
     }
 
-    // 骞虫澘绔?/ 鎵嬫満绔紙缁撴瀯涓?Jinja 妯℃澘涓€鑷达紝涓?.device-desktop 鍚岀骇锛?
+    // 骞虫澘绔?/ 鎵嬫満绔紙缁撴瀯涓?Jinja 妯℃澘涓€自动达紝涓?.device-desktop 鍚岀骇锛?
     if (!isDataModule) {
       html +=
         '<div class="device-config device-tablet" style="display:none">' +
           tabletFields +
-          '<div class="mb-2 mt-2"><label class="form-check-label small"><input type="checkbox" class="form-check-input" name="module_' + idx + '_resp_tablet_hidden" value="1"> 骞虫澘绔殣钘忔妯″潡</label></div>' +
+          '<div class="mb-2 mt-2"><label class="form-check-label small"><input type="checkbox" class="form-check-input" name="module_' + idx + '_resp_tablet_hidden" value="1"> 骞虫澘绔殣钘忔模块</label></div>' +
         '</div>' +
         '<div class="device-config device-mobile" style="display:none">' +
           mobileFields +
-          '<div class="mb-2 mt-2"><label class="form-check-label small"><input type="checkbox" class="form-check-input" name="module_' + idx + '_resp_mobile_hidden" value="1"> 鎵嬫満绔殣钘忔妯″潡</label></div>' +
+          '<div class="mb-2 mt-2"><label class="form-check-label small"><input type="checkbox" class="form-check-input" name="module_' + idx + '_resp_mobile_hidden" value="1"> 鎵嬫満绔殣钘忔模块</label></div>' +
         '</div>';
     }
 
@@ -2477,24 +2431,24 @@
     return { html: html, borderStyle: borderStyle, headerBg: headerBg };
   }
 
-  /* ====== 鎵嬮鐞村睍寮€/鏀剁缉 ======
+  /* ====== 鎵嬮鐞村睍寮€/鏀剁缉 ======
    *
-   * server 绔覆鏌撶殑妯″潡澶翠娇鐢?onclick="toggleModuleAccordion(...)" 璋冪敤姝ゅ嚱鏁帮紝
-   * 鍥犳蹇呴』鍚屾椂鏆撮湶涓?window.toggleModuleAccordion锛堜笉甯︿笅鍒掔嚎锛夈€?
+   * server 绔覆鏌撶殑模块澶翠娇鐢?onclick="toggleModuleAccordion(...)" 璋冪敤姝ゅ嚱鏁帮紝
+   * 鍥犳蹇呴』鍚屾椂鏆撮湶涓?window.toggleModuleAccordion锛堜笉甯︿笅鍒掔嚎锛夈€?
    *
-   * 鍏煎 page editor 鍜?dataset editor 涓ょ闈㈡澘涓婁笅鏂囷細
-   *   - 鏄惧紡鎺у埗 .module-config 鐨?display锛坧age editor 鐢紝涓嶈蛋 CSS !important锛?
-   *   - 鏄惧紡鎺у埗 .content-style-panel 鐨?display锛堜袱绉嶉潰鏉块兘鐢級
-   *   - 鏈夋潯浠惰皟鐢?selectModuleInPreview锛堜粎 page editor 鏈夐瑙?iframe锛?
+   * 鍏煎 page editor 鍜?dataset editor 涓ょ闈㈡澘涓婁笅鏂囷細
+   *   - 鏄惧紡鎺у埗 .module-config 鐨?display锛坧age editor 鐢紝涓嶈蛋 CSS !important锛?
+   *   - 鏄惧紡鎺у埗 .content-style-panel 鐨?display锛堜袱绉嶉潰鏉块兘鐢級
+   *   - 鏈夋潯浠惰皟鐢?selectModuleInPreview锛堜粎 page editor 鏈夐瑙?iframe锛?
    */
   function toggleModuleAccordion(moduleItem) {
     var wasExpanded = moduleItem.classList.contains('expanded');
-    // 鏀剁缉鍚屽鍣ㄥ唴鎵€鏈夋ā鍧楋細绉婚櫎 expanded + 鏄惧紡闅愯棌闈㈡澘
+    // 鏀剁缉鍚屽鍣ㄥ唴鎵€鏈夋ā鍧楋細绉婚櫎 expanded + 鏄惧紡闅愯棌闈㈡澘
     var container = moduleItem.parentElement;
     if (container) {
       container.querySelectorAll('.module-item').forEach(function(item) {
         item.classList.remove('expanded');
-        // 闅愯棌 .module-config锛坧age editor 闈㈡澘鐢級
+        // 闅愯棌 .module-config锛坧age editor 闈㈡澘鐢級
         var cfg = item.querySelector('.module-config');
         if (cfg) cfg.style.display = 'none';
         // 闅愯棌鎵€鏈?content-style 闈㈡澘
@@ -2503,25 +2457,25 @@
         });
       });
     }
-    // 濡傛灉涔嬪墠鏈睍寮€锛屽垯灞曞紑褰撳墠妯″潡
+    // 濡傛灉涔嬪墠鏈睍寮€锛屽垯展开当前模块
     if (!wasExpanded) {
       moduleItem.classList.add('expanded');
-      // 灞曞紑 .module-config
+      // 展开 .module-config
       var cfg = moduleItem.querySelector('.module-config');
       if (cfg) cfg.style.display = 'block';
-      // 鎭㈠ active tab 瀵瑰簲鐨勫唴瀹归潰鏉?
+      // 鎭㈠ active tab 瀵瑰簲鐨勫唴瀹归潰鏉?
       var activeTab = moduleItem.querySelector('.content-style-tab.active');
       var tabName = activeTab ? activeTab.dataset.tab : 'content';
       var target = moduleItem.querySelector('.panel-' + tabName);
       if (target) target.style.display = '';
-      // 鑱斿姩涓棿棰勮 iframe锛堜粎 page editor 鐜鏈夎鍑芥暟锛?
+      // 鑱斿姩涓棿预览 iframe锛堜粎 page editor 鐜鏈夎鍑芥暟锛?
       if (typeof selectModuleInPreview === 'function') {
         selectModuleInPreview(moduleItem.dataset.moduleIndex);
       }
     }
   }
 
-  /* ====== 瀵瑰鏆撮湶 ====== */
+  /* ====== 瀵瑰鏆撮湶 ====== */
   window._buildModuleHTML = buildModuleHTML;
   window._featuredPicksEditors = function(prefix, values) {
     return featuredPicksEditors(prefix, findBlockMeta('featured_picks'), values || {});
@@ -2541,11 +2495,11 @@
     updateConditionalFields(document);
   });
 
-  /* ====== 瀵屾枃鏈紪杈戝櫒 (RTE) ======
+  /* ====== 瀵屾枃鏈紪杈戝櫒 (RTE) ======
    * 鏍稿績绛栫暐锛?
-   *   1. 濮旀墭 mousedown 鍦?.rte-toolbar 涓?preventDefault锛岄樆姝㈡寜閽偣鍑诲鑷寸紪杈戝櫒澶辩劍
-   *   2. 濮旀墭 click 鎵ц execCommand锛岄€氳繃 _lastRteEditor 鎵惧埌瀵瑰簲鐨勭紪杈戝櫒
-   *   3. 棰滆壊閫夋嫨鍣ㄥ拰鏍囬涓嬫媺鐢?change/input 浜嬩欢
+   *   1. 濮旀墭 mousedown 鍦?.rte-toolbar 涓?preventDefault锛岄樆姝㈡寜閽偣鍑诲自动寸紪杈戝櫒澶辩劍
+   *   2. 濮旀墭 click 鎵ц execCommand锛岄€氳繃 _lastRteEditor 鎵惧埌瀵瑰簲鐨勭紪杈戝櫒
+   *   3. 颜色选择鍣ㄥ拰标题涓嬫媺鐢?change/input 浜嬩欢
    */
   if (!window.__adminModulesRteBound) {
   window.__adminModulesRteBound = true;
@@ -2564,9 +2518,9 @@
   }
 
   function restoreRteSelection(rte, range) {
-    // 鍏堟崟鑾?range锛屽啀 focus 鈥斺€?rte.focus() 浼氬悓姝ヨЕ鍙?focusin 浜嬩欢澶勭悊鍣紝
-    // 鍚庤€呰皟鐢?saveRteSelection() 鎶?_rteSavedRange 瑕嗙洊涓虹紪杈戝櫒寮€澶翠綅缃紙0锛夛紝
-    // 濡傛灉鍏?focus 鍐嶅彇鍊间細瀵艰嚧瑙嗛/鍥剧墖/閾炬帴濮嬬粓鎻掑湪椤堕儴鑰岄潪鍏夋爣浣嶇疆銆?
+    // 鍏堟崟鑾?range锛屽啀 focus 鈥斺€?rte.focus() 浼氬悓姝ヨЕ鍙?focusin 浜嬩欢澶勭悊鍣紝
+    // 鍚庤€呰皟鐢?saveRteSelection() 鎶?_rteSavedRange 瑕嗙洊涓虹紪杈戝櫒寮€澶翠綅缃紙0锛夛紝
+    // 濡傛灉鍏?focus 鍐嶅彇鍊间細瀵艰嚧视频/图片/链接濮嬬粓鎻掑湪椤堕儴鑰岄潪鍏夋爣浣嶇疆銆?
     var targetRange = range || _rteSavedRange;
     rte.focus();
     if (!targetRange) return;
@@ -2633,7 +2587,7 @@
   }
 
   function insertRteTable(rte) {
-    var size = window.prompt('琛ㄦ牸琛屽垪锛屼緥濡?3x3', '3x3');
+    var size = window.prompt('表格琛屽垪锛屼緥濡?3x3', '3x3');
     if (size === null) return;
     var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,锛? ]\s*(\d+)\s*$/);
     var rows = match ? parseInt(match[1], 10) : 3;
@@ -2829,16 +2783,16 @@
       btn.setAttribute('aria-label', title);
     });
     var heading = toolbar.querySelector('.rte-heading-select');
-    if (heading) heading.title = '鏍囬鏍峰紡';
+    if (heading) heading.title = '标题样式';
     var color = toolbar.querySelector('.rte-color-picker');
-    if (color) color.title = '鏂囧瓧棰滆壊';
+    if (color) color.title = '鏂囧瓧颜色';
     [
-      ['.rte-table-btn', '鎻掑叆琛ㄦ牸'],
-      ['.rte-table-settings-btn', '琛ㄦ牸璁剧疆'],
-      ['.rte-link-btn', '鎻掑叆閾炬帴'],
-      ['.rte-image-btn', '鎻掑叆鍥剧墖閾炬帴'],
+      ['.rte-table-btn', '鎻掑叆表格'],
+      ['.rte-table-settings-btn', '表格设置'],
+      ['.rte-link-btn', '鎻掑叆链接'],
+      ['.rte-image-btn', '鎻掑叆图片链接'],
       ['.rte-upload-image-btn', 'Upload image'],
-      ['.rte-video-url-btn', '鎻掑叆瑙嗛閾炬帴'],
+      ['.rte-video-url-btn', '鎻掑叆视频链接'],
       ['.rte-upload-video-btn', 'Upload video']
     ].forEach(function(item) {
       var btn = toolbar.querySelector(item[0]);
@@ -2955,26 +2909,26 @@
     restoreRteSelection(rte);
     var safeUrl = String(url || '').replace(/"/g, '&quot;');
     if (!safeUrl) return;
-    // 鐢?contenteditable="false" 鍖呰９瑙嗛涓轰笉鍙紪杈戝師瀛愬崟鍏冦€?
-    // 鍒犻櫎鎸夐挳鏀惧湪瑙嗛涓婃柟鐨勫皬宸ュ叿鏍忎腑锛岄伩鍏嶈娴忚鍣ㄥ師鐢熸帶浠堕伄鎸°€?
+    // 鐢?contenteditable="false" 鍖呰９视频涓轰笉鍙紪杈戝師瀛愬崟鍏冦€?
+    // 删除按钮鏀惧湪视频涓婃柟鐨勫皬宸ュ叿鏍忎腑锛岄伩鍏嶈娴忚鍣ㄥ師鐢熸帶浠堕伄鎸°€?
     var wrapper = document.createElement('div');
     wrapper.setAttribute('contenteditable', 'false');
     wrapper.className = 'rte-media-wrapper';
     wrapper.style.cssText = 'display:inline-block;max-width:100%;margin:8px 0;user-select:none;vertical-align:top';
 
-    // 瑙嗛涓婃柟鐨勫皬宸ュ叿鏍?
+    // 视频涓婃柟鐨勫皬宸ュ叿鏍?
     var toolbar = document.createElement('div');
     toolbar.className = 'rte-media-toolbar';
     toolbar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
       'padding:3px 6px;background:#f5f5f5;border:1px solid #e0e0e0;border-bottom:none;' +
       'border-radius:6px 6px 0 0;font-size:11px;color:#888';
-    toolbar.innerHTML = '<span>馃幀 瑙嗛</span>';
+    toolbar.innerHTML = '<span>馃幀 视频</span>';
 
     var delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.className = 'rte-media-del';
     delBtn.setAttribute('contenteditable', 'false');
-    delBtn.textContent = '鉁?鍒犻櫎';
+    delBtn.textContent = '鉁?删除';
     delBtn.style.cssText = 'border:1px solid #ddd;background:#fff;color:#e74c3c;' +
       'border-radius:3px;cursor:pointer;font-size:11px;padding:1px 8px;line-height:1.6';
     toolbar.appendChild(delBtn);
@@ -2989,7 +2943,7 @@
     wrapper.appendChild(video);
 
     // 鐢?Range.insertNode 鐩存帴鎻掑叆 DOM 鑺傜偣锛岄伩鍏?execCommand insertHTML
-    // 琚祻瑙堝櫒 sanitize 鎺?contenteditable 灞炴€у鑷?wrapper 閫€鍖栦负鍙紪杈戝厓绱犮€?
+    // 琚祻瑙堝櫒 sanitize 鎺?contenteditable 灞炴€у自动?wrapper 閫€鍖栦负鍙紪杈戝厓绱犮€?
     var sel = window.getSelection();
     if (sel.rangeCount) {
       var range = sel.getRangeAt(0);
@@ -3005,7 +2959,7 @@
   }
 
 
-  // 娉ㄥ唽鍦?document 涓婄敤浜嬩欢濮旀墭锛屽洜涓?wrapper 鏄姩鎬?DOM 鑺傜偣銆?
+  // 娉ㄥ唽鍦?document 涓婄敤浜嬩欢濮旀墭锛屽洜涓?wrapper 鏄姩鎬?DOM 鑺傜偣銆?
   document.addEventListener('click', function(e) {
     var delBtn = e.target.closest('.rte-media-del');
     if (!delBtn) return;
@@ -3079,7 +3033,7 @@
     }
   });
 
-  // 鈹€鈹€ 宸ュ叿鏍?mousedown锛氶樆姝㈡寜閽伔璧扮劍鐐?鈹€鈹€
+  // 鈹€鈹€ 宸ュ叿鏍?mousedown锛氶樆姝㈡寜閽伔璧扮劍鐐?鈹€鈹€
   document.addEventListener('mousedown', function(e) {
     if (e.target.closest('.rte-toolbar .rte-btn')) {
       e.preventDefault();
@@ -3104,7 +3058,7 @@
     if (!rte) rte = _lastRteEditor;
     if (!rte) return;
 
-    // 鍏堢敤 preventDefault 杩囩殑 mousedown 淇濅綇浜嗗厜鏍囧湪姝ゅ
+    // 鍏堢敤 preventDefault 杩囩殑 mousedown 淇濅綇浜嗗厜鏍囧湪姝ゅ
     var cmd = btn.dataset.cmd;
     var arg = btn.dataset.arg || null;
 
@@ -3131,7 +3085,7 @@
     }
   });
 
-  // 鈹€鈹€ 鏍囬涓嬫媺 鈹€鈹€
+  // 鈹€鈹€ 标题涓嬫媺 鈹€鈹€
   document.addEventListener('change', function(e) {
     if (!e.target.classList.contains('rte-heading-select')) return;
     var rte = e.target.closest('.rte-wrapper').querySelector('.rte-editor');
@@ -3212,7 +3166,7 @@
       });
   });
 
-  // 鈹€鈹€ 棰滆壊閫夋嫨鍣?鈹€鈹€
+  // 鈹€鈹€ 颜色选择鍣?鈹€鈹€
   document.addEventListener('input', function(e) {
     if (!e.target.classList.contains('rte-color-picker')) return;
     var rte = e.target.closest('.rte-wrapper').querySelector('.rte-editor');
@@ -3223,7 +3177,7 @@
     syncRteBody(rte);
   });
 
-  // 鈹€鈹€ 缂栬緫鍣ㄥ唴瀹瑰彉鏇?鈫?鍚屾 textarea 鈹€鈹€
+  // 鈹€鈹€ 编辑鍣ㄥ唴瀹瑰彉鏇?鈫?鍚屾 textarea 鈹€鈹€
   document.addEventListener('input', function(e) {
     var rte = e.target.closest('.rte-editor');
     if (rte) {
@@ -3326,7 +3280,7 @@
     syncRteBody(rte);
   });
 
-  /* 鈹€鈹€ URL 瀵硅瘽妗嗭紙閾炬帴 / 鍥剧墖鍏辩敤锛岄〉闈㈠眳涓伄缃╋級 鈹€鈹€ */
+  /* 鈹€鈹€ URL 对齐瘽妗嗭紙链接 / 图片鍏辩敤锛岄〉闈㈠眳涓伄缃╋級 鈹€鈹€ */
   var _rteDialogState = { rte: null, mode: '', existingLink: null, range: null };
 
   function ensureRteUrlOverlay(wrapper) {
@@ -3381,21 +3335,21 @@
     _rteDialogState = { rte: rte, mode: mode, existingLink: existing, range: rangeSnapshot };
 
     titleEl.textContent = mode === 'link'
-      ? (existing ? '缂栬緫閾炬帴' : '鎻掑叆閾炬帴')
-      : '鎻掑叆鍥剧墖';
+      ? (existing ? '编辑链接' : '鎻掑叆链接')
+      : '鎻掑叆图片';
     inputEl.value = currentUrl;
     if (mode === 'video') {
-      titleEl.textContent = '鎻掑叆瑙嗛閾炬帴';
+      titleEl.textContent = '鎻掑叆视频链接';
       inputEl.placeholder = 'https://example.com/video.mp4';
     } else {
       inputEl.placeholder = mode === 'link' ? 'https://example.com' : 'https://example.com/pic.webp';
     }
-    confirmEl.textContent = mode === 'link' && existing ? '鏇存柊' : '纭畾';
+    confirmEl.textContent = mode === 'link' && existing ? '鏇存柊' : '确认畾';
     overlay.style.display = 'flex';
     setTimeout(function(){ inputEl.focus(); inputEl.select(); }, 50);
   }
 
-  // 纭畾锛堝姞閿侀槻閲嶅瑙﹀彂锛?
+  // 确认畾锛堝姞閿侀槻閲嶅瑙﹀彂锛?
   document.addEventListener('click', function(e) {
     if (!e.target.closest('.rte-url-dialog-confirm')) return;
     var overlay = e.target.closest('.rte-url-overlay');
@@ -3404,7 +3358,7 @@
     if (!state.rte) return;
     var url = overlay.querySelector('.rte-url-dialog-input').value.trim();
     var rte = state.rte;
-    // 鍏堟秷璐?state + 闅愯棌 overlay锛屽啀鎿嶄綔 DOM锛岄槻姝换浣曢噸鍏?
+    // 鍏堟秷璐?state + 闅愯棌 overlay锛屽啀鎿嶄綔 DOM锛岄槻姝换浣曢噸鍏?
     _rteDialogState = { rte: null, mode: '', existingLink: null, range: null };
     overlay.style.display = 'none';
 
@@ -3422,8 +3376,8 @@
         insertRteLink(rte, url, state.range);
       }
     } else if (state.mode === 'image' && url) {
-      // execCommand('insertImage') 琛屼负涓嶅彲闈狅紙閫夊尯/娴忚鍣ㄥ樊寮傚鑷撮噸澶嶆彃鍏ワ級銆?
-      // 鏀圭敤 insertHTML 娉ㄥ叆 <img> 鏍囩锛屼竴娆＄簿纭彃鍏ャ€?
+      // execCommand('insertImage') 琛屼负涓嶅彲闈狅紙閫夊尯/娴忚鍣ㄥ樊寮傚自动撮噸澶嶆彃鍏ワ級銆?
+      // 鏀圭敤 insertHTML 娉ㄥ叆 <img> 鏍囩锛屼竴娆＄簿确认彃鍏ャ€?
       insertRteImage(rte, url);
     } else if (state.mode === 'video' && url) {
       insertRteVideo(rte, url);
@@ -3431,8 +3385,8 @@
     syncRteBody(rte);
   });
 
-  // 鍙栨秷 / 鐐瑰嚮閬僵鍏抽棴
-  // 鐢?closest 鍖归厤鍙栨秷鎸夐挳锛堝彲鑳借鐐瑰嚮鐨勬槸鎸夐挳鍐呯殑鏂囨湰鑺傜偣锛?
+  // 取消 / 鐐瑰嚮閬僵关闭
+  // 鐢?closest 鍖归厤取消按钮锛堝彲鑳借鐐瑰嚮鐨勬槸按钮鍐呯殑鏂囨湰鑺傜偣锛?
   document.addEventListener('click', function(e) {
     if (e.target.closest('.rte-url-dialog-cancel')) {
       var overlay = e.target.closest('.rte-url-overlay');
@@ -3440,14 +3394,14 @@
       _rteDialogState = { rte: null, mode: '', existingLink: null, range: null };
       return;
     }
-    // 鐐瑰嚮 overlay 鑷韩锛堥伄缃╃┖鐧藉锛夊叧闂?
+    // 鐐瑰嚮 overlay 自动韩锛堥伄缃╃┖鐧藉锛夊叧闂?
     if (e.target.classList.contains('rte-url-overlay')) {
       e.target.style.display = 'none';
       _rteDialogState = { rte: null, mode: '', existingLink: null, range: null };
     }
   });
 
-  // Enter 纭
+  // Enter 确认
   document.addEventListener('keydown', function(e) {
     if (e.key !== 'Enter') return;
     var input = e.target.closest('.rte-url-dialog-input');
