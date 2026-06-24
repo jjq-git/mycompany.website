@@ -3147,7 +3147,7 @@ def dataset_edit(dataset_key, item_id):
                 'images': gallery_images,
             }
         for field_name in ('cover', 'image', 'photo', 'logo'):
-            upload = request.files.get(field_name)
+            upload = request.files.get(field_name) or request.files.get(f'{field_name}_file')
             if upload and upload.filename:
                 try:
                     fields[field_name] = _save_uploaded_image(site.id, upload, prefix=f'{dataset_key}-{field_name}')
