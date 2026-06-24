@@ -84,8 +84,12 @@
       {% if footer_columns %}
       {% for col in footer_columns %}
       <div class="border rounded p-2 mb-2 footer-column-item collapsed">
-        <div class="d-flex justify-content-between align-items-center mb-2 footer-column-header" style="cursor:pointer; user-select:none;" onclick="this.closest('.footer-column-item').classList.toggle('collapsed')">
+        <div class="d-flex align-items-center mb-2 footer-column-header" style="cursor:pointer; user-select:none;" onclick="this.closest('.footer-column-item').classList.toggle('collapsed')">
           <span class="small fw-semibold d-flex align-items-center"><svg class="footer-column-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>栏目 {{ loop.index }}</span>
+          <span class="d-inline-flex align-items-center gap-1 ms-auto me-1">
+            <button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveFooterColumn(this,-1)">↑</button>
+            <button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveFooterColumn(this,1)">↓</button>
+          </span>
           <button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation(); this.closest('.footer-column-item').remove();reindexFooterColumns()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
         <div class="footer-column-body">
@@ -190,8 +194,12 @@ function addFooterColumn() {
   document.getElementById('footerColumnCount').value = idx + 1;
   // 新栏目默认收缩（collapsed），点击标题栏展开
   var html = '<div class="border rounded p-2 mb-2 footer-column-item collapsed">' +
-    '<div class="d-flex justify-content-between align-items-center mb-2 footer-column-header" style="cursor:pointer; user-select:none;" onclick="this.closest(\'.footer-column-item\').classList.toggle(\'collapsed\')">' +
+    '<div class="d-flex align-items-center mb-2 footer-column-header" style="cursor:pointer; user-select:none;" onclick="this.closest(\'.footer-column-item\').classList.toggle(\'collapsed\')">' +
     '<span class="small fw-semibold d-flex align-items-center"><svg class="footer-column-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>栏目 ' + (idx + 1) + '</span>' +
+    '<span class="d-inline-flex align-items-center gap-1 ms-auto me-1">' +
+    '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveFooterColumn(this,-1)">↑</button>' +
+    '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveFooterColumn(this,1)">↓</button>' +
+    '</span>' +
     '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation(); this.closest(\'.footer-column-item\').remove();reindexFooterColumns()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
     '<div class="footer-column-body">' +
     '<div class="row g-2 mb-2"><div class="col-6"><label class="form-label small mb-1 text-muted">类型</label>' +
@@ -217,21 +225,49 @@ function addFooterLink(btn) {
     '<div class="col-2"><button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="this.closest(\'.footer-link-item\').remove()">✕</button></div></div>';
   linksDiv.insertAdjacentHTML('beforeend', html);
 }
+function moveFooterColumn(btn, dir) {
+  var item = btn.closest('.footer-column-item');
+  if (!item) return;
+  var container = document.getElementById('footerColumnsList');
+  var items = Array.from(container.querySelectorAll('.footer-column-item'));
+  var idx = items.indexOf(item);
+  if (dir < 0 && idx > 0) {
+    container.insertBefore(item, items[idx - 1]);
+    reindexFooterColumns();
+  } else if (dir > 0 && idx < items.length - 1) {
+    container.insertBefore(items[idx + 1], item);
+    reindexFooterColumns();
+  }
+}
+function updateFooterColumnLabel(item, i) {
+  var label = item.querySelector('.footer-column-header .small.fw-semibold');
+  if (!label) return;
+  var titleInp = item.querySelector('input[name$="_title"]');
+  var title = titleInp ? titleInp.value.trim() : '';
+  var chevronSvg = label.querySelector('svg');
+  label.textContent = ' ' + (title || '栏目 ' + (i + 1));
+  if (chevronSvg) label.insertBefore(chevronSvg, label.firstChild);
+}
 function reindexFooterColumns() {
   var items = document.querySelectorAll('.footer-column-item');
   document.getElementById('footerColumnCount').value = items.length;
   items.forEach(function(item, i) {
-    var label = item.querySelector('.footer-column-header .small.fw-semibold');
-    if (label) {
-      var chevronSvg = label.querySelector('svg');
-      label.textContent = ' 栏目 ' + (i + 1);
-      if (chevronSvg) label.insertBefore(chevronSvg, label.firstChild);
-    }
+    updateFooterColumnLabel(item, i);
     item.querySelectorAll('[name]').forEach(function(el) {
       el.name = el.name.replace(/footer_col_\d+_/, 'footer_col_' + i + '_');
     });
   });
 }
+// 标题输入框内容变化时实时更新折叠标签
+document.getElementById('footerColumnsSection').addEventListener('input', function(e) {
+  if (e.target.name && e.target.name.endsWith('_title')) {
+    var item = e.target.closest('.footer-column-item');
+    if (!item) return;
+    var items = Array.from(document.querySelectorAll('.footer-column-item'));
+    var i = items.indexOf(item);
+    updateFooterColumnLabel(item, i);
+  }
+});
 </script>
 
 {% if translation_enabled and current_lang != default_lang %}

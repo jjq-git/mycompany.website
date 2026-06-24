@@ -289,8 +289,31 @@ def list_media_files(site_id):
                 'is_package': True,
             })
 
+    # 单次扫描所有 YAML 文件构建引用索引，避免每个文件都调用 find_media_references
+    # 导致 O(n × m) 性能问题（n=文件数, m=YAML 文件数）
+    ref_index = {}
+    root = site_root(site_id)
+    yaml_paths = list(root.rglob('*.yaml')) + list(root.rglob('*.yml'))
+    for path in sorted(yaml_paths):
+        if not _is_content_yaml(path):
+            continue
+        try:
+            text = path.read_text(encoding='utf-8')
+        except UnicodeDecodeError:
+            continue
+        rel_path = str(path.relative_to(root)).replace('\\', '/')
+        for item in items:
+            if item['api_name'] in ref_index:
+                continue  # 已有引用了，跳过（性能优化：不重复匹配）
+            needle = (
+                f'/media-packages/{media_package_name_from_token(item["api_name"])}/'
+                if item['is_package'] else f'/assets/uploads/{item["api_name"]}'
+            )
+            if needle in text:
+                ref_index.setdefault(item['api_name'], []).append(rel_path)
+
     for item in items:
-        refs = find_media_references(site_id, item['api_name'])
+        refs = ref_index.get(item['api_name'], [])
         item['reference_count'] = len(refs)
         item['is_referenced'] = bool(refs)
         item['can_delete'] = not refs

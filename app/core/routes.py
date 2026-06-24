@@ -3916,6 +3916,11 @@ def _parse_modules_form(form, existing_modules=None):
 
 
         for field in list(data.keys()):
+            # 跳过 file 后缀的字段（如 image_file），它们来自 mediaUploadHtml
+            # 的文件输入框值（文件名），不是图片字段。真正需要处理的图片字段
+            # 是 image/cover/background 等不带 _file 后缀的键名。
+            if field.endswith('_file'):
+                continue
             if _field_looks_like_image(field):
                 upload = request.files.get(f'{idx}_data_{field}_file')
                 if upload and upload.filename:

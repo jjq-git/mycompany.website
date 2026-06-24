@@ -76,6 +76,9 @@
       </div>
 
       <div class="media-empty" id="mediaEmpty" {% if files %}hidden{% endif %}>暂无媒体文件</div>
+      <div class="media-load-more" id="mediaLoadMore" {% if files|length <= 30 %}hidden{% endif %} style="text-align:center;padding:12px 0">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="mediaLoadMoreBtn">加载更多 (<span id="mediaVisibleCount">30</span> / <span id="mediaTotalCount">{{ files|length }}</span>)</button>
+      </div>
     </div>
 
     <aside class="media-preview-card" aria-label="媒体预览">
@@ -339,6 +342,8 @@
   }
 
   var currentSort = { by: 'name', asc: true };  // 默认按文件名升序
+  var PAGE_SIZE = 30;        // 每批显示数量，减轻首屏加载压力
+  var visibleCount = PAGE_SIZE;  // 当前已显示数量
 
   function sortMediaCards() {
     var cards = Array.from(grid.querySelectorAll('.media-card'));
@@ -370,14 +375,63 @@
   function applyCurrentFilter() {
     var active = panel.querySelector('.media-tab.active');
     var filter = active ? active.dataset.mediaFilter : 'all';
-    grid.querySelectorAll('.media-card').forEach(function(card) {
+    var allCards = grid.querySelectorAll('.media-card');
+    var matchingCards = [];
+    allCards.forEach(function(card) {
       var show = filter === 'all' || card.dataset.category === filter;
       if (filter === 'unreferenced') show = Number(card.dataset.referenceCount || 0) === 0;
-      card.hidden = !show;
+      card.hidden = true;  // 先全部隐藏
+      if (show) matchingCards.push(card);
     });
-    sortMediaCards();  // 筛选后重新排序
+    sortMediaCards();  // 排序
+    // 只显示前 PAGE_SIZE 个
+    visibleCount = Math.min(PAGE_SIZE, matchingCards.length);
+    for (var i = 0; i < matchingCards.length; i++) {
+      matchingCards[i].hidden = i >= visibleCount;
+    }
+    updateLoadMoreButton(matchingCards.length);
     updateVisibleMediaCount();
-    empty.hidden = grid.querySelectorAll('.media-card:not([hidden])').length > 0;
+    empty.hidden = matchingCards.length > 0;
+  }
+
+  function updateLoadMoreButton(totalCount) {
+    var loadMore = document.getElementById('mediaLoadMore');
+    var loadMoreBtn = document.getElementById('mediaLoadMoreBtn');
+    var totalEl = document.getElementById('mediaTotalCount');
+    var visEl = document.getElementById('mediaVisibleCount');
+    if (!loadMore || !loadMoreBtn) return;
+    if (visibleCount >= totalCount) {
+      loadMore.hidden = true;
+    } else {
+      loadMore.hidden = false;
+      if (visEl) visEl.textContent = visibleCount;
+      if (totalEl) totalEl.textContent = totalCount;
+    }
+  }
+
+  // 加载更多按钮点击事件
+  var loadMoreBtn = document.getElementById('mediaLoadMoreBtn');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', function() {
+      var allCards = grid.querySelectorAll('.media-card');
+      var hidden = [];
+      allCards.forEach(function(c) {
+        if (!c.hidden) return;
+        // 只计算匹配当前筛选的
+        var active = panel.querySelector('.media-tab.active');
+        var filter = active ? active.dataset.mediaFilter : 'all';
+        var show = filter === 'all' || c.dataset.category === filter;
+        if (filter === 'unreferenced') show = Number(c.dataset.referenceCount || 0) === 0;
+        if (show) hidden.push(c);
+      });
+      var toShow = Math.min(PAGE_SIZE, hidden.length);
+      for (var i = 0; i < toShow; i++) {
+        hidden[i].hidden = false;
+      }
+      visibleCount += toShow;
+      updateLoadMoreButton(hidden.length + visibleCount - toShow + toShow);
+      updateVisibleMediaCount();
+    });
   }
 
   function clampPreviewWidth(width) {
@@ -473,6 +527,9 @@
       sortMediaCards();
     });
   }
+
+  // 初始分页：首屏只显示前 PAGE_SIZE 个
+  applyCurrentFilter();
 
   initPreviewResize();
   if (previewUrlCode) previewUrlCode.addEventListener('click', inlineRenameFromPreview);

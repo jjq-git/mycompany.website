@@ -1313,7 +1313,7 @@
       overlay.id = 'moduleMediaLibraryOverlay';
       overlay.className = 'module-media-library-overlay';
       overlay.innerHTML = '<div class="module-media-library-dialog">' +
-        '<div class="module-media-library-head"><strong>选择濯掍綋</strong><button type="button" class="module-media-library-close" title="关闭">脳</button></div>' +
+        '<div class="module-media-library-head"><strong>选择媒体</strong><button type="button" class="module-media-library-close" title="关闭">×</button></div>' +
         '<div class="module-media-library-grid"><div class="text-muted small p-3">加载中..</div></div>' +
         '</div>';
       document.body.appendChild(overlay);
@@ -1340,7 +1340,7 @@
           var name = card.dataset.displayName || url;
           var isImage = card.dataset.category === 'image';
           return '<button type="button" class="module-media-library-item" data-url="' + attrEsc(url) + '" title="' + attrEsc(name) + '">' +
-            (isImage ? '<img src="' + attrEsc(url) + '" alt="">' : '<span class="module-media-library-video">鈻?/span>') +
+            (isImage ? '<img src="' + attrEsc(url) + '" alt="" loading="lazy">' : '<span class="module-media-library-video">▶</span>') +
             '<span>' + schemaEsc(name) + '</span></button>';
         }).join('');
         grid.innerHTML = items || '<div class="text-muted small p-3">媒体库暂无可选图片或视频</div>';
