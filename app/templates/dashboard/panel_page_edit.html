@@ -189,7 +189,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=73"></script>
+<script src="/static/js/admin_modules.js?v=78"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -1114,7 +1114,6 @@ function renderDynamicField(prefix, field, value, placeholder) {
         html += '<option value="' + escapeHtml(optValue) + '"' + (String(value || '') === String(optValue) ? ' selected' : '') + '>' + escapeHtml(optLabel) + '</option>';
       });
       html += '</select>';
-    }
   } else if (type === 'number') {
     html += '<input type="number" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '">';
   } else if (isColor) {

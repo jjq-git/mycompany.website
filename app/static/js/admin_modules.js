@@ -63,13 +63,34 @@
     return false;
   };
 
+  function legacyRichEditorExec(editor, cmd, arg) {
+    editor.focus();
+    if (cmd === 'formatBlock') {
+      var tag = String(arg || 'p').replace(/[<>]/g, '').toLowerCase();
+      if (!/^(p|h1|h2|h3|h4|h5|h6|blockquote)$/.test(tag)) tag = 'p';
+      document.execCommand('formatBlock', false, '<' + tag + '>');
+      if (tag === 'p') {
+        var sel = window.getSelection();
+        var node = sel && sel.rangeCount ? sel.getRangeAt(0).commonAncestorContainer : null;
+        var el = node && node.nodeType === 1 ? node : (node ? node.parentElement : null);
+        var heading = el ? el.closest('h1,h2,h3,h4,h5,h6,blockquote') : null;
+        if (heading && editor.contains(heading)) {
+          var p = document.createElement('p');
+          while (heading.firstChild) p.appendChild(heading.firstChild);
+          heading.parentNode.replaceChild(p, heading);
+        }
+      }
+      return;
+    }
+    document.execCommand(cmd, false, arg || null);
+  }
+
   window._richEditorCommand = function(btn, event, cmd, arg) {
     if (event) event.preventDefault();
     var wrapper = btn && btn.closest ? btn.closest('.mb-2') : null;
     var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
     if (!editor) return false;
-    editor.focus();
-    document.execCommand(cmd, false, arg || null);
+    legacyRichEditorExec(editor, cmd, arg);
     var textarea = editor.nextElementSibling;
     if (textarea) textarea.value = editor.innerHTML;
     return false;
@@ -79,8 +100,7 @@
     var wrapper = control && control.closest ? control.closest('.mb-2') : null;
     var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
     if (!editor) return false;
-    editor.focus();
-    document.execCommand(cmd, false, arg || null);
+    legacyRichEditorExec(editor, cmd, arg);
     var textarea = editor.nextElementSibling;
     if (textarea) textarea.value = editor.innerHTML;
     return false;
@@ -131,6 +151,7 @@
       imageUpload: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
       videoUrl: '<svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
       videoUpload: '<svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/><line x1="8" y1="13" x2="8" y2="19"/><polyline points="5 16 8 19 11 16"/></svg>',
+      mediaLibrary: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>',
       blockquote: '<svg viewBox="0 0 24 24"><path d="M3 5v8h5.5L6 21"/><path d="M12 5v8h5.5L15 21"/></svg>',
       hr: '<svg viewBox="0 0 24 24"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="8 8 4 12 8 16"/><polyline points="16 8 20 12 16 16"/></svg>',
       sub: '<svg viewBox="0 0 24 24"><text x="4" y="14" font-size="12" font-weight="bold" fill="currentColor">x</text><text x="14" y="22" font-size="9" font-weight="bold" fill="currentColor">2</text></svg>',
@@ -183,6 +204,7 @@
     tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-upload-image-btn" title="上传图片" aria-label="上传图片">' + icons.imageUpload + '</button>';
     tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-video-url-btn" title="插入视频链接" aria-label="插入视频链接">' + icons.videoUrl + '</button>';
     tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-upload-video-btn" title="上传视频" aria-label="上传视频">' + icons.videoUpload + '</button>';
+    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-media-library-btn" title="从媒体库选择" aria-label="从媒体库选择">' + icons.mediaLibrary + '</button>';
     tb += '<span class="rte-sep"></span>';
     // G6 结构元素
     tb += btnArg('formatBlock', '<blockquote>', '引用块', icons.blockquote);
@@ -1466,6 +1488,7 @@
     var item = e.target.closest('.module-media-library-item');
     if (!item) return;
     var overlay = item.closest('#moduleMediaLibraryOverlay');
+
     var input = overlay && overlay._targetInput;
     if (!input) return;
     input.value = item.dataset.url || '';
@@ -2577,6 +2600,52 @@
     return el && rte.contains(el) ? _rteSavedRange.cloneRange() : null;
   }
 
+  function normalizeRteBlockArg(arg) {
+    var tag = String(arg || 'p').replace(/[<>]/g, '').toLowerCase();
+    if (!/^(p|h1|h2|h3|h4|h5|h6|blockquote)$/.test(tag)) tag = 'p';
+    return '<' + tag + '>';
+  }
+
+  function replaceRteElementTag(el, tagName) {
+    if (!el || !el.parentNode) return null;
+    var next = document.createElement(tagName);
+    while (el.firstChild) next.appendChild(el.firstChild);
+    Array.prototype.slice.call(el.attributes || []).forEach(function(attr) {
+      if (attr.name !== 'style' && attr.name !== 'class') next.setAttribute(attr.name, attr.value);
+    });
+    el.parentNode.replaceChild(next, el);
+    return next;
+  }
+
+  function forceRteParagraph(rte) {
+    var sel = window.getSelection();
+    if (!rte || !sel || !sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    var blocks = [];
+    rte.querySelectorAll('h1,h2,h3,h4,h5,h6,blockquote').forEach(function(block) {
+      if (range.intersectsNode && range.intersectsNode(block)) blocks.push(block);
+    });
+    if (!blocks.length) {
+      var node = range.commonAncestorContainer;
+      var el = node.nodeType === 1 ? node : node.parentElement;
+      var block = el ? el.closest('h1,h2,h3,h4,h5,h6,blockquote') : null;
+      if (block && rte.contains(block)) blocks.push(block);
+    }
+    blocks.forEach(function(block) {
+      replaceRteElementTag(block, 'p');
+    });
+  }
+
+  function runRteCommand(rte, cmd, arg) {
+    if (cmd === 'formatBlock') {
+      var blockArg = normalizeRteBlockArg(arg);
+      document.execCommand('formatBlock', false, blockArg);
+      if (blockArg === '<p>') forceRteParagraph(rte);
+      return;
+    }
+    document.execCommand(cmd, false, arg);
+  }
+
   function setRteLinkAttrs(link, url) {
     link.setAttribute('href', url);
     link.setAttribute('target', '_blank');
@@ -2685,6 +2754,53 @@
     return row ? row.children.length : 0;
   }
 
+  function getRteTableRowCount(table) {
+    return table ? table.querySelectorAll('tbody tr, tr').length : 0;
+  }
+
+  function ensureRteTableBody(table) {
+    if (!table) return null;
+    var tbody = table.querySelector('tbody');
+    if (tbody) return tbody;
+    tbody = document.createElement('tbody');
+    Array.prototype.slice.call(table.querySelectorAll(':scope > tr')).forEach(function(row) {
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    return tbody;
+  }
+
+  function createRteTableCell(width) {
+    var td = document.createElement('td');
+    if (width) td.style.width = width;
+    td.innerHTML = '<br>';
+    return td;
+  }
+
+  function resizeRteTable(table, targetRows, targetCols) {
+    if (!table) return;
+    targetRows = Math.max(1, Math.min(parseInt(targetRows, 10) || 1, 50));
+    targetCols = Math.max(1, Math.min(parseInt(targetCols, 10) || 1, 20));
+    var tbody = ensureRteTableBody(table);
+    if (!tbody) return;
+    var widths = getRteTableWidths(table).split(',').filter(Boolean);
+    while (tbody.children.length < targetRows) {
+      var newRow = document.createElement('tr');
+      for (var c = 0; c < targetCols; c++) newRow.appendChild(createRteTableCell(widths[c] || ''));
+      tbody.appendChild(newRow);
+    }
+    while (tbody.children.length > targetRows) tbody.removeChild(tbody.lastElementChild);
+    Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(row) {
+      while (row.children.length < targetCols) row.appendChild(createRteTableCell(widths[row.children.length] || ''));
+      while (row.children.length > targetCols) row.removeChild(row.lastElementChild);
+    });
+    var oldColgroup = table.querySelector('colgroup');
+    if (oldColgroup) {
+      while (oldColgroup.children.length < targetCols) oldColgroup.appendChild(document.createElement('col'));
+      while (oldColgroup.children.length > targetCols) oldColgroup.removeChild(oldColgroup.lastElementChild);
+    }
+  }
+
   function getRteTableWidths(table) {
     var row = table ? table.querySelector('tr') : null;
     if (!row) return '';
@@ -2777,11 +2893,16 @@
     popover.appendChild(grid);
     wrapper.appendChild(popover);
     // 定位在按钮下方
+    if (window.getComputedStyle(wrapper).position === 'static') wrapper.style.position = 'relative';
     var btnRect = btn.getBoundingClientRect();
     var wrapperRect = wrapper.getBoundingClientRect();
-    popover.style.left = (btnRect.left - wrapperRect.left) + 'px';
+    var popoverWidth = popover.offsetWidth || 248;
+    var left = btnRect.left - wrapperRect.left;
+    var maxLeft = Math.max(0, wrapper.clientWidth - popoverWidth - 8);
+    left = Math.max(0, Math.min(left, maxLeft));
+    popover.style.left = left + 'px';
     popover.style.top = (btnRect.bottom - wrapperRect.top + 4) + 'px';
-    // hover 高亮
+    // hover highlight
     var hoverRow = 0, hoverCol = 0;
     function highlight() {
       grid.querySelectorAll('.rte-table-grid-cell').forEach(function(c) {
@@ -2835,24 +2956,36 @@
       return;
     }
     var wrapper = rte.closest('.rte-wrapper');
-    var overlay = ensureRteUrlOverlay(wrapper);  // 复用弹框基础设施
+    var overlay = ensureRteUrlOverlay(wrapper);
     if (!overlay) return;
+    var rows = getRteTableRowCount(table);
     var cols = getRteTableColumnCount(table);
     var currentWidths = getRteTableWidths(table);
     var currentBorder = table.getAttribute('data-rte-border') !== '0';
-    // 改造弹框内容为表格设置
     var titleEl = overlay.querySelector('.rte-url-dialog-title');
     var inputEl = overlay.querySelector('.rte-url-dialog-input');
     var confirmEl = overlay.querySelector('.rte-url-dialog-confirm');
-    var cancelEl = overlay.querySelector('.rte-url-dialog-cancel');
     var dialog = overlay.querySelector('.rte-url-dialog');
-    // 添加列宽输入和第二行控件前先保存原始结构，但这里动态改简单
-    // 把 input placeholder 当列宽用，再加一个边框复选框
-    titleEl.textContent = '表格设置（' + cols + ' 列）'; // 表格设置（N 列）
+    titleEl.textContent = '表格设置（' + rows + '×' + cols + '）';
     inputEl.value = currentWidths || '';
-    inputEl.placeholder = '列宽，如 50,50，留空则等宽'; // 列宽，如 50,50，留空则等宽
+    inputEl.placeholder = '列宽，如 50,50，留空则等宽';
     confirmEl.textContent = '应用';
-    // 动态添加边框行（如果还没有）
+
+    var sizeRow = dialog.querySelector('.rte-table-dialog-size-row');
+    if (!sizeRow) {
+      sizeRow = document.createElement('div');
+      sizeRow.className = 'rte-table-dialog-size-row d-flex align-items-center gap-2 mb-2';
+      sizeRow.innerHTML =
+        '<label style="font-size:12px;margin:0;flex:1">行数<input type="number" min="1" max="50" class="form-control form-control-sm rte-table-dialog-rows" style="margin-top:4px"></label>' +
+        '<label style="font-size:12px;margin:0;flex:1">列数<input type="number" min="1" max="20" class="form-control form-control-sm rte-table-dialog-cols" style="margin-top:4px"></label>';
+      inputEl.parentNode.insertBefore(sizeRow, inputEl);
+    }
+    sizeRow.style.display = '';
+    var rowsInput = dialog.querySelector('.rte-table-dialog-rows');
+    var colsInput = dialog.querySelector('.rte-table-dialog-cols');
+    if (rowsInput) rowsInput.value = rows;
+    if (colsInput) colsInput.value = cols;
+
     var borderRow = dialog.querySelector('.rte-table-dialog-border-row');
     if (!borderRow) {
       borderRow = document.createElement('div');
@@ -2860,15 +2993,16 @@
       borderRow.innerHTML = '<label style="font-size:12px;white-space:nowrap;margin:0"><input type="checkbox" class="rte-table-dialog-border-cb"> 显示表格边框</label>';
       inputEl.parentNode.insertBefore(borderRow, inputEl.nextSibling);
     }
+    borderRow.style.display = '';
     var borderCb = dialog.querySelector('.rte-table-dialog-border-cb');
     if (borderCb) borderCb.checked = currentBorder;
     overlay.style.display = 'flex';
-    // 临时标记此弹框为表格模式
     overlay.dataset.rteMode = 'table';
+    overlay.dataset.rteTableRows = rows;
     overlay.dataset.rteTableCols = cols;
-    setTimeout(function() { inputEl.focus(); inputEl.select(); }, 50);
+    _rteDialogState = { rte: rte, mode: 'table', existingLink: null, range: savedRangeInRte(rte) };
+    setTimeout(function() { if (rowsInput) rowsInput.focus(); }, 50);
   }
-
   function makeRteToolbarButton(className, label, title, html) {
     var btn = document.createElement('button');
     btn.type = 'button';
@@ -2940,6 +3074,7 @@
       ['.rte-upload-image-btn', '上传图片'],
       ['.rte-video-url-btn', '插入视频链接'],
       ['.rte-upload-video-btn', '上传视频'],
+      ['.rte-media-library-btn', '从媒体库选择'],
       ['.rte-source-btn', '查看/编辑 HTML 源码']
     ].forEach(function(item) {
       var btn = toolbar.querySelector(item[0]);
@@ -3046,8 +3181,91 @@
     syncRteBody(rte);
   }
 
+  function insertRteMediaFromLibrary(rte, url, category, name, range) {
+    if (!rte || !url) return;
+    restoreRteSelection(rte, range);
+    var safeUrl = String(url || '').replace(/"/g, '&quot;');
+    var safeName = String(name || url || 'media').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    if (category === 'image') {
+      document.execCommand('insertHTML', false, '<img src="' + safeUrl + '" alt="' + safeName + '" style="max-width:100%;border-radius:6px">');
+    } else if (category === 'video') {
+      insertRteVideo(rte, url);
+      return;
+    } else {
+      document.execCommand('insertHTML', false, '<a href="' + safeUrl + '" target="_blank" rel="noopener">' + safeName + '</a>');
+    }
+    syncRteBody(rte);
+  }
+
 
   // 注册鍦?document 上用事件委托，因涓wrapper 鏄姩鎬?DOM 节点銆?
+  function openRteMediaLibrary(btn, rte) {
+    if (!rte) return;
+    saveRteSelection(rte);
+    var overlay = document.getElementById('moduleMediaLibraryOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'moduleMediaLibraryOverlay';
+      overlay.className = 'module-media-library-overlay';
+      overlay.innerHTML = '<div class="module-media-library-dialog">' +
+        '<div class="module-media-library-head"><strong>选择媒体</strong><button type="button" class="module-media-library-close" title="关闭">×</button></div>' +
+        '<div class="module-media-library-grid"><div class="text-muted small p-3">加载中...</div></div>' +
+        '</div>';
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay || e.target.closest('.module-media-library-close')) {
+          overlay.classList.remove('show');
+        }
+      });
+    }
+    overlay._targetInput = null;
+    overlay._rteTarget = rte;
+    overlay._rteRange = savedRangeInRte(rte);
+    overlay.classList.add('show');
+    var grid = overlay.querySelector('.module-media-library-grid');
+    grid.innerHTML = '<div class="text-muted small p-3">加载中...</div>';
+    var site = (typeof currentSiteParam === 'function' && currentSiteParam()) || new URLSearchParams(window.location.search).get('site') || '';
+    fetch('/media?_fragment=1' + (site ? '&site=' + encodeURIComponent(site) : ''))
+      .then(function(r) { return r.text(); })
+      .then(function(html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var cards = Array.prototype.slice.call(doc.querySelectorAll('.media-card[data-url]'));
+        var items = cards.map(function(card) {
+          var url = card.dataset.url || '';
+          var name = card.dataset.displayName || card.dataset.name || url;
+          var category = card.dataset.category || 'other';
+          var isImage = category === 'image';
+          var isVideo = category === 'video';
+          var icon = isVideo ? '▶' : (category === 'document' ? 'DOC' : (category === 'package' ? 'ZIP' : 'FILE'));
+          return '<button type="button" class="module-media-library-item" data-url="' + attrEsc(url) + '" data-category="' + attrEsc(category) + '" data-name="' + attrEsc(name) + '" title="' + attrEsc(name) + '">' +
+            (isImage ? '<img src="' + attrEsc(url) + '" alt="" loading="lazy">' : '<span class="module-media-library-video">' + icon + '</span>') +
+            '<span>' + schemaEsc(name) + '</span></button>';
+        }).join('');
+        grid.innerHTML = items || '<div class="text-muted small p-3">媒体库暂无文件</div>';
+      })
+      .catch(function() {
+        grid.innerHTML = '<div class="text-danger small p-3">媒体库加载失败</div>';
+      });
+  }
+
+  document.addEventListener('click', function(e) {
+    var item = e.target.closest('#moduleMediaLibraryOverlay .module-media-library-item');
+    if (!item) return;
+    var overlay = item.closest('#moduleMediaLibraryOverlay');
+    if (!overlay || !overlay._rteTarget) return;
+    e.preventDefault();
+    e.stopPropagation();
+    insertRteMediaFromLibrary(
+      overlay._rteTarget,
+      item.dataset.url || '',
+      item.dataset.category || '',
+      item.dataset.name || item.getAttribute('title') || '',
+      overlay._rteRange
+    );
+    overlay._rteTarget = null;
+    overlay._rteRange = null;
+    overlay.classList.remove('show');
+  }, true);
   document.addEventListener('click', function(e) {
     var delBtn = e.target.closest('.rte-media-del');
     if (!delBtn) return;
@@ -3148,6 +3366,8 @@
       triggerRteImageUpload(btn);
     } else if (btn.classList.contains('rte-upload-video-btn')) {
       triggerRteVideoUpload(btn);
+    } else if (btn.classList.contains('rte-media-library-btn')) {
+      openRteMediaLibrary(btn, rte);
     } else if (btn.classList.contains('rte-table-btn')) {
       showTableGridPicker(rte, btn);
     } else if (btn.classList.contains('rte-table-settings-btn')) {
@@ -3162,7 +3382,7 @@
       toggleRteSource(rte);
     } else {
       rte.focus();
-      document.execCommand(cmd, false, arg);
+      runRteCommand(rte, cmd, arg);
       syncRteBody(rte);
     }
   });
@@ -3387,6 +3607,8 @@
 
     // 重置可能被表格设置修改的弹框状态
     delete overlay.dataset.rteMode;
+    var sizeRow = overlay.querySelector('.rte-table-dialog-size-row');
+    if (sizeRow) sizeRow.style.display = 'none';
     var borderRow = overlay.querySelector('.rte-table-dialog-border-row');
     if (borderRow) borderRow.style.display = 'none';
 
@@ -3446,14 +3668,18 @@
     restoreRteSelection(rte, state.range);
 
     if (state.mode === 'table') {
-      // 表格设置模式：从 overlay 取列宽和边框设置
       var table = getRteTableAtSelection(rte);
       if (table) {
         var dialog = overlay.querySelector('.rte-url-dialog');
         var cb = dialog ? dialog.querySelector('.rte-table-dialog-border-cb') : null;
         var showBorder = cb ? cb.checked : true;
-        var cols = parseInt(overlay.dataset.rteTableCols) || getRteTableColumnCount(table);
-        var widths = parseRteColumnWidths(url, cols);  // url 变量此时复用为列宽输入值
+        var rowsInput = dialog ? dialog.querySelector('.rte-table-dialog-rows') : null;
+        var colsInput = dialog ? dialog.querySelector('.rte-table-dialog-cols') : null;
+        var rows = rowsInput ? rowsInput.value : overlay.dataset.rteTableRows;
+        var cols = colsInput ? colsInput.value : overlay.dataset.rteTableCols;
+        resizeRteTable(table, rows, cols);
+        cols = getRteTableColumnCount(table);
+        var widths = parseRteColumnWidths(url, cols);
         applyRteTableSettings(table, widths, showBorder);
       }
     } else if (state.mode === 'link') {
@@ -3511,32 +3737,26 @@
     if (!wrapper) return;
     var sourceTa = wrapper.querySelector('.rte-source-ta');
     if (!sourceTa) return;
-    var isSource = sourceTa.style.display !== 'none';
+    var formTa = wrapper.querySelector('textarea[name]:not(.rte-source-ta)');
+    var isSource = !sourceTa.classList.contains('d-none') && window.getComputedStyle(sourceTa).display !== 'none';
     if (isSource) {
-      // 切回可视化编辑
       rte.innerHTML = sourceTa.value;
-      sourceTa.style.display = 'none';
-      rte.style.display = '';
-      var formTa = rte.nextElementSibling;
-      if (formTa && formTa.tagName === 'TEXTAREA' && formTa.classList.contains('d-none')) {
-        formTa.value = sourceTa.value;
-      }
+      sourceTa.classList.add('d-none');
+      rte.classList.remove('d-none');
+      if (formTa) formTa.value = sourceTa.value;
     } else {
-      // 切换到源码视图
       sourceTa.value = rte.innerHTML;
-      sourceTa.style.display = '';
-      rte.style.display = 'none';
-      // 同步到提交用的隐藏 textarea
-      var formTa = rte.nextElementSibling;
-      if (formTa && formTa.tagName === 'TEXTAREA' && formTa.classList.contains('d-none')) {
-        formTa.value = sourceTa.value;
-      }
+      sourceTa.classList.remove('d-none');
+      rte.classList.add('d-none');
+      if (formTa) formTa.value = sourceTa.value;
+      sourceTa.focus();
     }
+    rte.style.display = '';
+    sourceTa.style.display = '';
   }
-
   function syncRteBody(rte) {
     var wrapper = rte.closest('.rte-wrapper') || rte.parentElement;
-    var ta = wrapper ? (wrapper.querySelector('textarea[hidden], textarea.d-none, textarea[name="body"]')) : null;
+    var ta = wrapper ? wrapper.querySelector('textarea[name]:not(.rte-source-ta)') : null;
     if (ta) ta.value = rte.innerHTML;
   }
 
