@@ -189,7 +189,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=48"></script>
+<script src="/static/js/admin_modules.js?v=50"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -2707,6 +2707,8 @@ function moduleMediaPlaceholderIcon(accept) {
 function renderModuleMediaPicker(picker, src, fileName, accept) {
   if (!picker) return;
   var existingFile = picker.querySelector('input[type=file]');
+  // 保存旧文件引用——innerHTML 会销毁旧的 file input 及其已选文件
+  var oldFiles = existingFile && existingFile.files && existingFile.files.length ? existingFile.files : null;
   fileName = fileName || (existingFile ? existingFile.name : '');
   accept = accept || (existingFile ? existingFile.getAttribute('accept') : 'image/*,.svg,.svgz') || 'image/*,.svg,.svgz';
   var safeSrc = src ? String(src).replace(/"/g, '&quot;') : '';
@@ -2718,6 +2720,17 @@ function renderModuleMediaPicker(picker, src, fileName, accept) {
       '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
       '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>'
     : moduleMediaPlaceholderIcon(accept) + '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">';
+  // innerHTML 替换会销毁旧的 file input，需把已选文件恢复到新 input 中
+  if (oldFiles) {
+    var newInput = picker.querySelector('input[type=file]');
+    if (newInput) {
+      try {
+        var dt = new DataTransfer();
+        for (var i = 0; i < oldFiles.length; i++) { dt.items.add(oldFiles[i]); }
+        newInput.files = dt.files;
+      } catch(e) { /* DataTransfer 不可用时静默跳过 */ }
+    }
+  }
 }
 function handleModuleImageUpload(fileInput) {
   var file = fileInput.files[0];

@@ -149,6 +149,8 @@
       '<textarea class="form-control form-control-sm d-none" name="' + esc(name) + '">' + esc(value || '') + '</textarea>' +
       '</div>';
   }
+  // 导出到 window：panel_page_edit.html / panel_data_list.html 的内联脚本需要直接调用
+  window.richEditorHtml = richEditorHtml;
 
   function cn(name, ph, dv) {
     var hasVal = dv && String(dv).trim();
@@ -1238,6 +1240,8 @@
   function renderModuleMediaPicker(picker, src, fileName, accept) {
     if (!picker) return;
     var existingFile = picker.querySelector('input[type=file]');
+    // 保存旧文件引用——innerHTML 会销毁旧的 file input 及其已选文件
+    var oldFiles = existingFile && existingFile.files && existingFile.files.length ? existingFile.files : null;
     fileName = fileName || (existingFile ? existingFile.name : '');
     accept = accept || (existingFile ? existingFile.getAttribute('accept') : 'image/*,.svg,.svgz') || 'image/*,.svg,.svgz';
     var safeSrc = src ? String(src).replace(/"/g, '&quot;') : '';
@@ -1249,6 +1253,17 @@
         '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
         '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>'
       : moduleMediaPlaceholderIcon(accept) + '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">';
+    // innerHTML 替换会销毁旧的 file input，需把已选文件恢复到新 input 中
+    if (oldFiles) {
+      var newInput = picker.querySelector('input[type=file]');
+      if (newInput) {
+        try {
+          var dt = new DataTransfer();
+          for (var i = 0; i < oldFiles.length; i++) { dt.items.add(oldFiles[i]); }
+          newInput.files = dt.files;
+        } catch(e) { /* DataTransfer 不可用时静默跳过 */ }
+      }
+    }
   }
   window.handleModuleImageUpload = function(fileInput) {
     var file = fileInput.files[0];
