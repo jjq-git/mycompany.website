@@ -2591,13 +2591,15 @@
           '<option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option>' +
           '<option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option>' +
         '</select></div>' +
-      sw('show_view_all', '显示查看全部', false);
+      sw('show_view_all', '显示查看全部', false) +
+      sw('show_detail_btn', '显示"了解详情"按钮', true);
     return { specialEditor: specialEditor };
   }
 
   window._buildModuleHTML = buildModuleHTML;
   window.getMergedSchema = getMergedSchema;
   window._dataGridEditors = dataGridEditors;
+  window._dataListShowcaseEditors = dataListShowcaseEditors;
   window._featuredPicksEditors = function(prefix, values) {
     return featuredPicksEditors(prefix, findBlockMeta('featured_picks'), values || {});
   };

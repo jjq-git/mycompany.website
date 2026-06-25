@@ -306,6 +306,11 @@ def _process_field(node, field_def, data_dict, context):
         _inject_href(node, sub, context)
         return
 
+    # 无语义类型但带有 data-href-template：仅注入链接（如"了解详情"按钮）
+    if not dtype and node.attrs.get('data-href-template'):
+        _inject_href(node, data_dict, context)
+        return
+
     if dtype in bp.LIST_TYPES:
         _expand_list(node, field_def, data_dict, context)
         return

@@ -189,7 +189,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=79"></script>
+<script src="/static/js/admin_modules.js?v=81"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -1675,7 +1675,7 @@ function addModule(type, variant, dataPreset) {
   var styleEditor = '';
   // data-* 声明式 block：用 schema 自动生成表单，拦截在所有硬编码分支之前。
   // meta.is_data_attr/schema 由后端 scan_blocks 解析、随 blockLibraryJson 下发。
-  if (meta.is_data_attr && meta.schema && type !== 'feature_grid') {
+  if (meta.is_data_attr && meta.schema && type !== 'feature_grid' && type !== 'data_list_showcase') {
     var mergedSchema = _getMergedSchema(meta);
     if (type === 'featured_picks' && typeof window._featuredPicksEditors === 'function') {
       var fpEditors = window._featuredPicksEditors('module_' + idx + '_data_', dataPreset || {});
@@ -1688,6 +1688,10 @@ function addModule(type, variant, dataPreset) {
       specialEditor = generateSchemaForm('module_' + idx + '_data_', mergedSchema, {}, vT);
       styleEditor = generateSchemaStyleForm('module_' + idx + '_data_', mergedSchema, dataPreset);
     }
+  } else if (type === 'data_list_showcase' && typeof window._dataListShowcaseEditors === 'function') {
+    var dlsMergedSchema = _getMergedSchema(meta);
+    specialEditor = window._dataListShowcaseEditors(idx, dataPreset).specialEditor;
+    styleEditor = generateSchemaStyleForm('module_' + idx + '_data_', dlsMergedSchema, dataPreset);
   }
   else if (type === 'hero_banner') {
     styleEditor =
@@ -3052,6 +3056,10 @@ function initSchemaMounts() {
       mount.innerHTML = window._dataGridEditors(idx, mdata).specialEditor;
       var dgInitStyleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
       if (dgInitStyleMount) dgInitStyleMount.innerHTML = generateSchemaStyleForm(prefix, schema, mdata);
+    } else if (typeEl.value === 'data_list_showcase' && typeof window._dataListShowcaseEditors === 'function') {
+      mount.innerHTML = window._dataListShowcaseEditors(idx, mdata).specialEditor;
+      var dlsInitStyleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
+      if (dlsInitStyleMount) dlsInitStyleMount.innerHTML = generateSchemaStyleForm(prefix, schema, mdata);
     } else {
       mount.innerHTML = generateSchemaForm(prefix, schema, mdata, function() { return ''; });
       var styleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
