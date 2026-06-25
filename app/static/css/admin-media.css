@@ -332,7 +332,7 @@
   border: 1px solid var(--media-border);
   border-radius: 8px;
   background: #fff;
-  overflow: hidden;
+  /* 不能 overflow:hidden —— 会裁剪掉 left:-7px 的拖拽手柄 */
 }
 
 .media-preview-resizer {
@@ -390,7 +390,8 @@
   font-size: 13px;
   font-weight: 700;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  /* white-space: nowrap; */
+  word-break: break-all;
 }
 
 .media-modal-title {

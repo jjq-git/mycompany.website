@@ -20,6 +20,7 @@
 - **模板修改范围约束**：涉及 `site_templates/` 的修改，默认只改 `claude` 和 `dengtec` 两套模板。`airbnb`、`apple`、`notion` 等其他模板不动，除非用户明确指出要改哪套。这条同样适用于新增 block、修改 CSS/JS、调整种子数据等所有模板层操作
 - **后台 schema 表单改动必须先查全链路**：改 data-* block 字段时，先同时确认 `template.html`、`meta.yaml`、`app/templates/dashboard/panel_page_edit.html`、`app/static/js/admin_modules.js`、`block_renderer.py` 五处职责。右侧面板以 `template.html` 解析出的 schema 为主，`meta.yaml` 只补类型、label、options、`show_if` 等元信息；不要把 `meta.fields` 整体塞进内容表单，只有被 `show_if` 依赖但不在 schema 里的控制字段（如 `media_type`）可以额外注入。新增/已保存、桌面/平板/手机三条路径必须一起验证。
 - **富文本编辑器（RTE）只有一处定义**：`richEditorHtml()` 的唯一定义在 `app/static/js/admin_modules.js`。`panel_page_edit.html` 和 `panel_data_list.html` 都加载此 JS 后直接使用，不应在任何模板中重复定义同名函数。`page_home.html` 是独立体系（不加载 `admin_modules.js`，用 `onmousedown` 事件），暂不纳入统一。改 RTE 只改 `admin_modules.js` 即可生效于所有后台编辑面板。
+- **改完模板/CSS/JS 后自动重启 dev server**：涉及 HTML 模板、CSS、JS 文件改动后，改完立即杀掉旧进程并重启 `python run.py`，不要让用户提醒。Flask 热重载有时不生效（多进程残留、JS 缓存等），直接杀进程重启最可靠。
 
 ## 一、产品是什么
 
