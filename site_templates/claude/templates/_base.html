@@ -479,7 +479,7 @@ function loadMoreDataGrid(btn) {
   var perPage = parseInt(btn.getAttribute('data-per-page'), 10) || 6;
   var currentPage = parseInt(btn.getAttribute('data-page'), 10) || 1;
 
-  var list = pager.parentElement.querySelector('.dg-list');
+  var list = pager.parentElement.querySelector('.dg-list, .filterable-grid');
   if (!list) return;
 
   var cards = Array.prototype.slice.call(list.querySelectorAll('.dg-card')).filter(function(card) {
@@ -509,7 +509,7 @@ function goToDataGridPage(btn, page) {
   var pager = btn.closest('.dg-pager');
   if (!pager) return;
 
-  var list = pager.parentElement.querySelector('.dg-list');
+  var list = pager.parentElement.querySelector('.dg-list, .filterable-grid');
   if (!list) return;
 
   var configSpan = pager.querySelector('[data-pager-key="items_per_page"]');
@@ -550,7 +550,7 @@ function readDataGridPagerConfig(pager) {
 
 function resetDataGridPager(pager) {
   if (!pager) return;
-  var list = pager.parentElement.querySelector('.dg-list');
+  var list = pager.parentElement.querySelector('.dg-list, .filterable-grid');
   if (!list) return;
 
   var cfg = readDataGridPagerConfig(pager);
@@ -796,6 +796,8 @@ function initViewAllButtons() {
 
 function initModuleLists() {
   document.querySelectorAll('.module-list-region').forEach(function(region) {
+    // 跳过 data_grid / data_list_showcase 等由 initFilterableGrids 管理的区域
+    if (region.querySelector('.filterable-grid')) return;
     var items = Array.prototype.slice.call(region.querySelectorAll('[data-module-list-item="true"]'));
     var searchInput = region.querySelector('.module-list-search');
     var countEl = region.querySelector('.module-list-count');

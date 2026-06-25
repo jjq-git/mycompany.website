@@ -25,7 +25,7 @@
     </div>
 
     <div data-name="items" data-type="list" data-source="" class="data-list-showcase__items filterable-grid" data-filter-id="{dataset}">
-      <a data-name="item" data-type="group" data-href-template="{dataset_path}{slug}/" class="data-list-showcase__item dg-card">
+      <div data-name="item" data-type="group" data-href-template="{dataset_path}{slug}/" class="data-list-showcase__item dg-card">
         <section class="section data-list-showcase__card">
           <div class="hl-grid">
             <div class="hl-image data-list-showcase__image-link">
@@ -34,21 +34,19 @@
             <div class="hl-text">
               <span data-name="category" data-type="text" class="hl-tag filter-source-category">Category</span>
               <h3 data-name="title" data-fallback="name" data-type="text" class="hl-title">Title</h3>
-              <p data-name="summary" data-fallback="excerpt,description" data-type="text" class="hl-desc">Summary</p>
-              <ul class="hl-features data-list-showcase__meta">
-                <li data-name="model" data-fallback="sku,code,id" data-type="text" class="hl-feature">Model</li>
-                <li data-name="date" data-type="text" class="hl-feature">Date</li>
-              </ul>
+              <span data-name="date" data-type="text" class="hl-date">Date</span>
+              <p data-name="summary" data-fallback="excerpt,description" data-type="richtext" class="hl-desc">Summary</p>
               <div data-name="tags" data-type="list" class="dg-card-tags filter-source-tags data-list-showcase__tags">
                 <span data-name="tag" data-type="text" class="dg-card-tag">Tag</span>
               </div>
+              <span data-name="show_detail_btn" data-type="text" hidden>true</span>
               <div class="hl-actions">
-                <span class="hl-btn hl-btn--primary">Learn more</span>
+                <a data-show-when="show_detail_btn:true" class="hl-btn hl-btn--primary">Learn more</a>
               </div>
             </div>
           </div>
         </section>
-      </a>
+      </div>
     </div>
 
     <p class="dg-empty-state module-list-empty" data-filter-empty="{dataset}" hidden>No matching items.</p>
@@ -67,4 +65,15 @@
       <a data-href-template="{dataset_path}" class="btn btn-primary">View all</a>
     </div>
   </div>
+  <script>
+(function(){
+  var items = document.querySelectorAll('.data-list-showcase__item[href]');
+  items.forEach(function(item) {
+    var btn = item.querySelector('.hl-btn--primary');
+    if (btn && !btn.getAttribute('href')) {
+      btn.setAttribute('href', item.getAttribute('href'));
+    }
+  });
+})();
+</script>
 </section>

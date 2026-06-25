@@ -9,11 +9,6 @@ fields:
     group: 数据
     default: modules
     placeholder: products / portfolio / posts / modules
-  - key: max_items
-    label: 最大显示数量
-    type: number
-    group: 数据
-    default: 12
   - key: show_search
     label: 显示搜索
     type: select
@@ -89,6 +84,16 @@ fields:
     type: select
     group: 分页
     default: "false"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_detail_btn
+    label: 显示"了解详情"按钮
+    type: select
+    group: 按钮
+    default: "true"
     options:
       - value: "true"
         label: 显示
