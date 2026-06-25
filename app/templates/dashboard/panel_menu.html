@@ -72,22 +72,24 @@
           '<div class="menu-tree-card-row">' +
             collapseHtml +
             '<input class="menu-label" placeholder="菜单名称" value="' + escapeAttr(item.label) + '"' + (isHome ? ' readonly' : '') + '>' +
-            badgeHtml +
-            '<select class="menu-type"' + (isHome ? ' disabled' : '') + '>' +
-              Object.keys(typeLabels).filter(function(t){ return isHome || t !== 'home'; }).map(function(t){ return '<option value="' + t + '"' + (item.type === t ? ' selected' : '') + '>' + typeLabels[t] + '</option>'; }).join('') +
-            '</select>' +
-            '<button type="button" class="menu-tree-btn move-up" title="上移"' + (isHome ? ' disabled' : '') + '>↑</button>' +
-            '<button type="button" class="menu-tree-btn move-down" title="下移"' + (isHome ? ' disabled' : '') + '>↓</button>' +
-            '<button type="button" class="menu-tree-btn menu-tree-btn-danger delete-item" title="删除"' + (isHome ? ' disabled' : '') + '>×</button>' +
+            '<span class="menu-tree-actions">' +
+              badgeHtml +
+              '<select class="menu-type"' + (isHome ? ' disabled' : '') + '>' +
+                Object.keys(typeLabels).filter(function(t){ return isHome || t !== 'home'; }).map(function(t){ return '<option value="' + t + '"' + (item.type === t ? ' selected' : '') + '>' + typeLabels[t] + '</option>'; }).join('') +
+              '</select>' +
+              '<button type="button" class="menu-tree-btn move-up" title="上移"' + (isHome ? ' disabled' : '') + '>↑</button>' +
+              '<button type="button" class="menu-tree-btn move-down" title="下移"' + (isHome ? ' disabled' : '') + '>↓</button>' +
+              '<button type="button" class="menu-tree-btn menu-tree-btn-danger delete-item" title="删除"' + (isHome ? ' disabled' : '') + '>×</button>' +
+            '</span>' +
           '</div>' +
           // 可折叠区域：目标/URL + 下拉样式 + 添加子菜单 + 子菜单容器
           '<div class="menu-tree-collapsible">' +
-            '<label class="form-check-label small d-flex align-items-center gap-1 mt-1">' +
-              '<input type="checkbox" class="form-check-input menu-visible" ' + (item.hidden === true ? '' : ' checked') + (isHome ? ' disabled' : '') + '> 显示在导航菜单' +
-            '</label>' +
             '<div class="menu-tree-card-row mt-1">' +
               '<input class="menu-target" placeholder="页面路径，如 products / about" value="' + escapeAttr(item.target) + '">' +
               '<input class="menu-url" placeholder="链接地址，如 https:// 或 /page" value="' + escapeAttr(item.url) + '">' +
+              '<label class="form-check-label small d-flex align-items-center gap-1 ms-auto">' +
+                '<input type="checkbox" class="form-check-input menu-visible" ' + (item.hidden === true ? '' : ' checked') + (isHome ? ' disabled' : '') + '> 显示在导航菜单' +
+              '</label>' +
             '</div>' +
             '<div class="menu-tree-card-row mt-1">' +
               '<select class="menu-dropdown-style">' +

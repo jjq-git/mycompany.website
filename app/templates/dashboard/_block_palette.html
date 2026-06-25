@@ -294,7 +294,10 @@
   }
 
   function buildPaletteData() {
-    return getBlockLibrary().map(function(b) {
+    return getBlockLibrary().filter(function(b) {
+      // item_data 仅在数据集编辑器中自动追加，不出现在模块选择弹框中
+      return b.name !== 'item_data';
+    }).map(function(b) {
       return {
         type: b.name,
         name: b.display_name || b.name,
