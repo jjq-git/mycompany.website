@@ -114,38 +114,97 @@
 
   function richEditorHtml(name, value) {
     var icons = {
-      bold: '<svg viewBox="0 0 24 24"><path d="M7 5h7a4 4 0 0 1 0 8H7z"/><path d="M7 13h8a4 4 0 0 1 0 8H7z"/></svg>',
-      italic: '<svg viewBox="0 0 24 24"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg>',
-      underline: '<svg viewBox="0 0 24 24"><path d="M6 4v6a6 6 0 0 0 12 0V4"/><path d="M4 21h16"/></svg>',
-      strike: '<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M16 6.5A4.5 4.5 0 0 0 8 9c0 1 .4 1.8 1.2 2.4"/><path d="M9 17.5a5 5 0 0 0 7.7-2.2"/></svg>',
-      left: '<svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 10h10"/><path d="M4 14h16"/><path d="M4 18h10"/></svg>',
-      center: '<svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M7 10h10"/><path d="M4 14h16"/><path d="M7 18h10"/></svg>',
-      right: '<svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M10 10h10"/><path d="M4 14h16"/><path d="M10 18h10"/></svg>',
-      ul: '<svg viewBox="0 0 24 24"><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>',
-      ol: '<svg viewBox="0 0 24 24"><path d="M10 6h10"/><path d="M10 12h10"/><path d="M10 18h10"/><path d="M4 5h1v4"/><path d="M3.5 9h3"/><path d="M3.5 12.5A1.5 1.5 0 0 1 5 11h0a1.5 1.5 0 0 1 .9 2.7L4 16h3"/><path d="M4 19h1.5a1.5 1.5 0 1 0 0-3H4"/></svg>',
-      link: '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.2 1.2"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.2-1.2"/></svg>',
-      clear: '<svg viewBox="0 0 24 24"><path d="m7 21 10-10"/><path d="m12 3 9 9-6 6H6l-3-3z"/></svg>',
-      undo: '<svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-1"/></svg>',
-      redo: '<svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h1"/></svg>'
+      bold: '<svg viewBox="0 0 24 24"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>',
+      italic: '<svg viewBox="0 0 24 24"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>',
+      underline: '<svg viewBox="0 0 24 24"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg>',
+      strike: '<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M17 6.5A5 5 0 0 0 8 9c0 1 .3 1.8 1 2.4"/><path d="M9 17.5a5 5 0 0 0 7.7-2.2"/></svg>',
+      alignLeft: '<svg viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>',
+      alignCenter: '<svg viewBox="0 0 24 24"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="18" y1="14" x2="6" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>',
+      alignRight: '<svg viewBox="0 0 24 24"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="7" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>',
+      ul: '<svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+      ol: '<svg viewBox="0 0 24 24"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M3 10h2"/><path d="M4 18h1.5a1.5 1.5 0 1 0 0-3H4"/></svg>',
+      indent: '<svg viewBox="0 0 24 24"><line x1="21" y1="6" x2="11" y2="6"/><line x1="21" y1="10" x2="11" y2="10"/><line x1="21" y1="14" x2="11" y2="14"/><line x1="21" y1="18" x2="11" y2="18"/><polyline points="7 8 3 12 7 16"/></svg>',
+      outdent: '<svg viewBox="0 0 24 24"><line x1="21" y1="6" x2="11" y2="6"/><line x1="21" y1="10" x2="11" y2="10"/><line x1="21" y1="14" x2="11" y2="14"/><line x1="21" y1="18" x2="11" y2="18"/><polyline points="3 8 7 12 3 16"/></svg>',
+      table: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>',
+      link: '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+      imageUrl: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+      imageUpload: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+      videoUrl: '<svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
+      videoUpload: '<svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/><line x1="8" y1="13" x2="8" y2="19"/><polyline points="5 16 8 19 11 16"/></svg>',
+      blockquote: '<svg viewBox="0 0 24 24"><path d="M3 5v8h5.5L6 21"/><path d="M12 5v8h5.5L15 21"/></svg>',
+      hr: '<svg viewBox="0 0 24 24"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="8 8 4 12 8 16"/><polyline points="16 8 20 12 16 16"/></svg>',
+      sub: '<svg viewBox="0 0 24 24"><text x="4" y="14" font-size="12" font-weight="bold" fill="currentColor">x</text><text x="14" y="22" font-size="9" font-weight="bold" fill="currentColor">2</text></svg>',
+      sup: '<svg viewBox="0 0 24 24"><text x="4" y="12" font-size="12" font-weight="bold" fill="currentColor">x</text><text x="14" y="10" font-size="9" font-weight="bold" fill="currentColor">2</text></svg>',
+      settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>',
+      clear: '<svg viewBox="0 0 24 24"><line x1="10" y1="6" x2="17" y2="6"/><path d="M7.5 6L9 18h6l1.5-12"/><line x1="4.5" y1="6" x2="19.5" y2="6"/></svg>',
+      undo: '<svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
+      redo: '<svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>',
+      code: '<svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>'
     };
     function btn(cmd, title, icon, extra) {
-      return '<button type="button" class="btn btn-sm btn-light rte-btn ' + (extra || '') + '" data-cmd="' + cmd + '" title="' + title + '" aria-label="' + title + '">' + icon + '</button>';
+      var cls = 'btn btn-sm btn-light rte-btn ' + (extra || '');
+      return '<button type="button" class="' + cls + '" data-cmd="' + cmd + '" title="' + title + '" aria-label="' + title + '">' + icon + '</button>';
     }
+    function btnArg(cmd, arg, title, html, extra) {
+      var cls = 'btn btn-sm btn-light rte-btn ' + (extra || '');
+      return '<button type="button" class="' + cls + '" data-cmd="' + cmd + '" data-arg="' + arg + '" title="' + title + '" aria-label="' + title + '">' + html + '</button>';
+    }
+    // ----- 工具栏 HTML：按功能分组，rte-sep 竖线分隔 -----
+    var tb = '<div class="rich-toolbar rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">';
+    // G1 内联格式
+    tb += btn('bold', '加粗 (Ctrl+B)', icons.bold);
+    tb += btn('italic', '斜体 (Ctrl+I)', icons.italic);
+    tb += btn('underline', '下划线 (Ctrl+U)', icons.underline);
+    tb += btn('strikeThrough', '删除线', icons.strike);
+    tb += '<span class="rte-sep"></span>';
+    // G2 标题（直接显示 H2/H3/H4/P 按钮）
+    tb += btnArg('formatBlock', 'h2', '二级标题', 'H2', 'rte-heading-btn');
+    tb += btnArg('formatBlock', 'h3', '三级标题', 'H3', 'rte-heading-btn');
+    tb += btnArg('formatBlock', 'h4', '四级标题', 'H4', 'rte-heading-btn');
+    tb += btnArg('formatBlock', 'p', '正文段落', 'P', 'rte-heading-btn');
+    tb += '<span class="rte-sep"></span>';
+    // G3 对齐
+    tb += btn('justifyLeft', '左对齐', icons.alignLeft);
+    tb += btn('justifyCenter', '居中', icons.alignCenter);
+    tb += btn('justifyRight', '右对齐', icons.alignRight);
+    tb += '<span class="rte-sep"></span>';
+    // G4 列表 & 缩进
+    tb += btn('insertUnorderedList', '无序列表', icons.ul);
+    tb += btn('insertOrderedList', '有序列表', icons.ol);
+    tb += btn('indent', '增加缩进', icons.indent);
+    tb += btn('outdent', '减少缩进', icons.outdent);
+    tb += '<span class="rte-sep"></span>';
+    // G5 插入元素（表格/链接/图片/视频）
+    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-btn" title="插入表格" aria-label="插入表格">' + icons.table + '</button>';
+    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-settings-btn" title="表格设置（修改列宽/边框）" aria-label="表格设置">' + icons.settings + '</button>';
+    tb += '<span class="rte-sep rte-media-sep"></span>';
+    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-link-btn" title="插入链接 (Ctrl+K)" aria-label="插入链接">' + icons.link + '</button>';
+    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-image-btn" title="插入图片链接" aria-label="插入图片链接">' + icons.imageUrl + '</button>';
+    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-upload-image-btn" title="上传图片" aria-label="上传图片">' + icons.imageUpload + '</button>';
+    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-video-url-btn" title="插入视频链接" aria-label="插入视频链接">' + icons.videoUrl + '</button>';
+    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-upload-video-btn" title="上传视频" aria-label="上传视频">' + icons.videoUpload + '</button>';
+    tb += '<span class="rte-sep"></span>';
+    // G6 结构元素
+    tb += btnArg('formatBlock', '<blockquote>', '引用块', icons.blockquote);
+    tb += btn('insertHorizontalRule', '分割线', icons.hr);
+    tb += '<span class="rte-sep"></span>';
+    // G7 文字样式
+    tb += btn('subscript', '下标', icons.sub);
+    tb += btn('superscript', '上标', icons.sup);
+    tb += '<input type="color" class="rte-color-picker" value="#141413" title="文字颜色">';
+    tb += btn('removeFormat', '清除格式', icons.clear);
+    tb += '<span class="rte-sep"></span>';
+    // G8 撤销/重做
+    tb += btn('undo', '撤销', icons.undo);
+    tb += btn('redo', '重做', icons.redo);
+    tb += '<span class="rte-sep"></span>';
+    // G9 HTML 源码切换
+    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-source-btn" title="查看/编辑 HTML 源码" aria-label="查看源码">' + icons.code + '</button>';
+    tb += '</div>';
     return '<div class="rte-wrapper">' +
-      '<div class="rich-toolbar rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">' +
-      btn('bold', '加粗', icons.bold) + btn('italic', '斜体', icons.italic) + btn('underline', '下划线', icons.underline) + btn('strikeThrough', '删除线', icons.strike) +
-      '<span class="rte-sep"></span>' +
-      '<select class="form-select form-select-sm rte-heading-select" style="width:auto;font-size:12px" title="标题"><option value="">正文</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option></select>' +
-      '<span class="rte-sep"></span>' +
-      btn('justifyLeft', '左对齐', icons.left) + btn('justifyCenter', '居中', icons.center) + btn('justifyRight', '右对齐', icons.right) +
-      '<span class="rte-sep"></span>' +
-      btn('insertUnorderedList', '无序列表', icons.ul) + btn('insertOrderedList', '有序列表', icons.ol) +
-      '<button type="button" class="btn btn-sm btn-light rte-btn rte-link-btn" title="链接" aria-label="链接">' + icons.link + '</button>' +
-      '<span class="rte-sep"></span>' +
-      '<input type="color" class="rte-color-picker" value="#141413" title="文字颜色">' +
-      btn('removeFormat', '清除格式', icons.clear) + btn('undo', '撤销', icons.undo) + btn('redo', '重做', icons.redo) +
-      '</div>' +
+      tb +
       '<div contenteditable="true" class="rich-editor-body form-control form-control-sm rte-editor" style="min-height:150px;max-height:400px;overflow-y:auto;line-height:1.7;font-size:13px;outline:none" data-placeholder="">' + (value || '') + '</div>' +
+      '<textarea class="form-control form-control-sm d-none rte-source-ta" style="min-height:150px;max-height:400px;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.5" spellcheck="false"></textarea>' +
       '<textarea class="form-control form-control-sm d-none" name="' + esc(name) + '">' + esc(value || '') + '</textarea>' +
       '</div>';
   }
@@ -2664,34 +2723,20 @@
     });
   }
 
-  function insertRteTableConfigured(rte) {
-    var size = window.prompt('Table size, for example 2x2', '2x2');
-    if (size === null) return;
-    var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,\x2c ]\s*(\d+)\s*$/);
-    var rows = match ? parseInt(match[1], 10) : 2;
-    var cols = match ? parseInt(match[2], 10) : 2;
+  // 直接插入指定行列的表格（默认等宽、有边框），由可视化网格选择器调用
+  function insertRteTableGrid(rte, rows, cols) {
     rows = Math.max(1, Math.min(rows || 2, 20));
     cols = Math.max(1, Math.min(cols || 2, 10));
-
-    var defaults = [];
-    for (var i = 0; i < cols; i++) defaults.push(Math.round(100 / cols));
-    var widthsInput = window.prompt('Column widths, for example 50,50. Leave blank for equal widths.', defaults.join(','));
-    if (widthsInput === null) return;
-    var borderInput = window.prompt('Show table borders? y/n', 'y');
-    if (borderInput === null) return;
-    var widths = parseRteColumnWidths(widthsInput, cols);
-    var showBorder = !/^n(o)?|0|false$/i.test(String(borderInput || '').trim());
-
     restoreRteSelection(rte);
-    var html = '<table style="width:100%;table-layout:fixed;border-collapse:collapse" data-rte-border="' + (showBorder ? '1' : '0') + '" data-rte-widths="' + (widths && widths.length ? '1' : '0') + '">';
+    var w = Math.round(100 / cols);
+    var widths = [];
+    for (var i = 0; i < cols; i++) widths.push(w + '%');
+    var html = '<table style="width:100%;table-layout:fixed;border-collapse:collapse" data-rte-border="1" data-rte-widths="1">';
     html += buildRteColgroup(widths) + '<tbody>';
     for (var r = 0; r < rows; r++) {
       html += '<tr>';
       for (var c = 0; c < cols; c++) {
-        var cellStyle = '';
-        if (widths[c]) cellStyle += 'width:' + widths[c] + ';';
-        if (!showBorder) cellStyle += 'border:none;';
-        html += '<td' + (cellStyle ? ' style="' + cellStyle + '"' : '') + '><br></td>';
+        html += '<td style="width:' + widths[c] + '"><br></td>';
       }
       html += '</tr>';
     }
@@ -2700,23 +2745,128 @@
     syncRteBody(rte);
   }
 
+  // 显示可视化表格网格选择器（替代多次 prompt）
+  function showTableGridPicker(rte, btn) {
+    var wrapper = rte.closest('.rte-wrapper');
+    if (!wrapper) return;
+    // 如果已存在则先移除
+    var existing = wrapper.querySelector('.rte-table-grid-popover');
+    if (existing) { existing.remove(); return; }
+    var MAX_COLS = 10, MAX_ROWS = 8;
+    var popover = document.createElement('div');
+    popover.className = 'rte-table-grid-popover';
+    popover.style.cssText = 'position:absolute;z-index:99999;background:#fff;border:1px solid #dee2e6;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.15);padding:8px';
+    var header = document.createElement('div');
+    header.className = 'rte-table-grid-header';
+    header.style.cssText = 'text-align:center;font-size:12px;color:#6c757d;margin-bottom:6px;font-weight:500';
+    header.textContent = '拖选表格大小';
+    popover.appendChild(header);
+    var grid = document.createElement('div');
+    grid.className = 'rte-table-grid';
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(' + MAX_COLS + ', 22px);gap:2px';
+    for (var r = 1; r <= MAX_ROWS; r++) {
+      for (var c = 1; c <= MAX_COLS; c++) {
+        var cell = document.createElement('div');
+        cell.className = 'rte-table-grid-cell';
+        cell.style.cssText = 'width:22px;height:22px;border:1px solid #e0e0e0;border-radius:2px;cursor:pointer;transition:background .08s';
+        cell.dataset.row = r;
+        cell.dataset.col = c;
+        grid.appendChild(cell);
+      }
+    }
+    popover.appendChild(grid);
+    wrapper.appendChild(popover);
+    // 定位在按钮下方
+    var btnRect = btn.getBoundingClientRect();
+    var wrapperRect = wrapper.getBoundingClientRect();
+    popover.style.left = (btnRect.left - wrapperRect.left) + 'px';
+    popover.style.top = (btnRect.bottom - wrapperRect.top + 4) + 'px';
+    // hover 高亮
+    var hoverRow = 0, hoverCol = 0;
+    function highlight() {
+      grid.querySelectorAll('.rte-table-grid-cell').forEach(function(c) {
+        var cr = parseInt(c.dataset.row), cc = parseInt(c.dataset.col);
+        if (cr <= hoverRow && cc <= hoverCol) {
+          c.style.background = 'var(--bs-primary, #0d6efd)';
+          c.style.borderColor = 'var(--bs-primary, #0d6efd)';
+        } else {
+          c.style.background = '';
+          c.style.borderColor = '#e0e0e0';
+        }
+      });
+      header.textContent = hoverRow > 0 ? (hoverRow + '×' + hoverCol + ' 表格') : '拖选表格大小';
+    }
+    grid.addEventListener('mouseover', function(e) {
+      var cell = e.target.closest('.rte-table-grid-cell');
+      if (!cell) return;
+      hoverRow = parseInt(cell.dataset.row);
+      hoverCol = parseInt(cell.dataset.col);
+      highlight();
+    });
+    grid.addEventListener('mouseleave', function() {
+      hoverRow = 0; hoverCol = 0;
+      highlight();
+    });
+    grid.addEventListener('click', function(e) {
+      var cell = e.target.closest('.rte-table-grid-cell');
+      if (!cell) return;
+      popover.remove();
+      insertRteTableGrid(rte, parseInt(cell.dataset.row), parseInt(cell.dataset.col));
+    });
+    // 点击外部关闭
+    setTimeout(function() {
+      var closeHandler = function(ev) {
+        if (!popover.parentNode) { document.removeEventListener('click', closeHandler); return; }
+        if (!popover.contains(ev.target) && ev.target !== btn) {
+          popover.remove();
+          document.removeEventListener('click', closeHandler);
+        }
+      };
+      document.addEventListener('click', closeHandler);
+    }, 50);
+  }
+
+  // 单个弹框编辑表格（列宽 + 边框），替代两次 prompt
   function editRteTable(rte) {
     restoreRteSelection(rte);
     var table = getRteTableAtSelection(rte);
     if (!table) {
-      window.alert('Place the cursor inside a table first.');
+      window.alert('请先将光标置于表格内');
       return;
     }
+    var wrapper = rte.closest('.rte-wrapper');
+    var overlay = ensureRteUrlOverlay(wrapper);  // 复用弹框基础设施
+    if (!overlay) return;
     var cols = getRteTableColumnCount(table);
-    var widthsInput = window.prompt('Column widths, for example 50,50. Leave blank to clear custom widths.', getRteTableWidths(table));
-    if (widthsInput === null) return;
+    var currentWidths = getRteTableWidths(table);
     var currentBorder = table.getAttribute('data-rte-border') !== '0';
-    var borderInput = window.prompt('Show table borders? y/n', currentBorder ? 'y' : 'n');
-    if (borderInput === null) return;
-    var widths = parseRteColumnWidths(widthsInput, cols);
-    var showBorder = !/^n(o)?|0|false$/i.test(String(borderInput || '').trim());
-    applyRteTableSettings(table, widths, showBorder);
-    syncRteBody(rte);
+    // 改造弹框内容为表格设置
+    var titleEl = overlay.querySelector('.rte-url-dialog-title');
+    var inputEl = overlay.querySelector('.rte-url-dialog-input');
+    var confirmEl = overlay.querySelector('.rte-url-dialog-confirm');
+    var cancelEl = overlay.querySelector('.rte-url-dialog-cancel');
+    var dialog = overlay.querySelector('.rte-url-dialog');
+    // 添加列宽输入和第二行控件前先保存原始结构，但这里动态改简单
+    // 把 input placeholder 当列宽用，再加一个边框复选框
+    titleEl.textContent = '表格设置（' + cols + ' 列）'; // 表格设置（N 列）
+    inputEl.value = currentWidths || '';
+    inputEl.placeholder = '列宽，如 50,50，留空则等宽'; // 列宽，如 50,50，留空则等宽
+    confirmEl.textContent = '应用';
+    // 动态添加边框行（如果还没有）
+    var borderRow = dialog.querySelector('.rte-table-dialog-border-row');
+    if (!borderRow) {
+      borderRow = document.createElement('div');
+      borderRow.className = 'rte-table-dialog-border-row d-flex align-items-center gap-2 mt-2';
+      borderRow.innerHTML = '<label style="font-size:12px;white-space:nowrap;margin:0"><input type="checkbox" class="rte-table-dialog-border-cb"> 显示表格边框</label>';
+      inputEl.parentNode.insertBefore(borderRow, inputEl.nextSibling);
+    }
+    var borderCb = dialog.querySelector('.rte-table-dialog-border-cb');
+    if (borderCb) borderCb.checked = currentBorder;
+    overlay.style.display = 'flex';
+    // 临时标记此弹框为表格模式
+    overlay.dataset.rteMode = 'table';
+    overlay.dataset.rteTableCols = cols;
+    setTimeout(function() { inputEl.focus(); inputEl.select(); }, 50);
   }
 
   function makeRteToolbarButton(className, label, title, html) {
@@ -2751,31 +2901,46 @@
 
   function normalizeRteToolbar(toolbar) {
     if (!toolbar) return;
+    // data-cmd 按钮的默认 tooltip
     var cmdTitles = {
-      bold: '加粗', italic: '斜体', underline: '下划线', strikeThrough: '删除线',
+      bold: '加粗 (Ctrl+B)', italic: '斜体 (Ctrl+I)', underline: '下划线 (Ctrl+U)', strikeThrough: '删除线',
       justifyLeft: '左对齐', justifyCenter: '居中', justifyRight: '右对齐',
       insertUnorderedList: '无序列表', insertOrderedList: '有序列表',
-      formatBlock: '引用块', insertHorizontalRule: '分割线',
+      indent: '增加缩进', outdent: '减少缩进',
+      insertHorizontalRule: '分割线',
+      subscript: '下标', superscript: '上标',
       removeFormat: '清除格式', undo: '撤销', redo: '重做'
     };
     toolbar.querySelectorAll('.rte-btn[data-cmd]').forEach(function(btn) {
-      var title = cmdTitles[btn.dataset.cmd];
-      if (!title) return;
-      btn.title = title;
-      btn.setAttribute('aria-label', title);
+      var title = null;
+      // formatBlock 按钮根据 data-arg 决定 tooltip
+      if (btn.dataset.cmd === 'formatBlock') {
+        var arg = btn.dataset.arg || '';
+        if (arg === 'h2') title = '二级标题';
+        else if (arg === 'h3') title = '三级标题';
+        else if (arg === 'h4') title = '四级标题';
+        else if (arg === 'p') title = '正文段落';
+        else if (arg === '<blockquote>') title = '引用块';
+      } else {
+        title = cmdTitles[btn.dataset.cmd];
+      }
+      if (title) {
+        btn.title = title;
+        btn.setAttribute('aria-label', title);
+      }
     });
-    var heading = toolbar.querySelector('.rte-heading-select');
-    if (heading) heading.title = '标题样式';
     var color = toolbar.querySelector('.rte-color-picker');
     if (color) color.title = '文字颜色';
+    // 特定 class 按钮的 tooltip（无 data-cmd 的按钮）
     [
-      ['.rte-table-btn', '插入表格'],
-      ['.rte-table-settings-btn', '表格设置'],
-      ['.rte-link-btn', '插入链接'],
+      ['.rte-table-btn', '插入表格（拖选大小）'],
+      ['.rte-table-settings-btn', '表格设置（修改列宽/边框）'],
+      ['.rte-link-btn', '插入链接 (Ctrl+K)'],
       ['.rte-image-btn', '插入图片链接'],
       ['.rte-upload-image-btn', '上传图片'],
       ['.rte-video-url-btn', '插入视频链接'],
-      ['.rte-upload-video-btn', '上传视频']
+      ['.rte-upload-video-btn', '上传视频'],
+      ['.rte-source-btn', '查看/编辑 HTML 源码']
     ].forEach(function(item) {
       var btn = toolbar.querySelector(item[0]);
       if (!btn) return;
@@ -2784,81 +2949,17 @@
     });
   }
 
+  // 工具栏按钮已在 richEditorHtml 中完整生成，此处只做 tooltip 规范化
   function finalizeRteToolbar(wrapper, toolbar) {
-    if (!wrapper || !toolbar) return;
-    var tableInsertBtn = toolbar.querySelector('.rte-table-btn');
-    var tableSettingsBtn = ensureRteToolbarButton(wrapper, 'rte-table-settings-btn', 'T', '表格设置');
-    if (tableInsertBtn) placeRteToolbarGroup(toolbar, tableInsertBtn, [tableSettingsBtn]);
-
-    var mediaSep = wrapper.querySelector('.rte-media-sep');
-    if (!mediaSep) {
-      mediaSep = document.createElement('span');
-      mediaSep.className = 'rte-sep rte-media-sep';
-    }
-    var linkBtn = ensureRteToolbarButton(wrapper, 'rte-link-btn', 'L', '插入链接');
-    var imageUrlBtn = ensureRteToolbarButton(wrapper, 'rte-image-btn', 'P', '插入图片链接');
-    var imageUploadBtn = ensureRteToolbarButton(wrapper, 'rte-upload-image-btn', 'I', '上传图片');
-    var videoUrlBtn = ensureRteToolbarButton(wrapper, 'rte-video-url-btn', 'V', '插入视频链接');
-    var videoUploadBtn = ensureRteToolbarButton(wrapper, 'rte-upload-video-btn', 'V', '上传视频');
-    var mediaAnchor = tableSettingsBtn || tableInsertBtn;
-    if (mediaAnchor) {
-      placeRteToolbarGroup(toolbar, mediaAnchor, [mediaSep, linkBtn, imageUrlBtn, imageUploadBtn, videoUrlBtn, videoUploadBtn]);
-    }
-    normalizeRteToolbar(toolbar);
+    if (toolbar) normalizeRteToolbar(toolbar);
   }
 
+  // 确保 RTE wrapper 有文件 input + 上传状态（工具栏按钮已在 richEditorHtml 中生成）
   function ensureRteUploadControls(rte) {
     var wrapper = rte && rte.closest('.rte-wrapper');
     if (!wrapper) return;
     var toolbar = wrapper.querySelector('.rte-toolbar');
-    if (!toolbar) return;
-    if (!wrapper.querySelector('.rte-table-settings-btn')) {
-      var tableBtn = document.createElement('button');
-      tableBtn.type = 'button';
-      tableBtn.className = 'btn btn-sm btn-light rte-btn rte-table-settings-btn';
-      tableBtn.style.cssText = 'font-size:12px;line-height:1';
-      tableBtn.title = '表格设置';
-      tableBtn.textContent = 'T';
-      toolbar.appendChild(tableBtn);
-    }
-    var mediaSep = wrapper.querySelector('.rte-media-sep');
-    if (!mediaSep) {
-      mediaSep = document.createElement('span');
-      mediaSep.className = 'rte-sep rte-media-sep';
-      toolbar.appendChild(mediaSep);
-    }
-    if (!wrapper.querySelector('.rte-upload-image-btn')) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn btn-sm btn-light rte-btn rte-upload-image-btn';
-      btn.style.cssText = 'font-size:12px;line-height:1';
-      btn.title = '上传并插入图片';
-      btn.setAttribute('aria-label', '上传图片');
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path></svg>';
-      toolbar.appendChild(btn);
-    }
-    if (!wrapper.querySelector('.rte-video-url-btn')) {
-      var videoUrlBtn = document.createElement('button');
-      videoUrlBtn.type = 'button';
-      videoUrlBtn.className = 'btn btn-sm btn-light rte-btn rte-video-url-btn';
-      videoUrlBtn.style.cssText = 'font-size:12px;line-height:1';
-      videoUrlBtn.title = '插入视频链接';
-      videoUrlBtn.setAttribute('aria-label', '插入视频链接');
-      videoUrlBtn.textContent = 'VID';
-      toolbar.appendChild(videoUrlBtn);
-    }
-    if (!wrapper.querySelector('.rte-upload-video-btn')) {
-      var videoBtn = document.createElement('button');
-      videoBtn.type = 'button';
-      videoBtn.className = 'btn btn-sm btn-light rte-btn rte-upload-video-btn';
-      videoBtn.style.cssText = 'font-size:12px;line-height:1';
-      videoBtn.title = '上传并插入视频';
-      videoBtn.setAttribute('aria-label', '上传视频');
-      videoBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>';
-      toolbar.appendChild(videoBtn);
-    }
-
-    finalizeRteToolbar(wrapper, toolbar);
+    if (toolbar) normalizeRteToolbar(toolbar);  // 统一更新 tooltip
 
     if (!wrapper.querySelector('.rte-image-upload-input')) {
       var input = document.createElement('input');
@@ -2876,11 +2977,12 @@
       videoInput.style.display = 'none';
       wrapper.insertBefore(videoInput, rte);
     }
-
-    var status = document.createElement('div');
-    status.className = 'rte-upload-status small text-muted mb-1';
-    status.style.display = 'none';
-    wrapper.insertBefore(status, rte);
+    if (!wrapper.querySelector('.rte-upload-status')) {
+      var status = document.createElement('div');
+      status.className = 'rte-upload-status small text-muted mb-1';
+      status.style.display = 'none';
+      wrapper.insertBefore(status, rte);
+    }
   }
 
   function insertRteImage(rte, url) {
@@ -3020,19 +3122,11 @@
   });
 
   // 鈹€鈹€ 工具鏍mousedown：阻止按閽伔走焦鐐?鈹€鈹€
+  // rte-toolbar 内的按钮点击 preventDefault，阻止编辑器失焦
   document.addEventListener('mousedown', function(e) {
-    if (e.target.closest('.rte-toolbar .rte-btn')) {
+    if (e.target.closest('.rte-toolbar .rte-btn, .rte-toolbar .rte-color-picker')) {
       e.preventDefault();
       return;
-    }
-    var headingSelect = e.target.closest('.rte-heading-select');
-    if (headingSelect) {
-      var wrapper = headingSelect.closest('.rte-wrapper');
-      var rte = wrapper ? wrapper.querySelector('.rte-editor') : _lastRteEditor;
-      if (rte) {
-        _lastRteEditor = rte;
-        saveRteSelection(rte);
-      }
     }
   });
 
@@ -3055,7 +3149,7 @@
     } else if (btn.classList.contains('rte-upload-video-btn')) {
       triggerRteVideoUpload(btn);
     } else if (btn.classList.contains('rte-table-btn')) {
-      insertRteTableConfigured(rte);
+      showTableGridPicker(rte, btn);
     } else if (btn.classList.contains('rte-table-settings-btn')) {
       editRteTable(rte);
     } else if (btn.classList.contains('rte-link-btn')) {
@@ -3064,6 +3158,8 @@
       openRtePopover(rte, 'image');
     } else if (btn.classList.contains('rte-video-url-btn')) {
       openRtePopover(rte, 'video');
+    } else if (btn.classList.contains('rte-source-btn')) {
+      toggleRteSource(rte);
     } else {
       rte.focus();
       document.execCommand(cmd, false, arg);
@@ -3071,19 +3167,7 @@
     }
   });
 
-  // 鈹€鈹€ 标题下拉 鈹€鈹€
-  document.addEventListener('change', function(e) {
-    if (!e.target.classList.contains('rte-heading-select')) return;
-    var rte = e.target.closest('.rte-wrapper').querySelector('.rte-editor');
-    if (!rte) rte = _lastRteEditor;
-    if (!rte) return;
-    restoreRteSelection(rte);
-    var tag = e.target.value;
-    document.execCommand('formatBlock', false, tag ? '<' + tag + '>' : '<p>');
-    syncRteBody(rte);
-    saveRteSelection(rte);
-    e.target.value = '';
-  });
+
 
   function triggerRteVideoUpload(btn) {
     var wrapper = btn.closest('.rte-wrapper');
@@ -3163,12 +3247,19 @@
     syncRteBody(rte);
   });
 
-  // 鈹€鈹€ 编辑器内容变鏇?↪鍚屾 textarea 鈹€鈹€
+  // 编辑器内容变更 -> 同步到隐藏 textarea
   document.addEventListener('input', function(e) {
     var rte = e.target.closest('.rte-editor');
     if (rte) {
       saveRteSelection(rte);
       syncRteBody(rte);
+    }
+    // 源码视图 textarea 编辑时同步回提交表单
+    var sourceTa = e.target.closest('.rte-source-ta');
+    if (sourceTa) {
+      var wrapper = sourceTa.closest('.rte-wrapper');
+      var formTa = wrapper ? wrapper.querySelector('textarea[name]:not(.rte-source-ta)') : null;
+      if (formTa) formTa.value = sourceTa.value;
     }
   });
 
@@ -3294,6 +3385,11 @@
     var overlay = ensureRteUrlOverlay(wrapper);
     if (!overlay) return;
 
+    // 重置可能被表格设置修改的弹框状态
+    delete overlay.dataset.rteMode;
+    var borderRow = overlay.querySelector('.rte-table-dialog-border-row');
+    if (borderRow) borderRow.style.display = 'none';
+
     var titleEl   = overlay.querySelector('.rte-url-dialog-title');
     var inputEl   = overlay.querySelector('.rte-url-dialog-input');
     var confirmEl = overlay.querySelector('.rte-url-dialog-confirm');
@@ -3322,10 +3418,9 @@
 
     titleEl.textContent = mode === 'link'
       ? (existing ? '编辑链接' : '插入链接')
-      : '插入图片';
+      : (mode === 'video' ? '插入视频链接' : '插入图片');
     inputEl.value = currentUrl;
     if (mode === 'video') {
-      titleEl.textContent = '插入视频链接';
       inputEl.placeholder = 'https://example.com/video.mp4';
     } else {
       inputEl.placeholder = mode === 'link' ? 'https://example.com' : 'https://example.com/pic.webp';
@@ -3350,7 +3445,18 @@
 
     restoreRteSelection(rte, state.range);
 
-    if (state.mode === 'link') {
+    if (state.mode === 'table') {
+      // 表格设置模式：从 overlay 取列宽和边框设置
+      var table = getRteTableAtSelection(rte);
+      if (table) {
+        var dialog = overlay.querySelector('.rte-url-dialog');
+        var cb = dialog ? dialog.querySelector('.rte-table-dialog-border-cb') : null;
+        var showBorder = cb ? cb.checked : true;
+        var cols = parseInt(overlay.dataset.rteTableCols) || getRteTableColumnCount(table);
+        var widths = parseRteColumnWidths(url, cols);  // url 变量此时复用为列宽输入值
+        applyRteTableSettings(table, widths, showBorder);
+      }
+    } else if (state.mode === 'link') {
       if (state.existingLink) {
         if (url) {
           setRteLinkAttrs(state.existingLink, url);
@@ -3362,8 +3468,8 @@
         insertRteLink(rte, url, state.range);
       }
     } else if (state.mode === 'image' && url) {
-      // execCommand('insertImage') 行为不可靠（选区/娴忚器差寮傚自动撮噸复插入）銆?
-      // 改用 insertHTML 注入 <img> 标签，一次精确插入。
+      // execCommand('insertImage') 行为不可靠（选区/浏览器差异会自动重复插入）
+      // 改用 insertHTML 注入 <img> 标签，一次精确插入
       insertRteImage(rte, url);
     } else if (state.mode === 'video' && url) {
       insertRteVideo(rte, url);
@@ -3397,6 +3503,36 @@
     var confirm = overlay ? overlay.querySelector('.rte-url-dialog-confirm') : null;
     if (confirm) confirm.click();
   });
+
+  // HTML 源码切换：在 contenteditable 与 textarea 之间切换
+  function toggleRteSource(rte) {
+    if (!rte) return;
+    var wrapper = rte.closest('.rte-wrapper');
+    if (!wrapper) return;
+    var sourceTa = wrapper.querySelector('.rte-source-ta');
+    if (!sourceTa) return;
+    var isSource = sourceTa.style.display !== 'none';
+    if (isSource) {
+      // 切回可视化编辑
+      rte.innerHTML = sourceTa.value;
+      sourceTa.style.display = 'none';
+      rte.style.display = '';
+      var formTa = rte.nextElementSibling;
+      if (formTa && formTa.tagName === 'TEXTAREA' && formTa.classList.contains('d-none')) {
+        formTa.value = sourceTa.value;
+      }
+    } else {
+      // 切换到源码视图
+      sourceTa.value = rte.innerHTML;
+      sourceTa.style.display = '';
+      rte.style.display = 'none';
+      // 同步到提交用的隐藏 textarea
+      var formTa = rte.nextElementSibling;
+      if (formTa && formTa.tagName === 'TEXTAREA' && formTa.classList.contains('d-none')) {
+        formTa.value = sourceTa.value;
+      }
+    }
+  }
 
   function syncRteBody(rte) {
     var wrapper = rte.closest('.rte-wrapper') || rte.parentElement;

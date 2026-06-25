@@ -24,6 +24,10 @@
 - **硬编码编辑器 ≠ schema 自动生成，两者只能走一条路**：凡是有自己硬编码编辑器的 block 类型（如 `feature_grid`、`data_grid`），必须在 schema 通用路径中主动排除，否则模板的 `data-name` 属性会让 `generateSchemaForm` 自动生成一份，再加硬编码一份，导致表单字段重复（如两个 features）。具体方法（以 `feature_grid` 为例）：① `addModule` 中 schema 入口加 `type !== 'feature_grid'` 守卫；② `initSchemaMounts` 中同理加 `typeEl.value === 'feature_grid'` 提前 return；③ `admin_modules.js` 的 `buildModuleHTML` 中 `schemaManaged` 分支的 `else` 同样需要跳过（或回退到 `!schemaManaged` 的 `else if` 硬编码链）。新增任何带硬编码编辑器的 block 时，必须同时检查这三条路径。
 - **改完模板/CSS/JS 后自动重启 dev server**：涉及 HTML 模板、CSS、JS 文件改动后，改完立即杀掉旧进程并重启 `python run.py`，不要让用户提醒。Flask 热重载有时不生效（多进程残留、JS 缓存等），直接杀进程重启最可靠。
 - **改完 JS 后自动升版本号**：每次修改 `admin_modules.js` 后，同时更新 `panel_page_edit.html` 和 `panel_data_list.html` 中 `<script src="/static/js/admin_modules.js?v=N">` 的版本号（递增），避免浏览器缓存导致修改不生效。
+- **重启 dev server 必须先杀光端口上所有进程**：`netstat -ano | grep ':5000'` 查看，`taskkill /F /PID <id>` 逐个杀。不能只 `Stop-Process python`（可能漏掉子进程）或信任旧进程已退出。Flask reloader 会 fork 子进程，多次重启会堆积僵尸进程，导致 HTTP 请求始终由最早的旧进程处理，代码改动不生效。杀完后用 `netstat -ano | grep ':5000.*LISTENING'` 确认端口清空，再启动。
+- **重启 dev server 必须 `FLASK_DEBUG=1`**：不加这个环境变量则 `TEMPLATES_AUTO_RELOAD` 为 False，Jinja2 缓存编译后的模板在内存里，改模板文件不会生效 —— 即使杀了旧进程也没用，因为下次启动后首次编译仍可能读到旧缓存。`$env:FLASK_DEBUG = '1'; python run.py`。
+- **文件改动后必须字节级验证，禁止只看 Read 工具输出**：Read 工具可能读到的是 IDE 缓存或工作树快照。改完关键文件后用 `python -c "open(path,'rb').read()"` + 正则/hex 直接读磁盘字节确认改动真的写入了，不要信 Read 的输出。
+- **后台按钮图标统一用内联 SVG，禁用 Unicode 特殊字符**：`↑` `↓` 这类箭头是 ASCII 安全字符可以用，但 `⇄`（U+21C4）、`↔` 等落在 CJK/特殊符号区的字符在浏览器/系统字体下经常渲染成 `?` 乱码。新增按钮图标一律用和现有删除按钮同款 14×14 SVG（`stroke="currentColor" stroke-width="2"`），尺寸颜色风格对齐。这条同时适用于模板 Jinja 版和 JS 动态生成版 —— 两处必须同步改。
 
 ## 一、产品是什么
 

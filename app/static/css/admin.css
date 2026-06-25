@@ -2740,7 +2740,7 @@
   background: #fff;
 }
 .rte-sep { display: inline-block; width: 1px; height: 22px; background: #dee2e6; margin: 0 3px; vertical-align: middle; }
-.rte-heading-select { font-size: 11px !important; min-width: 60px; width: auto !important; flex: 0 0 auto; height: 28px; }
+.rte-heading-btn { font-size: 11px; font-weight: 600; width: auto !important; min-width: 28px; padding: 0 5px; letter-spacing: .5px; }
 .rte-color-picker { vertical-align: middle; cursor: pointer; }
 .rte-color-picker::-webkit-color-swatch-wrapper { padding: 0; }
 .rte-color-picker::-webkit-color-swatch { border: none; border-radius: 2px; }
@@ -2788,6 +2788,16 @@
 .rich-editor-body tr:nth-child(odd) td { background: #fff; }
 .rte-url-dialog-title { font-size: 13px; color: #343a40; }
 .rte-url-dialog-input:focus { border-color: var(--bs-primary, #0d6efd); box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15); }
+/* 表格网格选择器 */
+.rte-table-grid-popover { position: absolute; z-index: 99999; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.15); padding: 8px; user-select: none; }
+.rte-table-grid-cell { width: 22px; height: 22px; border: 1px solid #e0e0e0; border-radius: 2px; cursor: pointer; transition: background .08s; }
+/* 源码视图 */
+.rte-source-ta { min-height: 150px; max-height: 400px; font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 12px; line-height: 1.5; tab-size: 2; white-space: pre-wrap; word-break: break-all; }
+/* 按钮激活态 */
+.rte-toolbar .rte-btn.rte-active { background: #dee2e6; border-color: #adb5bd; }
+/* 表格设置弹框中的复选框 */
+.rte-table-dialog-border-row { font-size: 12px; }
+.rte-table-dialog-border-cb { accent-color: var(--bs-primary, #0d6efd); }
 
 .module-media-tools {
   display: flex;

@@ -65,7 +65,7 @@
           <div class="d-flex gap-1">
             <button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)">↑</button>
 	            <button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)">↓</button>
-	            <button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch({{ i }})">⇄</button>
+	            <button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch({{ i }})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>
 	            <button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest('.module-item').remove();reindexModules()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"/>
@@ -189,7 +189,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=72"></script>
+<script src="/static/js/admin_modules.js?v=73"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -2470,7 +2470,7 @@ function addModule(type, variant, dataPreset) {
       '<div class="d-flex gap-1">' +
 	        '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)">↑</button>' +
 	        '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)">↓</button>' +
-	        '<button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch(' + idx + ')">⇄</button>' +
+	        '<button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch(' + idx + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>' +
 	        '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();reindexModules()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
 	      '</div>' +
     '</div>' +
