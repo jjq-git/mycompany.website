@@ -2828,6 +2828,45 @@ a.ci-value:hover { color: var(--color-primary); }
 }
 .dg-card-img { }
 
+/* 卡片排版变体 */
+.dg-list--horizontal {
+  grid-template-columns: 1fr !important;
+}
+.dg-card--horizontal {
+  flex-direction: row;
+  align-items: center;
+}
+.dg-card--horizontal .dg-card-image {
+  flex-shrink: 0;
+  width: 240px;
+  min-height: 160px;
+  margin-bottom: 0;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+.dg-card--horizontal .dg-card-body {
+  flex: 1;
+  min-width: 0;
+}
+.dg-card--horizontal-reverse {
+  flex-direction: row-reverse;
+  align-items: center;
+}
+.dg-card--horizontal-reverse .dg-card-image {
+  flex-shrink: 0;
+  width: 240px;
+  min-height: 160px;
+  margin-bottom: 0;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+}
+.dg-card--horizontal-reverse .dg-card-body {
+  flex: 1;
+  min-width: 0;
+}
+.dg-card--no-border {
+  border: none !important;
+  box-shadow: none;
+}
+
 /* empty / hidden states */
 .dg-card--hidden,
 .dg-card--page-hidden,
@@ -2955,6 +2994,8 @@ a.ci-value:hover { color: var(--color-primary); }
   .services-grid { grid-template-columns: repeat(2, 1fr); }
   .lc-grid { grid-template-columns: repeat(3, 1fr); }
   .dg-list { grid-template-columns: repeat(2, 1fr); }
+  .dg-card--horizontal .dg-card-image,
+  .dg-card--horizontal-reverse .dg-card-image { width: 200px; min-height: 140px; }
   .hl-grid { gap: var(--space-xl); }
   .id-grid { gap: var(--space-xl); }
   .hero-banner .container { height: auto; }
@@ -2977,6 +3018,14 @@ a.ci-value:hover { color: var(--color-primary); }
   .services-grid { grid-template-columns: 1fr; }
   .lc-grid { grid-template-columns: repeat(2, 1fr); }
   .dg-list { grid-template-columns: 1fr; }
+  .dg-card--horizontal,
+  .dg-card--horizontal-reverse { flex-direction: column; align-items: stretch; }
+  .dg-card--horizontal .dg-card-image,
+  .dg-card--horizontal-reverse .dg-card-image {
+    width: 100%; min-height: 180px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  .dg-list--horizontal { gap: var(--space-md); }
   .id-grid { grid-template-columns: 1fr; }
   .item-data-layout {
     grid-template-columns: 1fr;

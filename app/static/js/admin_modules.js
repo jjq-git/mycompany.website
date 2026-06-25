@@ -331,28 +331,35 @@
 
   function mediaUploadHtml(name, value, type, placeholder) {
     var isVideo = type === 'video';
+    var isEmbed = type === 'embed' || type === 'package';
     var safeName = esc(name);
     var safeValue = esc(value || '');
-    var accept = isVideo ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*,.svg,.svgz';
-    var icon = isVideo
-      ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>'
-      : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
-    var preview = value
+    var accept = isEmbed ? '.zip' : (isVideo ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*,.svg,.svgz');
+    var icon = isEmbed
+      ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>'
+      : isVideo
+        ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>'
+        : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+    // embed 类型无法本地预览（zip 包），始终显示图标
+    var preview = (value && !isEmbed)
       ? (isVideo ? '<video src="' + safeValue + '" muted></video>' : '<img src="' + safeValue + '" alt="">')
       : icon;
+    var helpText = isEmbed
+      ? '上传包含 index.html 的 zip 网页包，用于嵌入 iframe 展示。'
+      : isVideo ? '支持 MP4/WebM/OGG/MOV。' : '默认转 WebP，取消勾选则保留原格式。';
     return '<div class="module-media-tools mt-1">' +
-        '<label class="module-media-picker' + (value ? ' has-media' : '') + '" title="点击上传">' +
+        '<label class="module-media-picker' + (value ? ' has-media' : '') + '" title="' + (isEmbed ? '上传网页包' : '点击上传') + '">' +
           preview +
           (value ? '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' : '') +
           '<input type="file" name="' + safeName + '_file" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
           (value ? '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>' : '') +
         '</label>' +
       '</div>' +
-      '<div class="form-text mt-1">' + (isVideo ? '支持 MP4/WebM/OGG/MOV。' : '默认转 WebP，取消勾选则保留原格式。') + '</div>' +
+      '<div class="form-text mt-1">' + helpText + '</div>' +
       '<div class="module-media-url-row">' +
         '<input type="text" class="form-control form-control-sm" name="' + safeName + '" value="' + safeValue + '" placeholder="' + esc(placeholder || '') + '" oninput="updateImagePreview(this)">' +
         '<button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>' +
-        (isVideo ? '' : '<input type="hidden" name="' + safeName + '_convert_webp" value="false"><label class="module-convert-check"><input type="checkbox" name="' + safeName + '_convert_webp" value="true" checked><span></span>WebP</label>') +
+        (isVideo || isEmbed ? '' : '<input type="hidden" name="' + safeName + '_convert_webp" value="false"><label class="module-convert-check"><input type="checkbox" name="' + safeName + '_convert_webp" value="true" checked><span></span>WebP</label>') +
       '</div>';
 }
 
@@ -627,6 +634,7 @@
     body: 'Body', content: 'Content', tag: 'Tag', tags: 'Tags', name: 'Name', category: 'Category', price: 'Price', date: 'Date', slug: 'Slug',
     image: 'Image', cover: 'Cover', photo: 'Photo', logo: 'Logo', icon: 'Icon', video: 'Video', media: 'Media', media_type: 'Media type',
     embed_url: 'Embed URL', link: 'Link', url: 'URL', href: 'Link', alt: 'Alt text', dataset: 'Dataset', columns: 'Columns', rows: 'Rows',
+    media_area: '媒体区域',
     items: 'Items', list: 'List', grid: 'Grid', layout: 'Layout', align: 'Align', visible: 'Visible', hidden: 'Hidden'
   };
 
@@ -701,6 +709,9 @@
       html += schemaListEditor(prefix, field, value);
     } else if (type === 'video') {
       html += mediaUploadHtml(prefix + key, value || '', 'video', placeholder || '视频 URL');
+    } else if (type === 'embed') {
+      // 网页包上传：zip 文件 → 解压为 iframe 可嵌入页面
+      html += mediaUploadHtml(prefix + key, value || '', 'embed', placeholder || '上传网页包 ZIP');
     } else if (isImage) {
       html += mediaUploadHtml(prefix + key, value || '', 'image', placeholder || '');
     } else if (type === 'richtext') {
@@ -968,10 +979,12 @@
     });
     metaFields.forEach(function(mf) {
       if (schemaFieldMap[mf.key]) return;
-      if (mf.type === 'list' || mf.type === 'grid') mergedFields.push(metaToSchemaField(mf));
+      if (mf.type === 'list' || mf.type === 'grid') {
+        mergedFields.push(metaToSchemaField(mf));
+      }
     });
 
-    return {
+    var result = {
       root_type: schema.root_type,
       root_tag: schema.root_tag,
       hideable: schema.hideable,
@@ -979,8 +992,12 @@
       style_tokens: schema.style_tokens || [],
       element_style_tokens: schema.element_style_tokens || [],
       from_source: schema.from_source,
-      fields: mergedFields.map(schemaFieldToFormField)
+      fields: mergedFields
     };
+    // 第二个参数为 true 时跳过 schemaFieldToFormField 转换（兼容调用方自有的字段处理逻辑）
+    if (arguments.length >= 2 && arguments[1] === true) return result;
+    result.fields = mergedFields.map(schemaFieldToFormField);
+    return result;
   }
 
   function featuredPicksEditors(prefix, meta, values) {
@@ -1203,11 +1220,16 @@
   }
 
   function findNamedInput(root, name) {
-    var inputs = root.querySelectorAll('[name]');
-    for (var i = 0; i < inputs.length; i++) {
-      if (inputs[i].name === name) return inputs[i];
+    var inputs = root.querySelectorAll('[name="' + name + '"]');
+    if (!inputs.length) return null;
+    // radio 按钮组需返回选中的那个，否则始终拿到第一个选项的值（如 media_type 永远 = image）
+    if (inputs[0].type === 'radio') {
+      for (var i = 0; i < inputs.length; i++) {
+        if (inputs[i].checked) return inputs[i];
+      }
+      return inputs[0]; // 兜底：没有选中的就返回第一个
     }
-    return null;
+    return inputs[0];
   }
 
   function updateConditionalFields(root) {
@@ -1216,7 +1238,9 @@
       var fieldKey = fieldEl.getAttribute('data-field-key') || '';
       var depKey = fieldEl.getAttribute('data-show-if-field') || '';
       var expected = (fieldEl.getAttribute('data-show-if-value') || '').split(',').map(function(v) { return v.trim(); });
-      var ownInput = fieldEl.querySelector('[name]');
+      // 搜值用 input（text/url/textarea/select/number/color），
+      // 不能用裸 [name] —— 会匹配到 file input，其 name 后缀 _file 不匹配 fieldKey
+      var ownInput = fieldEl.querySelector('input[type="text"][name], input[type="url"][name], textarea[name], select[name], input[type="number"][name], input[type="color"][name]');
       var prefix = '';
       if (ownInput && fieldKey && ownInput.name.slice(-fieldKey.length) === fieldKey) {
         prefix = ownInput.name.slice(0, -fieldKey.length);
@@ -1232,6 +1256,8 @@
   // 图片上传：选择文件后本地预览（全局函数，供动态生成的 onchange 调用
   function moduleMediaPlaceholderIcon(accept) {
     var isVideo = /video/i.test(accept || '');
+    var isEmbed = /\.zip/i.test(accept || '');
+    if (isEmbed) return '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>';
     return isVideo
       ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>'
       : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
@@ -1246,13 +1272,22 @@
     accept = accept || (existingFile ? existingFile.getAttribute('accept') : 'image/*,.svg,.svgz') || 'image/*,.svg,.svgz';
     var safeSrc = src ? String(src).replace(/"/g, '&quot;') : '';
     var isVideo = /video/i.test(accept || '') || /\.(mp4|webm|ogg|mov)$/i.test(safeSrc);
+    var isEmbed = /\.zip/i.test(accept || '');
     picker.classList.toggle('has-media', !!src);
-    picker.innerHTML = src
-      ? (isVideo ? '<video src="' + safeSrc + '" muted></video>' : '<img src="' + safeSrc + '" alt="">') +
+    // embed 类型无需预览，始终显示图标
+    if (isEmbed && src) {
+      picker.innerHTML = moduleMediaPlaceholderIcon(accept) +
         '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' +
         '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
-        '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>'
-      : moduleMediaPlaceholderIcon(accept) + '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">';
+        '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>';
+    } else {
+      picker.innerHTML = src
+        ? (isVideo ? '<video src="' + safeSrc + '" muted></video>' : '<img src="' + safeSrc + '" alt="">') +
+          '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' +
+          '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
+          '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>'
+        : moduleMediaPlaceholderIcon(accept) + '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">';
+    }
     // innerHTML 替换会销毁旧的 file input，需把已选文件恢复到新 input 中
     if (oldFiles) {
       var newInput = picker.querySelector('input[type=file]');
@@ -1648,67 +1683,8 @@
 
     /* ====== data_grid ====== */
     } else if (type === 'data_grid') {
-      var dsOptionsHtml = '';
-      datasetNames.forEach(function(ds) {
-        dsOptionsHtml += '<option value="' + esc(ds.target) + '"' + (d.dataset === ds.target ? ' selected' : '') + '>' + esc(ds.label) + ' (' + esc(ds.target) + ')</option>';
-      });
-      specialEditor =
-        '<div class="small fw-semibold mb-1 text-muted">数据</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">数据来源</label>' +
-          '<select class="form-select form-select-sm" data-no-segmented="1" name="module_' + idx + '_data_dataset">' +
-          (dsOptionsHtml || '<option value="">暂无数据源/option>') +
-          '</select></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">卡片布局</label>' +
-          '<select class="form-select form-select-sm" name="module_' + idx + '_data_card_layout"><option value="image_top"' + (d.card_layout !== 'image_left' ? ' selected' : '') + '>上图下文</option><option value="image_left"' + (d.card_layout === 'image_left' ? ' selected' : '') + '>左图右文</option></select></div>' +
-        '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
-        // Row 1: 显示分页 —toggle 开关
-        '<div class="form-check form-switch mb-3">' +
-          '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_pagination"' +
-          (d.show_pagination !== 'false' ? ' checked' : '') +
-          ' onchange="this.nextElementSibling.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
-          '<label class="form-check-label small" for="module_' + idx + '_show_pagination">显示分页</label>' +
-          '<input type="hidden" name="module_' + idx + '_data_show_pagination" value="' + (d.show_pagination !== 'false' ? 'true' : 'false') + '">' +
-        '</div>' +
-        // Row 2: 分页样式 —下拉选择
-        '<div class="mb-2">' +
-          '<label class="form-label small mb-1 text-muted">分页样式</label>' +
-          '<select class="form-select form-select-sm" name="module_' + idx + '_data_pagination_style">' +
-            '<option value="load_more"' + (d.pagination_style !== 'page_numbers' ? ' selected' : '') + '>加载更多</option>' +
-            '<option value="page_numbers"' + (d.pagination_style === 'page_numbers' ? ' selected' : '') + '>页码导航</option>' +
-          '</select></div>' +
-        // Row 3: 每页显示数量 —下拉选择
-        '<div class="mb-2">' +
-          '<label class="form-label small mb-1 text-muted">每页显示数量</label>' +
-          '<select class="form-select form-select-sm" name="module_' + idx + '_data_items_per_page">' +
-            ['3','4','6','8','10','12','18','24'].map(function(n) { return '<option value="' + n + '"' + ((d.items_per_page || '6') === n ? ' selected' : '') + '>' + n + ' 条/页</option>'; }).join('') +
-          '</select></div>' +
-        // Row 4: 分页对齐 —下拉选择
-        '<div class="mb-2">' +
-          '<label class="form-label small mb-1 text-muted">分页对齐</label>' +
-          '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align">' +
-            '<option value="center"' + (d.pager_align === 'center' || !d.pager_align ? ' selected' : '') + '>居中</option>' +
-            '<option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option>' +
-            '<option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option>' +
-          '</select></div>' +
-        '<hr class="my-2">' +
-        '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>';
-      styleEditor =
-        '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
-        '<div class="row g-2">' +
-          '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#ffffff') + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
-          '<div class="col-6">' + un('module_' + idx + '_data_inner_width', '内容层宽度', ['px','%','rem'], d.inner_width) + '</div>' +
-        '</div>' +
-        '<div class="small text-muted mt-2 mb-1" style="font-size:11px">外边距</div>' +
-        '<div class="input-group input-group-sm">' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_top" value="' + esc(d.margin_top) + '" placeholder="↪涓>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_right" value="' + esc(d.margin_right) + '" placeholder="↪右>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_bottom" value="' + esc(d.margin_bottom) + '" placeholder="↪涓>' +
-          '<input type="text" class="form-control form-control-sm placeholder-light" name="module_' + idx + '_data_margin_left" value="' + esc(d.margin_left) + '" placeholder="↪宸>' +
-          '<select class="form-select form-select-sm" onchange="var u=this.value;this.parentElement.querySelectorAll(\'input[type=text]\').forEach(function(el){var v=el.value.replace(/px|rem|%$/i,\'\').trim();if(v&&u)el.value=v+u;});"><option value="px">px</option><option value="rem">rem</option></select>' +
-        '</div>';
+      specialEditor = dataGridEditors(idx, d).specialEditor;
+      // styleEditor 由上方 schemaManaged 分支的 schemaStyleForm 生成（data-style → cols/bg/bg-color）
 
     /* ====== feature_grid ====== */
     } else if (type === 'feature_grid') {
@@ -2410,8 +2386,67 @@
     }
   }
 
+
+  // data_grid 共享编辑器：页面编辑器和数据集编辑面板共用同一份表单 HTML
+  function dataGridEditors(idx, d) {
+    var datasetNames = (window._moduleCtx && window._moduleCtx.datasetNames) || [];
+    var dsOptionsHtml = '';
+    datasetNames.forEach(function(ds) {
+      dsOptionsHtml += '<option value="' + esc(ds.target) + '"' + (d.dataset === ds.target ? ' selected' : '') + '>' + esc(ds.label) + ' (' + esc(ds.target) + ')</option>';
+    });
+    var specialEditor =
+      // 区块标题/副标题——放在最上面，店主优先看到
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle || '') + '"></div>' +
+      '<hr class="my-2">' +
+      '<div class="small fw-semibold mb-1 text-muted">数据</div>' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">数据来源</label>' +
+        '<select class="form-select form-select-sm" data-no-segmented="1" name="module_' + idx + '_data_dataset">' +
+        (dsOptionsHtml || '<option value="">暂无数据源</option>') +
+        '</select></div>' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">卡片布局</label>' +
+        '<select class="form-select form-select-sm" name="module_' + idx + '_data_card_layout"><option value="image_top"' + (d.card_layout !== 'image_left' && d.card_layout !== 'image_right' ? ' selected' : '') + '>上图下文</option><option value="image_left"' + (d.card_layout === 'image_left' ? ' selected' : '') + '>左图右文</option><option value="image_right"' + (d.card_layout === 'image_right' ? ' selected' : '') + '>左文右图</option></select></div>' +
+      '<div class="form-check form-switch mb-2">' +
+        '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_card_show_border"' +
+        (d.card_show_border === 'false' ? '' : ' checked') +
+        ' onchange="this.nextElementSibling.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
+        '<label class="form-check-label small" for="module_' + idx + '_card_show_border">显示卡片边框</label>' +
+        '<input type="hidden" name="module_' + idx + '_data_card_show_border" value="' + (d.card_show_border === 'false' ? 'false' : 'true') + '">' +
+      '</div>' +
+      '<hr class="my-2">' +
+      '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
+      '<div class="form-check form-switch mb-3">' +
+        '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_pagination"' +
+        (d.show_pagination !== 'false' ? ' checked' : '') +
+        ' onchange="this.nextElementSibling.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
+        '<label class="form-check-label small" for="module_' + idx + '_show_pagination">显示分页</label>' +
+        '<input type="hidden" name="module_' + idx + '_data_show_pagination" value="' + (d.show_pagination !== 'false' ? 'true' : 'false') + '">' +
+      '</div>' +
+      '<div class="mb-2">' +
+        '<label class="form-label small mb-1 text-muted">分页样式</label>' +
+        '<select class="form-select form-select-sm" name="module_' + idx + '_data_pagination_style">' +
+          '<option value="load_more"' + (d.pagination_style !== 'page_numbers' ? ' selected' : '') + '>加载更多</option>' +
+          '<option value="page_numbers"' + (d.pagination_style === 'page_numbers' ? ' selected' : '') + '>页码导航</option>' +
+        '</select></div>' +
+      '<div class="mb-2">' +
+        '<label class="form-label small mb-1 text-muted">每页显示数量</label>' +
+        '<select class="form-select form-select-sm" name="module_' + idx + '_data_items_per_page">' +
+          ['3','4','6','8','10','12','18','24'].map(function(n) { return '<option value="' + n + '"' + ((d.items_per_page || '6') === n ? ' selected' : '') + '>' + n + ' 条/页</option>'; }).join('') +
+        '</select></div>' +
+      '<div class="mb-2">' +
+        '<label class="form-label small mb-1 text-muted">分页对齐</label>' +
+        '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align">' +
+          '<option value="center"' + (d.pager_align === 'center' || !d.pager_align ? ' selected' : '') + '>居中</option>' +
+          '<option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option>' +
+          '<option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option>' +
+        '</select></div>';
+    return { specialEditor: specialEditor };
+  }
+
   /* ====== 对外暴露 ====== */
   window._buildModuleHTML = buildModuleHTML;
+  window.getMergedSchema = getMergedSchema;
+  window._dataGridEditors = dataGridEditors;
   window._featuredPicksEditors = function(prefix, values) {
     return featuredPicksEditors(prefix, findBlockMeta('featured_picks'), values || {});
   };

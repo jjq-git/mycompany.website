@@ -632,10 +632,62 @@ def render(block_html, schema, data_dict, context=None):
     _fill_business_attr_templates(root, context)
     _apply_i18n(root, context)
 
+    # 4.7 卡片配置：card_layout（图文排版）+ card_show_border（边框显隐）
+    _apply_card_config(root, data_dict)
+
     # 5. 清理 data-*
     _strip_data_attrs(root)
 
     return bp._serialize(root)
+
+
+def _add_class(attrs, class_name):
+    """给元素 attrs 追加一个 CSS class（不去重，重复对浏览器无害）。"""
+    existing = attrs.get('class', '')
+    attrs['class'] = (existing + ' ' + class_name).strip()
+
+
+def _apply_card_config(node, data_dict):
+    """卡片配置：根据 card_layout 和 card_show_border 注入 CSS class。
+
+    card_layout:
+      - image_top（默认）：不额外加 class
+      - image_left：.dg-list 加 dg-list--horizontal，.dg-card 加 dg-card--horizontal
+      - image_right：.dg-list 加 dg-list--horizontal，.dg-card 加 dg-card--horizontal-reverse
+    card_show_border:
+      - false：.dg-card 加 dg-card--no-border
+    """
+    card_layout = data_dict.get('card_layout', '') if isinstance(data_dict, dict) else ''
+    card_show_border = data_dict.get('card_show_border', '') if isinstance(data_dict, dict) else ''
+
+    if not card_layout and not card_show_border:
+        return
+
+    _walk_card_config(node, card_layout, card_show_border)
+
+
+def _walk_card_config(node, card_layout, card_show_border):
+    """递归遍历节点树，给 dg-list / dg-card 注入排版和边框 class。"""
+    if hasattr(node, 'attrs') and isinstance(node.attrs, dict):
+        cls = node.attrs.get('class', '') or ''
+        # 列表容器：水平布局时加 dg-list--horizontal（强制单列，全宽卡片）
+        if 'dg-list' in cls:
+            if card_layout in ('image_left', 'image_right'):
+                _add_class(node.attrs, 'dg-list--horizontal')
+        # 卡片：图文排版 + 边框
+        if 'dg-card' in cls:
+            if card_layout == 'image_left':
+                _add_class(node.attrs, 'dg-card--horizontal')
+            elif card_layout == 'image_right':
+                _add_class(node.attrs, 'dg-card--horizontal-reverse')
+            if str(card_show_border) == 'false':
+                _add_class(node.attrs, 'dg-card--no-border')
+
+    # 递归子节点
+    children = getattr(node, 'nodes', None)
+    if isinstance(children, list):
+        for child in children:
+            _walk_card_config(child, card_layout, card_show_border)
 
 
 # data-filter-* 等业务属性中支持 {变量} 模板替换

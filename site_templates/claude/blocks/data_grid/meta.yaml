@@ -24,6 +24,8 @@ fields:
         label: 上图下文
       - value: "image_left"
         label: 左图右文
+      - value: "image_right"
+        label: 左文右图
   - key: show_filters
     label: 显示筛选
     type: select
@@ -90,6 +92,16 @@ fields:
     label: 显示"查看全部"按钮
     type: select
     group: 分页
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: card_show_border
+    label: 显示卡片边框
+    type: select
+    group: 数据
     default: "true"
     options:
       - value: "true"

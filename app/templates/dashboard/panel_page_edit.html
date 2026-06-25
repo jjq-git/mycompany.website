@@ -189,7 +189,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=50"></script>
+<script src="/static/js/admin_modules.js?v=70"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -270,6 +270,7 @@ var FIELD_LABEL_MAP = {
   'content': '内容',
   'text': '文字',
   'text_area': '文字区域',
+  'media_area': '媒体区域',
   'tag': '标签',
   'tags': '标签',
   'badge': '徽标文字',
@@ -562,11 +563,16 @@ function conditionalFieldAttrs(key, showIf, escFn, actualValue) {
 }
 
 function findNamedInput(root, name) {
-  var inputs = root.querySelectorAll('[name]');
-  for (var i = 0; i < inputs.length; i++) {
-    if (inputs[i].name === name) return inputs[i];
+  var inputs = root.querySelectorAll('[name="' + name + '"]');
+  if (!inputs.length) return null;
+  // radio 按钮组需返回选中的那个，否则始终拿到第一个选项的值（如 media_type 永远 = image）
+  if (inputs[0].type === 'radio') {
+    for (var i = 0; i < inputs.length; i++) {
+      if (inputs[i].checked) return inputs[i];
+    }
+    return inputs[0];
   }
-  return null;
+  return inputs[0];
 }
 
 function updateConditionalFields(root) {
@@ -575,7 +581,9 @@ function updateConditionalFields(root) {
     var fieldKey = fieldEl.getAttribute('data-field-key') || '';
     var depKey = fieldEl.getAttribute('data-show-if-field') || '';
     var expected = (fieldEl.getAttribute('data-show-if-value') || '').split(',').map(function(v) { return v.trim(); });
-    var ownInput = fieldEl.querySelector('[name]');
+    // 搜值用 input（text/url/textarea/select/number/color），
+    // 不能用裸 [name] —— 会匹配到 file input，其 name 后缀 _file 不匹配 fieldKey
+    var ownInput = fieldEl.querySelector('input[type="text"][name], input[type="url"][name], textarea[name], select[name], input[type="number"][name], input[type="color"][name]');
     var prefix = '';
     if (ownInput && fieldKey && ownInput.name.slice(-fieldKey.length) === fieldKey) {
       prefix = ownInput.name.slice(0, -fieldKey.length);
@@ -594,28 +602,35 @@ function isDescriptionKey(key) {
 
 function mediaUploadHtml(name, value, type, placeholder) {
   var isVideo = type === 'video';
+  var isEmbed = type === 'embed' || type === 'package';
   var safeName = _schemaEsc ? _schemaEsc(name) : escapeHtml(name);
   var safeValue = _schemaEsc ? _schemaEsc(value || '') : escapeHtml(value || '');
-  var accept = isVideo ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*,.svg,.svgz';
-  var icon = isVideo
-    ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>'
-    : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
-  var preview = value
+  var accept = isEmbed ? '.zip' : (isVideo ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*,.svg,.svgz');
+  var icon = isEmbed
+    ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>'
+    : isVideo
+      ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>'
+      : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+  // embed 类型无法本地预览（zip 包），始终显示图标
+  var preview = (value && !isEmbed)
     ? (isVideo ? '<video src="' + safeValue + '" muted></video>' : '<img src="' + safeValue + '" alt="">')
     : icon;
+  var helpText = isEmbed
+    ? '上传包含 index.html 的 zip 网页包，用于嵌入 iframe 展示。'
+    : isVideo ? '支持 MP4/WebM/OGG/MOV。' : '默认转 WebP，取消勾选则保留原格式。';
   return '<div class="module-media-tools mt-1">' +
-      '<label class="module-media-picker' + (value ? ' has-media' : '') + '" title="点击上传">' +
+      '<label class="module-media-picker' + (value ? ' has-media' : '') + '" title="' + (isEmbed ? '上传网页包' : '点击上传') + '">' +
         preview +
         (value ? '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' : '') +
         '<input type="file" name="' + safeName + '_file" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
         (value ? '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>' : '') +
       '</label>' +
     '</div>' +
-    '<div class="form-text mt-1">' + (isVideo ? '支持 MP4/WebM/OGG/MOV。' : '默认转 WebP，取消勾选则保留原格式。') + '</div>' +
+    '<div class="form-text mt-1">' + helpText + '</div>' +
     '<div class="module-media-url-row">' +
       '<input type="text" class="form-control form-control-sm" name="' + safeName + '" value="' + safeValue + '" placeholder="' + (_schemaEsc ? _schemaEsc(placeholder || '') : escapeHtml(placeholder || '')) + '" oninput="updateImagePreview(this)">' +
       '<button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>' +
-      (isVideo ? '' : '<input type="hidden" name="' + safeName + '_convert_webp" value="false"><label class="module-convert-check"><input type="checkbox" name="' + safeName + '_convert_webp" value="true" checked><span></span>WebP</label>') +
+      (isVideo || isEmbed ? '' : '<input type="hidden" name="' + safeName + '_convert_webp" value="false"><label class="module-convert-check"><input type="checkbox" name="' + safeName + '_convert_webp" value="true" checked><span></span>WebP</label>') +
     '</div>';
 }
 
@@ -647,9 +662,11 @@ function _schemaFieldHtml(prefix, field, mdata) {
   } else if (field.type === 'image' || field.type === 'video') {
     var mediaPlaceholder = field.type === 'video' ? '视频链接' : '图片链接';
     html += mediaUploadHtml(name, val, field.type, mediaPlaceholder);
-  } else if (field.type === 'embed' || field.type === 'audio') {
-    var urlPlaceholder = field.type === 'audio' ? '音频链接' : '嵌入页面链接';
-    html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="' + _schemaEsc(urlPlaceholder) + '">';
+  } else if (field.type === 'embed') {
+    // 网页包上传：zip 文件 → 解压为 iframe 可嵌入页面
+    html += mediaUploadHtml(name, val, 'embed', '上传网页包 ZIP');
+  } else if (field.type === 'audio') {
+    html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="音频链接">';
   } else if (field.type === 'icon') {
     html += (window._iconPickerHtml ? window._iconPickerHtml(name, val) : '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">' + _schemaIconOptions(val) + '</select>');
   } else if (field.type === 'select') {
@@ -1657,17 +1674,21 @@ function addModule(type, variant, dataPreset) {
   var styleEditor = '';
   // data-* 声明式 block：用 schema 自动生成表单，拦截在所有硬编码分支之前。
   // meta.is_data_attr/schema 由后端 scan_blocks 解析、随 blockLibraryJson 下发。
-  if (meta.is_data_attr && meta.schema) {
+  if (meta.is_data_attr && meta.schema && type !== 'feature_grid') {
     var mergedSchema = _getMergedSchema(meta);
     if (type === 'featured_picks' && typeof window._featuredPicksEditors === 'function') {
       var fpEditors = window._featuredPicksEditors('module_' + idx + '_data_', dataPreset || {});
       specialEditor = fpEditors.content;
       styleEditor = fpEditors.style;
+    } else if (type === 'data_grid' && typeof window._dataGridEditors === 'function') {
+      specialEditor = window._dataGridEditors(idx, dataPreset).specialEditor;
+      styleEditor = generateSchemaStyleForm('module_' + idx + '_data_', mergedSchema, dataPreset);
     } else {
       specialEditor = generateSchemaForm('module_' + idx + '_data_', mergedSchema, {}, vT);
       styleEditor = generateSchemaStyleForm('module_' + idx + '_data_', mergedSchema, dataPreset);
     }
-  } else if (type === 'hero_banner') {
+  }
+  else if (type === 'hero_banner') {
     styleEditor =
     '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
     '<div class="row g-2 mb-2">' +
@@ -2699,6 +2720,8 @@ function idImageHtml(modIdx) {
 // 图片预览：选择文件后在当前字段中显示本地预览
 function moduleMediaPlaceholderIcon(accept) {
   var isVideo = /video/i.test(accept || '');
+  var isEmbed = /\.zip/i.test(accept || '');
+  if (isEmbed) return '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>';
   return isVideo
     ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>'
     : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
@@ -2713,13 +2736,22 @@ function renderModuleMediaPicker(picker, src, fileName, accept) {
   accept = accept || (existingFile ? existingFile.getAttribute('accept') : 'image/*,.svg,.svgz') || 'image/*,.svg,.svgz';
   var safeSrc = src ? String(src).replace(/"/g, '&quot;') : '';
   var isVideo = /video/i.test(accept || '') || /\.(mp4|webm|ogg|mov)$/i.test(safeSrc);
+  var isEmbed = /\.zip/i.test(accept || '');
   picker.classList.toggle('has-media', !!src);
-  picker.innerHTML = src
-    ? (isVideo ? '<video src="' + safeSrc + '" muted></video>' : '<img src="' + safeSrc + '" alt="">') +
+  // embed 类型无需本地预览（zip 包），始终显示图标
+  if (isEmbed && src) {
+    picker.innerHTML = moduleMediaPlaceholderIcon(accept) +
       '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' +
       '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
-      '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>'
-    : moduleMediaPlaceholderIcon(accept) + '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">';
+      '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>';
+  } else {
+    picker.innerHTML = src
+      ? (isVideo ? '<video src="' + safeSrc + '" muted></video>' : '<img src="' + safeSrc + '" alt="">') +
+        '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' +
+        '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
+        '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>'
+      : moduleMediaPlaceholderIcon(accept) + '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">';
+  }
   // innerHTML 替换会销毁旧的 file input，需把已选文件恢复到新 input 中
   if (oldFiles) {
     var newInput = picker.querySelector('input[type=file]');
@@ -3015,6 +3047,10 @@ function initSchemaMounts() {
       mount.innerHTML = fpEditors.content;
       var fpStyleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
       if (fpStyleMount) fpStyleMount.innerHTML = fpEditors.style;
+    } else if (typeEl.value === 'data_grid' && typeof window._dataGridEditors === 'function') {
+      mount.innerHTML = window._dataGridEditors(idx, mdata).specialEditor;
+      var dgInitStyleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
+      if (dgInitStyleMount) dgInitStyleMount.innerHTML = generateSchemaStyleForm(prefix, schema, mdata);
     } else {
       mount.innerHTML = generateSchemaForm(prefix, schema, mdata, function() { return ''; });
       var styleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');

@@ -3590,15 +3590,22 @@ def _parse_modules_form(form, existing_modules=None):
                     item_prefix = f'{idx}_data_{list_name}_{j}_' if is_alt_fmt else f'{idx}_{list_name}_{j}_'
                     entry = {}
                     for sub_name, sub_type, href_field in sub_specs:
-                        # 图片/视频字段：优先处理文件上传，否则取 URL 文本值
-                        if sub_type in ('image', 'video'):
+                        # 图片/视频/网页包字段：优先处理文件上传，否则取 URL 文本值
+                        if sub_type in ('image', 'video', 'embed'):
                             upload = request.files.get(f'{item_prefix}{sub_name}_file')
                             if upload and upload.filename:
                                 try:
-                                    val = _save_uploaded_media(
-                                        _current_context()[1].id, upload,
-                                        prefix=f'{m_type}-{sub_name}-{j + 1}'
-                                    )
+                                    if sub_type == 'embed':
+                                        # 网页包：zip → 解压为可嵌入页面
+                                        result = _save_media_package(
+                                            _current_context()[1].id, upload
+                                        )
+                                        val = result.get('entry_url', '')
+                                    else:
+                                        val = _save_uploaded_media(
+                                            _current_context()[1].id, upload,
+                                            prefix=f'{m_type}-{sub_name}-{j + 1}'
+                                        )
                                 except Exception as exc:
                                     current_app.logger.warning('上传失败: %s', exc)
                                     val = _parse_value(form.get(f'{item_prefix}{sub_name}', ''))
@@ -3618,21 +3625,28 @@ def _parse_modules_form(form, existing_modules=None):
                 form_fields_for_module.add(list_name)  # 表单已表达该列表；空列表也要覆盖旧数据
                 handled_lists.add(list_name)
 
-        # 通用 data-* 顶层 image/video 字段：处理文件上传（list 内字段已在上面处理）
+        # 通用 data-* 顶层 image/video/embed 字段：处理文件上传（list 内字段已在上面处理）
         if _schema is not None:
             for lf in _schema.get('fields', []):
                 if lf.get('type', '') in ('list', 'grid', 'group'):
                     continue
-                if lf.get('type', '') not in ('image', 'video'):
+                if lf.get('type', '') not in ('image', 'video', 'embed'):
                     continue
                 field_name = lf.get('name', '')
                 upload = request.files.get(f'{idx}_data_{field_name}_file')
                 if upload and upload.filename:
                     try:
-                        data[field_name] = _save_uploaded_media(
-                            _current_context()[1].id, upload,
-                            prefix=f'{m_type}-{field_name}'
-                        )
+                        if lf.get('type', '') == 'embed':
+                            # 网页包：zip → 解压为可嵌入页面
+                            result = _save_media_package(
+                                _current_context()[1].id, upload
+                            )
+                            data[field_name] = result.get('entry_url', '')
+                        else:
+                            data[field_name] = _save_uploaded_media(
+                                _current_context()[1].id, upload,
+                                prefix=f'{m_type}-{field_name}'
+                            )
                     except Exception as exc:
                         current_app.logger.warning('上传失败 %s: %s', field_name, exc)
 
