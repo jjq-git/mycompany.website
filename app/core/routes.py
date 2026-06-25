@@ -1378,7 +1378,7 @@ def _seo_health_report(site, lang=None):
                     list_pages_without_description.append(page_key)
                 else:
                     add('warn', f'{page_key} 缺少页面简介', '建议补 80-160 字简介，用于 meta description 和分享摘要。',
-                        url_for('core.page_panel', page_key=page_key, site=site.id, lang=lang))
+                        None)
 
         if task_type == 'detail':
             item = task.get('item') if isinstance(task.get('item'), dict) else {}
@@ -1389,9 +1389,14 @@ def _seo_health_report(site, lang=None):
             checked_items.add(item_key)
             item_title = item.get('title') or item.get('name') or item.get('slug') or '未命名条目'
             if not (item.get('summary') or item.get('description') or item.get('excerpt')):
+                current_path = task.get('current_path') or ''
+                preview_url = ''
+                if current_path:
+                    preview_url = f"/preview/{site.id}/{lang}{current_path if current_path.startswith('/') else '/' + current_path}"
                 add('warn', f'{dataset_key} / {item_title} 缺少摘要',
                     '详情页 description 和 llms.txt 摘要会变弱，建议补一段简短说明。',
-                    url_for('core.dataset_edit', dataset_key=dataset_key, item_id=item.get('id'), _fragment='1', site=site.id, lang=lang))
+                    url_for('core.dataset_edit', dataset_key=dataset_key, item_id=item.get('id'),
+                            _fragment='1', site=site.id, lang=lang, preview_url=preview_url))
 
     if list_pages_without_description:
         add('info', f'{len(list_pages_without_description)} 个列表页缺少简介',
@@ -2483,12 +2488,8 @@ def _validate_key(key):
 
 @bp.route('/templates')
 def templates_gallery():
-    user = _current_user()
+    user, site = _current_context()
     scan_templates()
-    query = Site.query
-    if user and user.role != 'admin':
-        query = query.filter_by(owner_id=user.id)
-    site = query.order_by(Site.id.desc()).first()
     templates = _visible_templates_query().all()
     if request.args.get('_fragment'):
         return render_template('dashboard/panel_templates.html',

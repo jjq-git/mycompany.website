@@ -214,7 +214,7 @@
                 <div class="seo-help mt-1">{{ check.detail }}</div>
               </div>
               {% if check.status != 'ok' and check.action_url %}
-              <button type="button" class="seo-check-link" data-panel-url="{{ check.action_url }}" onclick="event.preventDefault();if(window.opener){window.opener.location.href=this.dataset.panelUrl;window.close()}else{window.location.href=this.dataset.panelUrl}" title="点击跳转到编辑面板" style="flex-shrink:0;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:12px;border:1px solid var(--seo-primary-border);color:var(--seo-primary);text-decoration:none;white-space:nowrap;background:none;cursor:pointer">
+              <button type="button" class="seo-check-link" data-panel-url="{{ check.action_url }}" onclick="event.preventDefault();var u=this.dataset.panelUrl;if(parent&&parent!==window&&typeof parent.openSeoActionLink==='function'){parent.openSeoActionLink(u)}else if(typeof openSeoActionLink==='function'){openSeoActionLink(u)}else{window.location.href=u}" title="点击跳转到编辑面板" style="flex-shrink:0;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:12px;border:1px solid var(--seo-primary-border);color:var(--seo-primary);text-decoration:none;white-space:nowrap;background:none;cursor:pointer">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               </button>
               {% endif %}

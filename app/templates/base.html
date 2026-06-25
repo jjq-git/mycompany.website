@@ -104,7 +104,8 @@
           <ul class="dropdown-menu" id="siteDropdown">
             {% for opt in available_sites | default([]) %}
             <li><a class="dropdown-item {% if site and opt.id == site.id %}active{% endif %}"
-                href="{{ request.path }}?site={{ opt.id }}{% if current_lang %}&lang={{ current_lang }}{% endif %}">{{
+                href="{{ request.path }}?site={{ opt.id }}{% if current_lang %}&lang={{ current_lang }}{% endif %}"
+                data-site-id="{{ opt.id }}" onclick="return switchAdminSite(event, this)">{{
                 opt.name or opt.slug }} <span class="small">/{{ opt.slug }}</span></a></li>
             {% endfor %}
           </ul>
@@ -1168,6 +1169,19 @@
       return new URLSearchParams(window.location.search).get('lang') || currentAdminLang;
     }
 
+    function switchAdminSite(event, link) {
+      if (event) event.preventDefault();
+      var siteId = link && link.dataset ? link.dataset.siteId : '';
+      if (!siteId) return false;
+      currentSiteId = siteId;
+      var url = new URL(window.location.href);
+      url.searchParams.set('site', siteId);
+      var lang = currentLangParam();
+      if (lang) url.searchParams.set('lang', lang);
+      window.location.assign(url.toString());
+      return false;
+    }
+
     (function normalizeAdminUrlParams() {
       if (!currentSiteId) return;
       try {
@@ -1322,6 +1336,33 @@
           });
         })
         .catch(error => { body.innerHTML = '<div class="p-3 text-danger">加载失败</div>'; throw error; });
+    }
+
+    function openSeoActionLink(rawUrl) {
+      if (!rawUrl) return false;
+      var url = new URL(rawUrl, window.location.origin);
+      var previewUrl = url.searchParams.get('preview_url') || '';
+      if (previewUrl) {
+        url.searchParams.delete('preview_url');
+        var previewPath = new URL(previewUrl, window.location.origin).pathname;
+        var key = previewPath.replace(/^\/preview\/\d+\//, '').replace(/^\/+|\/+$/g, '') || 'preview';
+        if (typeof openPreviewTab === 'function') {
+          openPreviewTab(key, key.split('/').pop() || 'Preview', previewPath, false, '正在加载对应详情页...');
+        } else {
+          var frame = document.getElementById('previewFrame');
+          if (frame) {
+            frame.dataset.previewUrl = previewPath;
+            frame.src = previewPath;
+          }
+        }
+      }
+      var panelUrl = url.pathname + url.search;
+      if (typeof loadPanel === 'function') {
+        loadPanel(panelUrl);
+      } else {
+        window.location.href = panelUrl;
+      }
+      return false;
     }
 
     // 记录已加载的外部脚本 src，避免重复加载同一文件
@@ -1581,7 +1622,7 @@
     });
 
     function previewUrlForPage(pageKey) {
-      var siteId = '{{ site.id if site else "" }}';
+      var siteId = currentSiteParam();
       if (!siteId) return 'about:blank';
       var lang = currentPreviewLanguage();
       var page = (!pageKey || pageKey === 'home' || pageKey === '/') ? '' : String(pageKey).replace(/^\/+|\/+$/g, '') + '/';
