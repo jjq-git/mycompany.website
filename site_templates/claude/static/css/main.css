@@ -2834,33 +2834,39 @@ a.ci-value:hover { color: var(--color-primary); }
 }
 .dg-card--horizontal {
   flex-direction: row;
-  align-items: center;
+  align-items: stretch;           /* stretch → 图文等高（原 center 只在图片定宽时合理） */
 }
 .dg-card--horizontal .dg-card-image {
-  flex-shrink: 0;
-  width: 240px;
-  min-height: 160px;
+  flex: 0 0 50%;                  /* 图片占 50% 宽（原 240px 定宽 → 等比分配） */
+  min-height: 200px;
   margin-bottom: 0;
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
 }
+.dg-card--horizontal .dg-card-image img {
+  height: 100%;                   /* 填满图片容器（原 200px 固定高不适用 50% 布局） */
+}
 .dg-card--horizontal .dg-card-body {
-  flex: 1;
+  flex: 0 0 50%;                  /* 文字占 50% 宽（原 flex:1 → 对半分） */
   min-width: 0;
+  display: block;                 /* 取消 flex 列布局，让文字自然上下堆叠 */
 }
 .dg-card--horizontal-reverse {
   flex-direction: row-reverse;
-  align-items: center;
+  align-items: stretch;           /* 同上：图文等高 */
 }
 .dg-card--horizontal-reverse .dg-card-image {
-  flex-shrink: 0;
-  width: 240px;
-  min-height: 160px;
+  flex: 0 0 50%;                  /* 图片占 50% 宽 */
+  min-height: 200px;
   margin-bottom: 0;
   border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
 }
+.dg-card--horizontal-reverse .dg-card-image img {
+  height: 100%;                   /* 填满图片容器 */
+}
 .dg-card--horizontal-reverse .dg-card-body {
-  flex: 1;
+  flex: 0 0 50%;                  /* 文字占 50% 宽 */
   min-width: 0;
+  display: block;                 /* 取消 flex 列布局，让文字自然上下堆叠 */
 }
 .dg-card--no-border {
   border: none !important;
@@ -2899,6 +2905,7 @@ a.ci-value:hover { color: var(--color-primary); }
   display: grid;
   grid-template-columns: 92px 1fr;
   gap: var(--space-sm); align-items: start;
+  position: relative;           /* 为折叠按钮提供定位锚点 */
 }
 .dg-filter-label {
   color: var(--color-muted);
@@ -2907,6 +2914,36 @@ a.ci-value:hover { color: var(--color-primary); }
 }
 .dg-filter-options {
   display: flex; flex-wrap: wrap; gap: var(--space-xs);
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+/* 折叠态：限制约 2 行高度 */
+.dg-filter-options[data-collapsed="true"] {
+  max-height: 4.25rem;
+}
+.dg-filter-options[data-collapsed="false"] {
+  max-height: none;
+}
+/* 折叠切换按钮：绝对定位在 filter-group 右下角 */
+.dg-filter-toggle {
+  display: none;
+  position: absolute;
+  right: 0; bottom: 0;
+  width: 1.65rem; height: 1.65rem;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-xs);
+  background: var(--color-canvas);
+  color: var(--color-muted);
+  cursor: pointer;
+  align-items: center; justify-content: center;
+  transition: transform 0.3s ease;
+  z-index: 1;
+}
+.dg-filter-group--overflow .dg-filter-toggle {
+  display: inline-flex;
+}
+.dg-filter-toggle.expanded {
+  transform: rotate(180deg);
 }
 .dg-filter-option {
   min-height: 2rem;
@@ -2994,8 +3031,11 @@ a.ci-value:hover { color: var(--color-primary); }
   .services-grid { grid-template-columns: repeat(2, 1fr); }
   .lc-grid { grid-template-columns: repeat(3, 1fr); }
   .dg-list { grid-template-columns: repeat(2, 1fr); }
+  /* 水平布局平板端：图片 40% + 文字 60%，屏幕更窄时文字区需要更多空间 */
   .dg-card--horizontal .dg-card-image,
-  .dg-card--horizontal-reverse .dg-card-image { width: 200px; min-height: 140px; }
+  .dg-card--horizontal-reverse .dg-card-image { flex: 0 0 40%; min-height: 160px; }
+  .dg-card--horizontal .dg-card-body,
+  .dg-card--horizontal-reverse .dg-card-body { flex: 0 0 60%; }
   .hl-grid { gap: var(--space-xl); }
   .id-grid { gap: var(--space-xl); }
   .hero-banner .container { height: auto; }
@@ -3022,9 +3062,14 @@ a.ci-value:hover { color: var(--color-primary); }
   .dg-card--horizontal-reverse { flex-direction: column; align-items: stretch; }
   .dg-card--horizontal .dg-card-image,
   .dg-card--horizontal-reverse .dg-card-image {
+    flex: auto;                   /* 重置 50% flex-basis，回退到 100% 宽 */
     width: 100%; min-height: 180px;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
+  .dg-card--horizontal .dg-card-image img,
+  .dg-card--horizontal-reverse .dg-card-image img { height: 200px; }   /* 重置为默认高度 */
+  .dg-card--horizontal .dg-card-body,
+  .dg-card--horizontal-reverse .dg-card-body { flex: auto; display: flex; flex-direction: column; }  /* 手机端重置：恢复 flex 列布局 */
   .dg-list--horizontal { gap: var(--space-md); }
   .id-grid { grid-template-columns: 1fr; }
   .item-data-layout {

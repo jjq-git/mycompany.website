@@ -801,6 +801,33 @@ function initFilterableGrids() {
         state[groupName] = button.getAttribute('data-filter-value') || '';
         apply();
       });
+      // 筛选标签折叠：超过 2 行时收缩 + 右侧展开箭头
+      (function(optionsEl) {
+        optionsEl.setAttribute('data-collapsed', 'true');
+        var overflows = optionsEl.scrollHeight > optionsEl.clientHeight + 2;
+        if (!overflows) {
+          optionsEl.removeAttribute('data-collapsed');
+        } else {
+          var group = optionsEl.closest('.dg-filter-group');
+          if (group && !group.querySelector('.dg-filter-toggle')) {
+            group.classList.add('dg-filter-group--overflow');
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'dg-filter-toggle';
+            btn.title = '展开全部';
+            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+            btn.addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              var collapsed = optionsEl.getAttribute('data-collapsed') === 'true';
+              optionsEl.setAttribute('data-collapsed', collapsed ? 'false' : 'true');
+              btn.classList.toggle('expanded', collapsed);
+              btn.title = collapsed ? '收起' : '展开全部';
+            });
+            group.appendChild(btn);
+          }
+        }
+      })(target);
     }
 
     function updateButtons(groupName) {
