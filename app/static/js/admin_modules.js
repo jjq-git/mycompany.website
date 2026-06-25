@@ -1511,6 +1511,7 @@
       'highlight_card': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="8" height="16" rx="1"/><path d="M10 9h12v-2a1 1 0 0 0-1-1H10z"/><path d="M10 14h9"/><path d="M10 18h6"/></svg>',
       'feature_grid': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
       'data_grid': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>',
+      'data_list_showcase': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="5" rx="1"/><rect x="3" y="14" width="18" height="5" rx="1"/><path d="M8 5v5"/><path d="M8 14v5"/></svg>',
       'stat_counter': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>',
       'contact_info': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h4"/><circle cx="8.5" cy="8.5" r="0.5" fill="currentColor"/><circle cx="8.5" cy="12.5" r="0.5" fill="currentColor"/></svg>',
       'contact_form': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h4"/><path d="M17 17l2 2"/><path d="M19 15a4 4 0 1 0-8 0"/></svg>',
@@ -1775,6 +1776,9 @@
     } else if (type === 'data_grid') {
       specialEditor = dataGridEditors(idx, d).specialEditor;
       // styleEditor 由上方 schemaManaged 分支的 schemaStyleForm 生成（data-style → cols/bg/bg-color）
+
+    } else if (type === 'data_list_showcase') {
+      specialEditor = dataListShowcaseEditors(idx, d).specialEditor;
 
     /* ====== feature_grid ====== */
     } else if (type === 'feature_grid') {
@@ -2534,6 +2538,63 @@
   }
 
   /* ====== 对外暴露 ====== */
+  function dataListShowcaseEditors(idx, d) {
+    var datasetNames = (window._moduleCtx && window._moduleCtx.datasetNames) || [];
+    var dsOptionsHtml = '';
+    datasetNames.forEach(function(ds) {
+      dsOptionsHtml += '<option value="' + esc(ds.target) + '"' + (d.dataset === ds.target ? ' selected' : '') + '>' + esc(ds.label) + ' (' + esc(ds.target) + ')</option>';
+    });
+    if (!d.dataset && datasetNames.length) {
+      dsOptionsHtml = dsOptionsHtml.replace('<option value="' + esc(datasetNames[0].target) + '"', '<option value="' + esc(datasetNames[0].target) + '" selected');
+    }
+    function sw(key, label, defaultOn) {
+      var checked = d[key] === undefined ? defaultOn : d[key] !== 'false';
+      return '<div class="form-check form-switch mb-2">' +
+        '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_' + key + '"' +
+        (checked ? ' checked' : '') +
+        ' onchange="this.nextElementSibling.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
+        '<label class="form-check-label small" for="module_' + idx + '_' + key + '">' + label + '</label>' +
+        '<input type="hidden" name="module_' + idx + '_data_' + key + '" value="' + (checked ? 'true' : 'false') + '">' +
+      '</div>';
+    }
+    var specialEditor =
+      '<div class="small fw-semibold mb-1 text-muted">数据</div>' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">数据来源</label>' +
+        '<select class="form-select form-select-sm" data-no-segmented="1" name="module_' + idx + '_data_dataset">' +
+        (dsOptionsHtml || '<option value="">暂无数据源</option>') +
+        '</select></div>' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">最大显示数量</label>' +
+        '<input type="number" min="1" class="form-control form-control-sm" name="module_' + idx + '_data_max_items" value="' + esc(d.max_items || '12') + '">' +
+      '</div>' +
+      '<hr class="my-2">' +
+      '<div class="small fw-semibold mb-1 text-muted">搜索与筛选</div>' +
+      sw('show_search', '显示搜索', true) +
+      sw('show_filters', '显示筛选', true) +
+      '<hr class="my-2">' +
+      '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
+      sw('show_pagination', '显示分页', true) +
+      '<div class="mb-2">' +
+        '<label class="form-label small mb-1 text-muted">分页样式</label>' +
+        '<select class="form-select form-select-sm" name="module_' + idx + '_data_pagination_style">' +
+          '<option value="page_numbers"' + (d.pagination_style !== 'load_more' ? ' selected' : '') + '>页码导航</option>' +
+          '<option value="load_more"' + (d.pagination_style === 'load_more' ? ' selected' : '') + '>加载更多</option>' +
+        '</select></div>' +
+      '<div class="mb-2">' +
+        '<label class="form-label small mb-1 text-muted">每页显示数量</label>' +
+        '<select class="form-select form-select-sm" name="module_' + idx + '_data_items_per_page">' +
+          ['3','4','6','8','10','12'].map(function(n) { return '<option value="' + n + '"' + ((d.items_per_page || '6') === n ? ' selected' : '') + '>' + n + ' 条/页</option>'; }).join('') +
+        '</select></div>' +
+      '<div class="mb-2">' +
+        '<label class="form-label small mb-1 text-muted">分页对齐</label>' +
+        '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align">' +
+          '<option value="center"' + (d.pager_align === 'center' || !d.pager_align ? ' selected' : '') + '>居中</option>' +
+          '<option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option>' +
+          '<option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option>' +
+        '</select></div>' +
+      sw('show_view_all', '显示查看全部', false);
+    return { specialEditor: specialEditor };
+  }
+
   window._buildModuleHTML = buildModuleHTML;
   window.getMergedSchema = getMergedSchema;
   window._dataGridEditors = dataGridEditors;

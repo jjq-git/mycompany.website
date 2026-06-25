@@ -38,6 +38,13 @@ _ALT_ATTR_RE = re.compile(r'\s+alt\s*=\s*("([^"]*)"|\'([^\']*)\'|([^\s>]*))', re
 _HTML_TAG_RE = re.compile(r'<(p|div|br|h[1-6]|ul|ol|li|a|img|span|strong|em|b|i|u|s|table|blockquote|hr)\b', re.I)
 
 
+def _int_or_none(raw):
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
 def _richtext_with_image_alt(html, alt_text):
     """给富文本里的 img 补 alt；已有非空 alt 不覆盖。"""
     if not html or not alt_text:
@@ -373,6 +380,9 @@ def _expand_list(node, field_def, data_dict, context):
     数据为空且容器内无其他杂项（标题等）→ 整个容器加 hidden（对齐规范"空数组隐藏"）。
     """
     items = _resolve_list_items(field_def, data_dict, context)
+    max_items = _int_or_none(data_dict.get('max_items') if isinstance(data_dict, dict) else None)
+    if max_items:
+        items = items[:max_items]
     # data-page-size：作为"最多展示条数"上限（数据集驱动如 product_grid 的 max_items）
     if field_def.page_size:
         items = items[:field_def.page_size]

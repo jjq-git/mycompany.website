@@ -1,0 +1,111 @@
+name: 数据列表展示
+category: data
+icon: data_grid.svg
+description: 数据集驱动的图文列表模块，样式参考模块列表页，支持搜索、筛选和分页。
+fields:
+  - key: dataset
+    label: 数据来源
+    type: text
+    group: 数据
+    default: modules
+    placeholder: products / portfolio / posts / modules
+  - key: max_items
+    label: 最大显示数量
+    type: number
+    group: 数据
+    default: 12
+  - key: show_search
+    label: 显示搜索
+    type: select
+    group: 筛选
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_filters
+    label: 显示筛选
+    type: select
+    group: 筛选
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_pagination
+    label: 显示分页
+    type: select
+    group: 分页
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: pagination_style
+    label: 分页样式
+    type: select
+    group: 分页
+    default: "page_numbers"
+    options:
+      - value: "page_numbers"
+        label: 页码导航
+      - value: "load_more"
+        label: 加载更多
+  - key: items_per_page
+    label: 每页条数
+    type: select
+    group: 分页
+    default: "6"
+    options:
+      - value: "3"
+        label: 3 条/页
+      - value: "4"
+        label: 4 条/页
+      - value: "6"
+        label: 6 条/页
+      - value: "8"
+        label: 8 条/页
+      - value: "10"
+        label: 10 条/页
+      - value: "12"
+        label: 12 条/页
+  - key: pager_align
+    label: 分页对齐
+    type: select
+    group: 分页
+    default: "center"
+    options:
+      - value: "center"
+        label: 居中
+      - value: "left"
+        label: 居左
+      - value: "right"
+        label: 居右
+  - key: show_view_all
+    label: 显示查看全部
+    type: select
+    group: 分页
+    default: "false"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: section_bg
+    label: 外层背景色
+    type: color
+    group: 外层样式
+    default: ""
+  - key: padding_top
+    label: 上内边距
+    type: text
+    group: 外层样式
+    default: "1rem"
+  - key: padding_bottom
+    label: 下内边距
+    type: text
+    group: 外层样式
+    default: "1rem"
