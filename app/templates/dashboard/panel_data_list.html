@@ -126,13 +126,13 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   window.backToPageEditor = function() {
     loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()).then(function() {
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
     });
   };
   window.loadDatasetList = function() {
     loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()).then(function() {
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
     });
   };
   window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getSiteQuery()); };
@@ -305,7 +305,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var frame = document.getElementById('previewFrame');
     if (frame) {
       frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/' + EDIT_SLUG + '/';
-      try { refreshPreview(); } catch(e) {}
+      try { refreshPreview({ build: false }); } catch(e) {}
     }
   }
 })();
@@ -395,13 +395,13 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   window.backToPageEditor = function() {
     loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getQuery()).then(function() {
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
     });
   };
   window.loadDatasetList = function() {
     loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getQuery()).then(function() {
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview(); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
     });
   };
   window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getQuery()); };
