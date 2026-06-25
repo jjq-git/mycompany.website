@@ -174,13 +174,13 @@
   function sel(name, ph, options, dv) {
     var segmented = segmentedControl(name, options, dv, esc);
     if (segmented) {
-      return '<label class="form-label small mb-1 text-muted">' + ph + '</label>' + segmented;
+      return '<div class="label-radio-row"><label class="form-label small mb-1 text-muted">' + ph + '</label>' + segmented + '</div>';
     }
-    var h = '<label class="form-label small mb-1 text-muted">' + ph + '</label><select class="form-select form-select-sm" name="' + name + '">';
+    var h = '<div class="label-radio-row"><label class="form-label small mb-1 text-muted">' + ph + '</label><select class="form-select form-select-sm" name="' + name + '">';
     options.forEach(function(o) {
       h += '<option value="' + esc(o.value) + '"' + (String(dv || '') === String(o.value) ? ' selected' : '') + '>' + esc(o.label) + '</option>';
     });
-    return h + '</select>';
+    return h + '</select></div>';
   }
 
   function iconRegistry() {
@@ -379,7 +379,12 @@
         return { value: opt.value, label: opt.textContent };
       }), select.value, esc);
       var segmented = wrapper.firstElementChild;
-      select.parentNode.insertBefore(segmented, select);
+      var segParent = select.parentNode;
+      segParent.insertBefore(segmented, select);
+      // label + seg-radio 同行排版
+      segParent.classList.add('label-radio-row');
+      var segLabel = segParent.querySelector('.form-label');
+      if (segLabel) segLabel.classList.remove('mb-1');
       select.remove();
     });
   }
@@ -400,19 +405,18 @@
       if (!def) return;
       var name = prefix + 'style_' + token;
       var val = (mdata && mdata['style_' + token] != null) ? mdata['style_' + token] : '';
-      html += '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + schemaEsc(labelText({ key: token, label: def.label || token })) + '</label>';
-      if (def.control === 'select' || def.control === 'switch') {
-        var segmented = segmentedControl(name, def.options || [], val, schemaEsc);
-        if (segmented) {
-          html += segmented;
-        } else {
-          html += '<select class="form-select form-select-sm" name="' + schemaEsc(name) + '"><option value="">默认</option>';
-          (def.options || []).forEach(function(o) {
-            var ov = o.value, ol = o.text || o.value;
-            html += '<option value="' + schemaEsc(ov) + '"' + (String(val) === String(ov) ? ' selected' : '') + '>' + schemaEsc(ol) + '</option>';
-          });
-          html += '</select>';
-        }
+      var isStyleSelect = def.control === 'select' || def.control === 'switch';
+      var styleSegmented = isStyleSelect ? segmentedControl(name, def.options || [], val, schemaEsc) : null;
+      html += '<div class="mb-2' + (isStyleSelect ? ' label-radio-row' : '') + '"><label class="form-label small mb-1 text-muted">' + schemaEsc(labelText({ key: token, label: def.label || token })) + '</label>';
+      if (styleSegmented) {
+        html += styleSegmented;
+      } else if (def.control === 'select' || def.control === 'switch') {
+        html += '<select class="form-select form-select-sm" name="' + schemaEsc(name) + '"><option value="">默认</option>';
+        (def.options || []).forEach(function(o) {
+          var ov = o.value, ol = o.text || o.value;
+          html += '<option value="' + schemaEsc(ov) + '"' + (String(val) === String(ov) ? ' selected' : '') + '>' + schemaEsc(ol) + '</option>';
+        });
+        html += '</select>';
       } else if (def.control === 'color') {
         html += '<div class="input-group input-group-sm">' +
           '<input type="color" class="form-control form-control-color" value="' + schemaEsc(val || '#888888') + '" oninput="this.nextElementSibling.value=this.value">' +
@@ -702,6 +706,10 @@
     if (isHalfField(field)) {
       wrapperAttrs = wrapperAttrs.replace('module-field', 'module-field module-field-half');
     }
+    var isSegmented = type === 'select' && segmentedControl(prefix + key, field.options || [], value, esc);
+    if (type === 'select') {
+      wrapperAttrs = wrapperAttrs.replace('module-field', 'module-field label-radio-row');
+    }
     html += '<div' + wrapperAttrs + '><label class="form-label small mb-1 text-muted">' + esc(labelText(field)) + '</label>';
     if (isVisibilityField(field)) {
       html += visibilityEye(prefix + key, value);
@@ -720,7 +728,7 @@
       html += richEditorHtml(prefix + key, value || '');
     } else if (type === 'textarea') {
       html += '<textarea class="form-control form-control-sm" rows="4" name="' + prefix + key + '" placeholder="' + esc(placeholder || '') + '">' + esc(value || '') + '</textarea>';
-    } else if (type === 'select' && segmentedControl(prefix + key, field.options || [], value, esc)) {
+    } else if (isSegmented) {
       html += segmentedControl(prefix + key, field.options || [], value, esc);
     } else if (type === 'select') {
       html += '<select class="form-select form-select-sm" name="' + prefix + key + '"><option value="">请选择</option>';

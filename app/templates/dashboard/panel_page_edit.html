@@ -65,7 +65,7 @@
           <div class="d-flex gap-1">
             <button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)">↑</button>
 	            <button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)">↓</button>
-	            <button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch({{ i }})">?</button>
+	            <button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch({{ i }})">⇄</button>
 	            <button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest('.module-item').remove();reindexModules()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"/>
@@ -189,7 +189,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=70"></script>
+<script src="/static/js/admin_modules.js?v=72"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -649,6 +649,10 @@ function _schemaFieldHtml(prefix, field, mdata) {
   if (_schemaIsHalfField(field)) {
     fieldAttrs = fieldAttrs.replace('module-field', 'module-field module-field-half');
   }
+  var isSchemaSegmented = field.type === 'select' && segmentedControl(name, field.options || [], val, _schemaEsc);
+  if (field.type === 'select') {
+    fieldAttrs = fieldAttrs.replace('module-field', 'module-field label-radio-row');
+  }
   var html = '<div' + fieldAttrs + '><label class="form-label small mb-1 text-muted">' + _schemaEsc(label) + '</label>';
 
   if (_schemaIsVisibilityField(field)) {
@@ -669,18 +673,15 @@ function _schemaFieldHtml(prefix, field, mdata) {
     html += '<input type="text" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" placeholder="音频链接">';
   } else if (field.type === 'icon') {
     html += (window._iconPickerHtml ? window._iconPickerHtml(name, val) : '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">' + _schemaIconOptions(val) + '</select>');
+  } else if (isSchemaSegmented) {
+    html += segmentedControl(name, field.options || [], val, _schemaEsc);
   } else if (field.type === 'select') {
-    var schemaSegmented = segmentedControl(name, field.options || [], val, _schemaEsc);
-    if (schemaSegmented) {
-      html += schemaSegmented;
-    } else {
-      var opts = field.options || [];
-      html += '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">';
-      opts.forEach(function(opt) {
-        html += '<option value="' + _schemaEsc(opt.value) + '"' + (String(val) === String(opt.value) ? ' selected' : '') + '>' + _schemaEsc(opt.label) + '</option>';
-      });
-      html += '</select>';
-    }
+    var opts = field.options || [];
+    html += '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">';
+    opts.forEach(function(opt) {
+      html += '<option value="' + _schemaEsc(opt.value) + '"' + (String(val) === String(opt.value) ? ' selected' : '') + '>' + _schemaEsc(opt.label) + '</option>';
+    });
+    html += '</select>';
   } else if (field.type === 'radio') {
     // radio → 分段按钮组（隐藏 input，label 做成按钮卡片，选中项高亮主题色）
     var ropts = field.options || [];
@@ -888,20 +889,19 @@ function generateSchemaStyleForm(prefix, schema, mdata) {
     if (!def) return;
     var name = prefix + 'style_' + token;
     var val = (mdata && mdata['style_' + token] != null) ? mdata['style_' + token] : '';
-    html += '<div class="mb-2"><label class="form-label small mb-1 text-muted">' + _schemaEsc(translateFieldLabel(def.label || token)) + '</label>';
-    if (def.control === 'select' || def.control === 'switch') {
-      var styleSegmented = segmentedControl(name, def.options || [], val, _schemaEsc);
-      if (styleSegmented) {
-        html += styleSegmented;
-      } else {
-        html += '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">';
-        html += '<option value="">默认</option>';
-        (def.options || []).forEach(function(o) {
-          var ov = o.value, ol = o.text || o.value;
-          html += '<option value="' + _schemaEsc(ov) + '"' + (String(val) === String(ov) ? ' selected' : '') + '>' + _schemaEsc(ol) + '</option>';
-        });
-        html += '</select>';
-      }
+    var isStyleSelect = def.control === 'select' || def.control === 'switch';
+    var styleSegmented = isStyleSelect ? segmentedControl(name, def.options || [], val, _schemaEsc) : null;
+    html += '<div class="mb-2' + (isStyleSelect ? ' label-radio-row' : '') + '"><label class="form-label small mb-1 text-muted">' + _schemaEsc(translateFieldLabel(def.label || token)) + '</label>';
+    if (styleSegmented) {
+      html += styleSegmented;
+    } else if (def.control === 'select' || def.control === 'switch') {
+      html += '<select class="form-select form-select-sm" name="' + _schemaEsc(name) + '">';
+      html += '<option value="">默认</option>';
+      (def.options || []).forEach(function(o) {
+        var ov = o.value, ol = o.text || o.value;
+        html += '<option value="' + _schemaEsc(ov) + '"' + (String(val) === String(ov) ? ' selected' : '') + '>' + _schemaEsc(ol) + '</option>';
+      });
+      html += '</select>';
     } else if (def.control === 'color') {
       html += '<div class="input-group input-group-sm">' +
         '<input type="color" class="form-control form-control-color" value="' + _schemaEsc(val || '#888888') + '" oninput="this.nextElementSibling.value=this.value">' +
@@ -1083,6 +1083,10 @@ function renderDynamicField(prefix, field, value, placeholder) {
   if (_schemaIsHalfField({ name: key, key: key, type: type, show_if: field.show_if, options: field.options })) {
     attrs = attrs.replace('module-field', 'module-field module-field-half');
   }
+  var isDynamicSegmented = type === 'select' && segmentedControl(prefix + key, field.options || [], value, escapeHtml);
+  if (type === 'select') {
+    attrs = attrs.replace('module-field', 'module-field label-radio-row');
+  }
   var html = '<div' + attrs + '><label class="form-label small mb-1 text-muted">' + escapeHtml(label) + '</label>';
 
   // 颜色字段: color / bg / text_ → 颜色选择器+文本
@@ -1100,11 +1104,9 @@ function renderDynamicField(prefix, field, value, placeholder) {
     html += richEditorHtml(prefix + key, value || '');
   } else if (type === 'textarea') {
     html += '<textarea class="form-control form-control-sm" rows="4" name="' + prefix + key + '" placeholder="' + escapeHtml(placeholder || '') + '">' + escapeHtml(value || '') + '</textarea>';
+  } else if (isDynamicSegmented) {
+    html += segmentedControl(prefix + key, field.options || [], value, escapeHtml);
   } else if (type === 'select') {
-    var dynamicSegmented = segmentedControl(prefix + key, field.options || [], value, escapeHtml);
-    if (dynamicSegmented) {
-      html += dynamicSegmented;
-    } else {
       html += '<select class="form-select form-select-sm" name="' + prefix + key + '"><option value="">请选择</option>';
       (field.options || []).forEach(function(opt) {
         var optValue = typeof opt === 'object' ? opt.value : opt;
@@ -2468,8 +2470,8 @@ function addModule(type, variant, dataPreset) {
       '<div class="d-flex gap-1">' +
 	        '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)">↑</button>' +
 	        '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)">↓</button>' +
-	        '<button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch(' + idx + ')">?</button>' +
-	        '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();reindexModules()">?</button>' +
+	        '<button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch(' + idx + ')">⇄</button>' +
+	        '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();reindexModules()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
 	      '</div>' +
     '</div>' +
     '<input type="hidden" name="module_' + idx + '_type" value="' + type + '">' +
