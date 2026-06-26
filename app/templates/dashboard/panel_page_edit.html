@@ -189,7 +189,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=95"></script>
+<script src="/static/js/admin_modules.js?v=96"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -1104,6 +1104,12 @@ function renderDynamicField(prefix, field, value, placeholder) {
 
   if (type === 'richtext') {
     html += richEditorHtml(prefix + key, value || '');
+  } else if (type === 'image') {
+    html += mediaUploadHtml(prefix + key, value || '', 'image', placeholder || '');
+  } else if (type === 'video') {
+    html += mediaUploadHtml(prefix + key, value || '', 'video', placeholder || '视频 URL');
+  } else if (type === 'embed' || type === 'package') {
+    html += mediaUploadHtml(prefix + key, value || '', 'embed', placeholder || '上传网页包 ZIP');
   } else if (type === 'textarea' && isDescriptionKey(key)) {
     html += richEditorHtml(prefix + key, value || '');
   } else if (type === 'textarea') {
@@ -1581,17 +1587,30 @@ function _getMergedSchema(meta) {
     if (f.show_if && f.show_if.field) conditionalControllerMap[f.show_if.field] = true;
   });
 
-  function mergeField(sf) {
-    var mf = metaFieldMap[sf.name];
+  function metaChildrenMap(mf) {
+    var map = {};
+    ((mf && (mf.children || mf.item_fields)) || []).forEach(function(child) {
+      var childName = child && (child.name || child.key);
+      if (childName) map[childName] = child;
+    });
+    return map;
+  }
+
+  function mergeField(sf, metaOverride) {
+    var mf = metaOverride || metaFieldMap[sf.name];
     var mergedChildren;
     var children = _schemaChildren(sf);
+    var childMetaMap = metaChildrenMap(mf);
     if (children.length) {
-      mergedChildren = children.map(function(c) { return mergeField(c); });
+      mergedChildren = children.map(function(c) {
+        var childName = c && (c.name || c.key);
+        return mergeField(c, childMetaMap[childName]);
+      });
     } else {
       mergedChildren = children;
     }
     if (!mf) return Object.assign({}, sf, {children: mergedChildren});
-    if ((mf.type === 'list' || mf.type === 'grid') && (mf.item_fields || mf.children || []).length) {
+    if ((mf.type === 'list' || mf.type === 'grid') && (mf.item_fields || mf.children || []).length && !mergedChildren.length) {
       mergedChildren = (mf.item_fields || mf.children || []).map(function(c) {
         return mergeField(Object.assign({}, c, {name: c.name || c.key || ''}));
       });
@@ -3060,7 +3079,7 @@ function initSchemaMounts() {
     if (!typeEl) { console.log("[initSchemaMounts] module_" + idx + " NO typeEl"); return; }
     var meta = findBlockMeta(typeEl.value);
     console.log("[initSchemaMounts] module_" + idx + " type=" + typeEl.value + " is_data_attr=" + meta.is_data_attr + " hasSchema=" + !!(meta.schema));
-    if (!meta.is_data_attr || !meta.schema || typeEl.value === 'feature_grid') { console.log("[initSchemaMounts] module_" + idx + " SKIP"); return; }
+    if (!meta.is_data_attr || !meta.schema) { console.log("[initSchemaMounts] module_" + idx + " SKIP"); return; }
 
     var schema = _getMergedSchema(meta);
 

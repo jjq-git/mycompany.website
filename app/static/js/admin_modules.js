@@ -1042,10 +1042,23 @@
       if (f.show_if && f.show_if.field) conditionalControllerMap[f.show_if.field] = true;
     });
 
-    function mergeField(sf) {
+    function metaChildrenMap(mf) {
+      var map = {};
+      ((mf && (mf.children || mf.item_fields)) || []).forEach(function(child) {
+        var childName = child && (child.name || child.key);
+        if (childName) map[childName] = child;
+      });
+      return map;
+    }
+
+    function mergeField(sf, metaOverride) {
       var name = sf.name || sf.key;
-      var mf = metaFieldMap[name];
-      var children = (sf.children || sf.item_fields || []).map(mergeField);
+      var mf = metaOverride || metaFieldMap[name];
+      var childMetaMap = metaChildrenMap(mf);
+      var children = (sf.children || sf.item_fields || []).map(function(child) {
+        var childName = child && (child.name || child.key);
+        return mergeField(child, childMetaMap[childName]);
+      });
       var merged = Object.assign({}, sf, {
         name: name,
         key: name,
@@ -1057,12 +1070,12 @@
         merged.options = mf.options || merged.options;
         merged.label = mf.label || merged.label;
         merged.show_if = mf.show_if || merged.show_if;
-        if ((mf.type === 'list' || mf.type === 'grid') && (mf.item_fields || mf.children || []).length) {
-          merged.children = (mf.item_fields || mf.children || []).map(mergeField);
+        if ((mf.type === 'list' || mf.type === 'grid') && (mf.item_fields || mf.children || []).length && !children.length) {
+          merged.children = (mf.item_fields || mf.children || []).map(function(child) { return mergeField(child); });
           merged.item_fields = merged.children;
         }
         if ((mf.children || mf.item_fields || []).length && !children.length) {
-          merged.children = (mf.children || mf.item_fields || []).map(mergeField);
+          merged.children = (mf.children || mf.item_fields || []).map(function(child) { return mergeField(child); });
           merged.item_fields = merged.children;
         }
       }
@@ -1596,7 +1609,7 @@
     var borderStyle = '';
     var headerBg = '';
     var titleColor = '';
-    var schemaManaged = !!(!isDataModule && meta.is_data_attr && meta.schema && type !== 'feature_grid');
+    var schemaManaged = !!(!isDataModule && meta.is_data_attr && meta.schema);
 
     if (schemaManaged) {
       var mergedSchema = getMergedSchema(meta);
