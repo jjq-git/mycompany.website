@@ -147,6 +147,7 @@
           style="background:#ffffff;border:1px solid #d1d5db"></button>
       </div>
 
+      {#
       <div class="theme-swatches" id="themeSwatches" aria-label="主题色">
         <button class="theme-swatch" data-color="#263544" type="button" style="background:#263544" title="深灰蓝"
           onclick="setThemeColor('#263544')"></button>
@@ -177,35 +178,32 @@
             onchange="setThemeColor(this.value)">
         </label>
       </div>
+      #}
 
       {% if site %}
       <a class="header-btn" href="{{ url_for('core.preview_site', site_id=site.id) }}" target="_blank"
-        title="在新窗口中打开站点预览">
+        title="预览" aria-label="预览">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round">
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
           <circle cx="12" cy="12" r="3" />
         </svg>
-        预览
       </a>
-      <a class="header-btn" href="{{ url_for('core.export_zip') }}">
+      <a class="header-btn" href="{{ url_for('core.export_zip') }}" title="导出" aria-label="导出">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
           <polyline points="7 10 12 15 17 10" />
           <line x1="12" y1="15" x2="12" y2="3" />
         </svg>
-        导出
       </a>
-      <a class="header-btn header-btn-primary" href="javascript:doPublish()">
+      <a class="header-btn header-btn-primary" href="javascript:doPublish()" title="发布" aria-label="发布">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="17 1 21 5 17 9" />
-          <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-          <polyline points="7 23 3 19 7 15" />
-          <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
-        发布
       </a>
 
       <div class="header-divider"></div>
@@ -213,14 +211,12 @@
 
       <form method="post" action="{{ url_for('core.logout') }}" style="display:inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button class="header-btn" type="submit">
+        <button class="header-btn" type="submit" title="退出" aria-label="退出">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
+            <path d="M18 8a6 6 0 1 1-12 0" />
+            <line x1="12" y1="2" x2="12" y2="10" />
           </svg>
-          退出
         </button>
       </form>
 
@@ -274,48 +270,14 @@
             </button>
           </div>
           <div class="left-nav-submenu" style="display:none">
-            <a class="left-nav-item {% if active == 'company' %}active{% endif %}" href="{{ url_for('core.company') }}"
-              data-panel="company" style="padding-left:32px" title="公司信息">
+            <a class="left-nav-item {% if active == 'basic_settings' %}active{% endif %}" href="{{ url_for('core.basic_settings') }}"
+              data-panel="basic_settings" style="padding-left:32px" title="基本设置">
               <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 <polyline points="9 22 9 12 15 12 15 22" />
               </svg>
-              公司信息
-            </a>
-            <a class="left-nav-item {% if active == 'theme' %}active{% endif %}" href="{{ url_for('core.theme_edit') }}"
-              data-panel="theme" style="padding-left:32px" title="主题颜色">
-              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 2a10 10 0 0 1 0 20" />
-                <path d="M2 12h20" />
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10" />
-                <path d="M12 2a15.3 15.3 0 0 0-4 10 15.3 15.3 0 0 0 4 10" />
-              </svg>
-              主题颜色
-            </a>
-            <a class="left-nav-item {% if active == 'seo' %}active{% endif %}" href="{{ url_for('core.seo_health') }}"
-              data-panel="seo" style="padding-left:32px" title="SEO 健康检查">
-              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                <polyline points="7 11 9 9 11 11 15 7" />
-                <line x1="15" y1="12" x2="15" y2="7" />
-                <line x1="10" y1="7" x2="15" y2="7" />
-              </svg>
-              SEO 检查
-            </a>
-            <a class="left-nav-item {% if active == 'media' %}active{% endif %}" href="{{ url_for('core.media') }}"
-              data-panel="media" style="padding-left:32px" title="媒体管理">
-              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                <path d="M8 14l2.5-2.5L13 14l2-2 3 3" />
-                <circle cx="8" cy="10" r="1" />
-              </svg>
-              媒体管理
+              基本设置
             </a>
             <a class="left-nav-item {% if active == 'messages' %}active{% endif %}" href="{{ url_for('core.messages') }}"
               data-panel="messages" style="padding-left:32px" title="留言管理">
@@ -328,6 +290,28 @@
             </a>
           </div>
         </div>
+        <a class="left-nav-item {% if active == 'seo' %}active{% endif %}" href="{{ url_for('core.seo_health') }}"
+          data-panel="seo" title="SEO 检查">
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            <polyline points="7 11 9 9 11 11 15 7" />
+            <line x1="15" y1="12" x2="15" y2="7" />
+            <line x1="10" y1="7" x2="15" y2="7" />
+          </svg>
+          SEO 检查
+        </a>
+        <a class="left-nav-item {% if active == 'media' %}active{% endif %}" href="{{ url_for('core.media') }}"
+          data-panel="media" title="媒体管理">
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+            <path d="M8 14l2.5-2.5L13 14l2-2 3 3" />
+            <circle cx="8" cy="10" r="1" />
+          </svg>
+          媒体管理
+        </a>
         <a class="left-nav-item {% if active == 'header' %}active{% endif %}" href="{{ url_for('core.header_edit') }}"
           data-panel="header" title="网站头部">
           <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -709,6 +693,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"></script>
   <script>
+    window.ADMIN_AUTO_SAVE = {{ 'true' if admin_auto_save else 'false' }};
     // 全局 fetch 包装：自动给同源的非 GET 请求带上 X-CSRFToken（Flask-WTF 校验用）。
     // 表单内的 csrf hidden input 仍然有效，这层主要照顾 fetch+JSON / fetch+无 body 的调用。
     (function () {
@@ -837,7 +822,6 @@
       var themeColor = '{{ admin_primary }}';
       var navTheme = 'dark';
       try {
-        themeColor = localStorage.getItem('adminThemeColor') || themeColor;
         navTheme = localStorage.getItem('adminNavTheme') || navTheme;
       } catch (e) { }
       setThemeColor(themeColor, { skipStorage: true });
@@ -1321,7 +1305,7 @@
           }
           return runPanelScripts(body).then(function() {
             // 将保存按钮移到面板底部悬浮栏
-            var saveBar = body.querySelector('.panel-save-bar');
+            var saveBar = body.querySelector('.basic-settings-pane') ? null : body.querySelector('.panel-save-bar');
             if (saveBar && footer) {
               var form = saveBar.closest('form');
               var btn = saveBar.querySelector('button[type="submit"]');
@@ -1483,7 +1467,7 @@
             titleEl.textContent = '';
           }
           return runPanelScripts(body).then(function() {
-            var saveBar = body.querySelector('.panel-save-bar');
+            var saveBar = body.querySelector('.basic-settings-pane') ? null : body.querySelector('.panel-save-bar');
             if (saveBar && footer) {
               var newForm = saveBar.closest('form');
               var newBtn = saveBar.querySelector('button[type="submit"]');
@@ -1500,6 +1484,32 @@
         })
         .catch(err => { body.innerHTML = '<div class="p-3 text-danger">保存失败</div>'; });
     });
+
+    (function installPanelAutoSave() {
+      var body = document.getElementById('rightPanelBody');
+      if (!body) return;
+      var timer = null;
+      var saving = false;
+      function schedule(event) {
+        if (!window.ADMIN_AUTO_SAVE || saving) return;
+        var target = event.target;
+        if (!target || target.type === 'file') return;
+        var form = target.closest && target.closest('form');
+        if (!form || form.dataset.noAutoSave === '1') return;
+        if ((form.method || 'get').toLowerCase() !== 'post') return;
+        clearTimeout(timer);
+        timer = setTimeout(function() {
+          if (!document.body.contains(form)) return;
+          saving = true;
+          form.dataset.autoSaving = '1';
+          if (typeof form.requestSubmit === 'function') form.requestSubmit();
+          else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+          setTimeout(function() { saving = false; }, 1000);
+        }, 5000);
+      }
+      body.addEventListener('input', schedule, true);
+      body.addEventListener('change', schedule, true);
+    })();
 
     document.getElementById('leftNav').addEventListener('click', function (e) {
       // 侧栏收缩态下点击有子菜单的父项 → 先展开侧栏，不阻止默认行为

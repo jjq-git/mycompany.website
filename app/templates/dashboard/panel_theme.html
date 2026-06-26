@@ -1,7 +1,9 @@
 {# 主题颜色面板 #}
+{% if not basic_settings_embed|default(false) %}
 <div class="d-flex align-items-center justify-content-between mb-3">
   <span class="fw-semibold">主题颜色</span>
 </div>
+{% endif %}
 {% with messages = get_flashed_messages() %}
   {% for m in messages %}
     <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
@@ -10,6 +12,7 @@
 <form method="post" action="{{ url_for('core.theme_edit', site=site.id) if settings_workspace|default(false) else url_for('core.theme_edit', _fragment='1', site=site.id) }}" id="themeForm">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {% if settings_workspace|default(false) %}<input type="hidden" name="_workspace" value="1">{% endif %}
+  {% if basic_settings_embed|default(false) %}<input type="hidden" name="_basic_settings" value="1">{% endif %}
   <div class="panel-section">
     <div class="panel-section-title">颜色配置</div>
   {% for key, label, default_key in [('color-primary','主色','color-primary'),('color-bg','背景','color-bg'),('color-surface','面板色','color-surface'),('color-text','文字色','color-text'),('color-text-secondary','次要文字','color-text-secondary'),('color-border','边框色','color-border')] %}
@@ -57,7 +60,7 @@ document.getElementById('themeForm').addEventListener('submit', function(e) {
       var footer = document.getElementById('rightPanelFooter');
       if (panel) { panel.innerHTML = html; runPanelScripts(panel); }
       // 将保存按钮移到面板底部悬浮栏，同时清理旧的 footer 避免重复按钮
-      var saveBar = panel.querySelector('.panel-save-bar');
+      var saveBar = panel.querySelector('.basic-settings-pane') ? null : panel.querySelector('.panel-save-bar');
       if (saveBar && footer) {
         var form = saveBar.closest('form');
         var btn = saveBar.querySelector('button[type="submit"]');

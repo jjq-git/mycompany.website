@@ -528,27 +528,14 @@ def inject_context():
 
     ctx['platform_domain'] = current_app.config.get('PLATFORM_DOMAIN', '') or 'mycompany.website'
 
-    # 主题主色（用于覆盖 Bootstrap 默认蓝色 #0d6efd）
-    if site and site_id:
-        theme_color = (
-            settings.get('theme', {}).get('color-primary')
-            or ctx['template_meta'].get('default_theme', {}).get('color-primary')
-            or '#067a7a'
-        ).strip().strip('"').strip("'")
-        # 校验 hex 颜色格式：必须是 #rrggbb 或 #rrggbbaa
-        if not re.match(r'^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$', theme_color):
-            theme_color = '#067a7a'
-        ctx['admin_primary'] = theme_color
-        ctx['admin_primary_rgb'] = ', '.join(str(v) for v in _hex_to_rgb(theme_color))
-        ctx['admin_primary_hover'] = _darken(theme_color, 0.12)
-        ctx['admin_primary_active'] = _darken(theme_color, 0.20)
-        ctx['admin_primary_light'] = _lighten(theme_color, 0.85)
-    else:
-        ctx['admin_primary'] = '#067a7a'
-        ctx['admin_primary_rgb'] = '6, 122, 122'
-        ctx['admin_primary_hover'] = '#056666'
-        ctx['admin_primary_active'] = '#045555'
-        ctx['admin_primary_light'] = '#e6f2f2'
+    # 后台 UI 主色固定，不跟随网站前台主题色。
+    theme_color = '#0d9488'
+    ctx['admin_primary'] = theme_color
+    ctx['admin_primary_rgb'] = ', '.join(str(v) for v in _hex_to_rgb(theme_color))
+    ctx['admin_primary_hover'] = _darken(theme_color, 0.12)
+    ctx['admin_primary_active'] = _darken(theme_color, 0.20)
+    ctx['admin_primary_light'] = _lighten(theme_color, 0.85)
+    ctx['admin_auto_save'] = bool((settings.get('admin') or {}).get('auto_save')) if site and site_id else False
 
     return ctx
 
@@ -908,6 +895,43 @@ def theme_workspace():
                            theme=theme,
                            default_theme=default_theme,
                            settings_workspace=True)
+
+
+@bp.route('/settings/basic')
+def basic_settings():
+    """Company and theme settings in one side panel with tabs."""
+    user, site = _current_context()
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    lang, languages, default_lang = _get_panel_lang(site)
+    company_key = _lang_key('company', site, lang, default_lang)
+    contact_key = _lang_key('contact', site, lang, default_lang)
+    current_company = _merge_settings_section(settings.get('company'), settings.get(company_key))
+    current_contact = _merge_settings_section(settings.get('contact'), settings.get(contact_key))
+    source_company = settings.get('company', {})
+    source_contact = settings.get('contact', {})
+
+    tpl_meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    tpl_meta = _yaml.safe_load(tpl_meta_path.read_text(encoding='utf-8')) if tpl_meta_path.exists() else {}
+    default_theme = tpl_meta.get('default_theme') or {}
+    theme = settings.get('theme') or {}
+    tab = request.args.get('tab') or 'company'
+    if tab not in ('company', 'theme'):
+        tab = 'company'
+
+    return render_template('dashboard/panel_basic_settings.html',
+                           user=user, site=site,
+                           company=current_company,
+                           contact=current_contact,
+                           source_company=source_company,
+                           source_contact=source_contact,
+                           theme=theme,
+                           default_theme=default_theme,
+                           admin_settings=settings.get('admin') or {},
+                           current_lang=lang,
+                           languages=languages,
+                           default_lang=default_lang,
+                           basic_settings_tab=tab,
+                           active='basic_settings')
 
 
 @bp.route('/media')
@@ -1650,8 +1674,12 @@ def company():
                 settings[contact_key].pop(field, None)
         for field in ('address',):
             settings[contact_key][field] = request.form.get(f'contact.{field}', '').strip()
+        admin_settings = settings.setdefault('admin', {})
+        admin_settings['auto_save'] = bool(request.form.get('admin.auto_save'))
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
+        if request.form.get('_basic_settings') == '1':
+            return redirect(url_for('core.basic_settings', _fragment='1', site=site.id, lang=lang, tab='company'))
         if request.form.get('_workspace') == '1':
             return redirect(url_for('core.company_workspace', site=site.id, lang=lang))
         if is_fragment:
@@ -1672,7 +1700,8 @@ def company():
                                source_contact=source_contact,
                                current_lang=lang,
                                languages=languages,
-                               default_lang=default_lang)
+                               default_lang=default_lang,
+                               admin_settings=settings.get('admin') or {})
     return render_template('dashboard/company.html',
                            user=user, site=site,
                            company=current_company,
@@ -1682,6 +1711,7 @@ def company():
                            current_lang=lang,
                            languages=languages,
                            default_lang=default_lang,
+                           admin_settings=settings.get('admin') or {},
                            active='company')
 
 
@@ -2452,6 +2482,9 @@ def theme_edit():
             theme.pop(old_key, None)
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
+        if request.form.get('_basic_settings') == '1':
+            lang, _, default_lang = _get_panel_lang(site)
+            return redirect(url_for('core.basic_settings', _fragment='1', site=site.id, lang=lang, tab='theme'))
         if request.form.get('_workspace') == '1':
             return redirect(url_for('core.theme_workspace', site=site.id))
         if is_fragment:

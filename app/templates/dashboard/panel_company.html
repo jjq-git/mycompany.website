@@ -1,7 +1,9 @@
 {# 公司信息面板 #}
+{% if not basic_settings_embed|default(false) %}
 <div class="d-flex align-items-center justify-content-between mb-3">
   <span class="fw-semibold">公司信息</span>
 </div>
+{% endif %}
 
 {% with messages = get_flashed_messages() %}
   {% for m in messages %}
@@ -21,8 +23,20 @@
 <form method="post" action="{{ url_for('core.company', site=site.id, lang=current_lang) if settings_workspace|default(false) else url_for('core.company', _fragment='1', site=site.id, lang=current_lang) }}" enctype="multipart/form-data" id="companyForm">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {% if settings_workspace|default(false) %}<input type="hidden" name="_workspace" value="1">{% endif %}
+  {% if basic_settings_embed|default(false) %}<input type="hidden" name="_basic_settings" value="1">{% endif %}
   <div class="panel-section">
     <div class="panel-section-title">基本信息</div>
+    {% if basic_settings_embed|default(false) %}
+    <div class="mb-3 d-flex align-items-center justify-content-between gap-2 rounded px-2 py-2" style="background:#f8fafc;border:1px solid #e2e8f0">
+      <div>
+        <div class="small fw-semibold">自动保存</div>
+        <div class="text-muted" style="font-size:11px">编辑停止 5 秒后自动保存当前面板表单</div>
+      </div>
+      <label class="form-check form-switch m-0">
+        <input class="form-check-input" type="checkbox" name="admin.auto_save" value="1" {% if admin_settings.get('auto_save') %}checked{% endif %}>
+      </label>
+    </div>
+    {% endif %}
     {% set current_logo = company.get('logo', '') %}
     <div class="mb-2">
       <label class="form-label small mb-1 text-muted">Logo</label>
