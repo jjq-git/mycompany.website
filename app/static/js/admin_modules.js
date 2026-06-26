@@ -3716,11 +3716,34 @@
     overlay = document.createElement('div');
     overlay.className = 'rte-url-overlay';
     overlay.style.cssText = 'display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.35);align-items:center;justify-content:center';
+    // 弹窗含三标签页（外部链接 / 本站页面 / 媒体文件）+ 共用 URL 预览栏
     overlay.innerHTML =
-      '<div class="rte-url-dialog" style="background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);padding:20px;width:420px;max-width:90vw">' +
-        '<div class="rte-url-dialog-title small fw-semibold mb-3" style="font-size:13px;color:#343a40"></div>' +
-        '<input type="text" class="form-control form-control-sm rte-url-dialog-input" placeholder="https://">' +
-        '<div class="d-flex gap-2 mt-3 justify-content-end">' +
+      '<div class="rte-url-dialog" style="background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);padding:20px;width:520px;max-width:92vw;max-height:85vh;display:flex;flex-direction:column">' +
+        '<div class="rte-url-dialog-title small fw-semibold mb-3" style="font-size:13px;color:#343a40;flex-shrink:0"></div>' +
+        // 标签页（仅 link 模式可见）
+        '<div class="rte-url-tabs" style="display:none;flex-shrink:0;border-bottom:2px solid #e9ecef;margin-bottom:12px">' +
+          '<button type="button" class="rte-url-tab active" data-rte-tab="url">外部链接</button>' +
+          '<button type="button" class="rte-url-tab" data-rte-tab="pages">本站页面</button>' +
+          '<button type="button" class="rte-url-tab" data-rte-tab="media">媒体文件</button>' +
+        '</div>' +
+        // 标签页内容区（可滚动）
+        '<div class="rte-url-tab-body" style="flex:1;overflow-y:auto;min-height:0">' +
+          '<div class="rte-url-tab-panel" data-rte-tab-panel="url">' +
+            '<input type="text" class="form-control form-control-sm rte-url-dialog-input" placeholder="https://example.com">' +
+          '</div>' +
+          '<div class="rte-url-tab-panel" data-rte-tab-panel="pages" style="display:none">' +
+            '<div class="rte-pages-list text-muted small py-4 text-center">加载中...</div>' +
+          '</div>' +
+          '<div class="rte-url-tab-panel" data-rte-tab-panel="media" style="display:none">' +
+            '<div class="rte-media-picker-grid text-muted small py-4 text-center">加载中...</div>' +
+          '</div>' +
+        '</div>' +
+        // URL 预览栏（三标签共用）：页面/媒体选中后自动填入，也可手动编辑
+        '<div style="flex-shrink:0;margin-top:12px">' +
+          '<label class="form-label small mb-1 text-muted" style="font-size:11px">目标地址</label>' +
+          '<input type="text" class="form-control form-control-sm rte-url-dialog-input-preview" placeholder="选择页面或媒体后自动填入，也可手动输入" style="font-size:12px">' +
+        '</div>' +
+        '<div class="d-flex gap-2 mt-3 justify-content-end" style="flex-shrink:0">' +
           '<button type="button" class="btn btn-sm btn-outline-secondary rte-url-dialog-cancel">取消</button>' +
           '<button type="button" class="btn btn-sm btn-primary rte-url-dialog-confirm">确认</button>' +
         '</div>' +
@@ -3742,8 +3765,12 @@
     if (borderRow) borderRow.style.display = 'none';
 
     var titleEl   = overlay.querySelector('.rte-url-dialog-title');
-    var inputEl   = overlay.querySelector('.rte-url-dialog-input');
+    // 外部链接标签页内的输入框（直接输入 URL）
+    var urlInput  = overlay.querySelector('.rte-url-dialog-input');
+    // 底部共用预览输入框（三标签共用，页面/媒体选中后自动填入）
+    var previewInput = overlay.querySelector('.rte-url-dialog-input-preview');
     var confirmEl = overlay.querySelector('.rte-url-dialog-confirm');
+    var tabsRow   = overlay.querySelector('.rte-url-tabs');
 
     var existing = null;
     var rangeSnapshot = savedRangeInRte(rte);
@@ -3770,27 +3797,139 @@
     titleEl.textContent = mode === 'link'
       ? (existing ? '编辑链接' : '插入链接')
       : (mode === 'video' ? '插入视频链接' : '插入图片');
-    inputEl.value = currentUrl;
+
+    // 标签页仅 link 模式显示
+    if (mode === 'link' && tabsRow) {
+      tabsRow.style.display = '';
+      // 默认切到外部链接标签
+      selectRteLinkTab(overlay, 'url');
+    } else if (tabsRow) {
+      tabsRow.style.display = 'none';
+      // 非 link 模式：隐藏标签，直接显示输入区
+      var allPanels = overlay.querySelectorAll('.rte-url-tab-panel');
+      allPanels.forEach(function(p) { p.style.display = 'none'; });
+      var urlPanel = overlay.querySelector('[data-rte-tab-panel="url"]');
+      if (urlPanel) urlPanel.style.display = '';
+    }
+
+    // 共同预览输入框填入当前 URL
+    if (urlInput) urlInput.value = currentUrl;
+    if (previewInput) previewInput.value = currentUrl;
     if (mode === 'video') {
-      inputEl.placeholder = 'https://example.com/video.mp4';
+      if (urlInput) urlInput.placeholder = 'https://example.com/video.mp4';
+      if (previewInput) previewInput.placeholder = 'https://example.com/video.mp4';
     } else {
-      inputEl.placeholder = mode === 'link' ? 'https://example.com' : 'https://example.com/pic.webp';
+      if (urlInput) urlInput.placeholder = mode === 'link' ? 'https://example.com' : 'https://example.com/pic.webp';
+      if (previewInput) previewInput.placeholder = mode === 'link' ? '选择页面或媒体后自动填入，也可手动输入' : 'https://example.com/pic.webp';
     }
     confirmEl.textContent = mode === 'link' && existing ? '更新' : '确认';
     overlay.style.display = 'flex';
-    setTimeout(function(){ inputEl.focus(); inputEl.select(); }, 50);
+
+    // 焦点：link 模式放到外部链接输入框，其他模式放到通用输入框
+    setTimeout(function() {
+      var target = (mode === 'link' && urlInput) ? urlInput : (previewInput || urlInput);
+      if (target) { target.focus(); target.select(); }
+    }, 50);
   }
 
-  // 确认（加锁防閲嶅触发锛?
+  // 切换链接弹窗的标签页（模块级函数，供 document 委托事件调用）
+  function selectRteLinkTab(overlay, tabName) {
+    // 更新标签高亮
+    overlay.querySelectorAll('.rte-url-tab').forEach(function(t) {
+      t.classList.toggle('active', t.dataset.rteTab === tabName);
+    });
+    // 切换面板
+    overlay.querySelectorAll('.rte-url-tab-panel').forEach(function(p) {
+      p.style.display = (p.dataset.rteTabPanel === tabName) ? '' : 'none';
+    });
+    // 外部链接标签：同步输入框 → 预览栏
+    if (tabName === 'url') {
+      var urlInput = overlay.querySelector('.rte-url-dialog-input');
+      var previewInput = overlay.querySelector('.rte-url-dialog-input-preview');
+      if (urlInput) {
+        urlInput.addEventListener('input', function() {
+          if (previewInput) previewInput.value = urlInput.value;
+        });
+        if (previewInput && !previewInput.value && urlInput.value) previewInput.value = urlInput.value;
+      }
+    }
+    // 按需懒加载
+    if (tabName === 'pages') loadRtePages(overlay);
+    if (tabName === 'media') loadRteMedia(overlay);
+  }
+
+  // 加载本站页面列表到链接弹窗
+  function loadRtePages(overlay) {
+    if (overlay.dataset.rtePagesLoaded === '1') return;
+    overlay.dataset.rtePagesLoaded = '1';
+    var listEl = overlay.querySelector('.rte-pages-list');
+    if (!listEl) return;
+    listEl.innerHTML = '<span class="text-muted">加载中...</span>';
+    var site = (typeof currentSiteParam === 'function' && currentSiteParam()) || new URLSearchParams(window.location.search).get('site') || '';
+    fetch('/api/site/pages?site=' + encodeURIComponent(site))
+      .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+      .then(function(result) {
+        if (!result.ok || !result.data.pages || !result.data.pages.length) {
+          listEl.innerHTML = '<span class="text-muted">暂无页面</span>';
+          return;
+        }
+        var typeLabels = { home: '首页', page: '页面', list: '列表' };
+        var items = result.data.pages.map(function(p) {
+          return '<button type="button" class="rte-page-item" data-url="' + attrEsc(p.url) + '" title="' + attrEsc(p.label + ' — ' + p.url) + '">' +
+            '<span class="rte-page-item-label">' + schemaEsc(p.label) + '</span>' +
+            '<span class="rte-page-item-meta">' + (typeLabels[p.type] || p.type) + ' · ' + schemaEsc(p.url) + '</span>' +
+          '</button>';
+        }).join('');
+        listEl.innerHTML = items;
+      })
+      .catch(function() {
+        listEl.innerHTML = '<span class="text-danger">页面加载失败</span>';
+      });
+  }
+
+  // 加载媒体文件网格到链接弹窗
+  function loadRteMedia(overlay) {
+    if (overlay.dataset.rteMediaLoaded === '1') return;
+    overlay.dataset.rteMediaLoaded = '1';
+    var gridEl = overlay.querySelector('.rte-media-picker-grid');
+    if (!gridEl) return;
+    gridEl.innerHTML = '<span class="text-muted">加载中...</span>';
+    var site = (typeof currentSiteParam === 'function' && currentSiteParam()) || new URLSearchParams(window.location.search).get('site') || '';
+    fetch('/media?_fragment=1' + (site ? '&site=' + encodeURIComponent(site) : ''))
+      .then(function(r) { return r.text(); })
+      .then(function(html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var cards = Array.prototype.slice.call(doc.querySelectorAll('.media-card[data-url]'));
+        var items = cards.map(function(card) {
+          var url = card.dataset.url || '';
+          var name = card.dataset.displayName || card.dataset.name || url;
+          var category = card.dataset.category || 'other';
+          var icon = category === 'image' ? 'IMG' : (category === 'video' ? 'VID' : (category === 'document' ? 'DOC' : (category === 'package' ? 'ZIP' : 'FILE')));
+          return '<button type="button" class="rte-media-picker-item" data-url="' + attrEsc(url) + '" title="' + attrEsc(name) + '">' +
+            '<span class="rte-media-picker-badge">' + icon + '</span>' +
+            '<span class="rte-media-picker-name">' + schemaEsc(name) + '</span>' +
+          '</button>';
+        }).join('');
+        gridEl.innerHTML = items || '<span class="text-muted">媒体库暂无文件</span>';
+      })
+      .catch(function() {
+        gridEl.innerHTML = '<span class="text-danger">媒体库加载失败</span>';
+      });
+  }
+
+  // 确认（加锁防重复触发）
   document.addEventListener('click', function(e) {
     if (!e.target.closest('.rte-url-dialog-confirm')) return;
     var overlay = e.target.closest('.rte-url-overlay');
     if (!overlay || overlay.style.display === 'none') return;
     var state = _rteDialogState;
     if (!state.rte) return;
-    var url = overlay.querySelector('.rte-url-dialog-input').value.trim();
+    // 取底部预览输入框的值（link 模式三标签共用），兜底取外部链接输入框
+    var previewInput = overlay.querySelector('.rte-url-dialog-input-preview');
+    var urlInputEl = overlay.querySelector('.rte-url-dialog-input');
+    var url = (previewInput ? previewInput.value : (urlInputEl ? urlInputEl.value : '')).trim();
     var rte = state.rte;
-    // 先消璐?state + 隐藏 overlay，再操作 DOM锛岄槻姝换何重鍏?
+    // 先清除 state + 隐藏 overlay，再操作 DOM，防止任何重入
     _rteDialogState = { rte: null, mode: '', existingLink: null, range: null };
     overlay.style.display = 'none';
 
@@ -3848,10 +3987,46 @@
     }
   });
 
-  // Enter 确认
+  // 链接弹窗内标签页切换（委托）
+  document.addEventListener('click', function(e) {
+    var tabBtn = e.target.closest('.rte-url-tab');
+    if (!tabBtn) return;
+    var overlay = tabBtn.closest('.rte-url-overlay');
+    if (!overlay) return;
+    var tabName = tabBtn.dataset.rteTab;
+    if (tabName) selectRteLinkTab(overlay, tabName);
+  });
+
+  // 链接弹窗内页面项点击 → 填入预览输入框
+  document.addEventListener('click', function(e) {
+    var item = e.target.closest('.rte-page-item');
+    if (!item) return;
+    var overlay = item.closest('.rte-url-overlay');
+    if (!overlay) return;
+    var previewInput = overlay.querySelector('.rte-url-dialog-input-preview');
+    if (previewInput) previewInput.value = item.dataset.url || '';
+    // 选中高亮
+    overlay.querySelectorAll('.rte-page-item.selected').forEach(function(s) { s.classList.remove('selected'); });
+    item.classList.add('selected');
+  });
+
+  // 链接弹窗内媒体项点击 → 填入预览输入框
+  document.addEventListener('click', function(e) {
+    var item = e.target.closest('.rte-media-picker-item');
+    if (!item) return;
+    var overlay = item.closest('.rte-url-overlay');
+    if (!overlay) return;
+    var previewInput = overlay.querySelector('.rte-url-dialog-input-preview');
+    if (previewInput) previewInput.value = item.dataset.url || '';
+    // 选中高亮
+    overlay.querySelectorAll('.rte-media-picker-item.selected').forEach(function(s) { s.classList.remove('selected'); });
+    item.classList.add('selected');
+  });
+
+  // Enter 确认（同时监听外部链接输入框和底部预览输入框）
   document.addEventListener('keydown', function(e) {
     if (e.key !== 'Enter') return;
-    var input = e.target.closest('.rte-url-dialog-input');
+    var input = e.target.closest('.rte-url-dialog-input') || e.target.closest('.rte-url-dialog-input-preview');
     if (!input) return;
     e.preventDefault();
     var overlay = input.closest('.rte-url-overlay');

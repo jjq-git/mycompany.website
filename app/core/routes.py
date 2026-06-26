@@ -980,6 +980,66 @@ def api_media_references():
     return jsonify({'filename': name, 'refs': refs, 'count': len(refs)})
 
 
+@bp.route('/api/site/pages')
+def api_site_pages():
+    """返回当前站点所有可链接的页面（菜单项 + pages/ 目录下的孤儿 YAML）。
+
+    前端 RTE 链接插入器使用，用于在「本站页面」标签页中展示可选目标。
+    """
+    _, site = _current_context()
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    raw_menu = settings.get('menu') or []
+    pages_dir = lang_root(site.id) if False else None
+
+    # 从菜单树中收集所有有 URL 的页面项
+    seen_keys = set()
+    pages = []
+
+    def collect(items):
+        if not isinstance(items, list):
+            return
+        for it in items:
+            if not isinstance(it, dict):
+                continue
+            t = it.get('type')
+            if t in ('home', 'page', 'list'):
+                key = it.get('target', '') or 'home'
+                if t == 'home':
+                    key = 'home'
+                if key and key not in seen_keys:
+                    seen_keys.add(key)
+                    label = it.get('label') or key
+                    url = menu_lib.url_of(it)
+                    pages.append({'key': key, 'label': label, 'url': url, 'type': t})
+            collect(it.get('children') or [])
+
+    # 升级旧格式后收集
+    meta = {}
+    template_meta_file = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    if template_meta_file.exists():
+        try:
+            meta = _yaml.safe_load(template_meta_file.read_text(encoding='utf-8')) or {}
+        except Exception:
+            pass
+    upgraded = menu_lib.upgrade_old_format(raw_menu, meta.get('datasets', []))
+    collect(upgraded)
+
+    # 补充 pages/ 目录中未被菜单覆盖的孤儿 YAML（兼容手动创建的页面文件）
+    try:
+        for file in list_yaml_files(site.id, 'pages'):
+            key = file.stem
+            if key not in seen_keys:
+                seen_keys.add(key)
+                page_data = read_yaml(site.id, f'pages/{file.name}') or {}
+                label = page_data.get('title') or page_data.get('label') or key
+                url = f'/{key}' if key != 'home' else '/'
+                pages.append({'key': key, 'label': label, 'url': url, 'type': 'page'})
+    except Exception:
+        pass
+
+    return jsonify({'pages': pages})
+
+
 @bp.route('/api/contact/<int:site_id>', methods=['POST', 'OPTIONS'])
 @csrf.exempt
 @cross_origin(origins='*')
@@ -1062,8 +1122,38 @@ def api_media_upload():
     suffix = original.rsplit('.', 1)[-1].lower() if '.' in original else ''
     try:
         if suffix == 'zip':
-            result = _save_media_package(site.id, upload)
-            return jsonify({'ok': True, **result})
+            # 预检 ZIP 内容：根目录有 index.html → 网页包；否则降级为普通文件
+            is_package = False
+            try:
+                upload.stream.seek(0)
+                archive = zipfile.ZipFile(upload.stream)
+                with archive:
+                    infos = [info for info in archive.infolist() if not info.is_dir()]
+                    if infos:
+                        names = [_safe_zip_member_name(info.filename) for info in infos]
+                        strip_root = _zip_strip_root(names)
+                        normalized = []
+                        for name in names:
+                            parts = Path(name).parts
+                            if strip_root:
+                                parts = parts[1:]
+                            if not parts:
+                                continue
+                            normalized.append('/'.join(parts))
+                        is_package = 'index.html' in {n.lower() for n in normalized}
+                upload.stream.seek(0)
+            except Exception:
+                # peek 失败（损坏/非标准 ZIP）也不拦截，降级为普通文件
+                try:
+                    upload.stream.seek(0)
+                except Exception:
+                    pass
+
+            if is_package:
+                result = _save_media_package(site.id, upload)
+                return jsonify({'ok': True, **result})
+            # 不是网页包 → 继续往下走普通文件上传流程
+
         if suffix in ALLOWED_IMAGE_EXTENSIONS or suffix in ALLOWED_VIDEO_EXTENSIONS:
             url = _save_uploaded_media(site.id, upload, prefix='media')
         else:
