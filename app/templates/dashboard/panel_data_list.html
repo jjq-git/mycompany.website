@@ -16,7 +16,7 @@
 {% if translation_enabled and is_edit and languages and languages|length > 1 and current_lang != default_lang %}
 {# AI 翻译栏 — 独立一行，与语言标签区分 #}
 <div class="dataset-ai-translate-bar d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
-  <span class="text-muted text-nowrap">🌐 AI 翻译：当前内容 →</span>
+  <span class="text-muted text-nowrap">AI 翻译：当前内容 →</span>
   {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
   <span class="text-muted text-nowrap">AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
   <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:11px;">开始翻译</button>
@@ -69,6 +69,31 @@
 {# ---- 已选模块列表 ---- #}
 <form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" data-page-key="{{ dataset_key }}" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% set detail_btn_raw = edit_item.get('show_detail_btn') %}
+  {% set detail_btn_mode = 'inherit' if detail_btn_raw is none else ('true' if detail_btn_raw is sameas true or (detail_btn_raw|string|lower) == 'true' else 'false') %}
+  <div class="dataset-detail-button-field">
+    <div class="dataset-detail-button-row">
+      <label class="form-label small text-muted">列表卡片按钮</label>
+      <div class="dataset-detail-button-options" role="radiogroup" aria-label="列表卡片按钮">
+        <label class="seg-radio-option">
+          <input type="radio" name="_show_detail_btn_mode" value="inherit"{% if detail_btn_mode == 'inherit' %} checked{% endif %}>
+          <span class="seg-radio-dot" aria-hidden="true"></span>
+          <span>继承</span>
+        </label>
+        <label class="seg-radio-option">
+          <input type="radio" name="_show_detail_btn_mode" value="true"{% if detail_btn_mode == 'true' %} checked{% endif %}>
+          <span class="seg-radio-dot" aria-hidden="true"></span>
+          <span>显示</span>
+        </label>
+        <label class="seg-radio-option">
+          <input type="radio" name="_show_detail_btn_mode" value="false"{% if detail_btn_mode == 'false' %} checked{% endif %}>
+          <span class="seg-radio-dot" aria-hidden="true"></span>
+          <span>隐藏</span>
+        </label>
+      </div>
+    </div>
+    <div class="dataset-detail-button-help">只影响数据列表展示模块中这一条卡片的按钮。</div>
+  </div>
   <div>
     <div class="small text-muted mb-2">已选模块（点击箭头排序 | 点击展开配置）</div>
     <div id="selectedModulesDs">
@@ -82,7 +107,7 @@
 </form>
 
 {# JS: 模块选择器交互 #}
-<script src="/static/js/admin_modules.js?v=81"></script>
+<script src="/static/js/admin_modules.js?v=95"></script>
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="iconListDsJson">{{ icon_list | default([]) | tojson }}</script>
@@ -120,7 +145,10 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 
   function getSiteQuery() {
     var siteParam = new URLSearchParams(window.location.search).get('site') || SITE_ID;
-    return siteParam ? '&site=' + encodeURIComponent(siteParam) : '';
+    var langParam = new URLSearchParams(window.location.search).get('lang') || '{{ current_lang }}';
+    var qs = siteParam ? '&site=' + encodeURIComponent(siteParam) : '';
+    if (langParam) qs += '&lang=' + encodeURIComponent(langParam);
+    return qs;
   }
 
   window.backToPageEditor = function() {
@@ -137,13 +165,13 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   };
   window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getSiteQuery()); };
   window.addDataItem = function() {
-    fetch('/_dataset/' + DATASET_KEY + '/new?site=' + SITE_ID, {method: 'POST'})
+    fetch('/_dataset/' + DATASET_KEY + '/new?' + getSiteQuery().replace(/^&/, ''), {method: 'POST'})
       .then(function() { loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()); })
       .catch(function() { location.reload(); });
   };
   window.deleteDataItem = function(id) {
     if (!confirm('确认删除？')) return;
-    fetch('/_dataset/' + DATASET_KEY + '/' + id + '/delete?site=' + SITE_ID, {method: 'POST'})
+    fetch('/_dataset/' + DATASET_KEY + '/' + id + '/delete?' + getSiteQuery().replace(/^&/, ''), {method: 'POST'})
       .then(function() { loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()); })
       .catch(function() { location.reload(); });
   };
@@ -246,7 +274,16 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   window.addModuleDs = function(type, variant, savedData) {
     var container = document.getElementById('selectedModulesDs');
     var countEl = document.getElementById('moduleCountDs');
+    if (!container || !countEl) {
+      console.warn('[addModuleDs] missing container/count element', type);
+      return false;
+    }
+    if (typeof window._buildModuleHTML !== 'function') {
+      console.error('[addModuleDs] _buildModuleHTML is not ready', type);
+      return false;
+    }
     var idx = parseInt(countEl.value);
+    if (isNaN(idx)) idx = 0;
     countEl.value = idx + 1;
 
     var mdata = savedData || {};
@@ -255,7 +292,14 @@ window._dsEditItemJson = {{ edit_item | tojson }};
       window._moduleCtx.editItem = window._dsEditItemJson || mdata || {};
     }
 
-    var result = window._buildModuleHTML(type, idx, mdata);
+    var result;
+    try {
+      result = window._buildModuleHTML(type, idx, mdata);
+    } catch (err) {
+      countEl.value = idx;
+      console.error('[addModuleDs] failed to build module', type, err);
+      return false;
+    }
 
     // 创建外层 module-item div
     var div = document.createElement('div');
@@ -271,11 +315,15 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     if (typeof initColorPickers === 'function') initColorPickers(div);
 
     // 手风琴展开/收缩
-    div.querySelector('.module-header').addEventListener('click', function() {
-      window._toggleModuleAccordion(div);
-    });
+    var header = div.querySelector('.module-header');
+    if (header) {
+      header.addEventListener('click', function() {
+        window._toggleModuleAccordion(div);
+      });
+    }
 
     reindexModulesDs();
+    return true;
   };
 
   // ===== 模块选择回调 =====
@@ -288,7 +336,11 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var savedModules = {{ (edit_item.modules | default([])) | tojson }};
     if (savedModules && savedModules.length > 0) {
       savedModules.forEach(function(mod) {
-        window.addModuleDs(mod.type, mod.variant || 'default', mod.data || {});
+        try {
+          window.addModuleDs(mod.type, mod.variant || 'default', mod.data || {});
+        } catch (err) {
+          console.error('[dataset modules restore] failed', mod && mod.type, err);
+        }
       });
       // 如果没有 item_data，追加一个
       if (!savedModules.find(function(m) { return m.type === 'item_data'; })) {
@@ -315,6 +367,8 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 {# ========== 编辑模式：简单表单（无 blocks） ========== #}
 <form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% set detail_btn_raw = edit_item.get('show_detail_btn') %}
+  {% set detail_btn_mode = 'inherit' if detail_btn_raw is none else ('true' if detail_btn_raw is sameas true or (detail_btn_raw|string|lower) == 'true' else 'false') %}
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label>
     <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="如 my-post">
@@ -335,7 +389,30 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val }}" placeholder="多个用逗号或空格分隔">
   </div>
   <div class="mb-2"><label class="form-label small mb-1 text-muted">详细介绍</label><textarea class="form-control form-control-sm" name="body" rows="10" style="min-height:200px; font-family:monospace; white-space:pre-wrap;">{{ edit_item.body or edit_item.content or '' }}</textarea></div>
-  {% for key, val in edit_item.items() if key not in ('id', 'slug', 'date', 'title', 'description', 'excerpt', 'summary', 'cover', 'image', 'photo', 'logo', 'tags', 'body', 'content') %}
+  <div class="dataset-detail-button-field">
+    <div class="dataset-detail-button-row">
+      <label class="form-label small text-muted">列表卡片按钮</label>
+      <div class="dataset-detail-button-options" role="radiogroup" aria-label="列表卡片按钮">
+        <label class="seg-radio-option">
+          <input type="radio" name="_show_detail_btn_mode" value="inherit"{% if detail_btn_mode == 'inherit' %} checked{% endif %}>
+          <span class="seg-radio-dot" aria-hidden="true"></span>
+          <span>继承</span>
+        </label>
+        <label class="seg-radio-option">
+          <input type="radio" name="_show_detail_btn_mode" value="true"{% if detail_btn_mode == 'true' %} checked{% endif %}>
+          <span class="seg-radio-dot" aria-hidden="true"></span>
+          <span>显示</span>
+        </label>
+        <label class="seg-radio-option">
+          <input type="radio" name="_show_detail_btn_mode" value="false"{% if detail_btn_mode == 'false' %} checked{% endif %}>
+          <span class="seg-radio-dot" aria-hidden="true"></span>
+          <span>隐藏</span>
+        </label>
+      </div>
+    </div>
+    <div class="dataset-detail-button-help">只影响数据列表展示模块中这一条卡片的按钮。</div>
+  </div>
+  {% for key, val in edit_item.items() if key not in ('id', 'slug', 'date', 'title', 'description', 'excerpt', 'summary', 'cover', 'image', 'photo', 'logo', 'tags', 'body', 'content', 'show_detail_btn') %}
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">{{ key }}</label>
     {% if key in ('cover', 'photo', 'logo') %}<input type="text" class="form-control form-control-sm" name="{{ key }}" value="{{ val }}"><input type="file" class="form-control form-control-sm mt-1" name="{{ key }}" accept="image/*">
@@ -365,7 +442,17 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         <td><strong>{{ it.title or it.name }}</strong></td>
         <td class="text-muted"><code style="font-size:11px">{{ it.slug }}</code></td>
         <td class="text-muted small">{{ it.date or '' }}</td>
-        <td><button class="btn btn-sm btn-outline-danger" style="font-size:10px" onclick="event.stopPropagation(); deleteDataItem({{ it.id }})">删除</button></td>
+        <td>
+          <div class="dataset-row-actions">
+            <button type="button" class="dataset-row-icon-btn" title="复制此条数据" onclick="event.stopPropagation(); copyDataItem({{ it.id }}, this)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><rect x="4" y="4" width="11" height="11" rx="2"></rect></svg>
+            </button>
+            <button type="button" class="dataset-row-icon-btn dataset-paste-btn" title="粘贴到此条数据" onclick="event.stopPropagation(); pasteDataItem({{ it.id }}, this)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h6"></path><path d="M9 3h6v4H9z"></path><rect x="5" y="5" width="14" height="16" rx="2"></rect><path d="M9 13h6"></path><path d="M9 17h4"></path></svg>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" style="font-size:10px" onclick="event.stopPropagation(); deleteDataItem({{ it.id }})">删除</button>
+          </div>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
@@ -416,6 +503,41 @@ window._dsEditItemJson = {{ edit_item | tojson }};
       .then(function() { loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getQuery()); })
       .catch(function() { location.reload(); });
   };
+  function showDatasetToast(message) {
+    var toast = document.getElementById('datasetCopyToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'datasetCopyToast';
+      toast.className = 'dataset-copy-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(function() { toast.classList.remove('show'); }, 1800);
+  }
+  window.copyDataItem = function(id, btn) {
+    sessionStorage.setItem('datasetCopy:' + DATASET_KEY, String(id));
+    document.querySelectorAll('.dataset-row-icon-btn.is-active').forEach(function(el) { el.classList.remove('is-active'); });
+    if (btn) btn.classList.add('is-active');
+    showDatasetToast('已复制 #' + id + '，可粘贴到其他条目');
+  };
+  window.pasteDataItem = function(id, btn) {
+    var sourceId = sessionStorage.getItem('datasetCopy:' + DATASET_KEY);
+    if (!sourceId) { alert('请先复制一条数据'); return; }
+    if (String(sourceId) === String(id) && !confirm('要把这条数据粘贴到自身吗？')) return;
+    if (btn) btn.disabled = true;
+    showDatasetToast('正在粘贴到 #' + id + '...');
+    fetch('/_dataset/' + DATASET_KEY + '/' + id + '/paste-from/' + sourceId + getFetchQuery(), {method: 'POST'})
+      .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+      .then(function(result) {
+        if (!result.ok || !result.data.ok) throw new Error((result.data && result.data.error) || '粘贴失败');
+        showDatasetToast('已粘贴到 #' + id);
+        loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getQuery());
+      })
+      .catch(function(err) { alert(err.message || '粘贴失败'); })
+      .finally(function() { if (btn) btn.disabled = false; });
+  };
 })();
 </script>
 
@@ -443,6 +565,12 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   }
   if (typeof window.deleteDataItem !== 'function') {
     window.deleteDataItem = function(id) { location.reload(); };
+  }
+  if (typeof window.copyDataItem !== 'function') {
+    window.copyDataItem = function(id) { sessionStorage.setItem('datasetCopy:' + dsKey, String(id)); };
+  }
+  if (typeof window.pasteDataItem !== 'function') {
+    window.pasteDataItem = function(id) { location.reload(); };
   }
 })();
 </script>
@@ -538,19 +666,36 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   function showTranslateConfirm(title, body, onConfirm) {
     var modalEl = document.getElementById('translateModal');
     if (!modalEl) { onConfirm(); return; }
-    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    if (!window.bootstrap || !window.bootstrap.Modal) { onConfirm(); return; }
+    var modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
     document.getElementById('translateModalTitle').textContent = title;
     document.getElementById('translateModalBody').innerHTML = body;
     document.getElementById('translateModalConfirm').style.display = '';
     document.getElementById('translateModalCancel').style.display = '';
-    document.getElementById('translateModalConfirm').onclick = function() { modal.hide(); onConfirm(); };
+    document.getElementById('translateModalConfirm').onclick = function(e) {
+      if (e) e.preventDefault();
+      var fired = false;
+      modalEl.addEventListener('hidden.bs.modal', function h() {
+        modalEl.removeEventListener('hidden.bs.modal', h);
+        if (fired) return;
+        fired = true;
+        onConfirm();
+      });
+      modal.hide();
+      setTimeout(function() {
+        if (fired) return;
+        fired = true;
+        onConfirm();
+      }, 250);
+    };
     modal.show();
   }
 
   function showTranslateMsg(title, body) {
     var modalEl = document.getElementById('translateModal');
     if (!modalEl) { alert(String(body).replace(/<[^>]*>/g, '')); return; }
-    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    if (!window.bootstrap || !window.bootstrap.Modal) { alert(String(body).replace(/<[^>]*>/g, '')); return; }
+    var modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
     document.getElementById('translateModalTitle').textContent = title;
     document.getElementById('translateModalBody').innerHTML = '<p>' + body + '</p>';
     document.getElementById('translateModalConfirm').style.display = '';

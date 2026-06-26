@@ -2658,11 +2658,61 @@
   color: #0f172a;
 }
 
+.dataset-detail-button-field {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.dataset-detail-button-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dataset-detail-button-row > .form-label {
+  margin: 0 !important;
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+
+.dataset-detail-button-options {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dataset-detail-button-options .seg-radio-option {
+  min-height: 24px;
+  font-size: 12px;
+}
+
+.dataset-detail-button-help {
+  color: #94a3b8;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 @media (max-width: 640px) {
   .module-config .content-style-panel > .module-field-half,
   .module-field-row > .module-field-half {
     flex-basis: 100%;
     max-width: 100%;
+  }
+  .dataset-detail-button-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .dataset-detail-button-options {
+    justify-content: flex-start;
   }
 }
 
@@ -3215,4 +3265,98 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.dataset-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.dataset-row-icon-btn {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color, #d7dde8);
+  border-radius: 6px;
+  background: #fff;
+  color: #526071;
+  padding: 0;
+}
+
+.dataset-row-icon-btn:hover,
+.dataset-row-icon-btn.is-active {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.dataset-row-icon-btn:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.dataset-row-icon-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dataset-copy-toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 100000;
+  max-width: min(320px, calc(100vw - 36px));
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, .24);
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity .16s ease, transform .16s ease;
+}
+
+.dataset-copy-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.rte-editor img,
+.rte-editor video,
+.rte-editor iframe {
+  max-width: 100%;
+}
+
+.rte-editor img {
+  height: auto;
+}
+
+.rte-media-wrapper,
+.rte-embed-wrapper {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.rte-media-wrapper video {
+  width: 100% !important;
+  height: auto !important;
+  display: block !important;
+}
+
+.rte-embed-wrapper iframe {
+  width: 100% !important;
+  min-height: 320px;
+  aspect-ratio: 16 / 9;
 }

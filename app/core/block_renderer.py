@@ -408,9 +408,14 @@ def _expand_list(node, field_def, data_dict, context):
             continue
         item_type = item_node.attrs.get('data-type', '')
         if item_type == 'group':
-            item_data = item if isinstance(item, dict) else {}
+            item_data = dict(item) if isinstance(item, dict) else {}
+            if isinstance(data_dict, dict):
+                for inherited_key in ('show_detail_btn',):
+                    if inherited_key not in item_data and inherited_key in data_dict:
+                        item_data[inherited_key] = data_dict[inherited_key]
             _inject_into_children(item_node, field_def.children, item_data, context)
             _inject_href(item_node, item_data, context)
+            _apply_conditional_visibility(item_node, item_data)
             if item_data.get('tags_visible') is False or str(item_data.get('tags_visible')).lower() == 'false':
                 _mark_filter_source_tags_visual_hidden(item_node)
         else:
@@ -483,10 +488,12 @@ def _apply_conditional_visibility(node, data_dict):
         field, raw_values = condition.split(':', 1)
         field = field.strip()
         default_value = 'image' if field == 'media_type' else ''
-        actual = str(data_dict.get(field, default_value)).strip()
+        raw_actual = data_dict.get(field, default_value)
+        actual = 'true' if raw_actual is True else 'false' if raw_actual is False else str(raw_actual).strip()
         allowed = [v.strip() for v in raw_values.split(',') if v.strip()]
         if actual not in allowed:
             return False
+        node.attrs.pop('data-show-when', None)
 
     kept_nodes = []
     for child in node.nodes:
@@ -559,6 +566,86 @@ def _apply_descendant_styles(node, data_dict):
         if tokens:
             _apply_style(child, tokens, data_dict)
         _apply_descendant_styles(child, data_dict)
+
+
+def _append_style(node, prop, value):
+    if value in (None, ''):
+        return
+    safe = _sanitize_style_value({'control': 'text'}, str(value))
+    if safe is None:
+        return
+    existing = node.attrs.get('style', '').rstrip('; ')
+    node.attrs['style'] = (existing + '; ' if existing else '') + f'{prop}: {safe}'
+
+
+def _append_color_style(node, prop, value):
+    if value in (None, ''):
+        return
+    safe = _sanitize_style_value({'control': 'color'}, str(value))
+    if safe is None:
+        return
+    existing = node.attrs.get('style', '').rstrip('; ')
+    node.attrs['style'] = (existing + '; ' if existing else '') + f'{prop}: {safe}'
+
+
+def _find_first_by_class(node, class_name):
+    cls = node.attrs.get('class', '') if hasattr(node, 'attrs') else ''
+    if class_name in cls.split():
+        return node
+    for child in getattr(node, 'children', []):
+        found = _find_first_by_class(child, class_name)
+        if found is not None:
+            return found
+    return None
+
+
+def _apply_text_content_config(root, data_dict):
+    if not isinstance(data_dict, dict):
+        return
+    cls = root.attrs.get('class', '') if hasattr(root, 'attrs') else ''
+    if root.attrs.get('data-name') != 'text_content' and 'text_content' not in cls:
+        return
+
+    container = _find_first_by_class(root, 'container')
+    title = _find_first_by_class(root, 'section-title')
+    body = _find_first_by_class(root, 'tc-body')
+    block = _find_first_by_class(root, 'tc-block')
+
+    _append_color_style(root, 'background-color', data_dict.get('section_bg'))
+    _append_style(root, 'width', data_dict.get('outer_width'))
+    for key, prop in (
+        ('margin_top', 'margin-top'),
+        ('margin_right', 'margin-right'),
+        ('margin_bottom', 'margin-bottom'),
+        ('margin_left', 'margin-left'),
+    ):
+        _append_style(root, prop, data_dict.get(key))
+
+    if container is not None:
+        _append_style(container, 'max-width', data_dict.get('inner_width'))
+        for key, prop in (
+            ('padding_top', 'padding-top'),
+            ('padding_right', 'padding-right'),
+            ('padding_bottom', 'padding-bottom'),
+            ('padding_left', 'padding-left'),
+        ):
+            _append_style(container, prop, data_dict.get(key))
+
+    text_align = data_dict.get('text_align')
+    if text_align in ('left', 'center', 'right'):
+        _append_style(root, 'text-align', text_align)
+
+    if title is not None:
+        _append_color_style(title, 'color', data_dict.get('title_color'))
+        _append_style(title, 'font-size', data_dict.get('title_size'))
+
+    if body is not None:
+        _append_color_style(body, 'color', data_dict.get('body_color'))
+        _append_style(body, 'font-size', data_dict.get('body_size'))
+
+    if block is not None and str(data_dict.get('columns') or '') == '2':
+        _append_style(block, 'column-count', '2')
+        _append_style(block, 'column-gap', '2rem')
 
 
 def _sanitize_style_value(sdef, val):
@@ -649,6 +736,7 @@ def render(block_html, schema, data_dict, context=None):
 
     # 4.7 卡片配置：card_layout（图文排版）+ card_show_border（边框显隐）
     _apply_card_config(root, data_dict)
+    _apply_text_content_config(root, data_dict)
 
     # 5. 清理 data-*
     _strip_data_attrs(root)

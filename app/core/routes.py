@@ -4,6 +4,7 @@ MVP 登录：邮箱魔法链接，不存密码。开发环境默认把登录链�
 并在页面提示中展示，方便本地调试；接入邮件服务后替换发送逻辑即可。
 """
 import hashlib
+import copy
 import mimetypes
 import secrets
 import zipfile
@@ -2943,6 +2944,7 @@ def _render(template_name, **kwargs):
 
 
 @bp.route('/api/translate', methods=['POST'])
+@csrf.exempt  # 只读翻译端点，无数据修改，免除 CSRF 保护（fetch+JSON 调用不含表单 token）
 def api_translate():
     """AI 翻译端点 — 接受 JSON 文本字典，返回翻译后的字典."""
     data = request.get_json(silent=True) or {}
@@ -2995,6 +2997,21 @@ def api_richtext_upload_video():
     return jsonify({'ok': True, 'url': url})
 
 
+@bp.route('/api/richtext/upload-package', methods=['POST'])
+def api_richtext_upload_package():
+    """Upload a zip webpage package for rich-text iframe embeds."""
+    _, site = _current_context()
+    upload = request.files.get('package') or request.files.get('media')
+    if not upload or not upload.filename:
+        return jsonify({'error': 'No package file provided'}), 400
+    try:
+        result = _save_media_package(site.id, upload)
+    except Exception as exc:
+        current_app.logger.warning('rich text package upload failed: %s', exc)
+        return jsonify({'error': str(exc)}), 400
+    return jsonify({'ok': True, 'url': result.get('url') or result.get('entry_url'), 'name': result.get('name')})
+
+
 @bp.route('/api/site/<int:site_id>/dataset/<string:dataset_name>/items')
 def api_dataset_items(site_id, dataset_name):
     """返回某数据集下的条目摘要（供精选推荐等模块的"从数据集选取"功能调用）。
@@ -3038,6 +3055,11 @@ def dataset_panel(dataset_key):
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = _storage_lang(site, lang, default_lang)
     items = datasets.load(site.id, dataset_key, lang=storage_lang)
+    if storage_lang:
+        source_storage_lang = _storage_lang(site, default_lang, default_lang)
+        source_items = datasets.load(site.id, dataset_key, lang=source_storage_lang)
+        if not items and source_items:
+            items = source_items
     # 计算数据集的菜单层级路径，用于中间预览 URL
     settings = read_yaml(site.id, 'settings.yaml') or {}
     menu_items = settings.get('menu') or []
@@ -3080,13 +3102,21 @@ def dataset_edit(dataset_key, item_id):
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = _storage_lang(site, lang, default_lang)
+    source_storage_lang = _storage_lang(site, default_lang, default_lang)
 
     item = datasets.find(site.id, dataset_key, item_id, lang=storage_lang)
+    source_item = datasets.find(site.id, dataset_key, item_id, lang=source_storage_lang)
+    if not item and storage_lang and source_item:
+        item = source_item
     if not item:
         abort(404, f'数据不存在: {dataset_key}#{item_id}')
-    source_item = datasets.find(site.id, dataset_key, item_id) or item
+    source_item = source_item or item
 
     if request.method == 'POST':
+        if storage_lang and not datasets.find(site.id, dataset_key, item_id, lang=storage_lang):
+            source_items = datasets.load(site.id, dataset_key, lang=source_storage_lang)
+            if source_items:
+                datasets.save(site.id, dataset_key, source_items, lang=storage_lang)
         # 用旧数据做底，表单字段覆盖，避免种子字段（name/category/cover 等）被静默删除
         fields = {}
         for key, val in item.items():
@@ -3095,11 +3125,18 @@ def dataset_edit(dataset_key, item_id):
         for key in request.form:
             if key.startswith('detail_gallery_') or key in ('detail_gallery_count',):
                 continue
+            if key == '_show_detail_btn_mode':
+                continue
             # 跳过模块配置字段和 CSRF 令牌（不参与数据存储）
             if key.startswith('module_') or key in ('module_count', 'csrf_token'):
                 continue
             val = request.form.get(key, '').strip()
             fields[key] = val
+        detail_btn_mode = request.form.get('_show_detail_btn_mode')
+        if detail_btn_mode == 'inherit':
+            fields.pop('show_detail_btn', None)
+        elif detail_btn_mode in ('true', 'false'):
+            fields['show_detail_btn'] = detail_btn_mode == 'true'
         # slug 唯一性校验
         new_slug = fields.get('slug', '').strip() or None
         if new_slug:
@@ -3238,6 +3275,29 @@ def dataset_delete(dataset_key, item_id):
     return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
 
 
+@bp.route('/_dataset/<path:dataset_key>/<int:target_id>/paste-from/<int:source_id>', methods=['POST'])
+def dataset_paste_from(dataset_key, target_id, source_id):
+    """Copy one dataset item onto another, preserving the target id and slug."""
+    _validate_key(dataset_key)
+    _, site = _current_context()
+    lang, languages, default_lang = _get_panel_lang(site)
+    storage_lang = _storage_lang(site, lang, default_lang)
+    items = datasets.load(site.id, dataset_key, lang=storage_lang)
+    source = next((it for it in items if it.get('id') == source_id), None)
+    target = next((it for it in items if it.get('id') == target_id), None)
+    if not source or not target:
+        return jsonify({'error': '数据不存在'}), 404
+    new_item = copy.deepcopy(source)
+    new_item['id'] = target.get('id')
+    new_item['slug'] = target.get('slug')
+    for i, item in enumerate(items):
+        if item.get('id') == target_id:
+            items[i] = new_item
+            break
+    datasets.save(site.id, dataset_key, items, lang=storage_lang)
+    return jsonify({'ok': True})
+
+
 @bp.route('/_panel/<path:page_key>', methods=['GET', 'POST'])
 def page_panel(page_key):
     """动态菜单项面板路由：根据 page_key 分发到对应数据集列表或单页编辑.
@@ -3253,11 +3313,15 @@ def page_panel(page_key):
     lang, languages, default_lang = _get_panel_lang(site)
     # 非默认语言时使用 lang 参数进行读写；默认语言读写根目录
     storage_lang = _storage_lang(site, lang, default_lang)
+    source_storage_lang = _storage_lang(site, default_lang, default_lang)
 
     # POST：保存模块配置
     if request.method == 'POST':
         page = read_yaml(site.id, f'pages/{page_key}.yaml', lang=storage_lang) or {}
         existing_modules = page.get('modules', [])
+        if storage_lang and not existing_modules:
+            source_page_for_save = read_yaml(site.id, f'pages/{page_key}.yaml', lang=source_storage_lang) or {}
+            existing_modules = source_page_for_save.get('modules', []) or existing_modules
         page['modules'] = _parse_modules_form(request.form, existing_modules)
         # 页面级 SEO 信息和模块配置共用同一个保存按钮；保存模块时不能把
         # title/description 清掉，否则健康检查引导填写后预览 head 仍然没有简介。
@@ -3321,7 +3385,9 @@ def page_panel(page_key):
     all_list_datasets = menu_lib.collect_list_targets(normalized_menu)  # #22
 
     page = read_yaml(site.id, f'pages/{page_key}.yaml', lang=storage_lang)
-    source_page = read_yaml(site.id, f'pages/{page_key}.yaml') or {}
+    source_page = read_yaml(site.id, f'pages/{page_key}.yaml', lang=source_storage_lang) or {}
+    if storage_lang and source_page.get('modules') and not (page or {}).get('modules'):
+        page = copy.deepcopy(source_page)
 
     # 迁移：product_grid → data_grid（模块合并后的向后兼容）
     for _pg, _sl in [(page, storage_lang), (source_page, None)]:
@@ -3472,7 +3538,18 @@ def _parse_modules_form(form, existing_modules=None):
             return schema
         merged = dict(schema)
         fields = list(merged.get('fields') or [])
-        existing = {f.get('name') for f in fields if isinstance(f, dict)}
+        existing = set()
+
+        def collect_field_names(items):
+            for item in items or []:
+                if not isinstance(item, dict):
+                    continue
+                name = item.get('name') or item.get('key')
+                if name:
+                    existing.add(name)
+                collect_field_names(item.get('children') or item.get('item_fields') or [])
+
+        collect_field_names(fields)
         for mf in meta_fields or []:
             if not isinstance(mf, dict):
                 continue

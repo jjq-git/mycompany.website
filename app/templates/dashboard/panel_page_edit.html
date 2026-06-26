@@ -12,7 +12,7 @@
 {# AI 翻译栏 — 独立一行，与语言标签区分 #}
 <div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
   {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
-  <span class="text-muted text-nowrap">?? AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
+  <span class="text-muted text-nowrap">AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
   <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:11px;">从默认语言翻译</button>
   <span class="text-muted text-nowrap" style="font-size:10px;">翻译后请手动检查并保存</span>
 </div>
@@ -189,7 +189,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=81"></script>
+<script src="/static/js/admin_modules.js?v=95"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -938,6 +938,10 @@ function _schemaListEditor(prefix, field, mdata) {
   var listName = field.name;
   var items = (mdata && Array.isArray(mdata[listName])) ? mdata[listName] : [];
   var children = _schemaChildren(field);
+  if (children.length === 1 && children[0].type === 'group') {
+    var itemChildren = _schemaChildren(children[0]);
+    if (itemChildren.length) children = itemChildren;
+  }
   var html = '<div class="schema-list-editor mb-2" data-list-base="' + _schemaEsc(base) +
     '" data-list-name="' + _schemaEsc(listName) +
     '" data-children="' + _schemaEsc(JSON.stringify(children)) + '">';
@@ -1563,7 +1567,15 @@ function _getMergedSchema(meta) {
   var metaFieldMap = {};
   (meta.fields || []).forEach(function(f) { metaFieldMap[f.key] = f; });
   var schemaFieldMap = {};
-  (meta.schema.fields || []).forEach(function(sf) { schemaFieldMap[sf.name] = sf; });
+  function collectSchemaFields(fields) {
+    (fields || []).forEach(function(sf) {
+      if (!sf) return;
+      var name = sf.name || sf.key;
+      if (name) schemaFieldMap[name] = sf;
+      collectSchemaFields(_schemaChildren(sf));
+    });
+  }
+  collectSchemaFields(meta.schema.fields || []);
   var conditionalControllerMap = {};
   (meta.fields || []).forEach(function(f) {
     if (f.show_if && f.show_if.field) conditionalControllerMap[f.show_if.field] = true;
@@ -1579,6 +1591,11 @@ function _getMergedSchema(meta) {
       mergedChildren = children;
     }
     if (!mf) return Object.assign({}, sf, {children: mergedChildren});
+    if ((mf.type === 'list' || mf.type === 'grid') && (mf.item_fields || mf.children || []).length) {
+      mergedChildren = (mf.item_fields || mf.children || []).map(function(c) {
+        return mergeField(Object.assign({}, c, {name: c.name || c.key || ''}));
+      });
+    }
     return {
       name: sf.name, tag: sf.tag,
       default_text: sf.default_text, default_src: sf.default_src,
@@ -1681,6 +1698,10 @@ function addModule(type, variant, dataPreset) {
       var fpEditors = window._featuredPicksEditors('module_' + idx + '_data_', dataPreset || {});
       specialEditor = fpEditors.content;
       styleEditor = fpEditors.style;
+    } else if (type === 'text_content' && typeof window._textContentEditors === 'function') {
+      var tcEditors = window._textContentEditors(idx, dataPreset || {}, 'module_' + idx + '_data_');
+      specialEditor = tcEditors.specialEditor;
+      styleEditor = tcEditors.styleEditor;
     } else if (type === 'data_grid' && typeof window._dataGridEditors === 'function') {
       specialEditor = window._dataGridEditors(idx, dataPreset).specialEditor;
       styleEditor = generateSchemaStyleForm('module_' + idx + '_data_', mergedSchema, dataPreset);
@@ -3039,7 +3060,7 @@ function initSchemaMounts() {
     if (!typeEl) { console.log("[initSchemaMounts] module_" + idx + " NO typeEl"); return; }
     var meta = findBlockMeta(typeEl.value);
     console.log("[initSchemaMounts] module_" + idx + " type=" + typeEl.value + " is_data_attr=" + meta.is_data_attr + " hasSchema=" + !!(meta.schema));
-    if (!meta.is_data_attr || !meta.schema) { console.log("[initSchemaMounts] module_" + idx + " SKIP"); return; }
+    if (!meta.is_data_attr || !meta.schema || typeEl.value === 'feature_grid') { console.log("[initSchemaMounts] module_" + idx + " SKIP"); return; }
 
     var schema = _getMergedSchema(meta);
 
@@ -3052,6 +3073,11 @@ function initSchemaMounts() {
       mount.innerHTML = fpEditors.content;
       var fpStyleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
       if (fpStyleMount) fpStyleMount.innerHTML = fpEditors.style;
+    } else if (typeEl.value === 'text_content' && typeof window._textContentEditors === 'function') {
+      var tcEditors = window._textContentEditors(idx, mdata, prefix);
+      mount.innerHTML = tcEditors.specialEditor;
+      var tcStyleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
+      if (tcStyleMount) tcStyleMount.innerHTML = tcEditors.styleEditor;
     } else if (typeEl.value === 'data_grid' && typeof window._dataGridEditors === 'function') {
       mount.innerHTML = window._dataGridEditors(idx, mdata).specialEditor;
       var dgInitStyleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
@@ -3327,6 +3353,35 @@ function _fpSetItemField(itemEl, fieldName, value) {
     return null;
   }
 
+  // 判断文本值是否需要翻译（排除色号、URL、数字等非自然语言内容）
+  function _canTranslate(val) {
+    var s = String(val || '').trim();
+    if (!s) return false;
+    if (/^[#\d]/.test(s) && s.length < 10) return false;
+    if (/^https?:\/\//.test(s)) return false;
+    if (/^(left|right|center|top|bottom|row|row-reverse|image|video|true|false|show|hide|hidden|visible)$/i.test(s)) return false;
+    return true;
+  }
+
+  // 从 SOURCE_PAGE 模块数据中收集可翻译文本（DOM 无字段时的回退路径）
+  function _collectFromSourcePage() {
+    var texts = {};
+    var inputKeys = [];
+    if (!SOURCE_PAGE || !SOURCE_PAGE.modules) return { texts: texts, inputKeys: inputKeys };
+    SOURCE_PAGE.modules.forEach(function(mod, modIdx) {
+      var data = mod.data || {};
+      Object.keys(data).forEach(function(key) {
+        var val = data[key];
+        if (typeof val !== 'string') return;
+        if (!_canTranslate(val)) return;
+        var inputKey = 'module_' + modIdx + '_data_' + key;
+        texts[inputKey] = val;
+        inputKeys.push(inputKey);
+      });
+    });
+    return { texts: texts, inputKeys: inputKeys };
+  }
+
   function doTranslate(targetLang) {
     var texts = {};
     var inputKeys = [];
@@ -3336,18 +3391,25 @@ function _fpSetItemField(itemEl, fieldName, value) {
       '[contenteditable="true"]'
     ].join(', ');
 
+    // 第一路径：扫描 DOM 中的文本输入框
     document.querySelectorAll(selector).forEach(function(el){
       var key = el.name || el.id || ('field_' + inputKeys.length);
       var sourceVal = sourceValueForField(key);
       var val = (sourceVal == null ? (el.value || el.textContent || '') : sourceVal);
       if (typeof val === 'object') return;
-      val = String(val).trim();
-      if (!val) return;
-      if (/^[#\d]/.test(val) && val.length < 10) return;
-      if (/^https?:\/\//.test(val)) return;
-      texts[key] = val;
+      if (!_canTranslate(val)) return;
+      texts[key] = String(val).trim();
       inputKeys.push(key);
     });
+
+    // 第二路径：DOM 无字段时回退到 SOURCE_PAGE 模块数据直接提取
+    var fromSource = false;
+    if (Object.keys(texts).length === 0) {
+      var sourceResult = _collectFromSourcePage();
+      texts = sourceResult.texts;
+      inputKeys = sourceResult.inputKeys;
+      fromSource = true;
+    }
 
     if (Object.keys(texts).length === 0) {
       showTranslateMsg('AI 翻译', '未找到可翻译的文本字段');
@@ -3377,9 +3439,12 @@ function _fpSetItemField(itemEl, fieldName, value) {
 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
         targetLang: targetLang,
-        translations: translatedMap
+        translations: translatedMap,
+        fromSource: fromSource
       }));
 
+      var filledCount = 0;
+      var injectedCount = 0;
       Object.keys(translatedMap).forEach(function(key){
         var el = document.querySelector('[name="' + key + '"], #' + key);
         if (!el) {
@@ -3394,10 +3459,24 @@ function _fpSetItemField(itemEl, fieldName, value) {
             el.value = translatedMap[key];
           }
           el.dispatchEvent(new Event('input', { bubbles: true }));
+          filledCount++;
+        } else if (fromSource) {
+          // DOM 中没有对应字段 → 注入 hidden input，保存时自动纳入表单数据
+          var hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.name = key;
+          hidden.value = translatedMap[key];
+          hidden.setAttribute('data-ai-translated', '1');
+          document.getElementById('rightPanelBody').appendChild(hidden);
+          injectedCount++;
         }
       });
 
-      showTranslateMsg('翻译完成', '<p>译文已填入当前 <strong>' + (LANG_LABELS[targetLang] || targetLang) + '</strong> 表单，请检查后保存。</p>');
+      var msg = '<p>译文已填入。';
+      if (filledCount > 0) msg += filledCount + ' 个字段已更新。';
+      if (injectedCount > 0) msg += injectedCount + ' 个字段已通过隐藏域注入，保存后生效。';
+      msg += '请检查后点击保存。</p>';
+      showTranslateMsg('翻译完成', msg);
     })
     .catch(function(err){
       showTranslateMsg('翻译失败', err.message || '网络错误');
@@ -3412,19 +3491,36 @@ function _fpSetItemField(itemEl, fieldName, value) {
   function showTranslateConfirm(title, body, onConfirm) {
     var modalEl = document.getElementById('translateModal');
     if (!modalEl) { onConfirm(); return; }
-    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    if (!window.bootstrap || !window.bootstrap.Modal) { onConfirm(); return; }
+    var modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
     document.getElementById('translateModalTitle').textContent = title;
     document.getElementById('translateModalBody').innerHTML = body;
     document.getElementById('translateModalConfirm').style.display = '';
     document.getElementById('translateModalCancel').style.display = '';
-    document.getElementById('translateModalConfirm').onclick = function() { modal.hide(); onConfirm(); };
+    document.getElementById('translateModalConfirm').onclick = function(e) {
+      if (e) e.preventDefault();
+      var fired = false;
+      modalEl.addEventListener('hidden.bs.modal', function h() {
+        modalEl.removeEventListener('hidden.bs.modal', h);
+        if (fired) return;
+        fired = true;
+        onConfirm();
+      });
+      modal.hide();
+      setTimeout(function() {
+        if (fired) return;
+        fired = true;
+        onConfirm();
+      }, 250);
+    };
     modal.show();
   }
 
   function showTranslateMsg(title, body) {
     var modalEl = document.getElementById('translateModal');
     if (!modalEl) { alert(body.replace(/<[^>]*>/g, '')); return; }
-    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    if (!window.bootstrap || !window.bootstrap.Modal) { alert(String(body).replace(/<[^>]*>/g, '')); return; }
+    var modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
     document.getElementById('translateModalTitle').textContent = title;
     document.getElementById('translateModalBody').innerHTML = '<p>' + body + '</p>';
     document.getElementById('translateModalConfirm').style.display = '';
