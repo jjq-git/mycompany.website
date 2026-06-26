@@ -741,7 +741,7 @@
   height: 14px;
   display: inline-block;
   transition: transform 0.2s ease;
-  color: inherit;
+  color: rgba(255, 255, 255, 0.75);
   flex-shrink: 0;
 }
 .left-nav-chevron.open {
@@ -1033,10 +1033,16 @@
 }
 
 /* 预览设备按钮 active (配合 Bootstrap btn-outline-secondary) */
-.preview-device-btn.active {
+.preview-device-btn.active,
+.basic-tab-group .btn.active {
   background-color: var(--bs-primary) !important;
   color: #fff !important;
   border-color: var(--bs-primary) !important;
+}
+.basic-tab-group .btn:hover {
+  background-color: var(--admin-primary-light) !important;
+  color: var(--admin-primary-active) !important;
+  border-color: var(--admin-primary) !important;
 }
 
 /* 表单紧凑 */

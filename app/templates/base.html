@@ -138,6 +138,7 @@
 
       <div class="flex-grow-1"></div>
 
+      {#
       <div class="nav-mode-swatches" aria-label="侧栏颜色">
         <button class="nav-mode-swatch active" data-mode="dark" type="button" title="深色侧栏" onclick="setNavTheme('dark')"
           style="background:var(--theme-primary)"></button>
@@ -146,6 +147,7 @@
         <button class="nav-mode-swatch" data-mode="white" type="button" title="白色侧栏" onclick="setNavTheme('white')"
           style="background:#ffffff;border:1px solid #d1d5db"></button>
       </div>
+      #}
 
       {#
       <div class="theme-swatches" id="themeSwatches" aria-label="主题色">
@@ -214,8 +216,9 @@
         <button class="header-btn" type="submit" title="退出" aria-label="退出">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 8a6 6 0 1 1-12 0" />
-            <line x1="12" y1="2" x2="12" y2="10" />
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
         </button>
       </form>
@@ -1228,7 +1231,7 @@
       activeTabKey = key;
       renderPreviewTabs();
       updatePreviewUrlBar(url);
-      setPreviewChromeMode(key === 'seo' || key === 'media' || key === 'messages');
+      setPreviewChromeMode(key === 'seo' || key === 'media' || key === 'messages' || key === 'basic_settings');
       var frame = document.getElementById('previewFrame');
       if (frame) {
         frame.dataset.previewUrl = url;
@@ -1549,6 +1552,28 @@
         if (seoPanelFooter) seoPanelFooter.style.display = 'none';
         var seoPanel = document.getElementById('rightPanel');
         if (seoPanel && !seoPanel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
+          togglePanelCollapse();
+        }
+        return;
+      }
+      if (link.dataset.panel === 'basic_settings') {
+        var basicSiteParam = currentSiteParam();
+        var basicLangParam = currentLangParam();
+        var basicQuery = [];
+        if (basicSiteParam) basicQuery.push('site=' + encodeURIComponent(basicSiteParam));
+        if (basicLangParam) basicQuery.push('lang=' + encodeURIComponent(basicLangParam));
+        var basicUrl = '{{ url_for("core.basic_settings") }}' + (basicQuery.length ? '?embed=1&' + basicQuery.join('&') : '?embed=1');
+        openPreviewTab('basic_settings', '基本设置', basicUrl, false, '正在加载基本设置...');
+        var basicPanelTitle = document.getElementById('rightPanelTitle');
+        var basicPanelBody = document.getElementById('rightPanelBody');
+        var basicPanelFooter = document.getElementById('rightPanelFooter');
+        if (basicPanelTitle) basicPanelTitle.textContent = '基本设置';
+        if (basicPanelBody) {
+          basicPanelBody.innerHTML = '<div class="p-3 text-muted small">基本设置已在中间栏打开。</div>';
+        }
+        if (basicPanelFooter) basicPanelFooter.style.display = 'none';
+        var basicPanel = document.getElementById('rightPanel');
+        if (basicPanel && !basicPanel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
           togglePanelCollapse();
         }
         return;

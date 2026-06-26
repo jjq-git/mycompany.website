@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>基本设置</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260626-basic-settings-embed">
+  <style>
+    :root {
+      --bs-primary: {{ admin_primary }};
+      --bs-primary-rgb: {{ admin_primary_rgb }};
+      --bs-primary-bg-subtle: {{ admin_primary_light }};
+      --bs-link-color: {{ admin_primary }};
+      --bs-link-hover-color: {{ admin_primary_hover }};
+      --admin-primary: {{ admin_primary }};
+      --admin-primary-rgb: {{ admin_primary_rgb }};
+      --admin-primary-hover: {{ admin_primary_hover }};
+      --admin-primary-active: {{ admin_primary_active }};
+      --admin-primary-light: {{ admin_primary_light }};
+      --theme-primary: {{ admin_primary }};
+    }
+    body {
+      margin: 0; padding: 0;
+      background: #f6f7f9;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 14px;
+    }
+    .basic-workspace { min-height: 100vh; padding: 16px; }
+    .basic-workspace-inner { max-width: 920px; margin: 0 auto; }
+    .basic-workspace-panel {
+      padding: 18px;
+      border: 1px solid #dfe4ea;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 12px 36px rgba(15,23,42,.06);
+    }
+    .basic-workspace-panel form { max-width: none; }
+    .basic-workspace-panel .panel-save-bar {
+      position: sticky;
+      bottom: 0;
+      margin: 16px -18px -18px;
+      padding: 12px 18px;
+      border-top: 1px solid #e2e8f0;
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(8px);
+    }
+    .flash-toast {
+      padding: 8px 14px; border-radius: 6px; font-size: 13px;
+      margin-bottom: 12px; background: #f0fdf6; border: 1px solid #bbf7d0; color: #15803d;
+    }
+    .btn-primary {
+      --bs-btn-bg: var(--admin-primary);
+      --bs-btn-border-color: var(--admin-primary);
+      --bs-btn-hover-bg: var(--admin-primary-hover);
+      --bs-btn-hover-border-color: var(--admin-primary-hover);
+      --bs-btn-active-bg: var(--admin-primary-active);
+      --bs-btn-active-border-color: var(--admin-primary-active);
+    }
+  </style>
+</head>
+<body>
+<main class="basic-workspace">
+  <div class="basic-workspace-inner">
+    <section class="basic-workspace-panel">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <span class="fw-semibold">基本设置</span>
+      </div>
+
+      <div class="btn-group btn-group-sm w-100 mb-3 basic-tab-group" role="tablist" aria-label="基本设置">
+        <button type="button"
+                class="btn btn-outline-secondary {% if basic_settings_tab != 'theme' %}active{% endif %}"
+                onclick="switchBasicSettingsTab('company')">基础设置</button>
+        <button type="button"
+                class="btn btn-outline-secondary {% if basic_settings_tab == 'theme' %}active{% endif %}"
+                onclick="switchBasicSettingsTab('theme')">主题颜色</button>
+      </div>
+
+      <div id="basicSettingsCompany" class="basic-settings-pane" {% if basic_settings_tab == 'theme' %}style="display:none"{% endif %}>
+        {% set basic_settings_embed = true %}
+        {% include 'dashboard/panel_company.html' %}
+      </div>
+
+      <div id="basicSettingsTheme" class="basic-settings-pane" {% if basic_settings_tab != 'theme' %}style="display:none"{% endif %}>
+        {% set basic_settings_embed = true %}
+        {% include 'dashboard/panel_theme.html' %}
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"></script>
+<script>
+(function () {
+  // CSRF token 注入到 fetch
+  var meta = document.querySelector('meta[name="csrf-token"]');
+  var token = meta ? meta.getAttribute('content') : '';
+  if (token) {
+    var origFetch = window.fetch;
+    window.fetch = function (input, init) {
+      init = init || {};
+      var method = (init.method || 'GET').toUpperCase();
+      if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+        init.headers = new Headers(init.headers || {});
+        if (!init.headers.has('X-CSRFToken')) init.headers.set('X-CSRFToken', token);
+      }
+      return origFetch.call(this, input, init);
+    };
+  }
+
+  // 自动保存：停止编辑 5 秒后自动提交表单
+  var autoSave = {{ 'true' if admin_settings.get('auto_save') else 'false' }};
+  if (autoSave) {
+    var timer = null;
+    var saving = false;
+    function schedule(event) {
+      if (saving) return;
+      var target = event.target;
+      if (!target || target.type === 'file') return;
+      var form = target.closest && target.closest('form');
+      if (!form || (form.method || 'get').toLowerCase() !== 'post') return;
+      clearTimeout(timer);
+      timer = setTimeout(function() {
+        if (!document.body.contains(form)) return;
+        saving = true;
+        if (typeof form.requestSubmit === 'function') form.requestSubmit();
+        else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        setTimeout(function() { saving = false; }, 1000);
+      }, 5000);
+    }
+    document.addEventListener('input', schedule, true);
+    document.addEventListener('change', schedule, true);
+  }
+})();
+
+function switchBasicSettingsTab(tab) {
+  var company = document.getElementById('basicSettingsCompany');
+  var theme = document.getElementById('basicSettingsTheme');
+  if (company) company.style.display = tab === 'theme' ? 'none' : '';
+  if (theme) theme.style.display = tab === 'theme' ? '' : 'none';
+  document.querySelectorAll('[role="tablist"] .btn').forEach(function(btn, idx) {
+    btn.classList.toggle('active', (tab === 'theme') === (idx === 1));
+  });
+}
+</script>
+</body>
+</html>

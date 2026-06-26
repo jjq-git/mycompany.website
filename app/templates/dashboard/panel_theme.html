@@ -12,11 +12,12 @@
 <form method="post" action="{{ url_for('core.theme_edit', site=site.id) if settings_workspace|default(false) else url_for('core.theme_edit', _fragment='1', site=site.id) }}" id="themeForm">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {% if settings_workspace|default(false) %}<input type="hidden" name="_workspace" value="1">{% endif %}
-  {% if basic_settings_embed|default(false) %}<input type="hidden" name="_basic_settings" value="1">{% endif %}
+  {% if basic_settings_embed|default(false) %}<input type="hidden" name="_basic_settings" value="1"><input type="hidden" name="_embed" value="1">{% endif %}
   <div class="panel-section">
     <div class="panel-section-title">颜色配置</div>
+<div class="row g-2">
   {% for key, label, default_key in [('color-primary','主色','color-primary'),('color-bg','背景','color-bg'),('color-surface','面板色','color-surface'),('color-text','文字色','color-text'),('color-text-secondary','次要文字','color-text-secondary'),('color-border','边框色','color-border')] %}
-    <div class="mb-2">
+    <div class="col-6 mb-2">
       <label class="form-label small mb-1">{{ label }}
         <span class="text-muted">(默认: {{ default_theme.get(key, '') }})</span></label>
       <div class="input-group input-group-sm">
@@ -30,9 +31,12 @@
       </div>
     </div>
   {% endfor %}
+</div>
   </div>
   <div class="panel-save-bar">
-    <button class="btn btn-primary btn-sm w-100" type="submit">保存</button>
+    <button class="btn btn-primary btn-sm w-100" type="submit" title="保存">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    </button>
   </div>
 </form>
 <script>

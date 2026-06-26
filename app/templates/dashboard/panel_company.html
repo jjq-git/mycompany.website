@@ -23,7 +23,7 @@
 <form method="post" action="{{ url_for('core.company', site=site.id, lang=current_lang) if settings_workspace|default(false) else url_for('core.company', _fragment='1', site=site.id, lang=current_lang) }}" enctype="multipart/form-data" id="companyForm">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {% if settings_workspace|default(false) %}<input type="hidden" name="_workspace" value="1">{% endif %}
-  {% if basic_settings_embed|default(false) %}<input type="hidden" name="_basic_settings" value="1">{% endif %}
+  {% if basic_settings_embed|default(false) %}<input type="hidden" name="_basic_settings" value="1"><input type="hidden" name="_embed" value="1">{% endif %}
   <div class="panel-section">
     <div class="panel-section-title">基本信息</div>
     {% if basic_settings_embed|default(false) %}
@@ -38,113 +38,190 @@
     </div>
     {% endif %}
     {% set current_logo = company.get('logo', '') %}
-    <div class="mb-2">
-      <label class="form-label small mb-1 text-muted">Logo</label>
-      <input type="hidden" name="company.logo" value="{{ current_logo }}" oninput="updateImagePreview(this)">
-      <label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor='#94a3b8';this.style.background='#f1f5f9'" onmouseleave="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc'">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-        上传图片
-        <input type="file" name="company_logo_file" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml,.jpg,.jpeg,.png,.gif,.webp,.svg" onchange="handleCompanyLogoUpload(this)" style="display:none">
-      </label>
-      <div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>
-      <div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;{% if not current_logo %}display:none{% endif %}">{{ current_logo }}</div>
-      {# 图片预览容器必须有 min-width/min-height，防止图片为 0×0 时容器塌陷导致移除按钮飘在外面 #}
-      <div class="mt-2 module-image-preview" style="{% if not current_logo %}display:none{% endif %}">
-        <div style="position:relative;display:inline-block;min-width:44px;min-height:34px;vertical-align:top">
-          <img src="{{ current_logo }}" style="max-width:160px;max-height:100px;min-width:44px;min-height:20px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer;object-fit:contain;background:#f8fafc" onclick="enlargeCompanyLogo(this)" onerror="showCompanyImageError(this)">
-          <button type="button" class="btn btn-sm" onclick="clearCompanyLogo(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button>
-        </div>
-      </div>
-    </div>
     {% set current_favicon = company.get('favicon', '') %}
-    <div class="mb-2">
-      <label class="form-label small mb-1 text-muted">Favicon</label>
-      <input type="hidden" name="company.favicon" value="{{ current_favicon }}" oninput="updateFaviconPreview(this)">
-      <label class="d-flex align-items-center gap-2 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor='#94a3b8';this.style.background='#f1f5f9'" onmouseleave="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc'">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-        上传图片
-        <input type="file" name="company_favicon_file" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml,image/x-icon,.jpg,.jpeg,.png,.gif,.webp,.svg,.ico" onchange="handleCompanyFaviconUpload(this)" style="display:none">
-      </label>
-      <div class="form-text mt-1">浏览器标签页小图标，建议 32×32 或 16×16 像素</div>
-      <div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;{% if not current_favicon %}display:none{% endif %}">{{ current_favicon }}</div>
-      {# Favicon 预览容器同样需要 min-width/min-height 防止塌陷 #}
-      <div class="mt-2 module-image-preview" style="{% if not current_favicon %}display:none{% endif %}">
-        <div style="position:relative;display:inline-block;min-width:36px;min-height:36px;vertical-align:top">
-          <img src="{{ current_favicon }}" style="max-width:32px;max-height:32px;min-width:32px;min-height:32px;border-radius:2px;border:1px solid #dee2e6;cursor:pointer;object-fit:contain" onclick="enlargeCompanyFavicon(this)" onerror="showCompanyImageError(this)">
-          <button type="button" class="btn btn-sm" onclick="clearCompanyFavicon(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button>
+    <div class="row g-2 mb-2">
+      <div class="col-6">
+        <label class="form-label small mb-1 text-muted">Logo</label>
+        <div class="module-media-tools mt-1">
+          <label class="module-media-picker{% if current_logo %} has-media{% endif %}" title="点击上传">
+            {% if current_logo %}
+            <img src="{{ current_logo }}" alt="" onclick="event.stopPropagation();enlargeCompanyMedia(this)">
+            <span class="module-media-preview-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </span>
+            {% else %}
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            {% endif %}
+            <input type="file" name="company_logo_file" accept="image/*,.svg,.svgz" onchange="handleCompanyMediaUpload(this)" style="display:none">
+            {% if current_logo %}
+            <button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearCompanyMedia(this)" title="删除后重新上传">×</button>
+            {% endif %}
+          </label>
+        </div>
+        <div class="form-text mt-1">JPG/PNG/GIF/WebP，最大 12MB，自动转 WebP</div>
+        <div class="module-media-url-row">
+          <input type="text" class="form-control form-control-sm" name="company.logo" value="{{ current_logo }}" placeholder="图片 URL" oninput="updateCompanyMediaPreview(this)">
+          <button type="button" class="module-media-library-btn" onclick="openCompanyMediaLibrary(this)" title="从媒体库选择">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="col-6">
+        <label class="form-label small mb-1 text-muted">Favicon</label>
+        <div class="module-media-tools mt-1">
+          <label class="module-media-picker{% if current_favicon %} has-media{% endif %}" title="点击上传">
+            {% if current_favicon %}
+            <img src="{{ current_favicon }}" alt="" onclick="event.stopPropagation();enlargeCompanyMedia(this)">
+            <span class="module-media-preview-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </span>
+            {% else %}
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            {% endif %}
+            <input type="file" name="company_favicon_file" accept="image/*,.svg,.svgz,.ico" onchange="handleCompanyMediaUpload(this)" style="display:none">
+            {% if current_favicon %}
+            <button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearCompanyMedia(this)" title="删除后重新上传">×</button>
+            {% endif %}
+          </label>
+        </div>
+        <div class="form-text mt-1">标签页小图标，建议 32×32 或 16×16 像素</div>
+        <div class="module-media-url-row">
+          <input type="text" class="form-control form-control-sm" name="company.favicon" value="{{ current_favicon }}" placeholder="图片 URL" oninput="updateCompanyMediaPreview(this)">
+          <button type="button" class="module-media-library-btn" onclick="openCompanyMediaLibrary(this)" title="从媒体库选择">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </button>
         </div>
       </div>
     </div>
-    <div class="mb-2">
-      <label class="form-label small mb-1">公司名称</label>
-      <input class="form-control form-control-sm" name="company.name" value="{{ company.get('name', '') }}">
-    </div>
-    <div class="mb-2">
-      <label class="form-label small mb-1">简称</label>
-      <input class="form-control form-control-sm" name="company.short_name" value="{{ company.get('short_name', '') }}">
+    <div class="row g-2 mb-2">
+      <div class="col-6">
+        <label class="form-label small mb-1">公司名称</label>
+        <input class="form-control form-control-sm" name="company.name" value="{{ company.get('name', '') }}">
+      </div>
+      <div class="col-6">
+        <label class="form-label small mb-1">简称</label>
+        <input class="form-control form-control-sm" name="company.short_name" value="{{ company.get('short_name', '') }}">
+      </div>
     </div>
     <div class="mb-2">
       <label class="form-label small mb-1">公司简介</label>
-      <textarea class="form-control form-control-sm" name="company.description" rows="2" maxlength="200" placeholder="一句话简介，用于页面 meta description 兜底和 SEO 分享摘要">{{ company.get('description', '') }}</textarea>
-      <div class="form-text">一句话介绍公司，80-160 字，SEO 和社交分享时作为默认页面简介。</div>
+      <textarea class="form-control form-control-sm" name="company.description" rows="2" maxlength="200" placeholder="一句话简介，SEO 分享摘要">{{ company.get('description', '') }}</textarea>
+      <div class="form-text">80-160 字，SEO 和社交分享时作为默认页面简介</div>
     </div>
-    <div class="mb-0">
-      <label class="form-label small mb-1">备案号</label>
-      <input class="form-control form-control-sm" name="company.icp" value="{{ company.get('icp', '') }}" placeholder="如：苏ICP备XXXXXXXX号">
+    <div class="row g-2 mb-0">
+      <div class="col-6">
+        <label class="form-label small mb-1">备案号</label>
+        <input class="form-control form-control-sm" name="company.icp" value="{{ company.get('icp', '') }}" placeholder="如：苏ICP备XXXXXXXX号">
+      </div>
+      <div class="col-6"></div>
     </div>
   </div>
 
   <div class="panel-section">
     <div class="panel-section-title">联系方式</div>
-    <div class="mb-2">
-      <label class="form-label small mb-1">电话</label>
-      <input class="form-control form-control-sm" name="contact.phone" value="{{ contact.get('phone', '') }}">
+    <div class="row g-2 mb-2">
+      <div class="col-6">
+        <label class="form-label small mb-1">电话</label>
+        <input class="form-control form-control-sm" name="contact.phone" value="{{ contact.get('phone', '') }}">
+      </div>
+      <div class="col-6">
+        <label class="form-label small mb-1">邮箱</label>
+        <input class="form-control form-control-sm" name="contact.email" value="{{ contact.get('email', '') }}">
+      </div>
     </div>
-    <div class="mb-2">
-      <label class="form-label small mb-1">邮箱</label>
-      <input class="form-control form-control-sm" name="contact.email" value="{{ contact.get('email', '') }}">
-    </div>
-    <div class="mb-0">
-      <label class="form-label small mb-1">地址</label>
+    <div class="mb-0 d-flex align-items-center gap-2">
+      <label class="form-label small mb-0 text-nowrap">地址</label>
       <input class="form-control form-control-sm" name="contact.address" value="{{ contact.get('address', '') }}">
     </div>
   </div>
 
   <div class="panel-save-bar">
-    <button class="btn btn-primary btn-sm w-100" type="submit">保存</button>
+    <button class="btn btn-primary btn-sm w-100" type="submit" title="保存">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    </button>
   </div>
 </form>
 
 <script>
-function handleCompanyLogoUpload(fileInput) {
-  var file = fileInput.files[0];
-  var container = fileInput.closest('.mb-2');
-  var preview = container ? container.querySelector('.module-image-preview') : null;
-  var img = preview ? preview.querySelector('img') : null;
-  var urlText = container ? container.querySelector('.module-image-url-text') : null;
-  if (!file || !preview || !img) return;
-  // 清除之前的错误占位符
-  clearCompanyImageError(container);
-  // SVG 在 Windows 上 file.type 常为空或 image/svg，Blob URL 会导致 <img> 不渲染，
-  // 用 FileReader 强制输出 data:image/svg+xml data URI 绕过 MIME 问题
-  if (/\.svg$/i.test(file.name) || file.type === 'image/svg+xml' || file.type === 'image/svg') {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      img.src = e.target.result;
-      img.style.display = '';
-      preview.style.display = '';
-    };
-    reader.readAsDataURL(file);
-  } else if (file.type.startsWith('image/')) {
-    img.src = URL.createObjectURL(file);
-    img.style.display = '';
-    preview.style.display = '';
-  }
-  if (urlText) { urlText.textContent = file.name; urlText.style.display = ''; }
-  img.onerror = function() { showCompanyImageError(img); };
+// ---- 统一媒体上传组件（Logo / Favicon 共用） ----
+// 参考 admin_modules.js 中 renderModuleMediaPicker 的逻辑，内联实现不依赖外部 JS
+
+/** 从当前元素向上找到包含 picker 和 URL input 的共同容器（col-6 或独立 mb-2） */
+function _companyMediaContainer(el) {
+  return el.closest('.col-6') || el.closest('.mb-2');
 }
 
-function enlargeCompanyLogo(img) {
+/** 核心渲染函数：根据 src 有无重绘 module-media-picker 内部 HTML */
+function renderCompanyMediaPicker(picker, src, fileName, accept) {
+  if (!picker) return;
+  // 保存旧 file input 的已选文件——innerHTML 会销毁旧的 file input
+  var existingFile = picker.querySelector('input[type=file]');
+  var oldFiles = existingFile && existingFile.files && existingFile.files.length ? existingFile.files : null;
+  fileName = fileName || (existingFile ? existingFile.name : '');
+  accept = accept || (existingFile ? existingFile.getAttribute('accept') : 'image/*,.svg,.svgz') || 'image/*,.svg,.svgz';
+  var safeSrc = src ? String(src).replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+
+  picker.classList.toggle('has-media', !!src);
+  picker.innerHTML = src
+    ? '<img src="' + safeSrc + '" alt="" onclick="event.stopPropagation();enlargeCompanyMedia(this)">' +
+      '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' +
+      '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleCompanyMediaUpload(this)" style="display:none">' +
+      '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearCompanyMedia(this)" title="删除后重新上传">×</button>'
+    : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>' +
+      '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleCompanyMediaUpload(this)" style="display:none">';
+
+  // innerHTML 替换后，把旧 file input 的已选文件恢复到新 input
+  if (oldFiles) {
+    var newInput = picker.querySelector('input[type=file]');
+    if (newInput) {
+      try {
+        var dt = new DataTransfer();
+        for (var i = 0; i < oldFiles.length; i++) { dt.items.add(oldFiles[i]); }
+        newInput.files = dt.files;
+      } catch(e) { /* DataTransfer 不可用时静默跳过 */ }
+    }
+  }
+}
+
+/** 文件选择后更新 picker 预览 */
+function handleCompanyMediaUpload(fileInput) {
+  var file = fileInput.files[0];
+  var picker = fileInput.closest('.module-media-picker');
+  if (!file || !picker) return;
+  // SVG 在 Windows 上 file.type 常为空，用 FileReader 输出 data URI 绕过 MIME 问题
+  if (/\.svg$/i.test(file.name) || file.type === 'image/svg+xml' || file.type === 'image/svg') {
+    var reader = new FileReader();
+    reader.onload = function(e) { renderCompanyMediaPicker(picker, e.target.result, fileInput.name, fileInput.getAttribute('accept') || ''); };
+    reader.readAsDataURL(file);
+  } else {
+    renderCompanyMediaPicker(picker, URL.createObjectURL(file), fileInput.name, fileInput.getAttribute('accept') || '');
+  }
+}
+
+/** 清除按钮：重置 picker 为占位状态 + 清空 URL input */
+function clearCompanyMedia(btn) {
+  var picker = btn.closest('.module-media-picker');
+  if (!picker) return;
+  var container = _companyMediaContainer(btn);
+  var urlInput = container ? container.querySelector('input[type="text"][name]') : null;
+  var fileInput = picker.querySelector('input[type="file"]');
+  if (urlInput) urlInput.value = '';
+  if (fileInput) fileInput.value = '';
+  renderCompanyMediaPicker(picker, '', fileInput ? fileInput.name : '', fileInput ? fileInput.getAttribute('accept') : '');
+}
+
+/** URL 输入框变化时同步更新 picker 预览 */
+function updateCompanyMediaPreview(urlInput) {
+  var container = _companyMediaContainer(urlInput);
+  var picker = container ? container.querySelector('.module-media-picker') : null;
+  if (!picker) return;
+  var fileInput = picker.querySelector('input[type=file]');
+  renderCompanyMediaPicker(picker, urlInput.value.trim(), fileInput ? fileInput.name : '', fileInput ? fileInput.getAttribute('accept') : '');
+}
+
+/** 点击图片放大：优先用全局 enlargeImage（admin_modules.js），不存在则用内联 lightbox */
+function enlargeCompanyMedia(img) {
+  if (typeof enlargeImage === 'function') { enlargeImage(img); return; }
   var src = img.src;
   if (!src) return;
   var overlay = document.getElementById('imgLightbox');
@@ -162,80 +239,77 @@ function enlargeCompanyLogo(img) {
   overlay.style.display = 'flex';
 }
 
-// 图片加载失败时显示占位提示，而不是隐藏整个预览区（防止容器塌陷、移除按钮飘出）
-function showCompanyImageError(img) {
-  if (!img || !img.parentElement) return;
-  img.style.display = 'none';
-  var container = img.parentElement;
-  // 检查是否已有错误占位符
-  if (container.querySelector('.image-error-placeholder')) return;
-  var errorEl = document.createElement('div');
-  errorEl.className = 'image-error-placeholder';
-  errorEl.style.cssText = 'min-width:44px;min-height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px dashed #e5e7eb;border-radius:4px;background:#fef2f2;padding:6px 10px;font-size:11px;color:#dc3545;white-space:nowrap';
-  errorEl.textContent = '图片加载失败';
-  container.insertBefore(errorEl, container.firstChild);
-}
+/** 媒体库选择器：弹窗 grid，选中后回填 URL 输入框并刷新预览。
+    优先用全局 openModuleMediaLibrary（admin_modules.js），不存在则内联实现。 */
+function openCompanyMediaLibrary(btn) {
+  if (typeof openModuleMediaLibrary === 'function') { openModuleMediaLibrary(btn); return; }
+  var container = _companyMediaContainer(btn);
+  var urlInput = container ? container.querySelector('input[type="text"][name]') : null;
+  if (!urlInput) return;
 
-// 清除错误占位符（上传新文件时调用）
-function clearCompanyImageError(container) {
-  var placeholder = container.querySelector('.image-error-placeholder');
-  if (placeholder) placeholder.remove();
-  var img = container.querySelector('img');
-  if (img) img.style.display = '';
-}
-
-function clearCompanyLogo(btn) {
-  var container = btn.closest('.mb-2');
-  if (!container) return;
-  var urlInput = container.querySelector('input[type="hidden"]');
-  var fileInput = container.querySelector('input[type="file"]');
-  var urlText = container.querySelector('.module-image-url-text');
-  var preview = container.querySelector('.module-image-preview');
-  var img = preview ? preview.querySelector('img') : null;
-  // 清除错误占位符
-  if (container) clearCompanyImageError(container);
-  if (urlInput) urlInput.value = '';
-  if (fileInput) fileInput.value = '';
-  if (urlText) { urlText.textContent = ''; urlText.style.display = 'none'; }
-  if (img) img.src = '';
-  if (preview) preview.style.display = 'none';
-}
-
-function updateImagePreview(urlInput) {
-  var container = urlInput.closest('.mb-2');
-  var preview = container ? container.querySelector('.module-image-preview') : null;
-  var img = preview ? preview.querySelector('img') : null;
-  if (!preview || !img) return;
-  var url = urlInput.value.trim();
-  if (url) {
-    // 清除之前的错误占位符，恢复图片显示
-    clearCompanyImageError(container);
-    img.style.display = '';
-    img.src = url;
-    preview.style.display = '';
-  } else {
-    clearCompanyImageError(container);
-    preview.style.display = 'none';
-    img.src = '';
+  // 复用同一个 overlay（避免重复创建）
+  var overlay = document.getElementById('moduleMediaLibraryOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'moduleMediaLibraryOverlay';
+    overlay.className = 'module-media-library-overlay';
+    overlay.innerHTML = '<div class="module-media-library-dialog">' +
+      '<div class="module-media-library-head"><strong>选择媒体</strong><button type="button" class="module-media-library-close" title="关闭">×</button></div>' +
+      '<div class="module-media-library-grid"><div class="text-muted small p-3">加载中..</div></div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay || e.target.closest('.module-media-library-close')) {
+        overlay.classList.remove('show');
+      }
+    });
   }
+  overlay._targetInput = urlInput;
+  overlay.classList.add('show');
+  var grid = overlay.querySelector('.module-media-library-grid');
+  grid.innerHTML = '<div class="text-muted small p-3">加载中..</div>';
+
+  // 从当前 URL 或 form 中提取 site 参数
+  var siteId = (new URLSearchParams(window.location.search)).get('site') || '';
+  if (!siteId) {
+    var formSite = document.querySelector('input[name="site"]');
+    if (formSite) siteId = formSite.value;
+  }
+
+  fetch('/media?_fragment=1' + (siteId ? '&site=' + encodeURIComponent(siteId) : ''))
+    .then(function(r) { return r.text(); })
+    .then(function(html) {
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      var cards = Array.prototype.slice.call(doc.querySelectorAll('.media-card[data-url]'));
+      var items = cards.filter(function(card) {
+        return card.dataset.category === 'image' || card.dataset.category === 'video';
+      }).map(function(card) {
+        var url = card.dataset.url || '';
+        var name = card.dataset.displayName || url;
+        return '<button type="button" class="module-media-library-item" data-url="' +
+          url.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+          '" title="' + name.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '">' +
+          (card.dataset.category === 'image' ? '<img src="' + url.replace(/"/g, '&quot;') + '" alt="" loading="lazy">' : '<span class="module-media-library-video">▶</span>') +
+          '<span>' + (name.length > 18 ? name.slice(0,16) + '..' : name) + '</span></button>';
+      }).join('');
+      grid.innerHTML = items || '<div class="text-muted small p-3">媒体库暂无可选图片或视频</div>';
+    })
+    .catch(function() {
+      grid.innerHTML = '<div class="text-danger small p-3">媒体库加载失败</div>';
+    });
 }
 
-// Favicon 相关 JS（复用 Logo 的 lightbox 和预览逻辑）
-function handleCompanyFaviconUpload(fileInput) {
-  handleCompanyLogoUpload(fileInput);
-}
-
-function enlargeCompanyFavicon(img) {
-  enlargeCompanyLogo(img);
-}
-
-function clearCompanyFavicon(btn) {
-  clearCompanyLogo(btn);
-}
-
-function updateFaviconPreview(urlInput) {
-  updateImagePreview(urlInput);
-}
+// 媒体库 grid 点击事件委托（与 admin_modules.js 中逻辑一致）
+document.addEventListener('click', function(e) {
+  var item = e.target.closest('.module-media-library-item');
+  if (!item) return;
+  var overlay = item.closest('#moduleMediaLibraryOverlay');
+  var input = overlay && overlay._targetInput;
+  if (!input) return;
+  input.value = item.dataset.url || '';
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  overlay.classList.remove('show');
+});
 </script>
 
 {% if translation_enabled and languages and languages|length > 1 and current_lang != default_lang %}

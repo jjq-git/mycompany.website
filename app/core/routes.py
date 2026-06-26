@@ -918,6 +918,23 @@ def basic_settings():
     if tab not in ('company', 'theme'):
         tab = 'company'
 
+    # 中间栏嵌入模式：渲染无外壳的独立页面（类似留言管理的 embed 模式）
+    if request.args.get('embed') == '1':
+        return render_template('dashboard/basic_settings_embed.html',
+                               user=user, site=site,
+                               company=current_company,
+                               contact=current_contact,
+                               source_company=source_company,
+                               source_contact=source_contact,
+                               theme=theme,
+                               default_theme=default_theme,
+                               admin_settings=settings.get('admin') or {},
+                               current_lang=lang,
+                               languages=languages,
+                               default_lang=default_lang,
+                               basic_settings_tab=tab,
+                               active='basic_settings')
+
     return render_template('dashboard/panel_basic_settings.html',
                            user=user, site=site,
                            company=current_company,
@@ -1679,6 +1696,8 @@ def company():
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
         if request.form.get('_basic_settings') == '1':
+            if request.form.get('_embed') == '1':
+                return redirect(url_for('core.basic_settings', embed='1', site=site.id, lang=lang, tab='company'))
             return redirect(url_for('core.basic_settings', _fragment='1', site=site.id, lang=lang, tab='company'))
         if request.form.get('_workspace') == '1':
             return redirect(url_for('core.company_workspace', site=site.id, lang=lang))
@@ -2484,6 +2503,8 @@ def theme_edit():
         flash('已保存')
         if request.form.get('_basic_settings') == '1':
             lang, _, default_lang = _get_panel_lang(site)
+            if request.form.get('_embed') == '1':
+                return redirect(url_for('core.basic_settings', embed='1', site=site.id, lang=lang, tab='theme'))
             return redirect(url_for('core.basic_settings', _fragment='1', site=site.id, lang=lang, tab='theme'))
         if request.form.get('_workspace') == '1':
             return redirect(url_for('core.theme_workspace', site=site.id))
