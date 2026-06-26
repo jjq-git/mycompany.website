@@ -107,7 +107,7 @@
 </form>
 
 {# JS: 模块选择器交互 #}
-<script src="/static/js/admin_modules.js?v=95"></script>
+<script src="/static/js/admin_modules.js?v=96"></script>
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="iconListDsJson">{{ icon_list | default([]) | tojson }}</script>
@@ -450,7 +450,9 @@ window._dsEditItemJson = {{ edit_item | tojson }};
             <button type="button" class="dataset-row-icon-btn dataset-paste-btn" title="粘贴到此条数据" onclick="event.stopPropagation(); pasteDataItem({{ it.id }}, this)">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h6"></path><path d="M9 3h6v4H9z"></path><rect x="5" y="5" width="14" height="16" rx="2"></rect><path d="M9 13h6"></path><path d="M9 17h4"></path></svg>
             </button>
-            <button class="btn btn-sm btn-outline-danger" style="font-size:10px" onclick="event.stopPropagation(); deleteDataItem({{ it.id }})">删除</button>
+            <button type="button" class="dataset-row-icon-btn dataset-delete-btn" title="删除此条数据" onclick="event.stopPropagation(); deleteDataItem({{ it.id }})">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            </button>
           </div>
         </td>
       </tr>

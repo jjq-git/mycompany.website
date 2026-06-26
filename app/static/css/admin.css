@@ -1662,11 +1662,22 @@
   border-top: 1px solid #e8ecf0;
   box-shadow: 0 -2px 6px rgba(0,0,0,.04);
 }
-.panel-save-bar {
-  /* 移动到 footer 后不再需要独立样式，由 footer 统一处理 */
-}
 .panel-save-bar .btn {
   width: 100%;
+}
+/* 保存按钮跟随后台主题色 */
+.panel-save-bar .btn-primary {
+  color: #fff;
+  background: var(--theme-btn-bg);
+  border-color: var(--theme-btn-border-color);
+}
+.panel-save-bar .btn-primary:hover {
+  background: var(--theme-btn-hover-bg);
+  border-color: var(--theme-btn-hover-border-color);
+  color: #fff;
+}
+.panel-save-bar .btn-primary:active {
+  background: var(--theme-btn-active-bg) !important;
 }
 
 .panel-add-module-btn {
@@ -3291,6 +3302,12 @@
   border-color: #2563eb;
   color: #2563eb;
   background: #eff6ff;
+}
+
+.dataset-row-icon-btn.dataset-delete-btn:hover {
+  border-color: #dc2626;
+  color: #dc2626;
+  background: #fef2f2;
 }
 
 .dataset-row-icon-btn:disabled {
