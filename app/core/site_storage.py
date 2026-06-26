@@ -34,7 +34,7 @@ MEDIA_CATEGORIES = {
     },
     'document': {
         'label': '文档',
-        'extensions': {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv'},
+        'extensions': {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'zip'},
     },
 }
 
