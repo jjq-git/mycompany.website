@@ -21,7 +21,6 @@
 
     <div class="ic-dots"></div>
     <div class="ic-config" hidden>
-      <span data-name="images_per_row" data-type="text" class="ic-cfg-row">4</span>
       <span data-name="auto_scroll" data-type="text" class="ic-cfg-auto">true</span>
       <span data-name="scroll_interval" data-type="text" class="ic-cfg-interval">4</span>
       <span data-name="show_dots" data-type="text" class="ic-cfg-dots">true</span>
@@ -35,7 +34,7 @@
         var v = el ? (el.textContent || '').trim() : '';
         return v || def;
       };
-      var perRow = parseInt(readCfg('row', '4')) || 4;
+      var perRow = 4;
       var styleAttr = section.getAttribute('style') || '';
       var colsMatch = styleAttr.match(/--cols:\s*(\S+?)(?:;|$)/);
       if (colsMatch) {

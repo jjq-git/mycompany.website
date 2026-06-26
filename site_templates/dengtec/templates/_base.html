@@ -541,12 +541,19 @@ function initDataGridPagers() {
     var pageNumbers = pager.querySelector('.dg-page-numbers');
 
     if (paginationStyle === 'page_numbers') {
-      // 页码导航模式：动态生成页码按钮
+      // 页码导航模式：动态生成页码按钮 + 上一页/下一页（根据页面语言切换文字）
+      var pageLang = document.documentElement.getAttribute('lang') || 'en';
+      var isZh = pageLang === 'zh-CN' || pageLang === 'zh-TW';
+      var prevLabel = isZh ? '上一页' : 'Prev';
+      var nextLabel = isZh ? '下一页' : 'Next';
+
       var html = '';
+      html += '<button class="dg-page-btn dg-page-btn-prev" onclick="goToDataGridPage(this, 1)" data-page="prev" disabled>' + prevLabel + '</button>';
       for (var p = 1; p <= totalPages; p++) {
         html += '<button class="dg-page-btn' + (p === 1 ? ' active' : '') +
                 '" onclick="goToDataGridPage(this, ' + p + ')" data-page="' + p + '">' + p + '</button>';
       }
+      html += '<button class="dg-page-btn dg-page-btn-next" onclick="goToDataGridPage(this, 2)" data-page="next"' + (totalPages <= 1 ? ' disabled' : '') + '>' + nextLabel + '</button>';
       pageNumbers.innerHTML = html;
       pageNumbers.style.display = '';
     } else {
@@ -619,6 +626,25 @@ function goToDataGridPage(btn, page) {
   var cards = Array.prototype.slice.call(list.querySelectorAll('.dg-card')).filter(function(card) {
     return !card.classList.contains('dg-card--filter-hidden');
   });
+  var total = cards.length;
+  var totalPages = Math.ceil(total / perPage);
+
+  // 确定当前页码：从已激活的页码按钮读取
+  var activeBtn = pager.querySelector('.dg-page-btn.active');
+  var currentPage = activeBtn ? parseInt(activeBtn.getAttribute('data-page'), 10) || 1 : 1;
+
+  // 处理上一页 / 下一页导航
+  var isPrev = btn.getAttribute('data-page') === 'prev';
+  var isNext = btn.getAttribute('data-page') === 'next';
+  if (isPrev) {
+    page = currentPage - 1;
+  } else if (isNext) {
+    page = currentPage + 1;
+  }
+  // 边界保护
+  if (page < 1) page = 1;
+  if (page > totalPages) page = totalPages;
+
   var start = (page - 1) * perPage;
   var end = start + perPage;
 
@@ -630,11 +656,18 @@ function goToDataGridPage(btn, page) {
     }
   });
 
-  // 更新活跃页码按钮
+  // 更新所有按钮状态：清除旧 active，设置新 active
   pager.querySelectorAll('.dg-page-btn').forEach(function(b) {
     b.classList.remove('active');
   });
-  btn.classList.add('active');
+  var targetBtn = pager.querySelector('.dg-page-btn[data-page="' + page + '"]');
+  if (targetBtn) targetBtn.classList.add('active');
+
+  // 更新上一页 / 下一页按钮的禁用状态
+  var prevBtn = pager.querySelector('.dg-page-btn-prev');
+  var nextBtn = pager.querySelector('.dg-page-btn-next');
+  if (prevBtn) prevBtn.disabled = (page <= 1);
+  if (nextBtn) nextBtn.disabled = (page >= totalPages);
 }
 
 function readDataGridPagerConfig(pager) {
@@ -684,11 +717,19 @@ function resetDataGridPager(pager) {
 
   pager.style.display = '';
   if (cfg.paginationStyle === 'page_numbers') {
+    // 根据页面语言选择按钮文字
+    var pageLang = document.documentElement.getAttribute('lang') || 'en';
+    var isZh = pageLang === 'zh-CN' || pageLang === 'zh-TW';
+    var prevLabel = isZh ? '上一页' : 'Prev';
+    var nextLabel = isZh ? '下一页' : 'Next';
+
     var html = '';
+    html += '<button class="dg-page-btn dg-page-btn-prev" onclick="goToDataGridPage(this, 1)" data-page="prev" disabled>' + prevLabel + '</button>';
     for (var p = 1; p <= totalPages; p++) {
       html += '<button class="dg-page-btn' + (p === 1 ? ' active' : '') +
               '" onclick="goToDataGridPage(this, ' + p + ')" data-page="' + p + '">' + p + '</button>';
     }
+    html += '<button class="dg-page-btn dg-page-btn-next" onclick="goToDataGridPage(this, 2)" data-page="next"' + (totalPages <= 1 ? ' disabled' : '') + '>' + nextLabel + '</button>';
     if (pageNumbers) {
       pageNumbers.innerHTML = html;
       pageNumbers.style.display = '';

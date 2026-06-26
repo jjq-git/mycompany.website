@@ -2173,6 +2173,26 @@ a.ci-value:hover { color: var(--color-primary); }
   width: 100%; height: 100%; min-height: 400px;
   border: none; border-radius: var(--radius-lg);
 }
+
+/* RTE 富文本内嵌媒体：编辑态 DOM 在前端透明化 */
+.rte-media-toolbar,
+.rte-media-del { display: none !important; }
+.rte-media-wrapper {
+  display: contents !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  user-select: auto !important;
+}
+.rte-media-wrapper video,
+.rte-media-wrapper iframe {
+  width: 100% !important;
+  display: block !important;
+  border-radius: var(--radius-lg, 8px);
+  margin: 1rem 0;
+  min-height: 300px;
+}
+
 .cf-form-col {
   flex: var(--form-ratio, 1);
   min-width: 0;
@@ -3007,8 +3027,9 @@ a.ci-value:hover { color: var(--color-primary); }
 .dg-remaining { }
 .dg-page-numbers { display: flex; gap: var(--space-xs); }
 .dg-page-btn {
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
+  min-width: 36px; height: 36px;
+  padding: 0 var(--space-xs);
+  display: inline-flex; align-items: center; justify-content: center;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-hairline);
   background: var(--color-canvas);
@@ -3022,8 +3043,19 @@ a.ci-value:hover { color: var(--color-primary); }
   border-color: var(--color-primary);
   color: var(--color-on-primary);
 }
-.dg-page-btn:hover:not(.active) {
+.dg-page-btn:hover:not(.active):not(:disabled) {
   background-color: var(--color-surface-soft);
+}
+/* 上一页 / 下一页按钮 */
+.dg-page-btn-prev,
+.dg-page-btn-next {
+  padding-left: var(--space-sm);
+  padding-right: var(--space-sm);
+}
+/* 禁用态 */
+.dg-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 

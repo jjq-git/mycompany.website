@@ -5807,7 +5807,7 @@ h6 { font-size: var(--font-size-md); }
   align-items: center;
   justify-content: center;
 }
-.dg-page-btn:hover {
+.dg-page-btn:hover:not(:disabled) {
   background: #f3f4f6;
   border-color: #9ca3af;
 }
@@ -5815,6 +5815,18 @@ h6 { font-size: var(--font-size-md); }
   background: var(--color-primary, #067a7a);
   border-color: var(--color-primary, #067a7a);
   color: #fff;
+}
+/* 上一页 / 下一页按钮：更宽以容纳文字 */
+.dg-page-btn-prev,
+.dg-page-btn-next {
+  min-width: auto;
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
+}
+/* 禁用态 */
+.dg-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* ============================================
@@ -6785,6 +6797,27 @@ a.ci-value:hover {
   .cf-map-iframe {
     min-height: 300px;
   }
+}
+
+/* ============================================
+   RTE 富文本内嵌媒体：编辑态 DOM 在前端透明化
+   ============================================ */
+.rte-media-toolbar,
+.rte-media-del { display: none !important; }
+.rte-media-wrapper {
+  display: contents !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  user-select: auto !important;
+}
+.rte-media-wrapper video,
+.rte-media-wrapper iframe {
+  width: 100% !important;
+  display: block !important;
+  border-radius: var(--radius-md, 8px);
+  margin: 1rem 0;
+  min-height: 300px;
 }
 
 /* ============================================
