@@ -6,7 +6,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>SEO 健康检查</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-seo.css') }}?v=20260616d">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-seo.css') }}?v=20260629-flat">
   <style>
     :root {
       --bs-primary: {{ admin_primary }};
@@ -216,7 +216,7 @@
                 <div class="seo-help mt-1">{{ check.detail }}</div>
               </div>
               {% if check.status != 'ok' and check.action_url %}
-              <button type="button" class="seo-check-link" data-panel-url="{{ check.action_url }}" onclick="event.preventDefault();var u=this.dataset.panelUrl;if(parent&&parent!==window&&typeof parent.openSeoActionLink==='function'){parent.openSeoActionLink(u)}else if(typeof openSeoActionLink==='function'){openSeoActionLink(u)}else{window.location.href=u}" title="点击跳转到编辑面板" style="flex-shrink:0;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:12px;border:1px solid var(--seo-primary-border);color:var(--seo-primary);text-decoration:none;white-space:nowrap;background:none;cursor:pointer">
+              <button type="button" class="seo-check-link" data-panel-url="{{ check.action_url }}" data-action-kind="{{ check.action_kind or 'link' }}" onclick="seoRunCheckAction(this)" title="点击跳转到编辑面板" style="flex-shrink:0;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:12px;border:1px solid var(--seo-primary-border);color:var(--seo-primary);text-decoration:none;white-space:nowrap;background:none;cursor:pointer">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               </button>
               {% endif %}
@@ -353,6 +353,31 @@
           seoSetMsg(row, '已保存', true);
         })
         .catch(function(err) { seoSetMsg(row, err.message || '保存失败', false); });
+    }
+
+    function seoRunCheckAction(btn) {
+      var url = (btn.dataset.panelUrl || '').replace(/&amp;/g, '&');
+      if (!url) return false;
+      if (btn.dataset.actionKind !== 'post') {
+        if (parent && parent !== window && typeof parent.openSeoActionLink === 'function') parent.openSeoActionLink(url);
+        else if (typeof openSeoActionLink === 'function') openSeoActionLink(url);
+        else window.location.href = url;
+        return false;
+      }
+      btn.disabled = true;
+      fetch(url, { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.ok) throw new Error(data.error || '修复失败');
+          alert('已补齐 ' + (data.count || 0) + ' 个图片 alt');
+          if (parent && parent !== window && typeof parent.refreshPreview === 'function') parent.refreshPreview();
+          window.location.reload();
+        })
+        .catch(function(err) {
+          alert(err.message || '修复失败');
+          btn.disabled = false;
+        });
+      return false;
     }
 
     document.querySelectorAll('.seo-description').forEach(function (textarea) {

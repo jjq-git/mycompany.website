@@ -8,7 +8,7 @@
   <link rel="icon" href="{{ url_for('favicon') }}" type="image/svg+xml">
   <title>{% block title %}{{ site.slug if site else '' }}{% endblock %} — {{ platform_domain }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260626c">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260629-admin-layout">
   <style>
     :root {
       --bs-primary: {{ admin_primary }};
@@ -1107,8 +1107,20 @@
       if (siteParam) buildUrl += '&site=' + encodeURIComponent(siteParam);
       showBuildLoading(message || '正在生成预览...');
       return fetch(buildUrl, { method: 'POST' })
-        .then(function(r) { return r.json(); })
-        .catch(function() { return { ok: true }; });
+        .then(function(r) {
+          return r.json().catch(function() {
+            return { ok: false, error: '构建接口返回格式异常（HTTP ' + r.status + '）' };
+          }).then(function(data) {
+            if (!r.ok && data.ok !== false) {
+              data.ok = false;
+              data.error = data.error || ('构建请求失败（HTTP ' + r.status + '）');
+            }
+            return data;
+          });
+        })
+        .catch(function(err) {
+          return { ok: false, error: err.message || '构建请求失败' };
+        });
     }
 
     function refreshPreview(options) {
@@ -1125,7 +1137,13 @@
       return buildCurrentSite(options.message)
         .then(function(data) {
           if (data && data.ok === false) {
-            alert(data.error || '生成预览失败');
+            var details = '';
+            if (Array.isArray(data.report) && data.report.length) {
+              details = '\n\n' + data.report.slice(0, 5).map(function(item) {
+                return '- ' + (item.template || item.page || item.type || '页面') + ': ' + (item.error || '未知错误');
+              }).join('\n');
+            }
+            alert((data.error || '生成预览失败') + details);
             return;
           }
           return setPreviewFrameUrl(previewUrl);

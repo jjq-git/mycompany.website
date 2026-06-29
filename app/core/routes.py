@@ -27,6 +27,7 @@ from .translator import (generate_seo_description,
                          translate_json)
 from .builder import build_site, build_template_preview
 from .db import db
+from . import media_service
 from .template_loader import scan_templates
 from flask_cors import cross_origin
 # CSRF 豁免：静态站点公开 API 无法提供 CSRF token, 需要豁免
@@ -417,6 +418,22 @@ def _save_media_package(site_id, file_storage):
         'category_label': '网页包',
         'is_package': True,
     }
+
+
+# Media helpers live in media_service; keep these private names for the existing
+# routes and form parser while we split routes.py incrementally.
+ALLOWED_IMAGE_EXTENSIONS = media_service.ALLOWED_IMAGE_EXTENSIONS
+ALLOWED_VIDEO_EXTENSIONS = media_service.ALLOWED_VIDEO_EXTENSIONS
+_save_uploaded_image = media_service.save_uploaded_image
+_filename_alt = media_service.filename_alt
+_context_alt = media_service.context_alt
+_image_alt_key = media_service.image_alt_key
+_form_alt_value = media_service.form_alt_value
+_save_uploaded_media = media_service.save_uploaded_media
+_save_any_file = media_service.save_any_file
+_safe_zip_member_name = media_service.safe_zip_member_name
+_zip_strip_root = media_service.zip_strip_root
+_save_media_package = media_service.save_media_package
 
 
 def _uploaded_image_or_form(site_id, form_field, file_field=None, prefix='image'):
@@ -1169,34 +1186,8 @@ def api_media_upload():
     suffix = original.rsplit('.', 1)[-1].lower() if '.' in original else ''
     try:
         if suffix == 'zip':
-            # 预检 ZIP 内容：根目录有 index.html → 网页包；否则降级为普通文件
-            is_package = False
-            try:
-                upload.stream.seek(0)
-                archive = zipfile.ZipFile(upload.stream)
-                with archive:
-                    infos = [info for info in archive.infolist() if not info.is_dir()]
-                    if infos:
-                        names = [_safe_zip_member_name(info.filename) for info in infos]
-                        strip_root = _zip_strip_root(names)
-                        normalized = []
-                        for name in names:
-                            parts = Path(name).parts
-                            if strip_root:
-                                parts = parts[1:]
-                            if not parts:
-                                continue
-                            normalized.append('/'.join(parts))
-                        is_package = 'index.html' in {n.lower() for n in normalized}
-                upload.stream.seek(0)
-            except Exception:
-                # peek 失败（损坏/非标准 ZIP）也不拦截，降级为普通文件
-                try:
-                    upload.stream.seek(0)
-                except Exception:
-                    pass
-
-            if is_package:
+            # 根目录有 index.html → 网页包；否则降级为普通文件。
+            if media_service.uploaded_zip_has_index(upload):
                 result = _save_media_package(site.id, upload)
                 return jsonify({'ok': True, **result})
             # 不是网页包 → 继续往下走普通文件上传流程
@@ -1499,12 +1490,13 @@ def _seo_health_report(site, lang=None):
 
     checks = []
 
-    def add(status, title, detail, action_url=''):
+    def add(status, title, detail, action_url='', action_kind='link'):
         checks.append({
             'status': status,
             'title': title,
             'detail': detail,
             'action_url': action_url,
+            'action_kind': action_kind,
         })
 
     if company.get('name'):
@@ -1591,7 +1583,10 @@ def _seo_health_report(site, lang=None):
         if image_value and not has_alt:
             image_alt_missing += 1
     if image_alt_missing:
-        add('info', f'{image_alt_missing} 张详情页图片缺少 alt', '这是可选优化项，不影响自动 SEO 文件生成；有时间再补即可。')
+        add('info', f'{image_alt_missing} 张详情页图片缺少 alt',
+            '可用标题/产品名自动补齐；已有手动 alt 不会被覆盖。',
+            url_for('core.seo_repair_alt', site=site.id, lang=lang),
+            action_kind='post')
 
     output_root = Path(current_app.config['OUTPUT_DIR']) / str(site.id)
     missing_output_files = []
@@ -1619,6 +1614,65 @@ def _seo_health_report(site, lang=None):
     }
 
 
+def _alt_from_url(value):
+    text = str(value or '').strip()
+    if not text:
+        return ''
+    name = text.rstrip('/').rsplit('/', 1)[-1].split('?', 1)[0].split('#', 1)[0]
+    stem = Path(name).stem
+    return re.sub(r'[-_]+', ' ', stem).strip()
+
+
+def _repair_item_image_alt(item):
+    """Fill missing image alt values in one dataset item without overriding manual text."""
+    if not isinstance(item, dict):
+        return 0
+    changed = 0
+    context = _context_alt(item)
+
+    for field in ('image', 'image_url', 'cover', 'thumbnail', 'photo', 'logo'):
+        value = item.get(field)
+        if not value:
+            continue
+        alt_key = _image_alt_key(field)
+        if item.get(alt_key) or item.get('alt') or item.get('imageAlt'):
+            continue
+        item[alt_key] = context or _alt_from_url(value)
+        if item.get(alt_key):
+            changed += 1
+
+    for list_key in ('images', 'gallery', 'detail_gallery'):
+        images = item.get(list_key)
+        if not isinstance(images, list):
+            continue
+        for image in images:
+            if not isinstance(image, dict):
+                continue
+            value = image.get('url') or image.get('image') or image.get('src')
+            if value and not image.get('alt'):
+                image['alt'] = context or _alt_from_url(value)
+                if image.get('alt'):
+                    changed += 1
+
+    return changed
+
+
+def _repair_missing_image_alts(site, lang):
+    default_lang = site.default_language or 'zh-CN'
+    storage_lang = _storage_lang(site, lang, default_lang)
+    total = 0
+    touched = []
+    for data_file in list_yaml_files(site.id, 'data', lang=storage_lang):
+        raw = read_yaml(site.id, f'data/{data_file.name}', default=[], lang=storage_lang)
+        items = _dataset_items(raw)
+        changed = sum(_repair_item_image_alt(item) for item in items)
+        if changed:
+            write_yaml(site.id, f'data/{data_file.name}', raw, lang=storage_lang)
+            total += changed
+            touched.append(data_file.name)
+    return total, touched
+
+
 @bp.route('/seo')
 def seo_health():
     user, site = _current_context()
@@ -1638,6 +1692,15 @@ def seo_workspace():
     report = _seo_health_report(site, lang=lang)
     return render_template('dashboard/seo_workspace.html', user=user, site=site, report=report,
                            current_lang=lang, languages=languages, default_lang=default_lang)
+
+
+@bp.route('/seo/repair-alt', methods=['POST'])
+def seo_repair_alt():
+    """Auto-fill missing image alt text in dataset YAML for the current language."""
+    user, site = _current_context()
+    lang, languages, default_lang = _get_panel_lang(site)
+    count, files = _repair_missing_image_alts(site, lang)
+    return jsonify({'ok': True, 'count': count, 'files': files})
 
 
 @bp.route('/seo/page/<path:page_key>', methods=['POST'])
@@ -3014,16 +3077,17 @@ def site_new():
 def build():
     """触发构建当前站点, 跳到预览首页."""
     _, site = _current_context()
+    report = []
     try:
-        build_site(site.id, base_url=f'/preview/{site.id}')
+        build_site(site.id, base_url=f'/preview/{site.id}', report=report)
     except Exception as exc:
         current_app.logger.exception('站点 %s 构建失败', site.id)
         if request.method == 'POST' or request.args.get('_fragment'):
-            return jsonify({'ok': False, 'error': str(exc)}), 500
+            return jsonify({'ok': False, 'error': str(exc), 'report': report}), 500
         abort(500, f'构建失败: {exc}')
 
     if request.method == 'POST' or request.args.get('_fragment'):
-        return jsonify({'ok': True, 'preview_url': f'/preview_site/{site.id}'})
+        return jsonify({'ok': True, 'preview_url': f'/preview_site/{site.id}', 'report': report})
 
     return redirect(url_for('core.preview_site', site_id=site.id))
 
