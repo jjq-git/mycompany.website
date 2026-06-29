@@ -9,7 +9,7 @@ import json
 import shutil
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import quote, urljoin
 
 import yaml
 from flask import current_app
@@ -24,6 +24,138 @@ from .models import Site
 # block schema 解析缓存：同一次构建里一个 block 只解析一次。
 # key = (template_name, block_name, variant)，value = (html, schema) 或 None（旧式 Jinja2）。
 _SCHEMA_CACHE = {}
+
+_LANGUAGE_FLAG_FALLBACKS = {
+    'zh': '🇨🇳',
+    'zh-cn': '🇨🇳',
+    'zh-hans': '🇨🇳',
+    'zh-tw': '🇹🇼',
+    'zh-hant': '🇹🇼',
+    'en': '🇺🇸',
+    'en-us': '🇺🇸',
+    'en-gb': '🇬🇧',
+    'ja': '🇯🇵',
+    'jp': '🇯🇵',
+    'ko': '🇰🇷',
+    'fr': '🇫🇷',
+    'de': '🇩🇪',
+    'es': '🇪🇸',
+    'it': '🇮🇹',
+    'pt': '🇵🇹',
+    'ru': '🇷🇺',
+}
+
+_LANGUAGE_COUNTRY_FALLBACKS = {
+    'zh': 'cn',
+    'zh-cn': 'cn',
+    'zh-hans': 'cn',
+    'zh-tw': 'tw',
+    'zh-hant': 'tw',
+    'en': 'us',
+    'en-us': 'us',
+    'en-gb': 'gb',
+    'ja': 'jp',
+    'jp': 'jp',
+    'ko': 'kr',
+    'fr': 'fr',
+    'de': 'de',
+    'es': 'es',
+    'it': 'it',
+    'pt': 'pt',
+    'ru': 'ru',
+}
+
+
+def _country_code_to_flag(value):
+    """Convert two-letter country codes such as CN/US to flag emoji."""
+    if not isinstance(value, str):
+        return ''
+    code = value.strip().upper()
+    if len(code) != 2 or not code.isalpha():
+        return ''
+    return ''.join(chr(0x1F1E6 + ord(ch) - ord('A')) for ch in code)
+
+
+def _language_flag(lang):
+    raw_flag = str(lang.get('flag') or '').strip()
+    if raw_flag:
+        from_country_code = _country_code_to_flag(raw_flag)
+        return from_country_code or raw_flag
+
+    code = str(lang.get('code') or '').strip()
+    lowered = code.lower().replace('_', '-')
+    fallback = _LANGUAGE_FLAG_FALLBACKS.get(lowered)
+    if fallback:
+        return fallback
+    parts = lowered.split('-')
+    if len(parts) > 1:
+        return _country_code_to_flag(parts[-1])
+    return _LANGUAGE_FLAG_FALLBACKS.get(parts[0], '')
+
+
+def _language_country_code(lang):
+    raw_flag = str(lang.get('flag') or '').strip()
+    if len(raw_flag) == 2 and raw_flag.isalpha():
+        return raw_flag.lower()
+
+    code = str(lang.get('code') or '').strip().lower().replace('_', '-')
+    fallback = _LANGUAGE_COUNTRY_FALLBACKS.get(code)
+    if fallback:
+        return fallback
+    parts = code.split('-')
+    if len(parts) > 1 and len(parts[-1]) == 2 and parts[-1].isalpha():
+        return parts[-1]
+    return _LANGUAGE_COUNTRY_FALLBACKS.get(parts[0], parts[0][:2] if parts and parts[0] else '')
+
+
+def _flag_svg(country_code):
+    code = (country_code or '').lower()
+    if code == 'cn':
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#de2910"/><polygon points="10,6 11.8,11.5 17.6,11.5 12.9,14.9 14.7,20.4 10,17 5.3,20.4 7.1,14.9 2.4,11.5 8.2,11.5" fill="#ffde00"/><circle cx="23" cy="8" r="2.2" fill="#ffde00"/><circle cx="29" cy="14" r="2.2" fill="#ffde00"/><circle cx="29" cy="23" r="2.2" fill="#ffde00"/><circle cx="23" cy="29" r="2.2" fill="#ffde00"/></svg>'
+    if code == 'tw':
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" rx="4" fill="#f8fafc"/><rect width="60" height="40" rx="4" fill="none" stroke="#cbd5e1"/><text x="30" y="29" text-anchor="middle" font-family="Arial, Noto Sans TC, sans-serif" font-size="27" font-weight="800" fill="#334155">繁</text></svg>'
+    if code == 'us':
+        stripes = ''.join(f'<rect y="{i * 40 / 13:.3f}" width="60" height="{40 / 13:.3f}" fill="#b22234"/>' for i in range(0, 13, 2))
+        return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/>{stripes}<rect width="27" height="21.5" fill="#3c3b6e"/><g fill="#fff"><circle cx="5" cy="4" r="1"/><circle cx="11" cy="4" r="1"/><circle cx="17" cy="4" r="1"/><circle cx="23" cy="4" r="1"/><circle cx="8" cy="9" r="1"/><circle cx="14" cy="9" r="1"/><circle cx="20" cy="9" r="1"/><circle cx="5" cy="14" r="1"/><circle cx="11" cy="14" r="1"/><circle cx="17" cy="14" r="1"/><circle cx="23" cy="14" r="1"/></g></svg>'
+    if code == 'gb':
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#012169"/><path d="M0 0l60 40M60 0L0 40" stroke="#fff" stroke-width="8"/><path d="M0 0l60 40M60 0L0 40" stroke="#c8102e" stroke-width="4"/><path d="M30 0v40M0 20h60" stroke="#fff" stroke-width="12"/><path d="M30 0v40M0 20h60" stroke="#c8102e" stroke-width="7"/></svg>'
+    if code == 'jp':
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><circle cx="30" cy="20" r="11" fill="#bc002d"/></svg>'
+    if code == 'kr':
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><path d="M30 9a11 11 0 0 1 0 22a5.5 5.5 0 0 1 0-11a5.5 5.5 0 0 0 0-11z" fill="#cd2e3a"/><path d="M30 31a11 11 0 0 1 0-22a5.5 5.5 0 0 1 0 11a5.5 5.5 0 0 0 0 11z" fill="#0047a0"/></svg>'
+    if code == 'fr':
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="20" height="40" fill="#0055a4"/><rect x="20" width="20" height="40" fill="#fff"/><rect x="40" width="20" height="40" fill="#ef4135"/></svg>'
+    if code == 'de':
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="13.333" fill="#000"/><rect y="13.333" width="60" height="13.333" fill="#dd0000"/><rect y="26.666" width="60" height="13.334" fill="#ffce00"/></svg>'
+    if code == 'es':
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#aa151b"/><rect y="10" width="60" height="20" fill="#f1bf00"/></svg>'
+    if code == 'it':
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="20" height="40" fill="#009246"/><rect x="20" width="20" height="40" fill="#fff"/><rect x="40" width="20" height="40" fill="#ce2b37"/></svg>'
+    if code == 'pt':
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="24" height="40" fill="#006600"/><rect x="24" width="36" height="40" fill="#ff0000"/><circle cx="24" cy="20" r="6" fill="#ffcc00"/></svg>'
+    if code == 'ru':
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="13.333" fill="#fff"/><rect y="13.333" width="60" height="13.333" fill="#0039a6"/><rect y="26.666" width="60" height="13.334" fill="#d52b1e"/></svg>'
+    label = escape((code or '--').upper())
+    return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" rx="4" fill="#eef2f7"/><rect width="60" height="40" rx="4" fill="none" stroke="#cbd5e1"/><text x="30" y="25" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#475569">{label}</text></svg>'
+
+
+def _language_flag_image(lang):
+    country_code = _language_country_code(lang)
+    svg = _flag_svg(country_code)
+    return 'data:image/svg+xml,' + quote(svg, safe='')
+
+
+def _normalize_language_flags(languages):
+    normalized = []
+    for lang in languages or []:
+        if not isinstance(lang, dict):
+            normalized.append(lang)
+            continue
+        lang_copy = dict(lang)
+        lang_copy['flag'] = _language_flag(lang_copy)
+        lang_copy['flag_image'] = _language_flag_image(lang_copy)
+        normalized.append(lang_copy)
+    return normalized
 
 
 def _get_platform_base_url():
@@ -606,6 +738,7 @@ def _build_language_selector_page(output_root, base_url, settings, theme, year, 
     """
     if languages is None:
         languages = meta.get('languages', [])
+    languages = _normalize_language_flags(languages)
     if not languages:
         return
 
@@ -912,13 +1045,13 @@ def build_site(site_id, base_url='', report=None):
     if site_assets.exists():
         shutil.copytree(site_assets, output_root / 'assets', dirs_exist_ok=True)
 
-    languages = meta.get('languages', [])
+    languages = _normalize_language_flags(meta.get('languages', []))
     # 按站点启用的语言过滤（从 DB enabled_languages 读取，兜底显示全部）
     enabled_codes = site.enabled_languages or [l['code'] for l in languages]
     languages = [l for l in languages if l['code'] in enabled_codes]
     # 兜底：如果过滤后为空（旧站点 enabled_languages 可能与模板不一致），使用全部语言
     if not languages:
-        languages = meta.get('languages', [])
+        languages = _normalize_language_flags(meta.get('languages', []))
     # 提取 product_categories 和 products 供导航用
     default_lang = meta.get('default_language', languages[0]['code'] if languages else 'zh-CN')
     default_pages_for_lang = pages
@@ -1119,7 +1252,7 @@ def build_template_preview(template_name, base_url=''):
     if seed_assets.exists():
         shutil.copytree(seed_assets, output_root / 'assets', dirs_exist_ok=True)
 
-    languages = meta.get('languages', [])
+    languages = _normalize_language_flags(meta.get('languages', []))
     products_categories = _extract_products_categories(data)
     products_items = _extract_products_items(data)
     year = datetime.now().year

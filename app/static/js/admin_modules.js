@@ -410,11 +410,12 @@
     return /(description|summary|excerpt|desc|intro|message)/i.test(String(key || ''));
   }
 
-  function mediaUploadHtml(name, value, type, placeholder) {
+  function mediaUploadHtml(name, value, type, placeholder, altValue) {
     var isVideo = type === 'video';
     var isEmbed = type === 'embed' || type === 'package';
     var safeName = esc(name);
     var safeValue = esc(value || '');
+    var safeAlt = esc(altValue || '');
     var accept = isEmbed ? '.zip' : (isVideo ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*,.svg,.svgz');
     var icon = isEmbed
       ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>'
@@ -428,6 +429,10 @@
     var helpText = isEmbed
       ? '上传包含 index.html 的 zip 网页包，用于嵌入 iframe 展示。'
       : isVideo ? '支持 MP4/WebM/OGG/MOV。' : '默认转 WebP，取消勾选则保留原格式。';
+    var altInput = (isVideo || isEmbed) ? '' :
+      '<div class="module-media-alt-row mt-1">' +
+        '<input type="text" class="form-control form-control-sm module-media-alt-input" name="' + safeName + '_alt" value="' + safeAlt + '" placeholder="图片 Alt：自动使用标题/产品名，可覆盖">' +
+      '</div>';
     return '<div class="module-media-tools mt-1">' +
         '<label class="module-media-picker' + (value ? ' has-media' : '') + '" title="' + (isEmbed ? '上传网页包' : '点击上传') + '">' +
           preview +
@@ -441,7 +446,7 @@
         '<input type="text" class="form-control form-control-sm" name="' + safeName + '" value="' + safeValue + '" placeholder="' + esc(placeholder || '') + '" oninput="updateImagePreview(this)">' +
         '<button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>' +
         (isVideo || isEmbed ? '' : '<input type="hidden" name="' + safeName + '_convert_webp" value="false"><label class="module-convert-check"><input type="checkbox" name="' + safeName + '_convert_webp" value="true" checked><span></span>WebP</label>') +
-      '</div>';
+      '</div>' + altInput;
 }
 
   function enhanceCompactSelects(root) {
@@ -1425,11 +1430,45 @@
       }
     }
   }
+
+  function mediaAltFromFilename(file) {
+    var name = file && file.name ? file.name : '';
+    return name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim();
+  }
+
+  function mediaAltFromForm(container, file) {
+    var form = container && container.closest ? container.closest('form') : document;
+    var candidates = ['title', 'name', 'label'];
+    for (var i = 0; i < candidates.length; i++) {
+      var input = form && form.querySelector('[name$="' + candidates[i] + '"]');
+      if (input && String(input.value || '').trim()) return String(input.value).trim();
+    }
+    return mediaAltFromFilename(file);
+  }
+
+  function fillModuleMediaAlt(container, file) {
+    if (!container) return;
+    var altInput = container.querySelector('.module-media-alt-input');
+    if (!altInput || String(altInput.value || '').trim()) return;
+    altInput.value = mediaAltFromForm(container, file);
+  }
+
+  window.initModuleMediaAltInputs = function(root) {
+    root = root || document;
+    root.querySelectorAll('.module-media-alt-input').forEach(function(input) {
+      if (String(input.value || '').trim()) return;
+      var container = input.closest('.hero-slide-body') || input.closest('.mb-2') || input.parentElement;
+      input.value = mediaAltFromForm(container, null);
+    });
+  };
+  window.setTimeout(function(){ window.initModuleMediaAltInputs && window.initModuleMediaAltInputs(document); }, 0);
+
   window.handleModuleImageUpload = function(fileInput) {
     var file = fileInput.files[0];
     var container = fileInput.closest('.hero-slide-body') || fileInput.closest('.mb-2');
     var picker = container ? container.querySelector('.module-media-picker') : null;
     if (!file || !picker) return;
+    fillModuleMediaAlt(container, file);
     renderModuleMediaPicker(picker, URL.createObjectURL(file), fileInput.name, fileInput.getAttribute('accept') || '');
   };
 
@@ -1656,7 +1695,7 @@
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm font-monospace" name="slug" value="' + esc(item.slug || '') + '" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="濡?my-post"><div class="form-text">英文+数字+连字符，鍞竴标识</div></div>' +
         /* ==== 封面图：位于日期上方，只显示在数据集列表缩略图，不在详情页展示 ==== */
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">封面图</label>' +
-        mediaUploadHtml('cover', coverVal, 'image', '图片 URL 或上传') +
+        mediaUploadHtml('cover', coverVal, 'image', '图片 URL 或上传', item.cover_alt || item.image_alt || item.alt || '') +
         '<div class="form-text">仅显示在数据集列表中作为封面缩略图</div>' +
         detailGalleryHtml +
         '<hr class="my-2">' +
@@ -1938,7 +1977,7 @@
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag" value="' + esc(d.tag || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label>' + richEditorHtml('module_' + idx + '_data_desc', d.desc || '') + '</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label>' + mediaUploadHtml('module_' + idx + '_data_image', d.image || '', 'image', '图片 URL') + '</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label>' + mediaUploadHtml('module_' + idx + '_data_image', d.image || '', 'image', '图片 URL', d.image_alt || d.alt || '') + '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">主按閽枃瀛?</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryBtn" value="' + esc(d.primaryBtn || '') + '"></div>' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">主按閽摼鎺?</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryLink" value="' + esc(d.primaryLink || '') + '"></div>' +

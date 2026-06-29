@@ -68,12 +68,6 @@
                  value="{% if it.type == 'link' %}{{ it.url or '' }}{% endif %}"
                  placeholder="https:// 或 /products/host">
           <input type="hidden" name="children_json[]" value="{{ (it.children or []) | tojson | e }}">
-          <select name="dropdown_style[]" class="dropdown-style" {% if not it.children %}style="display:none"{% endif %}>
-            <option value="vertical" {% if it.dropdown_style|default('vertical') == 'vertical' %}selected{% endif %}>垂直列表</option>
-            <option value="horizontal" {% if it.dropdown_style == 'horizontal' %}selected{% endif %}>水平平铺</option>
-            <option value="grid" {% if it.dropdown_style == 'grid' %}selected{% endif %}>网格排列</option>
-            <option value="cards" {% if it.dropdown_style == 'cards' %}selected{% endif %}>图文卡片</option>
-          </select>
           {% if it.children %}
           <div class="muted" style="font-size:12px;margin-top:4px;">含 {{ it.children|length }} 个子菜单（保留结构）</div>
           {% endif %}
@@ -108,7 +102,6 @@
   .menu-row[data-type="link"] .target-link { display: inline-block; width: 100%; }
   .menu-row[data-type="group"] .target-group { display: inline; }
   .menu-row-home input[readonly] { background: #f8fafc; color: var(--muted); }
-  .menu-row .dropdown-style { margin-top: 6px; }
 </style>
 
 <script>
@@ -152,12 +145,6 @@ function addRow() {
       <input type="text" name="target_list[]" class="target-list" placeholder="products / about">
       <input type="text" name="url_link[]" class="target-link" placeholder="https:// 或 /products/host">
       <input type="hidden" name="children_json[]" value="[]">
-      <select name="dropdown_style[]" class="dropdown-style" style="display:none">
-        <option value="vertical">垂直列表</option>
-        <option value="horizontal">水平平铺</option>
-        <option value="grid">网格排列</option>
-        <option value="cards">图文卡片</option>
-      </select>
     </td>
     <td><button type="button" class="btn" onclick="removeRow(this)">删除</button></td>
   `;

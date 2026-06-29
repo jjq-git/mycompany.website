@@ -1,0 +1,71 @@
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <span class="fw-semibold">页头页脚</span>
+  <span class="small text-muted">模板: {{ site.template_name }}</span>
+</div>
+
+<style>
+.header-footer-tab-group .btn {
+  border-color: rgba(var(--admin-primary-rgb), .28);
+  color: var(--admin-primary);
+}
+.header-footer-tab-group .btn:hover,
+.header-footer-tab-group .btn.active {
+  background: var(--admin-primary);
+  border-color: var(--admin-primary);
+  color: #fff;
+}
+.header-footer-tab-group .btn:focus-visible {
+  box-shadow: 0 0 0 .2rem rgba(var(--admin-primary-rgb), .18);
+}
+.header-footer-editor .variant-card-grid {
+  grid-template-columns: repeat(3, minmax(128px, 1fr));
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.header-footer-editor .variant-card {
+  min-width: 128px;
+}
+@media (max-width: 420px) {
+  .header-footer-editor .variant-card-grid {
+    grid-template-columns: repeat(3, minmax(128px, 1fr));
+  }
+}
+</style>
+
+<div class="header-footer-editor">
+  <div class="btn-group btn-group-sm w-100 mb-3 header-footer-tab-group" role="tablist" aria-label="页头页脚">
+    <button type="button"
+            class="btn btn-outline-secondary {% if header_footer_tab != 'footer' %}active{% endif %}"
+            onclick="switchHeaderFooterTab('header')">页头</button>
+    <button type="button"
+            class="btn btn-outline-secondary {% if header_footer_tab == 'footer' %}active{% endif %}"
+            onclick="switchHeaderFooterTab('footer')">页脚</button>
+  </div>
+
+  <div id="headerFooterHeaderPane" {% if header_footer_tab == 'footer' %}style="display:none"{% endif %}>
+    {% set header_footer_embed = true %}
+    {% include 'dashboard/panel_header.html' %}
+  </div>
+
+  <div id="headerFooterFooterPane" {% if header_footer_tab != 'footer' %}style="display:none"{% endif %}>
+    {% set header_footer_embed = true %}
+    {% include 'dashboard/panel_footer_variant.html' %}
+  </div>
+</div>
+
+<script>
+function switchHeaderFooterTab(tab) {
+  var header = document.getElementById('headerFooterHeaderPane');
+  var footer = document.getElementById('headerFooterFooterPane');
+  if (header) header.style.display = tab === 'footer' ? 'none' : '';
+  if (footer) footer.style.display = tab === 'footer' ? '' : 'none';
+  document.querySelectorAll('[aria-label="页头页脚"] .btn').forEach(function(btn, idx) {
+    btn.classList.toggle('active', (tab === 'footer') === (idx === 1));
+  });
+  try {
+    var url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    window.history.replaceState({}, '', url.toString());
+  } catch (e) {}
+}
+</script>

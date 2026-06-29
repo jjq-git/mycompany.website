@@ -212,6 +212,53 @@ def _save_uploaded_image(site_id, file_storage, prefix='image', convert_webp=Non
     return f'/assets/uploads/{filename}'
 
 
+def _filename_alt(file_storage):
+    if not file_storage or not getattr(file_storage, 'filename', ''):
+        return ''
+    stem = Path(secure_filename(file_storage.filename)).stem
+    return re.sub(r'[-_]+', ' ', stem).strip()
+
+
+def _context_alt(*contexts, fallback=''):
+    for ctx in contexts:
+        if not isinstance(ctx, dict):
+            continue
+        for key in ('title', 'name', 'label', 'short_name', 'heading'):
+            val = ctx.get(key)
+            if isinstance(val, str) and val.strip():
+                return val.strip()
+    return str(fallback or '').strip()
+
+
+def _image_alt_key(field_name):
+    field = str(field_name or '').strip()
+    if not field:
+        return 'alt'
+    if field in ('cover', 'photo', 'logo'):
+        return f'{field}_alt'
+    if field in ('image', 'media', 'url', 'src'):
+        return 'alt'
+    if field.endswith('_url'):
+        return f'{field[:-4]}_alt'
+    return f'{field}_alt'
+
+
+def _form_alt_value(form, field_name, *contexts, upload=None, existing=None):
+    keys = []
+    field = str(field_name or '').strip()
+    if field:
+        keys.extend([f'{field}_alt', _image_alt_key(field)])
+    keys.append('alt')
+    for key in dict.fromkeys(keys):
+        if key in form:
+            val = form.get(key, '').strip()
+            if val:
+                return val
+    if existing:
+        return str(existing).strip()
+    return _context_alt(*contexts, fallback=_filename_alt(upload))
+
+
 def _save_uploaded_media(site_id, file_storage, prefix='media'):
     """保存图片或视频；图片转 WebP，视频原样保存到 assets/uploads。"""
     if not file_storage or not file_storage.filename:
@@ -2395,11 +2442,151 @@ def footer_variant_edit():
                            active='footer_variant')
 
 
+@bp.route('/settings/header_footer', methods=['GET', 'POST'])
+def header_footer_edit():
+    """Combined header/footer editor for the center workspace."""
+    user, site = _current_context()
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    lang, languages, default_lang = _get_panel_lang(site)
+    tab = request.args.get('tab') or request.form.get('_header_footer_tab') or 'header'
+    if tab not in ('header', 'footer'):
+        tab = 'header'
+
+    tpl_meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    tpl_meta = _yaml.safe_load(tpl_meta_path.read_text(encoding='utf-8')) if tpl_meta_path.exists() else {}
+
+    header_variants = tpl_meta.get('header_variants', [
+        {'key': 'logo_left_menu_right', 'label': 'Logo 左 + 菜单右', 'description': '经典布局，适合大多数企业网站'},
+        {'key': 'logo_center_menu_below', 'label': 'Logo 居中 + 菜单下方', 'description': '对称布局，适合品牌展示'},
+        {'key': 'minimal_hamburger', 'label': '极简（汉堡菜单）', 'description': 'Logo 左 + 汉堡菜单，移动端友好'},
+    ])
+    template_languages = tpl_meta.get('languages', [
+        {'code': 'zh-CN', 'name': '简体中文', 'flag': '🇨🇳'},
+        {'code': 'zh-TW', 'name': '繁體中文', 'flag': '🇹🇼'},
+        {'code': 'en', 'name': 'English', 'flag': '🇺🇸'},
+    ])
+    all_template_codes = [l['code'] for l in template_languages]
+
+    footer_variants = tpl_meta.get('footer_variants', [
+        {'key': 'columns', 'label': '栏目模式', 'description': '多列链接和文本栏目'},
+        {'key': 'minimal', 'label': '极简模式', 'description': '仅显示版权和备案信息'},
+        {'key': 'columns_social', 'label': '栏目 + 社交', 'description': '左侧公司 Logo 和社交图标，右侧栏目'},
+    ])
+    footer_key = _lang_key('footer', site, lang, default_lang)
+
+    if request.method == 'POST':
+        section = request.form.get('_section') or tab
+        if section == 'header':
+            header = settings.setdefault('header', {})
+            header['variant'] = request.form.get('header_variant', header_variants[0]['key'])
+            header['language_switcher'] = {
+                'enabled': bool(request.form.get('lang_switcher_enabled')),
+                'style': request.form.get('lang_switcher_style', 'vertical_dropdown'),
+            }
+            selected_langs = request.form.getlist('enabled_lang')
+            if selected_langs:
+                header['enabled_languages'] = [c for c in selected_langs if c in all_template_codes]
+            else:
+                default_header_lang = tpl_meta.get('default_language', all_template_codes[0] if all_template_codes else 'zh-CN')
+                header['enabled_languages'] = [default_header_lang]
+            site.enabled_languages = header['enabled_languages']
+            from .db import db
+            db.session.commit()
+            tab = 'header'
+        else:
+            footer = settings.setdefault(footer_key, {})
+            footer['variant'] = request.form.get('footer_variant', 'columns')
+            footer['copyright'] = request.form.get('copyright', '').strip()
+            footer['icp'] = request.form.get('icp', '').strip()
+
+            if any(k == 'social_enabled' or k.startswith('social_') for k in request.form):
+                social = settings.setdefault('social', {})
+                social['enabled'] = bool(request.form.get('social_enabled'))
+                for platform in ('github', 'twitter', 'facebook', 'linkedin', 'youtube'):
+                    social[platform] = request.form.get(f'social_{platform}', '').strip()
+
+            try:
+                col_count = int(request.form.get('footer_column_count', '0'))
+            except (ValueError, TypeError):
+                col_count = 0
+            columns = []
+            for ci in range(col_count):
+                col = {
+                    'type': request.form.get(f'footer_col_{ci}_type', 'menu').strip(),
+                    'title': request.form.get(f'footer_col_{ci}_title', '').strip(),
+                }
+                try:
+                    link_count = int(request.form.get(f'footer_col_{ci}_link_count', '0'))
+                except (ValueError, TypeError):
+                    link_count = 0
+                links = []
+                for li in range(link_count):
+                    label = request.form.get(f'footer_col_{ci}_link_{li}_label', '').strip()
+                    url = request.form.get(f'footer_col_{ci}_link_{li}_url', '').strip()
+                    if label or url:
+                        links.append({'label': label, 'url': url})
+                col['links'] = links
+                columns.append(col)
+            if columns:
+                footer['columns'] = columns
+            else:
+                footer.pop('columns', None)
+            tab = 'footer'
+
+        write_yaml(site.id, 'settings.yaml', settings)
+        flash('已保存')
+        return redirect(url_for('core.header_footer_edit', embed='1', site=site.id, lang=lang, tab=tab, saved='1'))
+
+    current_header = settings.get('header') or {}
+    header_variant_keys = [v['key'] for v in header_variants]
+    if current_header.get('variant') not in header_variant_keys:
+        current_header = dict(current_header)
+        current_header['variant'] = header_variant_keys[0] if header_variant_keys else 'logo_left_menu_right'
+    enabled_languages = [c for c in (site.enabled_languages or all_template_codes) if c in all_template_codes]
+    lang_switcher_styles = [
+        {'key': 'inline_row', 'label': '水平行内（中文 | EN | JP）'},
+        {'key': 'vertical_dropdown', 'label': '垂直下拉'},
+        {'key': 'flag_icon', 'label': '旗帜 + 简称'},
+    ]
+
+    current_footer = settings.get(footer_key) or settings.get('footer') or {}
+    source_footer = settings.get('footer') or {}
+    footer_variant_keys = [v['key'] for v in footer_variants]
+    if current_footer.get('variant') not in footer_variant_keys:
+        current_footer = dict(current_footer)
+        current_footer['variant'] = footer_variant_keys[0] if footer_variant_keys else 'columns'
+
+    header_form_action = url_for('core.header_footer_edit', embed='1', site=site.id, lang=lang, tab='header')
+    footer_form_action = url_for('core.header_footer_edit', embed='1', site=site.id, lang=lang, tab='footer')
+
+    return render_template('dashboard/settings_workspace.html',
+                           title='页头页脚',
+                           panel_template='dashboard/panel_header_footer.html',
+                           user=user, site=site, active='header_footer',
+                           header_variants=header_variants,
+                           template_languages=list(template_languages),
+                           enabled_languages=enabled_languages,
+                           lang_switcher_styles=lang_switcher_styles,
+                           current_header=current_header,
+                           footer_variants=footer_variants,
+                           current_footer=current_footer,
+                           source_footer=source_footer,
+                           settings=settings,
+                           current_lang=lang,
+                           languages=languages,
+                           default_lang=default_lang,
+                           header_footer_tab=tab,
+                           header_form_action=header_form_action,
+                           footer_form_action=footer_form_action,
+                           settings_workspace=True)
+
+
 @bp.route('/settings/menu', methods=['GET', 'POST'])
 def menu_edit():
     user, site = _current_context()
     settings = read_yaml(site.id, 'settings.yaml') or {}
     is_fragment = request.args.get('_fragment') is not None
+    is_embed = request.args.get('embed') == '1'
 
     lang, languages, default_lang = _get_panel_lang(site)
 
@@ -2442,7 +2629,6 @@ def menu_edit():
             types = request.form.getlist('type[]')
             targets_list = request.form.getlist('target_list[]')
             urls_link = request.form.getlist('url_link[]')
-            dropdown_styles = request.form.getlist('dropdown_style[]')
             children_values = request.form.getlist('children_json[]')
             for i, label in enumerate(labels):
                 label = label.strip()
@@ -2458,9 +2644,6 @@ def menu_edit():
                     url = urls_link[i].strip() if i < len(urls_link) else ''
                     if url:
                         raw['url'] = url
-                dropdown_style = dropdown_styles[i].strip() if i < len(dropdown_styles) else ''
-                if dropdown_style:
-                    raw['dropdown_style'] = dropdown_style
                 children_raw = children_values[i].strip() if i < len(children_values) else ''
                 if children_raw:
                     try:
@@ -2485,6 +2668,8 @@ def menu_edit():
             settings['menu_labels'] = menu_labels
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存，首页已保持为固定入口')
+        if is_embed:
+            return redirect(url_for('core.menu_edit', embed='1', site=site.id, lang=lang, saved='1'))
         if is_fragment:
             return redirect(url_for('core.menu_edit', _fragment='1', site=site.id, lang=lang))
         return redirect(url_for('core.menu_edit', site=site.id, lang=lang))
@@ -2512,6 +2697,15 @@ def menu_edit():
                                user=user, site=site, items=items,
                                source_menu=source_menu,
                                current_lang=lang, languages=languages, default_lang=default_lang)
+    if is_embed:
+        return render_template('dashboard/settings_workspace.html',
+                               title='菜单配置',
+                               panel_template='dashboard/panel_menu.html',
+                               user=user, site=site, items=items, active='menu',
+                               source_menu=source_menu,
+                               current_lang=lang, languages=languages, default_lang=default_lang,
+                               menu_form_action=url_for('core.menu_edit', embed='1', site=site.id, lang=lang),
+                               settings_workspace=True)
     return render_template('dashboard/menu.html',
                            user=user, site=site, items=items, active='menu',
                            source_menu=source_menu,
@@ -3316,25 +3510,40 @@ def dataset_edit(dataset_key, item_id):
             gallery_images = []
             for gi in range(gallery_count):
                 url = request.form.get(f'detail_gallery_{gi}_url', '').strip()
+                alt = request.form.get(f'detail_gallery_{gi}_url_alt', '').strip()
                 upload = request.files.get(f'detail_gallery_{gi}_url_file')
                 if upload and upload.filename:
                     try:
                         url = _save_uploaded_image(site.id, upload, prefix=f'{dataset_key}-detail-gallery-{gi + 1}')
+                        alt = alt or _context_alt(fields, item, fallback=_filename_alt(upload))
                     except Exception as exc:
                         current_app.logger.warning('细节图库图片上传失败: %s', exc)
                 if url:
-                    gallery_images.append({'url': url})
+                    alt = alt or _context_alt(fields, item)
+                    image = {'url': url}
+                    if alt:
+                        image['alt'] = alt
+                    gallery_images.append(image)
             fields['detail_gallery'] = {
                 'visible': str(request.form.get('detail_gallery_visible', 'true')).lower() != 'false',
                 'images': gallery_images,
             }
         for field_name in ('cover', 'image', 'photo', 'logo'):
             upload = request.files.get(field_name) or request.files.get(f'{field_name}_file')
+            alt_key = _image_alt_key(field_name)
+            if f'{field_name}_alt' in request.form or alt_key in request.form:
+                fields[alt_key] = _form_alt_value(request.form, field_name, fields, item, existing=fields.get(alt_key))
             if upload and upload.filename:
                 try:
                     fields[field_name] = _save_uploaded_image(site.id, upload, prefix=f'{dataset_key}-{field_name}')
+                    fields[alt_key] = _form_alt_value(
+                        request.form, field_name, fields, item,
+                        upload=upload, existing=fields.get(alt_key)
+                    )
                 except Exception as exc:
                     current_app.logger.warning('数据集图片上传失败 %s: %s', field_name, exc)
+            elif fields.get(field_name) and not str(fields.get(alt_key) or '').strip():
+                fields[alt_key] = _context_alt(fields, item)
         # 保存模块配置到数据项 (item) 中
         # module_count 缺失表示表单不包含模块数据（例如用户未展开面板就保存），
         # 此时保留已有 modules 而非清空
@@ -3828,15 +4037,27 @@ def _parse_modules_form(form, existing_modules=None):
                                             _current_context()[1].id, upload,
                                             prefix=f'{m_type}-{sub_name}-{j + 1}'
                                         )
+                                        alt_val = form.get(f'{item_prefix}{sub_name}_alt', '').strip()
+                                        if not alt_val:
+                                            alt_val = _context_alt(data, fallback=_filename_alt(upload))
+                                        if alt_val:
+                                            entry[_image_alt_key(sub_name)] = alt_val
                                 except Exception as exc:
                                     current_app.logger.warning('上传失败: %s', exc)
                                     val = _parse_value(form.get(f'{item_prefix}{sub_name}', ''))
                             else:
                                 val = _parse_value(form.get(f'{item_prefix}{sub_name}', ''))
+                                alt_val = form.get(f'{item_prefix}{sub_name}_alt', '').strip()
+                                if alt_val:
+                                    entry[_image_alt_key(sub_name)] = alt_val
                         else:
                             val = _parse_value(form.get(f'{item_prefix}{sub_name}', ''))
                         if val not in (None, ''):
                             entry[sub_name] = val
+                            if sub_type == 'image' and not any(entry.get(k) for k in ('alt', _image_alt_key(sub_name))):
+                                auto_alt = _context_alt(data)
+                                if auto_alt:
+                                    entry[_image_alt_key(sub_name)] = auto_alt
                         if href_field:
                             hval = _parse_value(form.get(f'{item_prefix}{href_field}', ''))
                             if hval not in (None, ''):
@@ -3855,6 +4076,11 @@ def _parse_modules_form(form, existing_modules=None):
                 if lf.get('type', '') not in ('image', 'video', 'embed'):
                     continue
                 field_name = lf.get('name', '')
+                alt_key = _image_alt_key(field_name)
+                if f'{idx}_data_{field_name}_alt' in form:
+                    alt_val = form.get(f'{idx}_data_{field_name}_alt', '').strip()
+                    if alt_val:
+                        data[alt_key] = alt_val
                 upload = request.files.get(f'{idx}_data_{field_name}_file')
                 if upload and upload.filename:
                     try:
@@ -3868,6 +4094,10 @@ def _parse_modules_form(form, existing_modules=None):
                             data[field_name] = _save_uploaded_media(
                                 _current_context()[1].id, upload,
                                 prefix=f'{m_type}-{field_name}'
+                            )
+                            data[alt_key] = _form_alt_value(
+                                form, f'{idx}_data_{field_name}',
+                                data, upload=upload, existing=data.get(alt_key)
                             )
                     except Exception as exc:
                         current_app.logger.warning('上传失败 %s: %s', field_name, exc)
@@ -3921,6 +4151,8 @@ def _parse_modules_form(form, existing_modules=None):
                     suffix = upload.filename.rsplit('.', 1)[-1].lower() if '.' in upload.filename else ''
                     slide['type'] = 'video' if suffix in ALLOWED_VIDEO_EXTENSIONS else 'image'
                     slide['media'] = media_url
+                    if slide['type'] == 'image':
+                        slide['alt'] = _context_alt(slide, data, fallback=_filename_alt(upload))
 
                 if slide.get('media') or slide.get('title') or slide.get('subtitle'):
                     slides.append(slide)
@@ -3956,6 +4188,8 @@ def _parse_modules_form(form, existing_modules=None):
                         'cta_url': data.get('cta_url', ''),
                         'badge': data.get('badge', ''),
                     })
+                    if uploaded_slides[-1]['type'] == 'image':
+                        uploaded_slides[-1]['alt'] = _context_alt(data, fallback=_filename_alt(upload))
             if uploaded_slides:
                 existing = data.get('slides') if isinstance(data.get('slides'), list) else []
                 data['slides'] = existing + uploaded_slides
@@ -3972,6 +4206,7 @@ def _parse_modules_form(form, existing_modules=None):
                 images = []
                 for ii in range(images_count):
                     url = form.get(f'{idx}_data_images_{ii}_url', '').strip()
+                    alt = form.get(f'{idx}_data_images_{ii}_url_alt', '').strip()
                     upload = request.files.get(f'{idx}_data_images_{ii}_url_file')
                     if upload and upload.filename:
                         try:
@@ -3979,10 +4214,15 @@ def _parse_modules_form(form, existing_modules=None):
                                 _current_context()[1].id, upload,
                                 prefix=f'{m_type}-img-{ii + 1}'
                             )
+                            alt = alt or _context_alt(data, fallback=_filename_alt(upload))
                         except Exception as exc:
                             current_app.logger.warning('模块图片上传失败: %s', exc)
-                    if url:
-                        images.append({'url': url})
+                if url:
+                    alt = alt or _context_alt(data)
+                    image = {'url': url}
+                    if alt:
+                        image['alt'] = alt
+                        images.append(image)
                 if images:
                     data['images'] = images
                 else:
@@ -4161,6 +4401,10 @@ def _parse_modules_form(form, existing_modules=None):
             if field.endswith('_file') or field.endswith('_convert_webp'):
                 continue
             if _field_looks_like_image(field):
+                alt_key = _image_alt_key(field)
+                alt_form_key = f'{idx}_data_{field}_alt'
+                if alt_form_key in form and form.get(alt_form_key, '').strip():
+                    data[alt_key] = form.get(alt_form_key, '').strip()
                 upload = request.files.get(f'{idx}_data_{field}_file')
                 if upload and upload.filename:
                     try:
@@ -4169,8 +4413,16 @@ def _parse_modules_form(form, existing_modules=None):
                             upload,
                             prefix=f'{m_type}-{field}',
                         )
+                        data[alt_key] = _form_alt_value(
+                            form, f'{idx}_data_{field}',
+                            data, upload=upload, existing=data.get(alt_key)
+                        )
                     except Exception as exc:
                         current_app.logger.warning('模块图片保存失败 %s: %s', field, exc)
+                if data.get(field) and not str(data.get(alt_key) or '').strip():
+                    auto_alt = _context_alt(data)
+                    if auto_alt:
+                        data[alt_key] = auto_alt
 
         # 兼容旧表单：仅模块自身真正支持时才接收这些顶层字段
         columns_val = form.get(f'{idx}_resp_columns', '').strip()

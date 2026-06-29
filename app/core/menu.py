@@ -27,7 +27,6 @@ DATASET_DETAIL_MAP = {
 }
 
 VALID_TYPES = {'home', 'list', 'page', 'link', 'group'}
-VALID_DROPDOWN_STYLES = {'vertical', 'horizontal', 'grid', 'cards'}
 
 # 菜单嵌套深度上限. 超出部分的 children 会被裁掉.
 # 防御恶意 settings.yaml 通过深嵌套触发 Python 递归栈溢出 / 渲染期 OOM.
@@ -200,10 +199,6 @@ def clean_for_storage(items):
                 url = str(raw.get('url') or '').strip()
                 if url:
                     item['url'] = url
-
-            dropdown_style = str(raw.get('dropdown_style') or '').strip()
-            if dropdown_style in VALID_DROPDOWN_STYLES:
-                item['dropdown_style'] = dropdown_style
 
             children = _clean(raw.get('children') or [], allow_home=False)
             if children:
@@ -502,7 +497,7 @@ def merge_structure(existing_menu, submitted):
             old = existing_by_id.get(key)
             new_item = dict(sub)
             if old:
-                # 保留已有标签，其余字段（target/type/children/dropdown_style）更新
+                # 保留已有标签，其余字段（target/type/children）更新
                 new_item['label'] = old.get('label', sub.get('label', ''))
             # else: 新项，直接用 submitted 的 label
             if sub.get('children'):

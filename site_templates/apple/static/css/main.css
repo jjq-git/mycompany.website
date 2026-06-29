@@ -1212,6 +1212,9 @@ input, textarea, select {
 }
 
 .lang-switcher--inline a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 4px 8px;
   font-size: var(--text-body-sm);
   font-weight: 500;
@@ -1229,6 +1232,15 @@ input, textarea, select {
 
 .lang-switcher--inline a.active {
   color: var(--color-primary);
+}
+
+.lang-switcher--inline .lang-flag-img {
+  width: 18px;
+  height: 12px;
+  display: block;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
 /* ============================================================

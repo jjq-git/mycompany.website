@@ -338,9 +338,10 @@ a:hover { color: var(--color-primary-active); }
 .lang-switcher__option:hover { background-color: rgba(0,0,0,0.04); color: var(--color-ink); }
 .lang-switcher__option.active { color: var(--color-primary); font-weight: 600; }
 .lang-switcher--inline { display: flex; gap: var(--space-xs); }
-.lang-switcher--inline a { padding: 4px 10px; font-size: var(--text-body-sm); color: var(--color-ink-secondary); border-radius: var(--radius-sm); text-decoration: none; }
+.lang-switcher--inline a { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: var(--text-body-sm); color: var(--color-ink-secondary); border-radius: var(--radius-sm); text-decoration: none; }
 .lang-switcher--inline a:hover { background-color: rgba(0,0,0,0.04); }
 .lang-switcher--inline a.active { color: var(--color-primary); font-weight: 600; }
+.lang-switcher--inline .lang-flag-img { width: 18px; height: 12px; display: block; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,0.08); }
 
 /* ============================================================
    9. HERO BANNER — 全屏深靛蓝 Night Band

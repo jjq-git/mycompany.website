@@ -101,7 +101,12 @@
         <a href="{{ base_url }}/{{ lang_opt.code }}{{ current_path }}"
            class="{% if lang == lang_opt.code %}active{% endif %}"
            title="{{ lang_opt.name }}">
-          {{ lang_opt.flag }} {{ lang_opt.code.split('-')[0] | upper }}
+          {%- if lang_opt.flag_image -%}
+          <img class="lang-flag-img" src="{{ lang_opt.flag_image }}" alt="" aria-hidden="true">
+          {%- elif lang_opt.flag -%}
+          <span class="lang-flag-text">{{ lang_opt.flag }}</span>
+          {%- endif -%}
+          <span>{{ lang_opt.code.split('-')[0] | upper }}</span>
         </a>
       {%- endfor -%}
     </div>

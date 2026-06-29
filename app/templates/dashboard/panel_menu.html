@@ -18,7 +18,8 @@
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('core.menu_edit', _fragment='1', site=site.id, lang=current_lang) }}" id="menuTreeForm">
+{% set menu_form_action = menu_form_action | default(url_for('core.menu_edit', _fragment='1', site=site.id, lang=current_lang)) %}
+<form method="post" action="{{ menu_form_action }}" id="menuTreeForm">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="menu_json" id="menuJson">
   <div id="menuTree" class="menu-tree"></div>
@@ -35,7 +36,6 @@
   const initialMenu = {{ items | tojson }};
   const typeLabels = {home: '首页', list: '列表', page: '单页', link: '链接', group: '容器'};
   const typeIcons = {home: '⌂', list: '☰', page: '▣', link: '↗', group: '▤'};
-  const styleLabels = {vertical: '垂直列表', horizontal: '水平平铺', grid: '网格排列', cards: '图文卡片'};
   const tree = document.getElementById('menuTree');
   const form = document.getElementById('menuTreeForm');
   const jsonInput = document.getElementById('menuJson');
@@ -85,17 +85,12 @@
           // 可折叠区域：目标/URL + 下拉样式 + 添加子菜单 + 子菜单容器
           '<div class="menu-tree-collapsible">' +
             '<div class="menu-tree-card-row mt-1">' +
-              '<input class="menu-target" placeholder="页面路径，如 products / about" value="' + escapeAttr(item.target) + '">' +
-              '<input class="menu-url" placeholder="链接地址，如 https:// 或 /page" value="' + escapeAttr(item.url) + '">' +
-              '<label class="form-check-label small d-flex align-items-center gap-1 ms-auto">' +
+              '<input class="menu-target" placeholder="页面路径" value="' + escapeAttr(item.target) + '">' +
+              '<input class="menu-url" placeholder="链接地址" value="' + escapeAttr(item.url) + '">' +
+              '<label class="form-check-label small d-flex align-items-center gap-1">' +
                 '<input type="checkbox" class="form-check-input menu-visible" ' + (item.hidden === true ? '' : ' checked') + (isHome ? ' disabled' : '') + '> 显示在导航菜单' +
               '</label>' +
-            '</div>' +
-            '<div class="menu-tree-card-row mt-1">' +
-              '<select class="menu-dropdown-style">' +
-                Object.keys(styleLabels).map(function(s){ return '<option value="' + s + '"' + ((item.dropdown_style || 'vertical') === s ? ' selected' : '') + '>' + styleLabels[s] + '</option>'; }).join('') +
-              '</select>' +
-              '<button type="button" class="menu-tree-btn menu-tree-btn-add add-child">+ 子菜单</button>' +
+              '<button type="button" class="menu-tree-btn menu-tree-btn-add add-child ms-auto">+ 子菜单</button>' +
             '</div>' +
             '<div class="menu-tree-children mt-2"></div>' +
           '</div>' +
@@ -110,11 +105,9 @@
     const type = row.querySelector('.menu-type').value;
     const target = row.querySelector('.menu-target');
     const url = row.querySelector('.menu-url');
-    const style = row.querySelector('.menu-dropdown-style');
     const item = row._item;
     target.style.display = (type === 'home' || type === 'link') ? 'none' : '';
     url.style.display = type === 'link' ? '' : 'none';
-    style.style.display = item.children && item.children.length ? '' : 'none';
   }
 
   function rowsIn(container) {
@@ -133,7 +126,6 @@
       if (visible && !visible.checked && type !== 'home') item.hidden = true;
       if (type === 'list' || type === 'page' || type === 'group') item.target = row.querySelector('.menu-target').value.trim();
       if (type === 'link') item.url = row.querySelector('.menu-url').value.trim();
-      if (item.children.length) item.dropdown_style = row.querySelector('.menu-dropdown-style').value;
       return item;
     });
   }

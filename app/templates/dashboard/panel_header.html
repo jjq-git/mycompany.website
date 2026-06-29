@@ -1,7 +1,9 @@
 {# 网站头部变体选择面板 #}
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <span class="fw-semibold">网站头部</span>
+  <span class="fw-semibold">页头设置</span>
+  {% if not header_footer_embed|default(false) %}
   <span class="small text-muted">模板: {{ site.template_name }}</span>
+  {% endif %}
 </div>
 {% with messages = get_flashed_messages() %}
   {% for m in messages %}
@@ -9,8 +11,58 @@
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('core.header_edit', _fragment='1', site=site.id, lang=current_lang) }}">
+{% set header_form_action = header_form_action | default(url_for('core.header_edit', _fragment='1', site=site.id, lang=current_lang)) %}
+<style>
+.lang-style-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.lang-style-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  padding: 2px 0;
+  color: #475569;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  transition: color .15s;
+  user-select: none;
+}
+.lang-style-option::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: inset 0 0 0 3px #fff;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+  flex: 0 0 auto;
+}
+.lang-style-option:hover,
+.lang-style-option.selected {
+  color: var(--admin-primary);
+}
+.lang-style-option.selected::before {
+  border-color: var(--admin-primary);
+  background: var(--admin-primary);
+  box-shadow: inset 0 0 0 3px #fff, 0 0 0 2px rgba(var(--admin-primary-rgb), .12);
+}
+.lang-style-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+</style>
+<form method="post" action="{{ header_form_action }}" id="headerForm">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="_section" value="header">
+  <input type="hidden" name="_header_footer_tab" value="header">
   {# Header 变体选择 - 卡片式 #}
   {% set selected_variant = current_header.get('variant', header_variants[0].key) %}
   <div class="panel-section">
@@ -63,12 +115,16 @@
       </div>
 
       <div class="small fw-semibold mb-2">按钮样式</div>
-      <select class="form-select form-select-sm" name="lang_switcher_style">
-        {% set current_style = current_header.get('language_switcher', {}).get('style', 'vertical_dropdown') %}
+      {% set current_style = current_header.get('language_switcher', {}).get('style', 'vertical_dropdown') %}
+      <div class="lang-style-options" role="radiogroup" aria-label="语言切换按钮样式">
         {% for s in lang_switcher_styles %}
-        <option value="{{ s.key }}" {% if current_style == s.key %}selected{% endif %}>{{ s.label }}</option>
+        <label class="lang-style-option {% if current_style == s.key %}selected{% endif %}">
+          <input type="radio" name="lang_switcher_style" value="{{ s.key }}"
+                 {% if current_style == s.key %}checked{% endif %}>
+          <span>{{ s.label }}</span>
+        </label>
         {% endfor %}
-      </select>
+      </div>
     </div>
   </div>
 
@@ -79,9 +135,9 @@
 
 <script>
 // 头部布局卡片点击切换
-document.querySelectorAll('.variant-card').forEach(function(card) {
+document.querySelectorAll('#headerForm .variant-card').forEach(function(card) {
   card.addEventListener('click', function() {
-    document.querySelectorAll('.variant-card').forEach(function(c) { c.classList.remove('selected'); });
+    document.querySelectorAll('#headerForm .variant-card').forEach(function(c) { c.classList.remove('selected'); });
     this.classList.add('selected');
     this.querySelector('.variant-card-radio').checked = true;
   });
@@ -90,6 +146,17 @@ document.querySelectorAll('.variant-card').forEach(function(card) {
 // 切换按钮控制下方语言版本 + 样式面板的显示
 document.getElementById('langSwitcherToggle').addEventListener('change', function(){
   document.getElementById('langSwitcherPanel').style.display = this.checked ? '' : 'none';
+});
+
+document.querySelectorAll('#headerForm .lang-style-option').forEach(function(option) {
+  option.addEventListener('click', function() {
+    document.querySelectorAll('#headerForm .lang-style-option').forEach(function(item) {
+      item.classList.remove('selected');
+    });
+    this.classList.add('selected');
+    var input = this.querySelector('input[type="radio"]');
+    if (input) input.checked = true;
+  });
 });
 
 </script>

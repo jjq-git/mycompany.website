@@ -107,7 +107,9 @@
               <div class="small text-muted seo-row-msg"></div>
               <div class="d-flex gap-2">
                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="seoGenerateDescription(this)">{% if report.ai_configured %}AI 鐢熸垚{% else %}自动生成{% endif %}</button>
-                <button type="button" class="btn btn-sm btn-primary" onclick="seoSavePage(this)">淇濆瓨</button>
+                <button type="button" class="btn btn-sm btn-primary" onclick="seoSavePage(this)" title="保存" aria-label="保存">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                </button>
               </div>
             </div>
           </form>

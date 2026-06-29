@@ -61,7 +61,6 @@
 
 {% macro render_menu_item(item, level=0) -%}
   {%- set children = item['children'] | default([]) -%}
-  {%- set dropdown_style = item['dropdown_style'] | default('vertical') -%}
   {%- set href = menu_href(item) -%}
   {%- if children -%}
     <div class="nav-dropdown{% if level > 0 %} nav-dropdown-nested{% endif %}">
@@ -79,7 +78,7 @@
           <span class="dropdown-chevron">▼</span>
         </button>
       </div>
-      <div class="nav-dropdown-menu nav-dropdown-menu--{{ dropdown_style }}">
+      <div class="nav-dropdown-menu">
         {%- for child in children -%}
           {{ render_menu_item(child, level + 1) }}
         {%- endfor -%}
@@ -117,7 +116,12 @@
         <a href="{{ base_url }}/{{ lang_opt.code }}{{ lang_switch_path | default(current_path) }}"
            class="lang-switcher-link{% if lang == lang_opt.code %} active{% endif %}"
            title="{{ lang_opt.name }}">
-          {{ lang_opt.flag }} {{ lang_opt.code.split('-')[0] | upper }}
+          {%- if lang_opt.flag_image -%}
+          <img class="lang-flag-img" src="{{ lang_opt.flag_image }}" alt="" aria-hidden="true">
+          {%- elif lang_opt.flag -%}
+          <span class="lang-flag-text">{{ lang_opt.flag }}</span>
+          {%- endif -%}
+          <span>{{ lang_opt.code.split('-')[0] | upper }}</span>
         </a>
       {%- endfor -%}
     </div>

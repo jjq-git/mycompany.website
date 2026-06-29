@@ -1,7 +1,9 @@
 {# 网站底部变体选择面板 #}
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <span class="fw-semibold">网站底部</span>
+  <span class="fw-semibold">页脚设置</span>
+  {% if not header_footer_embed|default(false) %}
   <span class="small text-muted">模板: {{ site.template_name }}</span>
+  {% endif %}
 </div>
 {% with messages = get_flashed_messages() %}
   {% for m in messages %}
@@ -18,8 +20,11 @@
 </div>
 {% endif %}
 
-<form method="post" action="{{ url_for('core.footer_variant_edit', _fragment='1', site=site.id, lang=current_lang) }}" id="footerForm">
+{% set footer_form_action = footer_form_action | default(url_for('core.footer_variant_edit', _fragment='1', site=site.id, lang=current_lang)) %}
+<form method="post" action="{{ footer_form_action }}" id="footerForm">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="_section" value="footer">
+  <input type="hidden" name="_header_footer_tab" value="footer">
   {# Footer 变体选择 - 卡片式，与头部布局风格一致 #}
   {% set current_variant = current_footer.get('variant', 'columns') %}
   <div class="panel-section">
@@ -84,7 +89,7 @@
       {% if footer_columns %}
       {% for col in footer_columns %}
       <div class="border rounded p-2 mb-2 footer-column-item collapsed">
-        <div class="d-flex align-items-center mb-2 footer-column-header" style="cursor:pointer; user-select:none;" onclick="this.closest('.footer-column-item').classList.toggle('collapsed')">
+        <div class="d-flex align-items-center footer-column-header" style="cursor:pointer; user-select:none;" onclick="this.closest('.footer-column-item').classList.toggle('collapsed')">
           <span class="small fw-semibold d-flex align-items-center"><svg class="footer-column-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>栏目 {{ loop.index }}</span>
           <span class="d-inline-flex align-items-center gap-1 ms-auto me-1">
             <button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveFooterColumn(this,-1)">↑</button>
@@ -92,7 +97,7 @@
           </span>
           <button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation(); this.closest('.footer-column-item').remove();reindexFooterColumns()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
-        <div class="footer-column-body">
+        <div class="footer-column-body" style="margin-top:8px;">
           <div class="row g-2 mb-2">
             <div class="col-6">
               <label class="form-label small mb-1 text-muted">类型</label>
@@ -111,15 +116,15 @@
             {% set col_idx = loop.index0 %}
             <input type="hidden" name="footer_col_{{ col_idx }}_link_count" value="{{ links | length }}">
             {% for link in links %}
-            <div class="row g-1 mb-1 footer-link-item">
-              <div class="col-5">
+            <div class="d-flex gap-1 mb-1 footer-link-item">
+              <div class="flex-fill">
                 <input type="text" class="form-control form-control-sm" name="footer_col_{{ col_idx }}_link_{{ loop.index0 }}_label" value="{{ link.label | default('') }}" placeholder="名称">
               </div>
-              <div class="col-5">
+              <div class="flex-fill">
                 <input type="text" class="form-control form-control-sm" name="footer_col_{{ col_idx }}_link_{{ loop.index0 }}_url" value="{{ link.url | default('') }}" placeholder="链接">
               </div>
-              <div class="col-2">
-                <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="this.closest('.footer-link-item').remove()">✕</button>
+              <div class="flex-shrink-0">
+                <button type="button" class="btn btn-sm btn-outline-danger px-2" title="删除链接" onclick="this.closest('.footer-link-item').remove()">✕</button>
               </div>
             </div>
             {% endfor %}
@@ -167,9 +172,9 @@
 
 <script>
 // 底部布局卡片点击切换——与头部布局卡片风格一致
-document.querySelectorAll('.variant-card').forEach(function(card) {
+document.querySelectorAll('#footerForm .variant-card').forEach(function(card) {
   card.addEventListener('click', function() {
-    document.querySelectorAll('.variant-card').forEach(function(c) { c.classList.remove('selected'); });
+    document.querySelectorAll('#footerForm .variant-card').forEach(function(c) { c.classList.remove('selected'); });
     this.classList.add('selected');
     this.querySelector('.variant-card-radio').checked = true;
     var mode = this.querySelector('.variant-card-radio').value;
@@ -194,14 +199,14 @@ function addFooterColumn() {
   document.getElementById('footerColumnCount').value = idx + 1;
   // 新栏目默认收缩（collapsed），点击标题栏展开
   var html = '<div class="border rounded p-2 mb-2 footer-column-item collapsed">' +
-    '<div class="d-flex align-items-center mb-2 footer-column-header" style="cursor:pointer; user-select:none;" onclick="this.closest(\'.footer-column-item\').classList.toggle(\'collapsed\')">' +
+    '<div class="d-flex align-items-center footer-column-header" style="cursor:pointer; user-select:none;" onclick="this.closest(\'.footer-column-item\').classList.toggle(\'collapsed\')">' +
     '<span class="small fw-semibold d-flex align-items-center"><svg class="footer-column-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>栏目 ' + (idx + 1) + '</span>' +
     '<span class="d-inline-flex align-items-center gap-1 ms-auto me-1">' +
     '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveFooterColumn(this,-1)">↑</button>' +
     '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveFooterColumn(this,1)">↓</button>' +
     '</span>' +
     '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation(); this.closest(\'.footer-column-item\').remove();reindexFooterColumns()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
-    '<div class="footer-column-body">' +
+    '<div class="footer-column-body" style="margin-top:8px;">' +
     '<div class="row g-2 mb-2"><div class="col-6"><label class="form-label small mb-1 text-muted">类型</label>' +
     '<select class="form-select form-select-sm footer-col-type" name="footer_col_' + idx + '_type"><option value="menu">菜单列</option><option value="text">文本列</option></select></div>' +
     '<div class="col-6"><label class="form-label small mb-1 text-muted">标题</label>' +
@@ -219,10 +224,10 @@ function addFooterLink(btn) {
   var countInp = linksDiv.querySelector('input[name$="_link_count"]');
   var idx = parseInt(countInp?.value || '0');
   if (countInp) countInp.value = idx + 1;
-  var html = '<div class="row g-1 mb-1 footer-link-item">' +
-    '<div class="col-5"><input type="text" class="form-control form-control-sm" name="footer_col_' + colIdx + '_link_' + idx + '_label" placeholder="名称"></div>' +
-    '<div class="col-5"><input type="text" class="form-control form-control-sm" name="footer_col_' + colIdx + '_link_' + idx + '_url" placeholder="链接"></div>' +
-    '<div class="col-2"><button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="this.closest(\'.footer-link-item\').remove()">✕</button></div></div>';
+  var html = '<div class="d-flex gap-1 mb-1 footer-link-item">' +
+    '<div class="flex-fill"><input type="text" class="form-control form-control-sm" name="footer_col_' + colIdx + '_link_' + idx + '_label" placeholder="名称"></div>' +
+    '<div class="flex-fill"><input type="text" class="form-control form-control-sm" name="footer_col_' + colIdx + '_link_' + idx + '_url" placeholder="链接"></div>' +
+    '<div class="flex-shrink-0"><button type="button" class="btn btn-sm btn-outline-danger px-2" title="删除链接" onclick="this.closest(\'.footer-link-item\').remove()">✕</button></div></div>';
   linksDiv.insertAdjacentHTML('beforeend', html);
 }
 function moveFooterColumn(btn, dir) {

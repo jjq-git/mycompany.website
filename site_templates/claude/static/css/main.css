@@ -1107,22 +1107,6 @@ hr {
   color: var(--color-ink);
 }
 
-/* 横向布局下拉（Products 类别的缩略图网格） */
-.nav-dropdown-menu--horizontal {
-  display: flex;
-  flex-direction: row;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  min-width: auto;
-}
-
-.nav-dropdown-menu--horizontal .nav-dropdown-item {
-  padding: var(--space-md) var(--space-lg);
-  border-radius: var(--radius-md);
-  text-align: center;
-  white-space: normal;
-}
-
 /* 嵌套下拉 */
 .nav-dropdown-nested {
   position: relative;
@@ -1303,6 +1287,9 @@ hr {
 }
 
 .lang-switcher--inline a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 4px 8px;
   font-size: var(--text-body-sm);
   font-weight: 500;
@@ -1320,6 +1307,15 @@ hr {
 
 .lang-switcher--inline a.active {
   color: var(--color-primary);
+}
+
+.lang-switcher--inline .lang-flag-img {
+  width: 18px;
+  height: 12px;
+  display: block;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
 /* ============================================================

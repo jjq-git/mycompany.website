@@ -315,16 +315,16 @@
           </svg>
           媒体管理
         </a>
-        <a class="left-nav-item {% if active == 'header' %}active{% endif %}" href="{{ url_for('core.header_edit') }}"
-          data-panel="header" title="网站头部">
+        <a class="left-nav-item {% if active == 'header_footer' %}active{% endif %}" href="{{ url_for('core.header_footer_edit') }}"
+          data-panel="header_footer" title="页头页脚">
           <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="2" width="20" height="8" rx="2" />
-            <line x1="6" y1="6" x2="6.01" y2="6" />
-            <line x1="10" y1="6" x2="10.01" y2="6" />
-            <line x1="14" y1="6" x2="14.01" y2="6" />
+            <rect x="3" y="3" width="18" height="5" rx="1.5" />
+            <rect x="3" y="16" width="18" height="5" rx="1.5" />
+            <line x1="7" y1="5.5" x2="7.01" y2="5.5" />
+            <line x1="7" y1="18.5" x2="7.01" y2="18.5" />
           </svg>
-          网站头部
+          页头页脚
         </a>
         <a class="left-nav-item {% if active == 'menu' %}active{% endif %}" href="{{ url_for('core.menu_edit') }}"
           data-panel="menu" title="菜单配置">
@@ -335,16 +335,6 @@
             <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
           菜单配置
-        </a>
-        <a class="left-nav-item {% if active == 'footer_variant' %}active{% endif %}"
-          href="{{ url_for('core.footer_variant_edit') }}" data-panel="footer_variant" title="网站底部">
-          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="16" width="20" height="6" rx="2" />
-            <line x1="6" y1="18" x2="6.01" y2="18" />
-            <line x1="10" y1="18" x2="10.01" y2="18" />
-          </svg>
-          网站底部
         </a>
 
         {# ---- 内容 ---- #}
@@ -1231,7 +1221,7 @@
       activeTabKey = key;
       renderPreviewTabs();
       updatePreviewUrlBar(url);
-      setPreviewChromeMode(key === 'seo' || key === 'media' || key === 'messages' || key === 'basic_settings');
+      setPreviewChromeMode(key === 'seo' || key === 'media' || key === 'messages' || key === 'basic_settings' || key === 'header_footer' || key === 'menu');
       var frame = document.getElementById('previewFrame');
       if (frame) {
         frame.dataset.previewUrl = url;
@@ -1578,6 +1568,48 @@
         }
         return;
       }
+      if (link.dataset.panel === 'header_footer') {
+        var hfSiteParam = currentSiteParam();
+        var hfLangParam = currentLangParam();
+        var hfQuery = ['embed=1'];
+        if (hfSiteParam) hfQuery.push('site=' + encodeURIComponent(hfSiteParam));
+        if (hfLangParam) hfQuery.push('lang=' + encodeURIComponent(hfLangParam));
+        var hfTab = link.dataset.tab || 'header';
+        hfQuery.push('tab=' + encodeURIComponent(hfTab));
+        var hfUrl = '{{ url_for("core.header_footer_edit") }}' + '?' + hfQuery.join('&');
+        openPreviewTab('header_footer', '页头页脚', hfUrl, false, '正在加载页头页脚...');
+        var hfPanelTitle = document.getElementById('rightPanelTitle');
+        var hfPanelBody = document.getElementById('rightPanelBody');
+        var hfPanelFooter = document.getElementById('rightPanelFooter');
+        if (hfPanelTitle) hfPanelTitle.textContent = '页头页脚';
+        if (hfPanelBody) hfPanelBody.innerHTML = '<div class="p-3 text-muted small">页头页脚已在中间栏打开。</div>';
+        if (hfPanelFooter) hfPanelFooter.style.display = 'none';
+        var hfPanel = document.getElementById('rightPanel');
+        if (hfPanel && !hfPanel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
+          togglePanelCollapse();
+        }
+        return;
+      }
+      if (link.dataset.panel === 'menu') {
+        var menuSiteParam = currentSiteParam();
+        var menuLangParam = currentLangParam();
+        var menuQuery = ['embed=1'];
+        if (menuSiteParam) menuQuery.push('site=' + encodeURIComponent(menuSiteParam));
+        if (menuLangParam) menuQuery.push('lang=' + encodeURIComponent(menuLangParam));
+        var menuUrl = '{{ url_for("core.menu_edit") }}' + '?' + menuQuery.join('&');
+        openPreviewTab('menu', '菜单配置', menuUrl, false, '正在加载菜单配置...');
+        var menuPanelTitle = document.getElementById('rightPanelTitle');
+        var menuPanelBody = document.getElementById('rightPanelBody');
+        var menuPanelFooter = document.getElementById('rightPanelFooter');
+        if (menuPanelTitle) menuPanelTitle.textContent = '菜单配置';
+        if (menuPanelBody) menuPanelBody.innerHTML = '<div class="p-3 text-muted small">菜单配置已在中间栏打开。</div>';
+        if (menuPanelFooter) menuPanelFooter.style.display = 'none';
+        var menuPanel = document.getElementById('rightPanel');
+        if (menuPanel && !menuPanel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
+          togglePanelCollapse();
+        }
+        return;
+      }
       if (link.dataset.panel === 'company' || link.dataset.panel === 'theme') {
         var settingsSiteParam = currentSiteParam();
         var settingsLangParam = currentLangParam();
@@ -1786,10 +1818,24 @@
         regionEl.classList.add('builder-canvas-selected');
         var siteParam = currentSiteParam();
         var langParam = currentLangParam();
-        var url = (regionEl.dataset.builderRegion === 'header' ? '/settings/header' : '/settings/footer_variant') + '?_fragment=1';
+        var regionTab = regionEl.dataset.builderRegion === 'footer' ? 'footer' : 'header';
+        var url = '{{ url_for("core.header_footer_edit") }}?embed=1&tab=' + encodeURIComponent(regionTab);
         if (siteParam) url += '&site=' + encodeURIComponent(siteParam);
         if (langParam) url += '&lang=' + encodeURIComponent(langParam);
-        loadPanel(url);
+        document.querySelectorAll('.left-nav-item').forEach(function(el) { el.classList.remove('active'); });
+        var navLink = document.querySelector('.left-nav-item[data-panel="header_footer"]');
+        if (navLink) navLink.classList.add('active');
+        openPreviewTab('header_footer', '页头页脚', url, false, '正在加载页头页脚...');
+        var rightTitle = document.getElementById('rightPanelTitle');
+        var rightBody = document.getElementById('rightPanelBody');
+        var rightFooter = document.getElementById('rightPanelFooter');
+        if (rightTitle) rightTitle.textContent = '页头页脚';
+        if (rightBody) rightBody.innerHTML = '<div class="p-3 text-muted small">页头页脚已在中间栏打开。</div>';
+        if (rightFooter) rightFooter.style.display = 'none';
+        var rightPanel = document.getElementById('rightPanel');
+        if (rightPanel && !rightPanel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
+          togglePanelCollapse();
+        }
       }, true);
     }
 

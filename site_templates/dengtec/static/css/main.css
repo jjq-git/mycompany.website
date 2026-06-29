@@ -403,7 +403,6 @@ h6 { font-size: var(--font-size-md); }
   text-align: center;
 }
 
-
 /* === Grid Layouts === */
 .grid {
   display: grid;
@@ -644,107 +643,9 @@ h6 { font-size: var(--font-size-md); }
   pointer-events: auto;
 }
 
-/* -- 各排版变体 -- */
-
-/* vertical：上下排列，每项撑满宽度 */
-.nav-dropdown-menu--vertical {
-  display: none;
-  flex-direction: column;
-  gap: var(--spacing-2xs);
-}
-.nav-dropdown.open > .nav-dropdown-menu--vertical {
-  display: flex;
-}
-.nav-dropdown-menu--vertical .nav-dropdown-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  text-align: left;
-}
-
-/* horizontal：水平排列 */
-.nav-dropdown-menu--horizontal {
-  display: none;
-  flex-direction: row;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-xs);
-}
-.nav-dropdown.open > .nav-dropdown-menu--horizontal {
-  display: flex;
-}
-
-/* grid：网格排列 */
-.nav-dropdown-menu--grid {
-  width: min(560px, calc(100vw - 2rem));
-  display: none;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--spacing-xs);
-}
-.nav-dropdown.open > .nav-dropdown-menu--grid {
-  display: grid;
-}
-
-/* cards：卡片排列 */
-.nav-dropdown-menu--cards {
-  width: min(600px, calc(100vw - 2rem));
-  display: none;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm);
-}
-.nav-dropdown.open > .nav-dropdown-menu--cards {
-  display: grid;
-}
-.nav-dropdown-menu--cards .nav-dropdown-item {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background-color: #fafbfc;
-  min-height: 64px;
-  white-space: normal;
-  transition: all 0.15s ease;
-}
-.nav-dropdown-menu--cards .nav-dropdown-item:hover {
-  border-color: var(--color-primary);
-  background-color: rgba(6,122,122,.04);
-  box-shadow: 0 2px 8px rgba(0,0,0,.06);
-}
-
 /* 桌面端：hover 即展开（有 hover 能力的设备） */
 @media (min-width: 1025px) and (hover: hover) and (pointer: fine) {
-  /* 各排版变体 hover 展开 */
-  .nav-dropdown:hover > .nav-dropdown-menu--vertical {
-    display: flex;
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-    pointer-events: auto;
-  }
-  .nav-dropdown:hover > .nav-dropdown-menu--horizontal {
-    display: flex;
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-    pointer-events: auto;
-  }
-  .nav-dropdown:hover > .nav-dropdown-menu--grid {
-    display: grid;
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-    pointer-events: auto;
-  }
-  .nav-dropdown:hover > .nav-dropdown-menu--cards {
-    display: grid;
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-    pointer-events: auto;
-  }
-  /* 无 dropdown_style 指定时的回退（block） */
-  .nav-dropdown:hover > .nav-dropdown-menu:not([class*="nav-dropdown-menu--"]) {
+  .nav-dropdown:hover > .nav-dropdown-menu {
     display: block;
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -3045,14 +2946,6 @@ h6 { font-size: var(--font-size-md); }
     max-width: 100%;
   }
 
-  /* 移动端各种排版统一为 block 布局 */
-  .header-nav .nav-dropdown.open > .nav-dropdown-menu--horizontal,
-  .header-nav .nav-dropdown.open > .nav-dropdown-menu--grid,
-  .header-nav .nav-dropdown.open > .nav-dropdown-menu--cards,
-  .header-nav .nav-dropdown.open > .nav-dropdown-menu--vertical {
-    display: block;
-  }
-
   .header-nav .nav-dropdown-item {
     display: flex;
     align-items: center;
@@ -3100,16 +2993,6 @@ h6 { font-size: var(--font-size-md); }
     padding-left: var(--spacing-xs);
     border-left: 0;
     background: transparent;
-  }
-
-  /* 移动端卡片样式简化 */
-  .header-nav .nav-dropdown-menu--cards .nav-dropdown-item {
-    display: flex;
-    border: none;
-    background: transparent;
-    min-height: auto;
-    padding: var(--spacing-sm) var(--spacing-md);
-    box-shadow: none;
   }
 
   .mobile-nav-actions {
@@ -4275,7 +4158,6 @@ h6 { font-size: var(--font-size-md); }
 
 /* ===== Contact Page ===== */
 
-
 .contact-page-header .page-header-description {
   font-size: var(--font-size-md);
   color: var(--color-text-secondary);
@@ -5114,6 +4996,9 @@ h6 { font-size: var(--font-size-md); }
 }
 
 .language-switcher--flag .lang-switcher-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
@@ -5131,6 +5016,15 @@ h6 { font-size: var(--font-size-md); }
   background: var(--color-primary-light);
   color: var(--color-primary);
   font-weight: var(--font-weight-semibold);
+}
+
+.language-switcher--flag .lang-flag-img {
+  width: 18px;
+  height: 12px;
+  display: block;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
 /* Ensure legacy .language-switcher display is not forced for the new variants */
