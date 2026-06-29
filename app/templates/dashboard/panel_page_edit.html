@@ -56,15 +56,20 @@
       <div class="card mb-2 module-item" data-index="{{ i }}" data-module-index="{{ i }}">
         <div class="d-flex align-items-center justify-content-between p-2 module-header"
              onclick="toggleModuleAccordion(this.closest('.module-item'))">
-          <span class="small fw-semibold d-flex align-items-center gap-1">
-            <svg class="module-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-            {{ block_icon(module.type) }} {{ mod_title }}
+          <span class="module-title-stack">
+            <span class="module-title-main">
+              <svg class="module-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+              {{ block_icon(module.type) }} {{ mod_title }}
+            </span>
+            <span class="module-title-meta">
+              #{{ i + 1 }} · {{ module.variant | default('default') }}
+            </span>
           </span>
           <div class="d-flex gap-1">
-            <button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)">↑</button>
-	            <button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)">↓</button>
+            <button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)"><svg viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
+	            <button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg></button>
 	            <button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch({{ i }})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>
 	            <button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest('.module-item').remove();reindexModules()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -189,7 +194,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=97"></script>
+<script src="/static/js/admin_modules.js?v=99"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -994,10 +999,10 @@ function _schemaListItemHtml(base, listName, j, children, itemData) {
     inner += _schemaFieldHtml(itemPrefix, child, itemData);
   });
   return '<div class="border rounded p-2 mb-2 schema-list-item collapsed" data-item-index="' + j + '">' +
-    '<div class="d-flex justify-content-between align-items-center mb-2 schema-list-item-header" data-schema-list-toggle="1" style="cursor:pointer;user-select:none">' +
+    '<div class="d-flex justify-content-between align-items-center schema-list-item-header" data-schema-list-toggle="1" style="cursor:pointer;user-select:none">' +
     '<span class="small fw-semibold d-flex align-items-center"><svg class="schema-list-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>条目 ' + (j + 1) + '</span>' +
     '<button type="button" class="module-action-btn module-action-del schema-list-remove" title="删除" aria-label="删除条目"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
-    '<div class="schema-list-item-body">' + inner + '</div></div>';
+    '<div class="schema-list-item-body" style="margin-top: 8px;">' + inner + '</div></div>';
 }
 
 function schemaListAdd(btn) {
@@ -1039,6 +1044,8 @@ function _schemaListReindex(editor) {
   var items = editor.querySelectorAll('.schema-list-item');
   editor.querySelector('.schema-list-count').value = items.length;
   items.forEach(function(item, idx) {
+    var header = item.querySelector('.schema-list-item-header');
+    if (header) header.classList.remove('mb-2');
     item.dataset.itemIndex = idx;
     var label = item.querySelector('.schema-list-item-header .small.fw-semibold');
     if (label) {
@@ -1541,6 +1548,8 @@ function onBlockPaletteConfirm(type, variant, dataPreset) {
     if (item) {
       var variantInput = item.querySelector('input[name$="_variant"]');
       if (variantInput) variantInput.value = variant || 'default';
+      var meta = item.querySelector('.module-title-meta');
+      if (meta) meta.textContent = '#' + (switchTargetIndex + 1) + ' · ' + (variant || 'default');
       applyDataPresetToModule(item, switchTargetIndex, dataPreset);
     }
     switchTargetIndex = null;
@@ -2514,10 +2523,13 @@ function addModule(type, variant, dataPreset) {
   div.dataset.moduleIndex = idx;
   div.innerHTML =
     '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="cursor:pointer">' +
-      '<span class="small fw-semibold d-flex align-items-center gap-1">' + getBlockIconHTML(type) + ' ' + escapeHtml(displayName) + '</span>' +
+      '<span class="module-title-stack">' +
+        '<span class="module-title-main">' + getBlockIconHTML(type) + ' ' + escapeHtml(displayName) + '</span>' +
+        '<span class="module-title-meta">#' + (idx + 1) + ' · ' + escapeHtml(variant || 'default') + '</span>' +
+      '</span>' +
       '<div class="d-flex gap-1">' +
-	        '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)">↑</button>' +
-	        '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)">↓</button>' +
+	        '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)"><svg viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>' +
+	        '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg></button>' +
 	        '<button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch(' + idx + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>' +
 	        '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();reindexModules()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
 	      '</div>' +
@@ -2646,6 +2658,9 @@ function reindexModules() {
     // 更新 data-index 和 data-module-index
     item.dataset.index = i;
     item.dataset.moduleIndex = i;
+    var meta = item.querySelector('.module-title-meta');
+    var variantInp = item.querySelector('input[name$="_variant"]');
+    if (meta) meta.textContent = '#' + (i + 1) + ' · ' + ((variantInp && variantInp.value) || 'default');
   });
 }
 
@@ -2678,13 +2693,17 @@ function ensureNestedSortControls(root) {
   configs.forEach(function(cfg) {
     root.querySelectorAll(cfg.item).forEach(function(item) {
       var header = cfg.header ? item.querySelector(cfg.header) : item.firstElementChild;
-      if (!header || header.querySelector('.nested-sort-actions')) return;
+      if (!header) return;
+      if (header.classList && header.classList.contains('schema-list-item-header')) {
+        header.classList.remove('mb-2');
+      }
+      if (header.querySelector('.nested-sort-actions')) return;
       var delBtn = header.querySelector('.module-action-del, .schema-list-remove, .btn-outline-danger');
       var controls = document.createElement('span');
       controls.className = 'nested-sort-actions d-inline-flex align-items-center gap-1 ms-auto me-1';
       controls.innerHTML =
-        '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveNestedListItem(this,-1)">↑</button>' +
-        '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveNestedListItem(this,1)">↓</button>';
+        '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveNestedListItem(this,-1)"><svg viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>' +
+        '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveNestedListItem(this,1)"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg></button>';
       if (delBtn) header.insertBefore(controls, delBtn);
       else header.appendChild(controls);
     });
@@ -3610,14 +3629,11 @@ function _fpSetItemField(itemEl, fieldName, value) {
 <style>
 .module-item.expanded .module-config { display: block !important; }
 .device-config { padding: 4px 8px; }
-.feature-item-header .small::before { content: '▼'; margin-right: 4px; font-size: 10px; }
-.feature-item.collapsed .feature-item-header .small::before { content: '?'; }
+.feature-item-header .small::before { content: none; }
 .feature-item.collapsed .feature-item-body { display: none; }
-.hero-slide-header .small::before { content: '▼'; margin-right: 4px; font-size: 10px; }
-.hero-slide-item.collapsed .hero-slide-header .small::before { content: '?'; }
+.hero-slide-header .small::before { content: none; }
 .hero-slide-item.collapsed .hero-slide-body { display: none; }
-.list-item-header .small::before { content: '▼'; margin-right: 4px; font-size: 10px; }
-.list-item.collapsed .list-item-header .small::before { content: '?'; }
+.list-item-header .small::before { content: none; }
 .list-item.collapsed .list-item-body { display: none; }
 </style>
 

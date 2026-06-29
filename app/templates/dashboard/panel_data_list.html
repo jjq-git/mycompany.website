@@ -107,7 +107,7 @@
 </form>
 
 {# JS: 模块选择器交互 #}
-<script src="/static/js/admin_modules.js?v=97"></script>
+<script src="/static/js/admin_modules.js?v=99"></script>
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="iconListDsJson">{{ icon_list | default([]) | tojson }}</script>
@@ -213,6 +213,9 @@ window._dsEditItemJson = {{ edit_item | tojson }};
       });
       var orderInp = item.querySelector('input[name$="_order"]');
       if (orderInp) orderInp.value = i + 1;
+      var meta = item.querySelector('.module-title-meta');
+      var variantInp = item.querySelector('input[name$="_variant"]');
+      if (meta) meta.textContent = '#' + (i + 1) + ' · ' + ((variantInp && variantInp.value) || 'default');
     });
     var countEl = document.getElementById('moduleCountDs');
     if (countEl) countEl.value = items.length;
@@ -294,7 +297,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 
     var result;
     try {
-      result = window._buildModuleHTML(type, idx, mdata);
+      result = window._buildModuleHTML(type, idx, mdata, variant || 'default');
     } catch (err) {
       countEl.value = idx;
       console.error('[addModuleDs] failed to build module', type, err);

@@ -1150,14 +1150,14 @@
       inner += renderField(itemPrefix, child, itemData ? itemData[child.key] : '', '');
     });
     return '<div class="border rounded p-2 mb-2 schema-list-item collapsed" data-item-index="' + index + '">' +
-      '<div class="d-flex justify-content-between align-items-center mb-2 schema-list-item-header" data-schema-list-toggle="1" style="cursor:pointer;user-select:none">' +
+      '<div class="d-flex justify-content-between align-items-center schema-list-item-header" data-schema-list-toggle="1" style="cursor:pointer;user-select:none">' +
         '<span class="small fw-semibold d-flex align-items-center">' +
           '<svg class="schema-list-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>' +
           '条目 ' + (index + 1) +
         '</span>' +
-        '<button type="button" class="module-action-btn module-action-del schema-list-remove" title="删除" aria-label="删除条目">✕</button>' +
+        '<button type="button" class="module-action-btn module-action-del schema-list-remove" title="删除" aria-label="删除条目">' + detailGalleryIcon('trash') + '</button>' +
       '</div>' +
-      '<div class="schema-list-item-body">' + inner + '</div>' +
+      '<div class="schema-list-item-body" style="margin-top: 8px;">' + inner + '</div>' +
     '</div>';
   }
 
@@ -1170,6 +1170,8 @@
     var count = editor.querySelector('.schema-list-count');
     if (count) count.value = items.length;
     items.forEach(function(item, i) {
+      var header = item.querySelector('.schema-list-item-header');
+      if (header) header.classList.remove('mb-2');
       item.dataset.itemIndex = i;
       var label = item.querySelector('.schema-list-item-header .small.fw-semibold');
       if (label) {
@@ -1198,6 +1200,26 @@
   };
   window._schemaListItemHtml = schemaListItemHtml;
   window._schemaListReindex = schemaListReindex;
+
+  function stripSchemaListHeaderMargins(root) {
+    (root || document).querySelectorAll('.schema-list-item-header.mb-2').forEach(function(header) {
+      header.classList.remove('mb-2');
+    });
+  }
+
+  stripSchemaListHeaderMargins(document);
+  if (window.MutationObserver && !window.__schemaListHeaderMarginObserver) {
+    window.__schemaListHeaderMarginObserver = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        Array.prototype.forEach.call(mutation.addedNodes || [], function(node) {
+          if (!node || node.nodeType !== 1) return;
+          if (node.matches && node.matches('.schema-list-item-header.mb-2')) node.classList.remove('mb-2');
+          if (node.querySelectorAll) stripSchemaListHeaderMargins(node);
+        });
+      });
+    });
+    window.__schemaListHeaderMarginObserver.observe(document.body, { childList: true, subtree: true });
+  }
 
   if (!window.__adminModulesSchemaListEventsBound) {
     window.__adminModulesSchemaListEventsBound = true;
@@ -1615,12 +1637,13 @@
    * 返回:   { html, borderStyle, headerBg }
    */
 
-  function buildModuleHTML(type, idx, mdata) {
+  function buildModuleHTML(type, idx, mdata, variant) {
     mdata = mdata || {};
     var meta = findBlockMeta(type);
     var fields = meta.fields || [];
     var displayName = meta.display_name || type.replace(/_/g, ' ');
     var isDataModule = (type === 'item_data');
+    var variantLabel = variant || mdata.variant || 'default';
     var d = mdata;
     var isDsMode = !!(window._moduleCtx && window._moduleCtx.isDatasetMode);
 
@@ -2441,14 +2464,18 @@
     /* ====== 构建 HTML (结构涓Jinja 模板对齐) ====== */
     var html =
       '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="' + headerBg + 'cursor:pointer">' +
-        '<span class="small fw-semibold d-flex align-items-center gap-1 ' + titleColor + '">' + getBlockIconHTML(type) + ' ' + esc(displayName) + '</span>' +
+        '<span class="module-title-stack ' + titleColor + '">' +
+          '<span class="module-title-main">' + getBlockIconHTML(type) + ' ' + esc(displayName) + '</span>' +
+          '<span class="module-title-meta">#' + (idx + 1) + ' · ' + esc(variantLabel) + '</span>' +
+        '</span>' +
         '<div class="d-flex gap-1 flex-shrink-0 flex-nowrap">' +
           '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();window._moveModule(this, -1)">' + detailGalleryIcon('up') + '</button>' +
           '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();window._moveModule(this, 1)">' + detailGalleryIcon('down') + '</button>' +
-          '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();window._reindexModules()">✕</button>' +
+          '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();window._reindexModules()">' + detailGalleryIcon('trash') + '</button>' +
         '</div>' +
       '</div>' +
       '<input type="hidden" name="module_' + idx + '_type" value="' + esc(type) + '">' +
+      '<input type="hidden" name="module_' + idx + '_variant" value="' + esc(variantLabel) + '">' +
       '<input type="hidden" name="module_' + idx + '_order" value="' + (idx + 1) + '">' +
       '<div class="module-config p-2 border-top" style="display:block">';
 

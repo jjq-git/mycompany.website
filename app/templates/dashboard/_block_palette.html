@@ -37,6 +37,13 @@
   var selectedVariantKey = null;
   var selectedDataPreset = null;  // 样式型变体的 data 预填值（如 {style_cols: '3'}）
   var _variantMeta = {};  // (blockType, variantKey) → {source, data_preset} 快速索引
+  var paletteFilter = { query: '', category: 'all' };
+
+  function paletteEsc(value) {
+    return String(value == null ? '' : value).replace(/[&<>'"]/g, function(ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch];
+    });
+  }
 
   // 模块图标映射
   function getBlockIconHTML(type) {
@@ -301,8 +308,42 @@
       return {
         type: b.name,
         name: b.display_name || b.name,
+        category: blockCategory(b.name),
         variants: b.variants || []
       };
+    });
+  }
+
+  function blockCategory(type) {
+    if (/hero|section_title|text_content|highlight_card/.test(type)) return 'content';
+    if (/data|item|product|featured|carousel|logo|stat|feature|process/.test(type)) return 'data';
+    if (/contact|form|message|social/.test(type)) return 'conversion';
+    return 'basic';
+  }
+
+  function categoryLabel(category) {
+    return {
+      all: '全部',
+      content: '内容',
+      data: '数据',
+      conversion: '转化',
+      basic: '基础'
+    }[category] || category;
+  }
+
+  function filterPaletteData(paletteData) {
+    var q = String(paletteFilter.query || '').trim().toLowerCase();
+    return paletteData.filter(function(blk) {
+      var inCategory = paletteFilter.category === 'all' || blk.category === paletteFilter.category;
+      if (!inCategory) return false;
+      if (!q) return true;
+      var haystack = [
+        blk.type,
+        blk.name,
+        categoryLabel(blk.category),
+        (blk.variants || []).map(function(v) { return [v.key, v.label, variantDisplayLabel(blk.type, v)].join(' '); }).join(' ')
+      ].join(' ').toLowerCase();
+      return haystack.indexOf(q) !== -1;
     });
   }
 
@@ -320,15 +361,69 @@
     var listPanel = document.getElementById('blockListPanel');
     if (!listPanel) return;
     var paletteData = buildPaletteData();
-    var html = '<div class="block-list-header">共 ' + paletteData.length + ' 个模块类型</div>';
-    paletteData.forEach(function(blk) {
+    var filtered = filterPaletteData(paletteData);
+    var categories = ['all', 'content', 'data', 'conversion', 'basic'];
+    var html = '<div class="block-library-tools">';
+    html += '<div class="block-library-title"><span>组件库</span><strong>' + filtered.length + '/' + paletteData.length + '</strong></div>';
+    html += '<input type="search" class="block-library-search" placeholder="搜索模块或排版" value="' + paletteEsc(paletteFilter.query) + '" oninput="window._filterBlockPalette(this.value)">';
+    html += '<div class="block-library-cats">';
+    categories.forEach(function(cat) {
+      html += '<button type="button" class="block-library-cat' + (paletteFilter.category === cat ? ' active' : '') + '" onclick="window._setBlockPaletteCategory(\'' + cat + '\')">' + categoryLabel(cat) + '</button>';
+    });
+    html += '</div></div>';
+    if (!filtered.length) {
+      html += '<div class="block-list-empty">没有匹配的模块</div>';
+    }
+    filtered.forEach(function(blk) {
       var vcount = blk.variants.length;
-      html += '<div class="block-list-item" data-block-type="' + blk.type + '" onclick="window._selectBlockType(\'' + blk.type + '\')">';
+      html += '<div class="block-list-item" data-block-type="' + paletteEsc(blk.type) + '" onclick="window._selectBlockType(\'' + blk.type + '\')">';
       html += '<div class="block-list-icon">' + getBlockIconHTML(blk.type) + '</div>';
-      html += '<div class="block-list-text"><div class="block-list-name">' + blk.name + '</div><div class="block-list-count">' + vcount + ' 种排版</div></div>';
+      html += '<div class="block-list-text"><div class="block-list-name">' + paletteEsc(blk.name) + '</div><div class="block-list-count">' + categoryLabel(blk.category) + ' · ' + vcount + ' 种排版</div></div>';
       html += '</div>';
     });
     listPanel.innerHTML = html;
+    document.querySelectorAll('#blockListPanel .block-list-item').forEach(function(item) {
+      item.classList.toggle('active', item.dataset.blockType === selectedBlockType);
+    });
+  }
+
+  window._filterBlockPalette = function(query) {
+    paletteFilter.query = query || '';
+    selectedBlockType = null;
+    selectedVariantKey = null;
+    selectedDataPreset = null;
+    _variantMeta = {};
+    resetConfirmBtn();
+    initBlockPalette();
+    focusPaletteSearch();
+    renderPaletteEmptyState();
+  };
+
+  window._setBlockPaletteCategory = function(category) {
+    paletteFilter.category = category || 'all';
+    selectedBlockType = null;
+    selectedVariantKey = null;
+    selectedDataPreset = null;
+    _variantMeta = {};
+    resetConfirmBtn();
+    initBlockPalette();
+    renderPaletteEmptyState();
+  };
+
+  function renderPaletteEmptyState() {
+    var panel = document.getElementById('variantPanel');
+    if (!panel) return;
+    panel.innerHTML = '<div class="variant-empty-hint"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17h7"/><path d="M17.5 13.5v7"/></svg><span>选择左侧模块，查看可用排版</span></div>';
+  }
+
+  function focusPaletteSearch() {
+    var input = document.querySelector('#blockListPanel .block-library-search');
+    if (!input) return;
+    input.focus();
+    try {
+      var end = input.value.length;
+      input.setSelectionRange(end, end);
+    } catch (e) {}
   }
 
   window._selectBlockType = function(blockType) {
@@ -367,12 +462,12 @@
       };
     });
 
-    var html = '<div class="variant-section-title">' + blk.name + ' — ' + variantCount + ' 种排版变体</div>';
+    var html = '<div class="variant-section-title">' + paletteEsc(blk.name) + ' — ' + variantCount + ' 种排版变体</div>';
     html += '<div class="variant-preview-grid">';
     blk.variants.forEach(function(v) {
       html += '<div class="variant-preview-card" data-block-type="' + blk.type + '" data-variant="' + v.key + '" onclick="window._selectVariant(this, \'' + blk.type + '\', \'' + v.key + '\')">';
       html += '<div class="variant-preview-thumb">' + buildVariantThumb(blk.type, v.key, v) + '</div>';
-      html += '<div class="variant-preview-label">' + variantDisplayLabel(blk.type, v) + '</div>';
+      html += '<div class="variant-preview-label">' + paletteEsc(variantDisplayLabel(blk.type, v)) + '</div>';
       html += '</div>';
     });
     html += '</div>';
@@ -433,6 +528,7 @@
     paletteModalEl.addEventListener('show.bs.modal', function() {
       resetConfirmBtn();
       initBlockPalette();
+      renderPaletteEmptyState();
     });
   }
 })();
