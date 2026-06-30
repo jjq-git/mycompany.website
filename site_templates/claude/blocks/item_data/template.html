@@ -3,6 +3,11 @@
     <article class="item-data-article item-detail-carousel">
       <div class="item-data-layout">
         <div class="detail-gallery item-data-gallery">
+          <div data-name="media_area" data-type="group" data-hideable class="item-data-media">
+            <img data-name="cover" data-fallback="image,photo,logo,thumbnail" data-type="image" data-show-when="media_type:image" src="" alt="" loading="lazy">
+            <video data-name="video" data-type="video" data-show-when="media_type:video" src="" controls playsinline preload="metadata"></video>
+            <iframe data-name="embed_url" data-type="embed" data-show-when="media_type:embed" src="" title="Embedded content" loading="lazy" allowfullscreen></iframe>
+          </div>
           <div class="detail-carousel-stage">
             <div data-name="detail_images" data-type="list" data-hideable class="detail-images">
               <img data-name="url" data-type="image" src="" alt="" loading="lazy" class="detail-gallery-img">

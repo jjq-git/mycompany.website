@@ -241,7 +241,18 @@
   <div class="container">
     <a href="{{ base_url }}/{{ lang }}/products/" class="btn btn-ghost" style="margin-bottom: var(--spacing-lg);">← {{ t.products.backToList }}</a>
     <div class="grid grid-2" style="align-items: start;">
-      <div>{% if product.image or product.cover %}<img src="{{ product.image or product.cover }}" alt="{{ product_name }}" style="width:100%;border-radius:var(--radius-md);">{% else %}<div class="project-image">Product</div>{% endif %}</div>
+      <div>
+        {% set product_media_type = product.media_type | default('embed' if product.embed_url else ('video' if product.video else 'image')) %}
+        {% if product_media_type == 'video' and product.video %}
+          <video src="{{ product.video }}" controls playsinline preload="metadata" style="width:100%;border-radius:var(--radius-md);"></video>
+        {% elif product_media_type == 'embed' and product.embed_url %}
+          <iframe src="{{ product.embed_url }}" title="{{ product_name }}" loading="lazy" allowfullscreen style="width:100%;min-height:420px;border:0;border-radius:var(--radius-md);"></iframe>
+        {% elif product.image or product.cover or product.photo or product.logo %}
+          <img src="{{ product.image or product.cover or product.photo or product.logo }}" alt="{{ product_name }}" style="width:100%;border-radius:var(--radius-md);">
+        {% else %}
+          <div class="project-image">Product</div>
+        {% endif %}
+      </div>
       <div>
         <h1 style="font-size:var(--font-size-3xl);margin-bottom:var(--spacing-md);">{{ product_name }}</h1>
         {% if product.price %}<div class="product-detail-price product-detail-price--dark">{{ product.price }}</div>{% endif %}
@@ -319,11 +330,9 @@
 {% set modules = product.modules | default([]) %}
 {% if modules %}
   {% for module in modules %}
-    {% if module.type != 'item_data' %}
     <div class="builder-module" data-builder-module-index="{{ loop.index0 }}">
       {{- render_block(module) }}
     </div>
-    {% endif %}
   {% endfor %}
 {% endif %}
 

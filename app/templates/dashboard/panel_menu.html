@@ -110,6 +110,39 @@
     url.style.display = type === 'link' ? '' : 'none';
   }
 
+  function syncRowToItem(row) {
+    if (!row || !row._item) return;
+    const item = row._item;
+    const type = row.querySelector('.menu-type').value;
+    item.label = row.querySelector('.menu-label').value.trim();
+    item.type = type;
+
+    const visible = row.querySelector('.menu-visible');
+    if (visible && !visible.checked && type !== 'home') {
+      item.hidden = true;
+    } else {
+      delete item.hidden;
+    }
+
+    if (type === 'list' || type === 'page' || type === 'group') {
+      item.target = row.querySelector('.menu-target').value.trim();
+      delete item.url;
+    } else if (type === 'link') {
+      item.url = row.querySelector('.menu-url').value.trim();
+      delete item.target;
+    } else {
+      delete item.target;
+      delete item.url;
+    }
+  }
+
+  function syncTreeToItems(container) {
+    rowsIn(container).forEach(function(row) {
+      syncRowToItem(row);
+      syncTreeToItems(row.querySelector('.menu-tree-children'));
+    });
+  }
+
   function rowsIn(container) {
     return Array.from(container.children).filter(function(el){ return el.classList.contains('menu-tree-row'); });
   }
@@ -132,17 +165,24 @@
 
   tree.addEventListener('input', function(e) {
     const row = e.target.closest('.menu-tree-row');
-    if (row) updateFields(row);
+    if (row) {
+      syncRowToItem(row);
+      updateFields(row);
+    }
   });
 
   tree.addEventListener('change', function(e) {
     const row = e.target.closest('.menu-tree-row');
-    if (row) updateFields(row);
+    if (row) {
+      syncRowToItem(row);
+      updateFields(row);
+    }
   });
 
   tree.addEventListener('click', function(e) {
     const row = e.target.closest('.menu-tree-row');
     if (!row) return;
+    syncTreeToItems(tree);
     const parentContainer = row.parentElement;
     const parentRow = parentContainer.closest('.menu-tree-row');
     const parentItems = parentRow ? parentRow._item.children : initialMenu;
@@ -169,6 +209,7 @@
   });
 
   document.getElementById('addRootMenu').addEventListener('click', function() {
+    syncTreeToItems(tree);
     initialMenu.push(newItem());
     render(initialMenu, tree, 0);
   });

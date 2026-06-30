@@ -3143,17 +3143,30 @@ def _default_lang_code(site):
 
 
 def _preview_needs_rebuild(site_id, out):
-    """Return true when generated preview is missing or older than site YAML."""
+    """Return true when generated preview is missing or older than site/template files."""
     index = out / 'index.html'
     if not index.exists():
         return True
     try:
         built_at = index.stat().st_mtime
         root = Path(current_app.config['SITES_DIR']) / str(site_id)
-        return any(
+        site_changed = any(
             path.stat().st_mtime > built_at
             for path in root.rglob('*.yaml')
             if not path.name.startswith('.tmp-')
+        )
+        if site_changed:
+            return True
+
+        site = Site.query.get(site_id)
+        if not site:
+            return False
+        tpl_root = Path(current_app.config['TEMPLATES_DIR']) / site.template_name
+        watched_suffixes = {'.html', '.yaml', '.yml', '.css', '.js', '.svg'}
+        return any(
+            path.stat().st_mtime > built_at
+            for path in tpl_root.rglob('*')
+            if path.is_file() and path.suffix.lower() in watched_suffixes
         )
     except OSError:
         return True
@@ -3514,6 +3527,40 @@ def dataset_edit(dataset_key, item_id):
         abort(404, f'数据不存在: {dataset_key}#{item_id}')
     source_item = source_item or item
 
+    def render_edit(current_item, current_source_item=None):
+        blocks = _get_available_blocks(site.template_name)
+        slug = current_item.get('slug', '')
+        settings = read_yaml(site.id, 'settings.yaml') or {}
+        menu_items = settings.get('menu') or []
+        is_list_page = any(
+            mi.get('type') == 'list' and mi.get('target') == dataset_key
+            for mi in menu_items
+        )
+        from app.core.menu import find_menu_path
+        meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+        meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
+        raw_menu = menu_lib.upgrade_old_format(menu_items, meta.get('datasets', []))
+        preview_path = find_menu_path(raw_menu, dataset_key)
+        all_list_datasets = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu))
+        from .style_registry import STYLE_REGISTRY
+        from .icon_registry import icon_names
+        return _render('dashboard/panel_data_list.html',
+                       user=user, site=site,
+                       dataset_key=dataset_key, items=[current_item],
+                       edit_prefix=f'_dataset/{dataset_key}',
+                       edit_item=current_item, edit_item_id=item_id,
+                       source_item=current_source_item or source_item,
+                       current_lang=lang, languages=languages, default_lang=default_lang,
+                       active=dataset_key,
+                       blocks=blocks,
+                       all_list_datasets=all_list_datasets,
+                       is_list_page=is_list_page,
+                       page_key=dataset_key,
+                       preview_slug=slug,
+                       preview_path=preview_path,
+                       style_registry=STYLE_REGISTRY,
+                       icon_list=icon_names())
+
     if request.method == 'POST':
         if storage_lang and not datasets.find(site.id, dataset_key, item_id, lang=storage_lang):
             source_items = datasets.load(site.id, dataset_key, lang=source_storage_lang)
@@ -3547,15 +3594,17 @@ def dataset_edit(dataset_key, item_id):
             # (构建期任意文件写入)。复用站点级同一套 SLUG_PATTERN 严格白名单。
             if not SLUG_PATTERN.match(new_slug):
                 flash(f'Slug "{new_slug}" 格式非法：只能用小写字母、数字、连字符，3-30 字符', 'error')
-                return redirect(url_for('core.dataset_edit', dataset_key=dataset_key,
-                                        item_id=item_id, _fragment='1', site=site.id, lang=lang))
+                invalid_item = dict(item)
+                invalid_item.update(fields)
+                return render_edit(invalid_item, source_item), 400
             all_items = datasets.load(site.id, dataset_key, lang=storage_lang)
             dup = next((it for it in all_items
                         if it.get('slug') == new_slug and it.get('id') != item_id), None)
             if dup:
                 flash(f'Slug "{new_slug}" 已被 #{dup["id"]} 使用，请换一个', 'error')
-                return redirect(url_for('core.dataset_edit', dataset_key=dataset_key,
-                                        item_id=item_id, _fragment='1', site=site.id, lang=lang))
+                invalid_item = dict(item)
+                invalid_item.update(fields)
+                return render_edit(invalid_item, source_item), 400
         # tags: 逗号/空格分隔的字符串 → 列表
         if 'tags' in fields and fields['tags']:
             raw_tags = fields['tags']
@@ -3608,6 +3657,19 @@ def dataset_edit(dataset_key, item_id):
                     current_app.logger.warning('数据集图片上传失败 %s: %s', field_name, exc)
             elif fields.get(field_name) and not str(fields.get(alt_key) or '').strip():
                 fields[alt_key] = _context_alt(fields, item)
+        video_upload = request.files.get('video_file')
+        if video_upload and video_upload.filename:
+            try:
+                fields['video'] = _save_uploaded_media(site.id, video_upload, prefix=f'{dataset_key}-video')
+            except Exception as exc:
+                current_app.logger.warning('数据集视频上传失败: %s', exc)
+        embed_upload = request.files.get('embed_url_file')
+        if embed_upload and embed_upload.filename:
+            try:
+                result = _save_media_package(site.id, embed_upload)
+                fields['embed_url'] = result.get('entry_url', '')
+            except Exception as exc:
+                current_app.logger.warning('数据集嵌入页面上传失败: %s', exc)
         # 保存模块配置到数据项 (item) 中
         # module_count 缺失表示表单不包含模块数据（例如用户未展开面板就保存），
         # 此时保留已有 modules 而非清空
@@ -3645,40 +3707,7 @@ def dataset_edit(dataset_key, item_id):
         flash('已保存')
         return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
 
-    blocks = _get_available_blocks(site.template_name)
-    # 中间预览 URL：计算数据集在菜单中的完整层级路径
-    slug = item.get('slug', '')
-    settings = read_yaml(site.id, 'settings.yaml') or {}
-    menu_items = settings.get('menu') or []
-    is_list_page = any(
-        mi.get('type') == 'list' and mi.get('target') == dataset_key
-        for mi in menu_items
-    )
-    # 计算数据集的完整菜单路径（含父级前缀），用于预览 URL
-    from app.core.menu import find_menu_path
-    meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
-    meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
-    raw_menu = menu_lib.upgrade_old_format(menu_items, meta.get('datasets', []))
-    preview_path = find_menu_path(raw_menu, dataset_key)
-    all_list_datasets = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu))
-    from .style_registry import STYLE_REGISTRY
-    from .icon_registry import icon_names
-    return _render('dashboard/panel_data_list.html',
-                   user=user, site=site,
-                   dataset_key=dataset_key, items=[item],
-                   edit_prefix=f'_dataset/{dataset_key}',
-                   edit_item=item, edit_item_id=item_id,
-                   source_item=source_item,
-                   current_lang=lang, languages=languages, default_lang=default_lang,
-                   active=dataset_key,
-                   blocks=blocks,
-                   all_list_datasets=all_list_datasets,
-                   is_list_page=is_list_page,
-                   page_key=dataset_key,
-                   preview_slug=slug,
-                   preview_path=preview_path,
-                   style_registry=STYLE_REGISTRY,
-                   icon_list=icon_names())
+    return render_edit(item, source_item)
 
 @bp.route('/_dataset/<path:dataset_key>/<int:item_id>/delete', methods=['POST'])
 def dataset_delete(dataset_key, item_id):

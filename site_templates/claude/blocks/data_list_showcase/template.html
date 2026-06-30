@@ -29,7 +29,9 @@
         <section class="section data-list-showcase__card">
           <div class="hl-grid">
             <div class="hl-image data-list-showcase__image-link">
-              <img data-name="cover" data-fallback="image,photo,logo,thumbnail" data-type="image" src="" alt="" loading="lazy">
+              <img data-name="cover" data-fallback="image,photo,logo,thumbnail" data-type="image" data-show-when="media_type:image" src="" alt="" loading="lazy">
+              <video data-name="video" data-type="video" data-show-when="media_type:video" src="" controls playsinline preload="metadata"></video>
+              <iframe data-name="embed_url" data-type="embed" data-show-when="media_type:embed" src="" title="Embedded content" loading="lazy" allowfullscreen></iframe>
             </div>
             <div class="hl-text">
               <span data-name="category" data-type="text" class="hl-tag filter-source-category">Category</span>

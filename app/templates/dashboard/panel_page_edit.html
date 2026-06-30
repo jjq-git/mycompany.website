@@ -594,7 +594,7 @@ function updateConditionalFields(root) {
       prefix = ownInput.name.slice(0, -fieldKey.length);
     }
     var scope = fieldEl.closest('.device-config') || fieldEl.closest('.module-item') || root;
-    var depInput = prefix ? findNamedInput(scope, prefix + depKey) : null;
+    var depInput = fieldKey ? findNamedInput(scope, prefix + depKey) : null;
     var actual = depInput ? String(depInput.value || '') : '';
     if (!actual && depKey === 'media_type') actual = 'image';
     fieldEl.style.display = expected.indexOf(actual) >= 0 ? '' : 'none';

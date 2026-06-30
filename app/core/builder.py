@@ -273,6 +273,20 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
                             merged_item['detail_images'] = detail_images
                     if not merged_item.get('detail_images'):
                         merged_item['_hidden_detail_images'] = True
+                    media_type = merged_item.get('media_type') or (
+                        'embed' if merged_item.get('embed_url') else
+                        ('video' if merged_item.get('video') else 'image')
+                    )
+                    has_image_media = any(merged_item.get(k) for k in ('cover', 'image', 'photo', 'logo'))
+                    has_selected_media = (
+                        (media_type == 'image' and has_image_media) or
+                        (media_type == 'video' and merged_item.get('video')) or
+                        (media_type == 'embed' and merged_item.get('embed_url'))
+                    )
+                    if has_selected_media and not merged_item.get('media_type'):
+                        merged_item['media_type'] = media_type
+                    if not has_selected_media:
+                        merged_item['_hidden_media_area'] = True
                     if merged_item.get('tags_visible') is False or str(merged_item.get('tags_visible')).lower() == 'false':
                         merged_item['_hidden_tags'] = True
                     # 模块 data 覆盖产品字段，但空值不覆盖已有字段

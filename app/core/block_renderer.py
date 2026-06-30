@@ -36,6 +36,7 @@ _IMG_TAG_RE = re.compile(r'<img\b[^>]*>', re.I)
 _ALT_ATTR_RE = re.compile(r'\s+alt\s*=\s*("([^"]*)"|\'([^\']*)\'|([^\s>]*))', re.I)
 # 检测文本是否包含 HTML 标签（用于判断 textarea 内容是否来自富文本编辑器）
 _HTML_TAG_RE = re.compile(r'<(p|div|br|h[1-6]|ul|ol|li|a|img|span|strong|em|b|i|u|s|table|blockquote|hr)\b', re.I)
+_BLOCK_HTML_TAG_RE = re.compile(r'<(p|div|h[1-6]|ul|ol|li|table|blockquote|hr)\b', re.I)
 
 
 def _int_or_none(raw):
@@ -72,6 +73,8 @@ def _set_text(node, value, raw_html=False):
     raw_html=True（richtext）：按 innerHTML 原样注入，序列化不转义。
     否则：作为纯文本，序列化时转义。
     """
+    if raw_html and node.tag.lower() == 'p' and _BLOCK_HTML_TAG_RE.search(str(value)):
+        node.tag = 'div'
     node.nodes = [bp._Text(str(value), raw=raw_html)]
 
 
@@ -409,6 +412,13 @@ def _expand_list(node, field_def, data_dict, context):
         item_type = item_node.attrs.get('data-type', '')
         if item_type == 'group':
             item_data = dict(item) if isinstance(item, dict) else {}
+            if not item_data.get('media_type'):
+                if item_data.get('embed_url'):
+                    item_data['media_type'] = 'embed'
+                elif item_data.get('video'):
+                    item_data['media_type'] = 'video'
+                else:
+                    item_data['media_type'] = 'image'
             if isinstance(data_dict, dict):
                 for inherited_key in ('show_detail_btn',):
                     if inherited_key not in item_data and inherited_key in data_dict:

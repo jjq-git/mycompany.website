@@ -1,13 +1,17 @@
 <section data-name="item_data" data-type="group" data-hideable data-style="bg-color" class="section item-data-section">
     <div class="container">
         <article class="item-data-article">
+            <div data-name="media_area" data-type="group" data-hideable class="item-data-media">
+                <img data-name="cover" data-fallback="image,photo,logo" data-type="image" data-show-when="media_type:image" src="" alt="" loading="lazy">
+                <video data-name="video" data-type="video" data-show-when="media_type:video" src="" controls playsinline preload="metadata"></video>
+                <iframe data-name="embed_url" data-type="embed" data-show-when="media_type:embed" src="" title="Embedded content" loading="lazy" allowfullscreen></iframe>
+            </div>
             <h1 data-name="title" data-type="text" data-fallback="name" class="item-data-title">详情标题</h1>
             <div data-name="date" data-type="text" class="item-data-date">发布日期</div>
             <div data-name="tags" data-type="list" class="item-data-tags">
                 <span data-name="tag" data-type="text" class="badge badge-primary item-data-tag">标签</span>
             </div>
-            <p data-name="description" data-type="textarea" data-fallback="summary,excerpt" class="item-data-desc">详情简述
-            </p>
+            <p data-name="description" data-type="textarea" data-fallback="summary,excerpt" class="item-data-desc">详情简述</p>
             <div data-name="body" data-type="richtext" data-fallback="content" class="item-data-body">
                 <p>详情正文</p>
             </div>

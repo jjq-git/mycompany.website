@@ -1398,7 +1398,7 @@
         prefix = ownInput.name.slice(0, -fieldKey.length);
       }
       var scope = fieldEl.closest('.device-config') || root;
-      var depInput = prefix ? findNamedInput(scope, prefix + depKey) : null;
+      var depInput = fieldKey ? findNamedInput(scope, prefix + depKey) : null;
       var actual = depInput ? String(depInput.value || '') : '';
       if (!actual && depKey === 'media_type') actual = 'image';
       fieldEl.style.display = expected.indexOf(actual) >= 0 ? '' : 'none';
@@ -1712,14 +1712,18 @@
         '</div>';
       /* 封面图：取 item 顶层字段，与列表页缩略图自动匹配（cover / image / photo 依次回退）*/
       var coverVal = item.cover || item.image || item.photo || '';
+      var mediaType = item.media_type || (item.embed_url ? 'embed' : (item.video ? 'video' : 'image'));
+      var mediaFields =
+        renderField('', {key:'media_type', label:'媒体类型', type:'select', options:[{value:'image', label:'图片'}, {value:'video', label:'视频'}, {value:'embed', label:'嵌入页面'}]}, mediaType, '') +
+        renderField('', {key:'cover', label:'图片', type:'image', show_if:{field:'media_type', value:'image'}}, coverVal, '图片 URL 或上传') +
+        renderField('', {key:'video', label:'视频', type:'video', show_if:{field:'media_type', value:'video'}}, item.video || '', '视频 URL 或上传') +
+        renderField('', {key:'embed_url', label:'嵌入页面', type:'embed', show_if:{field:'media_type', value:'embed'}}, item.embed_url || '', '上传网页包 ZIP');
       styleEditor = schemaStyleForm('module_' + idx + '_data_', meta.schema || {}, item);
       specialEditor =
         '<div class="small fw-semibold mb-1 text-muted">基础字段</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm font-monospace" name="slug" value="' + esc(item.slug || '') + '" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="濡?my-post"><div class="form-text">英文+数字+连字符，鍞竴标识</div></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label><input type="text" class="form-control form-control-sm font-monospace" name="slug" value="' + esc(item.slug || '') + '" required minlength="3" maxlength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" title="只能用小写字母、数字、连字符，3-30 字符，不能以连字符开头或结尾" placeholder="如 my-post"><div class="form-text">英文+数字+连字符，唯一标识</div></div>' +
         /* ==== 封面图：位于日期上方，只显示在数据集列表缩略图，不在详情页展示 ==== */
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">封面图</label>' +
-        mediaUploadHtml('cover', coverVal, 'image', '图片 URL 或上传', item.cover_alt || item.image_alt || item.alt || '') +
-        '<div class="form-text">仅显示在数据集列表中作为封面缩略图</div>' +
+        mediaFields +
         detailGalleryHtml +
         '<hr class="my-2">' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">日期</label><input type="date" class="form-control form-control-sm" name="date" value="' + esc(item.date || '') + '"></div>' +
@@ -1737,7 +1741,7 @@
         '<div class="form-text">支持加粗、斜体、标题、列表、引用、分割线、链接、图片、文字颜色</div>' +
         '<hr class="my-2">';
       // 动态剩余字段
-      var skipKeys = ['id','slug','date','title','description','excerpt','summary','cover','image','photo','logo','tags','tags_visible','detail_gallery','detail_images','body','content','modules','csrf_token','name','category','price','specs','section_bg','inner_width','style_bg-color'];
+      var skipKeys = ['id','slug','date','title','description','excerpt','summary','cover','image','photo','logo','media_type','video','embed_url','tags','tags_visible','detail_gallery','detail_images','body','content','modules','csrf_token','name','category','price','specs','section_bg','inner_width','style_bg-color'];
       Object.keys(item).forEach(function(k) {
         if (skipKeys.indexOf(k) >= 0 || /^module_/.test(k)) return;
         var v = item[k];

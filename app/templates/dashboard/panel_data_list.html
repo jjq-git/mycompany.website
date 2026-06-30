@@ -24,9 +24,9 @@
 </div>
 {% endif %}
 
-{% with messages = get_flashed_messages() %}
-  {% for m in messages %}
-    <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, m in messages %}
+    <div class="alert alert-{{ 'danger' if category == 'error' else category }} py-1 px-2 small mb-2">{{ m }}</div>
   {% endfor %}
 {% endwith %}
 
@@ -118,6 +118,16 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 (function() {
   var DATASET_KEY = '{{ dataset_key }}';
   var SITE_ID = '{{ site.id }}';
+  var datasetForm = document.getElementById('datasetEditForm');
+  if (datasetForm) {
+    datasetForm.addEventListener('submit', function(e) {
+      if (!datasetForm.checkValidity()) {
+        e.preventDefault();
+        e.stopPropagation();
+        datasetForm.reportValidity();
+      }
+    });
+  }
   var blockLibrary = JSON.parse(document.getElementById('blockLibraryDsJson').textContent || '[]');
   window.blockLibrary = blockLibrary;
   var styleRegistry = JSON.parse((document.getElementById('styleRegistryDsJson') || {}).textContent || '{}');
@@ -374,17 +384,36 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   {% set detail_btn_mode = 'inherit' if detail_btn_raw is none else ('true' if detail_btn_raw is sameas true or (detail_btn_raw|string|lower) == 'true' else 'false') %}
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label>
-    <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" placeholder="如 my-post">
+    <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required minlength="3" maxlength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" title="只能用小写字母、数字、连字符，3-30 字符，不能以连字符开头或结尾" placeholder="如 my-post">
   </div>
   <div class="mb-2"><label class="form-label small mb-1 text-muted">日期</label><input type="date" class="form-control form-control-sm" name="date" value="{{ edit_item.date or '' }}"></div>
   <div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="title" value="{{ edit_item.title or '' }}"></div>
   <div class="mb-2"><label class="form-label small mb-1 text-muted">简述</label><textarea class="form-control form-control-sm" name="description" rows="2">{{ edit_item.description or edit_item.excerpt or edit_item.summary or '' }}</textarea></div>
   <div class="mb-2">
-    <label class="form-label small mb-1 text-muted">预览图</label>
+    <label class="form-label small mb-1 text-muted">媒体类型</label>
+    {% set item_media_type = edit_item.media_type or ('embed' if edit_item.embed_url else ('video' if edit_item.video else 'image')) %}
+    <select class="form-select form-select-sm" name="media_type">
+      <option value="image" {% if item_media_type == 'image' %}selected{% endif %}>图片</option>
+      <option value="video" {% if item_media_type == 'video' %}selected{% endif %}>视频</option>
+      <option value="embed" {% if item_media_type == 'embed' %}selected{% endif %}>嵌入页面</option>
+    </select>
+  </div>
+  <div class="mb-2">
+    <label class="form-label small mb-1 text-muted">图片</label>
     {% set cover_val = edit_item.cover or edit_item.image or edit_item.photo or '' %}
-    <input type="text" class="form-control form-control-sm" name="image" value="{{ cover_val }}" placeholder="图片 URL 或上传">
-    <input type="file" class="form-control form-control-sm mt-1" name="image" accept="image/*">
+    <input type="text" class="form-control form-control-sm" name="cover" value="{{ cover_val }}" placeholder="图片 URL 或上传">
+    <input type="file" class="form-control form-control-sm mt-1" name="cover_file" accept="image/*,.svg,.svgz">
     {% if cover_val %}<img src="{{ cover_val }}" alt="预览" style="margin-top:6px;max-width:200px;max-height:120px;border-radius:6px;">{% endif %}
+  </div>
+  <div class="mb-2">
+    <label class="form-label small mb-1 text-muted">视频</label>
+    <input type="text" class="form-control form-control-sm" name="video" value="{{ edit_item.video or '' }}" placeholder="MP4/WebM 视频 URL 或上传">
+    <input type="file" class="form-control form-control-sm mt-1" name="video_file" accept="video/mp4,video/webm,video/ogg,video/quicktime">
+  </div>
+  <div class="mb-2">
+    <label class="form-label small mb-1 text-muted">嵌入页面</label>
+    <input type="text" class="form-control form-control-sm" name="embed_url" value="{{ edit_item.embed_url or '' }}" placeholder="嵌入页面 URL，或上传包含 index.html 的 ZIP">
+    <input type="file" class="form-control form-control-sm mt-1" name="embed_url_file" accept=".zip">
   </div>
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">标签</label>
@@ -415,7 +444,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     </div>
     <div class="dataset-detail-button-help">只影响数据列表展示模块中这一条卡片的按钮。</div>
   </div>
-  {% for key, val in edit_item.items() if key not in ('id', 'slug', 'date', 'title', 'description', 'excerpt', 'summary', 'cover', 'image', 'photo', 'logo', 'tags', 'body', 'content', 'show_detail_btn') %}
+  {% for key, val in edit_item.items() if key not in ('id', 'slug', 'date', 'title', 'description', 'excerpt', 'summary', 'cover', 'image', 'photo', 'logo', 'media_type', 'video', 'embed_url', 'tags', 'body', 'content', 'show_detail_btn') %}
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">{{ key }}</label>
     {% if key in ('cover', 'photo', 'logo') %}<input type="text" class="form-control form-control-sm" name="{{ key }}" value="{{ val }}"><input type="file" class="form-control form-control-sm mt-1" name="{{ key }}" accept="image/*">
