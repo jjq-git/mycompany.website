@@ -499,6 +499,7 @@
         </svg>
         <span class="url-text" id="previewUrlText">{{ url_for('core.preview_site', site_id=site.id) if site else
           'about:blank' }}</span>
+        <span class="preview-dirty-badge" id="previewDirtyBadge" hidden>预览待刷新</span>
         <div class="flex-grow-1"></div>
         <div class="d-flex align-items-center gap-1">
           <button class="btn btn-sm btn-outline-secondary active preview-device-btn" data-device="desktop"
@@ -526,7 +527,7 @@
               <line x1="12" y1="19" x2="12" y2="19" />
             </svg>
           </button>
-          <button class="btn btn-sm btn-outline-secondary preview-toolbar-btn" onclick="refreshPreview()" title="刷新预览">
+          <button class="btn btn-sm btn-outline-secondary preview-toolbar-btn" id="previewRefreshBtn" onclick="refreshPreview()" title="刷新预览">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
               <polyline points="23 4 23 10 17 10" />
@@ -1146,6 +1147,7 @@
             alert((data.error || '生成预览失败') + details);
             return;
           }
+          clearPreviewDirty();
           return setPreviewFrameUrl(previewUrl);
         })
         .finally(hideBuildLoading);
@@ -1203,6 +1205,20 @@
     function updatePreviewUrlBar(url) {
       var text = document.getElementById('previewUrlText');
       if (text) text.textContent = url || 'about:blank';
+    }
+
+    function markPreviewDirty() {
+      var badge = document.getElementById('previewDirtyBadge');
+      var btn = document.getElementById('previewRefreshBtn');
+      if (badge) badge.hidden = false;
+      if (btn) btn.classList.add('preview-toolbar-btn--dirty');
+    }
+
+    function clearPreviewDirty() {
+      var badge = document.getElementById('previewDirtyBadge');
+      var btn = document.getElementById('previewRefreshBtn');
+      if (badge) badge.hidden = true;
+      if (btn) btn.classList.remove('preview-toolbar-btn--dirty');
     }
 
     function renderPreviewTabs() {
@@ -1467,9 +1483,11 @@
       body.innerHTML = '<div class="p-3 text-muted text-center py-5"><div class="spinner-border spinner-border-sm me-2"></div>保存中...</div>';
       if (footer) footer.style.display = 'none';
       fetch(form.action || window.location.href, { method: 'POST', body: new FormData(form) })
-        .then(r => r.text())
-        .then(html => {
-          body.innerHTML = html;
+        .then(function(r) {
+          return r.text().then(function(html) { return { ok: r.ok, html: html }; });
+        })
+        .then(function(result) {
+          body.innerHTML = result.html;
           // 提取片段中的标题（.fw-semibold）显示到右侧面板顶栏，然后清空原处
           var titleEl = body.querySelector('.fw-semibold');
           if (titleEl && titleEl.textContent.trim()) {
@@ -1490,7 +1508,7 @@
               footer.appendChild(saveBar);
               footer.style.display = '';
             }
-            refreshPreview();
+            if (result.ok) markPreviewDirty();
           });
         })
         .catch(err => { body.innerHTML = '<div class="p-3 text-danger">保存失败</div>'; });

@@ -520,12 +520,12 @@ document.getElementById('modulesForm').addEventListener('submit', function(e){
   e.preventDefault();
   var formData = new FormData(this);
   fetch(this.action, {method:'POST', body: formData})
-    .then(r => r.text())
-    .then(html => {
+    .then(function(r) { return r.text().then(function(html) { return {ok: r.ok, html: html}; }); })
+    .then(function(result) {
       var panel = document.getElementById('rightPanelBody');
-      panel.innerHTML = html;
+      panel.innerHTML = result.html;
       runPanelScripts(panel);
-      refreshPreview();
+      if (result.ok && typeof markPreviewDirty === 'function') markPreviewDirty();
     });
 });
 

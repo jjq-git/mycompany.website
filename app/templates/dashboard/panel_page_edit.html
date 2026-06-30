@@ -2985,11 +2985,11 @@ function submitModuleFormAjax(form, event) {
   var btn = form.querySelector('button[type="submit"]') || document.querySelector('button[form="' + form.id + '"][type="submit"]');
   if (btn) { btn.disabled = true; btn.textContent = '保存中...'; }
   fetch(form.action, {method:'POST', body: formData})
-    .then(function(r) { return r.text(); })
-    .then(function(html) {
+    .then(function(r) { return r.text().then(function(html) { return {ok: r.ok, html: html}; }); })
+    .then(function(result) {
       var panel = document.getElementById('rightPanelBody');
       var footer = document.getElementById('rightPanelFooter');
-      panel.innerHTML = html;
+      panel.innerHTML = result.html;
       return runPanelScripts(panel).then(function() {
         // 移动保存按钮到 footer
         var saveBar = panel.querySelector('.panel-save-bar');
@@ -3004,7 +3004,7 @@ function submitModuleFormAjax(form, event) {
           footer.appendChild(saveBar);
           footer.style.display = '';
         }
-        refreshPreview();
+        if (result.ok && typeof markPreviewDirty === 'function') markPreviewDirty();
       });
     })
     .catch(function(err) {
@@ -3713,12 +3713,12 @@ document.getElementById('migrateForm').addEventListener('submit', function(e){
   e.preventDefault();
   var formData = new FormData(this);
   fetch(this.action, {method:'POST', body: formData})
-    .then(r => r.text())
-    .then(html => {
+    .then(function(r) { return r.text().then(function(html) { return {ok: r.ok, html: html}; }); })
+    .then(function(result) {
       var panel = document.getElementById('rightPanelBody');
-      panel.innerHTML = html;
+      panel.innerHTML = result.html;
       return runPanelScripts(panel).then(function() {
-        refreshPreview();
+        if (result.ok && typeof markPreviewDirty === 'function') markPreviewDirty();
       });
     });
 });

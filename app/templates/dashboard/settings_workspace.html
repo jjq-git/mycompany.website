@@ -88,8 +88,8 @@
     var params = new URLSearchParams(window.location.search);
     if (params.get('saved') === '1' && window.parent && window.parent !== window) {
       try {
-        if (typeof window.parent.refreshPreview === 'function') {
-          window.parent.refreshPreview({ message: '正在更新预览...' });
+        if (typeof window.parent.markPreviewDirty === 'function') {
+          window.parent.markPreviewDirty();
         }
       } catch (e) {}
     }
