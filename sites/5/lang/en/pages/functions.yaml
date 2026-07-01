@@ -1,15 +1,3 @@
-module_list:
-  enabled: true
-  search: true
-  pagination: true
-  page_size: 6
-  target_types:
-  - highlight_card
-  search_placeholder: Search functions...
-  empty_text: No matching functions.
-  results_label: results
-  prev_label: Previous
-  next_label: Next
 modules:
 - type: section_title
   order: 1
@@ -17,270 +5,41 @@ modules:
   data:
     tag: ''
     title: Functions
-    desc: Thanks to its high-performance MCU, the Rimu host can smoothly run a variety
-      of lightweight and practical tools, providing a flexible and efficient experience
-      for both development and everyday use. We continuously update and release new
-      functional modules, allowing your device to grow with your needs and always
-      stay fresh and powerful. If you have programming skills, you can even develop
-      your own custom tools to create a more personalized experience. All applications
-      are optional and can be installed based on your needs. The interface below offers
-      a web-based preview, allowing you to explore and interact with each tool before
-      installing it.
+    desc: <p>With its high-performance MCU, the Rimu host can smoothly run various
+      lightweight utility tools, providing a flexible and efficient experience for
+      development and daily use. We continuously update and release new functional
+      modules, allowing your device to grow with your needs, always staying fresh
+      and powerful. If you have programming skills, you can even develop your own
+      custom tools to create a more personalized experience. All applications are
+      optional and can be installed as needed. The following interface provides a
+      web-based preview, allowing you to explore and try each tool before installation.</p>
     btn: ''
     btn_url: ''
     _hidden: 'false'
     style_text-align: center
     style_bg-color: '#f9fbfb'
     style_bg: ''
+    style_bg_convert_webp: 'false'
+    style_bg_alt: Features
+    style_font-color: ''
   responsive:
     tablet:
       _hidden: 'false'
     mobile:
       _hidden: 'false'
-- type: highlight_card
+- type: data_list_showcase
   order: 2
-  variant: dir_row
+  variant: default
   data:
-    media_type: embed
-    _hidden_image_area: ''
-    image: https://cdn.dengtec.com/rimu/color_code_resistor/index.html
-    video: ''
-    embed_url: https://cdn.dengtec.com/rimu/color_code_resistor/index.html
-    _hidden_text_area: ''
-    tag: ''
-    title: Resistor Decoder
-    desc: This app lets you quickly decode resistor color codes, visualize their corresponding
-      ohm values, and compare multiple resistors side by side. Whether you’re a student,
-      hobbyist, or professional, it helps you avoid manual lookup and reduces errors
-      in circuit design.
-    primaryBtn: ''
-    primaryLink: ''
-    secondaryBtn: ''
-    secondaryLink: ''
-    _hidden: 'false'
-    style_dir: row
+    dataset: functions
+    show_search: 'true'
+    show_filters: 'false'
+    show_pagination: 'true'
+    show_view_all: 'false'
+    show_detail_btn: 'true'
+    style_bg: ''
+    style_bg_convert_webp: 'false'
+    style_bg_alt: Features
     style_bg-color: ''
-    style_bg: ''
-  responsive:
-    tablet:
-      media_type: image
-      _hidden: 'false'
-    mobile:
-      media_type: image
-      _hidden: 'false'
-- type: highlight_card
-  order: 3
-  variant: dir_row-reverse
-  data:
-    media_type: embed
-    _hidden_image_area: ''
-    image: ''
-    video: ''
-    embed_url: https://cdn.dengtec.com/rimu/base_converter/index.html
-    _hidden_text_area: ''
-    tag: ''
-    title: Base Convertor
-    desc: A simple and practical real-time base converter tool that supports quick
-      conversions between binary, octal, decimal, and hexadecimal, making it easy
-      to view numbers in different numeral systems.
-    primaryBtn: ''
-    primaryLink: ''
-    secondaryBtn: ''
-    secondaryLink: ''
-    _hidden: 'false'
-    style_dir: row-reverse
-    style_bg-color: '#f9fbfb'
-    style_bg: ''
-  responsive:
-    tablet:
-      media_type: image
-      _hidden: 'false'
-    mobile:
-      media_type: image
-      _hidden: 'false'
-- type: highlight_card
-  order: 4
-  variant: dir_row
-  data:
-    media_type: embed
-    _hidden_image_area: ''
-    image: ''
-    video: ''
-    embed_url: https://cdn.dengtec.com/rimu/calculate/index.html
-    _hidden_text_area: ''
-    tag: ''
-    title: Calculate
-    desc: A simple calculator.
-    primaryBtn: ''
-    primaryLink: ''
-    secondaryBtn: ''
-    secondaryLink: ''
-    _hidden: 'false'
-    style_dir: row
-    style_bg-color: ''
-    style_bg: ''
-  responsive:
-    tablet:
-      media_type: image
-      _hidden: 'false'
-    mobile:
-      media_type: image
-      _hidden: 'false'
-- type: highlight_card
-  order: 5
-  variant: dir_row-reverse
-  data:
-    media_type: embed
-    _hidden_image_area: ''
-    image: ''
-    video: ''
-    embed_url: https://cdn.dengtec.com/rimu/keyboard/index.html
-    _hidden_text_area: ''
-    tag: ''
-    title: Keyboard
-    desc: By connecting the RIMU host to your computer via USB Type-C, it instantly
-      transforms into a customizable shortcut keyboard. Easily trigger your most-used
-      actions and boost productivity—whether you’re coding, editing, or handling daily
-      tasks.
-    primaryBtn: ''
-    primaryLink: ''
-    secondaryBtn: ''
-    secondaryLink: ''
-    _hidden: 'false'
-    style_dir: row-reverse
-    style_bg-color: '#f9fbfb'
-    style_bg: ''
-  responsive:
-    tablet:
-      media_type: image
-      _hidden: 'false'
-    mobile:
-      media_type: image
-      _hidden: 'false'
-- type: highlight_card
-  order: 6
-  variant: dir_row
-  data:
-    media_type: embed
-    _hidden_image_area: ''
-    image: ''
-    video: ''
-    embed_url: https://cdn.dengtec.com/rimu/parallel_res/index.html
-    _hidden_text_area: ''
-    tag: ''
-    title: Parallel Resistor Calculator
-    desc: Quickly calculate the total resistance of multiple resistors connected in
-      parallel. This tool helps you visualize and compute equivalent resistance with
-      ease—perfect for electronics hobbyists, students, and engineers looking to save
-      time and avoid manual math.
-    primaryBtn: ''
-    primaryLink: ''
-    secondaryBtn: ''
-    secondaryLink: ''
-    _hidden: 'false'
-    style_dir: row
-    style_bg-color: ''
-    style_bg: ''
-  responsive:
-    tablet:
-      media_type: image
-      _hidden: 'false'
-    mobile:
-      media_type: image
-      _hidden: 'false'
-- type: highlight_card
-  order: 7
-  variant: dir_row-reverse
-  data:
-    media_type: embed
-    _hidden_image_area: ''
-    image: ''
-    video: ''
-    embed_url: https://cdn.dengtec.com/rimu/qrcode/index.html
-    _hidden_text_area: ''
-    tag: ''
-    title: QuickQR
-    desc: Easily generate and display QR codes on screen. This tool is perfect for
-      sharing URLs, Wi-Fi credentials, or text with mobile devices—just scan and go.
-      Simple, fast, and ideal for presentations or demos.
-    primaryBtn: ''
-    primaryLink: ''
-    secondaryBtn: ''
-    secondaryLink: ''
-    _hidden: 'false'
-    style_dir: row-reverse
-    style_bg-color: '#f9fbfb'
-    style_bg: ''
-  responsive:
-    tablet:
-      media_type: image
-      _hidden: 'false'
-    mobile:
-      media_type: image
-      _hidden: 'false'
-- type: highlight_card
-  order: 8
-  variant: dir_row
-  data:
-    media_type: embed
-    _hidden_image_area: ''
-    image: ''
-    video: ''
-    embed_url: https://cdn.dengtec.com/rimu/ruler/index.html
-    _hidden_text_area: ''
-    tag: ''
-    title: Screen Ruler
-    desc: A digital ruler that supports both metric (cm/mm) and imperial (inch) units.
-      Designed for on-screen measurement and quick reference, it’s ideal for design
-      work, education, or precise comparison tasks. Switch units easily and get accurate
-      readings with a responsive interface.
-    primaryBtn: ''
-    primaryLink: ''
-    secondaryBtn: ''
-    secondaryLink: ''
-    _hidden: 'false'
-    style_dir: row
-    style_bg-color: ''
-    style_bg: ''
-  responsive:
-    tablet:
-      media_type: image
-      _hidden: 'false'
-    mobile:
-      media_type: image
-      _hidden: 'false'
-- type: highlight_card
-  order: 9
-  variant: dir_row-reverse
-  data:
-    media_type: embed
-    _hidden_image_area: ''
-    image: ''
-    video: ''
-    embed_url: https://cdn.dengtec.com/rimu/worldtime/index.html
-    _hidden_text_area: ''
-    tag: ''
-    title: Global Time
-    desc: View the current time across multiple cities and time zones around the world.
-      Whether you’re coordinating international meetings or staying in touch with
-      friends abroad, this tool gives you a clear, real-time overview of global time
-      differences.
-    primaryBtn: ''
-    primaryLink: ''
-    secondaryBtn: ''
-    secondaryLink: ''
-    _hidden: 'false'
-    style_dir: row-reverse
-    style_bg-color: '#f9fbfb'
-    style_bg: ''
-  responsive:
-    tablet:
-      media_type: image
-      _hidden: 'false'
-    mobile:
-      media_type: image
-      _hidden: 'false'
-title: Functions
-description: RIMU host runs lightweight tools like Resistor Decoder, Base Convertor,
-  and QuickQR on its high-performance MCU. Explore web-based previews, install optional
-  apps, or build custom
+    pagination_style: page_numbers
+    pager_align: center

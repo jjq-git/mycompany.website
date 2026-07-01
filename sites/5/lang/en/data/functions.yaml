@@ -1,0 +1,515 @@
+- id: 1
+  title: Resistor Decoder
+  slug: resistor-decoder
+  cover: ''
+  cover_convert_webp: 'false'
+  cover_alt: Resistor Decoder
+  date: ''
+  name: ''
+  category: ''
+  description: "<p style=\"text-align: left;\">This app lets you quickly decode resistor\
+    \ color bands, visualize their corresponding ohm values, and compare multiple\
+    \ resistors side by side. Whether you're a student, hobbyist, or professional,\
+    \ it helps you avoid manual lookups and reduces errors in circuit design.<br></p><p></p><ul><li>Top\
+    \ three buttons: 4 Band / 5 Band / 6 Band — select the number of color bands on\
+    \ the resistor. The currently selected option has a yellow outline.\r\n</li><li>Middle\
+    \ gray resistor body: the bands to be colored are arranged on it. Gray means not\
+    \ yet colored.\r\n</li><li>Bottom row of color blocks: the color picker. Tap a\
+    \ color block to color the current band and fill in the corresponding digit.\r\
+    \n</li><li>Above the resistor body: once all bands are selected, the resistance\
+    \ result is displayed (e.g. 200MR 2%, R = ohm Ω).</li></ul><p></p>"
+  tags_visible: true
+  tags: ''
+  price: ''
+  body: "<h3><b>How to Use</b></h3><div><p><b>Step 1 — Select resistor type and pick\
+    \ the first band color</b></p><p>First tap 4 / 5 / 6 Band at the top to choose\
+    \ the number of bands (image shows 5 Band), then tap the first band. Color blocks\
+    \ with digits appear at the bottom — tap the matching color (e.g. Red = 2), and\
+    \ the first band turns red.</p><p><img src=\"/assets/uploads/richtext-20260701055859-8fbabed4.svg\"\
+    ></p></div><div><p><b>Step 2 — Pick the second band color</b></p><p>The first\
+    \ band has turned red and shows 2. Tap the second band, choose its color from\
+    \ the bottom (e.g. Black = 0), and the second band colors accordingly. Repeat\
+    \ for remaining significant digit bands (3rd band for 5/6 Band types).</p></div><div><img\
+    \ src=\"/assets/uploads/richtext-20260701055935-bf5bedb2.svg\"></div><div><p><b>Step\
+    \ 3 — Select the multiplier band color</b></p><p>After the significant digit bands,\
+    \ tap the multiplier band. The bottom color blocks automatically switch to the\
+    \ multiplier legend (Silver ×0.01 … White ×1G). Tap the matching color (e.g. Blue\
+    \ = ×1M), and the multiplier band shows x 1M.</p><p><img src=\"/assets/uploads/richtext-20260701055946-950470c7.svg\"\
+    ></p><p><b>Step 4 — Read the resistance result</b></p><p>Once the final tolerance\
+    \ band is also selected and all bands are complete, the final resistance value\
+    \ and tolerance are automatically displayed above the resistor body, e.g. 200MR\
+    \ 2% (i.e. 200 MΩ ±2%).</p><p><img src=\"/assets/uploads/richtext-20260701055959-43056e16.svg\"\
+    ></p><hr id=\"null\"><p>Tips</p><p></p><ul><li>All bands required for the current\
+    \ type must be selected before the result appears at the top; skipping any band\
+    \ hides the result.\r\n</li><li>Switching between 4 / 5 / 6 Band clears all selected\
+    \ colors — you start fresh.\r\n</li><li>The bottom color blocks change automatically\
+    \ based on the current band's role: significant digit bands show 0–9, multiplier\
+    \ band shows multipliers, tolerance/tempco band shows percentages/ppm.\r\n</li><li>In\
+    \ the result, R represents ohm Ω; K / M / G represent kilo / mega / giga ohms.</li></ul><p></p></div>"
+  rte_clicked_editor_idx: ''
+  detail_gallery:
+    visible: true
+    images: []
+  style_bg-color: ''
+  modules:
+  - type: item_data
+    order: 1
+    variant: default
+    data: {}
+  media_type: embed
+  video: ''
+  embed_url: /media-packages/wf1f_color_code_res-20260630085447-4382a3df/
+- id: 2
+  title: Base Convertor
+  slug: base-convertor
+  media_type: embed
+  cover: ''
+  cover_convert_webp: 'false'
+  cover_alt: Base Convertor
+  video: ''
+  embed_url: /media-packages/wf1f_base_converter-20260630085501-b67b5a83/
+  date: ''
+  name: ''
+  category: ''
+  description: "A simple and practical real-time base conversion tool that supports\
+    \ quick conversions between binary, octal, decimal, and hexadecimal, making it\
+    \ easy to view numbers in different numeral systems.<div><p></p><ul><li>Four rows\
+    \ from top to bottom: BIN (16-bit binary), HEX (4-digit hexadecimal), OCT (6-digit\
+    \ octal), DEC (5-digit decimal).\r\n</li><li>Each row has the base name on the\
+    \ left and a row of digit cells on the right.\r\n</li><li>All four rows always\
+    \ represent the same number, with a maximum supported value of decimal 65535.</li></ul><p></p></div>"
+  tags_visible: true
+  tags: ''
+  price: ''
+  body: '<h3><b>How to Use</b></h3><hr id="null"><p><b>Step 1 — Open the app</b></p><p>On
+    entry all four rows show 0, indicating the current value is 0.</p><p><img src="/assets/uploads/richtext-20260630054920-61b86e62.svg"></p><p><b>Step
+    2 — Flip binary bits</b></p><p>Each cell in the BIN row has only two states: 0
+    or 1. Tap a cell to flip between 0 and 1. In the image below, tapping the rightmost
+    bit flips it to 1, the value becomes 1, and the other three rows update synchronously.</p><p><img
+    src="/assets/uploads/richtext-20260701060207-86be71c5.svg"></p><p><b>Step 3 —
+    Increment hex/decimal digits</b></p><p>Each cell in the HEX, OCT, and DEC rows
+    increments by 1 per tap, wrapping back to 0 at the maximum (HEX wraps F→0, DEC
+    wraps 9→0). In the image below, tapping the HEX units digit from 1 to 2 changes
+    the value to 2.</p><p><img src="/assets/uploads/richtext-20260701060228-458acd65.svg"></p><p><b>Step
+    4 — Swipe to adjust digits</b></p><p>Each cell in the HEX, OCT, and DEC rows also
+    supports vertical swiping for continuous value adjustment — great for quickly
+    spanning multiple numbers. In the image below, swiping the DEC tens digit to 5
+    changes the value to 52, with all four rows updating synchronously.</p><p><img
+    src="/assets/uploads/richtext-20260701060243-06f72b75.svg"></p>'
+  rte_clicked_editor_idx: ''
+  detail_gallery:
+    visible: true
+    images: []
+  style_bg-color: ''
+  modules:
+  - type: item_data
+    order: 1
+    variant: default
+    data: {}
+- id: 3
+  title: Calculator
+  slug: calculate
+  media_type: embed
+  cover: ''
+  cover_convert_webp: 'false'
+  cover_alt: Calculator
+  video: ''
+  embed_url: /media-packages/wf1f_calculate-20260630085510-fa1994d9/
+  date: ''
+  name: ''
+  category: ''
+  description: "<p>A basic four-function calculator: digit/operator keypad + large\
+    \ display, automatically recording each calculation result into the history on\
+    \ the left.</p><p><ul><li>Top-left display area: current input or calculation\
+    \ result, right-aligned large white text.\r\n</li><li>Bottom-left history area:\
+    \ list of completed expressions (a op b = result), newest at the bottom.\r\n</li><li>Right-side\
+    \ keypad matrix: 4 columns × 5 rows.\r\n</li></ul></p><blockquote style=\"margin:\
+    \ 0 0 0 40px; border: none; padding: 0px;\"><p>Digit keys: 0–9 and decimal point\
+    \ .\r\n</p><p>Operator keys: / (divide), * (multiply), - (subtract), + (add).\r\
+    \n</p><p>Function keys: CE (clear entry), C (clear all), +/- (negate), = (equals).</p></blockquote>"
+  tags_visible: true
+  tags: ''
+  price: ''
+  body: "<p><b>Tips\r\n</b><br><ul><li>Difference between C and CE: C clears the entire\
+    \ expression (including the history current line) and resets to zero; CE only\
+    \ clears the entry currently being typed.\r\n</li><li>+/- negates the current\
+    \ number; . enters a decimal point. Dividing by 0 displays \"divider can't be\
+    \ zero!\".\r\n</li><li>Long-press the bottom-left history area to open settings:\
+    \ toggle \"Record History\" on/off, one-tap \"Clear History\".\r\n</li><li>History\
+    \ keeps roughly the 10 most recent expressions; the oldest is pushed out when\
+    \ the limit is exceeded.\r\n</li><li>History and the \"Record History\" toggle\
+    \ are saved even after power-off on real hardware; in the simulator (WASM) an\
+    \ NVS stub is used, which only persists within the current session and does not\
+    \ survive across sessions.</li></ul></p>"
+  rte_clicked_editor_idx: ''
+  detail_gallery:
+    visible: true
+    images: []
+  style_bg-color: ''
+  modules:
+  - type: item_data
+    order: 1
+    variant: default
+    data: {}
+- id: 4
+  title: Keyboard
+  slug: keyboard
+  media_type: embed
+  cover: ''
+  cover_convert_webp: 'false'
+  cover_alt: Keyboard
+  video: ''
+  embed_url: /media-packages/wf1f_keyboard-20260630085521-6e9297a8/
+  date: ''
+  name: ''
+  category: ''
+  description: "<p>USB shortcut keyboard. The device connects as a USB HID keyboard\
+    \ to your computer. Select an app profile on the left side, and the keyboard works\
+    \ with shortcut keys sent from the web page (WebUSB).</p><p></p><ul><li>Left vertical\
+    \ bar: 6 app brand icons, from top to bottom: YouTube / Photoshop / KiCad / VLC\
+    \ / Windows / CNC.\r\n</li><li>The currently selected icon has a lighter background\
+    \ (near white); the rest are bright cyan.\r\n</li><li>Right large area: content\
+    \ zone, left blank and driven by web page (WebUSB) configuration.</li></ul><p></p>"
+  tags_visible: true
+  tags: ''
+  price: ''
+  body: "<h3><b>How to Use</b></h3><hr id=\"null\"><div><p><b>Step 1 — Open the keyboard</b></p><p>On\
+    \ entry, the top YouTube profile is selected by default (lighter background),\
+    \ and the device connects as a USB HID keyboard to the computer, waiting for the\
+    \ web page to send configuration.</p><p><img src=\"/assets/uploads/richtext-20260630065716-53cc48ad.svg\"\
+    ></p><p><b>Step 2 — Select an app profile</b></p><p>Tap the desired app icon on\
+    \ the left bar, e.g. tap Photoshop.</p><p><img src=\"/assets/uploads/richtext-20260701060410-452ea344.svg\"\
+    ></p><p><b>Step 3 — Switch complete</b></p><p>The tapped icon's background lightens,\
+    \ indicating it is selected. The right content area now operates according to\
+    \ that app's configuration.</p><p><img src=\"/assets/uploads/richtext-20260630065806-9e07ec63.svg\"\
+    ></p><p><b>Step 4 — Switch again anytime</b></p><p>At any time, tap another icon\
+    \ to switch to a different app, e.g. tap the bottom CNC icon. Only one is selected\
+    \ at a time.</p><p><img src=\"/assets/uploads/richtext-20260701060421-9f1367f1.svg\"\
+    ></p><hr id=\"null\"><p><b>Tips</b></p><p></p><ul><li>The 6 icons correspond to\
+    \ 6 sets of app profiles, mutually exclusive — only one is active at a time.\r\
+    \n</li><li>Which keys are actually sent is configured by the web page (WebUSB)\
+    \ and sent to the device; the device itself does not have built-in shortcuts.\r\
+    \n</li><li>Exiting this page releases the USB HID keyboard role.</li></ul><p></p></div>"
+  rte_clicked_editor_idx: ''
+  detail_gallery:
+    visible: true
+    images: []
+  style_bg-color: ''
+  modules:
+  - type: item_data
+    order: 1
+    variant: default
+    data: {}
+- id: 5
+  title: Parallel Resistor Calculator
+  slug: parallel-resistor-calculator
+  media_type: embed
+  cover: ''
+  cover_convert_webp: 'false'
+  cover_alt: Parallel Resistor Calculator
+  video: ''
+  embed_url: /media-packages/wf1f_parallel_res-20260630085531-709d6192/
+  date: ''
+  name: ''
+  category: ''
+  description: "<p>Enter multiple resistor values, press once to calculate their parallel\
+    \ equivalent, supporting R / KR / MR units.</p><p></p><ul><li>Top-left large number:\
+    \ parallel result, formatted as value + unit (e.g. 6.85 KR).\r\n</li><li>Left\
+    \ side 5 rows: resistor inputs, one resistor per row.\r\n</li><li>Left dark box\
+    \ per row: enter the value (right-aligned).\r\n</li><li>Right cyan button per\
+    \ row: the row's unit (R / KR / MR), tap to cycle through.\r\n</li><li>Right-side\
+    \ numeric keypad: enter digits and decimal point, ‹ › to move cursor, ⌫ to backspace,\
+    \ ✓ to calculate.</li></ul><p></p><p></p>"
+  tags_visible: true
+  tags: ''
+  price: ''
+  body: "<h3><b>How to Use</b></h3><hr id=\"null\"><div><p><b>Step 1 — Open the app</b></p><p>On\
+    \ entry, the result shows 0 R, and all 5 input rows are empty, waiting for input.</p><p><img\
+    \ src=\"/assets/uploads/richtext-20260630070352-94eca15a.svg\"></p><p><b>Step\
+    \ 2 — Enter the first resistor</b></p><p>First tap an input box to select it (cursor\
+    \ appears), then use the right-side keypad to type the resistor value.</p><p><img\
+    \ src=\"/assets/uploads/richtext-20260701060556-25f693a7.svg\"></p><p><b>Step\
+    \ 3 — Select the unit</b></p><p>Tap the unit button on the right side of that\
+    \ row to cycle through R → KR → MR, corresponding to ohms, kilo-ohms, and mega-ohms.</p><p><img\
+    \ src=\"/assets/uploads/richtext-20260701060613-1a98dc97.svg\"></p><p><b>Step\
+    \ 4 — Fill in remaining resistors</b></p><p>Repeat steps 2 and 3 to fill in the\
+    \ remaining resistors row by row (each row can have a different unit). Unfilled\
+    \ rows are not included in the calculation.</p><p><img src=\"/assets/uploads/richtext-20260701060627-23c4cc96.svg\"\
+    ></p><p><b>Step 5 — Calculate</b></p><p>Press the ✓ key at the bottom right of\
+    \ the keypad to instantly compute the parallel result from each row's value and\
+    \ unit.</p><p><img src=\"/assets/uploads/richtext-20260701060637-143f6259.svg\"\
+    ></p><p><b>Step 6 — Read the parallel result</b></p><p>The upper-left number is\
+    \ the parallel result. The unit (R / KR / MR) is automatically selected based\
+    \ on the value magnitude, showing two decimal places.</p><p><img src=\"/assets/uploads/richtext-20260701060645-38b2e31f.svg\"\
+    ></p><hr id=\"null\"><p><b>Tips</b></p><p></p><ul><li>Empty or zero-value rows\
+    \ are automatically ignored — only fill in the resistors actually connected.\r\
+    \n</li><li>After changing any row's value or unit, press ✓ again to refresh the\
+    \ result.\r\n</li><li>Units are per-row independent: one row can be KR, another\
+    \ R — mixing is fine.\r\n</li><li>The result unit auto-scales with magnitude:\
+    \ below 1000 shows R, at thousands shows KR, at millions shows MR.</li></ul><p></p></div>"
+  rte_clicked_editor_idx: ''
+  detail_gallery:
+    visible: true
+    images: []
+  style_bg-color: ''
+  modules:
+  - type: item_data
+    order: 1
+    variant: default
+    data: {}
+- id: 6
+  title: QuickQR
+  slug: quick-qr
+  media_type: embed
+  cover: ''
+  cover_convert_webp: 'false'
+  cover_alt: QuickQR
+  video: ''
+  embed_url: /media-packages/wf1f_qrcode-20260630085542-7108ec9d/
+  date: ''
+  name: ''
+  category: ''
+  description: "<p>Instantly generate and display QR codes on screen, with customizable\
+    \ content (URLs, text, etc.) and a title bar above.<br></p><ul><li>Top title bar:\
+    \ a line of descriptive text, defaults to \"Tap to edit\" — tap to edit.\r\n</li><li>Center\
+    \ QR code: generated in real time from the encoded content, white blocks on a\
+    \ cyan-green background for easy scanning.\r\n</li><li>Both the content and title\
+    \ can be edited by tapping the corresponding area — no separate buttons needed.</li></ul><p></p>"
+  tags_visible: true
+  tags: ''
+  price: ''
+  body: "<h3><b>How to Use</b></h3><hr id=\"null\"><p><b>Step 1 — Open QR code</b></p><p>On\
+    \ entry, the center displays the QR code for the current content, with the title\
+    \ text at the top. The default encoding is https://rimu.me.</p><p><img src=\"\
+    /assets/uploads/richtext-20260630070953-71ef0ad1.svg\" alt=\"richtext-20260630070953-71ef0ad1.svg\"\
+    ></p><p><b>Step 2 — Edit QR code content\r\n</b><br>Tap the center QR code area.\
+    \ The screen switches to the editing interface.</p><p><img src=\"/assets/uploads/richtext-20260701060758-3179db54.svg\"\
+    ></p><p><b>Step 3 — Enter and confirm\r\n</b><br>Type a new URL or text on the\
+    \ pop-up keyboard, then tap the confirm key (⏎). The QR code immediately regenerates\
+    \ with the new content and returns to the viewing interface.</p><p><img src=\"\
+    /assets/uploads/richtext-20260630071029-82ed0d85.svg\" alt=\"richtext-20260630071029-82ed0d85.svg\"\
+    ></p><p><b>Step 4 — Edit title text (optional)\r\n</b><br>Tap the top title bar,\
+    \ which also brings up the keyboard. Enter a new title and tap confirm — the title\
+    \ updates immediately.</p><p><img src=\"/assets/uploads/richtext-20260701060810-18237faa.svg\"\
+    ></p><div><hr id=\"null\"><p><b>Tips\r\n</b><br></p><ul><li>While editing, tap\
+    \ the cancel (close) key on the keyboard to discard changes and keep the original\
+    \ content.\r\n</li><li>If content is left empty and confirmed, it automatically\
+    \ reverts to the default URL https://rimu.me; leaving the title empty reverts\
+    \ to \"Tap to edit\".\r\n</li><li>Longer content produces a denser QR code — using\
+    \ short URLs is recommended for easier phone scanning.</li></ul><p></p></div><div><b><br></b></div>"
+  rte_clicked_editor_idx: ''
+  detail_gallery:
+    visible: true
+    images: []
+  style_bg-color: ''
+  modules:
+  - type: item_data
+    order: 1
+    variant: default
+    data: {}
+- id: 7
+  title: Screen Ruler
+  slug: screen-ruler
+  media_type: embed
+  cover: ''
+  cover_convert_webp: 'false'
+  cover_alt: Screen Ruler
+  video: ''
+  embed_url: /media-packages/wf1f_ruler-20260630085552-0e20501b/
+  date: ''
+  name: ''
+  category: ''
+  description: "<p>Turn your screen into a physical ruler. A full-screen grid of tick\
+    \ marks lets you measure lengths directly, supporting both centimeters (CM) and\
+    \ inches (IN).</p><p>\r\n</p><p></p><ul><li>Full-screen tick grid: thin lines\
+    \ are small ticks, bright lines are integer marks.\r\n</li><li>Numbers on the\
+    \ left/bottom axes: vertical axis increases upward, horizontal axis increases\
+    \ to the right.\r\n</li><li>Top-right unit button: shows the current unit CM /\
+    \ IN — tap to toggle.</li></ul><p></p>"
+  tags_visible: true
+  tags: ''
+  price: ''
+  body: "<p></p><h3><b>How to Use</b></h3><p></p><hr id=\"null\"><p><b>Step 1 — Open\
+    \ the ruler\r\n</b><br>On entry the default is centimeter (CM) grid: horizontal\
+    \ axis 0–80, vertical axis 0–40, with bright lines every 10 for quick reading.</p><p><img\
+    \ src=\"/assets/uploads/richtext-20260630072632-2b024c1e.svg\"></p><p><b>Step\
+    \ 2 — Measure an object's length\r\n</b><br>Place the object against the screen,\
+    \ align one end with the 0 mark, and look where the other end falls — that's the\
+    \ length.</p><p><img src=\"/assets/uploads/richtext-20260701060924-712cf39e.svg\"\
+    ></p><p><b>Step 3 — Switch units (CM / IN)\r\n</b><br>Tap the unit button in the\
+    \ top-right corner to toggle between centimeters and inches. The text on the button\
+    \ indicates the current unit: showing CM means centimeter mode; switching to inches\
+    \ shows IN.</p><p><img src=\"/assets/uploads/richtext-20260701060934-b1cfb92b.svg\"\
+    ></p><p>After switching to inches, the grid changes to 1 large division per inch\
+    \ (with small ticks inside), horizontal axis labeled 0–3, vertical axis 0–2:</p><p><img\
+    \ src=\"/assets/uploads/richtext-20260630072714-50d1c892.svg\"></p><hr id=\"null\"\
+    ><p><b>Tips\r\n</b><br></p><ul><li>Measurement accuracy depends on screen size\
+    \ and display scaling — suitable for rough measurements; use a physical measuring\
+    \ tool for precision.\r\n</li><li>When measuring long objects, hold one end firmly\
+    \ at 0 and shift your gaze to read the other end to avoid angular misreading.\r\
+    \n</li><li>The centimeter grid is denser (down to millimeter ticks); the inch\
+    \ grid is coarser — switch as needed.</li></ul><p></p>"
+  rte_clicked_editor_idx: ''
+  detail_gallery:
+    visible: true
+    images: []
+  style_bg-color: ''
+  modules:
+  - type: item_data
+    order: 1
+    variant: default
+    data: {}
+- id: 8
+  title: Alarm Clock
+  slug: alarm-clock
+  media_type: embed
+  cover: ''
+  cover_convert_webp: 'false'
+  cover_alt: Alarm Clock
+  video: ''
+  embed_url: /media-packages/wf1f_alarm_clock-20260630085602-14742c08/
+  date: ''
+  name: ''
+  category: ''
+  description: "<p>A local alarm clock. On startup it shows the current time (analog\
+    \ dial + digital time + date). You can add multiple alarms, set hours and minutes,\
+    \ and toggle each one individually; alarms alert at the set time.</p><p></p><ul><li>Left\
+    \ large dial: current time, with white hour/minute hands, a cyan second hand,\
+    \ and a cyan center dot.\r\n</li><li>Below the dial: digital time (HH:MM:SS) and\
+    \ date.\r\n</li><li>Right circular bell button \U0001F514: opens alarm settings\
+    \ (expands the right-side list).\r\n</li><li>Settings mode right side: alarm list,\
+    \ each entry = bell icon + time + once/daily + toggle switch; bottom floating\
+    \ ➕ to add new.</li></ul><p></p>"
+  tags_visible: true
+  tags: ''
+  price: ''
+  body: "<h3><b>How to Use</b></h3><hr id=\"null\"><p><b>Step 1 — View current time\r\
+    \n</b><br>On entry you see a full-screen clock — the dial runs in real time, and\
+    \ the digital time and date are shown below. No action needed.</p><p><img src=\"\
+    /assets/uploads/richtext-20260630073159-78c7cbb8.svg\"></p><p><b>Step 2 — Enter\
+    \ alarm settings\r\n</b><br>Tap the \U0001F514 bell button on the right. The dial\
+    \ shrinks to the left half, and the alarm list expands on the right.</p><p><img\
+    \ src=\"/assets/uploads/richtext-20260701061049-259986bb.svg\"></p><p><b>Step\
+    \ 3 — Add a new alarm\r\n</b><br>Tap the ➕ button at the bottom of the list. A\
+    \ time picker pops up (max 8 alarms; ➕ grays out when full).</p><p><img src=\"\
+    /assets/uploads/richtext-20260701061101-2f8ef009.svg\"></p><p><b>Step 4 — Set\
+    \ the time and confirm\r\n</b><br>Scroll the hour and minute wheels to select\
+    \ the desired time, then tap ✓ to save; tap ✕ to cancel. The new alarm is enabled\
+    \ by default.</p><p><img src=\"/assets/uploads/richtext-20260701061110-4e307a78.svg\"\
+    ></p><p><b>Step 5 — Enable / disable alarms\r\n</b><br>Tap the toggle switch on\
+    \ the right side of an alarm entry: on (cyan) = will alert at the set time; off\
+    \ (gray) = kept but silent.</p><p><img src=\"/assets/uploads/richtext-20260701061121-d83dd679.svg\"\
+    ></p><p><b>Step 6 — Delete an alarm\r\n</b><br>Swipe the alarm entry to the left\
+    \ — a red delete area appears on the right. Tap \U0001F5D1 to delete it.</p><p><img\
+    \ src=\"/assets/uploads/richtext-20260701061144-cdfc16e3.svg\"></p><hr id=\"null\"\
+    ><p><b>Tips\r\n</b><br></p><ul><li>Tap the time digits on an alarm entry to re-enter\
+    \ the picker and modify it.\r\n</li><li>In settings mode, tap the left dial to\
+    \ collapse back to the full-screen clock.\r\n</li><li>Alarms are stored in memory\
+    \ and cleared on restart — re-add them after a reboot.</li></ul><p></p>"
+  rte_clicked_editor_idx: ''
+  detail_gallery:
+    visible: true
+    images: []
+  style_bg-color: ''
+  modules:
+  - type: item_data
+    order: 1
+    variant: default
+    data: {}
+- id: 9
+  title: Stopwatch
+  slug: stopwatch
+  media_type: embed
+  cover: ''
+  cover_convert_webp: 'false'
+  cover_alt: Stopwatch
+  video: ''
+  embed_url: /media-packages/wf1f_stopwatch-20260630085615-72ef6793/
+  date: ''
+  name: ''
+  category: ''
+  description: "<p>A millisecond-precision stopwatch with start / pause / reset, plus\
+    \ lap recording while timing.</p><p></p><ul><li>Left large digits: current elapsed\
+    \ time, formatted as HH:MM:SS.hundredths (cyan two digits = hundredths of a second).\r\
+    \n</li><li>Above the digits: status — READY / RUNNING / PAUSED.\r\n</li><li>Top-right\
+    \ circular button: start / pause.\r\n</li><li>Bottom-right circular button: \U0001F6A9\
+    \ lap while running, ↺ reset while stopped.</li></ul><p></p>"
+  tags_visible: true
+  tags: ''
+  price: ''
+  body: "<h3><b>How to Use</b></h3><hr id=\"null\"><p><b>Step 1 — Open the stopwatch\r\
+    \n</b><br>On entry it shows 00:00:00.00, status is READY, and below it says \"\
+    No laps yet\".</p><p><img src=\"/assets/uploads/richtext-20260630073545-9ba27d84.svg\"\
+    ></p><p><b>Step 2 — Start timing\r\n</b><br>Tap the ▶ Start button at the top\
+    \ right. The digits start ticking, and the status changes to RUNNING.</p><p><img\
+    \ src=\"/assets/uploads/richtext-20260701061406-a60ce497.svg\"></p><p><b>Step\
+    \ 3 — Record a lap (optional)\r\n</b><br>While timing, tap the \U0001F6A9 Lap\
+    \ button at the bottom right to record the current elapsed time as an entry in\
+    \ the list below — newest at the top.</p><p><img src=\"/assets/uploads/richtext-20260701061418-7f7ba4f7.svg\"\
+    ></p><p><b>Step 4 — Pause\r\n</b><br>Tap the ⏸ Pause button at the top right.\
+    \ The digits stop, and the status changes to PAUSED. Tap ▶ again to resume from\
+    \ the current time.</p><p><img src=\"/assets/uploads/richtext-20260701061427-057f480d.svg\"\
+    ></p><p><b>Step 5 — Reset to zero\r\n</b><br>While paused, tap the ↺ Reset button\
+    \ at the bottom right. The time resets to zero, all laps are cleared, and the\
+    \ status returns to READY.</p><p><img src=\"/assets/uploads/richtext-20260701061434-ee71d6a8.svg\"\
+    ></p><hr id=\"null\"><p><b>Tips\r\n</b><br></p><ul><li>After pausing, the next\
+    \ action is \"resume\", not \"clear\" — to start over, pause first, then reset.\r\
+    \n</li><li>Up to 64 laps can be recorded; no more are added beyond that.\r\n</li><li>Hundredths\
+    \ of a second refresh every 30 milliseconds for smooth display.</li></ul><p></p><p>\r\
+    \n<br></p>"
+  rte_clicked_editor_idx: ''
+  detail_gallery:
+    visible: true
+    images: []
+  style_bg-color: ''
+  modules:
+  - type: item_data
+    order: 1
+    variant: default
+    data: {}
+- id: 10
+  title: World Clock
+  slug: world-time
+  media_type: embed
+  cover: ''
+  cover_convert_webp: 'false'
+  cover_alt: World Clock
+  video: ''
+  embed_url: /media-packages/wf1f_world_time-20260630085624-e01b2565/
+  date: ''
+  name: ''
+  category: ''
+  description: "<p>Display the real-time time of two time zones side by side, updated\
+    \ automatically every second — just open and view, no interaction needed.</p><p></p><ul><li>Landscape\
+    \ mode: two cards side by side — left Shanghai (Beijing Time UTC+8), right New\
+    \ York (Eastern Time UTC−5).\r\n</li><li>Card top: city name.\r\n</li><li>Card\
+    \ center large digits: local time, formatted as HH:MM:SS (24-hour).\r\n</li><li>Card\
+    \ bottom two lines: day of week (e.g. Thu) and date (YYYY-MM-DD).</li></ul><p></p>"
+  tags_visible: true
+  tags: ''
+  price: ''
+  body: "<h3><b>How to Use</b></h3><hr id=\"null\"><p><b>Step 1 — Open World Clock\r\
+    \n</b><br>On entry, both locations' times are displayed immediately, with the\
+    \ seconds ticking every second — no tapping needed. The two cards refresh synchronously.</p><p><img\
+    \ src=\"/assets/uploads/richtext-20260630074132-5006bed5.svg\"></p><p><b>Step\
+    \ 2 — Compare the two times\r\n</b><br>The left card is the local time zone, and\
+    \ the right card is the target time zone. Read the large center digits for the\
+    \ time, and check the bottom for the day of the week and date — across time zones\
+    \ the right card may show a different date than the left.</p><p><img src=\"/assets/uploads/richtext-20260701061530-2166c708.svg\"\
+    ></p><hr id=\"null\"><p><b>Tips\r\n</b><br></p><ul><li>The time follows the system\
+    \ clock — make sure the device's time is correctly set in system settings first\
+    \ so both locations are accurate.\r\n</li><li>Time zones are fixed as built-in\
+    \ (Shanghai / New York). This page does not support adding, removing, or switching\
+    \ cities on the fly.\r\n</li><li>Times are displayed with monospaced digits, so\
+    \ the whole string doesn't jitter left or right as the seconds tick.</li></ul><p></p><p>\r\
+    \n<br></p>"
+  rte_clicked_editor_idx: ''
+  detail_gallery:
+    visible: true
+    images: []
+  style_bg-color: ''
+  modules:
+  - type: item_data
+    order: 1
+    variant: default
+    data: {}
