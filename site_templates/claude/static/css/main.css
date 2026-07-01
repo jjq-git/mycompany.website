@@ -2970,6 +2970,14 @@ a.ci-value:hover { color: var(--color-primary); }
   background: transparent;
 }
 
+.data-list-showcase .hl-grid {
+  min-height: 360px;
+}
+
+.data-list-showcase .data-list-showcase__item:nth-child(even) .hl-grid {
+  flex-direction: row-reverse;
+}
+
 /* empty / hidden states */
 .dg-card--hidden,
 .dg-card--page-hidden,
@@ -3164,6 +3172,12 @@ a.ci-value:hover { color: var(--color-primary); }
   .hero-banner .container { height: auto; }
 
   .hl-grid { flex-direction: column; gap: var(--space-lg); }
+  .data-list-showcase .data-list-showcase__item:nth-child(even) .hl-grid {
+    flex-direction: column;
+  }
+  .data-list-showcase .hl-grid {
+    min-height: 0;
+  }
   .services-grid { grid-template-columns: 1fr; }
   .lc-grid { grid-template-columns: repeat(2, 1fr); }
   .dg-list { grid-template-columns: 1fr; }

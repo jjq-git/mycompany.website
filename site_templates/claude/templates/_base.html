@@ -323,7 +323,7 @@ function toggleLangDropdown(e) {
   var path = window.location.pathname;
   var cleaned = path
     .replace(/\/templates\/[^/]+\/preview/, '')
-    .replace(/\/preview\/\d+/, '')
+    .replace(/\/(?:preview|live_preview)\/\d+/, '')
     .replace(/^\/(zh-CN|zh-TW|en)/, '')
     .replace(/\/$/, '') || '/';
 
@@ -341,7 +341,7 @@ function toggleLangDropdown(e) {
     if (href.indexOf('http') === 0 || href === '#') return;
     var normalized = href
       .replace(/\/templates\/[^/]+\/preview/, '')
-      .replace(/\/preview\/\d+/, '')
+      .replace(/\/(?:preview|live_preview)\/\d+/, '')
       .replace(/^\/(zh-CN|zh-TW|en)/, '')
       .replace(/\/$/, '') || '/';
     if (normalized === cleaned || (normalized !== '/' && cleaned.indexOf(normalized + '/') === 0)) {

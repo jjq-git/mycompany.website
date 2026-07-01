@@ -38,12 +38,12 @@
 {% set modules = item.modules or [] %}
 {% if modules %}
   {% for module in modules %}
-    <div class="builder-module" data-builder-module-index="{{ loop.index0 }}">
+    <div class="builder-module" data-builder-module-index="{{ loop.index0 }}" data-builder-module-type="{{ module.type }}" data-builder-page-key="{{ page_key }}">
       {{- render_block(module) }}
     </div>
   {% endfor %}
 {% else %}
-  <div class="builder-module" data-builder-module-index="0">
+  <div class="builder-module" data-builder-module-index="0" data-builder-module-type="item_data" data-builder-page-key="{{ page_key }}">
     {{- render_block({'type': 'item_data', 'variant': 'default', 'data': {}}) }}
   </div>
 {% endif %}

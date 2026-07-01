@@ -30,7 +30,7 @@
         {% endif %}
         {% set module_list_state.controls_rendered = true %}
       {% endif %}
-      <div class="builder-module" data-builder-module-index="{{ loop.index0 }}" data-builder-module-type="{{ module.type }}"{% if is_module_list_item %} data-module-list-item="true"{% endif %}>
+      <div class="builder-module" data-builder-module-index="{{ loop.index0 }}" data-builder-module-type="{{ module.type }}" data-builder-page-key="{{ page_key }}"{% if is_module_list_item %} data-module-list-item="true"{% endif %}>
         {# render_block 全权处理：data-* 声明式走渲染器，旧式回退 Jinja2 include #}
         {{- render_block(module) }}
       </div>

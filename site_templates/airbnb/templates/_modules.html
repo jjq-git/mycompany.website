@@ -1,7 +1,7 @@
 {% if page.modules %}
   {% for module in page.modules | sort(attribute='order') %}
     {% if module.data is mapping or (module.type == 'hero_banner' and module.data is iterable and module.data is not string) %}
-      <div class="builder-module" data-builder-module-index="{{ loop.index0 }}" data-builder-module-type="{{ module.type }}">
+      <div class="builder-module" data-builder-module-index="{{ loop.index0 }}" data-builder-module-type="{{ module.type }}" data-builder-page-key="{{ page_key }}">
         {# render_block 全权处理：data-* 声明式走渲染器，旧式回退 Jinja2 include #}
         {{- render_block(module) }}
       </div>

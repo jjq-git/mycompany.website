@@ -330,7 +330,7 @@
 {% set modules = product.modules | default([]) %}
 {% if modules %}
   {% for module in modules %}
-    <div class="builder-module" data-builder-module-index="{{ loop.index0 }}">
+    <div class="builder-module" data-builder-module-index="{{ loop.index0 }}" data-builder-module-type="{{ module.type }}" data-builder-page-key="{{ page_key }}">
       {{- render_block(module) }}
     </div>
   {% endfor %}
