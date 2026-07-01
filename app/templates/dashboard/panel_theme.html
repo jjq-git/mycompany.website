@@ -44,6 +44,7 @@ function syncColorFromPicker(key) {
   var picker = document.getElementById('picker_' + key);
   var text = document.getElementById('text_' + key);
   if (picker && text) text.value = picker.value;
+  applyThemeDraftToPreview();
 }
 function syncColorFromText(key) {
   var text = document.getElementById('text_' + key);
@@ -52,10 +53,38 @@ function syncColorFromText(key) {
     var v = text.value.trim();
     if (/^#[0-9a-fA-F]{3,8}$/.test(v)) picker.value = v;
   }
+  applyThemeDraftToPreview();
+}
+
+function applyThemeDraftToPreview() {
+  var frame = document.getElementById('previewFrame');
+  if (!frame) return;
+  var doc;
+  try { doc = frame.contentDocument || frame.contentWindow.document; } catch(e) { return; }
+  if (!doc || !doc.head) return;
+  var style = doc.getElementById('liveThemeDraftStyle');
+  if (!style) {
+    style = doc.createElement('style');
+    style.id = 'liveThemeDraftStyle';
+    doc.head.appendChild(style);
+  }
+  var css = ':root{';
+  document.querySelectorAll('#themeForm .theme-text-input[name]').forEach(function(input) {
+    var key = input.name;
+    var value = (input.value || '').trim();
+    if (key && value && /^#[0-9a-fA-F]{3,8}$|^rgba?\([\d.,%\s]+\)$|^hsla?\([\d.,%\s]+\)$|^[a-zA-Z]+$/.test(value)) {
+      css += '--' + key + ':' + value + ';';
+    }
+  });
+  css += '}';
+  style.textContent = css;
 }
 document.getElementById('themeForm').addEventListener('submit', function(e) {
   if (!document.getElementById('rightPanelBody')) return;
   e.preventDefault();
+  this.dataset.saving = '1';
+  this.dataset.panelDirty = '';
+  if (typeof setPanelEditStatus === 'function') setPanelEditStatus('previewing', '保存中...');
   var formData = new FormData(this);
   fetch(this.action, {method: 'POST', body: formData})
     .then(function(r) { return r.text().then(function(html) { return {ok: r.ok, html: html}; }); })
@@ -66,17 +95,30 @@ document.getElementById('themeForm').addEventListener('submit', function(e) {
       // 将保存按钮移到面板底部悬浮栏，同时清理旧的 footer 避免重复按钮
       var saveBar = panel.querySelector('.basic-settings-pane') ? null : panel.querySelector('.panel-save-bar');
       if (saveBar && footer) {
-        var form = saveBar.closest('form');
-        var btn = saveBar.querySelector('button[type="submit"]');
-        if (btn && form) {
-          if (!form.id) form.id = '_panelForm_' + Date.now();
-          btn.setAttribute('form', form.id);
+        if (typeof preparePanelSaveBar === 'function') {
+          preparePanelSaveBar(saveBar, footer);
+        } else {
+          var form = saveBar.closest('form');
+          var btn = saveBar.querySelector('button[type="submit"]');
+          if (btn && form) {
+            form.dataset.panelGuard = '1';
+            if (!form.id) form.id = '_panelForm_' + Date.now();
+            btn.setAttribute('form', form.id);
+          }
+          footer.innerHTML = '';
+          footer.appendChild(saveBar);
+          footer.style.display = '';
         }
-        footer.innerHTML = '';
-        footer.appendChild(saveBar);
-        footer.style.display = '';
       }
-      if (result.ok && typeof markPreviewDirty === 'function') markPreviewDirty();
+      if (result.ok) {
+        if (typeof setPanelEditStatus === 'function') setPanelEditStatus('saved', '已保存');
+        if (typeof markPreviewDirty === 'function') markPreviewDirty();
+      } else if (typeof setPanelEditStatus === 'function') {
+        setPanelEditStatus('error', '保存失败，请重试');
+      }
+    })
+    .catch(function() {
+      if (typeof setPanelEditStatus === 'function') setPanelEditStatus('error', '保存失败，请重试');
     });
 });
 </script>

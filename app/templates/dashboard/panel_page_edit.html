@@ -18,12 +18,6 @@
 </div>
 {% endif %}
 
-{% with messages = get_flashed_messages() %}
-  {% for m in messages %}
-    <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
-  {% endfor %}
-{% endwith %}
-
 {% if is_modules_format %}
 {# ---- 添加模块按钮 ---- #}
 <div class="mb-3">
@@ -40,6 +34,7 @@
   <div class="small text-muted mb-2">已选模块（点击箭头排序 | 点击配置）</div>
   <form method="post" action="{{ url_for('core.page_panel', page_key=page_key, site=site.id, _fragment='1', lang=current_lang) }}" id="modulesForm" data-page-key="{{ page_key }}" enctype="multipart/form-data" onsubmit="submitModuleFormAjax(this, event)">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="_draft_page_key" value="{{ page_key }}">
     <input type="hidden" name="module_count" id="moduleCount" value="{{ page.modules | length }}">
 
     {% set display_names = {} %}
@@ -189,6 +184,7 @@
     </div>
 
     <div class="panel-save-bar">
+      <div class="panel-live-status" id="moduleLiveStatus" data-state="saved">已保存</div>
       <button type="submit" class="btn btn-primary btn-sm w-100 rounded-0">保存模块配置</button>
     </div>
   </form>
@@ -2662,6 +2658,7 @@ function reindexModules() {
     var variantInp = item.querySelector('input[name$="_variant"]');
     if (meta) meta.textContent = '#' + (i + 1) + ' · ' + ((variantInp && variantInp.value) || 'default');
   });
+  scheduleModuleDraftPreview();
 }
 
 // 箭头排序：点击 ↑/↓ 移动模块位置
@@ -2980,6 +2977,9 @@ function submitModuleFormAjax(form, event) {
     });
   });
 
+  form.dataset.saving = '1';
+  cancelModuleDraftPreview();
+  setModuleLiveStatus('previewing', '保存中...');
   var formData = new FormData(form);
   // 按钮可能已被移到 footer，从全局查找
   var btn = form.querySelector('button[type="submit"]') || document.querySelector('button[form="' + form.id + '"][type="submit"]');
@@ -2994,25 +2994,146 @@ function submitModuleFormAjax(form, event) {
         // 移动保存按钮到 footer
         var saveBar = panel.querySelector('.panel-save-bar');
         if (saveBar && footer) {
-          var newForm = saveBar.closest('form');
-          var newBtn = saveBar.querySelector('button[type="submit"]');
-          if (newBtn && newForm) {
-            if (!newForm.id) newForm.id = '_panelForm_' + Date.now();
-            newBtn.setAttribute('form', newForm.id);
+          if (typeof preparePanelSaveBar === 'function') {
+            preparePanelSaveBar(saveBar, footer);
+          } else {
+            var newForm = saveBar.closest('form');
+            var newBtn = saveBar.querySelector('button[type="submit"]');
+            if (newBtn && newForm) {
+              newForm.dataset.panelGuard = '1';
+              if (!newForm.id) newForm.id = '_panelForm_' + Date.now();
+              newBtn.setAttribute('form', newForm.id);
+            }
+            footer.innerHTML = '';
+            footer.appendChild(saveBar);
+            footer.style.display = '';
           }
-          footer.innerHTML = '';
-          footer.appendChild(saveBar);
-          footer.style.display = '';
         }
-        if (result.ok && typeof markPreviewDirty === 'function') markPreviewDirty();
+        if (result.ok) {
+          var savedForm = document.getElementById('modulesForm');
+          if (savedForm) savedForm.dataset.panelDirty = '';
+          if (typeof setModuleLiveStatus === 'function') setModuleLiveStatus('saved', '已保存');
+          if (typeof markPreviewDirty === 'function') markPreviewDirty();
+        } else if (typeof setModuleLiveStatus === 'function') {
+          setModuleLiveStatus('error', '保存失败，请重试');
+        }
       });
     })
     .catch(function(err) {
       console.error('Save failed:', err);
       if (btn) { btn.disabled = false; btn.textContent = '保存模块配置'; }
+      form.dataset.saving = '';
+      setModuleLiveStatus('error', '保存失败，请重试');
     });
   return false;
 }
+
+var _moduleDraftPreviewTimer = null;
+var _moduleDraftPreviewAbort = null;
+var _moduleDraftPreviewSeq = 0;
+
+function setModuleLiveStatus(state, text) {
+  var status = document.getElementById('moduleLiveStatus');
+  if (!status) return;
+  status.dataset.state = state || '';
+  status.textContent = text || '';
+}
+
+function currentLivePreviewUrlForForm(form) {
+  var frame = document.getElementById('previewFrame');
+  var siteId = (typeof currentSiteParam === 'function' && currentSiteParam()) || '{{ site.id }}';
+  var lang = (typeof currentPreviewLanguage === 'function' && currentPreviewLanguage()) || '{{ current_lang }}';
+  var pageKey = (form && form.dataset.pageKey) || '{{ page_key }}';
+  var current = frame ? (frame.dataset.previewUrl || frame.src || '') : '';
+  if (current && current.indexOf('/live_preview/') === 0) return current.replace(/[?&]_=\d+$/, '');
+  var page = (!pageKey || pageKey === 'home') ? '' : String(pageKey).replace(/^\/+|\/+$/g, '') + '/';
+  return '/live_preview/' + siteId + '/' + (lang ? lang + '/' : '') + page + 'index.html';
+}
+
+function cancelModuleDraftPreview() {
+  _moduleDraftPreviewSeq++;
+  clearTimeout(_moduleDraftPreviewTimer);
+  _moduleDraftPreviewTimer = null;
+  if (_moduleDraftPreviewAbort) {
+    _moduleDraftPreviewAbort.abort();
+    _moduleDraftPreviewAbort = null;
+  }
+}
+
+function scheduleModuleDraftPreview() {
+  var form = document.getElementById('modulesForm');
+  var frame = document.getElementById('previewFrame');
+  if (!form || !frame || form.dataset.saving === '1') return;
+  form.dataset.panelDirty = '1';
+  setModuleLiveStatus('dirty', '有未保存修改');
+  clearTimeout(_moduleDraftPreviewTimer);
+  _moduleDraftPreviewTimer = setTimeout(function() {
+    if (!document.body.contains(form)) return;
+    var url = currentLivePreviewUrlForForm(form);
+    if (!url || url === 'about:blank') return;
+    if (_moduleDraftPreviewAbort) _moduleDraftPreviewAbort.abort();
+    _moduleDraftPreviewAbort = window.AbortController ? new AbortController() : null;
+    var previewSeq = ++_moduleDraftPreviewSeq;
+    form.querySelectorAll('.rich-editor-body, .rte-editor').forEach(function(editor) {
+      var wrapper = editor.closest('.rte-wrapper') || editor.parentElement;
+      var textarea = wrapper ? wrapper.querySelector('textarea[name]:not(.rte-source-ta)') : editor.nextElementSibling;
+      if (textarea) textarea.value = editor.innerHTML;
+    });
+    var data = new FormData(form);
+    frame.dataset.previewUrl = url;
+    setModuleLiveStatus('previewing', '实时预览中...');
+    fetch(url, {
+      method: 'POST',
+      body: data,
+      signal: _moduleDraftPreviewAbort ? _moduleDraftPreviewAbort.signal : undefined
+    })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      })
+      .then(function(html) {
+        if (previewSeq !== _moduleDraftPreviewSeq || form.dataset.saving === '1' || !document.body.contains(form)) return;
+        var doc = frame.contentDocument || (frame.contentWindow && frame.contentWindow.document);
+        if (!doc) {
+          frame.src = url + (url.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
+          return;
+        }
+        doc.open();
+        doc.write(html);
+        doc.close();
+        try { doc.__builderCanvasReady = false; } catch (e) {}
+        updatePreviewUrlBar(url);
+        if (typeof schedulePreviewCanvasInstall === 'function') {
+          schedulePreviewCanvasInstall();
+        } else if (typeof installPreviewCanvasHandlers === 'function') {
+          installPreviewCanvasHandlers();
+          setTimeout(installPreviewCanvasHandlers, 80);
+          setTimeout(installPreviewCanvasHandlers, 300);
+        }
+        setModuleLiveStatus('previewed', '预览已更新，未保存');
+      })
+      .catch(function(err) {
+        if (err && err.name === 'AbortError') return;
+        if (previewSeq !== _moduleDraftPreviewSeq || form.dataset.saving === '1' || !document.body.contains(form)) return;
+        setModuleLiveStatus('error', '实时预览失败，仍可保存');
+        console.warn('实时草稿预览失败:', err);
+      });
+  }, 450);
+}
+
+(function installModuleDraftPreviewListeners() {
+  var form = document.getElementById('modulesForm');
+  if (!form || form.dataset.draftPreviewInstalled === '1') return;
+  form.dataset.draftPreviewInstalled = '1';
+  form.addEventListener('input', function(event) {
+    if (event.target && event.target.type === 'file') return;
+    scheduleModuleDraftPreview();
+  }, true);
+  form.addEventListener('change', function(event) {
+    if (event.target && event.target.type === 'file') return;
+    scheduleModuleDraftPreview();
+  }, true);
+})();
 
 // 全局 unit-picker：选单位后自动拼到左侧输入框（不依赖 class，按 DOM 结构判断）
 document.addEventListener('change', function(e) {

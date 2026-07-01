@@ -69,6 +69,9 @@
 {# ---- 已选模块列表 ---- #}
 <form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" data-page-key="{{ dataset_key }}" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="_draft_dataset_key" value="{{ dataset_key }}">
+  <input type="hidden" name="_draft_item_id" value="{{ edit_item_id }}">
+  <input type="hidden" name="_draft_preview_path" value="{{ preview_path }}">
   {% set detail_btn_raw = edit_item.get('show_detail_btn') %}
   {% set detail_btn_mode = 'inherit' if detail_btn_raw is none else ('true' if detail_btn_raw is sameas true or (detail_btn_raw|string|lower) == 'true' else 'false') %}
   <div class="dataset-detail-button-field">
@@ -118,6 +121,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 (function() {
   var DATASET_KEY = '{{ dataset_key }}';
   var SITE_ID = '{{ site.id }}';
+  var restoringDatasetModules = true;
   var datasetForm = document.getElementById('datasetEditForm');
   if (datasetForm) {
     datasetForm.addEventListener('submit', function(e) {
@@ -162,15 +166,17 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   }
 
   window.backToPageEditor = function() {
-    loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()).then(function() {
+    loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()).then(function(loaded) {
+      if (loaded === false) return;
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/live_preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/index.html'; try { refreshPreview({ build: false }); } catch(e) {} }
     });
   };
   window.loadDatasetList = function() {
-    loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()).then(function() {
+    loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()).then(function(loaded) {
+      if (loaded === false) return;
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/live_preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/index.html'; try { refreshPreview({ build: false }); } catch(e) {} }
     });
   };
   window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getSiteQuery()); };
@@ -229,6 +235,9 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     });
     var countEl = document.getElementById('moduleCountDs');
     if (countEl) countEl.value = items.length;
+    if (!restoringDatasetModules && typeof scheduleDatasetDraftPreview === 'function') {
+      scheduleDatasetDraftPreview(document.getElementById('datasetEditForm'));
+    }
   }
   window._reindexModules = reindexModulesDs;
 
@@ -242,6 +251,9 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var html = '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="' + next + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();window._reindexIdImages(' + modIdx + ')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片 URL</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_images_' + next + '_url"><input type="file" class="form-control form-control-sm mt-1" name="module_' + modIdx + '_data_images_' + next + '_url_file" accept="image/*"><div class="form-text">上传后自动转 WebP 并覆盖 URL</div></div></div>';
     list.insertAdjacentHTML('beforeend', html);
     countEl.value = next + 1;
+    if (typeof scheduleDatasetDraftPreview === 'function') {
+      scheduleDatasetDraftPreview(document.getElementById('datasetEditForm'));
+    }
   };
 
   window._reindexIdImages = function(modIdx) {
@@ -256,6 +268,9 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         el.name = el.name.replace(/module_\d+_data_images_\d+_/, 'module_' + modIdx + '_data_images_' + i + '_');
       });
     });
+    if (typeof scheduleDatasetDraftPreview === 'function') {
+      scheduleDatasetDraftPreview(document.getElementById('datasetEditForm'));
+    }
   };
 
   window._addIdSpec = function(modIdx) {
@@ -267,6 +282,9 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var html = '<div class="border rounded p-2 mb-2 id-spec-item" data-spec-index="' + next + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">规格 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-spec-item\').remove();window._reindexIdSpecs(' + modIdx + ')">删除</button></div><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">参数名</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_specs_' + next + '_name"></div><div class="col-6"><label class="form-label small mb-1 text-muted">参数值</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_specs_' + next + '_value"></div></div></div>';
     list.insertAdjacentHTML('beforeend', html);
     countEl.value = next + 1;
+    if (typeof scheduleDatasetDraftPreview === 'function') {
+      scheduleDatasetDraftPreview(document.getElementById('datasetEditForm'));
+    }
   };
 
   window._reindexIdSpecs = function(modIdx) {
@@ -281,6 +299,9 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         el.name = el.name.replace(/module_\d+_data_specs_\d+_/, 'module_' + modIdx + '_data_specs_' + i + '_');
       });
     });
+    if (typeof scheduleDatasetDraftPreview === 'function') {
+      scheduleDatasetDraftPreview(document.getElementById('datasetEditForm'));
+    }
   };
 
   /* ====== 添加模块 (使用共享 buildModuleHTML) ====== */
@@ -363,13 +384,14 @@ window._dsEditItemJson = {{ edit_item | tojson }};
       window.addModuleDs('item_data', 'default');
     }
   })();
+  restoringDatasetModules = false;
 
   // 编辑模式：中间预览加载详情页
   var EDIT_SLUG = '{{ preview_slug | default(edit_item.slug if edit_item else "") }}';
   if (EDIT_SLUG) {
     var frame = document.getElementById('previewFrame');
     if (frame) {
-      frame.dataset.previewUrl = '/preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/' + EDIT_SLUG + '/';
+      frame.dataset.previewUrl = '/live_preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/' + EDIT_SLUG + '/index.html';
       try { refreshPreview({ build: false }); } catch(e) {}
     }
   }
@@ -378,8 +400,11 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 
 {% elif is_edit and edit_item %}
 {# ========== 编辑模式：简单表单（无 blocks） ========== #}
-<form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" enctype="multipart/form-data">
+<form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" data-page-key="{{ dataset_key }}" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="_draft_dataset_key" value="{{ dataset_key }}">
+  <input type="hidden" name="_draft_item_id" value="{{ edit_item_id }}">
+  <input type="hidden" name="_draft_preview_path" value="{{ preview_path }}">
   {% set detail_btn_raw = edit_item.get('show_detail_btn') %}
   {% set detail_btn_mode = 'inherit' if detail_btn_raw is none else ('true' if detail_btn_raw is sameas true or (detail_btn_raw|string|lower) == 'true' else 'false') %}
   <div class="mb-2">
@@ -514,15 +539,17 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     return qs;
   }
   window.backToPageEditor = function() {
-    loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getQuery()).then(function() {
+    loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getQuery()).then(function(loaded) {
+      if (loaded === false) return;
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/live_preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/index.html'; try { refreshPreview({ build: false }); } catch(e) {} }
     });
   };
   window.loadDatasetList = function() {
-    loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getQuery()).then(function() {
+    loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getQuery()).then(function(loaded) {
+      if (loaded === false) return;
       var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/'; try { refreshPreview({ build: false }); } catch(e) {} }
+      if (frame) { frame.dataset.previewUrl = '/live_preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/index.html'; try { refreshPreview({ build: false }); } catch(e) {} }
     });
   };
   window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getQuery()); };

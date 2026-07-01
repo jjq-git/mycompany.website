@@ -709,6 +709,17 @@ def _template_paths(template_name):
     return base, base / 'templates', base / 'static'
 
 
+def _create_template_env(tpl_root, tpl_html_dir, template_name):
+    env = Environment(
+        loader=FileSystemLoader([str(tpl_html_dir), str(tpl_root)]),
+        autoescape=select_autoescape(['html']),
+        trim_blocks=True, lstrip_blocks=True,
+    )
+    _enable_da = current_app.config.get('ENABLE_DATA_ATTR_BLOCKS', False)
+    env.globals['render_block'] = _make_render_block(env, tpl_root, template_name, _enable_da)
+    return env
+
+
 def _load_translations(tpl_root):
     """加载多语言翻译文件."""
     seed = tpl_root / 'seed_data'
@@ -890,6 +901,45 @@ def _write_site_seo_files(output_root, seo_records, settings, site_base_url):
     (output_root / 'llms.txt').write_text('\n'.join(llms).strip() + '\n', encoding='utf-8')
 
 
+def _normalize_preview_filepath(filepath):
+    rel = str(filepath or 'index.html').replace('\\', '/').lstrip('/')
+    if not rel or rel == '.':
+        return 'index.html'
+    if rel.endswith('/'):
+        return rel + 'index.html'
+    if '.' not in rel.rsplit('/', 1)[-1]:
+        return rel.rstrip('/') + '/index.html'
+    return rel
+
+
+def _render_task_html(env, task, common, pages, data, meta, dataset_paths):
+    tpl = env.get_template(task['template'])
+    ctx = dict(common)
+    lang_code = ctx.get('lang') or ''
+    ctx['current_path'] = task['current_path']
+    ctx['dataset_paths'] = {
+        key: _seo_url(ctx.get('base_url', ''), lang_code, path)
+        for key, path in dataset_paths.items()
+    }
+    ctx['page_key'] = task['page_key']
+    ctx['lang_switch_path'] = task['current_path']
+
+    if task['type'] == 'home':
+        ctx['page'] = pages.get('home', {})
+    elif task['type'] == 'list':
+        ctx['page'] = pages.get(task['page_key'], {})
+    elif task['type'] in ('page',):
+        ctx['page'] = pages.get(task['page_key'], {})
+    elif task['type'] == 'detail':
+        ctx['page'] = pages.get(task['page_key'], {})
+        ctx[task['var_name']] = task['item']
+        current = task['current_path'].rstrip('/')
+        ctx['lang_switch_path'] = current.rsplit('/', 1)[0] + '/' if '/' in current else '/'
+
+    ctx['seo'] = _build_seo_context(task, ctx, common, meta)
+    return tpl.render(**ctx)
+
+
 def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, pages, data, meta, seo_records=None):
     """为一种语言渲染所有页面 (菜单驱动).
 
@@ -984,6 +1034,130 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
             failures.append({'lang': lang_code, 'template': task.get('template'),
                              'type': task.get('type'), 'error': str(e)})
     return failures
+
+
+def render_site_page(site_id, filepath='index.html', base_url='', lang_code=None,
+                     draft_page_key=None, draft_page=None, draft_settings=None, draft_data=None):
+    """Render a single page for editor live preview without writing output files."""
+    site = Site.query.get(site_id)
+    if not site:
+        raise ValueError(f'站点不存在: {site_id}')
+
+    settings, pages, data = _gather_site_data(site_id, site.template_name)
+    if isinstance(draft_settings, dict):
+        settings = _deep_merge(settings, draft_settings)
+    if isinstance(draft_data, dict):
+        data = _deep_merge(data, draft_data)
+
+    site_base_url = _site_base_url(site, base_url)
+    tpl_root, tpl_html_dir, _tpl_static_dir = _template_paths(site.template_name)
+    meta = _load_yaml(tpl_root / 'meta.yaml')
+    translations = _load_translations(tpl_root)
+
+    if 'menu' not in settings or not settings.get('menu'):
+        settings['menu'] = meta.get('default_menu', [])
+    settings['menu'] = menu_lib.ensure_home(
+        menu_lib.normalize_for_render(
+            menu_lib.upgrade_old_format(settings['menu'], meta.get('datasets', []))
+        )
+    )
+    theme_default = meta.get('default_theme', {})
+    theme = {**theme_default, **(settings.get('theme') or {})}
+    env = _create_template_env(tpl_root, tpl_html_dir, site.template_name)
+
+    languages = _normalize_language_flags(meta.get('languages', []))
+    enabled_codes = site.enabled_languages or [l['code'] for l in languages]
+    languages = [l for l in languages if l['code'] in enabled_codes] or languages
+    default_lang = meta.get('default_language', languages[0]['code'] if languages else (site.default_language or ''))
+
+    rel = _normalize_preview_filepath(filepath)
+    if languages:
+        if not lang_code:
+            first = rel.split('/', 1)[0]
+            if first in [l['code'] for l in languages]:
+                lang_code = first
+                rel = rel.split('/', 1)[1] if '/' in rel else 'index.html'
+        lang_code = lang_code or default_lang
+
+        default_pages, default_data = _load_lang_overrides(site_id, default_lang, default_lang, pages, data)
+        lang_pages, lang_data = _load_lang_overrides(site_id, lang_code, default_lang, default_pages, default_data)
+        if isinstance(draft_data, dict):
+            lang_data = _deep_merge(lang_data, draft_data)
+        if isinstance(draft_page, dict) and draft_page_key:
+            lang_pages[draft_page_key] = _merge_page_content(lang_pages.get(draft_page_key, {}), draft_page)
+
+        fallback_settings_to_default = lang_code == default_lang
+        lang_settings = dict(settings)
+        label_map = _language_label_map(settings, lang_code, default_lang, fallback_settings_to_default)
+        menu_override_key = f'menu_{lang_code}'
+        if menu_override_key in settings and settings.get(menu_override_key) and not label_map:
+            lang_settings['menu'] = menu_lib.ensure_home(
+                menu_lib.normalize_for_render(
+                    menu_lib.upgrade_old_format(settings[menu_override_key], meta.get('datasets', []))
+                )
+            )
+        elif label_map:
+            lang_settings['menu'] = menu_lib.apply_labels(settings.get('menu', []), label_map)
+
+        footer_override = _language_override(settings, 'footer', lang_code, default_lang, fallback_settings_to_default)
+        if footer_override:
+            lang_settings['footer'] = footer_override
+        company_override = _language_override(settings, 'company', lang_code, default_lang, fallback_settings_to_default)
+        if company_override:
+            lang_settings['company'] = _merge_language_settings_section(settings.get('company'), company_override)
+        contact_override = _language_override(settings, 'contact', lang_code, default_lang, fallback_settings_to_default)
+        if contact_override:
+            lang_settings['contact'] = _merge_language_settings_section(settings.get('contact'), contact_override)
+
+        render_pages = lang_pages
+        render_data = lang_data
+        render_settings = lang_settings
+        render_lang = lang_code
+        t = translations.get(lang_code, {})
+    else:
+        if isinstance(draft_page, dict) and draft_page_key:
+            pages[draft_page_key] = _merge_page_content(pages.get(draft_page_key, {}), draft_page)
+        render_pages = pages
+        render_data = data
+        render_settings = settings
+        render_lang = site.default_language or ''
+        t = {}
+
+    full_menu = menu_lib.cap_menu_depth(render_settings.get('menu', []))
+    nav_menu = menu_lib.filter_hidden_for_nav(full_menu)
+    common_settings = dict(render_settings)
+    common_settings['menu'] = nav_menu
+    common = {
+        'settings': common_settings,
+        'theme': theme,
+        'year': datetime.now().year,
+        'lang': render_lang,
+        'base_url': base_url.rstrip('/'),
+        'site_base_url': site_base_url,
+        't': t,
+        'languages': languages,
+        'products_categories': _extract_products_categories(render_data),
+        'products': _extract_products_items(render_data),
+        'portfolio': render_data.get('portfolio', []),
+        'posts': render_data.get('posts', []),
+        'features': render_data.get('features', []),
+        'all_datasets': render_data,
+        'site_id': site_id,
+        'platform_api_url': _get_platform_base_url(),
+    }
+
+    tasks = menu_lib.collect_render_tasks(full_menu, tpl_html_dir, render_data, render_pages)
+    dataset_paths = {
+        task.get('dataset_key'): task.get('current_path')
+        for task in tasks
+        if task.get('type') == 'list' and task.get('dataset_key') and task.get('current_path')
+    }
+    task = next((item for item in tasks if item.get('output_path') == rel), None)
+    if task is None and rel == 'index.html':
+        task = next((item for item in tasks if item.get('type') == 'home'), None)
+    if task is None:
+        raise FileNotFoundError(rel)
+    return _render_task_html(env, task, common, render_pages, render_data, meta, dataset_paths)
 
 
 def build_site(site_id, base_url='', report=None):

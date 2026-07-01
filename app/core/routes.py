@@ -25,7 +25,7 @@ from . import menu as menu_lib
 from .translator import (generate_seo_description,
                          is_configured as translation_configured,
                          translate_json)
-from .builder import build_site, build_template_preview
+from .builder import build_site, build_template_preview, render_site_page
 from .db import db
 from . import media_service
 from .template_loader import scan_templates
@@ -3214,6 +3214,176 @@ def preview_or_build(site_id):
     return _safe_send_from_directory(out, 'index.html')
 
 
+def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, source_storage_lang):
+    """Parse a dataset edit form into one draft item without writing YAML."""
+    item = datasets.find(site.id, dataset_key, item_id, lang=storage_lang)
+    source_item = datasets.find(site.id, dataset_key, item_id, lang=source_storage_lang)
+    if not item and source_item:
+        item = source_item
+    if not item:
+        return None
+
+    fields = {}
+    for key, val in item.items():
+        if key not in ('modules', 'csrf_token'):
+            fields[key] = val
+
+    for key in form:
+        if key.startswith('_draft_'):
+            continue
+        if key.startswith('detail_gallery_') or key in ('detail_gallery_count',):
+            continue
+        if key == '_show_detail_btn_mode':
+            continue
+        if key.startswith('module_') or key in ('module_count', 'csrf_token'):
+            continue
+        fields[key] = form.get(key, '').strip()
+
+    detail_btn_mode = form.get('_show_detail_btn_mode')
+    if detail_btn_mode == 'inherit':
+        fields.pop('show_detail_btn', None)
+    elif detail_btn_mode in ('true', 'false'):
+        fields['show_detail_btn'] = detail_btn_mode == 'true'
+
+    if 'tags' in fields and fields['tags'] and isinstance(fields['tags'], str):
+        fields['tags'] = [t.strip() for t in fields['tags'].replace(',', ' ').split() if t.strip()]
+
+    if 'tags_visible' in fields:
+        fields['tags_visible'] = str(fields.get('tags_visible')).lower() != 'false'
+
+    if 'detail_gallery_count' in form or 'detail_gallery_visible' in form:
+        try:
+            gallery_count = int(form.get('detail_gallery_count', '0'))
+        except (ValueError, TypeError):
+            gallery_count = 0
+        gallery_images = []
+        for gi in range(gallery_count):
+            url = form.get(f'detail_gallery_{gi}_url', '').strip()
+            alt = form.get(f'detail_gallery_{gi}_url_alt', '').strip()
+            if url:
+                image = {'url': url}
+                if alt:
+                    image['alt'] = alt
+                gallery_images.append(image)
+        fields['detail_gallery'] = {
+            'visible': str(form.get('detail_gallery_visible', 'true')).lower() != 'false',
+            'images': gallery_images,
+        }
+
+    module_count_str = form.get('module_count')
+    if module_count_str and module_count_str.isdigit():
+        existing_modules = item.get('modules', [])
+        modules = _parse_modules_form(form, existing_modules)
+        for m in modules:
+            if m.get('type') == 'item_data':
+                keep = {}
+                for key, value in (m.get('data') or {}).items():
+                    if key.startswith('style_'):
+                        fields[key] = value
+                    else:
+                        keep[key] = value
+                m['data'] = keep
+        fields['modules'] = modules
+    elif module_count_str is not None:
+        fields['modules'] = []
+
+    draft = dict(item)
+    draft.update(fields)
+    draft['id'] = item_id
+    return draft
+
+
+@bp.route('/live_preview/<int:site_id>/')
+@bp.route('/live_preview/<int:site_id>/<path:filepath>', methods=['GET', 'POST'])
+def live_preview(site_id, filepath='index.html'):
+    """Editor live preview: render one page without running the full static build."""
+    session['current_site_id'] = site_id
+    site = Site.query.get_or_404(site_id)
+    _require_site_access(site)
+
+    filepath = (filepath or 'index.html').replace('\\', '/').lstrip('/')
+    if filepath.startswith('static/'):
+        static_file = filepath[len('static/'):]
+        tpl_static = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'static'
+        return _safe_send_from_directory(tpl_static, static_file)
+
+    if filepath in ('', 'index.html'):
+        return redirect(url_for('core.live_preview',
+                                site_id=site_id,
+                                filepath=f'{_default_lang_code(site)}/index.html'))
+
+    draft_page = None
+    draft_data = None
+    draft_page_key = request.form.get('_draft_page_key', '').strip()
+    if request.method == 'POST' and draft_page_key:
+        _validate_key(draft_page_key)
+        lang, _languages, default_lang = _get_panel_lang(site)
+        storage_lang = _storage_lang(site, lang, default_lang)
+        page = read_yaml(site.id, f'pages/{draft_page_key}.yaml', lang=storage_lang) or {}
+        existing_modules = page.get('modules', [])
+        if storage_lang and not existing_modules:
+            source_storage_lang = _storage_lang(site, default_lang, default_lang)
+            source_page = read_yaml(site.id, f'pages/{draft_page_key}.yaml', lang=source_storage_lang) or {}
+            existing_modules = source_page.get('modules', []) or existing_modules
+        draft_page = dict(page)
+        draft_page['modules'] = _parse_modules_form(request.form, existing_modules)
+        if 'page_title' in request.form:
+            title = request.form.get('page_title', '').strip()
+            if title:
+                draft_page['title'] = title
+            else:
+                draft_page.pop('title', None)
+        if 'page_description' in request.form:
+            description = request.form.get('page_description', '').strip()
+            if description:
+                draft_page['description'] = description
+            else:
+                draft_page.pop('description', None)
+
+    draft_dataset_key = request.form.get('_draft_dataset_key', '').strip()
+    draft_item_id = request.form.get('_draft_item_id', '').strip()
+    if request.method == 'POST' and draft_dataset_key and draft_item_id.isdigit():
+        _validate_key(draft_dataset_key)
+        lang, _languages, default_lang = _get_panel_lang(site)
+        storage_lang = _storage_lang(site, lang, default_lang)
+        source_storage_lang = _storage_lang(site, default_lang, default_lang)
+        item_id = int(draft_item_id)
+        draft_item = _parse_dataset_draft_item(
+            site, draft_dataset_key, item_id, request.form, storage_lang, source_storage_lang
+        )
+        if draft_item:
+            items = datasets.load(site.id, draft_dataset_key, lang=storage_lang)
+            if not items and storage_lang:
+                items = datasets.load(site.id, draft_dataset_key, lang=source_storage_lang)
+            draft_items = []
+            replaced = False
+            for item in items or []:
+                if item.get('id') == item_id:
+                    draft_items.append(draft_item)
+                    replaced = True
+                else:
+                    draft_items.append(item)
+            if not replaced:
+                draft_items.append(draft_item)
+            draft_data = {draft_dataset_key: draft_items}
+
+    try:
+        html = render_site_page(
+            site_id,
+            filepath=filepath,
+            base_url=f'/live_preview/{site_id}',
+            draft_page_key=draft_page_key or None,
+            draft_page=draft_page,
+            draft_data=draft_data,
+        )
+    except FileNotFoundError:
+        abort(404, '未找到可实时预览的页面')
+    except Exception as exc:
+        current_app.logger.exception('实时预览渲染站点 %s 失败', site_id)
+        abort(500, f'实时预览失败: {exc}')
+    return current_app.response_class(html, mimetype='text/html; charset=utf-8')
+
+
 @bp.route('/preview/<int:site_id>/')
 @bp.route('/preview/<int:site_id>/<path:filepath>')
 def preview(site_id, filepath='index.html'):
@@ -3569,9 +3739,11 @@ def dataset_edit(dataset_key, item_id):
         # 用旧数据做底，表单字段覆盖，避免种子字段（name/category/cover 等）被静默删除
         fields = {}
         for key, val in item.items():
-            if key not in ('id', 'slug', 'modules', 'csrf_token'):
+            if key not in ('id', 'slug', 'modules', 'csrf_token') and not key.startswith('_draft_'):
                 fields[key] = val
         for key in request.form:
+            if key.startswith('_draft_'):
+                continue
             if key.startswith('detail_gallery_') or key in ('detail_gallery_count',):
                 continue
             if key == '_show_detail_btn_mode':

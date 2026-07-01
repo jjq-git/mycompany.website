@@ -497,7 +497,7 @@
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
         </svg>
-        <span class="url-text" id="previewUrlText">{{ url_for('core.preview_site', site_id=site.id) if site else
+        <span class="url-text" id="previewUrlText">{{ url_for('core.live_preview', site_id=site.id, filepath=(current_lang | default(site.default_language or 'zh-CN', true)) ~ '/index.html') if site else
           'about:blank' }}</span>
         <span class="preview-dirty-badge" id="previewDirtyBadge" hidden>预览待刷新</span>
         <div class="flex-grow-1"></div>
@@ -527,7 +527,7 @@
               <line x1="12" y1="19" x2="12" y2="19" />
             </svg>
           </button>
-          <button class="btn btn-sm btn-outline-secondary preview-toolbar-btn" id="previewRefreshBtn" onclick="refreshPreview()" title="刷新预览">
+          <button class="btn btn-sm btn-outline-secondary preview-toolbar-btn" id="previewRefreshBtn" onclick="refreshPreview()" title="重新生成完整预览">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
               <polyline points="23 4 23 10 17 10" />
@@ -547,8 +547,8 @@
       <div class="preview-frame-wrap flex-grow-1 overflow-auto d-flex justify-content-center" style="background:#e8eaed">
         {% if site %}
         <iframe class="border-0 bg-white shadow preview-frame desktop" id="previewFrame"
-          src="{{ url_for('core.preview_site', site_id=site.id) if site else 'about:blank' }}"
-          data-preview-url="{{ url_for('core.preview_site', site_id=site.id) if site else 'about:blank' }}">
+          src="{{ url_for('core.live_preview', site_id=site.id, filepath=(current_lang | default(site.default_language or 'zh-CN', true)) ~ '/index.html') if site else 'about:blank' }}"
+          data-preview-url="{{ url_for('core.live_preview', site_id=site.id, filepath=(current_lang | default(site.default_language or 'zh-CN', true)) ~ '/index.html') if site else 'about:blank' }}">
         </iframe>
         <div class="preview-loading-overlay" id="previewLoadingOverlay" aria-live="polite" aria-hidden="true">
           <div class="preview-loading-box">
@@ -642,6 +642,26 @@
   </div>
 
   {# 拖拽遮罩 — iframe 失焦时用 #}
+  <div class="modal fade" id="unsavedLeaveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header py-2">
+          <h6 class="modal-title mb-0">当前页面有未保存修改</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+        </div>
+        <div class="modal-body small text-muted">
+          离开后，当前页面的实时预览草稿会丢失。
+          <div class="text-danger mt-2 d-none" id="unsavedLeaveError">保存失败，请重试。</div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-unsaved-action="cancel">取消</button>
+          <button type="button" class="btn btn-sm btn-outline-danger" data-unsaved-action="discard">放弃修改</button>
+          <button type="button" class="btn btn-sm btn-primary" data-unsaved-action="save">保存并离开</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="dragOverlay"
     style="display:none;position:fixed;inset:0;z-index:9999;background:transparent;cursor:col-resize;"></div>
 
@@ -1207,11 +1227,26 @@
       if (text) text.textContent = url || 'about:blank';
     }
 
+    function isLivePreviewUrl(url) {
+      return !!url && String(url).indexOf('/live_preview/') === 0;
+    }
+
+    var _livePreviewRefreshTimer = null;
+    function scheduleLivePreviewRefresh() {
+      var frame = document.getElementById('previewFrame');
+      if (!frame || !isLivePreviewUrl(frame.dataset.previewUrl || frame.src)) return;
+      clearTimeout(_livePreviewRefreshTimer);
+      _livePreviewRefreshTimer = setTimeout(function() {
+        refreshPreview({ build: false, message: '正在更新实时预览...' });
+      }, 250);
+    }
+
     function markPreviewDirty() {
       var badge = document.getElementById('previewDirtyBadge');
       var btn = document.getElementById('previewRefreshBtn');
       if (badge) badge.hidden = false;
       if (btn) btn.classList.add('preview-toolbar-btn--dirty');
+      scheduleLivePreviewRefresh();
     }
 
     function clearPreviewDirty() {
@@ -1308,7 +1343,293 @@
       });
     }
 
-    function loadPanel(url) {
+    var _unsavedGuardBypassUntil = 0;
+    var _unsavedLeavePromise = null;
+
+    function currentGuardedPanelForm() {
+      return document.querySelector('#rightPanelBody form[data-panel-dirty="1"], #rightPanelBody form[data-panel-guard="1"], #rightPanelBody #modulesForm[data-page-key], #rightPanelBody #datasetEditForm');
+    }
+
+    function panelStatusEl() {
+      var dirtyForm = document.querySelector('#rightPanelBody form[data-panel-dirty="1"]');
+      if (dirtyForm) {
+        var dirtyStatus = dirtyForm.querySelector('.panel-live-status');
+        if (dirtyStatus) return dirtyStatus;
+      }
+      var footerStatus = document.querySelector('#rightPanelFooter .panel-live-status');
+      if (footerStatus) return footerStatus;
+      var visibleStatuses = Array.from(document.querySelectorAll('#rightPanelBody .panel-live-status'));
+      return visibleStatuses.find(function(el) { return el.getClientRects().length > 0; }) || visibleStatuses[0] || null;
+    }
+
+    function setPanelEditStatus(state, text) {
+      if (typeof setModuleLiveStatus === 'function' && document.getElementById('moduleLiveStatus')) {
+        setModuleLiveStatus(state, text);
+        return;
+      }
+      var status = panelStatusEl();
+      if (!status) return;
+      status.dataset.state = state || '';
+      status.textContent = text || '';
+    }
+
+    function ensurePanelSaveStatus(saveBar) {
+      if (!saveBar) return null;
+      var status = saveBar.querySelector('.panel-live-status');
+      if (!status) {
+        status = document.createElement('div');
+        status.className = 'panel-live-status';
+        status.dataset.state = 'saved';
+        status.textContent = '已保存';
+        saveBar.insertBefore(status, saveBar.firstChild);
+      }
+      return status;
+    }
+
+    function preparePanelSaveBar(saveBar, footer) {
+      if (!saveBar || !footer) return;
+      ensurePanelSaveStatus(saveBar);
+      var form = saveBar.closest('form');
+      var btn = saveBar.querySelector('button[type="submit"]');
+      if (btn && form) {
+        form.dataset.panelGuard = '1';
+        if (!form.id) form.id = '_panelForm_' + Date.now();
+        btn.setAttribute('form', form.id);
+      }
+      footer.innerHTML = '';
+      footer.appendChild(saveBar);
+      footer.style.display = '';
+    }
+
+    function initializeInlinePanelSaveBars(container) {
+      if (!container) return;
+      container.querySelectorAll('.panel-save-bar').forEach(function(saveBar) {
+        ensurePanelSaveStatus(saveBar);
+        var form = saveBar.closest('form');
+        if (form) form.dataset.panelGuard = '1';
+      });
+    }
+
+    function hasUnsavedModuleDraft() {
+      var form = currentGuardedPanelForm();
+      if (!form) return false;
+      if (form.dataset.saving === '1') return true;
+      var status = panelStatusEl();
+      var state = status ? (status.dataset.state || '') : '';
+      return ['dirty', 'previewing', 'previewed', 'error'].indexOf(state) !== -1;
+    }
+
+    function syncModuleDraftEditors(form) {
+      if (!form) return;
+      form.querySelectorAll('.rich-editor-body, .rte-editor').forEach(function(editor) {
+        var wrapper = editor.closest('.rte-wrapper') || editor.parentElement;
+        var textarea = wrapper ? wrapper.querySelector('textarea[name]:not(.rte-source-ta)') : editor.nextElementSibling;
+        if (textarea) textarea.value = editor.innerHTML;
+      });
+    }
+
+    function saveCurrentModuleDraftBeforeLeave() {
+      var form = currentGuardedPanelForm();
+      if (!form) return Promise.resolve(true);
+      if (typeof cancelModuleDraftPreview === 'function') cancelModuleDraftPreview();
+      if (typeof cancelDatasetDraftPreview === 'function') cancelDatasetDraftPreview();
+      setPanelEditStatus('previewing', '保存中...');
+      form.dataset.saving = '1';
+      syncModuleDraftEditors(form);
+      if (typeof normalizeUnitInputs === 'function') normalizeUnitInputs(form);
+      return fetch(form.action || window.location.href, { method: 'POST', body: new FormData(form) })
+        .then(function(r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          if (typeof markPreviewDirty === 'function') markPreviewDirty();
+          form.dataset.panelDirty = '';
+          setPanelEditStatus('saved', '已保存');
+          return true;
+        })
+        .catch(function(err) {
+          form.dataset.saving = '';
+          setPanelEditStatus('error', '保存失败，请重试');
+          throw err;
+        });
+    }
+
+    function reloadCurrentLivePreviewFromSaved() {
+      var frame = document.getElementById('previewFrame');
+      if (!frame) return;
+      var url = frame.dataset.previewUrl || frame.src || '';
+      if (!url || url === 'about:blank') return;
+      var joiner = url.indexOf('?') === -1 ? '?' : '&';
+      frame.src = url + joiner + '_=' + Date.now();
+    }
+
+    var _datasetDraftPreviewTimer = null;
+    var _datasetDraftPreviewAbort = null;
+    var _datasetDraftPreviewSeq = 0;
+
+    function slugForDatasetDraft(form) {
+      var input = form ? form.querySelector('[name="slug"]') : null;
+      var raw = input ? input.value : '';
+      return String(raw || '').trim().replace(/^\/+|\/+$/g, '');
+    }
+
+    function datasetDraftPreviewUrl(form) {
+      var frame = document.getElementById('previewFrame');
+      var siteId = (typeof currentSiteParam === 'function' && currentSiteParam()) || '';
+      var lang = (typeof currentPreviewLanguage === 'function' && currentPreviewLanguage()) || '';
+      var previewPathInput = form ? form.querySelector('[name="_draft_preview_path"]') : null;
+      var previewPath = String((previewPathInput && previewPathInput.value) || '').replace(/^\/+|\/+$/g, '');
+      var slug = slugForDatasetDraft(form);
+      if (!siteId || !previewPath || !slug) return frame ? (frame.dataset.previewUrl || frame.src || '') : '';
+      return '/live_preview/' + siteId + '/' + (lang ? lang + '/' : '') + previewPath + '/' + slug + '/index.html';
+    }
+
+    function cancelDatasetDraftPreview() {
+      _datasetDraftPreviewSeq++;
+      clearTimeout(_datasetDraftPreviewTimer);
+      _datasetDraftPreviewTimer = null;
+      if (_datasetDraftPreviewAbort) {
+        _datasetDraftPreviewAbort.abort();
+        _datasetDraftPreviewAbort = null;
+      }
+    }
+
+    function writeHtmlToPreviewFrame(url, html) {
+      var frame = document.getElementById('previewFrame');
+      if (!frame) return;
+      frame.dataset.previewUrl = url;
+      var doc = frame.contentDocument || (frame.contentWindow && frame.contentWindow.document);
+      if (!doc) {
+        frame.src = url + (url.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
+        return;
+      }
+      doc.open();
+      doc.write(html);
+      doc.close();
+      try { doc.__builderCanvasReady = false; } catch (e) {}
+      updatePreviewUrlBar(url);
+      if (typeof schedulePreviewCanvasInstall === 'function') {
+        schedulePreviewCanvasInstall();
+      } else if (typeof installPreviewCanvasHandlers === 'function') {
+        installPreviewCanvasHandlers();
+        setTimeout(installPreviewCanvasHandlers, 80);
+        setTimeout(installPreviewCanvasHandlers, 300);
+      }
+    }
+
+    function scheduleDatasetDraftPreview(form) {
+      form = form || document.getElementById('datasetEditForm');
+      var frame = document.getElementById('previewFrame');
+      if (!form || !frame || form.dataset.saving === '1') return;
+      form.dataset.panelGuard = '1';
+      form.dataset.panelDirty = '1';
+      setPanelEditStatus('dirty', '有未保存修改');
+      clearTimeout(_datasetDraftPreviewTimer);
+      _datasetDraftPreviewTimer = setTimeout(function() {
+        if (!document.body.contains(form)) return;
+        var url = datasetDraftPreviewUrl(form);
+        if (!url || url === 'about:blank') return;
+        if (_datasetDraftPreviewAbort) _datasetDraftPreviewAbort.abort();
+        _datasetDraftPreviewAbort = window.AbortController ? new AbortController() : null;
+        var previewSeq = ++_datasetDraftPreviewSeq;
+        syncModuleDraftEditors(form);
+        var data = new FormData(form);
+        setPanelEditStatus('previewing', '实时预览中...');
+        fetch(url, {
+          method: 'POST',
+          body: data,
+          signal: _datasetDraftPreviewAbort ? _datasetDraftPreviewAbort.signal : undefined
+        })
+          .then(function(r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.text();
+          })
+          .then(function(html) {
+            if (previewSeq !== _datasetDraftPreviewSeq || form.dataset.saving === '1' || !document.body.contains(form)) return;
+            writeHtmlToPreviewFrame(url, html);
+            setPanelEditStatus('previewed', '预览已更新，未保存');
+          })
+          .catch(function(err) {
+            if (err && err.name === 'AbortError') return;
+            if (previewSeq !== _datasetDraftPreviewSeq || form.dataset.saving === '1' || !document.body.contains(form)) return;
+            setPanelEditStatus('error', '实时预览失败，仍可保存');
+            console.warn('数据集实时草稿预览失败:', err);
+          });
+      }, 450);
+    }
+
+    function confirmUnsavedModuleLeave() {
+      if (!hasUnsavedModuleDraft()) return Promise.resolve(true);
+      if (Date.now() < _unsavedGuardBypassUntil) return Promise.resolve(true);
+      if (_unsavedLeavePromise) return _unsavedLeavePromise;
+      _unsavedLeavePromise = new Promise(function(resolve) {
+        var modalEl = document.getElementById('unsavedLeaveModal');
+        if (!modalEl || !window.bootstrap) {
+          resolve(window.confirm('当前页面有未保存修改，离开后会丢失。确定离开吗？'));
+          return;
+        }
+        var error = document.getElementById('unsavedLeaveError');
+        var saveBtn = modalEl.querySelector('[data-unsaved-action="save"]');
+        var discardBtn = modalEl.querySelector('[data-unsaved-action="discard"]');
+        var cancelBtn = modalEl.querySelector('[data-unsaved-action="cancel"]');
+        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        var settled = false;
+        function finish(value) {
+          if (settled) return;
+          settled = true;
+          modalEl.removeEventListener('hidden.bs.modal', onHidden);
+          _unsavedLeavePromise = null;
+          resolve(value);
+        }
+        function onHidden() {
+          finish(false);
+        }
+        function setBusy(busy) {
+          if (saveBtn) {
+            saveBtn.disabled = busy;
+            saveBtn.textContent = busy ? '保存中...' : '保存并离开';
+          }
+          if (discardBtn) discardBtn.disabled = busy;
+          if (cancelBtn) cancelBtn.disabled = busy;
+        }
+        if (error) error.classList.add('d-none');
+        if (saveBtn) saveBtn.onclick = function() {
+          setBusy(true);
+          if (error) error.classList.add('d-none');
+          saveCurrentModuleDraftBeforeLeave()
+            .then(function() {
+              _unsavedGuardBypassUntil = Date.now() + 1000;
+              modal.hide();
+              finish(true);
+            })
+            .catch(function() {
+              setBusy(false);
+              if (error) error.classList.remove('d-none');
+            });
+        };
+        if (discardBtn) discardBtn.onclick = function() {
+          _unsavedGuardBypassUntil = Date.now() + 1000;
+          reloadCurrentLivePreviewFromSaved();
+          modal.hide();
+          finish(true);
+        };
+        if (cancelBtn) cancelBtn.onclick = function() {
+          modal.hide();
+          finish(false);
+        };
+        modalEl.addEventListener('hidden.bs.modal', onHidden, { once: true });
+        setBusy(false);
+        modal.show();
+      });
+      return _unsavedLeavePromise;
+    }
+
+    function loadPanel(url, options) {
+      options = options || {};
+      if (!options.skipUnsavedGuard && hasUnsavedModuleDraft() && Date.now() >= _unsavedGuardBypassUntil) {
+        return confirmUnsavedModuleLeave().then(function(ok) {
+          if (!ok) return false;
+          return loadPanel(url, { skipUnsavedGuard: true });
+        });
+      }
       var panel = document.getElementById('rightPanel');
       if (panel && panel.classList.contains('d-none') && typeof toggleRightPanel === 'function') {
         toggleRightPanel();
@@ -1333,17 +1654,8 @@
           return runPanelScripts(body).then(function() {
             // 将保存按钮移到面板底部悬浮栏
             var saveBar = body.querySelector('.basic-settings-pane') ? null : body.querySelector('.panel-save-bar');
-            if (saveBar && footer) {
-              var form = saveBar.closest('form');
-              var btn = saveBar.querySelector('button[type="submit"]');
-              if (btn && form) {
-                if (!form.id) form.id = '_panelForm_' + Date.now();
-                btn.setAttribute('form', form.id);
-              }
-              footer.innerHTML = '';
-              footer.appendChild(saveBar);
-              footer.style.display = '';
-            }
+            preparePanelSaveBar(saveBar, footer);
+            initializeInlinePanelSaveBars(body);
           });
         })
         .catch(error => { body.innerHTML = '<div class="p-3 text-danger">加载失败</div>'; throw error; });
@@ -1478,6 +1790,11 @@
       if (form.dataset.ajaxHandled === '1' || e.defaultPrevented) return;
       e.preventDefault();
       normalizeUnitInputs(form);
+      if (typeof cancelModuleDraftPreview === 'function') cancelModuleDraftPreview();
+      if (typeof cancelDatasetDraftPreview === 'function') cancelDatasetDraftPreview();
+      form.dataset.saving = '1';
+      form.dataset.panelDirty = '';
+      setPanelEditStatus('previewing', '保存中...');
       var body = document.getElementById('rightPanelBody');
       var footer = document.getElementById('rightPanelFooter');
       body.innerHTML = '<div class="p-3 text-muted text-center py-5"><div class="spinner-border spinner-border-sm me-2"></div>保存中...</div>';
@@ -1497,22 +1814,50 @@
           }
           return runPanelScripts(body).then(function() {
             var saveBar = body.querySelector('.basic-settings-pane') ? null : body.querySelector('.panel-save-bar');
-            if (saveBar && footer) {
-              var newForm = saveBar.closest('form');
-              var newBtn = saveBar.querySelector('button[type="submit"]');
-              if (newBtn && newForm) {
-                if (!newForm.id) newForm.id = '_panelForm_' + Date.now();
-                newBtn.setAttribute('form', newForm.id);
-              }
-              footer.innerHTML = '';
-              footer.appendChild(saveBar);
-              footer.style.display = '';
+            preparePanelSaveBar(saveBar, footer);
+            initializeInlinePanelSaveBars(body);
+            if (result.ok) {
+              setPanelEditStatus('saved', '已保存');
+              markPreviewDirty();
+            } else {
+              setPanelEditStatus('error', '保存失败，请重试');
             }
-            if (result.ok) markPreviewDirty();
           });
         })
         .catch(err => { body.innerHTML = '<div class="p-3 text-danger">保存失败</div>'; });
     });
+
+    document.getElementById('rightPanelBody').addEventListener('input', function(e) {
+      var target = e.target;
+      if (!target || target.type === 'file') return;
+      var form = target.closest && target.closest('form');
+      if (!form || form.dataset.ajaxHandled === '1') return;
+      if (!form.dataset.panelGuard && !form.querySelector('.panel-save-bar') && form.id !== 'datasetEditForm') return;
+      if (form.id === 'modulesForm' && typeof scheduleModuleDraftPreview === 'function' && target.type !== 'file') return;
+      if (form.id === 'datasetEditForm' && target.type !== 'file') {
+        scheduleDatasetDraftPreview(form);
+        return;
+      }
+      form.dataset.panelGuard = '1';
+      form.dataset.panelDirty = '1';
+      setPanelEditStatus('dirty', '有未保存修改');
+    }, true);
+
+    document.getElementById('rightPanelBody').addEventListener('change', function(e) {
+      var target = e.target;
+      if (!target) return;
+      var form = target.closest && target.closest('form');
+      if (!form || form.dataset.ajaxHandled === '1') return;
+      if (!form.dataset.panelGuard && !form.querySelector('.panel-save-bar') && form.id !== 'datasetEditForm') return;
+      if (form.id === 'modulesForm' && typeof scheduleModuleDraftPreview === 'function' && target.type !== 'file') return;
+      if (form.id === 'datasetEditForm' && target.type !== 'file') {
+        scheduleDatasetDraftPreview(form);
+        return;
+      }
+      form.dataset.panelGuard = '1';
+      form.dataset.panelDirty = '1';
+      setPanelEditStatus('dirty', '有未保存修改');
+    }, true);
 
     (function installPanelAutoSave() {
       var body = document.getElementById('rightPanelBody');
@@ -1539,6 +1884,27 @@
       body.addEventListener('input', schedule, true);
       body.addEventListener('change', schedule, true);
     })();
+
+    document.getElementById('leftNav').addEventListener('click', function (e) {
+      var guardedLink = e.target.closest('a.left-nav-item');
+      if (!guardedLink) return;
+      var guardedHref = guardedLink.getAttribute('href');
+      if (guardedLink.classList.contains('external-link') || guardedLink.getAttribute('target') === '_blank' || (guardedHref && /^https?:\/\//.test(guardedHref))) return;
+      if (!hasUnsavedModuleDraft() || Date.now() < _unsavedGuardBypassUntil) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      confirmUnsavedModuleLeave().then(function(ok) {
+        if (!ok) return;
+        _unsavedGuardBypassUntil = Date.now() + 1000;
+        guardedLink.click();
+      });
+    }, true);
+
+    window.addEventListener('beforeunload', function(e) {
+      if (!hasUnsavedModuleDraft()) return;
+      e.preventDefault();
+      e.returnValue = '';
+    });
 
     document.getElementById('leftNav').addEventListener('click', function (e) {
       // 侧栏收缩态下点击有子菜单的父项 → 先展开侧栏，不阻止默认行为
@@ -1729,7 +2095,7 @@
       if (!siteId) return 'about:blank';
       var lang = currentPreviewLanguage();
       var page = (!pageKey || pageKey === 'home' || pageKey === '/') ? '' : String(pageKey).replace(/^\/+|\/+$/g, '') + '/';
-      return '/preview/' + siteId + '/' + (lang ? lang + '/' : '') + page + 'index.html';
+      return '/live_preview/' + siteId + '/' + (lang ? lang + '/' : '') + page + 'index.html';
     }
 
     (function initPreviewTabs() {
@@ -1744,7 +2110,7 @@
       var frame = document.getElementById('previewFrame');
       var path = '';
       try { path = frame.contentWindow.location.pathname; } catch (e) { path = frame.src || ''; }
-      var match = path.match(/\/preview\/\d+\/(zh-CN|zh-TW|en)(?:\/|$)/);
+      var match = path.match(/\/(?:preview|live_preview)\/\d+\/(zh-CN|zh-TW|en)(?:\/|$)/);
       return match ? match[1] : '';
     }
 
@@ -1760,7 +2126,7 @@
     }
 
     function pageKeyFromPreviewPath(pathname) {
-      var cleaned = pathname.replace(/^\/preview\/\d+/, '').replace(/^\/(zh-CN|zh-TW|en)/, '').replace(/\/index\.html$/, '').replace(/\/$/, '');
+      var cleaned = pathname.replace(/^\/(?:preview|live_preview)\/\d+/, '').replace(/^\/(zh-CN|zh-TW|en)/, '').replace(/\/index\.html$/, '').replace(/\/$/, '');
       if (!cleaned || cleaned === '/') return 'home';
       var parts = cleaned.split('/').filter(Boolean);
       var last = parts[parts.length - 1];
@@ -1775,8 +2141,43 @@
       return last || 'home';
     }
 
+    function panelModuleTypeAt(index) {
+      var body = document.getElementById('rightPanelBody');
+      if (!body) return '';
+      var item = body.querySelector('.module-item[data-module-index="' + index + '"]');
+      if (!item) return '';
+      if (item.dataset.moduleType) return item.dataset.moduleType;
+      var typeInput = item.querySelector('input[name="module_' + index + '_type"], input[name$="_type"]');
+      return typeInput ? (typeInput.value || '') : '';
+    }
+
+    function previewModuleTypeAt(doc, index) {
+      if (!doc) return '';
+      var item = doc.querySelector('.builder-module[data-builder-module-index="' + index + '"]');
+      return item ? (item.dataset.builderModuleType || '') : '';
+    }
+
+    function previewModuleSequenceMatchesPanel(doc) {
+      var body = document.getElementById('rightPanelBody');
+      if (!doc || !body) return false;
+      var previewModules = Array.from(doc.querySelectorAll('.builder-module[data-builder-module-index]'))
+        .filter(function(item) { return !item.dataset.moduleListItem; });
+      var panelModules = Array.from(body.querySelectorAll('.module-item[data-module-index]'));
+      if (!previewModules.length || previewModules.length !== panelModules.length) return false;
+      for (var i = 0; i < previewModules.length; i++) {
+        var previewType = previewModules[i].dataset.builderModuleType || '';
+        var panelType = panelModuleTypeAt(previewModules[i].dataset.builderModuleIndex);
+        if (!previewType || !panelType || previewType !== panelType) return false;
+      }
+      return true;
+    }
+
     function selectModuleInPanel(index, pageKey) {
       var body = document.getElementById('rightPanelBody');
+      var rightPanel = document.getElementById('rightPanel');
+      if (rightPanel && rightPanel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
+        togglePanelCollapse();
+      }
       var targetPageKey = pageKey || currentPanelPageKey() || 'home';
       if (currentPanelPageKey() !== targetPageKey) {
         var params = new URLSearchParams(window.location.search);
@@ -1785,7 +2186,10 @@
         var joiner = siteParam ? '&site=' + siteParam : '';
         if (langParam) joiner += '&lang=' + encodeURIComponent(langParam);
         return loadPanel('/_panel/' + targetPageKey + '?_fragment=1' + joiner)
-          .then(() => selectModuleInPanel(index, targetPageKey));
+          .then(function(loaded) {
+            if (loaded === false) return false;
+            return selectModuleInPanel(index, targetPageKey);
+          });
       }
       // 折叠所有模块，再展开目标（手风琴）
       body.querySelectorAll('.module-item').forEach(item => {
@@ -1847,11 +2251,31 @@
 
         if (moduleEl) {
           moduleEl.classList.add('builder-canvas-selected');
-          selectModuleInPanel(moduleEl.dataset.builderModuleIndex, pageKeyFromPreviewPath(frame.contentWindow.location.pathname));
+          var moduleIndex = moduleEl.dataset.builderModuleIndex;
+          var currentKey = currentPanelPageKey();
+          var previewKey = moduleEl.dataset.builderPageKey || pageKeyFromPreviewPath(frame.contentWindow.location.pathname);
+          var currentBody = document.getElementById('rightPanelBody');
+          var hasSamePanelModule = currentBody && currentBody.querySelector('.module-item[data-module-index="' + moduleIndex + '"]');
+          var previewType = previewModuleTypeAt(doc, moduleIndex);
+          var panelType = panelModuleTypeAt(moduleIndex);
+          var sameModuleSet = hasSamePanelModule && previewType && panelType && previewType === panelType && previewModuleSequenceMatchesPanel(doc);
+          var targetKey = (currentKey && (currentKey === previewKey || sameModuleSet)) ? currentKey : previewKey;
+          selectModuleInPanel(moduleIndex, targetKey);
           return;
         }
 
         regionEl.classList.add('builder-canvas-selected');
+        if (hasUnsavedModuleDraft() && Date.now() >= _unsavedGuardBypassUntil) {
+          confirmUnsavedModuleLeave().then(function(ok) {
+            if (!ok) {
+              regionEl.classList.remove('builder-canvas-selected');
+              return;
+            }
+            _unsavedGuardBypassUntil = Date.now() + 1000;
+            regionEl.click();
+          });
+          return;
+        }
         var siteParam = currentSiteParam();
         var langParam = currentLangParam();
         var regionTab = regionEl.dataset.builderRegion === 'footer' ? 'footer' : 'header';
@@ -1920,7 +2344,7 @@
       if (f) {
         var src = f.src || '';
         // 从 iframe src 中提取页面路径: /preview/<id>/<lang>/<page>/index.html → page/
-        var m = src.match(/\/preview\/\d+\/(?:zh-CN|zh-TW|en)?\/?(.*?)index\.html/);
+        var m = src.match(/\/(?:preview|live_preview)\/\d+\/(?:zh-CN|zh-TW|en)?\/?(.*?)index\.html/);
         if (m && m[1]) previewPath = m[1]; // e.g. 'about/' or ''
       }
 
@@ -1928,8 +2352,12 @@
         var frame = document.getElementById('previewFrame');
         if (!frame) return;
         var siteParam = currentSiteParam();
-        var newUrl = '/preview/' + siteParam + '/' + langCode + '/' + (previewPath || '') + 'index.html';
+        var newUrl = '/live_preview/' + siteParam + '/' + langCode + '/' + (previewPath || '') + 'index.html';
         frame.dataset.previewUrl = newUrl;
+        if (isLivePreviewUrl(newUrl)) {
+          setPreviewFrameUrl(newUrl, '正在切换实时预览...');
+          return;
+        }
         // 先触发构建，确保多语言菜单等内容已生成
         buildCurrentSite('正在生成多语言预览...')
           .then(function (data) {
@@ -1970,6 +2398,7 @@
       installPreviewCanvasHandlers();
       setTimeout(installPreviewCanvasHandlers, 80);
       setTimeout(installPreviewCanvasHandlers, 300);
+      setTimeout(installPreviewCanvasHandlers, 700);
     }
 
     var previewFrameEl = document.getElementById('previewFrame');
