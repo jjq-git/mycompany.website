@@ -6,6 +6,7 @@
 根路径生成语言选择首页.
 """
 import json
+import copy
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -24,6 +25,8 @@ from .models import Site
 # block schema 解析缓存：同一次构建里一个 block 只解析一次。
 # key = (template_name, block_name, variant)，value = (html, schema) 或 None（旧式 Jinja2）。
 _SCHEMA_CACHE = {}
+_YAML_CACHE = {}
+_YAML_CACHE_MAX = 512
 
 _LANGUAGE_FLAG_FALLBACKS = {
     'zh': '🇨🇳',
@@ -341,7 +344,19 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
 def _load_yaml(path):
     if not path.exists():
         return {}
-    return yaml.safe_load(path.read_text(encoding='utf-8')) or {}
+    try:
+        stat = path.stat()
+        cache_key = (str(path.resolve()), stat.st_mtime_ns, stat.st_size)
+        cached = _YAML_CACHE.get(cache_key)
+        if cached is not None:
+            return copy.deepcopy(cached)
+        data = yaml.safe_load(path.read_text(encoding='utf-8')) or {}
+        if len(_YAML_CACHE) >= _YAML_CACHE_MAX:
+            _YAML_CACHE.pop(next(iter(_YAML_CACHE)), None)
+        _YAML_CACHE[cache_key] = data
+        return copy.deepcopy(data)
+    except OSError:
+        return {}
 
 
 def _is_content_yaml(path):
@@ -1080,7 +1095,10 @@ def render_site_page(site_id, filepath='index.html', base_url='', lang_code=None
         lang_code = lang_code or default_lang
 
         default_pages, default_data = _load_lang_overrides(site_id, default_lang, default_lang, pages, data)
-        lang_pages, lang_data = _load_lang_overrides(site_id, lang_code, default_lang, default_pages, default_data)
+        if lang_code == default_lang:
+            lang_pages, lang_data = default_pages, default_data
+        else:
+            lang_pages, lang_data = _load_lang_overrides(site_id, lang_code, default_lang, default_pages, default_data)
         if isinstance(draft_data, dict):
             lang_data = _deep_merge(lang_data, draft_data)
         if isinstance(draft_page, dict) and draft_page_key:

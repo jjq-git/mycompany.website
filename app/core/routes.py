@@ -7,6 +7,7 @@ import hashlib
 import copy
 import mimetypes
 import secrets
+import time
 import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -19,6 +20,12 @@ from werkzeug.utils import secure_filename
 import re
 
 import yaml as _yaml
+
+_LIVE_PREVIEW_CACHE = {}
+_LIVE_PREVIEW_VERSION_CACHE = {}
+_LIVE_PREVIEW_CACHE_TTL = 5
+_LIVE_PREVIEW_VERSION_TTL = 1
+_LIVE_PREVIEW_CACHE_MAX = 128
 
 from . import datasets, style_registry
 from . import menu as menu_lib
@@ -3225,7 +3232,7 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
 
     fields = {}
     for key, val in item.items():
-        if key not in ('modules', 'csrf_token'):
+        if key not in ('modules', 'csrf_token') and not key.startswith('_draft_'):
             fields[key] = val
 
     for key in form:
@@ -3293,6 +3300,52 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
     return draft
 
 
+def _live_preview_content_version(site):
+    """Cheap invalidation token for GET live-preview cache."""
+    version_key = (site.id, site.template_name)
+    cached = _LIVE_PREVIEW_VERSION_CACHE.get(version_key)
+    now = time.monotonic()
+    if cached and now - cached[0] <= _LIVE_PREVIEW_VERSION_TTL:
+        return cached[1]
+    latest = 0
+    site_root = Path(current_app.config['SITES_DIR']) / str(site.id)
+    tpl_root = Path(current_app.config['TEMPLATES_DIR']) / site.template_name
+    watched_suffixes = {'.yaml', '.yml', '.html', '.css', '.js'}
+    for root in (site_root, tpl_root):
+        try:
+            for path in root.rglob('*'):
+                if not path.is_file() or path.name.startswith('.tmp-'):
+                    continue
+                if path.suffix.lower() not in watched_suffixes:
+                    continue
+                try:
+                    latest = max(latest, path.stat().st_mtime_ns)
+                except OSError:
+                    continue
+        except OSError:
+            continue
+    _LIVE_PREVIEW_VERSION_CACHE[version_key] = (now, latest)
+    return latest
+
+
+def _live_preview_cache_get(key):
+    item = _LIVE_PREVIEW_CACHE.get(key)
+    if not item:
+        return None
+    created_at, html = item
+    if time.monotonic() - created_at > _LIVE_PREVIEW_CACHE_TTL:
+        _LIVE_PREVIEW_CACHE.pop(key, None)
+        return None
+    return html
+
+
+def _live_preview_cache_set(key, html):
+    if len(_LIVE_PREVIEW_CACHE) >= _LIVE_PREVIEW_CACHE_MAX:
+        oldest = min(_LIVE_PREVIEW_CACHE.items(), key=lambda item: item[1][0])[0]
+        _LIVE_PREVIEW_CACHE.pop(oldest, None)
+    _LIVE_PREVIEW_CACHE[key] = (time.monotonic(), html)
+
+
 @bp.route('/live_preview/<int:site_id>/')
 @bp.route('/live_preview/<int:site_id>/<path:filepath>', methods=['GET', 'POST'])
 def live_preview(site_id, filepath='index.html'):
@@ -3311,6 +3364,18 @@ def live_preview(site_id, filepath='index.html'):
         return redirect(url_for('core.live_preview',
                                 site_id=site_id,
                                 filepath=f'{_default_lang_code(site)}/index.html'))
+
+    cache_key = None
+    if request.method == 'GET':
+        cache_key = (
+            site_id,
+            filepath,
+            request.args.get('pv', ''),
+            _live_preview_content_version(site),
+        )
+        cached_html = _live_preview_cache_get(cache_key)
+        if cached_html is not None:
+            return current_app.response_class(cached_html, mimetype='text/html; charset=utf-8')
 
     draft_page = None
     draft_data = None
@@ -3381,6 +3446,8 @@ def live_preview(site_id, filepath='index.html'):
     except Exception as exc:
         current_app.logger.exception('实时预览渲染站点 %s 失败', site_id)
         abort(500, f'实时预览失败: {exc}')
+    if cache_key is not None:
+        _live_preview_cache_set(cache_key, html)
     return current_app.response_class(html, mimetype='text/html; charset=utf-8')
 
 

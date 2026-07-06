@@ -14,6 +14,7 @@
     └── assets/               上传的图片/文件
 """
 import os
+import copy
 import shutil
 import tempfile
 from pathlib import Path
@@ -39,6 +40,8 @@ MEDIA_CATEGORIES = {
 }
 
 _MEDIA_PACKAGE_PREFIX = '__package__:'
+_READ_YAML_CACHE = {}
+_READ_YAML_CACHE_MAX = 512
 
 
 def _is_content_yaml(path):
@@ -129,17 +132,32 @@ def read_yaml(site_id, relative_path, default=None, lang=None):
     如果指定了 lang: 先尝试 lang/<lang>/<relative_path>, 不存在则回退到根路径.
     不指定 lang: 只读根路径.
     """
+    def _read_cached(path):
+        try:
+            stat = path.stat()
+            cache_key = (str(path.resolve()), stat.st_mtime_ns, stat.st_size)
+            cached = _READ_YAML_CACHE.get(cache_key)
+            if cached is not None:
+                return copy.deepcopy(cached)
+            data = yaml.safe_load(path.read_text(encoding='utf-8'))
+            if len(_READ_YAML_CACHE) >= _READ_YAML_CACHE_MAX:
+                _READ_YAML_CACHE.pop(next(iter(_READ_YAML_CACHE)), None)
+            _READ_YAML_CACHE[cache_key] = data
+            return copy.deepcopy(data)
+        except OSError:
+            return default
+
     # 先尝试语言特定版本 (路径同样过 _safe_path 兜底, 防 .. 逃逸)
     if lang:
         lang_path = _safe_path(site_id, relative_path, lang=lang)
         if lang_path.exists():
-            return yaml.safe_load(lang_path.read_text(encoding='utf-8'))
+            return _read_cached(lang_path)
 
     # 回退到根路径
     path = _safe_path(site_id, relative_path)
     if not path.exists():
         return default
-    return yaml.safe_load(path.read_text(encoding='utf-8'))
+    return _read_cached(path)
 
 
 def copy_seed_data(site_id, template_name):

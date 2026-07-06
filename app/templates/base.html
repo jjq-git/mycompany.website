@@ -1054,7 +1054,23 @@
 
     function cacheBustUrl(url) {
       if (!url || url === 'about:blank') return url || 'about:blank';
-      return url + (url.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
+      var next = url;
+      if (isLivePreviewUrl(next) && window._livePreviewContentVersion) {
+        next += (next.indexOf('?') === -1 ? '?' : '&') + 'pv=' + encodeURIComponent(window._livePreviewContentVersion);
+      }
+      return next + (next.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
+    }
+
+    function comparablePreviewUrl(url) {
+      if (!url || url === 'about:blank') return url || 'about:blank';
+      try {
+        var parsed = new URL(url, window.location.origin);
+        parsed.searchParams.delete('_');
+        parsed.searchParams.delete('pv');
+        return parsed.pathname + (parsed.search ? parsed.search : '');
+      } catch (e) {
+        return String(url).replace(/[?&]_=\d+$/, '');
+      }
     }
 
     function showPreviewLoading(message) {
@@ -1082,8 +1098,16 @@
     function setPreviewFrameUrl(url, loadingMessage) {
       var f = document.getElementById('previewFrame');
       if (!f) return Promise.resolve();
+      var currentUrl = comparablePreviewUrl(f.getAttribute('src') || f.src || '');
+      var nextUrl = comparablePreviewUrl(url);
+      var nextVersion = String(window._livePreviewContentVersion || '');
+      if (currentUrl === nextUrl && String(f.dataset.previewContentVersion || '') === nextVersion) {
+        updatePreviewUrlBar(url);
+        return Promise.resolve();
+      }
       updatePreviewUrlBar(url);
       if (loadingMessage) showPreviewLoading(loadingMessage);
+      f.dataset.previewContentVersion = nextVersion;
       return new Promise(function(resolve) {
         var done = false;
         var timer = window.setTimeout(finish, 12000);
@@ -1242,6 +1266,7 @@
     }
 
     function markPreviewDirty() {
+      window._livePreviewContentVersion = Date.now();
       var badge = document.getElementById('previewDirtyBadge');
       var btn = document.getElementById('previewRefreshBtn');
       if (badge) badge.hidden = false;
@@ -1325,11 +1350,27 @@
       var path = item.dataset.path || '/';
       var url = previewUrlForPage(path);
       var key = (path === '/' ? 'home' : String(path).replace(/^\/+|\/+$/g, '') || 'home');
-      openPreviewTab(key, title, url);
-      var modalEl = document.getElementById('pageTreeModal');
-      if (modalEl && window.bootstrap) {
-        var modal = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
-        if (modal) modal.hide();
+      function openSelectedPage() {
+        openPreviewTab(key, title, url);
+        var siteParam = currentSiteParam();
+        var langParam = currentLangParam();
+        var qs = siteParam ? '&site=' + encodeURIComponent(siteParam) : '';
+        if (langParam) qs += '&lang=' + encodeURIComponent(langParam);
+        loadPanel('/_panel/' + String(key).replace(/^\/+|\/+$/g, '') + '?_fragment=1' + qs);
+        var modalEl = document.getElementById('pageTreeModal');
+        if (modalEl && window.bootstrap) {
+          var modal = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+          if (modal) modal.hide();
+        }
+      }
+      if (key !== currentPanelPageKey() && hasUnsavedModuleDraft() && Date.now() >= _unsavedGuardBypassUntil) {
+        confirmUnsavedModuleLeave().then(function(ok) {
+          if (!ok) return;
+          _unsavedGuardBypassUntil = Date.now() + 1000;
+          openSelectedPage();
+        });
+      } else {
+        openSelectedPage();
       }
     }
 
@@ -1859,6 +1900,22 @@
       setPanelEditStatus('dirty', '有未保存修改');
     }, true);
 
+    function leftNavTargetPageKey(link) {
+      if (!link) return '';
+      var previewPage = link.dataset.previewPage;
+      if (previewPage) {
+        return (previewPage === '/' ? 'home' : String(previewPage).replace(/^\/+|\/+$/g, '') || 'home');
+      }
+      var href = link.getAttribute('href') || '';
+      var match = href.match(/\/_panel\/([^?#]+)/);
+      return match ? decodeURIComponent(match[1]) : '';
+    }
+
+    function isSameLeftNavEditTarget(link) {
+      var targetPage = leftNavTargetPageKey(link);
+      return !!targetPage && targetPage === currentPanelPageKey();
+    }
+
     (function installPanelAutoSave() {
       var body = document.getElementById('rightPanelBody');
       if (!body) return;
@@ -1890,6 +1947,7 @@
       if (!guardedLink) return;
       var guardedHref = guardedLink.getAttribute('href');
       if (guardedLink.classList.contains('external-link') || guardedLink.getAttribute('target') === '_blank' || (guardedHref && /^https?:\/\//.test(guardedHref))) return;
+      if (isSameLeftNavEditTarget(guardedLink)) return;
       if (!hasUnsavedModuleDraft() || Date.now() < _unsavedGuardBypassUntil) return;
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -2075,18 +2133,18 @@
         }
         return;
       }
+      var previewPage = link.dataset.previewPage;
+      if (previewPage) {
+        var previewUrl = previewUrlForPage(previewPage);
+        var title = link.getAttribute('title') || link.textContent.trim() || '预览';
+        openPreviewTab((previewPage === '/' ? 'home' : String(previewPage).replace(/^\/+|\/+$/g, '') || 'home'), title, previewUrl);
+      }
       if (href && href !== '#') {
         var siteParam = currentSiteParam();
         var langParam = currentLangParam();
         var qs = siteParam ? '&site=' + siteParam : '';
         if (langParam) qs += '&lang=' + encodeURIComponent(langParam);
         loadPanel(href + '?_fragment=1' + qs);
-      }
-      var previewPage = link.dataset.previewPage;
-      if (previewPage) {
-        var previewUrl = previewUrlForPage(previewPage);
-        var title = link.getAttribute('title') || link.textContent.trim() || '预览';
-        openPreviewTab((previewPage === '/' ? 'home' : String(previewPage).replace(/^\/+|\/+$/g, '') || 'home'), title, previewUrl);
       }
     });
 
@@ -2097,6 +2155,41 @@
       var page = (!pageKey || pageKey === 'home' || pageKey === '/') ? '' : String(pageKey).replace(/^\/+|\/+$/g, '') + '/';
       return '/live_preview/' + siteId + '/' + (lang ? lang + '/' : '') + page + 'index.html';
     }
+
+    var _previewPrefetchTimers = {};
+    var _previewPrefetched = {};
+    function prefetchPreviewUrl(url) {
+      if (!url || url === 'about:blank' || !isLivePreviewUrl(url) || _previewPrefetched[url]) return;
+      _previewPrefetched[url] = true;
+      var prefetchUrl = url;
+      if (window._livePreviewContentVersion) {
+        prefetchUrl += (prefetchUrl.indexOf('?') === -1 ? '?' : '&') + 'pv=' + encodeURIComponent(window._livePreviewContentVersion);
+      }
+      fetch(prefetchUrl, { method: 'GET', credentials: 'same-origin' }).catch(function() {
+        _previewPrefetched[url] = false;
+      });
+    }
+
+    function schedulePreviewPrefetch(pageKey) {
+      var url = previewUrlForPage(pageKey);
+      if (!url || url === 'about:blank') return;
+      clearTimeout(_previewPrefetchTimers[url]);
+      _previewPrefetchTimers[url] = setTimeout(function() {
+        prefetchPreviewUrl(url);
+      }, 120);
+    }
+
+    document.getElementById('leftNav').addEventListener('mouseover', function(e) {
+      var link = e.target.closest && e.target.closest('a.left-nav-item[data-preview-page]');
+      if (!link) return;
+      schedulePreviewPrefetch(link.dataset.previewPage);
+    }, true);
+
+    document.getElementById('leftNav').addEventListener('focusin', function(e) {
+      var link = e.target.closest && e.target.closest('a.left-nav-item[data-preview-page]');
+      if (!link) return;
+      schedulePreviewPrefetch(link.dataset.previewPage);
+    }, true);
 
     (function initPreviewTabs() {
       var frame = document.getElementById('previewFrame');
