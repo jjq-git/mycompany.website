@@ -1327,15 +1327,15 @@ hr {
 .site-footer {
   background-color: var(--color-surface-dark);
   color: var(--color-on-dark-soft);
-  padding-top: 64px;
-  padding-bottom: 64px;
+  padding-top: var(--space-xxl);
+  padding-bottom: var(--space-xl);
 }
 
 .footer-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-xl);
-  margin-bottom: var(--space-xxl);
+  margin-bottom: var(--space-xl);
 }
 
 .footer-col__title {
@@ -1473,8 +1473,12 @@ hr {
 /* Minimal footer */
 .footer--minimal {
   text-align: center;
-  padding-top: var(--space-xxl);
-  padding-bottom: var(--space-xxl);
+  padding-top: var(--space-xl);
+  padding-bottom: var(--space-xl);
+}
+.footer--minimal .footer-bottom {
+  border-top: none;
+  padding-top: var(--space-md);
 }
 
 /* ============================================================

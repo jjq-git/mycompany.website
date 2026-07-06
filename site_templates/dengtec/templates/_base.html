@@ -395,11 +395,11 @@ document.addEventListener('click', function(e) {
   {% block content %}{% endblock %}
 </main>
 
-<footer class="site-footer builder-region" data-builder-region="footer">
+{% set footer_cfg = settings.footer | default({}) %}
+{% set footer_variant = footer_cfg.get('variant', 'columns') %}
+{% set footer_columns = footer_cfg.get('columns', []) %}
+<footer class="site-footer builder-region{% if footer_variant == 'minimal' %} footer--minimal{% endif %}" data-builder-region="footer">
   <div class="container">
-    {% set footer_cfg = settings.footer | default({}) %}
-    {% set footer_variant = footer_cfg.get('variant', 'columns') %}
-    {% set footer_columns = footer_cfg.get('columns', []) %}
 
     {% if footer_variant == 'minimal' %}
     {# 极简模式：不渲染栏目，仅保留下方版权行 #}
