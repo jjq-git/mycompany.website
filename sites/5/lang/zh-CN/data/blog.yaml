@@ -58,8 +58,8 @@
     \ IO 端口的使用。如果 Atmega328p 无法满足特定要求，将使用主机的 IO 端口进行处理，同时支持 IO 端口切换，允许主机连接多个设备。<br></p><p><b>模块引脚<br></b></p><p>不同模块可能使用不同的引脚。在设计阶段，应尽可能利用模块自身的引脚，以尽量减少主机\
     \ IO 端口的使用。\r\n<br>R01\tR02\tR03\tR04\tR05\tR06\tR07\tR08\tR09\tR10\tR11\r\n<br>C1\t\
     3.3v¹\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\tIO02\tIO01\t5V²\tGND\r\n<br>C2\tGND\t\
-    IO20\tIO19\tIO12⁴\tIO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V³ <br></p><p><img src=\"\
-    /assets/uploads/richtext-20260612020127-f3536ea0.svg\"></p><p><b>注释<br></b></p><p></p><ol><li>最大输出电流：2A，由主机提供。</li><li>模块电源：为主机电池充电。</li><li>最大输出电流：200mA，由主机提供。</li><li>IO12\
+    IO20\tIO19\tIO12⁴\tIO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V³&nbsp;<br></p><p><img\
+    \ src=\"/assets/uploads/richtext-20260612020127-f3536ea0.svg\"></p><p><b>注释<br></b></p><p></p><ol><li>最大输出电流：2A，由主机提供。</li><li>模块电源：为主机电池充电。</li><li>最大输出电流：200mA，由主机提供。</li><li>IO12\
     \ 引脚：此引脚主要用于向主机发送中断信号。<br></li></ol><p></p><p><b>固件更新<br></b></p><p><img src=\"\
     /assets/uploads/richtext-20260612020151-454aecd2.svg\"></p><p><b>使用主机升级模块固件<br></b></p><p></p><ol><li>使用螺丝刀打开模块，参考上图\
     \ C 中的 UPGRADE 位置，将三个拨码开关全部拨到 ON 位置。</li><li>重新安装模块顶盖（盖好盖子后，模块即可与主机正常通信）。</li><li>点击屏幕上的“升级”开始固件升级。</li><li>升级成功后，取下模块顶盖，将拨码开关拨到\
@@ -76,35 +76,36 @@
     IO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\t\
     IO13\tIO14\tIO45\tIO04\t5V\r\n<br> \t \t \t \t \t \t \t \t \t \t \t \r\n<br>I2C\t\
     –\tSCL\tSDA\t–\t–\t–\t–\t–\t–\t–\t–\r\n<br>I2C\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t\
-    – <br></p><p><b>UART 引脚\r\n</b><br>某些模块需要使用串行通信，例如 RS485、CAN、DMX512 等。此外，更新模块固件时需要用到\
+    –&nbsp;<br></p><p><b>UART 引脚\r\n</b><br>某些模块需要使用串行通信，例如 RS485、CAN、DMX512 等。此外，更新模块固件时需要用到\
     \ UART 接口和 RESET 引脚。由于更新模块固件的操作不常见，因此通信和固件更新所用的 TX 和 RX 引脚是共用的。RESET (RST) 引脚仅在固件更新时使用。引脚位置如下图所示：\r\
     \n<br>R1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3v\tIO41\tIO42\t\
     IO09\tIO40\tIO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\t\
     IO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V\r\n<br>UART\t–\t–\t–\t–\t–\t–\tRST\tRX\t\
-    TX\t–\t–\r\n<br>UART\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t– <br></p><p>用于升级固件的拨码开关在模块出厂时设置为\
+    TX\t–\t–\r\n<br>UART\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p>用于升级固件的拨码开关在模块出厂时设置为\
     \ OFF。如果需要固件升级，请将拨码开关拨到 ON。正常使用时，拨码开关应设置为 OFF。\r\n<br>\r\n<br>Peng<br></p><p><b>USB\r\
     \n</b><br>主机配备 TYPE-C 接口，正插和反插功能不同：</p><p><img src=\"/assets/uploads/richtext-20260612020450-b8ba23d2.svg\"\
     ></p><p></p><ol><li>正插（与 RIMU 标志和屏幕同侧）：主机可模拟键盘、鼠标、U 盘和游戏控制器等设备。\r\n</li><li>反插（与\
-    \ RIMU 标志和屏幕相反侧）：用于升级程序和调试，连接方式为计算机 -> CH9102X -> ESP32S3。</li></ol><p></p><p><b>正插\
+    \ RIMU 标志和屏幕相反侧）：用于升级程序和调试，连接方式为计算机 -&gt; CH9102X -&gt; ESP32S3。</li></ol><p></p><p><b>正插\
     \ - USB 设备\r\n</b><br>使用 USB 接口时，主机可模拟键盘、鼠标、U 盘和游戏控制器等设备。此时，IO19 和 IO20 引脚将被占用。\r\
     \n<br>R1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\t\
     IO09\tIO40\tIO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\t\
     IO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V\r\n<br>USB-HID\t–\t–\t–\t–\t–\t–\t–\t–\t\
-    –\t–\t–\r\n<br>USB-HID\t–\tD+\tD-\t–\t–\t–\t–\t–\t–\t–\t– <br></p><p><b>反插 - USB\
-    \ 串口\r\n</b><br>使用 TYPE-C 串口时，IO43 和 IO44 引脚将被占用。主机可用作串口进行调试或升级程序。\r\n<br>R1\t\
+    –\t–\t–\r\n<br>USB-HID\t–\tD+\tD-\t–\t–\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p><b>反插\
+    \ - USB 串口\r\n</b><br>使用 TYPE-C 串口时，IO43 和 IO44 引脚将被占用。主机可用作串口进行调试或升级程序。\r\n<br>R1\t\
     R2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\t\
     IO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\t\
     IO13\tIO14\tIO45\tIO04\t5V\r\n<br>USB-UART\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\r\n\
-    <br>USB-UART\t–\t–\t–\t–\tRX\tTX\t–\t–\t–\t–\t– <br></p><p><b>SPI 引脚\r\n</b><br>某些模块需要更高速的数据传输，将使用\
-    \ SPI 协议。片选引脚由 Atmega328p 控制，允许多个模块连接到一个 SPI 总线。SPI 引脚定义如下：\r\n<br>R1\tR2\tR3\t\
-    R4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\tIO06\t\
-    IO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\t\
-    IO14\tIO45\tIO04\t5V\r\n<br>SPI\t–\t–\t–\tSCK\tMOSI\tMISO\t–\t–\t–\t–\t–\r\n<br>SPI\t\
-    –\t–\t–\t–\t–\t–\t–\t–\t–\t–\t– <br></p><p><b>中断引脚\r\n</b><br>具有中断功能的模块可以通过中断引脚通知主机有新信息。由于此中断引脚与主机的内部外设共用同一引脚，主机必须首先确认哪个模块触发了中断，然后读取相应模块的寄存器信息。引脚位置如下：\r\
+    <br>USB-UART\t–\t–\t–\t–\tRX\tTX\t–\t–\t–\t–\t–&nbsp;<br></p><p><b>SPI 引脚\r\n\
+    </b><br>某些模块需要更高速的数据传输，将使用 SPI 协议。片选引脚由 Atmega328p 控制，允许多个模块连接到一个 SPI 总线。SPI 引脚定义如下：\r\
+    \n<br>R1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\t\
+    IO09\tIO40\tIO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\t\
+    IO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V\r\n<br>SPI\t–\t–\t–\tSCK\tMOSI\tMISO\t\
+    –\t–\t–\t–\t–\r\n<br>SPI\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p><b>中断引脚\r\
+    \n</b><br>具有中断功能的模块可以通过中断引脚通知主机有新信息。由于此中断引脚与主机的内部外设共用同一引脚，主机必须首先确认哪个模块触发了中断，然后读取相应模块的寄存器信息。引脚位置如下：\r\
     \n<br>R1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\t\
     IO09\tIO40\tIO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\t\
     IO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V\r\n<br>INTERRUPT\t–\t–\t–\t–\t–\t–\t–\t\
-    –\t–\t–\t–\r\n<br>INTERRUPT\t–\t–\t–\tINT\t–\t–\t–\t–\t–\t–\t– <br></p><p></p><div></div><p></p><p><b>非协议引脚\r\
+    –\t–\t–\t–\r\n<br>INTERRUPT\t–\t–\t–\tINT\t–\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p></p><div></div><p></p><p><b>非协议引脚\r\
     \n</b><br>这些非协议引脚不被任何协议占用。在模块硬件设计过程中，应优先使用这些引脚。此外，IO05 引脚仅在固件升级时使用。\r\n<br>R1\t\
     R2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\t\
     IO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\t\
@@ -117,24 +118,24 @@
     \n</b><br>地址\t功能\t读/写\t注释\r\n<br>0x00/02\t模块编号\tR\t\r\n<br>0x01/03\t模块编号\tR\t\r\
     \n<br>0x04\t寄存器总数\tR\t\r\n<br>0x05\t硬件版本\tR\t\r\n<br>0x06\t软件版本\tR\t\r\n<br>0x07\t\
     使用的功能\tR\t\r\n<br>0x08\t校验和\tR\t\r\n<br>0x09/0A/0B/0C/0D/0E\t保留\tR\t\r\n<br>0x0E\t\
-    新数据标志\tR/W\t\r\n<br>0x10->0x2F\t模块名称\tR\t\r\n<br>0x30\tPIN-01 状态\tR\t\r\n<br>0x31\t\
+    新数据标志\tR/W\t\r\n<br>0x10-&gt;0x2F\t模块名称\tR\t\r\n<br>0x30\tPIN-01 状态\tR\t\r\n<br>0x31\t\
     PIN-02 状态\tR\t\r\n<br>0x32\tPIN-04 状态\tR\t\r\n<br>0x33\tPIN-05 状态\tR\t\r\n<br>0x34\t\
     PIN-06 状态\tR\t\r\n<br>0x35\tPIN-09 状态\tR\t\r\n<br>0x36\tPIN-12 状态\tR\t\r\n<br>0x37\t\
     PIN-13 状态\tR\t\r\n<br>0x38\tPIN-14 状态\tR\t\r\n<br>0x39\tPIN-19 状态\tR\t\r\n<br>0x3A\t\
     PIN-20 状态\tR\t\r\n<br>0x3B\tPIN-40 状态\tR\t\r\n<br>0x3C\tPIN-41 状态\tR\t\r\n<br>0x3D\t\
     PIN-42 状态\tR\t\r\n<br>0x3E\tPIN-43 状态\tR\t\r\n<br>0x3F\tPIN-44 状态\tR\t\r\n<br>0x40\t\
-    PIN-45 状态\tR\t\r\n<br>0x41\t中断标志\tR/W </p><p><b>模块编号\r\n</b><br>每个模块都有一个不同且唯一的编号，范围从\
+    PIN-45 状态\tR\t\r\n<br>0x41\t中断标志\tR/W&nbsp;</p><p><b>模块编号\r\n</b><br>每个模块都有一个不同且唯一的编号，范围从\
     \ 0x0001 到 0xFFFF。同一模块的不同版本使用相同的编号。硬件版本用于区分硬件。为确保正确识别模块，系统将编号存储两次，以防止 I2C 连接到其他设备。\r\
     \n<br>\r\n<br>0x00/0x02\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>高 8 位\t0\t0\t0\t\
     0\t0\t0\t0\t0\r\n<br>0x01/0x03\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>低 8 位\t\
-    0\t0\t0\t0\t0\t0\t0\t0 <br></p><p><b>总位数\r\n</b><br>寄存器总数范围从 0x00 到 0xFF，等于通用寄存器数量加上私有寄存器数量。此总数存储在地址\
+    0\t0\t0\t0\t0\t0\t0\t0&nbsp;<br></p><p><b>总位数\r\n</b><br>寄存器总数范围从 0x00 到 0xFF，等于通用寄存器数量加上私有寄存器数量。此总数存储在地址\
     \ 0x04。\r\n<br>\r\n<br>0x04\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>值\t0\t0\t0\t\
     0\t0\t0\t0\t0</p><p><b>硬件版本\r\n</b><br>模块的硬件版本在功能相同的模块中递增，范围从 1 到 255，第一个版本为 1。此版本信息存储在地址\
     \ 0x05。\r\n<br>\r\n<br>0x05\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>值\t0\t0\t0\t\
-    0\t0\t0\t0\t0 <br></p><p><b>软件版本\r\n</b><br>模块的软件版本可通过主机升级，范围从 1 到 255，第一个版本为\
+    0\t0\t0\t0\t0&nbsp;<br></p><p><b>软件版本\r\n</b><br>模块的软件版本可通过主机升级，范围从 1 到 255，第一个版本为\
     \ 1。此版本信息存储在地址 0x06。\r\n<br>\r\n<br>固件更新不会修改 EEPROM 中的数据，但在模块初始化期间，可能会使用旧数据，这可能导致数据错误。软件版本还用于确定是否应从\
     \ EEPROM 读取数据以初始化模块。\r\n<br>\r\n<br>0x06\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>值\t\
-    0\t0\t0\t0\t0\t0\t0\t0 <br></p><p><b>通信协议\r\n</b><br>不同模块具有不同的功能，因此所需的通信协议也不同。此模块使用的协议存储在寄存器\
+    0\t0\t0\t0\t0\t0\t0\t0&nbsp;<br></p><p><b>通信协议\r\n</b><br>不同模块具有不同的功能，因此所需的通信协议也不同。此模块使用的协议存储在寄存器\
     \ 0x07 中，供主机识别。\r\n<br>\r\n<br>每个位代表模块使用的通信协议，0 表示未使用，1 表示当前正在使用。所有模块都支持 I2C 协议。\r\
     \n<br>\r\n<br>0x07\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>协议\t–\t–\tUPGRADE\t\
     USB-HID\tUSB-UART\tINTERRUPT\tUART\tSPI\r\n<br></p><ol><li>UPGRADE：模块可通过主机升级。\r\
@@ -145,7 +146,7 @@
     B5\tB4\tB3\tB2\tB1\tB0\r\n<br>值\t0\t0\t0\t0\t0\t0\t0\t0\r\n<br><b>保留位\r\n</b><br>地址范围\
     \ 0x09 – 0x0E 为保留位，未使用，值为 0。\r\n<br>\r\n<br><b>新数据标志\r\n</b><br>如果模块有新数据，此值需要递增。当主机轮询时，首先读取此寄存器。如果值不为\
     \ 0，则继续读取其他寄存器，然后将其清零。此值存储在地址 0x0F。如果此寄存器的值很大，主机需要缩短轮询间隔。\r\n<br>\r\n<br>0x0F\t\
-    B7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>值\t0\t0\t0\t0\t0\t0\t0\t0 <br></p><p><b>模块名称\r\
+    B7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>值\t0\t0\t0\t0\t0\t0\t0\t0&nbsp;<br></p><p><b>模块名称\r\
     \n</b><br>模块名称必须唯一，并以“WF1-”开头，后面最多跟 32 个字符，仅由字母、数字或连字符 (-) 组成。模块名称存储在寄存器范围 0x10\
     \ – 0x2F 中。</p><p><b>引脚状态\r\n</b><br>确认模块使用的协议后，引脚状态将在模块上电时初始化。引脚状态不会保存到 EEPROM，而是由程序在寄存器中初始化。引脚有四种定义，代表不同的状态。总共使用\
     \ 2 位来表示不同的状态，即 BIT0 和 BIT1，其他位保留。具体如下：\r\n<br>\r\n<br>0x30\tB7\tB6\tB5\tB4\t\
@@ -176,13 +177,7 @@
     \ color=\"#018073\"><a href=\"https://github.com/RIMU-DENGTEC/wf1_module_library\"\
     \ target=\"_blank\" rel=\"noopener\">wf1 模块库</a>\r\n</font></li><li><font color=\"\
     #018073\"><a href=\"https://rimu.me/wp-content/uploads/2025/01/wf1_module_general_info_en_v0.pdf\"\
-    \ target=\"_blank\" rel=\"noopener\">wf1_module_general_info_en_v0.pdf </a><br><br></font></li></ul><div><table><tbody><tr><td\
-    \ style=\"text-align: center;\">1</td><td style=\"text-align: center;\">2</td><td\
-    \ style=\"text-align: center;\">3</td></tr><tr><td style=\"text-align: center;\"\
-    >4</td><td style=\"text-align: center;\">44</td><td style=\"text-align: center;\"\
-    >5</td></tr><tr><td style=\"text-align: center;\">55</td><td style=\"text-align:\
-    \ center;\">55</td><td style=\"text-align: center;\">55</td></tr></tbody></table><p><br></p></div><div><font\
-    \ color=\"#018073\"><br></font></div><p></p><div></div>"
+    \ target=\"_blank\" rel=\"noopener\">wf1_module_general_info_en_v0.pdf&nbsp;</a><br><br></font></li></ul><p></p><div></div>"
   cover: /assets/uploads/blog-cover-20260611110528-abccb981.webp
   style_bg-color: ''
   modules:
@@ -194,7 +189,20 @@
   seo_description: RIMU 模块通过 I2C 总线与主机通信，支持 DIMMER5 和 8 通道 IO 扩展等可定制模块，采用 Atmega328p
     处理器自主处理事件，减少主机 IO 占用，并提供拨码开关设置地址与固件升级功能。
   category: RIMU
-  tags: []
+  tags: ''
+  media_type: image
+  cover_convert_webp: 'false'
+  cover_alt: RIMU 模块的一般信息
+  video: ''
+  embed_url: ''
+  date: ''
+  name: ''
+  tags_visible: true
+  price: ''
+  rte_clicked_editor_idx: ''
+  detail_gallery:
+    visible: true
+    images: []
 - id: 5
   title: Rimu 的键盘功能
   slug: keyboard-function-of-rimu

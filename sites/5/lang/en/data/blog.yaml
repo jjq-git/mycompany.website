@@ -80,7 +80,7 @@
     \ the usage of the host’s IO ports.\r\n<br>R01\tR02\tR03\tR04\tR05\tR06\tR07\t\
     R08\tR09\tR10\tR11\r\n<br>C1\t3.3v¹\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\tIO02\t\
     IO01\t5V²\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12⁴\tIO44\tIO43\tIO13\tIO14\tIO45\t\
-    IO04\t5V³ <br></p><p><img src=\"/assets/uploads/richtext-20260612020127-f3536ea0.svg\"\
+    IO04\t5V³&nbsp;<br></p><p><img src=\"/assets/uploads/richtext-20260612020127-f3536ea0.svg\"\
     ></p><p><b>Notes<br></b></p><p></p><ol><li>Maximum output current: 2A, supplied\
     \ by the host.</li><li>Module power: charges the host’s battery.</li><li>Maximum\
     \ output current: 200mA, supplied by the host.</li><li>IO12 pin: This pin is primarily\
@@ -126,7 +126,7 @@
     R5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3v\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\t\
     IO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\tIO14\t\
     IO45\tIO04\t5V\r\n<br> \t \t \t \t \t \t \t \t \t \t \t \r\n<br>I2C\t–\tSCL\t\
-    SDA\t–\t–\t–\t–\t–\t–\t–\t–\r\n<br>I2C\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t– <br></p><p><b>UART\
+    SDA\t–\t–\t–\t–\t–\t–\t–\t–\r\n<br>I2C\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p><b>UART\
     \ Pins\r\n</b><br>Some modules require the use of serial communication, such as\
     \ RS485, CAN, DMX512, etc. Additionally, the UART interface and RESET pin are\
     \ needed when updating the module firmware. Since the operation of updating the\
@@ -136,7 +136,7 @@
     R6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3v\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\t\
     IO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\tIO14\t\
     IO45\tIO04\t5V\r\n<br>UART\t–\t–\t–\t–\t–\t–\tRST\tRX\tTX\t–\t–\r\n<br>UART\t\
-    –\t–\t–\t–\t–\t–\t–\t–\t–\t–\t– <br></p><p>The dip switch for upgrading firmware\
+    –\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p>The dip switch for upgrading firmware\
     \ is set to OFF when the module leaves the factory. If firmware upgrade is needed,\
     \ please switch the dip switch to ON. For normal use, the dip switch should be\
     \ set to OFF.\r\n<br>\r\n<br>Peng<br></p><p><b>USB\r\n</b><br>The host is equipped\
@@ -146,42 +146,42 @@
     \ host can simulate devices such as keyboards, mice, USB drives, and game controllers.\r\
     \n</li><li>Reverse Insertion (opposite side of RIMU logo and screen): Used for\
     \ upgrading programs and debugging, with the connection method being computer\
-    \ -> CH9102X -> ESP32S3.</li></ol><p></p><p><b>Normal Insertion - USB Device\r\
+    \ -&gt; CH9102X -&gt; ESP32S3.</li></ol><p></p><p><b>Normal Insertion - USB Device\r\
     \n</b><br>When using the USB interface, the host can simulate devices such as\
     \ keyboards, mice, USB drives, and game controllers. At this time, the IO19 and\
     \ IO20 pins will be occupied.\r\n<br>R1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\t\
     R11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\tIO02\tIO01\t5V\tGND\r\
     \n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V\r\n<br>USB-HID\t\
     –\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\r\n<br>USB-HID\t–\tD+\tD-\t–\t–\t–\t–\t–\t–\t\
-    –\t– <br></p><p><b>Reverse Insertion - USB Serial Port\r\n</b><br>When using the\
-    \ TYPE-C serial port, the IO43 and IO44 pins will be occupied. The host can act\
-    \ as a serial port for debugging or upgrading programs.\r\n<br>R1\tR2\tR3\tR4\t\
-    R5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\t\
-    IO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\tIO14\t\
-    IO45\tIO04\t5V\r\n<br>USB-UART\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\r\n<br>USB-UART\t\
-    –\t–\t–\t–\tRX\tTX\t–\t–\t–\t–\t– <br></p><p><b>SPI Pins\r\n</b><br>Some modules\
-    \ require higher-speed data transmission and will use the SPI protocol. The chip\
-    \ select pin is controlled by the Atmega328p, allowing multiple modules to connect\
-    \ to one SPI bus. The SPI pin definitions are as follows:\r\n<br>R1\tR2\tR3\t\
+    –\t–&nbsp;<br></p><p><b>Reverse Insertion - USB Serial Port\r\n</b><br>When using\
+    \ the TYPE-C serial port, the IO43 and IO44 pins will be occupied. The host can\
+    \ act as a serial port for debugging or upgrading programs.\r\n<br>R1\tR2\tR3\t\
     R4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\tIO06\t\
     IO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\t\
-    IO14\tIO45\tIO04\t5V\r\n<br>SPI\t–\t–\t–\tSCK\tMOSI\tMISO\t–\t–\t–\t–\t–\r\n<br>SPI\t\
-    –\t–\t–\t–\t–\t–\t–\t–\t–\t–\t– <br></p><p><b>Interrupt Pins\r\n</b><br>Modules\
-    \ with interrupt functionality can notify the host of new information via the\
-    \ interrupt pin. Since this interrupt pin shares the same pin with the host’s\
-    \ internal peripherals, the host must first confirm which module triggered the\
-    \ interrupt before reading the corresponding module’s register information. The\
-    \ pin positions are as follows:\r\n<br>R1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\t\
-    R11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\tIO02\tIO01\t5V\tGND\r\
-    \n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V\r\n<br>INTERRUPT\t\
-    –\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\r\n<br>INTERRUPT\t–\t–\t–\tINT\t–\t–\t–\t–\t–\t\
-    –\t– <br></p><p></p><div></div><p></p><p><b>Non-protocol Pins\r\n</b><br>These\
-    \ non-protocol pins are not occupied by any protocol. During the design of the\
-    \ module hardware, these pins should be prioritized. Additionally, the IO05 pin\
-    \ is only used during firmware upgrades.\r\n<br>R1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\t\
-    R9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\tIO02\tIO01\t\
-    5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\tIO14\tIO45\tIO04\t\
-    5V\r\n<br>Non-protocol Pin\t–\t–\t–\t–\t–\t–\tY\t–\t–\t–\t–\r\n<br>Non-protocol\
+    IO14\tIO45\tIO04\t5V\r\n<br>USB-UART\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\r\n<br>USB-UART\t\
+    –\t–\t–\t–\tRX\tTX\t–\t–\t–\t–\t–&nbsp;<br></p><p><b>SPI Pins\r\n</b><br>Some\
+    \ modules require higher-speed data transmission and will use the SPI protocol.\
+    \ The chip select pin is controlled by the Atmega328p, allowing multiple modules\
+    \ to connect to one SPI bus. The SPI pin definitions are as follows:\r\n<br>R1\t\
+    R2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\t\
+    IO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\t\
+    IO13\tIO14\tIO45\tIO04\t5V\r\n<br>SPI\t–\t–\t–\tSCK\tMOSI\tMISO\t–\t–\t–\t–\t\
+    –\r\n<br>SPI\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p><b>Interrupt Pins\r\
+    \n</b><br>Modules with interrupt functionality can notify the host of new information\
+    \ via the interrupt pin. Since this interrupt pin shares the same pin with the\
+    \ host’s internal peripherals, the host must first confirm which module triggered\
+    \ the interrupt before reading the corresponding module’s register information.\
+    \ The pin positions are as follows:\r\n<br>R1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\t\
+    R10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\tIO02\tIO01\t5V\t\
+    GND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V\r\
+    \n<br>INTERRUPT\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\r\n<br>INTERRUPT\t–\t–\t–\tINT\t\
+    –\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p></p><div></div><p></p><p><b>Non-protocol Pins\r\
+    \n</b><br>These non-protocol pins are not occupied by any protocol. During the\
+    \ design of the module hardware, these pins should be prioritized. Additionally,\
+    \ the IO05 pin is only used during firmware upgrades.\r\n<br>R1\tR2\tR3\tR4\t\
+    R5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\t\
+    IO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\tIO14\t\
+    IO45\tIO04\t5V\r\n<br>Non-protocol Pin\t–\t–\t–\t–\t–\t–\tY\t–\t–\t–\t–\r\n<br>Non-protocol\
     \ Pin\t–\t–\t–\t–\t–\t–\tY\tY\tY\tY\t–</p><p><b>Registers\r\n</b><br>The total\
     \ number of registers is a maximum of 0xFF, consisting of general and private\
     \ parts.\r\n<br><b>General Registers\r\n</b><br></p><ul><li>0x00 – 0x41, a total\
@@ -195,7 +195,7 @@
     R\t\r\n<br>0x01/03\tModule Number\tR\t\r\n<br>0x04\tTotal Number of Registers\t\
     R\t\r\n<br>0x05\tHardware Version\tR\t\r\n<br>0x06\tSoftware Version\tR\t\r\n\
     <br>0x07\tFunctions Used\tR\t\r\n<br>0x08\tChecksum\tR\t\r\n<br>0x09/0A/0B/0C/0D/0E\t\
-    Reversed\tR\t\r\n<br>0x0E\tNew data flag\tR/W\t\r\n<br>0x10->0x2F\tModule Name\t\
+    Reversed\tR\t\r\n<br>0x0E\tNew data flag\tR/W\t\r\n<br>0x10-&gt;0x2F\tModule Name\t\
     R\t\r\n<br>0x30\tPIN-01 Status\tR\t\r\n<br>0x31\tPIN-02 Status\tR\t\r\n<br>0x32\t\
     PIN-04 Status\tR\t\r\n<br>0x33\tPIN-05 Status\tR\t\r\n<br>0x34\tPIN-06 Status\t\
     R\t\r\n<br>0x35\tPIN-09 Status\tR\t\r\n<br>0x36\tPIN-12 Status\tR\t\r\n<br>0x37\t\
@@ -203,105 +203,105 @@
     R\t\r\n<br>0x3A\tPIN-20 Status\tR\t\r\n<br>0x3B\tPIN-40 Status\tR\t\r\n<br>0x3C\t\
     PIN-41 Status\tR\t\r\n<br>0x3D\tPIN-42 Status\tR\t\r\n<br>0x3E\tPIN-43 Status\t\
     R\t\r\n<br>0x3F\tPIN-44 Status\tR\t\r\n<br>0x40\tPIN-45 Status\tR\t\r\n<br>0x41\t\
-    Interrupt Flag\tR/W </p><p><b>Module Number\r\n</b><br>Each module has a different\
-    \ and unique number, ranging from 0x0001 to 0xFFFF. Different versions of the\
-    \ same module use the same number. The hardware version is used to distinguish\
+    Interrupt Flag\tR/W&nbsp;</p><p><b>Module Number\r\n</b><br>Each module has a\
+    \ different and unique number, ranging from 0x0001 to 0xFFFF. Different versions\
+    \ of the same module use the same number. The hardware version is used to distinguish\
     \ between hardware. To ensure the correct identification of the module, the system\
     \ stores the number twice to prevent the I2C from connecting to other devices.\r\
     \n<br>\r\n<br>0x00/0x02\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>High 8 Bits\t0\t\
     0\t0\t0\t0\t0\t0\t0\r\n<br>0x01/0x03\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>Low\
-    \ 8 Bits\t0\t0\t0\t0\t0\t0\t0\t0 <br></p><p><b>Total Bits\r\n</b><br>The total\
-    \ number of registers ranges from 0x00 to 0xFF, equal to the number of general\
+    \ 8 Bits\t0\t0\t0\t0\t0\t0\t0\t0&nbsp;<br></p><p><b>Total Bits\r\n</b><br>The\
+    \ total number of registers ranges from 0x00 to 0xFF, equal to the number of general\
     \ registers plus the number of private registers. This total number is stored\
     \ at address 0x04.\r\n<br>\r\n<br>0x04\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>Val\t\
     0\t0\t0\t0\t0\t0\t0\t0</p><p><b>Hardware Version\r\n</b><br>The hardware version\
     \ of the module increments among modules with the same functionality, ranging\
     \ from 1 to 255, with the first version being 1. This version information is stored\
     \ at address 0x05.\r\n<br>\r\n<br>0x05\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>Val\t\
-    0\t0\t0\t0\t0\t0\t0\t0 <br></p><p><b>Software Version\r\n</b><br>The software\
+    0\t0\t0\t0\t0\t0\t0\t0&nbsp;<br></p><p><b>Software Version\r\n</b><br>The software\
     \ version of the module can be upgraded via the host, ranging from 1 to 255, with\
     \ the first version being 1. This version information is stored at address 0x06.\r\
     \n<br>\r\n<br>Firmware updates do not modify the data in the EEPROM, but during\
     \ module initialization, the old data may be used, which could lead to data errors.\
     \ The software version also serves to determine whether data should be read from\
     \ the EEPROM to initialize the module.\r\n<br>\r\n<br>0x06\tB7\tB6\tB5\tB4\tB3\t\
-    B2\tB1\tB0\r\n<br>Val\t0\t0\t0\t0\t0\t0\t0\t0 <br></p><p><b>Communication Protocol\r\
-    \n</b><br>Different modules have different functionalities, so the required communication\
-    \ protocols also vary. The protocol used by this module is stored at register\
-    \ 0x07 for the host to identify.\r\n<br>\r\n<br>Each bit represents the communication\
-    \ protocol used by the module, with 0 indicating not in use and 1 indicating currently\
-    \ in use. All modules support the I2C protocol.\r\n<br>\r\n<br>0x07\tB7\tB6\t\
-    B5\tB4\tB3\tB2\tB1\tB0\r\n<br>Protocal\t–\t–\tUPGRADE\tUSB-HID\tUSB-UART\tINTERRUPT\t\
-    UART\tSPI\r\n<br></p><ol><li>UPGRADE: The module can be upgraded via the host.\r\
-    \n</li><li>INTERRUPT: The module has interrupt trigger functionality, notifying\
-    \ the host when the module’s status changes.\r\n</li><li>UART: The module uses\
-    \ serial pins for communication.\r\n</li><li>SPI: The module uses the SPI protocol\
-    \ for data transmission.\r\n</li><li>USB-HID:The module uses IO19 and IO20 pins,\
-    \ which will disable the host’s ability to simulate HID device functionality.\r\
-    \n</li><li>USB-UART:The module uses IO43 and IO44 pins, which will disable the\
-    \ host’s TYPE-C interface from functioning as a serial port.</li></ol><div></div><p></p><p><b>Checksum\r\
-    \n</b><br>The checksum value is the low eight bits of the sum from 0x00 to 0x07.\
-    \ This checksum is stored at address 0x08.\r\n<br>\r\n<br>0x08\tB7\tB6\tB5\tB4\t\
-    B3\tB2\tB1\tB0\r\n<br>Val\t0\t0\t0\t0\t0\t0\t0\t0\r\n<br><b>Reserved Bits\r\n\
-    </b><br>The address range 0x09 – 0x0E is reserved, unused, and has a value of\
-    \ 0.\r\n<br>\r\n<br><b>New Data Flag\r\n</b><br>If the module has new data, this\
-    \ value needs to be incremented. When the host polls, it first reads this register.\
-    \ If the value is not 0, it continues to read other registers and then clears\
-    \ it. This value is stored at address 0x0F. If the value of this register is large,\
-    \ the host needs to shorten the polling interval.\r\n<br>\r\n<br>0x0F\tB7\tB6\t\
-    B5\tB4\tB3\tB2\tB1\tB0\r\n<br>Val\t0\t0\t0\t0\t0\t0\t0\t0 <br></p><p><b>Module\
-    \ Name\r\n</b><br>The module name must be unique and start with \"WF1-\", with\
-    \ a maximum of 32 characters following it, consisting only of letters, numbers,\
-    \ or hyphens (-). The module name is stored in the register range 0x10 – 0x2F.</p><p><b>Pin\
-    \ Status\r\n</b><br>After confirming the protocol used by the module, the pin\
-    \ status will be initialized when the module is powered on. The pin status is\
-    \ not saved to EEPROM but is initialized by the program in the registers. There\
-    \ are four definitions for the pins, representing different statuses. A total\
-    \ of 2 bits are used to represent different statuses, BIT0 and BIT1, with other\
-    \ bits reserved. The specifics are as follows:\r\n<br>\r\n<br>0x30\tB7\tB6\tB5\t\
-    B4\tB3\tB2\tB1\tB0\r\n<br>Val\t–\t–\t–\t–\t–\t–\tIO\txx\r\n<br>The steps to set\
-    \ the pin status are as follows:\r\n<br>\r\n<br></p><ol><li>The module initializes\
-    \ the pin status according to the protocol.\r\n</li><li>The module sets the status\
-    \ of non-protocol pins during initialization.\r\n</li><li>If the module’s pins\
-    \ can be set by the host, they are set through the host.\r\n</li><li>The module\
-    \ saves the pin status to EEPROM for automatic initialization of these pins during\
-    \ the next startup.\r\n</li><li>The host can detect the status of these pins and\
-    \ issue warnings if conflicts are found.</li></ol><div></div><p></p><p><b>0 -\
-    \ Isolated Pin (0b00)\r\n</b><br>This pin is not connected to any lines of the\
-    \ module and can be considered a useless pin for this module. These pins cannot\
-    \ be modified by the host. Specific cases include:\r\n<br>\r\n<br></p><ol><li>Unused\
-    \ non-protocol pins.\r\n</li><li>Dedicated pins for protocols not used by this\
-    \ module.</li></ol><div></div><p></p><p><b>1 - Pin was connected, but not used\
-    \ (0b01)\r\n</b><br>The pin is connected to the module’s lines but is not used\
-    \ by the current module and can be used by other modules. Specific cases include:<br></p><ol><li>The\
-    \ three pins used during upgrades: IO01 TX, IO02 RX, and IO05 RST. These three\
-    \ pins are only used during upgrades and can be used by other modules at other\
-    \ times.\r\n</li><li>The default state of non-protocol pins can be set to – 2\
-    \ (0b10) by the host.\r\n</li></ol><b>2 - Pin is used, and can be modified by\
-    \ the host (0b10)\r\n</b><br>This status is modified by the host, and the module\
-    \ needs to save the status of these pins to EEPROM.<br><ol><li>The upgrade pins\
-    \ can be set to a used state by the host.\r\n</li><li>Non-protocol pins set to\
-    \ a used state by the host can be modified by the host if other modules need them.\r\
-    \n</li><li>Unused protocol pins, such as SPI and USB, can be modified by the host\
-    \ if this module does not use them.\r\n</li></ol><b>3 - Pin is used, and cannot\
-    \ be modified by the host (0b11)\r\n</b><br>The pins used on the module cannot\
-    \ be modified by the host. Specific cases include:<br><ol><li>The SCL and SDA\
-    \ pins used by the I2C protocol cannot be modified by the host.\r\n</li><li>The\
-    \ interrupt pin IO12, used for interrupts, shares the same pin with the host’s\
-    \ interrupt and cannot be modified unless in special circumstances.\r\n</li><li>Pins\
-    \ occupied by protocols used by other modules cannot be modified by the host.\r\
-    \n</li></ol>If the module uses certain fixed pins, their status must be set to\
-    \ 0b11 and cannot be modified by the host.<p></p><p><b>Register Address and Pin\
-    \ Function Table\r\n</b><br>address\tPin #\tProtocol\tName\tPriority\r\n<br>0x30\t\
-    IO01\tUART/UPGRADE\tTX\t1\r\n<br>0x31\tIO02\tUART/UPGRADE\tRX\t1\r\n<br>0x32\t\
-    IO04\tNon-protocol Pin\t–\t0\r\n<br>0x33\tIO05\tUPGRADE\tRST\t1\r\n<br>0x34\t\
-    IO06\tSPI\tMISO\t2\r\n<br>0x35\tIO09\tSPI\tSCK\t2\r\n<br>0x36\tIO12\tINTERRUPT\t\
-    High-Level Triggered\t3\r\n<br>0x37\tIO13\tNon-protocol Pin\t–\t0\r\n<br>0x38\t\
-    IO14\tNon-protocol Pin\t–\t0\r\n<br>0x39\tIO19\tUSD-D\tD+\t2\r\n<br>0x3A\tIO20\t\
-    USD-D\tD-\t2\r\n<br>0x3B\tIO40\tSPI\tMOSI\t2\r\n<br>0x3C\tIO41\tI2C\tSCL\t3\r\n\
-    <br>0x3D\tIO42\tI2C\tSDA\t3\r\n<br>0x3E\tIO43\tUSB-UART\tTX\t2\r\n<br>0x3F\tIO44\t\
-    USB-UART\tRX\t2\r\n<br>0x40\tIO45\tNon-protocol Pin\t–\t0</p><p><b>Priority\r\n\
-    </b><br></p><ul><li>0 – Highest priority for use\r\n</li><li>1 – Second priority\
+    B2\tB1\tB0\r\n<br>Val\t0\t0\t0\t0\t0\t0\t0\t0&nbsp;<br></p><p><b>Communication\
+    \ Protocol\r\n</b><br>Different modules have different functionalities, so the\
+    \ required communication protocols also vary. The protocol used by this module\
+    \ is stored at register 0x07 for the host to identify.\r\n<br>\r\n<br>Each bit\
+    \ represents the communication protocol used by the module, with 0 indicating\
+    \ not in use and 1 indicating currently in use. All modules support the I2C protocol.\r\
+    \n<br>\r\n<br>0x07\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>Protocal\t–\t–\tUPGRADE\t\
+    USB-HID\tUSB-UART\tINTERRUPT\tUART\tSPI\r\n<br></p><ol><li>UPGRADE: The module\
+    \ can be upgraded via the host.\r\n</li><li>INTERRUPT: The module has interrupt\
+    \ trigger functionality, notifying the host when the module’s status changes.\r\
+    \n</li><li>UART: The module uses serial pins for communication.\r\n</li><li>SPI:\
+    \ The module uses the SPI protocol for data transmission.\r\n</li><li>USB-HID:The\
+    \ module uses IO19 and IO20 pins, which will disable the host’s ability to simulate\
+    \ HID device functionality.\r\n</li><li>USB-UART:The module uses IO43 and IO44\
+    \ pins, which will disable the host’s TYPE-C interface from functioning as a serial\
+    \ port.</li></ol><div></div><p></p><p><b>Checksum\r\n</b><br>The checksum value\
+    \ is the low eight bits of the sum from 0x00 to 0x07. This checksum is stored\
+    \ at address 0x08.\r\n<br>\r\n<br>0x08\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>Val\t\
+    0\t0\t0\t0\t0\t0\t0\t0\r\n<br><b>Reserved Bits\r\n</b><br>The address range 0x09\
+    \ – 0x0E is reserved, unused, and has a value of 0.\r\n<br>\r\n<br><b>New Data\
+    \ Flag\r\n</b><br>If the module has new data, this value needs to be incremented.\
+    \ When the host polls, it first reads this register. If the value is not 0, it\
+    \ continues to read other registers and then clears it. This value is stored at\
+    \ address 0x0F. If the value of this register is large, the host needs to shorten\
+    \ the polling interval.\r\n<br>\r\n<br>0x0F\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n\
+    <br>Val\t0\t0\t0\t0\t0\t0\t0\t0&nbsp;<br></p><p><b>Module Name\r\n</b><br>The\
+    \ module name must be unique and start with \"WF1-\", with a maximum of 32 characters\
+    \ following it, consisting only of letters, numbers, or hyphens (-). The module\
+    \ name is stored in the register range 0x10 – 0x2F.</p><p><b>Pin Status\r\n</b><br>After\
+    \ confirming the protocol used by the module, the pin status will be initialized\
+    \ when the module is powered on. The pin status is not saved to EEPROM but is\
+    \ initialized by the program in the registers. There are four definitions for\
+    \ the pins, representing different statuses. A total of 2 bits are used to represent\
+    \ different statuses, BIT0 and BIT1, with other bits reserved. The specifics are\
+    \ as follows:\r\n<br>\r\n<br>0x30\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>Val\t\
+    –\t–\t–\t–\t–\t–\tIO\txx\r\n<br>The steps to set the pin status are as follows:\r\
+    \n<br>\r\n<br></p><ol><li>The module initializes the pin status according to the\
+    \ protocol.\r\n</li><li>The module sets the status of non-protocol pins during\
+    \ initialization.\r\n</li><li>If the module’s pins can be set by the host, they\
+    \ are set through the host.\r\n</li><li>The module saves the pin status to EEPROM\
+    \ for automatic initialization of these pins during the next startup.\r\n</li><li>The\
+    \ host can detect the status of these pins and issue warnings if conflicts are\
+    \ found.</li></ol><div></div><p></p><p><b>0 - Isolated Pin (0b00)\r\n</b><br>This\
+    \ pin is not connected to any lines of the module and can be considered a useless\
+    \ pin for this module. These pins cannot be modified by the host. Specific cases\
+    \ include:\r\n<br>\r\n<br></p><ol><li>Unused non-protocol pins.\r\n</li><li>Dedicated\
+    \ pins for protocols not used by this module.</li></ol><div></div><p></p><p><b>1\
+    \ - Pin was connected, but not used (0b01)\r\n</b><br>The pin is connected to\
+    \ the module’s lines but is not used by the current module and can be used by\
+    \ other modules. Specific cases include:<br></p><ol><li>The three pins used during\
+    \ upgrades: IO01 TX, IO02 RX, and IO05 RST. These three pins are only used during\
+    \ upgrades and can be used by other modules at other times.\r\n</li><li>The default\
+    \ state of non-protocol pins can be set to – 2 (0b10) by the host.\r\n</li></ol><b>2\
+    \ - Pin is used, and can be modified by the host (0b10)\r\n</b><br>This status\
+    \ is modified by the host, and the module needs to save the status of these pins\
+    \ to EEPROM.<br><ol><li>The upgrade pins can be set to a used state by the host.\r\
+    \n</li><li>Non-protocol pins set to a used state by the host can be modified by\
+    \ the host if other modules need them.\r\n</li><li>Unused protocol pins, such\
+    \ as SPI and USB, can be modified by the host if this module does not use them.\r\
+    \n</li></ol><b>3 - Pin is used, and cannot be modified by the host (0b11)\r\n\
+    </b><br>The pins used on the module cannot be modified by the host. Specific cases\
+    \ include:<br><ol><li>The SCL and SDA pins used by the I2C protocol cannot be\
+    \ modified by the host.\r\n</li><li>The interrupt pin IO12, used for interrupts,\
+    \ shares the same pin with the host’s interrupt and cannot be modified unless\
+    \ in special circumstances.\r\n</li><li>Pins occupied by protocols used by other\
+    \ modules cannot be modified by the host.\r\n</li></ol>If the module uses certain\
+    \ fixed pins, their status must be set to 0b11 and cannot be modified by the host.<p></p><p><b>Register\
+    \ Address and Pin Function Table\r\n</b><br>address\tPin #\tProtocol\tName\tPriority\r\
+    \n<br>0x30\tIO01\tUART/UPGRADE\tTX\t1\r\n<br>0x31\tIO02\tUART/UPGRADE\tRX\t1\r\
+    \n<br>0x32\tIO04\tNon-protocol Pin\t–\t0\r\n<br>0x33\tIO05\tUPGRADE\tRST\t1\r\n\
+    <br>0x34\tIO06\tSPI\tMISO\t2\r\n<br>0x35\tIO09\tSPI\tSCK\t2\r\n<br>0x36\tIO12\t\
+    INTERRUPT\tHigh-Level Triggered\t3\r\n<br>0x37\tIO13\tNon-protocol Pin\t–\t0\r\
+    \n<br>0x38\tIO14\tNon-protocol Pin\t–\t0\r\n<br>0x39\tIO19\tUSD-D\tD+\t2\r\n<br>0x3A\t\
+    IO20\tUSD-D\tD-\t2\r\n<br>0x3B\tIO40\tSPI\tMOSI\t2\r\n<br>0x3C\tIO41\tI2C\tSCL\t\
+    3\r\n<br>0x3D\tIO42\tI2C\tSDA\t3\r\n<br>0x3E\tIO43\tUSB-UART\tTX\t2\r\n<br>0x3F\t\
+    IO44\tUSB-UART\tRX\t2\r\n<br>0x40\tIO45\tNon-protocol Pin\t–\t0</p><p><b>Priority\r\
+    \n</b><br></p><ul><li>0 – Highest priority for use\r\n</li><li>1 – Second priority\
     \ for use\r\n</li><li>2 – Last priority for use\r\n</li><li>3 – Not to be used\
     \ unless in special circumstances</li></ul><div></div><p></p><p><b>Interrupt Trigger\
     \ Bit\r\n</b><br>If the module has information that requires immediate processing\
@@ -314,13 +314,7 @@
     \ from address 0x42.</p><p></p><ul><li><font color=\"#018073\"><a href=\"https://github.com/RIMU-DENGTEC/wf1_module_library\"\
     \ target=\"_blank\" rel=\"noopener\">wf1 modules library</a>\r\n</font></li><li><font\
     \ color=\"#018073\"><a href=\"https://rimu.me/wp-content/uploads/2025/01/wf1_module_general_info_en_v0.pdf\"\
-    \ target=\"_blank\" rel=\"noopener\">wf1_module_general_info_en_v0.pdf </a><br><br></font></li></ul><div><table><tbody><tr><td\
-    \ style=\"text-align: center;\">1</td><td style=\"text-align: center;\">2</td><td\
-    \ style=\"text-align: center;\">3</td></tr><tr><td style=\"text-align: center;\"\
-    >4</td><td style=\"text-align: center;\">44</td><td style=\"text-align: center;\"\
-    >5</td></tr><tr><td style=\"text-align: center;\">55</td><td style=\"text-align:\
-    \ center;\">55</td><td style=\"text-align: center;\">55</td></tr></tbody></table><p><br></p></div><div><font\
-    \ color=\"#018073\"><br></font></div><p></p><div></div>"
+    \ target=\"_blank\" rel=\"noopener\">wf1_module_general_info_en_v0.pdf&nbsp;</a><br><br></font></li></ul><p></p><div></div>"
   cover: /assets/uploads/blog-cover-20260611110528-abccb981.webp
   style_bg-color: ''
   modules:
@@ -333,7 +327,20 @@
     including DIMMER5 and 8-channel IO expansion, using Atmega328p to reduce host
     IO usage and support firmware
   category: RIMU
-  tags: []
+  tags: ''
+  media_type: image
+  cover_convert_webp: 'false'
+  cover_alt: The general information of rimu modules
+  video: ''
+  embed_url: ''
+  date: ''
+  name: ''
+  tags_visible: true
+  price: ''
+  rte_clicked_editor_idx: ''
+  detail_gallery:
+    visible: true
+    images: []
 - id: 5
   title: The Keyboard Function of Rimu
   slug: keyboard-function-of-rimu
