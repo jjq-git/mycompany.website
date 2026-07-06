@@ -280,7 +280,8 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
                         'embed' if merged_item.get('embed_url') else
                         ('video' if merged_item.get('video') else 'image')
                     )
-                    has_image_media = any(merged_item.get(k) for k in ('cover', 'image', 'photo', 'logo'))
+                    # cover 不计入 media_area 自动显示（模板层默认隐藏 Cover，用户可显式设 media_type 覆盖）
+                    has_image_media = any(merged_item.get(k) for k in ('image', 'photo', 'logo'))
                     has_selected_media = (
                         (media_type == 'image' and has_image_media) or
                         (media_type == 'video' and merged_item.get('video')) or
