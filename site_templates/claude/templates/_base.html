@@ -387,7 +387,7 @@ document.addEventListener('click', function(e) {
     <div class="footer-grid" style="grid-template-columns: repeat({{ footer_columns | length }}, 1fr);">
       {% for col in footer_columns %}
       <div class="footer-col">
-        {% if col.title %}<h4 class="footer-col__title">{{ col.title }}</h4>{% endif %}
+        {% if col.title %}<h3 class="footer-col__title">{{ col.title }}</h3>{% endif %}
         {% if col.type == 'menu' and col.links %}
         <div class="footer-col__links">
           {% for link in col.links %}
@@ -439,7 +439,7 @@ document.addEventListener('click', function(e) {
       {# 链接栏 #}
       {% for col in footer_columns %}
       <div class="footer-col">
-        {% if col.title %}<h4 class="footer-col__title">{{ col.title }}</h4>{% endif %}
+        {% if col.title %}<h3 class="footer-col__title">{{ col.title }}</h3>{% endif %}
         {% if col.links %}
         <div class="footer-col__links">
           {% for link in col.links %}

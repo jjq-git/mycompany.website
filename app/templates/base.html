@@ -274,7 +274,8 @@
         {# ---- 菜单渲染 ---- #}
         {% macro render_left_menu(items, level=0) %}
         {% for item in items %}
-        {% if item.type != 'home' %}
+        {# 外部“链接”用于前台导航，不属于后台可编辑内容，不在左侧内容栏显示。 #}
+        {% if item.type not in ('home', 'link') %}
         {% set has_children = item.children | default([]) | length > 0 %}
         {% if has_children %}
         <div class="left-nav-group" data-level="{{ level }}">

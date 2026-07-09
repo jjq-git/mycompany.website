@@ -407,7 +407,7 @@ document.addEventListener('click', function(e) {
     <div class="footer-grid" style="grid-template-columns: repeat({{ footer_columns | length }}, 1fr);">
       {% for col in footer_columns %}
       <div class="footer-col">
-        {% if col.title %}<h4>{{ col.title }}</h4>{% endif %}
+        {% if col.title %}<h3>{{ col.title }}</h3>{% endif %}
         {% if col.type == 'menu' and col.links %}
         <ul>
           {% for link in col.links %}
@@ -432,7 +432,7 @@ document.addEventListener('click', function(e) {
       <div class="footer-grid footer-grid--with-social" style="grid-template-columns: repeat({{ footer_columns | length }}, 1fr);">
         {% for col in footer_columns %}
         <div class="footer-col">
-          {% if col.title %}<h4>{{ col.title }}</h4>{% endif %}
+          {% if col.title %}<h3>{{ col.title }}</h3>{% endif %}
           {% if col.type == 'menu' and col.links %}
           <ul>
             {% for link in col.links %}

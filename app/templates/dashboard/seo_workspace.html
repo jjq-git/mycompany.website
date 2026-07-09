@@ -6,7 +6,6 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>SEO 健康检查</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-seo.css') }}?v=20260709-page-health">
   <style>
     :root {
@@ -80,11 +79,13 @@
       {% endif %}
     </span>
   {%- endmacro %}
+  {% set editable_pages = report.pages|rejectattr('kind', 'equalto', 'group')|list %}
+  {% set first_page = editable_pages[0] if editable_pages else none %}
 
   <main class="seo-shell">
     <header class="seo-header">
       <div>
-        <h1 class="seo-title" id="seoCurrentPageTitle">{{ report.pages[0].title if report.pages else 'SEO 健康检查' }}</h1>
+        <h1 class="seo-title" id="seoCurrentPageTitle">{{ first_page.menu_label if first_page else 'SEO 健康检查' }}</h1>
         <div class="seo-subtitle">
           左侧选择会实际发布的页面，右侧集中维护页面标题和页面简介。标题和简介会用于搜索结果、社交分享、AI 检索摘要和自动生成的 SEO 文件。
         </div>
@@ -92,26 +93,26 @@
       <div class="seo-header-actions">
       <div class="seo-score">
         <div class="seo-score-number">
-          <strong id="seoCurrentScore">{{ report.pages[0].health_score if report.pages else 0 }}</strong>
+          <strong id="seoCurrentScore">{{ first_page.health_score if first_page else 0 }}</strong>
           <div class="seo-help">当前页健康分</div>
         </div>
         <div class="seo-stat-grid" aria-label="SEO 状态汇总">
           <div class="seo-stat">
-            <strong class="text-success" id="seoCurrentOk">{{ report.pages[0].ok_count if report.pages else 0 }}</strong>
+            <strong class="text-success" id="seoCurrentOk">{{ first_page.ok_count if first_page else 0 }}</strong>
             <span>正常</span>
           </div>
           <div class="seo-stat">
-            <strong class="text-warning" id="seoCurrentWarn">{{ report.pages[0].warn_count if report.pages else 0 }}</strong>
+            <strong class="text-warning" id="seoCurrentWarn">{{ first_page.warn_count if first_page else 0 }}</strong>
             <span>建议</span>
           </div>
           <div class="seo-stat">
-            <strong class="text-secondary" id="seoCurrentInfo">{{ report.pages[0].info_count if report.pages else 0 }}</strong>
+            <strong class="text-secondary" id="seoCurrentInfo">{{ first_page.info_count if first_page else 0 }}</strong>
             <span>优化</span>
           </div>
         </div>
       </div>
-      <button type="button" class="btn btn-outline-secondary btn-sm seo-site-settings-btn" id="seoSiteSettingsToggle" onclick="seoOpenSiteSettings()" aria-haspopup="dialog" aria-controls="seoSiteSettings">
-        <span class="material-symbols-outlined" aria-hidden="true">settings</span><span>全站设置</span>
+      <button type="button" class="btn btn-outline-secondary btn-sm seo-site-settings-btn" id="seoSiteSettingsToggle" onclick="seoOpenSiteSettings()" aria-haspopup="dialog" aria-controls="seoSiteSettings" aria-label="全站设置" title="全站设置">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
       </div>
     </header>
@@ -120,15 +121,30 @@
       <aside class="seo-sidebar" aria-label="页面列表">
         <div class="seo-sidebar-head">
           <h2 class="seo-section-title">页面</h2>
-          <span class="seo-help">{{ report.pages|length }} 个</span>
+          <span class="seo-help">{{ editable_pages|length }} 个</span>
         </div>
         <div class="seo-page-nav">
           {% for row in report.pages %}
           {% set children = report.pages|selectattr('parent_id', 'equalto', row.id)|list %}
+          {% set is_group = row.kind == 'group' %}
           <div class="seo-page-node{% if row.parent_id %} seo-tree-child is-collapsed{% endif %}"
-               data-node-id="{{ row.id }}" data-parent-id="{{ row.parent_id }}" data-depth="{{ row.depth }}">
+               data-node-id="{{ row.id }}" data-parent-id="{{ row.parent_id }}" data-depth="{{ row.depth }}"
+               data-expanded="false">
+            {% if is_group %}
+            {# group 容器：外观与普通页面一致，不可选页，点击或右侧箭头展开/折叠子项 #}
             <button type="button"
-                    class="seo-page-link{% if loop.first %} active{% endif %}"
+                    class="seo-page-link"
+                    data-page-key="{{ row.id }}"
+                    aria-expanded="false"
+                    onclick="seoToggleChildren(this, event)">
+              <span>
+              <span class="seo-page-name">{{ row.menu_label }}</span>
+              <span class="seo-page-key">{{ row.url_path }}</span>
+              </span>
+            </button>
+            {% else %}
+            <button type="button"
+                    class="seo-page-link{% if first_page and row.id == first_page.id %} active{% endif %}"
                     data-page-key="{{ row.id }}"
                     data-health-score="{{ row.health_score }}"
                     data-ok-count="{{ row.ok_count }}"
@@ -141,10 +157,20 @@
                 {% if row.kind == 'detail' %}{{ row.dataset_key }} / {{ row.key }}{% else %}/{{ row.key }}/{% endif %}
               </span>
               </span>
-              <span class="seo-page-score score-{{ row.score }}" aria-label="SEO {{ row.score }} 分：{{ row.score_reason }}" title="SEO {{ row.score }} 分：{{ row.score_reason }}">{{ row.score }}</span>
+              <span class="seo-page-score score-{{ row.score }}" aria-label="SEO {{ row.score }} 分：{{ row.score_reason }}" title="SEO {{ row.score }} 分：{{ row.score_reason }}">
+                {% if row.score >= 4 %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
+                {% elif row.score == 3 %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 4.2 2.7 18a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>
+                {% else %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/></svg>
+                {% endif %}
+                <span>{{ row.score }}</span>
+              </span>
             </button>
+            {% endif %}
             {% if children %}
-            <button type="button" class="seo-tree-toggle" onclick="seoToggleChildren(this)" aria-expanded="false" aria-label="展开{{ row.title }}的下级页面">
+            <button type="button" class="seo-tree-toggle" onclick="seoToggleChildren(this, event)" aria-expanded="false" aria-label="展开{{ row.menu_label }}的下级页面">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
             </button>
             {% else %}
@@ -159,7 +185,7 @@
         <dialog class="seo-site-settings-dialog" id="seoSiteSettings" aria-labelledby="seoSiteSettingsTitle">
           <div class="seo-site-settings-head">
             <div><h2 class="seo-section-title" id="seoSiteSettingsTitle">全站设置与系统检查</h2><p>检查站点级 SEO 文件、索引规则和公共信息。</p></div>
-            <button type="button" class="seo-dialog-close" onclick="seoCloseSiteSettings()" aria-label="关闭"><span class="material-symbols-outlined">close</span></button>
+            <button type="button" class="seo-dialog-close" onclick="seoCloseSiteSettings()" aria-label="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
           </div>
           <div class="seo-check-list">
             {% for check in report.checks %}
@@ -167,25 +193,25 @@
               <div class="fw-semibold small">{{ status_icon(check.status, check.title) }} {{ check.title }}</div>
               <div class="seo-help mt-1">{{ check.detail }}</div>
               {% if check.status != 'ok' and check.action_url %}
-              <button type="button" class="seo-check-link" data-panel-url="{{ check.action_url }}" data-action-kind="{{ check.action_kind or 'link' }}" onclick="return seoRunCheckAction(this)" title="处理" aria-label="处理：{{ check.title }}"><span class="material-symbols-outlined">arrow_outward</span></button>
+              <button type="button" class="seo-check-link" data-panel-url="{{ check.action_url }}" data-action-kind="{{ check.action_kind or 'link' }}" onclick="return seoRunCheckAction(this)" title="处理" aria-label="处理：{{ check.title }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></button>
               {% endif %}
             </div>
             {% endfor %}
           </div>
         </dialog>
-        {% for row in report.pages %}
-        <form class="seo-detail{% if loop.first %} active{% endif %}"
+        {% if not editable_pages %}
+        <div class="seo-empty-state">当前菜单中没有可编辑的页面。</div>
+        {% endif %}
+        {% for row in editable_pages %}
+        <form class="seo-detail{% if first_page and row.id == first_page.id %} active{% endif %}"
               data-page-key="{{ row.id }}"
               data-generate-url="{{ row.generate_url }}"
               data-save-url="{{ row.save_url }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="seo-detail-head">
-            <div>
-              <h2 class="seo-page-title">{{ row.title }}</h2>
-              <div class="seo-page-path">
-                {% if row.kind == 'detail' %}{{ row.dataset_key }} / {{ row.key }}{% else %}/{{ row.key }}/{% endif %}
-                · {{ row.status_detail }}
-              </div>
+            <div class="seo-page-path">
+              {% if row.kind == 'detail' %}{{ row.dataset_key }} / {{ row.key }}{% else %}/{{ row.key }}/{% endif %}
+              · {{ row.status_detail }}
             </div>
             <div class="seo-detail-status">
               <span class="seo-status-text">{{ row.status_label }}</span>
@@ -220,18 +246,20 @@
           <div class="seo-editor-grid">
             <div>
               <div class="mb-3">
-                <label class="form-label small text-muted mb-1">页面标题</label>
-                <div class="seo-ai-field"><input class="form-control" name="title" value="{{ row.title }}" oninput="seoSyncPreview(this)"><button type="button" class="seo-ai-btn" onclick="seoGenerateField(this,'title')" title="AI 优化标题"><span class="material-symbols-outlined">auto_awesome</span></button></div>
+                <label class="form-label small text-muted mb-1" for="seo-title-{{ loop.index }}">页面标题</label>
+                <div class="seo-ai-field"><input class="form-control" id="seo-title-{{ loop.index }}" name="title" value="{{ row.title }}" maxlength="60" oninput="seoSyncPreview(this)"><button type="button" class="seo-ai-btn" onclick="seoGenerateField(this,'title')" title="智能优化标题" aria-label="智能优化标题"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.2 3.3L16.5 7.5l-3.3 1.2L12 12l-1.2-3.3-3.3-1.2 3.3-1.2L12 3Z"/><path d="m18 13 .8 2.2L21 16l-2.2.8L18 19l-.8-2.2L15 16l2.2-.8L18 13ZM6 13l.8 2.2L9 16l-2.2.8L6 19l-.8-2.2L3 16l2.2-.8L6 13Z"/></svg></button></div>
+                <div class="seo-help mt-1"><span class="seo-title-count">0</span>/60，建议 10-60 字</div>
               </div>
               <div>
-                <label class="form-label small text-muted mb-1">页面简介</label>
+                <label class="form-label small text-muted mb-1" for="seo-description-{{ loop.index }}">页面简介</label>
                 <div class="seo-ai-field"><textarea class="form-control seo-description"
+                          id="seo-description-{{ loop.index }}"
                           name="description"
                           rows="6"
                           style="height:120px"
                           maxlength="180"
                           placeholder="{{ row.auto_description }}"
-                          oninput="seoSyncPreview(this)">{{ row.description }}</textarea><button type="button" class="seo-ai-btn" onclick="seoGenerateField(this,'description')" title="AI 优化描述"><span class="material-symbols-outlined">auto_awesome</span></button></div>
+                          oninput="seoSyncPreview(this)">{{ row.description }}</textarea><button type="button" class="seo-ai-btn" onclick="seoGenerateField(this,'description')" title="智能优化描述" aria-label="智能优化描述"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.2 3.3L16.5 7.5l-3.3 1.2L12 12l-1.2-3.3-3.3-1.2 3.3-1.2L12 3Z"/><path d="m18 13 .8 2.2L21 16l-2.2.8L18 19l-.8-2.2L15 16l2.2-.8L18 13ZM6 13l.8 2.2L9 16l-2.2.8L6 19l-.8-2.2L3 16l2.2-.8L6 13Z"/></svg></button></div>
                 <div class="seo-help mt-1"><span class="seo-desc-count">0</span>/180，建议 80-160 字</div>
               </div>
             </div>
@@ -245,13 +273,13 @@
               </div>
               <div class="seo-preview-desc">{{ row.description or row.auto_description or '保存页面简介后，这里会显示搜索结果摘要。' }}</div>
               <div class="seo-help mt-3">
-                {% if report.ai_configured %}AI 生成已接入{% else %}AI 未配置，当前使用本地摘要兜底{% endif %}
+                {% if report.ai_configured %}智能生成可用{% else %}当前使用页面内容生成摘要{% endif %}
               </div>
             </aside>
           </div>
 
           <div class="seo-actions">
-            <div class="seo-row-msg"></div>
+            <div class="seo-row-msg" role="status" aria-live="polite"></div>
             <div class="d-flex gap-2 justify-content-end">
               <button type="button" class="btn btn-primary" onclick="seoSavePage(this)" title="保存" aria-label="保存">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -295,9 +323,9 @@
       });
       var detail = document.querySelector('.seo-detail[data-page-key="' + CSS.escape(pageKey) + '"]');
       var heading = document.getElementById('seoCurrentPageTitle');
-      var pageTitle = detail ? detail.querySelector('.seo-page-title') : null;
-      if (heading && pageTitle) heading.textContent = pageTitle.textContent;
       var selectedLink = document.querySelector('.seo-page-link[data-page-key="' + CSS.escape(pageKey) + '"]');
+      var menuName = selectedLink ? selectedLink.querySelector('.seo-page-name') : null;
+      if (heading && menuName) heading.textContent = menuName.textContent;
       if (selectedLink) {
         document.getElementById('seoCurrentScore').textContent = selectedLink.dataset.healthScore || '0';
         document.getElementById('seoCurrentOk').textContent = selectedLink.dataset.okCount || '0';
@@ -324,21 +352,34 @@
     }
 
     function seoSetBranch(node, expanded) {
-      var toggle = node.querySelector(':scope > .seo-tree-toggle');
+      node.dataset.expanded = String(expanded);
+      var toggle = node.querySelector(':scope > .seo-tree-toggle') ||
+                   node.querySelector(':scope > .seo-page-link > .seo-tree-toggle');
       if (toggle) {
         toggle.setAttribute('aria-expanded', String(expanded));
         toggle.classList.toggle('open', expanded);
       }
+      var groupButton = node.querySelector(':scope > .seo-page-link[aria-expanded]');
+      if (groupButton) groupButton.setAttribute('aria-expanded', String(expanded));
       seoDirectChildren(node.dataset.nodeId).forEach(function(child) {
         child.classList.toggle('is-collapsed', !expanded);
         if (!expanded) seoSetBranch(child, false);
       });
     }
 
-    function seoToggleChildren(button) {
+    function seoToggleChildren(button, clickEvent) {
+      if (clickEvent) {
+        clickEvent.preventDefault();
+        clickEvent.stopImmediatePropagation();
+      }
       var node = button.closest('.seo-page-node');
       if (!node) return;
-      seoSetBranch(node, button.getAttribute('aria-expanded') !== 'true');
+      var children = seoDirectChildren(node.dataset.nodeId);
+      if (!children.length) return;
+      var shouldExpand = children.some(function(child) {
+        return child.classList.contains('is-collapsed');
+      });
+      seoSetBranch(node, shouldExpand);
     }
 
     function seoRevealAncestors(nodeId) {
@@ -374,6 +415,8 @@
       var previewDesc = row.querySelector('.seo-preview-desc');
       if (previewTitle && title) previewTitle.textContent = title.value || '未命名页面';
       if (previewDesc && desc) previewDesc.textContent = desc.value || desc.getAttribute('placeholder') || '保存页面简介后，这里会显示搜索结果摘要。';
+      var titleCounter = row.querySelector('.seo-title-count');
+      if (titleCounter && title) titleCounter.textContent = String((title.value || '').length);
       if (desc) seoUpdateCount(desc);
     }
 
@@ -440,31 +483,33 @@
       var formData = new FormData();
       formData.append('field', field);
       btn.disabled = true;
-      seoSetMsg(row, 'AI 生成中...', true);
+      seoSetMsg(row, '智能生成中...', true);
       fetch((row.dataset.generateUrl || '').replace(/&amp;/g, '&'), { method:'POST', body:formData })
         .then(function(r) { return r.json().then(function(data) { if (!r.ok) throw new Error(data.error || '生成失败'); return data; }); })
         .then(function(data) {
           if (!data.ok) throw new Error(data.error || '生成失败');
           if (original) { original.value = data.value || ''; seoSyncPreview(original); }
-          seoSetMsg(row, 'AI 已生成，可修改后保存', true);
+          seoSetMsg(row, data.source === 'ai' ? 'AI 已生成，可修改后保存' : '已根据页面内容生成，可修改后保存', true);
         })
-        .catch(function(err) { alert(err.message || '生成失败'); seoSetMsg(row, err.message || '生成失败', false); })
+        .catch(function(err) { seoSetMsg(row, err.message || '生成失败', false); })
         .finally(function() { btn.disabled = false; });
     }
 
     function seoSavePage(btn) {
       var row = seoRowOf(btn);
-      if (!row) return;
+      if (!row || btn.disabled) return;
+      btn.disabled = true;
       seoSetMsg(row, '保存中...', true);
       var url = (row.dataset.saveUrl || '').replace(/&amp;/g, '&');
       fetch(url, { method: 'POST', body: new FormData(row) })
-        .then(function(r) { return r.json(); })
+        .then(function(r) { return r.json().then(function(data) { if (!r.ok) throw new Error(data.error || '保存失败'); return data; }); })
         .then(function(data) {
           if (!data.ok) throw new Error(data.error || '保存失败');
           seoMarkSaved(row);
           seoSetMsg(row, '已保存', true);
         })
-        .catch(function(err) { seoSetMsg(row, err.message || '保存失败', false); });
+        .catch(function(err) { seoSetMsg(row, err.message || '保存失败', false); })
+        .finally(function() { btn.disabled = false; });
     }
 
     function seoRunCheckAction(btn) {
@@ -492,8 +537,9 @@
       return false;
     }
 
-    document.querySelectorAll('.seo-description').forEach(function (textarea) {
-      seoUpdateCount(textarea);
+    document.querySelectorAll('.seo-detail').forEach(function (row) {
+      var field = row.querySelector('.seo-description') || row.querySelector('input[name="title"]');
+      if (field) seoSyncPreview(field);
     });
   </script>
 </body>

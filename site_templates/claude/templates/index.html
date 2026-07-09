@@ -3,6 +3,7 @@
 {% block description %}{{ page.description | default('') }}{% endblock %}
 
 {% block content %}
+<h1 class="sr-only">{{ page.title | default(page_key) }}</h1>
 {% include '_modules.html' %}
 
 {% endblock %}

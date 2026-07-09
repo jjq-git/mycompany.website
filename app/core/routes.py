@@ -1383,7 +1383,7 @@ def _seo_page_score(title, description, auto_desc):
     return min(score, 5)
 
 
-def _seo_row_for_page(site, lang, page_key, title, page, row_id=None, depth=0, parent_id=''):
+def _seo_row_for_page(site, lang, page_key, title, page, row_id=None, depth=0, parent_id='', url_path=''):
     page = page if isinstance(page, dict) else {}
     auto_desc = _auto_page_description(page)
     description = page.get('description') or ''
@@ -1396,6 +1396,7 @@ def _seo_row_for_page(site, lang, page_key, title, page, row_id=None, depth=0, p
         'kind': 'page',
         'depth': depth,
         'parent_id': parent_id,
+        'url_path': url_path,
         'menu_label': title or page_key,  # 菜单原始标签，不受 SEO 标题覆盖影响
         'title': page.get('title') or title or page_key,
         'description': description,
@@ -1409,7 +1410,7 @@ def _seo_row_for_page(site, lang, page_key, title, page, row_id=None, depth=0, p
     }
 
 
-def _seo_row_for_detail(site, lang, dataset_key, item, depth=0, parent_id=''):
+def _seo_row_for_detail(site, lang, dataset_key, item, depth=0, parent_id='', url_path=''):
     item = item if isinstance(item, dict) else {}
     slug = item.get('slug') or item.get('id') or ''
     title = item.get('seo_title') or item.get('title') or item.get('name') or str(slug) or '未命名详情页'
@@ -1425,6 +1426,7 @@ def _seo_row_for_detail(site, lang, dataset_key, item, depth=0, parent_id=''):
         'dataset_key': dataset_key,
         'depth': depth,
         'parent_id': parent_id,
+        'url_path': url_path,
         'title': title,
         'description': description,
         'auto_description': auto_desc,
@@ -1448,28 +1450,83 @@ def _seo_page_rows(site, lang, settings, pages, data, meta):
     rows = []
     seen = set()
 
-    def add_page_row(page_key, label, item_type='page', depth=0, parent_id=''):
+    def add_page_row(page_key, label, item_type='page', depth=0, parent_id='', url_path=''):
         if not page_key or page_key in seen or page_key not in pages:
             return ''
         seen.add(page_key)
         row_id = f'page:{page_key}'
-        row = _seo_row_for_page(site, lang, page_key, label, pages.get(page_key), row_id=row_id, depth=depth, parent_id=parent_id)
+        row = _seo_row_for_page(site, lang, page_key, label, pages.get(page_key), row_id=row_id, depth=depth, parent_id=parent_id, url_path=url_path)
         row['type'] = item_type
         rows.append(row)
         return row_id
 
-    def walk(items, depth=0, parent_id=''):
+    # group ID 计数器，确保同标签的多个 group 不会碰撞
+    _group_seq = [0]
+
+    def add_group_row(group_key, label, depth=0, parent_id='', url_path=''):
+        """为 group 类型菜单生成折叠节点行（无对应页面，仅用于展开/折叠子项）。"""
+        _group_seq[0] += 1
+        row_id = f'group:{group_key}:{_group_seq[0]}'
+        rows.append({
+            'id': row_id,
+            'key': group_key,
+            'type': 'group',
+            'kind': 'group',
+            'depth': depth,
+            'parent_id': parent_id,
+            'url_path': url_path,
+            'menu_label': label or group_key,
+            'title': label or group_key,
+            'description': '',
+            'auto_description': '',
+            'status': 'ok',
+            'status_label': '',
+            'status_detail': '',
+            'score': 0,
+            'save_url': '',
+            'generate_url': '',
+        })
+        return row_id
+
+    def walk(items, depth=0, parent_id='', parent_path=''):
         for item in items or []:
             if not isinstance(item, dict):
                 continue
             item_type = item.get('type')
-            label = item.get('label') or item.get('target') or item.get('url') or ''
+            target = item.get('target') or ''
+            label = item.get('label') or target or item.get('url') or ''
+            # 计算当前项的 URL 路径（与 collect_render_tasks 保持一致）
+            if parent_path and target:
+                item_path = f'{parent_path}/{target}'
+            elif target:
+                item_path = target
+            else:
+                item_path = parent_path
+            # 子菜单的父路径：page/list/group 传递其 target
+            child_parent = parent_path
+            if item_type in ('page', 'list', 'group') and target:
+                child_parent = item_path
+            # link 类型是外链，不对应具体页面，跳过
+            if item_type == 'link':
+                if item.get('children'):
+                    walk(item.get('children') or [], depth=depth, parent_id=parent_id, parent_path=parent_path)
+                continue
+            # group 是容器（如"产品"），生成可折叠节点，子页面挂在它下面
+            if item_type == 'group':
+                group_url_path = f'/{item_path}/' if item_path else '/'
+                row_id = add_group_row(
+                    target, label, depth=depth, parent_id=parent_id,
+                    url_path=group_url_path
+                )
+                if item.get('children'):
+                    walk(item.get('children') or [], depth=depth + 1, parent_id=row_id, parent_path=child_parent)
+                continue
             row_id = ''
             if item_type == 'home':
-                row_id = add_page_row('home', label or 'Home', item_type='home', depth=depth, parent_id=parent_id)
-            elif item_type in ('page', 'list') and item.get('target'):
-                target = item.get('target')
-                row_id = add_page_row(target, label, item_type=item_type, depth=depth, parent_id=parent_id)
+                row_id = add_page_row('home', label or 'Home', item_type='home', depth=depth, parent_id=parent_id, url_path='/')
+            elif item_type in ('page', 'list') and target:
+                url_path = f'/{item_path}/'
+                row_id = add_page_row(target, label, item_type=item_type, depth=depth, parent_id=parent_id, url_path=url_path)
                 if item_type == 'list':
                     dt_tmpl, var_name, slug_field = menu_lib.derive_detail_info(target, tpl_html_dir)
                     if dt_tmpl and var_name:
@@ -1479,10 +1536,11 @@ def _seo_page_rows(site, lang, settings, pages, data, meta):
                             slug = entry.get(slug_field) or entry.get('slug') or entry.get('id')
                             if not slug:
                                 continue
-                            detail_row = _seo_row_for_detail(site, lang, target, entry, depth=depth + 1, parent_id=row_id)
+                            detail_url_path = f'/{item_path}/{slug}/'
+                            detail_row = _seo_row_for_detail(site, lang, target, entry, depth=depth + 1, parent_id=row_id, url_path=detail_url_path)
                             rows.append(detail_row)
             if item.get('children'):
-                walk(item.get('children') or [], depth=depth + 1, parent_id=row_id or parent_id)
+                walk(item.get('children') or [], depth=depth + 1, parent_id=row_id or parent_id, parent_path=child_parent)
 
     walk(menu_items)
 
@@ -1501,9 +1559,20 @@ def _inspect_built_seo_page(site, lang, default_lang, row):
     # 均优先位于 output/<site>/<lang>/。兼容旧构建结果时才回退根目录。
     localized_root = output_root / lang
     lang_root_path = localized_root if localized_root.exists() else output_root
-    parts = [] if row.get('key') == 'home' else (
-        [row.get('dataset_key'), row.get('key')] if row.get('kind') == 'detail' else [row.get('key')]
-    )
+    url_path = row.get('url_path', '').strip('/')
+    if row.get('key') == 'home':
+        parts = []
+    elif row.get('kind') == 'detail':
+        # 优先用 url_path（含菜单父级路径），否则回退到 dataset_key + key
+        if url_path:
+            parts = url_path.split('/')
+        else:
+            parts = [row.get('dataset_key'), row.get('key')]
+    else:
+        if url_path:
+            parts = url_path.split('/')
+        else:
+            parts = [row.get('key')]
     html_path = lang_root_path.joinpath(*(str(p) for p in parts if p), 'index.html')
     result = {
         'built': False, 'path': '/' + '/'.join(str(p) for p in parts if p) + ('/' if parts else ''),
@@ -1610,6 +1679,15 @@ def _seo_health_report(site, lang=None):
 
     seo_pages = _seo_page_rows(site, lang, settings, pages, data, meta)
     for row in seo_pages:
+        # group 是容器节点，无对应页面，跳过页面级检查
+        if row.get('kind') == 'group':
+            row['inspection'] = {'built': False, 'path': '', 'h1_count': 0, 'heading_issue': False, 'images_total': 0, 'images_missing_alt': 0, 'images_empty_alt': 0, 'has_jsonld': False, 'has_open_graph': False, 'has_twitter_card': False, 'noindex': False, 'images': [], 'issues': []}
+            row['health_score'] = 0
+            row['ok_count'] = 0
+            row['warn_count'] = 0
+            row['info_count'] = 0
+            row['score_reason'] = ''
+            continue
         row['inspection'] = _inspect_built_seo_page(site, lang, default_lang, row)
         inspection = row['inspection']
         if inspection['built']:

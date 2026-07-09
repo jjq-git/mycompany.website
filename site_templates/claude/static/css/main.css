@@ -107,6 +107,19 @@
   --z-modal: 400;
 }
 
+/* 屏幕阅读器专用，视觉隐藏但对 SEO 和 a11y 可见 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 /* ============================================================
    2. COLOR TOKENS — 店主可覆盖的 6 色 + Claude 别名派生
 
