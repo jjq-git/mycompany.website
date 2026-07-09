@@ -6,7 +6,6 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>SEO 健康检查</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-seo.css') }}?v=20260629-flat">
   <style>
     :root {
@@ -84,12 +83,11 @@
   <main class="seo-shell">
     <header class="seo-header">
       <div>
-        <h1 class="seo-title" id="seoWorkspaceTitle">{{ report.pages[0].title if report.pages else 'SEO 健康检查' }}</h1>
+        <h1 class="seo-title">SEO 健康检查</h1>
         <div class="seo-subtitle">
           左侧选择会实际发布的页面，右侧集中维护页面标题和页面简介。标题和简介会用于搜索结果、社交分享、AI 检索摘要和自动生成的 SEO 文件。
         </div>
       </div>
-      <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#seoSiteSettingsModal">全站设置</button>
       <div class="seo-score">
         <div class="seo-score-number">
           <strong>{{ report.score }}</strong>
@@ -113,10 +111,10 @@
     </header>
 
     <div class="seo-layout">
-      <aside class="seo-sidebar collapsed" id="seoSidebar" aria-label="页面列表">
+      <aside class="seo-sidebar" aria-label="页面列表">
         <div class="seo-sidebar-head">
           <h2 class="seo-section-title">页面</h2>
-          <button type="button" class="seo-sidebar-toggle" onclick="seoToggleSidebar()" aria-label="展开页面列表" aria-expanded="false">☰</button>
+          <span class="seo-help">{{ report.pages|length }} 个</span>
         </div>
         <div class="seo-page-nav">
           {% for row in report.pages %}
@@ -131,9 +129,7 @@
                 {% if row.kind == 'detail' %}{{ row.dataset_key }} / {{ row.key }}{% else %}/{{ row.key }}/{% endif %}
               </span>
             </span>
-            <span class="seo-page-score score-{{ row.score }}" title="SEO {{ row.score }} 分" aria-label="SEO {{ row.score }} 分">
-              <span class="material-symbols-outlined" aria-hidden="true">{{ 'looks_one' if row.score == 1 else ('looks_two' if row.score == 2 else ('looks_3' if row.score == 3 else ('looks_4' if row.score == 4 else 'looks_5'))) }}</span>
-            </span>
+            <span class="seo-nav-status">{{ status_icon(row.status, row.status_label) }}</span>
           </button>
           {% endfor %}
         </div>
@@ -164,19 +160,17 @@
             <div>
               <div class="mb-3">
                 <label class="form-label small text-muted mb-1">页面标题</label>
-                <div class="seo-ai-field"><input class="form-control" name="title" value="{{ row.title }}" oninput="seoSyncPreview(this)"><button type="button" class="seo-ai-btn" onclick="seoGenerateField(this,'title')" title="AI 优化标题"><span class="material-symbols-outlined">auto_awesome</span></button></div>
-                <div class="seo-help mt-1">建议准确描述本页主题，并保持简洁；推荐 10～60 个字符。</div>
+                <input class="form-control" name="title" value="{{ row.title }}" oninput="seoSyncPreview(this)">
               </div>
               <div>
                 <label class="form-label small text-muted mb-1">页面简介</label>
-                <div class="seo-ai-field"><textarea class="form-control seo-description"
+                <textarea class="form-control seo-description"
                           name="description"
                           rows="6"
                           style="height:120px"
                           maxlength="180"
                           placeholder="{{ row.auto_description }}"
-                          oninput="seoSyncPreview(this)">{{ row.description }}</textarea><button type="button" class="seo-ai-btn" onclick="seoGenerateField(this,'description')" title="AI 优化描述"><span class="material-symbols-outlined">auto_awesome</span></button></div>
-                <div class="seo-help mt-1">概括页面内容，避免重复堆砌关键词；推荐 50～180 个字符。</div>
+                          oninput="seoSyncPreview(this)">{{ row.description }}</textarea>
                 <div class="seo-help mt-1"><span class="seo-desc-count">0</span>/180，建议 80-160 字</div>
               </div>
             </div>
@@ -210,20 +204,7 @@
         {% endfor %}
 
         <section class="seo-check-panel">
-          <h2 class="seo-section-title mb-3">当前页面检查</h2>
-          <div class="seo-check mb-2"><strong>URL</strong><div class="seo-help">路径应简短、稳定、可读，使用连字符分隔单词。</div></div>
-          <div class="seo-check mb-2"><strong>H1 与标题层级</strong><div class="seo-help">发布前按最终 HTML 检查：每页一个 H1，后续标题按 H2、H3 递进。</div></div>
-          <div class="seo-check mb-2"><strong>图片 alt</strong><div class="seo-help">检查当前页全部图片；装饰图片允许空 alt，内容图片需要有意义的替代文本。</div></div>
-          <div class="seo-check"><strong>结构化数据与社交卡片</strong><div class="seo-help">检查 JSON-LD、Open Graph 与 Twitter Card 是否完整。</div></div>
-        </section>
-      </div>
-    </div>
-  </main>
-
-  <div class="modal fade" id="seoSiteSettingsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
-      <div class="modal-header"><h2 class="modal-title fs-6">全站 SEO 设置与系统检查</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button></div>
-      <div class="modal-body"><div class="seo-check-list">
+          <h2 class="seo-section-title mb-3">系统检查</h2>
           <div class="seo-check-list">
             {% for check in report.checks %}
             <div class="seo-check d-flex align-items-start justify-content-between gap-2">
@@ -242,11 +223,11 @@
             </div>
             {% endfor %}
           </div>
-      </div></div>
-    </div></div>
-  </div>
+        </section>
+      </div>
+    </div>
+  </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     (function () {
       var meta = document.querySelector('meta[name="csrf-token"]');
@@ -275,27 +256,6 @@
       document.querySelectorAll('.seo-detail').forEach(function (row) {
         row.classList.toggle('active', row.dataset.pageKey === pageKey);
       });
-      var active = document.querySelector('.seo-detail[data-page-key="' + CSS.escape(pageKey) + '"] .seo-page-title');
-      var title = document.getElementById('seoWorkspaceTitle');
-      if (active && title) title.textContent = active.textContent;
-    }
-
-    function seoToggleSidebar() {
-      var sidebar = document.getElementById('seoSidebar');
-      if (!sidebar) return;
-      sidebar.classList.toggle('collapsed');
-      var button = sidebar.querySelector('.seo-sidebar-toggle');
-      if (button) button.setAttribute('aria-expanded', String(!sidebar.classList.contains('collapsed')));
-    }
-
-    function seoGenerateField(btn, field) {
-      var row = seoRowOf(btn);
-      if (!row) return;
-      if (field === 'title') {
-        seoSetMsg(row, '标题 AI 生成尚未配置，请先手动编辑。', false);
-        return;
-      }
-      seoGenerateDescription(btn);
     }
 
     function seoSetMsg(row, text, ok) {

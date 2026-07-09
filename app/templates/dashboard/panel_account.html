@@ -2,41 +2,6 @@
 <div class="fw-semibold mb-3">账号管理</div>
 <div class="card mb-3">
   <div class="card-body">
-    <h6 class="card-title">站点</h6>
-    <div class="list-group list-group-flush account-site-list">
-      {% for opt in available_sites|default([]) %}
-      <a class="list-group-item list-group-item-action px-0 {% if site and opt.id == site.id %}active{% endif %}"
-         href="{{ request.path }}?site={{ opt.id }}{% if current_lang %}&lang={{ current_lang }}{% endif %}"
-         data-site-id="{{ opt.id }}" onclick="return switchAdminSite(event, this)">
-        {{ opt.name or opt.slug }}{% if opt.name and opt.name != opt.slug %} <span class="small opacity-75">/{{ opt.slug }}</span>{% endif %}
-      </a>
-      {% endfor %}
-    </div>
-    {% if admin_languages %}
-    <h6 class="card-title mt-3">语言</h6>
-    {% set flag_map = {'zh-CN':'🇨🇳','zh-TW':'🇹🇼','zh-HK':'🇭🇰','en':'🇺🇸','en-US':'🇺🇸','en-GB':'🇬🇧','ja':'🇯🇵','ja-JP':'🇯🇵','ko':'🇰🇷','ko-KR':'🇰🇷'} %}
-    <div class="account-language-list" role="list" aria-label="切换语言">
-      {% for lang in admin_languages %}
-      <a class="account-language-link {% if lang.code == current_lang %}active{% endif %}"
-         href="{{ request.path }}?site={{ site.id if site else '' }}&lang={{ lang.code }}"
-         title="{{ lang.name }}" aria-label="切换到{{ lang.name }}">
-        <span aria-hidden="true">{{ flag_map.get(lang.code, '🌐') }}</span>
-        <span>{{ lang.name }}</span>
-      </a>
-      {% endfor %}
-    </div>
-    {% endif %}
-    <div class="d-grid gap-2 mt-3">
-      <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openTemplatesPanel()">模板库</button>
-      {% if site %}
-      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('core.export_zip') }}">下载站点</a>
-      <button class="btn btn-primary btn-sm" type="button" onclick="doPublish()">发布站点</button>
-      {% endif %}
-    </div>
-  </div>
-</div>
-<div class="card mb-3">
-  <div class="card-body">
     <h6 class="card-title">{{ user.email }}</h6>
     <p class="text-muted small mb-1">站点数量：{{ site_count }}</p>
     <p class="text-muted small">当前站点：{{ site.name }} (slug: {{ site.slug }})</p>
