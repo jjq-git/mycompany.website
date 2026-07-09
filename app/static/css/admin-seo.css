@@ -140,20 +140,34 @@ body {
   gap: 4px;
 }
 
+.seo-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.seo-header-actions > .btn {
+  min-height: 34px;
+  white-space: nowrap;
+}
+
+.seo-site-settings-btn { display:inline-flex; align-items:center; gap:5px; }
+.seo-site-settings-btn .material-symbols-outlined { font-size:17px; }
+
 .seo-page-node { position:relative; display:flex; align-items:center; }
 .seo-page-node.is-collapsed { display:none; }
 .seo-page-node[data-depth="1"] { padding-left:14px; }
 .seo-page-node[data-depth="2"] { padding-left:28px; }
 .seo-page-node[data-depth="3"] { padding-left:42px; }
 .seo-page-node .seo-page-link { min-width:0; flex:1; }
-.seo-tree-toggle { width:28px; height:32px; flex:0 0 28px; padding:5px; border:0; background:transparent; color:var(--seo-muted); }
+.seo-tree-toggle,.seo-tree-toggle-placeholder { width:28px; height:32px; flex:0 0 28px; }
+.seo-tree-toggle { padding:5px; border:0; background:transparent; color:var(--seo-muted); }
 .seo-tree-toggle svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; transition:transform .15s; }
 .seo-tree-toggle.open svg { transform:rotate(90deg); }
-.seo-page-score { display:inline-flex; width:24px; height:24px; align-items:center; justify-content:center; border:1px solid currentColor; border-radius:50%; font-size:12px; font-weight:700; }
-.seo-page-score.score-1,.seo-page-score.score-2 { color:#dc2626; }
-.seo-page-score.score-3 { color:#d97706; }
-.seo-page-score.score-4,.seo-page-score.score-5 { color:#15803d; }
-.seo-page-score .material-symbols-outlined { font-size:24px; }
+.seo-page-score { display:inline-flex; width:20px; height:20px; align-items:center; justify-content:center; border:0; border-radius:5px; color:#fff; font-size:11px; font-weight:700; line-height:1; }
+.seo-page-score.score-1,.seo-page-score.score-2 { background:#dc2626; }
+.seo-page-score.score-3 { background:#d97706; }
+.seo-page-score.score-4,.seo-page-score.score-5 { background:#15803d; }
 .seo-ai-field { display:flex; align-items:stretch; gap:6px; }
 .seo-ai-btn { width:42px; flex:0 0 42px; border:1px solid var(--seo-primary-border); border-radius:7px; background:var(--seo-primary-soft); color:var(--theme-primary); }
 .seo-ai-btn .material-symbols-outlined { font-size:20px; }
@@ -162,8 +176,22 @@ body {
 .seo-page-inspection h3 { font-size:14px; margin:0 0 10px; }
 .seo-inspection-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
 .seo-inspection-grid > div { display:flex; flex-direction:column; gap:3px; padding:10px; border:1px solid var(--seo-border); border-radius:7px; }
+.seo-inspection-grid > div { border-left-width:3px; }
+.seo-inspection-grid > .check-ok { border-left-color:#16a34a; }
+.seo-inspection-grid > .check-warn { border-left-color:#dc2626; }
+.seo-inspection-grid > .check-waiting { border-left-color:#94a3b8; background:#f8fafc; }
 .seo-inspection-grid span { font-size:13px; }
 .seo-inspection-grid small { color:var(--seo-muted); }
+.seo-image-details { margin-top:10px; border:1px solid var(--seo-border); border-radius:7px; background:#fff; }
+.seo-image-details summary { padding:9px 10px; color:var(--theme-primary); font-size:12px; font-weight:600; cursor:pointer; }
+.seo-image-list { display:flex; flex-direction:column; max-height:260px; overflow:auto; border-top:1px solid var(--seo-border); }
+.seo-image-row { display:grid; grid-template-columns:64px minmax(0,1.3fr) minmax(0,1fr); gap:8px; align-items:center; padding:7px 10px; border-bottom:1px solid #eef1f4; font-size:11px; }
+.seo-image-row:last-child { border-bottom:0; }
+.seo-image-row code,.seo-image-row > span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.seo-image-state { color:#15803d; font-weight:600; }
+.seo-image-row.alt-empty .seo-image-state { color:#a16207; }
+.seo-image-row.alt-decorative .seo-image-state { color:#64748b; }
+.seo-image-row.alt-missing .seo-image-state { color:#dc2626; }
 @media (max-width: 760px) { .seo-inspection-grid { grid-template-columns:1fr; } }
 
 .seo-page-link {
@@ -357,6 +385,15 @@ body {
   padding: 16px;
 }
 
+.seo-site-settings-dialog { width:min(880px,calc(100vw - 32px)); max-height:min(760px,calc(100vh - 32px)); padding:0; overflow:hidden; border:1px solid var(--seo-border-strong); border-radius:10px; background:#fff; color:var(--seo-ink); box-shadow:0 24px 70px rgba(15,23,42,.24); }
+.seo-site-settings-dialog::backdrop { background:rgba(15,23,42,.42); backdrop-filter:blur(2px); }
+.seo-site-settings-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:16px 18px; border-bottom:1px solid var(--seo-border); }
+.seo-site-settings-head p { margin:4px 0 0; color:var(--seo-muted); font-size:12px; }
+.seo-site-settings-dialog .seo-check-list { max-height:calc(100vh - 195px); padding:16px 18px 20px; overflow:auto; }
+.seo-dialog-close { width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; flex:0 0 30px; border:0; border-radius:5px; background:#f1f5f9; color:#64748b; }
+.seo-dialog-close:hover { background:#e2e8f0; color:#1e293b; }
+.seo-dialog-close .material-symbols-outlined { font-size:18px; }
+
 .seo-check-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -383,11 +420,17 @@ body {
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
 }
 
 .seo-check-link:hover {
   text-decoration: underline;
 }
+
+.seo-check-link .material-symbols-outlined { font-size:18px; }
 
 @media (max-width: 980px) {
   .seo-header,
@@ -395,6 +438,11 @@ body {
   .seo-editor-grid,
   .seo-check-list {
     grid-template-columns: 1fr;
+  }
+
+  .seo-header-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .seo-sidebar {
@@ -421,6 +469,14 @@ body {
 
   .seo-stat-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .seo-image-row {
+    grid-template-columns:62px minmax(0,1fr);
+  }
+
+  .seo-image-row > span:last-child {
+    grid-column:2;
   }
 }
 

@@ -916,7 +916,9 @@ def not_found(error):
 @bp.route('/')
 def index():
     user, site = _current_context()
-    return render_template('base.html', user=user, site=site, active='')
+    site_count = Site.query.filter_by(owner_id=user.id).count() if user else 0
+    return render_template('base.html', user=user, site=site, active='',
+                           initial_account_panel=True, site_count=site_count)
 
 
 @bp.route('/overview')
@@ -1394,6 +1396,7 @@ def _seo_row_for_page(site, lang, page_key, title, page, row_id=None, depth=0, p
         'kind': 'page',
         'depth': depth,
         'parent_id': parent_id,
+        'menu_label': title or page_key,  # 菜单原始标签，不受 SEO 标题覆盖影响
         'title': page.get('title') or title or page_key,
         'description': description,
         'auto_description': auto_desc,
@@ -1494,7 +1497,10 @@ def _seo_page_rows(site, lang, settings, pages, data, meta):
 def _inspect_built_seo_page(site, lang, default_lang, row):
     """Inspect the final generated HTML for checks that source YAML cannot prove."""
     output_root = Path(current_app.config['OUTPUT_DIR']) / str(site.id)
-    lang_root_path = output_root if lang == default_lang else output_root / lang
+    # output/<site>/index.html 是语言选择页；实际语言页面（包括默认语言）
+    # 均优先位于 output/<site>/<lang>/。兼容旧构建结果时才回退根目录。
+    localized_root = output_root / lang
+    lang_root_path = localized_root if localized_root.exists() else output_root
     parts = [] if row.get('key') == 'home' else (
         [row.get('dataset_key'), row.get('key')] if row.get('kind') == 'detail' else [row.get('key')]
     )
@@ -1504,6 +1510,7 @@ def _inspect_built_seo_page(site, lang, default_lang, row):
         'h1_count': 0, 'heading_issue': False, 'images_total': 0,
         'images_missing_alt': 0, 'images_empty_alt': 0, 'has_jsonld': False,
         'has_open_graph': False, 'has_twitter_card': False, 'noindex': False,
+        'images': [], 'issues': [],
     }
     if not html_path.exists():
         return result
@@ -1516,10 +1523,30 @@ def _inspect_built_seo_page(site, lang, default_lang, row):
     result['images_total'] = len(images)
     result['images_missing_alt'] = sum(1 for tag in images if not re.search(r'\balt\s*=', tag, flags=re.I))
     result['images_empty_alt'] = sum(1 for tag in images if re.search(r'\balt\s*=\s*([\'"])\s*\1', tag, flags=re.I))
+    for tag in images[:30]:
+        src_match = re.search(r'\bsrc\s*=\s*([\'"])(.*?)\1', tag, flags=re.I | re.S)
+        alt_match = re.search(r'\balt\s*=\s*([\'"])(.*?)\1', tag, flags=re.I | re.S)
+        src_value = src_match.group(2).strip() if src_match else ''
+        alt_value = alt_match.group(2).strip() if alt_match else ''
+        result['images'].append({
+            'src': (src_value or '(无 src)')[:240],
+            'alt': alt_value,
+            'alt_state': 'missing' if not alt_match else ('decorative' if not alt_value and not src_value else ('empty' if not alt_value else 'ok')),
+        })
     result['has_jsonld'] = bool(re.search(r'type\s*=\s*([\'"])application/ld\+json\1', text, flags=re.I))
     result['has_open_graph'] = bool(re.search(r'property\s*=\s*([\'"])og:', text, flags=re.I))
     result['has_twitter_card'] = bool(re.search(r'name\s*=\s*([\'"])twitter:card\1', text, flags=re.I))
     result['noindex'] = bool(re.search(r'<meta\b[^>]*content\s*=\s*([\'"])[^\'"]*noindex', text, flags=re.I))
+    if result['h1_count'] != 1:
+        result['issues'].append(f"H1 数量为 {result['h1_count']}")
+    if result['heading_issue']:
+        result['issues'].append('标题层级存在跳级')
+    if result['images_missing_alt']:
+        result['issues'].append(f"{result['images_missing_alt']} 张图片缺少 alt")
+    if not result['has_open_graph']:
+        result['issues'].append('缺少 Open Graph')
+    if not result['has_twitter_card']:
+        result['issues'].append('缺少 Twitter Card')
     return result
 
 
@@ -1584,6 +1611,46 @@ def _seo_health_report(site, lang=None):
     seo_pages = _seo_page_rows(site, lang, settings, pages, data, meta)
     for row in seo_pages:
         row['inspection'] = _inspect_built_seo_page(site, lang, default_lang, row)
+        inspection = row['inspection']
+        if inspection['built']:
+            essential_issues = (
+                int(inspection['h1_count'] != 1) +
+                int(inspection['heading_issue']) +
+                int(inspection['images_missing_alt'] > 0)
+            )
+            row['score'] = max(1, row['score'] - min(2, essential_issues))
+        row['score_reason'] = '；'.join(inspection['issues']) if inspection['built'] and inspection['issues'] else '页面内容完整度正常'
+        page_ok = 0
+        page_warn = 0
+        page_info = 0
+        title_len = len(_plain_text(row.get('title')))
+        description_len = len(_plain_text(row.get('description')))
+        if 10 <= title_len <= 60:
+            page_ok += 1
+        else:
+            page_warn += 1
+        if 50 <= description_len <= 180:
+            page_ok += 1
+        elif row.get('description') or row.get('auto_description'):
+            page_info += 1
+        else:
+            page_warn += 1
+        if inspection['built']:
+            page_ok += int(inspection['h1_count'] == 1)
+            page_warn += int(inspection['h1_count'] != 1)
+            page_ok += int(not inspection['heading_issue'])
+            page_warn += int(inspection['heading_issue'])
+            page_ok += int(inspection['images_missing_alt'] == 0)
+            page_warn += int(inspection['images_missing_alt'] > 0)
+            social_complete = inspection['has_open_graph'] and inspection['has_twitter_card']
+            page_ok += int(social_complete)
+            page_info += int(not social_complete)
+        else:
+            page_info += 4
+        row['health_score'] = row['score'] * 20
+        row['ok_count'] = page_ok
+        row['warn_count'] = page_warn
+        row['info_count'] = page_info
 
     # 只检查菜单会实际渲染的页面/详情页，避免把孤立草稿 YAML 当成 SEO 问题。
     menu_items = menu_lib.ensure_home(
@@ -1664,11 +1731,14 @@ def _seo_health_report(site, lang=None):
             add('warn', 'robots.txt 可能屏蔽全站', '发现 Disallow: /，请确认这不是生产站点规则。')
         else:
             add('ok', 'robots.txt 未发现全站屏蔽', '未发现 Disallow: / 规则。')
-    noindex_pages = [row['inspection']['path'] for row in seo_pages if row['inspection'].get('noindex')]
-    if noindex_pages:
+    built_pages = [row for row in seo_pages if row['inspection'].get('built')]
+    noindex_pages = [row['inspection']['path'] for row in built_pages if row['inspection'].get('noindex')]
+    if not built_pages:
+        add('info', '尚未检查 noindex', '没有可用的页面构建结果，请先预览、导出或发布。')
+    elif noindex_pages:
         add('warn', f'{len(noindex_pages)} 个页面包含 noindex', '、'.join(noindex_pages[:8]))
     else:
-        add('ok', '页面未发现 noindex', '已生成页面中未检测到 noindex。')
+        add('ok', '页面未发现 noindex', f'已检查 {len(built_pages)} 个生成页面，未检测到 noindex。')
 
     warn_count = sum(1 for c in checks if c['status'] == 'warn')
     info_count = sum(1 for c in checks if c['status'] == 'info')
@@ -2347,8 +2417,8 @@ def account():
     if request.args.get('_fragment'):
         return render_template('dashboard/panel_account.html',
                                user=user, site=site, site_count=site_count)
-    return render_template('dashboard/account.html',
-                           user=user, site=site, site_count=site_count, active='account')
+    lang, _, _ = _get_panel_lang(site)
+    return redirect(url_for('core.index', site=site.id, lang=lang))
 
 
 @bp.route('/sites/delete', methods=['POST'])

@@ -84,22 +84,9 @@
         <img class="admin-logo" width="28" height="28" src="{{ url_for('static', filename='icon.svg') }}" alt="">
       </a>
 
-      <div class="header-divider"></div>
+      <!-- <div class="header-divider"></div> -->
 
-      <div class="header-site-group">
-        {% if admin_languages and admin_languages|length > 0 %}
-        <div class="header-flags" id="siteLangFlags" role="list" aria-label="切换语言">
-          {% for lang in admin_languages %}
-          {% set flag_code = 'cn' if lang.code == 'zh-CN' else ('tw' if lang.code == 'zh-TW' else 'us') %}
-          <a class="header-flag-link {% if lang.code == current_lang %}active{% endif %}"
-             href="{{ request.path }}?site={{ site.id if site else '' }}&lang={{ lang.code }}"
-             title="{{ lang.name }}" aria-label="切换到{{ lang.name }}" role="listitem">
-            <img src="{{ url_for('static', filename='flags/' ~ flag_code ~ '.svg') }}" alt="">
-          </a>
-          {% endfor %}
-        </div>
-        {% endif %}
-      </div>
+      <div class="header-site-group" aria-hidden="true"></div>
 
       <div class="flex-grow-1"></div>
 
@@ -183,7 +170,7 @@
       <div class="left-nav-site-info px-3 py-2">
         <div class="site-label">{{ site.name or site.slug if site else '未选择' }}</div>
         {% set current_flag = 'cn' if current_lang == 'zh-CN' else ('tw' if current_lang == 'zh-TW' else 'us') %}
-        <div class="site-name"><img class="left-nav-language-flag" src="{{ url_for('static', filename='flags/' ~ current_flag ~ '.svg') }}" alt=""> {{ current_language_label if current_language_label else '' }}</div>
+        <div class="site-name"><img class="left-nav-language-flag" src="{{ url_for('static', filename='flags/' ~ current_flag ~ '.svg') }}?v=2" alt="{{ current_language_label if current_language_label else '当前语言' }}" title="{{ current_language_label if current_language_label else '当前语言' }}"></div>
       </div>
 
       <div class="flex-grow-1 overflow-auto left-nav-menu">
@@ -470,7 +457,7 @@
             </svg>
           </button>
           <button id="reopenPanelBtn" class="btn btn-sm btn-outline-secondary preview-toolbar-btn" style="display:none;"
-            onclick="toggleRightPanel()" title="打开属性面板">
+            onclick="toggleRightPanel()" title="打开右侧面板">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
               <rect x="9" y="3" width="13" height="18" rx="2" ry="2" />
@@ -535,7 +522,7 @@
       </button>
     </div>
 
-    {# 右栏：属性面板 #}
+    {# 右栏：统一面板（头像打开账号管理，左侧项目打开对应编辑内容） #}
     <aside class="right-panel bg-white border-start flex-shrink-0 d-flex flex-column" style="width:380px"
       id="rightPanel">
       <div class="right-panel-header d-flex align-items-center justify-content-between flex-shrink-0">
@@ -546,7 +533,7 @@
             <path
               d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
-          <span class="fw-semibold small" id="rightPanelTitle">属性</span>
+          <span class="fw-semibold small" id="rightPanelTitle">账号管理</span>
         </div>
       </div>
       <div class="right-panel-body flex-grow-1 overflow-auto" id="rightPanelBody">
@@ -560,6 +547,9 @@
         {% endif %}
         {% endwith %}
         {% block content %}
+        {% if initial_account_panel|default(false) %}
+        {% include "dashboard/panel_account.html" %}
+        {% else %}
         <div class="panel-empty-state">
           <div class="panel-empty-icon">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
@@ -570,6 +560,7 @@
           </div>
           <p class="text-muted small">← 在左侧选择一项开始编辑</p>
         </div>
+        {% endif %}
         {% endblock %}
       </div>
       <div class="right-panel-footer flex-shrink-0" id="rightPanelFooter" style="display:none;"></div>
@@ -2331,6 +2322,8 @@
 
     function openAccountPanel() {
       document.querySelectorAll('.left-nav-item').forEach(function(el) { el.classList.remove('active'); });
+      var panelTitle = document.getElementById('rightPanelTitle');
+      if (panelTitle) panelTitle.textContent = '账号管理';
       var params = new URLSearchParams(window.location.search);
       var siteParam = currentSiteParam();
       var langParam = currentLangParam();

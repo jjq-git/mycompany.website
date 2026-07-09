@@ -7,7 +7,7 @@
   <title>SEO 健康检查</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-seo.css') }}?v=20260629-flat">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-seo.css') }}?v=20260709-page-health">
   <style>
     :root {
       --bs-primary: {{ admin_primary }};
@@ -89,27 +89,31 @@
           左侧选择会实际发布的页面，右侧集中维护页面标题和页面简介。标题和简介会用于搜索结果、社交分享、AI 检索摘要和自动生成的 SEO 文件。
         </div>
       </div>
+      <div class="seo-header-actions">
       <div class="seo-score">
         <div class="seo-score-number">
-          <strong>{{ report.score }}</strong>
-          <div class="seo-help">健康分</div>
+          <strong id="seoCurrentScore">{{ report.pages[0].health_score if report.pages else 0 }}</strong>
+          <div class="seo-help">当前页健康分</div>
         </div>
         <div class="seo-stat-grid" aria-label="SEO 状态汇总">
           <div class="seo-stat">
-            <strong class="text-success">{{ report.ok_count }}</strong>
+            <strong class="text-success" id="seoCurrentOk">{{ report.pages[0].ok_count if report.pages else 0 }}</strong>
             <span>正常</span>
           </div>
           <div class="seo-stat">
-            <strong class="text-warning">{{ report.warn_count }}</strong>
+            <strong class="text-warning" id="seoCurrentWarn">{{ report.pages[0].warn_count if report.pages else 0 }}</strong>
             <span>建议</span>
           </div>
           <div class="seo-stat">
-            <strong class="text-secondary">{{ report.info_count }}</strong>
+            <strong class="text-secondary" id="seoCurrentInfo">{{ report.pages[0].info_count if report.pages else 0 }}</strong>
             <span>优化</span>
           </div>
         </div>
       </div>
-      <button type="button" class="btn btn-outline-secondary btn-sm" onclick="seoToggleSiteSettings()">全站设置</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm seo-site-settings-btn" id="seoSiteSettingsToggle" onclick="seoOpenSiteSettings()" aria-haspopup="dialog" aria-controls="seoSiteSettings">
+        <span class="material-symbols-outlined" aria-hidden="true">settings</span><span>全站设置</span>
+      </button>
+      </div>
     </header>
 
     <div class="seo-layout">
@@ -126,19 +130,25 @@
             <button type="button"
                     class="seo-page-link{% if loop.first %} active{% endif %}"
                     data-page-key="{{ row.id }}"
+                    data-health-score="{{ row.health_score }}"
+                    data-ok-count="{{ row.ok_count }}"
+                    data-warn-count="{{ row.warn_count }}"
+                    data-info-count="{{ row.info_count }}"
                     onclick="seoSelectPage(this.dataset.pageKey)">
               <span>
-              <span class="seo-page-name">{{ row.title }}</span>
+              <span class="seo-page-name">{{ row.menu_label }}</span>
               <span class="seo-page-key">
                 {% if row.kind == 'detail' %}{{ row.dataset_key }} / {{ row.key }}{% else %}/{{ row.key }}/{% endif %}
               </span>
               </span>
-              <span class="seo-page-score score-{{ row.score }}" aria-label="SEO {{ row.score }} 分" title="SEO {{ row.score }} 分"><span class="material-symbols-outlined">{{ 'looks_one' if row.score == 1 else ('looks_two' if row.score == 2 else ('looks_3' if row.score == 3 else ('looks_4' if row.score == 4 else 'looks_5'))) }}</span></span>
+              <span class="seo-page-score score-{{ row.score }}" aria-label="SEO {{ row.score }} 分：{{ row.score_reason }}" title="SEO {{ row.score }} 分：{{ row.score_reason }}">{{ row.score }}</span>
             </button>
             {% if children %}
             <button type="button" class="seo-tree-toggle" onclick="seoToggleChildren(this)" aria-expanded="false" aria-label="展开{{ row.title }}的下级页面">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
             </button>
+            {% else %}
+            <span class="seo-tree-toggle-placeholder" aria-hidden="true"></span>
             {% endif %}
           </div>
           {% endfor %}
@@ -146,14 +156,23 @@
       </aside>
 
       <div class="seo-content">
-        <section class="seo-check-panel mb-3" id="seoSiteSettings" hidden>
-          <h2 class="seo-section-title mb-3">全站设置与系统检查</h2>
+        <dialog class="seo-site-settings-dialog" id="seoSiteSettings" aria-labelledby="seoSiteSettingsTitle">
+          <div class="seo-site-settings-head">
+            <div><h2 class="seo-section-title" id="seoSiteSettingsTitle">全站设置与系统检查</h2><p>检查站点级 SEO 文件、索引规则和公共信息。</p></div>
+            <button type="button" class="seo-dialog-close" onclick="seoCloseSiteSettings()" aria-label="关闭"><span class="material-symbols-outlined">close</span></button>
+          </div>
           <div class="seo-check-list">
             {% for check in report.checks %}
-            <div class="seo-check"><div class="fw-semibold small">{{ status_icon(check.status, check.title) }} {{ check.title }}</div><div class="seo-help mt-1">{{ check.detail }}</div></div>
+            <div class="seo-check">
+              <div class="fw-semibold small">{{ status_icon(check.status, check.title) }} {{ check.title }}</div>
+              <div class="seo-help mt-1">{{ check.detail }}</div>
+              {% if check.status != 'ok' and check.action_url %}
+              <button type="button" class="seo-check-link" data-panel-url="{{ check.action_url }}" data-action-kind="{{ check.action_kind or 'link' }}" onclick="return seoRunCheckAction(this)" title="处理" aria-label="处理：{{ check.title }}"><span class="material-symbols-outlined">arrow_outward</span></button>
+              {% endif %}
+            </div>
             {% endfor %}
           </div>
-        </section>
+        </dialog>
         {% for row in report.pages %}
         <form class="seo-detail{% if loop.first %} active{% endif %}"
               data-page-key="{{ row.id }}"
@@ -176,15 +195,25 @@
 
           <section class="seo-page-inspection">
             <h3>当前页面检查</h3>
-            {% if row.inspection.built %}
             <div class="seo-inspection-grid">
-              <div><strong>URL</strong><span>{{ row.inspection.path }}</span><small>路径应简短、稳定且可读。</small></div>
-              <div><strong>H1 / 标题层级</strong><span>H1：{{ row.inspection.h1_count }} 个{% if row.inspection.heading_issue %}，存在跳级{% endif %}</span><small>每页应有且仅有一个 H1，后续标题逐级排列。</small></div>
-              <div><strong>图片 alt</strong><span>{{ row.inspection.images_total }} 张；缺少 {{ row.inspection.images_missing_alt }}；空值 {{ row.inspection.images_empty_alt }}</span><small>空 alt 可用于装饰图片；内容图片需要替代文本。</small></div>
-              <div><strong>结构化与社交数据</strong><span>JSON-LD {{ '有' if row.inspection.has_jsonld else '无' }} / OG {{ '有' if row.inspection.has_open_graph else '无' }} / Twitter {{ '有' if row.inspection.has_twitter_card else '无' }}</span><small>结果来自最终生成的 HTML。</small></div>
+              <div class="check-ok"><strong>URL</strong><span>{{ row.inspection.path }}</span><small>路径应简短、稳定且可读。</small></div>
+              <div class="{{ 'check-waiting' if not row.inspection.built else ('check-warn' if row.inspection.h1_count != 1 or row.inspection.heading_issue else 'check-ok') }}"><strong>H1 / 标题层级</strong><span>{% if row.inspection.built %}H1：{{ row.inspection.h1_count }} 个{% if row.inspection.heading_issue %}，存在跳级{% endif %}{% else %}待构建后检查{% endif %}</span><small>每页应有且仅有一个 H1，后续标题逐级排列。</small></div>
+              <div class="{{ 'check-waiting' if not row.inspection.built else ('check-warn' if row.inspection.images_missing_alt else 'check-ok') }}"><strong>图片 alt</strong><span>{% if row.inspection.built %}{{ row.inspection.images_total }} 张；缺少属性 {{ row.inspection.images_missing_alt }}；空 alt {{ row.inspection.images_empty_alt }}{% else %}待构建后检查{% endif %}</span><small>空 alt 可用于装饰图片；内容图片需要替代文本。</small></div>
+              <div class="{{ 'check-waiting' if not row.inspection.built else ('check-warn' if not row.inspection.has_open_graph or not row.inspection.has_twitter_card else 'check-ok') }}"><strong>结构化与社交数据</strong><span>{% if row.inspection.built %}JSON-LD {{ '有' if row.inspection.has_jsonld else '无' }} / OG {{ '有' if row.inspection.has_open_graph else '无' }} / Twitter {{ '有' if row.inspection.has_twitter_card else '无' }}{% else %}待构建后检查{% endif %}</span><small>结果来自最终生成的 HTML。</small></div>
             </div>
-            {% else %}
-            <div class="seo-help">尚无该页面的构建结果；预览、导出或发布后才能执行最终 HTML 检查。</div>
+            {% if row.inspection.built and row.inspection.images %}
+            <details class="seo-image-details">
+              <summary>查看图片明细（{{ row.inspection.images|length }}{% if row.inspection.images_total > row.inspection.images|length %} / {{ row.inspection.images_total }}{% endif %}）</summary>
+              <div class="seo-image-list">
+                {% for image in row.inspection.images %}
+                <div class="seo-image-row alt-{{ image.alt_state }}">
+                  <span class="seo-image-state">{{ '正常' if image.alt_state == 'ok' else ('装饰图' if image.alt_state == 'decorative' else ('空 alt' if image.alt_state == 'empty' else '缺少 alt')) }}</span>
+                  <code title="{{ image.src }}">{{ image.src }}</code>
+                  <span title="{{ image.alt }}">{{ image.alt or '—' }}</span>
+                </div>
+                {% endfor %}
+              </div>
+            </details>
             {% endif %}
           </section>
 
@@ -268,12 +297,24 @@
       var heading = document.getElementById('seoCurrentPageTitle');
       var pageTitle = detail ? detail.querySelector('.seo-page-title') : null;
       if (heading && pageTitle) heading.textContent = pageTitle.textContent;
+      var selectedLink = document.querySelector('.seo-page-link[data-page-key="' + CSS.escape(pageKey) + '"]');
+      if (selectedLink) {
+        document.getElementById('seoCurrentScore').textContent = selectedLink.dataset.healthScore || '0';
+        document.getElementById('seoCurrentOk').textContent = selectedLink.dataset.okCount || '0';
+        document.getElementById('seoCurrentWarn').textContent = selectedLink.dataset.warnCount || '0';
+        document.getElementById('seoCurrentInfo').textContent = selectedLink.dataset.infoCount || '0';
+      }
       seoRevealAncestors(pageKey);
     }
 
-    function seoToggleSiteSettings() {
-      var panel = document.getElementById('seoSiteSettings');
-      if (panel) panel.hidden = !panel.hidden;
+    function seoOpenSiteSettings() {
+      var dialog = document.getElementById('seoSiteSettings');
+      if (dialog && !dialog.open) dialog.showModal();
+    }
+
+    function seoCloseSiteSettings() {
+      var dialog = document.getElementById('seoSiteSettings');
+      if (dialog && dialog.open) dialog.close();
     }
 
     function seoDirectChildren(nodeId) {

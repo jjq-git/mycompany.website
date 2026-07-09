@@ -1,66 +1,63 @@
-{# 账号管理面板 #}
-<div class="fw-semibold mb-3">账号管理</div>
-<div class="card mb-3">
-  <div class="card-body">
-    <h6 class="card-title">站点与语言</h6>
-    <div class="list-group list-group-flush mb-3">
-      {% for opt in available_sites|default([]) %}
-      <a class="list-group-item list-group-item-action px-0 {% if site and opt.id == site.id %}active{% endif %}"
-         href="{{ request.path }}?site={{ opt.id }}{% if current_lang %}&lang={{ current_lang }}{% endif %}"
-         data-site-id="{{ opt.id }}" onclick="return switchAdminSite(event,this)">
-        {{ opt.name or opt.slug }}{% if (opt.name or opt.slug) != opt.slug %} <span class="small opacity-75">/{{ opt.slug }}</span>{% endif %}
-      </a>
-      {% endfor %}
-    </div>
-    <div class="account-language-list" role="list" aria-label="切换语言">
-      {% for lang in admin_languages|default([]) %}
-      {% set flag_code = 'cn' if lang.code == 'zh-CN' else ('tw' if lang.code == 'zh-TW' else 'us') %}
-      <a class="account-language-link {% if lang.code == current_lang %}active{% endif %}"
-         href="{{ request.path }}?site={{ site.id }}&lang={{ lang.code }}" title="{{ lang.name }}" aria-label="切换到{{ lang.name }}">
-        <img src="{{ url_for('static', filename='flags/' ~ flag_code ~ '.svg') }}" alt=""><span>{{ lang.name }}</span>
-      </a>
-      {% endfor %}
-    </div>
-    <div class="d-grid gap-2 mt-3">
-      <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openTemplatesPanel()">模板库</button>
-      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('core.export_zip') }}">下载站点</a>
-      <button class="btn btn-primary btn-sm" type="button" onclick="doPublish()">发布站点</button>
-    </div>
+{# 账号管理面板；初始化与头像点击共用本模板 #}
+{% if not initial_account_panel|default(false) %}<div class="fw-semibold mb-3">账号管理</div>{% endif %}
+<div class="account-profile">
+  <div class="account-profile-avatar" aria-hidden="true">{{ user.email[:1].upper() }}</div>
+  <div class="account-profile-main">
+    <div class="account-profile-email">{{ user.email }}</div>
+    <div class="account-profile-meta">{{ site_count }} 个站点 · 当前 {{ site.name }}</div>
   </div>
 </div>
-<div class="card mb-3">
-  <div class="card-body">
-    <h6 class="card-title">{{ user.email }}</h6>
-    <p class="text-muted small mb-1">站点数量：{{ site_count }}</p>
-    <p class="text-muted small">当前站点：{{ site.name }} (slug: {{ site.slug }})</p>
-    <div class="d-flex gap-2 mt-3">
-      {# data-ajax-handled="1" 告诉 rightPanelBody 的全局 submit 拦截器跳过此表单，
-         让退出登录走浏览器原生 POST + 302 重定向，避免被 AJAX 接管后拿不到跳转。 #}
-      <form method="post" action="{{ url_for('core.logout') }}" data-ajax-handled="1">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button class="btn btn-outline-secondary btn-sm account-panel-action-btn" type="submit">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          <span>退出登录</span>
-        </button>
-      </form>
-      <button class="btn btn-outline-danger btn-sm account-panel-action-btn" type="button" onclick="showDeleteSiteModal()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-          <path d="M10 11v6"/>
-          <path d="M14 11v6"/>
-          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-        </svg>
-        <span>删除站点</span>
-      </button>
-    </div>
+
+<div class="panel-section account-section">
+  <div class="panel-section-title">当前站点</div>
+  <div class="account-site-list">
+    {% for opt in available_sites|default([]) %}
+    <a class="account-site-item {% if site and opt.id == site.id %}active{% endif %}"
+       href="{{ request.path }}?site={{ opt.id }}{% if current_lang %}&lang={{ current_lang }}{% endif %}"
+       data-site-id="{{ opt.id }}" onclick="return switchAdminSite(event,this)">
+      <span class="account-site-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></span>
+      <span class="account-site-text"><strong>{{ opt.name or opt.slug }}</strong>{% if (opt.name or opt.slug) != opt.slug %}<small>/{{ opt.slug }}</small>{% endif %}</span>
+      {% if site and opt.id == site.id %}<svg class="account-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 4 4L19 6"/></svg>{% endif %}
+    </a>
+    {% endfor %}
   </div>
+</div>
+
+<div class="panel-section account-section">
+  <div class="panel-section-title">网站语言</div>
+  <div class="account-language-list" role="list" aria-label="切换语言">
+    {% for lang in admin_languages|default([]) %}
+    {% set flag_code = 'cn' if lang.code == 'zh-CN' else ('tw' if lang.code == 'zh-TW' else 'us') %}
+    <a class="account-language-link {% if lang.code == current_lang %}active{% endif %}"
+       href="?site={{ site.id }}&lang={{ lang.code }}" data-lang-code="{{ lang.code }}"
+       onclick="return switchAccountLanguage(event,this)" title="{{ lang.name }}" aria-label="切换到{{ lang.name }}">
+      <img src="{{ url_for('static', filename='flags/' ~ flag_code ~ '.svg') }}?v=2" alt=""><span>{{ lang.name }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="panel-section account-section">
+  <div class="panel-section-title">站点操作</div>
+  <div class="account-quick-actions">
+    <button class="account-quick-action" type="button" onclick="openTemplatesPanel()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>模板库</span>
+    </button>
+    <a class="account-quick-action" href="{{ url_for('core.export_zip') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>下载</span>
+    </a>
+    <button class="account-quick-action primary" type="button" onclick="doPublish()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>发布</span>
+    </button>
+  </div>
+</div>
+
+<div class="account-footer-actions">
+  <form method="post" action="{{ url_for('core.logout') }}" data-ajax-handled="1">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="account-text-action" type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg><span>退出登录</span></button>
+  </form>
+  <button class="account-text-action danger" type="button" onclick="showDeleteSiteModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="m8 6 1-3h6l1 3"/><path d="m19 6-1 15H6L5 6"/><path d="M10 11v5M14 11v5"/></svg><span>删除站点</span></button>
 </div>
 
 {# 删除站点确认对话框 #}
@@ -93,6 +90,16 @@
 </div>
 
 <script>
+function switchAccountLanguage(event, link) {
+  if (event) event.preventDefault();
+  var langCode = link && link.dataset ? link.dataset.langCode : '';
+  if (!langCode) return false;
+  var url = new URL(window.location.href);
+  url.searchParams.set('site', '{{ site.id }}');
+  url.searchParams.set('lang', langCode);
+  window.location.assign(url.toString());
+  return false;
+}
 function showDeleteSiteModal() {
   console.log('[DEBUG] showDeleteSiteModal called');
   var modalEl = document.getElementById('deleteSiteModal');
