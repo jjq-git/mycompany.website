@@ -19,8 +19,8 @@
   <span class="text-muted text-nowrap">AI 翻译：当前内容 →</span>
   {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
   <span class="text-muted text-nowrap">AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
-  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:11px;">开始翻译</button>
-  <span class="text-muted text-nowrap" style="font-size:10px;">翻译后请手动检查并保存</span>
+  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:12px;">开始翻译</button>
+  <span class="text-muted text-nowrap" style="font-size:12px;">翻译后请手动检查并保存</span>
 </div>
 {% endif %}
 
@@ -497,7 +497,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
           {% else %}<span class="text-muted" style="font-size:18px">🖼️</span>{% endif %}
         </td>
         <td><strong>{{ it.title or it.name }}</strong></td>
-        <td class="text-muted"><code style="font-size:11px">{{ it.slug }}</code></td>
+        <td class="text-muted"><code style="font-size:12px">{{ it.slug }}</code></td>
         <td class="text-muted small">{{ it.date or '' }}</td>
         <td>
           <div class="dataset-row-actions">

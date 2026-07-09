@@ -1,4 +1,4 @@
-﻿{# 菜单配置面板 #}
+{# 菜单配置面板 #}
 <div class="d-flex align-items-center justify-content-between mb-3">
   <span class="fw-semibold">菜单配置</span>
   <span class="small text-muted">首页固定在第一项</span>
@@ -8,8 +8,8 @@
 <div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
   {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
   <span class="text-muted text-nowrap">🌐 AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
-  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:11px;">从默认语言翻译</button>
-  <span class="text-muted text-nowrap" style="font-size:10px;">翻译后请手动检查并保存</span>
+  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:12px;">从默认语言翻译</button>
+  <span class="text-muted text-nowrap" style="font-size:12px;">翻译后请手动检查并保存</span>
 </div>
 {% endif %}
 {% with messages = get_flashed_messages() %}
@@ -61,7 +61,7 @@
       row.dataset.depth = depth;
       row._item = item;
 
-      var collapseHtml = '<button type="button" class="menu-tree-btn menu-tree-collapse-toggle toggle-collapse" title="' + (isCollapsed ? '展开编辑' : '收起编辑') + '">' + (isCollapsed ? '▶' : '▼') + '</button>';
+      var collapseHtml = '<button type="button" class="menu-tree-btn menu-tree-collapse-toggle toggle-collapse' + (isCollapsed ? ' is-collapsed' : '') + '" title="' + (isCollapsed ? '展开编辑' : '收起编辑') + '" aria-label="' + (isCollapsed ? '展开编辑' : '收起编辑') + '" aria-expanded="' + (!isCollapsed) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>';
 
       // 子菜单计数徽章
       var badgeHtml = childCount > 0 ? '<span class="menu-tree-child-count">' + childCount + '</span>' : '';
@@ -182,24 +182,26 @@
   tree.addEventListener('click', function(e) {
     const row = e.target.closest('.menu-tree-row');
     if (!row) return;
+    const action = e.target.closest('button');
+    if (!action) return;
     syncTreeToItems(tree);
     const parentContainer = row.parentElement;
     const parentRow = parentContainer.closest('.menu-tree-row');
     const parentItems = parentRow ? parentRow._item.children : initialMenu;
     const index = rowsIn(parentContainer).indexOf(row);
-    if (e.target.classList.contains('toggle-collapse')) {
+    if (action.classList.contains('toggle-collapse')) {
       // 折叠/展开子菜单
       row._item._collapsed = !row._item._collapsed;
       render(initialMenu, tree, 0);
-    } else if (e.target.classList.contains('delete-item')) {
+    } else if (action.classList.contains('delete-item')) {
       if (row._item.type !== 'home') parentItems.splice(index, 1);
-    } else if (e.target.classList.contains('add-child')) {
+    } else if (action.classList.contains('add-child')) {
       row._item.children.push(newItem());
       row._item._collapsed = false; // 添加子菜单时自动展开
-    } else if (e.target.classList.contains('move-up') && index > 0) {
+    } else if (action.classList.contains('move-up') && index > 0) {
       const item = parentItems.splice(index, 1)[0];
       parentItems.splice(index - 1, 0, item);
-    } else if (e.target.classList.contains('move-down') && index < parentItems.length - 1) {
+    } else if (action.classList.contains('move-down') && index < parentItems.length - 1) {
       const item = parentItems.splice(index, 1)[0];
       parentItems.splice(index + 1, 0, item);
     } else {

@@ -82,10 +82,7 @@
     <aside class="media-preview-card" aria-label="媒体预览">
       <div class="media-preview-resizer" data-preview-resizer role="separator" aria-orientation="vertical" tabindex="0" title="拖拽调整预览宽度"></div>
       <div class="media-preview-head">
-        <div>
-          <div class="media-preview-label">预览</div>
-          <div class="media-preview-title" id="mediaPreviewTitle">选择一个资源</div>
-        </div>
+        <div class="media-preview-label">预览</div>
       </div>
       <div class="media-preview-body" id="mediaPreviewBody">
         <div class="media-preview-placeholder">
@@ -94,9 +91,11 @@
         </div>
       </div>
       <div class="media-preview-info" id="mediaPreviewInfo" hidden>
-        <div><span>类型</span><strong data-preview-type></strong></div>
-        <div><span>大小</span><strong data-preview-size></strong></div>
-        <div><span>路径</span><code data-preview-url title="点击文件名修改"></code></div>
+        <div class="media-preview-meta-row">
+          <div><span>大小</span><strong data-preview-size></strong></div>
+          <div><span>路径</span><code data-preview-url></code></div>
+        </div>
+        <div class="media-preview-filename"><span>文件名</span><code data-preview-name title="点击修改文件名"></code></div>
       </div>
     </aside>
   </div>
@@ -112,10 +111,10 @@
   var uploadZone = document.getElementById('mediaUploadZone');
   var uploadInput = document.getElementById('mediaUploadInput');
   var mediaCount = panel.querySelector('.media-count');
-  var previewTitle = document.getElementById('mediaPreviewTitle');
   var previewBody = document.getElementById('mediaPreviewBody');
   var previewInfo = document.getElementById('mediaPreviewInfo');
   var previewUrlCode = previewInfo ? previewInfo.querySelector('[data-preview-url]') : null;
+  var previewNameCode = previewInfo ? previewInfo.querySelector('[data-preview-name]') : null;
   var managerLayout = panel.querySelector('.media-manager-layout');
   var previewCard = panel.querySelector('.media-preview-card');
   var previewResizer = panel.querySelector('[data-preview-resizer]');
@@ -168,8 +167,8 @@
   }
 
   function inlineRenameFromPreview() {
-    if (!previewUrlCode) return;
-    var oldName = previewUrlCode.dataset.name || '';
+    if (!previewNameCode) return;
+    var oldName = previewNameCode.dataset.name || '';
     if (!oldName) return;
     var activeCard = grid.querySelector('.media-card.active[data-name="' + oldName.replace(/"/g, '\\"') + '"]') || grid.querySelector('.media-card[data-name="' + oldName.replace(/"/g, '\\"') + '"]');
     var parts = splitFilename(activeCard ? activeCard.dataset.displayName : oldName);
@@ -188,29 +187,29 @@
     row.appendChild(input);
     if (parts.ext) row.appendChild(ext);
     row.appendChild(loading);
-    previewUrlCode.replaceWith(row);
+    previewNameCode.replaceWith(row);
     input.focus();
     input.select();
 
-    function restore(urlText, apiName) {
+    function restore(displayText, apiName) {
       var code = document.createElement('code');
-      code.setAttribute('data-preview-url', '');
-      code.title = '点击文件名修改';
+      code.setAttribute('data-preview-name', '');
+      code.title = '点击修改文件名';
       code.dataset.name = apiName || oldName;
-      code.textContent = urlText;
-      previewUrlCode = code;
+      code.textContent = displayText;
+      previewNameCode = code;
       row.replaceWith(code);
       code.addEventListener('click', inlineRenameFromPreview);
     }
 
     function finish(save) {
       if (!save) {
-        restore(activeCard ? activeCard.dataset.url : previewUrlCode.textContent, oldName);
+        restore(activeCard ? activeCard.dataset.displayName : oldName, oldName);
         return;
       }
       var stem = input.value.trim();
       if (!stem || stem === parts.stem) {
-        restore(activeCard ? activeCard.dataset.url : previewUrlCode.textContent, oldName);
+        restore(activeCard ? activeCard.dataset.displayName : oldName, oldName);
         return;
       }
       var newName = stem + parts.ext;
@@ -239,13 +238,13 @@
           var download = activeCard.querySelector('a[download]');
           if (download) download.href = newUrl;
         }
-        previewTitle.textContent = newName;
         previewBody.querySelectorAll('img,video,iframe').forEach(function(el) { el.src = newUrl; });
-        restore(newUrl, newApiName);
+        if (previewUrlCode) previewUrlCode.textContent = newUrl;
+        restore(newName, newApiName);
         setStatus('文件名已保存', 'success');
       }).catch(function(err) {
         setStatus(err.message || '保存失败', 'danger');
-        restore(activeCard ? activeCard.dataset.url : previewUrlCode.textContent, oldName);
+        restore(activeCard ? activeCard.dataset.displayName : oldName, oldName);
       });
     }
 
@@ -264,15 +263,11 @@
     var displayName = card.dataset.displayName;
     var url = card.dataset.url;
     var category = card.dataset.category;
-    var categoryLabel = card.dataset.categoryLabel;
     var size = card.dataset.size;
-
-    // 更新预览标题
-    previewTitle.textContent = displayName;
 
     // 根据媒体类型渲染预览内容
     if (category === 'image') {
-      previewBody.innerHTML = '<img src="' + url + '" alt="' + displayName + '" style="max-width:100%;height:auto;border-radius:4px;">';
+      previewBody.innerHTML = '<div class="media-preview-zoom-stage" title="移动鼠标查看细节"><img class="media-preview-zoom-image" src="' + url + '" alt="' + displayName + '"></div>';
     } else if (category === 'video') {
       previewBody.innerHTML = '<video src="' + url + '" controls style="max-width:100%;height:auto;border-radius:4px;"></video>';
     } else if (category === 'package') {
@@ -283,17 +278,34 @@
       previewBody.innerHTML = '<div class="media-preview-placeholder"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><div>不支持预览此文件类型</div></div>';
     }
 
-    // 更新信息面板（类型、大小、路径）
+    // 更新信息面板（大小、路径、文件名）
     previewInfo.hidden = false;
-    var typeEl = previewInfo.querySelector('[data-preview-type]');
     var sizeEl = previewInfo.querySelector('[data-preview-size]');
-    if (typeEl) typeEl.textContent = categoryLabel;
     if (sizeEl) sizeEl.textContent = size;
     if (previewUrlCode) {
       previewUrlCode.textContent = url;
-      previewUrlCode.dataset.name = name;
+    }
+    if (previewNameCode) {
+      previewNameCode.textContent = displayName;
+      previewNameCode.dataset.name = name;
     }
   }
+
+  previewBody.addEventListener('pointermove', function(event) {
+    var stage = event.target.closest('.media-preview-zoom-stage');
+    if (!stage) return;
+    var image = stage.querySelector('.media-preview-zoom-image');
+    if (!image) return;
+    var rect = stage.getBoundingClientRect();
+    var x = Math.max(0, Math.min(100, (event.clientX - rect.left) / rect.width * 100));
+    var y = Math.max(0, Math.min(100, (event.clientY - rect.top) / rect.height * 100));
+    image.style.transformOrigin = x + '% ' + y + '%';
+  });
+
+  previewBody.addEventListener('pointerleave', function() {
+    var image = previewBody.querySelector('.media-preview-zoom-image');
+    if (image) image.style.transformOrigin = '50% 50%';
+  });
 
   function deleteCard(card) {
     var name = card.dataset.name;
@@ -301,7 +313,6 @@
       var refs = result.data.refs || [];
       if (refs.length) {
         setStatus('This media is referenced and cannot be deleted.', 'danger');
-        previewTitle.textContent = 'Media is referenced';
         previewBody.innerHTML = '<div class="media-ref-warning">' + refsHtml(refs) + '</div>';
         previewInfo.hidden = true;
         return;
@@ -562,6 +573,6 @@
   applyCurrentFilter();
 
   initPreviewResize();
-  if (previewUrlCode) previewUrlCode.addEventListener('click', inlineRenameFromPreview);
+  if (previewNameCode) previewNameCode.addEventListener('click', inlineRenameFromPreview);
 })();
 </script>

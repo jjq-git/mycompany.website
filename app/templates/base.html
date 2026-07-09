@@ -84,9 +84,49 @@
         <img class="admin-logo" width="28" height="28" src="{{ url_for('static', filename='icon.svg') }}" alt="">
       </a>
 
-      <!-- <div class="header-divider"></div> -->
-
-      <div class="header-site-group" aria-hidden="true"></div>
+      {% if site %}
+      <div class="header-divider header-brand-divider"></div>
+      <div class="header-site-group">
+        <div class="dropdown">
+          <button class="btn btn-sm dropdown-toggle header-site-btn" type="button"
+                  data-bs-toggle="dropdown" aria-expanded="false" aria-label="选择站点">
+            {{ site.name or site.slug }}
+          </button>
+          <ul class="dropdown-menu">
+            <li><h6 class="dropdown-header">切换站点</h6></li>
+            {% for opt in available_sites|default([]) %}
+            <li>
+              <a class="dropdown-item{% if opt.id == site.id %} active{% endif %}"
+                 href="{{ request.path }}?site={{ opt.id }}{% if current_lang %}&lang={{ current_lang }}{% endif %}"
+                 data-site-id="{{ opt.id }}" onclick="return switchAdminSite(event,this)">
+                <span class="header-site-option">
+                  <strong>{{ opt.name or opt.slug }}</strong>
+                  {% if (opt.name or opt.slug) != opt.slug %}<small>/{{ opt.slug }}</small>{% endif %}
+                </span>
+                {% if opt.id == site.id %}
+                <svg class="header-site-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+                {% endif %}
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      <div class="header-divider header-brand-divider"></div>
+        <div class="header-flags" role="list" aria-label="选择语言">
+          {% for lang in admin_languages|default([]) %}
+          {% set flag_code = 'cn' if lang.code == 'zh-CN' else ('tw' if lang.code == 'zh-TW' else 'us') %}
+          <a class="header-flag-link{% if lang.code == current_lang %} active{% endif %}"
+             href="?site={{ site.id }}&lang={{ lang.code }}"
+             data-lang-code="{{ lang.code }}"
+             onclick="return switchAccountLanguage(event,this)"
+             title="{{ lang.name }}" aria-label="切换到{{ lang.name }}"
+             {% if lang.code == current_lang %}aria-current="true"{% endif %}>
+            <img src="{{ url_for('static', filename='flags/' ~ flag_code ~ '.svg') }}?v=2" alt="">
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
 
       <div class="flex-grow-1"></div>
 

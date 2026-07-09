@@ -15,8 +15,8 @@
 <div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
   {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
   <span class="text-muted text-nowrap">AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
-  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" type="button" style="font-size:11px;">从默认语言翻译</button>
-  <span class="text-muted text-nowrap" style="font-size:10px;">翻译后请手动检查并保存</span>
+  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" type="button" style="font-size:12px;">从默认语言翻译</button>
+  <span class="text-muted text-nowrap" style="font-size:12px;">翻译后请手动检查并保存</span>
 </div>
 {% endif %}
 
@@ -137,7 +137,7 @@
       <div class="text-center py-4 text-muted" style="border: 2px dashed #dee2e6; border-radius: 8px;">
         <div style="font-size: 32px; margin-bottom: 8px;">📋</div>
         <div class="small">还没有底部栏目</div>
-        <div class="small mt-1" style="font-size: 10px;">点击上方「+ 添加栏目」来创建快速链接、联系方式等</div>
+        <div class="small mt-1" style="font-size: 12px;">点击上方「+ 添加栏目」来创建快速链接、联系方式等</div>
       </div>
       {% endif %}
     </div>

@@ -15,8 +15,8 @@
 <div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
   {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
   <span class="text-muted text-nowrap">AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
-  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" type="button" style="font-size:11px;">从默认语言翻译</button>
-  <span class="text-muted text-nowrap" style="font-size:10px;">翻译后请手动检查并保存</span>
+  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" type="button" style="font-size:12px;">从默认语言翻译</button>
+  <span class="text-muted text-nowrap" style="font-size:12px;">翻译后请手动检查并保存</span>
 </div>
 {% endif %}
 
@@ -30,7 +30,7 @@
     <div class="mb-3 d-flex align-items-center justify-content-between gap-2 rounded px-2 py-2" style="background:#f8fafc;border:1px solid #e2e8f0">
       <div>
         <div class="small fw-semibold">自动保存</div>
-        <div class="text-muted" style="font-size:11px">编辑停止 5 秒后自动保存当前面板表单</div>
+        <div class="text-muted" style="font-size:12px">编辑停止 5 秒后自动保存当前面板表单</div>
       </div>
       <label class="form-check form-switch m-0">
         <input class="form-check-input" type="checkbox" name="admin.auto_save" value="1" {% if admin_settings.get('auto_save') %}checked{% endif %}>
@@ -105,7 +105,7 @@
     </div>
     <div class="mb-2">
       <label class="form-label small mb-1">公司简介</label>
-      <textarea class="form-control form-control-sm" name="company.description" rows="2" maxlength="200" placeholder="一句话简介，SEO 分享摘要">{{ company.get('description', '') }}</textarea>
+      <textarea class="form-control form-control-sm" name="company.description" rows="2" maxlength="200" placeholder="一句话简介，SEO 分享摘要" style="min-height: 110px;">{{ company.get('description', '') }}</textarea>
       <div class="form-text">80-160 字，SEO 和社交分享时作为默认页面简介</div>
     </div>
     <div class="row g-2 mb-0">

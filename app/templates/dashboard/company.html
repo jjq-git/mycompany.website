@@ -24,7 +24,7 @@
       <input type="file" name="company_logo_file" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml,.jpg,.jpeg,.png,.gif,.webp,.svg" onchange="handleCompanyLogoUpload(this)" style="display:none">
     </label>
     <div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>
-    <div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;{% if not current_logo %}display:none{% endif %}">{{ current_logo }}</div>
+    <div class="module-image-url-text mt-1" style="font-size:12px;color:#94a3b8;word-break:break-all;{% if not current_logo %}display:none{% endif %}">{{ current_logo }}</div>
     {# 图片预览容器必须有 min-width/min-height，防止图片为 0×0 时容器塌陷导致移除按钮飘在外面 #}
     <div class="mt-2 module-image-preview" style="{% if not current_logo %}display:none{% endif %}">
       <div style="position:relative;display:inline-block;min-width:44px;min-height:34px;vertical-align:top">
@@ -44,7 +44,7 @@
       <input type="file" name="company_favicon_file" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml,image/x-icon,.jpg,.jpeg,.png,.gif,.webp,.svg,.ico" onchange="handleCompanyFaviconUpload(this)" style="display:none">
     </label>
     <div class="form-text mt-1">浏览器标签页小图标，建议 32×32 或 16×16 像素</div>
-    <div class="module-image-url-text mt-1" style="font-size:11px;color:#94a3b8;word-break:break-all;{% if not current_favicon %}display:none{% endif %}">{{ current_favicon }}</div>
+    <div class="module-image-url-text mt-1" style="font-size:12px;color:#94a3b8;word-break:break-all;{% if not current_favicon %}display:none{% endif %}">{{ current_favicon }}</div>
     {# Favicon 预览容器同样需要 min-width/min-height 防止塌陷 #}
     <div class="mt-2 module-image-preview" style="{% if not current_favicon %}display:none{% endif %}">
       <div style="position:relative;display:inline-block;min-width:36px;min-height:36px;vertical-align:top">
@@ -141,7 +141,7 @@ function showCompanyImageError(img) {
   if (container.querySelector('.image-error-placeholder')) return;
   var errorEl = document.createElement('div');
   errorEl.className = 'image-error-placeholder';
-  errorEl.style.cssText = 'min-width:44px;min-height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px dashed #e5e7eb;border-radius:4px;background:#fef2f2;padding:6px 10px;font-size:11px;color:#dc3545;white-space:nowrap';
+  errorEl.style.cssText = 'min-width:44px;min-height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px dashed #e5e7eb;border-radius:4px;background:#fef2f2;padding:6px 10px;font-size:12px;color:#dc3545;white-space:nowrap';
   errorEl.textContent = '图片加载失败';
   container.insertBefore(errorEl, container.firstChild);
 }
