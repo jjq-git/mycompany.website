@@ -311,7 +311,7 @@ def is_configured():
     return bool(current_app.config.get('TRANSLATION_API_KEY', ''))
 
 
-def generate_seo_description(page_title, page_text, company_name='', lang='zh-CN'):
+def generate_seo_description(page_title, page_text, company_name='', lang='zh-CN', output='description'):
     """调用 AI 生成页面 SEO 简介。
 
     复用翻译服务的 DeepSeek / OpenAI 兼容配置，避免为 SEO 另起一套 API。
@@ -329,16 +329,23 @@ def generate_seo_description(page_title, page_text, company_name='', lang='zh-CN
         'page_title': str(page_title or '').strip(),
         'page_content': str(page_text or '').strip()[:2200],
     }, ensure_ascii=False, indent=2)
-    prompt = _SEO_DESCRIPTION_PROMPT.format(lang=lang, input_json=input_json)
+    if output == 'title':
+        prompt = (
+            f'请根据以下 JSON 为网页生成一个准确、自然的 SEO 标题，语言为 {lang}。'
+            '只输出标题，不加引号、解释或 Markdown；避免关键词堆砌，最长 60 个字符。\n'
+            f'{input_json}'
+        )
+    else:
+        prompt = _SEO_DESCRIPTION_PROMPT.format(lang=lang, input_json=input_json)
 
     payload = json.dumps({
         'model': model,
         'messages': [
-            {'role': 'system', 'content': '你是专业 SEO 文案助手，只输出一条 meta description。'},
+            {'role': 'system', 'content': '你是专业 SEO 文案助手，只输出一个 SEO 标题。' if output == 'title' else '你是专业 SEO 文案助手，只输出一条 meta description。'},
             {'role': 'user', 'content': prompt},
         ],
         'temperature': 0.4,
-        'max_tokens': 220,
+        'max_tokens': 100 if output == 'title' else 220,
     }, ensure_ascii=False).encode('utf-8')
 
     url = f'{api_base.rstrip("/")}/chat/completions'
@@ -378,4 +385,8 @@ def generate_seo_description(page_title, page_text, company_name='', lang='zh-CN
 
     content = content.strip().strip('"').strip("'").strip()
     # 兜底裁剪：模型偶尔会超长，保存前压到搜索结果可接受范围。
-    return content[:180].rstrip()
+    return content[:60 if output == 'title' else 180].rstrip()
+
+
+def generate_seo_title(page_title, page_text, company_name='', lang='zh-CN'):
+    return generate_seo_description(page_title, page_text, company_name=company_name, lang=lang, output='title')

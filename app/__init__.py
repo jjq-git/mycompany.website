@@ -102,13 +102,8 @@ def create_app(config_override=None):
 
     @app.route('/favicon.ico', endpoint='favicon')
     def _serve_favicon():
-        svg = (
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
-            '<rect width="32" height="32" rx="7" fill="#2563eb"/>'
-            '<path d="M9 21V11h3.2l3.8 5.6 3.8-5.6H23v10h-3v-5.3l-3.2 4.6h-1.6L12 15.7V21H9z" fill="white"/>'
-            '</svg>'
-        )
-        return app.response_class(svg, mimetype='image/svg+xml')
+        return send_from_directory(str((Path(__file__).parent / 'static').resolve()), 'icon.svg',
+                                   mimetype='image/svg+xml')
 
     # 自定义 /static/ 路由（static_folder=None，Werkzeug 不拦截，请求会到达这里）
     # 搜索优先级：

@@ -29,7 +29,7 @@ _LIVE_PREVIEW_CACHE_MAX = 128
 
 from . import datasets, style_registry
 from . import menu as menu_lib
-from .translator import (generate_seo_description,
+from .translator import (generate_seo_description, generate_seo_title,
                          is_configured as translation_configured,
                          translate_json)
 from .builder import build_site, build_template_preview, render_site_page
@@ -1365,6 +1365,22 @@ def _seo_status(description, auto_desc):
     return 'warn', '缺少内容', '页面内容不足，建议手动填写'
 
 
+def _seo_page_score(title, description, auto_desc):
+    """按可解释的页面内容完整度换算为 1～5 分。"""
+    title_len = len(_plain_text(title))
+    description_len = len(_plain_text(description))
+    score = 1
+    if title_len:
+        score += 1
+    if 10 <= title_len <= 60:
+        score += 1
+    if description or auto_desc:
+        score += 1
+    if 50 <= description_len <= 180:
+        score += 1
+    return min(score, 5)
+
+
 def _seo_row_for_page(site, lang, page_key, title, page, row_id=None, depth=0, parent_id=''):
     page = page if isinstance(page, dict) else {}
     auto_desc = _auto_page_description(page)
@@ -1384,6 +1400,7 @@ def _seo_row_for_page(site, lang, page_key, title, page, row_id=None, depth=0, p
         'status': status,
         'status_label': status_label,
         'status_detail': status_detail,
+        'score': _seo_page_score(page.get('title') or title or page_key, description, auto_desc),
         'save_url': url_for('core.seo_page_update', page_key=page_key, site=site.id, lang=lang),
         'generate_url': url_for('core.seo_page_generate', page_key=page_key, site=site.id, lang=lang),
     }
@@ -1411,6 +1428,7 @@ def _seo_row_for_detail(site, lang, dataset_key, item, depth=0, parent_id=''):
         'status': status,
         'status_label': status_label,
         'status_detail': status_detail,
+        'score': _seo_page_score(title, description, auto_desc),
         'save_url': url_for('core.seo_detail_update', dataset_key=dataset_key, item_key=slug, site=site.id, lang=lang),
         'generate_url': url_for('core.seo_detail_generate', dataset_key=dataset_key, item_key=slug, site=site.id, lang=lang),
     }
@@ -1473,6 +1491,38 @@ def _seo_page_rows(site, lang, settings, pages, data, meta):
     return rows
 
 
+def _inspect_built_seo_page(site, lang, default_lang, row):
+    """Inspect the final generated HTML for checks that source YAML cannot prove."""
+    output_root = Path(current_app.config['OUTPUT_DIR']) / str(site.id)
+    lang_root_path = output_root if lang == default_lang else output_root / lang
+    parts = [] if row.get('key') == 'home' else (
+        [row.get('dataset_key'), row.get('key')] if row.get('kind') == 'detail' else [row.get('key')]
+    )
+    html_path = lang_root_path.joinpath(*(str(p) for p in parts if p), 'index.html')
+    result = {
+        'built': False, 'path': '/' + '/'.join(str(p) for p in parts if p) + ('/' if parts else ''),
+        'h1_count': 0, 'heading_issue': False, 'images_total': 0,
+        'images_missing_alt': 0, 'images_empty_alt': 0, 'has_jsonld': False,
+        'has_open_graph': False, 'has_twitter_card': False, 'noindex': False,
+    }
+    if not html_path.exists():
+        return result
+    text = html_path.read_text(encoding='utf-8', errors='replace')
+    result['built'] = True
+    levels = [int(v) for v in re.findall(r'<h([1-6])\b', text, flags=re.I)]
+    result['h1_count'] = levels.count(1)
+    result['heading_issue'] = any(b > a + 1 for a, b in zip(levels, levels[1:]))
+    images = re.findall(r'<img\b[^>]*>', text, flags=re.I)
+    result['images_total'] = len(images)
+    result['images_missing_alt'] = sum(1 for tag in images if not re.search(r'\balt\s*=', tag, flags=re.I))
+    result['images_empty_alt'] = sum(1 for tag in images if re.search(r'\balt\s*=\s*([\'"])\s*\1', tag, flags=re.I))
+    result['has_jsonld'] = bool(re.search(r'type\s*=\s*([\'"])application/ld\+json\1', text, flags=re.I))
+    result['has_open_graph'] = bool(re.search(r'property\s*=\s*([\'"])og:', text, flags=re.I))
+    result['has_twitter_card'] = bool(re.search(r'name\s*=\s*([\'"])twitter:card\1', text, flags=re.I))
+    result['noindex'] = bool(re.search(r'<meta\b[^>]*content\s*=\s*([\'"])[^\'"]*noindex', text, flags=re.I))
+    return result
+
+
 def _seo_health_report(site, lang=None):
     """生成 SEO 健康检查报告。
 
@@ -1532,6 +1582,8 @@ def _seo_health_report(site, lang=None):
         data[dataset_key] = read_yaml(site.id, f'data/{data_file.name}', default=[], lang=storage_lang)
 
     seo_pages = _seo_page_rows(site, lang, settings, pages, data, meta)
+    for row in seo_pages:
+        row['inspection'] = _inspect_built_seo_page(site, lang, default_lang, row)
 
     # 只检查菜单会实际渲染的页面/详情页，避免把孤立草稿 YAML 当成 SEO 问题。
     menu_items = menu_lib.ensure_home(
@@ -1605,6 +1657,18 @@ def _seo_health_report(site, lang=None):
             missing_output_files.append(filename)
     if missing_output_files:
         add('warn', 'SEO 附属文件尚未生成', '点击预览、导出或发布后会自动生成 sitemap.xml、robots.txt 和 llms.txt。')
+    robots_path = output_root / 'robots.txt'
+    if robots_path.exists():
+        robots_text = robots_path.read_text(encoding='utf-8', errors='replace')
+        if re.search(r'(?im)^\s*Disallow\s*:\s*/\s*$', robots_text):
+            add('warn', 'robots.txt 可能屏蔽全站', '发现 Disallow: /，请确认这不是生产站点规则。')
+        else:
+            add('ok', 'robots.txt 未发现全站屏蔽', '未发现 Disallow: / 规则。')
+    noindex_pages = [row['inspection']['path'] for row in seo_pages if row['inspection'].get('noindex')]
+    if noindex_pages:
+        add('warn', f'{len(noindex_pages)} 个页面包含 noindex', '、'.join(noindex_pages[:8]))
+    else:
+        add('ok', '页面未发现 noindex', '已生成页面中未检测到 noindex。')
 
     warn_count = sum(1 for c in checks if c['status'] == 'warn')
     info_count = sum(1 for c in checks if c['status'] == 'info')
@@ -1752,16 +1816,23 @@ def seo_page_generate(page_key):
         company.get('description') or company.get('intro') or company.get('name') or ''
     )
     page_text = _page_text_for_seo(page) or fallback
+    field = request.form.get('field', 'description')
+    if field not in ('title', 'description'):
+        return jsonify({'ok': False, 'error': '不支持的 SEO 字段'}), 400
+    if not translation_configured():
+        return jsonify({'ok': False, 'error': 'token 不足'}), 402
     if translation_configured():
         try:
-            description = generate_seo_description(page_title, page_text, company_name=company_name, lang=lang)
-            return jsonify({'ok': True, 'description': description, 'source': 'ai'})
+            value = (generate_seo_title(page_title, page_text, company_name=company_name, lang=lang)
+                     if field == 'title' else
+                     generate_seo_description(page_title, page_text, company_name=company_name, lang=lang))
+            payload = {'ok': True, 'field': field, 'value': value, 'source': 'ai'}
+            if field == 'description':
+                payload['description'] = value  # 兼容旧 SEO 弹窗调用方
+            return jsonify(payload)
         except Exception as exc:
-            current_app.logger.warning('AI 生成 SEO 简介失败，回退本地摘要: %s', exc)
-            return jsonify({'ok': True, 'description': fallback, 'source': 'fallback',
-                            'warning': f'AI 生成失败，已回退本地摘要: {exc}'})
-    return jsonify({'ok': True, 'description': fallback, 'source': 'fallback',
-                    'warning': 'AI 未配置，已使用本地摘要'})
+            current_app.logger.warning('AI 生成页面 SEO 字段失败: %s', exc)
+            return jsonify({'ok': False, 'error': f'AI 生成失败: {exc}'}), 502
 
 
 def _load_dataset_for_seo(site_id, dataset_key, storage_lang):
@@ -1831,16 +1902,23 @@ def seo_detail_generate(dataset_key, item_key):
         item.get('body') or item.get('content') or page_title
     )[:180].rstrip()
     page_text = _detail_item_text_for_seo(item) or fallback
+    field = request.form.get('field', 'description')
+    if field not in ('title', 'description'):
+        return jsonify({'ok': False, 'error': '不支持的 SEO 字段'}), 400
+    if not translation_configured():
+        return jsonify({'ok': False, 'error': 'token 不足'}), 402
     if translation_configured():
         try:
-            description = generate_seo_description(page_title, page_text, company_name=company_name, lang=lang)
-            return jsonify({'ok': True, 'description': description, 'source': 'ai'})
+            value = (generate_seo_title(page_title, page_text, company_name=company_name, lang=lang)
+                     if field == 'title' else
+                     generate_seo_description(page_title, page_text, company_name=company_name, lang=lang))
+            payload = {'ok': True, 'field': field, 'value': value, 'source': 'ai'}
+            if field == 'description':
+                payload['description'] = value  # 兼容旧 SEO 弹窗调用方
+            return jsonify(payload)
         except Exception as exc:
-            current_app.logger.warning('AI 生成详情页 SEO 简介失败，回退本地摘要: %s', exc)
-            return jsonify({'ok': True, 'description': fallback, 'source': 'fallback',
-                            'warning': f'AI 生成失败，已回退本地摘要: {exc}'})
-    return jsonify({'ok': True, 'description': fallback, 'source': 'fallback',
-                    'warning': 'AI 未配置，已使用本地摘要'})
+            current_app.logger.warning('AI 生成详情页 SEO 字段失败: %s', exc)
+            return jsonify({'ok': False, 'error': f'AI 生成失败: {exc}'}), 502
 
 
 @bp.route('/company', methods=['GET', 'POST'])
@@ -2850,6 +2928,19 @@ def theme_edit():
             else:
                 # 空值或非法颜色一律清除该键，回退到模板默认色
                 theme.pop(key, None)
+        font_family = request.form.get('font-family-base', '').strip()
+        allowed_fonts = {
+            'system': "-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif",
+            'yahei': "'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', sans-serif",
+            'serif': "Georgia, 'Times New Roman', 'Songti SC', serif",
+        }
+        if font_family in allowed_fonts:
+            theme['font-family-base'] = allowed_fonts[font_family]
+            theme['font-sans'] = allowed_fonts[font_family]
+        font_size = request.form.get('font-size-base', '').strip()
+        if re.fullmatch(r'(?:1[2-9]|2[0-2])px', font_size):
+            theme['font-size-base'] = font_size
+            theme['text-body-md'] = font_size
         # 清理旧版短 key（迁移前遗留数据）
         for old_key in ('accent', 'bg', 'surface', 'text', 'text_muted', 'border'):
             theme.pop(old_key, None)
@@ -2867,11 +2958,16 @@ def theme_edit():
         return redirect(url_for('core.theme_edit', site=site.id))
 
     theme = settings.get('theme') or {}
+    font_value = theme.get('font-family-base', '')
+    font_choice = 'serif' if 'Georgia' in font_value else ('yahei' if 'Microsoft YaHei' in font_value else 'system')
+    font_size_value = theme.get('font-size-base', '16px')
     if is_fragment:
         return render_template('dashboard/panel_theme.html',
-                               user=user, site=site, theme=theme, default_theme=default_theme)
+                               user=user, site=site, theme=theme, default_theme=default_theme,
+                               font_choice=font_choice, font_size_value=font_size_value)
     return render_template('dashboard/theme.html',
-                           user=user, site=site, theme=theme, default_theme=default_theme, active='theme')
+                           user=user, site=site, theme=theme, default_theme=default_theme, active='theme',
+                           font_choice=font_choice, font_size_value=font_size_value)
 
 
 SLUG_PATTERN = re.compile(r'^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$')

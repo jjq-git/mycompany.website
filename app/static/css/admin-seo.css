@@ -140,6 +140,32 @@ body {
   gap: 4px;
 }
 
+.seo-page-node { position:relative; display:flex; align-items:center; }
+.seo-page-node.is-collapsed { display:none; }
+.seo-page-node[data-depth="1"] { padding-left:14px; }
+.seo-page-node[data-depth="2"] { padding-left:28px; }
+.seo-page-node[data-depth="3"] { padding-left:42px; }
+.seo-page-node .seo-page-link { min-width:0; flex:1; }
+.seo-tree-toggle { width:28px; height:32px; flex:0 0 28px; padding:5px; border:0; background:transparent; color:var(--seo-muted); }
+.seo-tree-toggle svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; transition:transform .15s; }
+.seo-tree-toggle.open svg { transform:rotate(90deg); }
+.seo-page-score { display:inline-flex; width:24px; height:24px; align-items:center; justify-content:center; border:1px solid currentColor; border-radius:50%; font-size:12px; font-weight:700; }
+.seo-page-score.score-1,.seo-page-score.score-2 { color:#dc2626; }
+.seo-page-score.score-3 { color:#d97706; }
+.seo-page-score.score-4,.seo-page-score.score-5 { color:#15803d; }
+.seo-page-score .material-symbols-outlined { font-size:24px; }
+.seo-ai-field { display:flex; align-items:stretch; gap:6px; }
+.seo-ai-btn { width:42px; flex:0 0 42px; border:1px solid var(--seo-primary-border); border-radius:7px; background:var(--seo-primary-soft); color:var(--theme-primary); }
+.seo-ai-btn .material-symbols-outlined { font-size:20px; }
+.seo-ai-btn:disabled { opacity:.55; cursor:wait; }
+.seo-page-inspection { margin-top:18px; padding-top:16px; border-top:1px solid var(--seo-border); }
+.seo-page-inspection h3 { font-size:14px; margin:0 0 10px; }
+.seo-inspection-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.seo-inspection-grid > div { display:flex; flex-direction:column; gap:3px; padding:10px; border:1px solid var(--seo-border); border-radius:7px; }
+.seo-inspection-grid span { font-size:13px; }
+.seo-inspection-grid small { color:var(--seo-muted); }
+@media (max-width: 760px) { .seo-inspection-grid { grid-template-columns:1fr; } }
+
 .seo-page-link {
   width: 100%;
   display: grid;
