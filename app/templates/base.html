@@ -81,59 +81,8 @@
     <div class="d-flex align-items-center h-100 px-3 gap-2">
 
       <a href="{{ url_for('core.index') }}" class="d-flex align-items-center gap-2 text-decoration-none">
-        {# 内联 SVG logo — 不依赖外部文件，确保始终显示 #}
-        <svg class="admin-logo" width="28" height="28" viewBox="0 0 28 28" fill="none"
-          xmlns="http://www.w3.org/2000/svg">
-          <rect width="28" height="28" rx="6" fill="var(--bs-primary)" />
-          <rect x="5" y="7" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95" />
-          <rect x="16" y="7" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95" />
-          <rect x="5" y="16" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95" />
-          <rect x="16" y="16" width="7" height="5" rx="1.5" fill="#fff" opacity="0.95" />
-        </svg>
-        <span class="admin-brand">{{ platform_domain }}</span>
-      </a>
-
-      <div class="header-divider"></div>
-
-      <div class="header-site-group">
-        <div class="dropdown">
-          <button class="header-btn header-site-btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
-            data-bs-auto-close="outside" aria-expanded="false" id="headerSiteBtn">
-            {{ site.name or site.slug if site else '未选择' }}
-          </button>
-          <ul class="dropdown-menu" id="siteDropdown">
-            {% for opt in available_sites | default([]) %}
-            <li><a class="dropdown-item {% if site and opt.id == site.id %}active{% endif %}"
-                href="{{ request.path }}?site={{ opt.id }}{% if current_lang %}&lang={{ current_lang }}{% endif %}"
-                data-site-id="{{ opt.id }}" onclick="return switchAdminSite(event, this)">{{
-                opt.name or opt.slug }} <span class="small">/{{ opt.slug }}</span></a></li>
-            {% endfor %}
-          </ul>
-        </div>
-        {% if admin_languages and admin_languages|length > 0 %}
-        <div class="dropdown" id="siteLangDropdown">
-          <button class="header-btn header-site-btn header-lang-btn dropdown-toggle" type="button"
-            data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" id="headerLangBtn">
-            {{ current_language_label }}
-          </button>
-          <ul class="dropdown-menu" id="langDropdown">
-            {% for lang in admin_languages %}
-            <li><a class="dropdown-item {% if lang.code == current_lang %}active{% endif %}"
-                href="{{ request.path }}?site={{ site.id if site else '' }}&lang={{ lang.code }}">{{ lang.name }} ({{
-                lang.code }})</a></li>
-            {% endfor %}
-          </ul>
-        </div>
-        {% endif %}
-      </div>
-
-      <a class="header-btn" href="javascript:void(0)" onclick="openTemplatesPanel()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-        新建站点
+        <img class="admin-logo" width="28" height="28"
+             src="{{ url_for('static', filename='icon.svg') }}" alt="">
       </a>
 
       <div class="flex-grow-1"></div>
@@ -191,23 +140,6 @@
           <circle cx="12" cy="12" r="3" />
         </svg>
       </a>
-      <a class="header-btn" href="{{ url_for('core.export_zip') }}" title="导出" aria-label="导出">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
-      </a>
-      <a class="header-btn header-btn-primary" href="javascript:doPublish()" title="发布" aria-label="发布">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="17 8 12 3 7 8" />
-          <line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
-      </a>
-
       <div class="header-divider"></div>
       {% endif %}
 
@@ -234,30 +166,18 @@
       {# 站点信息区 #}
       <div class="left-nav-site-info px-3 py-2">
         <div class="site-label">{{ site.name or site.slug if site else '未选择' }}</div>
-        <div class="site-name">{{ current_language_label if current_language_label else '' }}</div>
+        {% set flag_map = {'zh-CN':'🇨🇳','zh-TW':'🇹🇼','zh-HK':'🇭🇰','en':'🇺🇸','en-US':'🇺🇸','en-GB':'🇬🇧','ja':'🇯🇵','ja-JP':'🇯🇵','ko':'🇰🇷','ko-KR':'🇰🇷'} %}
+        <div class="site-name"><span aria-hidden="true">{{ flag_map.get(current_lang, '🌐') }}</span> {{ current_language_label if current_language_label else '' }}</div>
       </div>
 
       <div class="flex-grow-1 overflow-auto left-nav-menu">
-        {# ---- 站点 ---- #}
-        <div class="left-nav-section-title">站点</div>
-        <a class="left-nav-item {% if active == 'templates' %}active{% endif %}"
-          href="{{ url_for('core.templates_gallery') }}" data-panel="templates" title="模板库">
-          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="3" width="7" height="7" rx="1" />
-            <rect x="3" y="14" width="7" height="7" rx="1" />
-            <rect x="14" y="14" width="7" height="7" rx="1" />
-          </svg>
-          模板库
-        </a>
-
         {% if site %}
         {# ---- 设置 ---- #}
         <div class="left-nav-section-title">设置</div>
         <div class="left-nav-group" data-level="0">
           <div class="left-nav-parent-row">
-            <span class="left-nav-item left-nav-parent-label flex-grow-1" title="网站设置">
+            <a class="left-nav-item left-nav-parent-label flex-grow-1" href="{{ url_for('core.basic_settings') }}"
+               data-panel="basic_settings" title="网站设置">
               <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3" />
@@ -265,7 +185,7 @@
                   d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
               网站设置
-            </span>
+            </a>
             <button class="left-nav-chevron-btn" type="button" onclick="toggleLeftSubmenu(this)" title="展开/折叠子菜单">
               <svg class="left-nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 18l6-6-6-6"/>

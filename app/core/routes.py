@@ -1365,6 +1365,22 @@ def _seo_status(description, auto_desc):
     return 'warn', '缺少内容', '页面内容不足，建议手动填写'
 
 
+def _seo_five_score(title, description, auto_desc):
+    """内容层的稳定五级分；技术检查在全站设置中单独呈现。"""
+    score = 1
+    title_len = len(_plain_text(title))
+    desc_len = len(_plain_text(description))
+    if title_len:
+        score += 1
+    if 10 <= title_len <= 60:
+        score += 1
+    if description or auto_desc:
+        score += 1
+    if 50 <= desc_len <= 180:
+        score += 1
+    return min(5, score)
+
+
 def _seo_row_for_page(site, lang, page_key, title, page, row_id=None, depth=0, parent_id=''):
     page = page if isinstance(page, dict) else {}
     auto_desc = _auto_page_description(page)
@@ -1384,6 +1400,7 @@ def _seo_row_for_page(site, lang, page_key, title, page, row_id=None, depth=0, p
         'status': status,
         'status_label': status_label,
         'status_detail': status_detail,
+        'score': _seo_five_score(page.get('title') or title or page_key, description, auto_desc),
         'save_url': url_for('core.seo_page_update', page_key=page_key, site=site.id, lang=lang),
         'generate_url': url_for('core.seo_page_generate', page_key=page_key, site=site.id, lang=lang),
     }
@@ -1411,6 +1428,7 @@ def _seo_row_for_detail(site, lang, dataset_key, item, depth=0, parent_id=''):
         'status': status,
         'status_label': status_label,
         'status_detail': status_detail,
+        'score': _seo_five_score(title, description, auto_desc),
         'save_url': url_for('core.seo_detail_update', dataset_key=dataset_key, item_key=slug, site=site.id, lang=lang),
         'generate_url': url_for('core.seo_detail_generate', dataset_key=dataset_key, item_key=slug, site=site.id, lang=lang),
     }

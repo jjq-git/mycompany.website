@@ -116,6 +116,42 @@ body {
   overflow: hidden;
 }
 
+.seo-sidebar-toggle {
+  border: 0;
+  background: transparent;
+  color: var(--seo-muted);
+  font-size: 18px;
+}
+
+.seo-sidebar.collapsed .seo-page-link:not(.active) {
+  display: none;
+}
+
+.seo-page-score {
+  display: inline-flex;
+  align-items: center;
+}
+
+.seo-page-score .material-symbols-outlined { font-size: 25px; }
+.seo-page-score.score-1, .seo-page-score.score-2 { color: #dc2626; }
+.seo-page-score.score-3 { color: #d97706; }
+.seo-page-score.score-4, .seo-page-score.score-5 { color: #15803d; }
+
+.seo-ai-field {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.seo-ai-btn {
+  width: 42px;
+  flex: 0 0 42px;
+  border: 1px solid var(--seo-primary-border);
+  border-radius: 7px;
+  background: var(--seo-primary-soft);
+  color: var(--theme-primary);
+}
+
 .seo-sidebar-head {
   display: flex;
   align-items: center;
