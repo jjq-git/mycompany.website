@@ -4254,7 +4254,7 @@ def detail_templates_panel(dataset_key):
     if request.method == 'POST':
         page = _ensure_page_detail_templates(site.id, dataset_key, page_label)
         templates = _detail_templates_for_page(page, dataset_key, page_label)
-        action = request.form.get('action', '').strip()
+        action = request.form.get('_template_action', request.form.get('action', '')).strip()
         template_id = request.form.get('template_id', '').strip()
 
         if action == 'add':

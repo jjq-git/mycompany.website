@@ -16,7 +16,7 @@
 <div class="mb-3 p-2 rounded" style="background:#f8f9fa;border:1px solid #e9ecef">
   <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}" class="d-flex gap-2">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="action" value="add">
+    <input type="hidden" name="_template_action" value="add">
     <input type="text" class="form-control form-control-sm" name="name" placeholder="新模板名称，例如 LED灯条参数详情">
     <button class="btn btn-sm btn-primary text-nowrap" type="submit">创建</button>
   </form>
@@ -49,7 +49,7 @@
       {% if not is_default %}
       <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="action" value="set_default">
+        <input type="hidden" name="_template_action" value="set_default">
         <input type="hidden" name="template_id" value="{{ tpl_id }}">
         <button class="btn btn-sm btn-outline-primary" type="submit">设为默认</button>
       </form>
@@ -57,7 +57,7 @@
 
       <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}" class="d-flex gap-1">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="action" value="copy">
+        <input type="hidden" name="_template_action" value="copy">
         <input type="hidden" name="template_id" value="{{ tpl_id }}">
         <input type="text" class="form-control form-control-sm" name="name" placeholder="副本名称" style="width:130px">
         <button class="btn btn-sm btn-outline-secondary" type="submit">复制</button>
@@ -66,7 +66,7 @@
       {% if not is_default %}
       <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="_template_action" value="delete">
         <input type="hidden" name="template_id" value="{{ tpl_id }}">
         <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('删除这个详情模板？当前有 {{ (template_usage | default({})).get(tpl_id, 0) }} 条数据选择它，删除后会自动回退到默认模板。')">删除</button>
       </form>
@@ -83,7 +83,7 @@
 
 <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang, template_id=tpl_id) }}" id="detailTemplateForm" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <input type="hidden" name="action" value="save_modules">
+  <input type="hidden" name="_template_action" value="save_modules">
   <input type="hidden" name="template_id" value="{{ tpl_id }}">
   <input type="hidden" name="module_count" id="moduleCountTpl" value="0">
 
