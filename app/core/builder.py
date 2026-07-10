@@ -297,6 +297,7 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
                     for k, v in data_dict.items():
                         if v not in (None, '', [], {}):
                             merged_item[k] = v
+                    merged_item = _apply_item_data_rules(merged_item)
                     data_dict = merged_item
             context = {
                 'all_datasets': jinja_ctx.get('all_datasets', {}),
@@ -438,6 +439,22 @@ def _company_description(settings):
     )
 
 
+def _format_detail_rule(rule, item, settings, t=None):
+    if not rule:
+        return ''
+    class _SafeValues(dict):
+        def __missing__(self, key):
+            return ''
+    values = {}
+    if isinstance(item, dict):
+        values.update({k: '' if v is None else v for k, v in item.items() if not isinstance(v, (dict, list))})
+    values['site_name'] = _company_name(settings, t)
+    try:
+        return str(rule).format_map(_SafeValues(values)).strip()
+    except (KeyError, ValueError):
+        return str(rule).strip()
+
+
 def _seo_title_description(task, ctx, settings, t):
     """按页面类型推导 title/description，避免让店主手写 SEO。"""
     company_name = _company_name(settings, t)
@@ -445,10 +462,22 @@ def _seo_title_description(task, ctx, settings, t):
     page_key = task.get('page_key', '')
     t_pages = (t or {}).get('pages') if isinstance((t or {}).get('pages'), dict) else {}
 
-    item = task.get('item') if isinstance(task.get('item'), dict) else {}
+    item = ctx.get('item') if isinstance(ctx.get('item'), dict) else (
+        task.get('item') if isinstance(task.get('item'), dict) else {}
+    )
     if task.get('type') == 'detail':
-        title = _first_text(item.get('seo_title'), item.get('title'), item.get('name'), page.get('title'), page_key)
-        description = _first_text(item.get('seo_description'), item.get('summary'), item.get('description'), item.get('excerpt'))
+        detail_template = _find_detail_template(page, task.get('dataset_key') or page_key, item.get('template_id'))
+        template_seo = detail_template.get('seo') if isinstance(detail_template.get('seo'), dict) else {}
+        template_title = _format_detail_rule(template_seo.get('title'), item, settings, t)
+        template_description = _format_detail_rule(template_seo.get('description'), item, settings, t)
+        title = _first_text(item.get('seo_title'), template_title, item.get('title'), item.get('name'), page.get('title'), page_key)
+        description = _first_text(
+            item.get('seo_description'),
+            template_description,
+            item.get('summary'),
+            item.get('description'),
+            item.get('excerpt'),
+        )
     elif task.get('type') == 'home':
         title = _first_text(page.get('title'), company_name)
         description = _first_text(page.get('description'), _company_description(settings))
@@ -536,7 +565,25 @@ def _build_seo_context(task, ctx, common, meta):
     title, description = _seo_title_description(task, ctx, settings, t)
     company = settings.get('company') or {}
     page = ctx.get('page') if isinstance(ctx.get('page'), dict) else {}
+    item = ctx.get('item') if isinstance(ctx.get('item'), dict) else (
+        task.get('item') if isinstance(task.get('item'), dict) else {}
+    )
+    template_image = ''
+    if task.get('type') == 'detail':
+        detail_template = _find_detail_template(page, task.get('dataset_key') or task.get('page_key'), item.get('template_id'))
+        template_seo = detail_template.get('seo') if isinstance(detail_template.get('seo'), dict) else {}
+        image_rule = item.get('seo_image') or template_seo.get('image')
+        if image_rule and isinstance(image_rule, str):
+            template_image = item.get(image_rule) or image_rule
+            if image_rule == 'cover' and not template_image:
+                template_image = _first_text(item.get('image'), item.get('photo'), item.get('logo'))
+            if image_rule == 'detail_images':
+                images = item.get('detail_images')
+                if isinstance(images, list) and images:
+                    first_image = images[0]
+                    template_image = first_image.get('url') if isinstance(first_image, dict) else first_image
     image = _first_text(
+        template_image,
         page.get('og_image'),
         page.get('cover'),
         company.get('og_image'),
@@ -943,6 +990,72 @@ def _default_detail_template(dataset_key):
             'image': 'cover',
         },
     }
+
+
+def _detail_bool(value, default=True):
+    if value in (None, ''):
+        return default
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() not in ('false', '0', 'no', 'off')
+
+
+def _detail_int(value, default=None):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _apply_item_data_rules(item_data):
+    if not isinstance(item_data, dict):
+        return item_data
+
+    if item_data.get('text_color') and not item_data.get('style_font-color'):
+        item_data['style_font-color'] = item_data.get('text_color')
+    if item_data.get('section_bg') and not item_data.get('style_bg-color'):
+        item_data['style_bg-color'] = item_data.get('section_bg')
+
+    if not _detail_bool(item_data.get('show_detail_images'), True):
+        item_data['_hidden_detail_images'] = True
+        item_data['detail_images'] = []
+    else:
+        detail_images = item_data.get('detail_images')
+        if isinstance(detail_images, list):
+            max_images = _detail_int(item_data.get('detail_images_max') or item_data.get('images_max'))
+            if max_images is not None and max_images >= 0:
+                item_data['detail_images'] = detail_images[:max_images]
+        if not item_data.get('detail_images'):
+            item_data['_hidden_detail_images'] = True
+
+    if not _detail_bool(item_data.get('show_specs'), True):
+        item_data['_hidden_specs'] = True
+        item_data['specs'] = []
+    else:
+        specs = item_data.get('specs')
+        if isinstance(specs, dict):
+            specs = [{'name': k, 'value': v} for k, v in specs.items()]
+            item_data['specs'] = specs
+        if isinstance(specs, list):
+            max_rows = _detail_int(item_data.get('specs_max_rows') or item_data.get('table_rows'))
+            if max_rows is not None and max_rows >= 0:
+                item_data['specs'] = specs[:max_rows]
+        if not item_data.get('specs'):
+            item_data['_hidden_specs'] = True
+
+    if not _detail_bool(item_data.get('show_tags'), True):
+        item_data['_hidden_tags'] = True
+    if not _detail_bool(item_data.get('show_link'), True) or not (
+        item_data.get('link_url') or item_data.get('button_url') or item_data.get('download_url')
+    ):
+        item_data['_hidden_link'] = True
+        item_data['_hidden_button'] = True
+
+    if not _detail_bool(item_data.get('show_arrows'), True):
+        item_data['_hidden_arrows'] = True
+    if not _detail_bool(item_data.get('show_dots'), True):
+        item_data['_hidden_dots'] = True
+    return item_data
 
 
 def _detail_templates_for_page(page, dataset_key):

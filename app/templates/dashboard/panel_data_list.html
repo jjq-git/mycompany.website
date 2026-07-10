@@ -73,7 +73,7 @@
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">详情模板</label>
     {% set current_template_id = edit_item.template_id | default(default_template_id) %}
-    <select class="form-select form-select-sm" name="template_id">
+    <select class="form-select form-select-sm" name="template_id" id="detailTemplateSelect">
       {% for tpl in detail_templates | default([]) %}
       {% set tpl_id = tpl.id | default(tpl.get('id')) %}
       <option value="{{ tpl_id }}" {% if tpl_id == current_template_id %}selected{% endif %}>
@@ -82,6 +82,138 @@
       {% endfor %}
     </select>
     <div class="form-text">未做单独自定义时，此条详情页会跟随所选模板。</div>
+  </div>
+
+  {% set current_req = (detail_requirements | default({})).get(current_template_id, {}) %}
+  {% set gallery_cfg = edit_item.detail_gallery if edit_item.detail_gallery is mapping else {} %}
+  {% set gallery_images = gallery_cfg.images if gallery_cfg.images is iterable and gallery_cfg.images is not string else (edit_item.detail_images if edit_item.detail_images is iterable and edit_item.detail_images is not string else []) %}
+  {% set specs_items = edit_item.specs if edit_item.specs is iterable and edit_item.specs is not string else [] %}
+  {% set tags_val = edit_item.tags | join(', ') if edit_item.tags is iterable and edit_item.tags is not string else (edit_item.tags or '') %}
+
+  <div class="p-2 rounded mb-2" style="background:#fff;border:1px solid #e9ecef">
+    <div class="small fw-semibold mb-2">基础内容</div>
+    <div class="mb-2">
+      <label class="form-label small mb-1 text-muted">Slug <span class="text-danger">*</span></label>
+      <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required minlength="3" maxlength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" title="只能用小写字母、数字、连字符，3-30 字符，不能以连字符开头或结尾">
+    </div>
+    <div class="mb-2">
+      <label class="form-label small mb-1 text-muted">标题</label>
+      <input type="text" class="form-control form-control-sm" name="title" value="{{ edit_item.title or edit_item.name or '' }}">
+    </div>
+    <div class="mb-2">
+      <label class="form-label small mb-1 text-muted">简介</label>
+      <textarea class="form-control form-control-sm" name="summary" rows="2">{{ edit_item.summary or edit_item.description or edit_item.excerpt or '' }}</textarea>
+    </div>
+    <div class="row g-2">
+      <div class="col-6">
+        <label class="form-label small mb-1 text-muted">分类</label>
+        <input type="text" class="form-control form-control-sm" name="category" value="{{ edit_item.category or '' }}">
+      </div>
+      <div class="col-6">
+        <label class="form-label small mb-1 text-muted">标签</label>
+        <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val }}" placeholder="多个用逗号或空格分隔">
+      </div>
+    </div>
+  </div>
+
+  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="media" style="background:#fff;border:1px solid #e9ecef">
+    <div class="small fw-semibold mb-2">媒体</div>
+    {% set item_media_type = edit_item.media_type or ('embed' if edit_item.embed_url else ('video' if edit_item.video else 'image')) %}
+    <div class="mb-2">
+      <label class="form-label small mb-1 text-muted">媒体类型</label>
+      <select class="form-select form-select-sm" name="media_type">
+        <option value="image" {% if item_media_type == 'image' %}selected{% endif %}>图片</option>
+        <option value="video" {% if item_media_type == 'video' %}selected{% endif %}>视频</option>
+        <option value="embed" {% if item_media_type == 'embed' %}selected{% endif %}>嵌入页面</option>
+      </select>
+    </div>
+    <div class="mb-2">
+      <label class="form-label small mb-1 text-muted">封面图</label>
+      {% set cover_val = edit_item.cover or edit_item.image or edit_item.photo or edit_item.logo or '' %}
+      <input type="text" class="form-control form-control-sm" name="cover" value="{{ cover_val }}" placeholder="图片 URL 或上传">
+      <input type="file" class="form-control form-control-sm mt-1" name="cover_file" accept="image/*,.svg,.svgz">
+      {% if cover_val %}<img src="{{ cover_val }}" alt="预览" style="margin-top:6px;max-width:200px;max-height:120px;border-radius:6px;">{% endif %}
+    </div>
+    <div class="mb-2">
+      <label class="form-label small mb-1 text-muted">视频</label>
+      <input type="text" class="form-control form-control-sm" name="video" value="{{ edit_item.video or '' }}" placeholder="MP4/WebM 视频 URL 或上传">
+      <input type="file" class="form-control form-control-sm mt-1" name="video_file" accept="video/mp4,video/webm,video/ogg,video/quicktime">
+    </div>
+    <div>
+      <label class="form-label small mb-1 text-muted">嵌入页面</label>
+      <input type="text" class="form-control form-control-sm" name="embed_url" value="{{ edit_item.embed_url or '' }}" placeholder="嵌入页面 URL，或上传包含 index.html 的 ZIP">
+      <input type="file" class="form-control form-control-sm mt-1" name="embed_url_file" accept=".zip">
+    </div>
+  </div>
+
+  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="body" style="background:#fff;border:1px solid #e9ecef">
+    <div class="small fw-semibold mb-2">正文</div>
+    <textarea class="form-control form-control-sm" name="body" rows="8" style="min-height:160px; font-family:monospace; white-space:pre-wrap;">{{ edit_item.body or edit_item.content or '' }}</textarea>
+  </div>
+
+  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="detail_images" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_images') %}display:none{% endif %}">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="small fw-semibold">细节图</div>
+      <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDatasetDetailImage()">+ 添加图片</button>
+    </div>
+    <input type="hidden" name="detail_gallery_visible" value="{{ 'true' if gallery_cfg.get('visible', True) is not sameas false else 'false' }}">
+    <input type="hidden" name="detail_gallery_count" id="detailGalleryCount" value="{{ gallery_images|length }}">
+    <div id="detailGalleryList">
+      {% for img in gallery_images %}
+      {% set img_url = img.url if img is mapping else img %}
+      {% set img_alt = img.alt if img is mapping else '' %}
+      <div class="border rounded p-2 mb-2 detail-gallery-item" data-gallery-index="{{ loop.index0 }}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="small fw-semibold">图片 {{ loop.index }}</span>
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.detail-gallery-item').remove();reindexDatasetDetailImages()">删除</button>
+        </div>
+        <input type="text" class="form-control form-control-sm mb-1" name="detail_gallery_{{ loop.index0 }}_url" value="{{ img_url }}" placeholder="图片 URL">
+        <input type="text" class="form-control form-control-sm mb-1" name="detail_gallery_{{ loop.index0 }}_url_alt" value="{{ img_alt }}" placeholder="图片说明">
+        <input type="file" class="form-control form-control-sm" name="detail_gallery_{{ loop.index0 }}_url_file" accept="image/*">
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="specs" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('specs') %}display:none{% endif %}">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="small fw-semibold">规格参数</div>
+      <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDatasetSpec()">+ 添加规格</button>
+    </div>
+    <input type="hidden" name="specs_count" id="datasetSpecsCount" value="{{ specs_items|length }}">
+    <div id="datasetSpecsList">
+      {% for spec in specs_items %}
+      <div class="border rounded p-2 mb-2 dataset-spec-item" data-spec-index="{{ loop.index0 }}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="small fw-semibold">规格 {{ loop.index }}</span>
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.dataset-spec-item').remove();reindexDatasetSpecs()">删除</button>
+        </div>
+        <div class="row g-2">
+          <div class="col-6"><input type="text" class="form-control form-control-sm" name="specs_{{ loop.index0 }}_name" value="{{ spec.name if spec is mapping else '' }}" placeholder="参数名"></div>
+          <div class="col-6"><input type="text" class="form-control form-control-sm" name="specs_{{ loop.index0 }}_value" value="{{ spec.value if spec is mapping else '' }}" placeholder="参数值"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="link" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('link') %}display:none{% endif %}">
+    <div class="small fw-semibold mb-2">链接</div>
+    <div class="mb-2">
+      <label class="form-label small mb-1 text-muted">链接文字</label>
+      <input type="text" class="form-control form-control-sm" name="link_text" value="{{ edit_item.link_text or edit_item.button_text or '' }}">
+    </div>
+    <div>
+      <label class="form-label small mb-1 text-muted">链接地址</label>
+      <input type="text" class="form-control form-control-sm" name="link_url" value="{{ edit_item.link_url or edit_item.button_url or edit_item.download_url or '' }}">
+    </div>
+  </div>
+
+  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="seo" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('seo') %}display:none{% endif %}">
+    <div class="small fw-semibold mb-2">SEO 覆盖</div>
+    <input type="text" class="form-control form-control-sm mb-2" name="seo_title" value="{{ edit_item.seo_title or '' }}" placeholder="SEO 标题，不填则使用模板规则">
+    <textarea class="form-control form-control-sm mb-2" name="seo_description" rows="2" placeholder="SEO 描述，不填则使用模板规则">{{ edit_item.seo_description or '' }}</textarea>
+    <input type="text" class="form-control form-control-sm" name="seo_image" value="{{ edit_item.seo_image or '' }}" placeholder="SEO 图片字段或 URL">
   </div>
 
   {% set detail_btn_raw = edit_item.get('show_detail_btn') %}
@@ -155,6 +287,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   var SITE_ID = '{{ site.id }}';
   var restoringDatasetModules = true;
   var HAS_CUSTOM_MODULES = {{ 'true' if has_custom_modules else 'false' }};
+  var DETAIL_REQUIREMENTS = {{ detail_requirements | default({}) | tojson }};
   var datasetForm = document.getElementById('datasetEditForm');
   if (datasetForm) {
     datasetForm.addEventListener('submit', function(e) {
@@ -169,6 +302,82 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   window.blockLibrary = blockLibrary;
   var styleRegistry = JSON.parse((document.getElementById('styleRegistryDsJson') || {}).textContent || '{}');
   var iconList = JSON.parse((document.getElementById('iconListDsJson') || {}).textContent || '[]');
+
+  function applyTemplateFieldVisibility() {
+    var select = document.getElementById('detailTemplateSelect');
+    var tplId = select ? select.value : '';
+    var req = DETAIL_REQUIREMENTS[tplId] || {};
+    document.querySelectorAll('.detail-field-section').forEach(function(section) {
+      var key = section.getAttribute('data-field-section');
+      if (!key || key === 'media' || key === 'body') {
+        section.style.display = '';
+        return;
+      }
+      section.style.display = req[key] ? '' : 'none';
+    });
+  }
+  var detailTemplateSelect = document.getElementById('detailTemplateSelect');
+  if (detailTemplateSelect) {
+    detailTemplateSelect.addEventListener('change', applyTemplateFieldVisibility);
+    applyTemplateFieldVisibility();
+  }
+
+  window.addDatasetDetailImage = function() {
+    var list = document.getElementById('detailGalleryList');
+    var countEl = document.getElementById('detailGalleryCount');
+    if (!list || !countEl) return;
+    var next = parseInt(countEl.value || '0', 10);
+    var html = '<div class="border rounded p-2 mb-2 detail-gallery-item" data-gallery-index="' + next + '">' +
+      '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest(&quot;.detail-gallery-item&quot;).remove();reindexDatasetDetailImages()">删除</button></div>' +
+      '<input type="text" class="form-control form-control-sm mb-1" name="detail_gallery_' + next + '_url" placeholder="图片 URL">' +
+      '<input type="text" class="form-control form-control-sm mb-1" name="detail_gallery_' + next + '_url_alt" placeholder="图片说明">' +
+      '<input type="file" class="form-control form-control-sm" name="detail_gallery_' + next + '_url_file" accept="image/*">' +
+      '</div>';
+    list.insertAdjacentHTML('beforeend', html);
+    countEl.value = next + 1;
+  };
+
+  window.reindexDatasetDetailImages = function() {
+    var items = document.querySelectorAll('#detailGalleryList .detail-gallery-item');
+    var countEl = document.getElementById('detailGalleryCount');
+    if (countEl) countEl.value = items.length;
+    items.forEach(function(item, i) {
+      item.dataset.galleryIndex = i;
+      var title = item.querySelector('.small.fw-semibold');
+      if (title) title.textContent = '图片 ' + (i + 1);
+      item.querySelectorAll('input[name]').forEach(function(el) {
+        el.name = el.name.replace(/detail_gallery_\d+_/, 'detail_gallery_' + i + '_');
+      });
+    });
+  };
+
+  window.addDatasetSpec = function() {
+    var list = document.getElementById('datasetSpecsList');
+    var countEl = document.getElementById('datasetSpecsCount');
+    if (!list || !countEl) return;
+    var next = parseInt(countEl.value || '0', 10);
+    var html = '<div class="border rounded p-2 mb-2 dataset-spec-item" data-spec-index="' + next + '">' +
+      '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">规格 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest(&quot;.dataset-spec-item&quot;).remove();reindexDatasetSpecs()">删除</button></div>' +
+      '<div class="row g-2"><div class="col-6"><input type="text" class="form-control form-control-sm" name="specs_' + next + '_name" placeholder="参数名"></div>' +
+      '<div class="col-6"><input type="text" class="form-control form-control-sm" name="specs_' + next + '_value" placeholder="参数值"></div></div>' +
+      '</div>';
+    list.insertAdjacentHTML('beforeend', html);
+    countEl.value = next + 1;
+  };
+
+  window.reindexDatasetSpecs = function() {
+    var items = document.querySelectorAll('#datasetSpecsList .dataset-spec-item');
+    var countEl = document.getElementById('datasetSpecsCount');
+    if (countEl) countEl.value = items.length;
+    items.forEach(function(item, i) {
+      item.dataset.specIndex = i;
+      var title = item.querySelector('.small.fw-semibold');
+      if (title) title.textContent = '规格 ' + (i + 1);
+      item.querySelectorAll('input[name]').forEach(function(el) {
+        el.name = el.name.replace(/specs_\d+_/, 'specs_' + i + '_');
+      });
+    });
+  };
 
   // ===== 设置共享模块上下文 =====
   window._moduleCtx = {

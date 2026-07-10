@@ -1686,7 +1686,54 @@
     }
 
     /* ====== item_data (详情数据) 特殊处理 ====== */
-    if (isDataModule) {
+    if (isDataModule && window._moduleCtx && window._moduleCtx.isDetailTemplateMode) {
+      specialEditor =
+        '<div class="small fw-semibold mb-1 text-muted">细节图</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_show_detail_images', '显示细节图', [{value:'true',label:'显示'}, {value:'false',label:'隐藏'}], d.show_detail_images || 'true') + '</div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">最多显示几张</label><input type="number" min="0" max="30" class="form-control form-control-sm" name="module_' + idx + '_data_detail_images_max" value="' + esc(d.detail_images_max || '6') + '"></div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_show_arrows', '显示箭头', [{value:'true',label:'显示'}, {value:'false',label:'隐藏'}], d.show_arrows || 'true') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_show_dots', '显示圆点', [{value:'true',label:'显示'}, {value:'false',label:'隐藏'}], d.show_dots || 'true') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_auto_scroll', '自动滚动', [{value:'false',label:'关闭'}, {value:'true',label:'开启'}], d.auto_scroll || 'false') + '</div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">滚动间隔秒</label><input type="number" min="1" max="60" class="form-control form-control-sm" name="module_' + idx + '_data_scroll_interval" value="' + esc(d.scroll_interval || '3') + '"></div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">规格表</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_show_specs', '显示规格表', [{value:'true',label:'显示'}, {value:'false',label:'隐藏'}], d.show_specs || 'true') + '</div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">最多显示几行</label><input type="number" min="0" max="100" class="form-control form-control-sm" name="module_' + idx + '_data_specs_max_rows" value="' + esc(d.specs_max_rows || '8') + '"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">表格列数</label><input type="number" min="1" max="6" class="form-control form-control-sm" name="module_' + idx + '_data_specs_columns" value="' + esc(d.specs_columns || '2') + '"></div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_hide_empty_rows', '空行处理', [{value:'true',label:'隐藏空行'}, {value:'false',label:'保留'}], d.hide_empty_rows || 'true') + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">链接</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_show_link', '显示链接', [{value:'true',label:'有链接时显示'}, {value:'false',label:'隐藏'}], d.show_link || 'true') + '</div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">默认链接文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_link_text" value="' + esc(d.link_text || '了解更多') + '"></div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">自动生成</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_auto_category', '分类', [{value:'inherit',label:'继承列表/手动覆盖'}, {value:'manual',label:'只手动'}], d.auto_category || 'inherit') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_auto_tags', '标签', [{value:'suggest',label:'建议生成'}, {value:'manual',label:'只手动'}], d.auto_tags || 'suggest') + '</div>' +
+        '</div>';
+      styleEditor =
+        '<div class="small fw-semibold mb-1 text-muted">颜色</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_text_color', '普通文字颜色', d.text_color || '#333333') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_link_color', '链接文字颜色', d.link_color || '#0f66d0') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_title_color', '标题颜色', d.title_color || '') + '</div>' +
+          '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', '背景颜色', d.section_bg || '') + '</div>' +
+        '</div>' +
+        '<hr class="my-2">' +
+        '<div class="small fw-semibold mb-1 text-muted">尺寸</div>' +
+        '<div class="row g-2">' +
+          '<div class="col-6">' + un('module_' + idx + '_data_image_radius', '图片圆角', ['px','rem','%'], d.image_radius || '') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_block_gap', '模块间距', ['px','rem'], d.block_gap || '') + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_content_width', '内容宽度', ['px','%','rem'], d.content_width || '') + '</div>' +
+          '<div class="col-6">' + sel('module_' + idx + '_data_text_align', '对齐方式', [{value:'left',label:'左对齐'}, {value:'center',label:'居中'}, {value:'right',label:'右对齐'}], d.text_align || 'left') + '</div>' +
+        '</div>';
+    } else if (isDataModule) {
       var item = (window._moduleCtx && window._moduleCtx.editItem) || mdata || {};
       var tagsVal = (item.tags && Array.isArray(item.tags)) ? item.tags.join(', ') : (item.tags || '');
       var tagsVisible = !(item.tags_visible === false || String(item.tags_visible) === 'false');

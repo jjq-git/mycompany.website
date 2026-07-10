@@ -121,6 +121,140 @@ def _unique_detail_template_id(templates, name):
     return candidate
 
 
+def _detail_template_field_requirements(template, item=None):
+    """Infer which dataset fields should be shown for a detail template.
+
+    The inference is intentionally conservative: core fields are always
+    available, template module options add specialized sections, and existing
+    item data keeps its section visible so old content is never hidden away
+    without a trace.
+    """
+    req = {
+        'slug': True,
+        'title': True,
+        'summary': True,
+        'media': True,
+        'category': True,
+        'tags': True,
+        'body': True,
+        'detail_images': False,
+        'specs': False,
+        'link': False,
+        'seo': False,
+    }
+    modules = template.get('modules') if isinstance(template, dict) else []
+    if not isinstance(modules, list):
+        modules = []
+    for module in modules:
+        if not isinstance(module, dict):
+            continue
+        m_type = module.get('type') or ''
+        data = module.get('data') if isinstance(module.get('data'), dict) else {}
+        if m_type in ('item_detail', 'image_carousel'):
+            req['detail_images'] = True
+        if m_type in ('item_detail',):
+            req['specs'] = True
+        if m_type in ('contact_info', 'contact_form', 'featured_picks'):
+            req['link'] = True
+        for key, value in data.items():
+            key_l = str(key).lower()
+            value_enabled = str(value).strip().lower() not in ('false', '0', 'no', 'off', '')
+            if key_l == 'show_detail_images':
+                req['detail_images'] = value_enabled
+                continue
+            if key_l == 'show_specs':
+                req['specs'] = value_enabled
+                continue
+            if key_l == 'show_link':
+                req['link'] = value_enabled
+                continue
+            if value_enabled and ('image' in key_l or key_l in ('show_arrows', 'show_dots', 'auto_scroll', 'scroll_interval')):
+                req['detail_images'] = True
+            if value_enabled and ('spec' in key_l or key_l in ('table_rows', 'table_cols', 'table_columns')):
+                req['specs'] = True
+            if value_enabled and ('link' in key_l or key_l.endswith('_url') or key_l in ('btn_text', 'btn_url', 'button_text')):
+                req['link'] = True
+            if key_l.startswith('seo_'):
+                req['seo'] = True
+            if value not in (None, '', [], {}):
+                if key_l in req:
+                    req[key_l] = True
+    item = item if isinstance(item, dict) else {}
+    if item.get('detail_images') or (isinstance(item.get('detail_gallery'), dict) and item.get('detail_gallery', {}).get('images')):
+        req['detail_images'] = True
+    if item.get('specs'):
+        req['specs'] = True
+    if item.get('link_url') or item.get('link_text') or item.get('button_url') or item.get('download_url'):
+        req['link'] = True
+    if item.get('seo_title') or item.get('seo_description') or item.get('seo_image'):
+        req['seo'] = True
+    return req
+
+
+def _detail_template_requirements_map(templates, item=None):
+    result = {}
+    for tpl in templates or []:
+        if not isinstance(tpl, dict):
+            continue
+        tpl_id = tpl.get('id')
+        if tpl_id:
+            result[str(tpl_id)] = _detail_template_field_requirements(tpl, item)
+    return result
+
+
+def _detail_template_rule_value(template, key, default=None):
+    modules = template.get('modules') if isinstance(template, dict) else []
+    if not isinstance(modules, list):
+        return default
+    for module in modules:
+        if not isinstance(module, dict) or module.get('type') != 'item_data':
+            continue
+        data = module.get('data') if isinstance(module.get('data'), dict) else {}
+        if key in data and data.get(key) not in (None, ''):
+            return data.get(key)
+    return default
+
+
+def _suggest_tags_from_fields(fields, limit=8):
+    tags = []
+    for source in (fields.get('title'), fields.get('category')):
+        if isinstance(source, str):
+            tags.extend([part.strip() for part in re.split(r'[,，\s/|]+', source) if part.strip()])
+    specs = fields.get('specs')
+    if isinstance(specs, list):
+        for spec in specs:
+            if not isinstance(spec, dict):
+                continue
+            for source in (spec.get('name'), spec.get('value')):
+                if isinstance(source, str):
+                    tags.extend([part.strip() for part in re.split(r'[,，\s/|]+', source) if part.strip()])
+    seen = set()
+    result = []
+    for tag in tags:
+        normalized = tag.lower()
+        if len(tag) < 2 or normalized in seen:
+            continue
+        seen.add(normalized)
+        result.append(tag)
+        if len(result) >= limit:
+            break
+    return result
+
+
+def _apply_detail_template_autofill(fields, template, page_label=None):
+    if not isinstance(fields, dict):
+        return fields
+    auto_category = _detail_template_rule_value(template, 'auto_category', 'inherit')
+    if auto_category == 'inherit' and not str(fields.get('category') or '').strip() and page_label:
+        fields['category'] = page_label
+    auto_tags = _detail_template_rule_value(template, 'auto_tags', 'suggest')
+    if auto_tags == 'suggest' and not fields.get('tags'):
+        suggested = _suggest_tags_from_fields(fields)
+        if suggested:
+            fields['tags'] = suggested
+    return fields
+
+
 def _ensure_detail_templates_for_menu(site_id, menu_items):
     for entry in menu_lib.collect_list_targets(menu_items):
         target = entry.get('target')
@@ -3566,6 +3700,8 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
             continue
         if key in ('_advanced_modules_enabled', '_restore_template_modules'):
             continue
+        if key.startswith('specs_') or key in ('specs_count',):
+            continue
         if key.startswith('module_') or key in ('module_count', 'csrf_token'):
             continue
         fields[key] = form.get(key, '').strip()
@@ -3600,6 +3736,41 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
             'visible': str(form.get('detail_gallery_visible', 'true')).lower() != 'false',
             'images': gallery_images,
         }
+
+    if 'specs_count' in form:
+        specs_count = 0
+        try:
+            specs_count = int(form.get('specs_count', '0'))
+        except (ValueError, TypeError):
+            specs_count = 0
+        specs = []
+        for si in range(specs_count):
+            name = form.get(f'specs_{si}_name', '').strip()
+            value = form.get(f'specs_{si}_value', '').strip()
+            if name or value:
+                specs.append({'name': name, 'value': value})
+        fields['specs'] = specs
+
+    settings_for_templates = read_yaml(site.id, 'settings.yaml') or {}
+    raw_menu_for_templates = settings_for_templates.get('menu') or []
+    list_targets_for_templates = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu_for_templates))
+    page_label_for_templates = next(
+        (entry.get('label') for entry in list_targets_for_templates if entry.get('target') == dataset_key),
+        dataset_key,
+    )
+    page_cfg_for_templates = _ensure_page_detail_templates(site.id, dataset_key, page_label_for_templates)
+    templates_for_autofill = _detail_templates_for_page(page_cfg_for_templates, dataset_key, page_label_for_templates)
+    template_for_autofill = next(
+        (tpl for tpl in templates_for_autofill if str(tpl.get('id') or '') == str(fields.get('template_id') or '')),
+        None,
+    )
+    if template_for_autofill is None:
+        default_template_id_for_autofill = _default_detail_template_id(page_cfg_for_templates, dataset_key, page_label_for_templates)
+        template_for_autofill = next(
+            (tpl for tpl in templates_for_autofill if str(tpl.get('id') or '') == str(default_template_id_for_autofill)),
+            None,
+        )
+    _apply_detail_template_autofill(fields, template_for_autofill or {}, page_label_for_templates)
 
     if form.get('_restore_template_modules') == '1':
         fields['modules'] = []
@@ -4170,6 +4341,14 @@ def detail_templates_panel(dataset_key):
     ) if edit_template_id else None
     blocks = _get_available_blocks(site.template_name)
     all_list_datasets = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu))
+    storage_lang = _storage_lang(site, lang, default_lang)
+    dataset_items = datasets.load(site.id, dataset_key, lang=storage_lang)
+    template_usage = {}
+    for item in dataset_items or []:
+        if not isinstance(item, dict):
+            continue
+        tpl_id = str(item.get('template_id') or default_template_id)
+        template_usage[tpl_id] = template_usage.get(tpl_id, 0) + 1
     from .style_registry import STYLE_REGISTRY
     from .icon_registry import icon_names
     return _render('dashboard/panel_detail_templates.html',
@@ -4181,6 +4360,7 @@ def detail_templates_panel(dataset_key):
                    edit_template=edit_template,
                    blocks=blocks,
                    all_list_datasets=all_list_datasets,
+                   template_usage=template_usage,
                    style_registry=STYLE_REGISTRY,
                    icon_list=icon_names(),
                    current_lang=lang,
@@ -4243,6 +4423,7 @@ def dataset_edit(dataset_key, item_id):
         page_cfg = _ensure_page_detail_templates(site.id, dataset_key, page_label)
         detail_templates = _detail_templates_for_page(page_cfg, dataset_key, page_label)
         default_template_id = _default_detail_template_id(page_cfg, dataset_key, page_label)
+        detail_requirements = _detail_template_requirements_map(detail_templates, current_item)
         all_list_datasets = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu))
         from .style_registry import STYLE_REGISTRY
         from .icon_registry import icon_names
@@ -4262,6 +4443,7 @@ def dataset_edit(dataset_key, item_id):
                         preview_path=preview_path,
                         detail_templates=detail_templates,
                         default_template_id=default_template_id,
+                        detail_requirements=detail_requirements,
                         style_registry=STYLE_REGISTRY,
                         icon_list=icon_names())
 
@@ -4283,6 +4465,8 @@ def dataset_edit(dataset_key, item_id):
             if key == '_show_detail_btn_mode':
                 continue
             if key in ('_advanced_modules_enabled', '_restore_template_modules'):
+                continue
+            if key.startswith('specs_') or key in ('specs_count',):
                 continue
             # 跳过模块配置字段和 CSRF 令牌（不参与数据存储）
             if key.startswith('module_') or key in ('module_count', 'csrf_token'):
@@ -4349,6 +4533,39 @@ def dataset_edit(dataset_key, item_id):
                 'visible': str(request.form.get('detail_gallery_visible', 'true')).lower() != 'false',
                 'images': gallery_images,
             }
+        if 'specs_count' in request.form:
+            specs_count = 0
+            try:
+                specs_count = int(request.form.get('specs_count', '0'))
+            except (ValueError, TypeError):
+                specs_count = 0
+            specs = []
+            for si in range(specs_count):
+                name = request.form.get(f'specs_{si}_name', '').strip()
+                value = request.form.get(f'specs_{si}_value', '').strip()
+                if name or value:
+                    specs.append({'name': name, 'value': value})
+            fields['specs'] = specs
+        settings_for_templates = read_yaml(site.id, 'settings.yaml') or {}
+        raw_menu_for_templates = settings_for_templates.get('menu') or []
+        list_targets_for_templates = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu_for_templates))
+        page_label_for_templates = next(
+            (entry.get('label') for entry in list_targets_for_templates if entry.get('target') == dataset_key),
+            dataset_key,
+        )
+        page_cfg_for_templates = _ensure_page_detail_templates(site.id, dataset_key, page_label_for_templates)
+        templates_for_autofill = _detail_templates_for_page(page_cfg_for_templates, dataset_key, page_label_for_templates)
+        template_for_autofill = next(
+            (tpl for tpl in templates_for_autofill if str(tpl.get('id') or '') == str(fields.get('template_id') or '')),
+            None,
+        )
+        if template_for_autofill is None:
+            default_template_id_for_autofill = _default_detail_template_id(page_cfg_for_templates, dataset_key, page_label_for_templates)
+            template_for_autofill = next(
+                (tpl for tpl in templates_for_autofill if str(tpl.get('id') or '') == str(default_template_id_for_autofill)),
+                None,
+            )
+        _apply_detail_template_autofill(fields, template_for_autofill or {}, page_label_for_templates)
         for field_name in ('cover', 'image', 'photo', 'logo'):
             upload = request.files.get(field_name) or request.files.get(f'{field_name}_file')
             alt_key = _image_alt_key(field_name)

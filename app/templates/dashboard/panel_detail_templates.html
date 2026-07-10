@@ -34,7 +34,7 @@
       <div style="min-width:0">
         <div class="fw-semibold text-truncate">{{ tpl_name }}</div>
         <div class="text-muted" style="font-size:12px">
-          ID: {{ tpl_id }} · 模块 {{ modules|length }} 个{% if is_default %} · 默认{% endif %}
+          ID: {{ tpl_id }} · 模块 {{ modules|length }} 个 · 使用 {{ (template_usage | default({})).get(tpl_id, 0) }} 条{% if is_default %} · 默认{% endif %}
         </div>
       </div>
       <div class="d-flex gap-1">
@@ -68,7 +68,7 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="template_id" value="{{ tpl_id }}">
-        <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('删除这个详情模板？已选择它的数据会自动回退到默认模板。')">删除</button>
+        <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('删除这个详情模板？当前有 {{ (template_usage | default({})).get(tpl_id, 0) }} 条数据选择它，删除后会自动回退到默认模板。')">删除</button>
       </form>
       {% endif %}
     </div>
@@ -140,6 +140,7 @@
     editItem: {},
     styleRegistry: styleRegistry,
     isDatasetMode: true,
+    isDetailTemplateMode: true,
     containerId: 'selectedModulesTpl'
   };
 
