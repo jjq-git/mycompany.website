@@ -12,10 +12,10 @@
 {% endwith %}
 
 {% if translation_enabled and languages and languages|length > 1 and current_lang != default_lang %}
-<div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:14px;">
+<div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
   {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
   <span class="text-muted text-nowrap">AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
-  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" type="button" style="font-size:14px;">从默认语言翻译</button>
+  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" type="button" style="font-size:12px;">从默认语言翻译</button>
   <span class="text-muted text-nowrap" style="font-size:12px;">翻译后请手动检查并保存</span>
 </div>
 {% endif %}
@@ -39,7 +39,7 @@
     {% endif %}
     {% set current_logo = company.get('logo', '') %}
     {% set current_favicon = company.get('favicon', '') %}
-    <div class="row g-2 mb-2">
+    <div class="row g-2 mb-3">
       <div class="col-6">
         <label class="form-label small mb-1 text-muted">Logo</label>
         <div class="module-media-tools mt-1">
@@ -93,7 +93,7 @@
         </div>
       </div>
     </div>
-    <div class="row g-2 mb-2">
+    <div class="row g-2 mb-3">
       <div class="col-6">
         <label class="form-label small mb-1">公司名称</label>
         <input class="form-control form-control-sm" name="company.name" value="{{ company.get('name', '') }}">
@@ -103,7 +103,7 @@
         <input class="form-control form-control-sm" name="company.short_name" value="{{ company.get('short_name', '') }}">
       </div>
     </div>
-    <div class="mb-2">
+    <div class="mb-3">
       <label class="form-label small mb-1">公司简介</label>
       <textarea class="form-control form-control-sm" name="company.description" rows="2" maxlength="200" placeholder="一句话简介，SEO 分享摘要" style="min-height: 110px;">{{ company.get('description', '') }}</textarea>
       <div class="form-text">80-160 字，SEO 和社交分享时作为默认页面简介</div>

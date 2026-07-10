@@ -6,7 +6,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>基本设置</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260626-basic-settings-embed">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260710-basic-no-typography">
   <style>
     :root {
       --bs-primary: {{ admin_primary }};
@@ -29,13 +29,13 @@
       font-size: 14px;
     }
     .basic-workspace { min-height: 100vh; padding: 16px; }
-    .basic-workspace-inner { max-width: 920px; margin: 0 auto; }
+    .basic-workspace-inner { max-width: 1540px; margin: 0 auto; }
     .basic-workspace-panel {
-      padding: 18px;
+      /* padding: 18px;
       border: 1px solid #dfe4ea;
       border-radius: 8px;
       background: #fff;
-      box-shadow: 0 12px 36px rgba(15,23,42,.06);
+      box-shadow: 0 12px 36px rgba(15,23,42,.06); */
     }
     .basic-workspace-panel form { max-width: none; }
     .basic-workspace-panel .panel-save-bar {
@@ -46,6 +46,19 @@
       border-top: 1px solid #e2e8f0;
       background: rgba(255,255,255,.94);
       backdrop-filter: blur(8px);
+    }
+    .basic-workspace-panel--combined .basic-settings-pane .panel-save-bar { display: none; }
+    .basic-settings-combined-save {
+      position: sticky;
+      bottom: 0;
+      grid-column: 1 / -1;
+      margin-top: 16px;
+      padding: 12px 18px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 -8px 24px rgba(15,23,42,.05);
     }
     .flash-toast {
       padding: 8px 14px; border-radius: 6px; font-size: 14px;
@@ -64,28 +77,28 @@
 <body>
 <main class="basic-workspace">
   <div class="basic-workspace-inner">
-    <section class="basic-workspace-panel">
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <span class="fw-semibold">基本设置</span>
-      </div>
-
-      <div class="btn-group btn-group-sm w-100 mb-3 basic-tab-group" role="tablist" aria-label="基本设置">
-        <button type="button"
-                class="btn btn-outline-secondary {% if basic_settings_tab != 'theme' %}active{% endif %}"
-                onclick="switchBasicSettingsTab('company')">基础设置</button>
-        <button type="button"
-                class="btn btn-outline-secondary {% if basic_settings_tab == 'theme' %}active{% endif %}"
-                onclick="switchBasicSettingsTab('theme')">主题颜色</button>
-      </div>
-
-      <div id="basicSettingsCompany" class="basic-settings-pane" {% if basic_settings_tab == 'theme' %}style="display:none"{% endif %}>
+    <section class="basic-workspace-panel basic-workspace-panel--combined">
+      <div id="basicSettingsCompany" class="basic-settings-pane basic-settings-pane--company">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <span class="fw-semibold">基础设置</span>
+        </div>
         {% set basic_settings_embed = true %}
         {% include 'dashboard/panel_company.html' %}
       </div>
 
-      <div id="basicSettingsTheme" class="basic-settings-pane" {% if basic_settings_tab != 'theme' %}style="display:none"{% endif %}>
+      <div id="basicSettingsTheme" class="basic-settings-pane basic-settings-pane--theme">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <span class="fw-semibold">主题颜色</span>
+        </div>
         {% set basic_settings_embed = true %}
         {% include 'dashboard/panel_theme.html' %}
+      </div>
+
+      <div class="basic-settings-combined-save">
+        <button class="btn btn-primary btn-sm w-100" type="button" id="saveBasicSettingsAll" title="保存">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          保存
+        </button>
       </div>
     </section>
   </div>
@@ -135,13 +148,25 @@
   }
 })();
 
-function switchBasicSettingsTab(tab) {
-  var company = document.getElementById('basicSettingsCompany');
-  var theme = document.getElementById('basicSettingsTheme');
-  if (company) company.style.display = tab === 'theme' ? 'none' : '';
-  if (theme) theme.style.display = tab === 'theme' ? '' : 'none';
-  document.querySelectorAll('[role="tablist"] .btn').forEach(function(btn, idx) {
-    btn.classList.toggle('active', (tab === 'theme') === (idx === 1));
+var saveAllBtn = document.getElementById('saveBasicSettingsAll');
+if (saveAllBtn) {
+  saveAllBtn.addEventListener('click', function() {
+    var forms = [document.getElementById('companyForm'), document.getElementById('themeForm')].filter(Boolean);
+    var originalHtml = saveAllBtn.innerHTML;
+    saveAllBtn.disabled = true;
+    saveAllBtn.textContent = '保存中...';
+    forms.reduce(function(chain, form) {
+      return chain.then(function() {
+        return fetch(form.action, { method: 'POST', body: new FormData(form), credentials: 'same-origin' });
+      });
+    }, Promise.resolve()).then(function() {
+      saveAllBtn.textContent = '已保存';
+      setTimeout(function() { window.location.reload(); }, 350);
+    }).catch(function() {
+      saveAllBtn.disabled = false;
+      saveAllBtn.innerHTML = originalHtml;
+      alert('保存失败，请重试');
+    });
   });
 }
 </script>

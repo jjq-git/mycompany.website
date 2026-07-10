@@ -121,7 +121,7 @@
              onclick="return switchAccountLanguage(event,this)"
              title="{{ lang.name }}" aria-label="切换到{{ lang.name }}"
              {% if lang.code == current_lang %}aria-current="true"{% endif %}>
-            <img src="{{ url_for('static', filename='flags/' ~ flag_code ~ '.svg') }}?v=2" alt="">
+            <img src="{{ url_for('static', filename='flags/' ~ flag_code ~ '.svg') }}?v=4" alt="">
           </a>
           {% endfor %}
         </div>
@@ -210,7 +210,7 @@
       <div class="left-nav-site-info px-3 py-2">
         <div class="site-label">{{ site.name or site.slug if site else '未选择' }}</div>
         {% set current_flag = 'cn' if current_lang == 'zh-CN' else ('tw' if current_lang == 'zh-TW' else 'us') %}
-        <div class="site-name"><img class="left-nav-language-flag" src="{{ url_for('static', filename='flags/' ~ current_flag ~ '.svg') }}?v=2" alt="{{ current_language_label if current_language_label else '当前语言' }}" title="{{ current_language_label if current_language_label else '当前语言' }}"></div>
+        <div class="site-name"><img class="left-nav-language-flag" src="{{ url_for('static', filename='flags/' ~ current_flag ~ '.svg') }}?v=4" alt="{{ current_language_label if current_language_label else '当前语言' }}" title="{{ current_language_label if current_language_label else '当前语言' }}"></div>
       </div>
 
       <div class="flex-grow-1 overflow-auto left-nav-menu">
@@ -300,7 +300,7 @@
         </a>
 
         {# ---- 内容 ---- #}
-        <div class="left-nav-section-title">内容</div>
+        <div class="left-nav-section-title">页面</div>
         <a class="left-nav-item {% if active in ('pages_home', 'home') %}active{% endif %}" href="{{ url_for('core.page_panel', page_key='home') }}"
           data-panel="pages_home" data-preview-page="home" title="首页">
           <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -1009,6 +1009,45 @@
       }
     }
 
+    function isDatasetPanelUrl(url) {
+      try {
+        var parsed = new URL(url, window.location.origin);
+        return /^\/_dataset(?:\/|$)/.test(parsed.pathname);
+      } catch (e) {
+        return /^\/_dataset(?:\/|$)/.test(String(url || '').split('?')[0]);
+      }
+    }
+
+    function enterDatasetWideMode() {
+      var panel = document.getElementById('rightPanel');
+      if (!panel) return;
+      if (!document.body.classList.contains('dataset-wide-mode')) {
+        panel.dataset.datasetSavedWidth = panel.style.width || (panel.offsetWidth ? String(panel.offsetWidth) + 'px' : '');
+      }
+      if (panel.classList.contains('d-none') && typeof toggleRightPanel === 'function') {
+        toggleRightPanel();
+      }
+      if (panel.classList.contains('panel-collapsed')) {
+        panel.classList.remove('panel-collapsed');
+      }
+      document.body.classList.add('dataset-wide-mode');
+      var btn = document.getElementById('panelCollapseBtn');
+      if (btn) {
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+        btn.title = '收起面板';
+      }
+    }
+
+    function exitDatasetWideMode() {
+      var panel = document.getElementById('rightPanel');
+      if (!document.body.classList.contains('dataset-wide-mode')) return;
+      document.body.classList.remove('dataset-wide-mode');
+      if (panel && panel.dataset.datasetSavedWidth) {
+        panel.style.width = panel.dataset.datasetSavedWidth;
+        delete panel.dataset.datasetSavedWidth;
+      }
+    }
+
     function switchDevice(device) {
       document.querySelectorAll('.preview-device-btn').forEach(b => b.classList.remove('active'));
       var btn = document.querySelector('[data-device="' + device + '"]');
@@ -1638,6 +1677,11 @@
           return loadPanel(url, { skipUnsavedGuard: true });
         });
       }
+      if (isDatasetPanelUrl(url)) {
+        enterDatasetWideMode();
+      } else {
+        exitDatasetWideMode();
+      }
       var panel = document.getElementById('rightPanel');
       if (panel && panel.classList.contains('d-none') && typeof toggleRightPanel === 'function') {
         toggleRightPanel();
@@ -1951,6 +1995,7 @@
       // 外部链接（link 类型菜单项、新标签页、或 href 以 http(s):// 开头）：让浏览器正常处理，不拦截
       if (link.classList.contains('external-link') || link.getAttribute('target') === '_blank' || (href && /^https?:\/\//.test(href))) return;
       e.preventDefault();
+      if (typeof exitDatasetWideMode === 'function') exitDatasetWideMode();
       document.querySelectorAll('.left-nav-item').forEach(el => el.classList.remove('active'));
       link.classList.add('active');
       if (link.dataset.panel === 'seo') {

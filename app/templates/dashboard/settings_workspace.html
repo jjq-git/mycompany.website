@@ -6,7 +6,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{{ title }}</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260629-admin-layout">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260710-header-lang-stack">
   <style>
     :root {
       --bs-primary: {{ admin_primary }};
@@ -29,7 +29,7 @@
       font-size: 14px;
     }
     .settings-workspace { min-height: 100vh; padding: 16px; }
-    .settings-workspace-inner { max-width: 1080px; margin: 0 auto; }
+    .settings-workspace-inner { max-width: 1540px; margin: 0 auto; }
     .settings-workspace-panel {
       padding: 18px;
       border: 1px solid #dfe4ea;
@@ -57,10 +57,18 @@
       --bs-btn-disabled-color: var(--admin-primary);
       --bs-btn-disabled-border-color: var(--admin-primary);
     }
+    .btn-primary {
+      --bs-btn-bg: var(--admin-primary);
+      --bs-btn-border-color: var(--admin-primary);
+      --bs-btn-hover-bg: var(--admin-primary-hover);
+      --bs-btn-hover-border-color: var(--admin-primary-hover);
+      --bs-btn-active-bg: var(--admin-primary-active);
+      --bs-btn-active-border-color: var(--admin-primary-active);
+    }
   </style>
 </head>
 <body>
-  <main class="settings-workspace">
+  <main class="settings-workspace settings-workspace--{{ active|default('settings') }}">
     <div class="settings-workspace-inner">
       <section class="settings-workspace-panel">
         {% include panel_template %}

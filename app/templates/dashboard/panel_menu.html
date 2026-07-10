@@ -5,10 +5,10 @@
 </div>
 {% if translation_enabled and languages and languages|length > 1 and current_lang != default_lang %}
 {# AI 翻译栏 #}
-<div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:14px;">
+<div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
   {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
   <span class="text-muted text-nowrap">🌐 AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
-  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:14px;">从默认语言翻译</button>
+  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:12px;">从默认语言翻译</button>
   <span class="text-muted text-nowrap" style="font-size:12px;">翻译后请手动检查并保存</span>
 </div>
 {% endif %}
@@ -22,9 +22,15 @@
 <form method="post" action="{{ menu_form_action }}" id="menuTreeForm">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="menu_json" id="menuJson">
-  <div id="menuTree" class="menu-tree"></div>
-  <div class="d-flex gap-2 mt-3">
-    <button type="button" class="btn btn-outline-secondary btn-sm" id="addRootMenu">+ 添加一级菜单</button>
+  <div class="menu-config-layout">
+    <section class="menu-config-tree-panel">
+      <!-- <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="small fw-semibold">菜单</span>
+      </div> -->
+      <div id="menuTree" class="menu-tree menu-tree-picker"></div>
+      <button type="button" class="btn btn-outline-primary btn-sm w-100 mt-3" id="addRootMenu">+ 添加一级菜单</button>
+    </section>
+    <aside class="menu-config-inspector" id="menuInspector"></aside>
   </div>
   <div class="panel-save-bar">
     <button class="btn btn-primary btn-sm w-100" type="submit">保存菜单</button>
@@ -39,6 +45,8 @@
   const tree = document.getElementById('menuTree');
   const form = document.getElementById('menuTreeForm');
   const jsonInput = document.getElementById('menuJson');
+  const inspector = document.getElementById('menuInspector');
+  let selectedItem = null;
 
   function newItem() {
     return {label: '新菜单', type: 'page', target: '', children: []};
@@ -46,6 +54,44 @@
 
   function escapeAttr(value) {
     return String(value || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  function cleanItem(item) {
+    const type = item.type || 'page';
+    const result = {
+      label: String(item.label || '').trim(),
+      type: type,
+      children: (item.children || []).map(cleanItem)
+    };
+    if (item.hidden === true && type !== 'home') result.hidden = true;
+    if (type === 'list' || type === 'page' || type === 'group') {
+      const target = String(item.target || '').trim();
+      if (target) result.target = target;
+    }
+    if (type === 'link') {
+      const url = String(item.url || '').trim();
+      if (url) result.url = url;
+    }
+    return result;
+  }
+
+  function itemLabel(item) {
+    return item.label || typeLabels[item.type] || '未命名菜单';
+  }
+
+  function walkItems(items, callback, parentItems) {
+    (items || []).forEach(function(item, index) {
+      callback(item, index, items, parentItems || null);
+      walkItems(item.children || [], callback, items);
+    });
+  }
+
+  function ensureSelected() {
+    let exists = false;
+    walkItems(initialMenu, function(item) {
+      if (item === selectedItem) exists = true;
+    });
+    if (!exists) selectedItem = initialMenu[0] || null;
   }
 
   function render(items, container, depth) {
@@ -61,85 +107,34 @@
       row.dataset.depth = depth;
       row._item = item;
 
-      var collapseHtml = '<button type="button" class="menu-tree-btn menu-tree-collapse-toggle toggle-collapse' + (isCollapsed ? ' is-collapsed' : '') + '" title="' + (isCollapsed ? '展开编辑' : '收起编辑') + '" aria-label="' + (isCollapsed ? '展开编辑' : '收起编辑') + '" aria-expanded="' + (!isCollapsed) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>';
+      var collapseHtml = childCount > 0
+        ? '<button type="button" class="menu-tree-btn menu-tree-collapse-toggle toggle-collapse' + (isCollapsed ? ' is-collapsed' : '') + '" title="' + (isCollapsed ? '展开子菜单' : '收起子菜单') + '" aria-label="' + (isCollapsed ? '展开子菜单' : '收起子菜单') + '" aria-expanded="' + (!isCollapsed) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>'
+        : '<span class="menu-tree-collapse-spacer" aria-hidden="true"></span>';
 
       // 子菜单计数徽章
       var badgeHtml = childCount > 0 ? '<span class="menu-tree-child-count">' + childCount + '</span>' : '';
 
       row.innerHTML =
-        '<div class="menu-tree-card' + (isCollapsed ? ' menu-tree-collapsed' : '') + '" data-type="' + item.type + '">' +
-          // 第一行：折叠按钮 + 名称 + 类型 + 子级计数 + 操作按钮
+        '<div class="menu-tree-card menu-tree-picker-card' + (isCollapsed ? ' menu-tree-collapsed' : '') + (item === selectedItem ? ' selected' : '') + '" data-type="' + item.type + '">' +
           '<div class="menu-tree-card-row">' +
             collapseHtml +
-            '<input class="menu-label" placeholder="菜单名称" value="' + escapeAttr(item.label) + '"' + (isHome ? ' readonly' : '') + '>' +
+            '<button type="button" class="menu-tree-select">' +
+              '<span class="menu-tree-title">' + escapeAttr(itemLabel(item)) + '</span>' +
+              '<span class="menu-tree-meta">' + escapeAttr(typeLabels[item.type] || item.type || '菜单') + '</span>' +
+            '</button>' +
             '<span class="menu-tree-actions">' +
               badgeHtml +
-              '<select class="menu-type"' + (isHome ? ' disabled' : '') + '>' +
-                Object.keys(typeLabels).filter(function(t){ return isHome || t !== 'home'; }).map(function(t){ return '<option value="' + t + '"' + (item.type === t ? ' selected' : '') + '>' + typeLabels[t] + '</option>'; }).join('') +
-              '</select>' +
               '<button type="button" class="menu-tree-btn move-up" title="上移"' + (isHome ? ' disabled' : '') + '>↑</button>' +
               '<button type="button" class="menu-tree-btn move-down" title="下移"' + (isHome ? ' disabled' : '') + '>↓</button>' +
               '<button type="button" class="menu-tree-btn menu-tree-btn-danger delete-item" title="删除"' + (isHome ? ' disabled' : '') + '>×</button>' +
             '</span>' +
           '</div>' +
-          // 可折叠区域：目标/URL + 下拉样式 + 添加子菜单 + 子菜单容器
           '<div class="menu-tree-collapsible">' +
-            '<div class="menu-tree-card-row mt-1">' +
-              '<input class="menu-target" placeholder="页面路径" value="' + escapeAttr(item.target) + '">' +
-              '<input class="menu-url" placeholder="链接地址" value="' + escapeAttr(item.url) + '">' +
-              '<label class="form-check-label small d-flex align-items-center gap-1">' +
-                '<input type="checkbox" class="form-check-input menu-visible" ' + (item.hidden === true ? '' : ' checked') + (isHome ? ' disabled' : '') + '> 显示在导航菜单' +
-              '</label>' +
-              '<button type="button" class="menu-tree-btn menu-tree-btn-add add-child ms-auto">+ 子菜单</button>' +
-            '</div>' +
             '<div class="menu-tree-children mt-2"></div>' +
           '</div>' +
         '</div>';
       container.appendChild(row);
-      updateFields(row);
       render(item.children, row.querySelector('.menu-tree-children'), depth + 1);
-    });
-  }
-
-  function updateFields(row) {
-    const type = row.querySelector('.menu-type').value;
-    const target = row.querySelector('.menu-target');
-    const url = row.querySelector('.menu-url');
-    const item = row._item;
-    target.style.display = (type === 'home' || type === 'link') ? 'none' : '';
-    url.style.display = type === 'link' ? '' : 'none';
-  }
-
-  function syncRowToItem(row) {
-    if (!row || !row._item) return;
-    const item = row._item;
-    const type = row.querySelector('.menu-type').value;
-    item.label = row.querySelector('.menu-label').value.trim();
-    item.type = type;
-
-    const visible = row.querySelector('.menu-visible');
-    if (visible && !visible.checked && type !== 'home') {
-      item.hidden = true;
-    } else {
-      delete item.hidden;
-    }
-
-    if (type === 'list' || type === 'page' || type === 'group') {
-      item.target = row.querySelector('.menu-target').value.trim();
-      delete item.url;
-    } else if (type === 'link') {
-      item.url = row.querySelector('.menu-url').value.trim();
-      delete item.target;
-    } else {
-      delete item.target;
-      delete item.url;
-    }
-  }
-
-  function syncTreeToItems(container) {
-    rowsIn(container).forEach(function(row) {
-      syncRowToItem(row);
-      syncTreeToItems(row.querySelector('.menu-tree-children'));
     });
   }
 
@@ -147,57 +142,82 @@
     return Array.from(container.children).filter(function(el){ return el.classList.contains('menu-tree-row'); });
   }
 
-  function collect(container) {
-    return rowsIn(container).map(function(row) {
-      const type = row.querySelector('.menu-type').value;
-      const item = {
-        label: row.querySelector('.menu-label').value.trim(),
-        type: type,
-        children: collect(row.querySelector('.menu-tree-children'))
-      };
-      const visible = row.querySelector('.menu-visible');
-      if (visible && !visible.checked && type !== 'home') item.hidden = true;
-      if (type === 'list' || type === 'page' || type === 'group') item.target = row.querySelector('.menu-target').value.trim();
-      if (type === 'link') item.url = row.querySelector('.menu-url').value.trim();
-      return item;
-    });
+  function renderInspector() {
+    ensureSelected();
+    if (!selectedItem) {
+      inspector.innerHTML = '<div class="menu-inspector-empty">请先在左侧选择一个菜单</div>';
+      return;
+    }
+    const isHome = selectedItem.type === 'home';
+    const type = selectedItem.type || 'page';
+    inspector.innerHTML =
+      '<div class="menu-inspector-section">' +
+        '<label class="form-label small text-muted mb-1">菜单名称</label>' +
+        '<input class="form-control form-control-sm menu-inspector-label" value="' + escapeAttr(selectedItem.label) + '"' + (isHome ? ' readonly' : '') + '>' +
+      '</div>' +
+      '<div class="menu-inspector-section">' +
+        '<label class="form-label small text-muted mb-1">菜单类型</label>' +
+        '<select class="form-select form-select-sm menu-inspector-type-select"' + (isHome ? ' disabled' : '') + '>' +
+          Object.keys(typeLabels).filter(function(t){ return isHome || t !== 'home'; }).map(function(t){ return '<option value="' + t + '"' + (type === t ? ' selected' : '') + '>' + typeLabels[t] + '</option>'; }).join('') +
+        '</select>' +
+      '</div>' +
+      '<div class="menu-inspector-section menu-target-section">' +
+        '<label class="form-label small text-muted mb-1">页面路径</label>' +
+        '<input class="form-control form-control-sm menu-inspector-target" placeholder="如: products" value="' + escapeAttr(selectedItem.target) + '">' +
+      '</div>' +
+      '<div class="menu-inspector-section menu-url-section">' +
+        '<label class="form-label small text-muted mb-1">链接地址</label>' +
+        '<input class="form-control form-control-sm menu-inspector-url" placeholder="https://..." value="' + escapeAttr(selectedItem.url) + '">' +
+      '</div>' +
+      '<div class="menu-inspector-section">' +
+        '<label class="form-check form-switch mb-0">' +
+          '<input class="form-check-input menu-inspector-visible" type="checkbox" ' + (selectedItem.hidden === true ? '' : ' checked') + (isHome ? ' disabled' : '') + '>' +
+          '<span class="form-check-label small fw-semibold">显示在导航菜单</span>' +
+        '</label>' +
+      '</div>' +
+      '<div class="menu-inspector-actions">' +
+        '<button type="button" class="btn btn-outline-primary btn-sm w-100 menu-inspector-add-child">+ 添加子菜单</button>' +
+      '</div>';
+    updateInspectorFields();
   }
 
-  tree.addEventListener('input', function(e) {
-    const row = e.target.closest('.menu-tree-row');
-    if (row) {
-      syncRowToItem(row);
-      updateFields(row);
-    }
-  });
+  function updateInspectorFields() {
+    const type = selectedItem ? selectedItem.type : '';
+    const targetSection = inspector.querySelector('.menu-target-section');
+    const urlSection = inspector.querySelector('.menu-url-section');
+    if (targetSection) targetSection.style.display = (type === 'home' || type === 'link') ? 'none' : '';
+    if (urlSection) urlSection.style.display = type === 'link' ? '' : 'none';
+  }
 
-  tree.addEventListener('change', function(e) {
-    const row = e.target.closest('.menu-tree-row');
-    if (row) {
-      syncRowToItem(row);
-      updateFields(row);
-    }
-  });
+  function rerenderAll() {
+    ensureSelected();
+    render(initialMenu, tree, 0);
+    renderInspector();
+  }
 
   tree.addEventListener('click', function(e) {
     const row = e.target.closest('.menu-tree-row');
     if (!row) return;
     const action = e.target.closest('button');
-    if (!action) return;
-    syncTreeToItems(tree);
+    if (!action || action.classList.contains('menu-tree-select')) {
+      selectedItem = row._item;
+      rerenderAll();
+      return;
+    }
     const parentContainer = row.parentElement;
     const parentRow = parentContainer.closest('.menu-tree-row');
     const parentItems = parentRow ? parentRow._item.children : initialMenu;
     const index = rowsIn(parentContainer).indexOf(row);
     if (action.classList.contains('toggle-collapse')) {
-      // 折叠/展开子菜单
       row._item._collapsed = !row._item._collapsed;
-      render(initialMenu, tree, 0);
     } else if (action.classList.contains('delete-item')) {
-      if (row._item.type !== 'home') parentItems.splice(index, 1);
+      if (row._item.type !== 'home') {
+        parentItems.splice(index, 1);
+        if (selectedItem === row._item) selectedItem = initialMenu[0] || null;
+      }
     } else if (action.classList.contains('add-child')) {
       row._item.children.push(newItem());
-      row._item._collapsed = false; // 添加子菜单时自动展开
+      row._item._collapsed = false;
     } else if (action.classList.contains('move-up') && index > 0) {
       const item = parentItems.splice(index, 1)[0];
       parentItems.splice(index - 1, 0, item);
@@ -207,20 +227,83 @@
     } else {
       return;
     }
-    render(initialMenu, tree, 0);
+    rerenderAll();
+  });
+
+  inspector.addEventListener('input', function(e) {
+    if (!selectedItem) return;
+    if (e.target.classList.contains('menu-inspector-label')) {
+      selectedItem.label = e.target.value.trim();
+      render(initialMenu, tree, 0);
+    } else if (e.target.classList.contains('menu-inspector-target')) {
+      selectedItem.target = e.target.value.trim();
+    } else if (e.target.classList.contains('menu-inspector-url')) {
+      selectedItem.url = e.target.value.trim();
+    }
+  });
+
+  inspector.addEventListener('change', function(e) {
+    if (!selectedItem) return;
+    if (e.target.classList.contains('menu-inspector-type-select')) {
+      selectedItem.type = e.target.value;
+      if (selectedItem.type === 'link') {
+        delete selectedItem.target;
+      } else {
+        delete selectedItem.url;
+      }
+      rerenderAll();
+    } else if (e.target.classList.contains('menu-inspector-visible')) {
+      if (e.target.checked) delete selectedItem.hidden;
+      else selectedItem.hidden = true;
+    }
+  });
+
+  inspector.addEventListener('click', function(e) {
+    if (!selectedItem) return;
+    if (!e.target.closest('.menu-inspector-add-child')) return;
+    if (!Array.isArray(selectedItem.children)) selectedItem.children = [];
+    const child = newItem();
+    selectedItem.children.push(child);
+    selectedItem._collapsed = false;
+    selectedItem = child;
+    rerenderAll();
   });
 
   document.getElementById('addRootMenu').addEventListener('click', function() {
-    syncTreeToItems(tree);
-    initialMenu.push(newItem());
-    render(initialMenu, tree, 0);
+    const item = newItem();
+    initialMenu.push(item);
+    selectedItem = item;
+    rerenderAll();
   });
 
   form.addEventListener('submit', function() {
-    jsonInput.value = JSON.stringify(collect(tree));
+    jsonInput.value = JSON.stringify(initialMenu.map(cleanItem));
   });
 
-  render(initialMenu, tree, 0);
+  window.menuEditorApi = {
+    collectLabels: function() {
+      const labels = [];
+      walkItems(initialMenu, function(item) {
+        labels.push(String(item.label || '').trim());
+      });
+      return labels;
+    },
+    applyTranslations: function(translations, sourceLabels) {
+      let i = 0;
+      walkItems(initialMenu, function(item) {
+        const current = String(item.label || '').trim();
+        const key = sourceLabels && sourceLabels[i] ? sourceLabels[i] : current;
+        i += 1;
+        if (translations[key] !== undefined && translations[key] !== null) {
+          item.label = translations[key];
+        }
+      });
+      rerenderAll();
+    }
+  };
+
+  selectedItem = initialMenu[0] || null;
+  rerenderAll();
 })();
 </script>
 
@@ -242,14 +325,9 @@
     if (pending.targetLang !== CURRENT_LANG) return;
     sessionStorage.removeItem(STORAGE_KEY);
     var translations = pending.translations;
-    document.querySelectorAll('.menu-label').forEach(function(el){
-      var label = el.value.trim();
-      // 用原文作为 key 匹配译文
-      if (translations[label] !== undefined && translations[label] !== null) {
-        el.value = translations[label];
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-    });
+    if (window.menuEditorApi) {
+      window.menuEditorApi.applyTranslations(translations, collectSourceLabels(SOURCE_MENU));
+    }
   })();
 
   var btn = document.getElementById('aiTranslateBtn');
@@ -276,12 +354,13 @@
     var labels = [];
     var originals = [];
     var sourceLabels = collectSourceLabels(SOURCE_MENU);
-    document.querySelectorAll('.menu-label').forEach(function(el, i){
-      var val = (sourceLabels[i] || el.value || '').trim();
+    var currentLabels = window.menuEditorApi ? window.menuEditorApi.collectLabels() : [];
+    currentLabels.forEach(function(label, i){
+      var val = (sourceLabels[i] || label || '').trim();
       if (!val) return;
       if (/^[#\d]/.test(val) && val.length < 10) return;
       labels.push(val);
-      originals.push(el.value.trim());
+      originals.push(label.trim());
     });
 
     if (labels.length === 0) {
@@ -320,14 +399,9 @@
         translations: translatedMap
       }));
 
-      // 同时填入当前表单（方便预览）
-      document.querySelectorAll('.menu-label').forEach(function(el){
-        var original = el.value.trim();
-        if (translatedMap[original]) {
-          el.value = translatedMap[original];
-          el.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-      });
+      if (window.menuEditorApi) {
+        window.menuEditorApi.applyTranslations(translatedMap, sourceLabels);
+      }
 
       showTranslateMsg('翻译完成', '<p>菜单名称已填入当前 <strong>' + (LANG_LABELS[targetLang] || targetLang) + '</strong> 表单，请检查后保存。</p>');
     })

@@ -12,10 +12,10 @@
 {% endwith %}
 
 {% if translation_enabled and languages and languages|length > 1 and current_lang != default_lang %}
-<div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:14px;">
+<div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
   {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
   <span class="text-muted text-nowrap">AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
-  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" type="button" style="font-size:14px;">从默认语言翻译</button>
+  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" type="button" style="font-size:12px;">从默认语言翻译</button>
   <span class="text-muted text-nowrap" style="font-size:12px;">翻译后请手动检查并保存</span>
 </div>
 {% endif %}
@@ -27,55 +27,58 @@
   <input type="hidden" name="_header_footer_tab" value="footer">
   {# Footer 变体选择 - 卡片式，与头部布局风格一致 #}
   {% set current_variant = current_footer.get('variant', 'columns') %}
-  <div class="panel-section">
-    <div class="panel-section-title">底部布局</div>
-    <div class="variant-card-grid">
-      <label class="variant-card {% if current_variant == 'columns' %}selected{% endif %}" data-variant="columns">
-        <input type="radio" name="footer_variant" value="columns"
-               {% if current_variant == 'columns' %}checked{% endif %}
-               class="variant-card-radio">
-        <div class="variant-card-icon">
-          <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="2" y="4" width="10" height="10" rx="1" fill="currentColor" opacity="0.5"/><rect x="14" y="4" width="10" height="10" rx="1" fill="currentColor" opacity="0.5"/><rect x="26" y="4" width="10" height="10" rx="1" fill="currentColor" opacity="0.5"/><rect x="38" y="4" width="8" height="10" rx="1" fill="currentColor" opacity="0.5"/><rect x="6" y="19" width="36" height="2" rx="1" fill="currentColor" opacity="0.2"/><rect x="14" y="24" width="20" height="2" rx="1" fill="currentColor" opacity="0.15"/><rect x="10" y="28" width="28" height="2" rx="1" fill="currentColor" opacity="0.1"/></svg>
-        </div>
-        <div class="variant-card-label">栏目模式</div>
-      </label>
-      <label class="variant-card {% if current_variant == 'minimal' %}selected{% endif %}" data-variant="minimal">
-        <input type="radio" name="footer_variant" value="minimal"
-               {% if current_variant == 'minimal' %}checked{% endif %}
-               class="variant-card-radio">
-        <div class="variant-card-icon">
-          <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="10" y="13" width="28" height="2" rx="1" fill="currentColor" opacity="0.3"/><rect x="14" y="18" width="20" height="2" rx="1" fill="currentColor" opacity="0.2"/></svg>
-        </div>
-        <div class="variant-card-label">极简模式</div>
-      </label>
-      <label class="variant-card {% if current_variant == 'columns_social' %}selected{% endif %}" data-variant="columns_social">
-        <input type="radio" name="footer_variant" value="columns_social"
-               {% if current_variant == 'columns_social' %}checked{% endif %}
-               class="variant-card-radio">
-        <div class="variant-card-icon">
-          <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="2" y="5" width="9" height="9" rx="1.5" fill="currentColor" opacity="0.65"/><circle cx="5" cy="20" r="2" fill="currentColor" opacity="0.4"/><circle cx="11" cy="20" r="2" fill="currentColor" opacity="0.4"/><rect x="18" y="5" width="8" height="10" rx="1" fill="currentColor" opacity="0.42"/><rect x="29" y="5" width="8" height="10" rx="1" fill="currentColor" opacity="0.42"/><rect x="40" y="5" width="6" height="10" rx="1" fill="currentColor" opacity="0.42"/><rect x="18" y="22" width="26" height="2" rx="1" fill="currentColor" opacity="0.16"/></svg>
-        </div>
-        <div class="variant-card-label">栏目 + 社交</div>
-      </label>
+  <div class="footer-settings-left">
+    <div class="panel-section">
+      <div class="panel-section-title">底部布局</div>
+      <div class="variant-card-grid">
+        <label class="variant-card {% if current_variant == 'columns' %}selected{% endif %}" data-variant="columns">
+          <input type="radio" name="footer_variant" value="columns"
+                 {% if current_variant == 'columns' %}checked{% endif %}
+                 class="variant-card-radio">
+          <div class="variant-card-icon">
+            <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="2" y="4" width="10" height="10" rx="1" fill="currentColor" opacity="0.5"/><rect x="14" y="4" width="10" height="10" rx="1" fill="currentColor" opacity="0.5"/><rect x="26" y="4" width="10" height="10" rx="1" fill="currentColor" opacity="0.5"/><rect x="38" y="4" width="8" height="10" rx="1" fill="currentColor" opacity="0.5"/><rect x="6" y="19" width="36" height="2" rx="1" fill="currentColor" opacity="0.2"/><rect x="14" y="24" width="20" height="2" rx="1" fill="currentColor" opacity="0.15"/><rect x="10" y="28" width="28" height="2" rx="1" fill="currentColor" opacity="0.1"/></svg>
+          </div>
+          <div class="variant-card-label">栏目模式</div>
+        </label>
+        <label class="variant-card {% if current_variant == 'minimal' %}selected{% endif %}" data-variant="minimal">
+          <input type="radio" name="footer_variant" value="minimal"
+                 {% if current_variant == 'minimal' %}checked{% endif %}
+                 class="variant-card-radio">
+          <div class="variant-card-icon">
+            <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="10" y="13" width="28" height="2" rx="1" fill="currentColor" opacity="0.3"/><rect x="14" y="18" width="20" height="2" rx="1" fill="currentColor" opacity="0.2"/></svg>
+          </div>
+          <div class="variant-card-label">极简模式</div>
+        </label>
+        <label class="variant-card {% if current_variant == 'columns_social' %}selected{% endif %}" data-variant="columns_social">
+          <input type="radio" name="footer_variant" value="columns_social"
+                 {% if current_variant == 'columns_social' %}checked{% endif %}
+                 class="variant-card-radio">
+          <div class="variant-card-icon">
+            <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="2" y="5" width="9" height="9" rx="1.5" fill="currentColor" opacity="0.65"/><circle cx="5" cy="20" r="2" fill="currentColor" opacity="0.4"/><circle cx="11" cy="20" r="2" fill="currentColor" opacity="0.4"/><rect x="18" y="5" width="8" height="10" rx="1" fill="currentColor" opacity="0.42"/><rect x="29" y="5" width="8" height="10" rx="1" fill="currentColor" opacity="0.42"/><rect x="40" y="5" width="6" height="10" rx="1" fill="currentColor" opacity="0.42"/><rect x="18" y="22" width="26" height="2" rx="1" fill="currentColor" opacity="0.16"/></svg>
+          </div>
+          <div class="variant-card-label">栏目 + 社交</div>
+        </label>
+      </div>
     </div>
-  </div>
 
-  <hr>
+    <hr>
 
   {# 版权文本 #}
-  <div class="mb-2">
+  <div class="mb-2 footer-meta-field footer-meta-copyright">
     <label class="form-label small mb-1 text-muted">版权文本</label>
     <input class="form-control form-control-sm" name="copyright"
            value="{{ current_footer.get('copyright', '') }}" placeholder="如: 昆山德恩基电子科技有限公司（留空=使用公司名称）">
   </div>
 
   {# 备案号 #}
-  <div class="mb-2">
+  <div class="mb-2 footer-meta-field footer-meta-icp">
     <label class="form-label small mb-1 text-muted">备案号</label>
     <input class="form-control form-control-sm" name="icp"
            value="{{ current_footer.get('icp', '') }}" placeholder="如: 苏ICP备xxx号（留空=使用公司信息中的备案号）">
   </div>
+  </div>
 
+  <div class="footer-settings-right">
   {# 底部栏目（栏目模式下显示） #}
   <div id="footerColumnsSection" {% if current_variant == 'minimal' %}style="display:none"{% endif %}>
     <hr>
@@ -163,6 +166,7 @@
       </div>
       {% endfor %}
     </div>
+  </div>
   </div>
 
   <div class="panel-save-bar">

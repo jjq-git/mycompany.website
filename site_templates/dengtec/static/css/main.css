@@ -6529,29 +6529,38 @@ h6 { font-size: var(--font-size-md); }
    ============================================ */
 .ci-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
 }
 
 .ci-card {
-  padding: var(--spacing-lg);
-  background: var(--color-bg, #fff);
-  border: 1px solid var(--color-border, #e2e8f0);
-  border-radius: var(--radius-md, var(--radius-md));
+  padding: clamp(1.25rem, 2.4vw, 1.75rem);
+  background: color-mix(in srgb, var(--color-bg, #fff) 94%, var(--color-primary, #067a7a) 6%);
+  border: 1px solid color-mix(in srgb, var(--color-border, #e2e8f0) 82%, var(--color-primary, #067a7a) 18%);
+  border-radius: 8px;
   text-align: center;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 170px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .ci-card:hover {
   border-color: var(--color-primary, #067a7a);
-  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06));
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.1);
+  transform: translateY(-2px);
 }
 
 .ci-icon {
+  width: 3rem;
+  height: 3rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: var(--spacing-sm);
+  margin: 0 auto var(--spacing-md);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-primary, #067a7a) 12%, transparent);
   color: var(--color-primary, #067a7a);
 }
 
@@ -6571,6 +6580,7 @@ h6 { font-size: var(--font-size-md); }
   text-decoration: none;
   display: block;
   line-height: var(--line-height-base);
+  overflow-wrap: anywhere;
 }
 
 a.ci-value:hover {
@@ -6588,19 +6598,22 @@ a.ci-value:hover {
 .ci-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  max-width: 640px;
+  gap: .75rem;
+  max-width: 720px;
   margin: 0 auto;
 }
 .ci-list-row {
   display: flex;
   align-items: flex-start;
   gap: var(--spacing-md);
-  padding: var(--spacing-md) 0;
-  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--color-bg, #fff);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 .ci-list-row:last-child {
-  border-bottom: none;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
 }
 .ci-list-row .ci-icon {
   margin-bottom: 0;
@@ -6908,38 +6921,44 @@ a.ci-value:hover {
    ============================================ */
 .ps-track {
   display: grid;
-  gap: var(--spacing-lg);
+  gap: clamp(1rem, 2vw, 1.5rem);
 }
 
 .ps-track--horizontal {
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
   overflow-x: auto;
+  padding-top: .25rem;
 }
 
 .ps-track--vertical {
   grid-template-columns: 1fr;
-  gap: 0;
-  width: 500px;
+  gap: .85rem;
+  width: min(680px, 100%);
   margin: 0 auto;
-  .ps-body {
-    padding-left: var(--spacing-md);
-  }
 }
 
 .ps-step {
   position: relative;
   text-align: center;
+  min-width: 0;
+}
+
+.ps-track--horizontal .ps-step {
+  padding: 1.125rem;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--color-bg, #fff);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .ps-track--vertical .ps-step {
   display: flex;
-  gap: var(--spacing-lg);
+  gap: 1rem;
   text-align: left;
-  padding-bottom: var(--spacing-lg);
-  border-left: 2px solid var(--color-border, #e2e8f0);
-  padding-left: var(--spacing-lg);
-  margin-left: var(--spacing-sm);
+  padding: 0 0 1.25rem 1.5rem;
+  border-left: 2px solid color-mix(in srgb, var(--color-border, #e2e8f0) 82%, var(--color-primary, #067a7a) 18%);
+  margin-left: 1rem;
 }
 
 .ps-track--vertical .ps-step:last-child {
@@ -6947,12 +6966,23 @@ a.ci-value:hover {
   padding-bottom: 0;
 }
 
+.ps-track--vertical .ps-body {
+  flex: 1;
+  min-width: 0;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--color-bg, #fff);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
 .ps-marker {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: .875rem;
   position: relative;
+  z-index: 1;
 }
 
 .ps-track--vertical .ps-marker {
@@ -6967,19 +6997,20 @@ a.ci-value:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 50%;
   background: var(--color-primary, #067a7a);
   color: #fff;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
   flex-shrink: 0;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-bg, #fff) 82%, transparent);
 }
 
 .ps-track--vertical .ps-number {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 2rem;
+  height: 2rem;
   font-size: var(--font-size-xs);
 }
 
@@ -6987,11 +7018,12 @@ a.ci-value:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 50%;
   background: var(--color-primary);
   color: var(--color-text-inverse);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-bg, #fff) 82%, transparent);
 }
 
 .ps-body {
@@ -7003,29 +7035,32 @@ a.ci-value:hover {
   font-size: var(--font-size-lg, var(--font-size-md));
   font-weight: var(--font-weight-semibold, var(--font-weight-semibold));
   color: var(--color-text, #1e293b);
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: .5rem;
+  line-height: 1.35;
 }
 
 .ps-desc {
   font-size: var(--font-size-sm, var(--font-size-sm));
   color: var(--color-text-secondary, #64748b);
   line-height: var(--line-height-base);
+  margin-bottom: 0;
 }
 
 /* 横向步骤间的连接线 */
 .ps-track--horizontal .ps-step:not(:last-child)::after {
   content: '';
   position: absolute;
-  top: 1rem;
-  right: -0.75rem;
-  width: 1.5rem;
+  top: 1.35rem;
+  right: calc(-.75rem - 1px);
+  width: calc(1.5rem + 2px);
   height: 2px;
-  background: var(--color-border, #e2e8f0);
+  background: color-mix(in srgb, var(--color-border, #e2e8f0) 78%, var(--color-primary, #067a7a) 22%);
 }
 
 /* 数字序号变体：CSS counter 自增 1/2/3... */
 .ps-track--numbered {
   counter-reset: ps-counter;
+  align-items: stretch;
 }
 .ps-track--numbered .ps-step {
   counter-increment: ps-counter;
@@ -7046,6 +7081,10 @@ a.ci-value:hover {
   .ps-track--vertical {
     width: 100%;
     margin: 0;
+  }
+  .ps-track--vertical .ps-step {
+    margin-left: .75rem;
+    padding-left: 1.25rem;
   }
 }
 
