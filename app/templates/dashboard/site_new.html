@@ -110,7 +110,7 @@
     langs.forEach(function(lang){
       var label = document.createElement('label');
       label.className = 'd-flex align-items-center gap-2 px-2 py-1 rounded';
-      label.style.cssText = 'border:1px solid #e5e7eb;background:#f8fafc;cursor:pointer;font-size:12px;';
+      label.style.cssText = 'border:1px solid #e5e7eb;background:#f8fafc;cursor:pointer;font-size:14px;';
       label.innerHTML = '<input class="form-check-input mt-0" type="checkbox" name="enabled_lang" value="' +
         String(lang.code).replace(/"/g, '&quot;') + '"' + (selected.indexOf(lang.code) !== -1 ? ' checked' : '') +
         '><span>' + (lang.name || lang.code) + '</span>';

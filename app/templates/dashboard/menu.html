@@ -10,7 +10,7 @@
   {% for l in languages %}
   <a href="{{ url_for('core.menu_edit', site=site.id, lang=l.code) }}"
      class="badge text-decoration-none lang-tab {% if current_lang == l.code %}bg-primary text-white{% else %}bg-light text-dark border{% endif %}"
-     style="font-size:12px;padding:6px 12px;">{{ l.name }}</a>
+     style="font-size:14px;padding:6px 12px;">{{ l.name }}</a>
   {% endfor %}
 </div>
 {% endif %}
