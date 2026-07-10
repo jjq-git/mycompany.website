@@ -1,0 +1,104 @@
+<div class="d-flex align-items-center justify-content-between mb-2">
+  <span class="fw-semibold">{{ page_label }}详情模板</span>
+  <div class="d-flex gap-1">
+    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="backToPageEditor()">返回</button>
+    <button class="btn btn-sm btn-outline-primary" type="button" onclick="openDatasetPanelFromTemplates()">数据</button>
+  </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, m in messages %}
+    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} py-1 px-2 small mb-2">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+
+<div class="mb-3 p-2 rounded" style="background:#f8f9fa;border:1px solid #e9ecef">
+  <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}" class="d-flex gap-2">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="add">
+    <input type="text" class="form-control form-control-sm" name="name" placeholder="新模板名称，例如 LED灯条参数详情">
+    <button class="btn btn-sm btn-primary text-nowrap" type="submit">创建</button>
+  </form>
+</div>
+
+<div class="d-flex flex-column gap-2">
+  {% for tpl in detail_templates %}
+  {% set tpl_id = tpl.id | default(tpl.get('id')) %}
+  {% set tpl_name = tpl.name | default(tpl.get('name', tpl_id)) %}
+  {% set is_default = tpl_id == default_template_id %}
+  {% set modules = tpl.modules | default(tpl.get('modules', [])) %}
+  <div class="p-2 rounded" style="border:1px solid #e5e7eb;background:#fff">
+    <div class="d-flex align-items-start justify-content-between gap-2">
+      <div style="min-width:0">
+        <div class="fw-semibold text-truncate">{{ tpl_name }}</div>
+        <div class="text-muted" style="font-size:12px">
+          ID: {{ tpl_id }} · 模块 {{ modules|length }} 个{% if is_default %} · 默认{% endif %}
+        </div>
+      </div>
+      {% if is_default %}
+      <span class="badge text-bg-primary">默认</span>
+      {% endif %}
+    </div>
+
+    <div class="mt-2 d-flex flex-wrap gap-1">
+      {% if not is_default %}
+      <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="set_default">
+        <input type="hidden" name="template_id" value="{{ tpl_id }}">
+        <button class="btn btn-sm btn-outline-primary" type="submit">设为默认</button>
+      </form>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}" class="d-flex gap-1">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="copy">
+        <input type="hidden" name="template_id" value="{{ tpl_id }}">
+        <input type="text" class="form-control form-control-sm" name="name" placeholder="副本名称" style="width:130px">
+        <button class="btn btn-sm btn-outline-secondary" type="submit">复制</button>
+      </form>
+
+      {% if not is_default %}
+      <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="template_id" value="{{ tpl_id }}">
+        <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('删除这个详情模板？已选择它的数据会自动回退到默认模板。')">删除</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <div class="mt-2 small text-muted">
+      模板模块编辑将在下一步接入页面模块编辑器；当前可先创建模板，并在数据条目中选择使用。
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+(function() {
+  var DATASET_KEY = '{{ dataset_key }}';
+  var SITE_ID = '{{ site.id }}';
+  function getQuery() {
+    var params = new URLSearchParams(window.location.search);
+    var siteParam = params.get('site') || SITE_ID;
+    var langParam = params.get('lang') || '{{ current_lang }}';
+    var qs = siteParam ? '&site=' + encodeURIComponent(siteParam) : '';
+    if (langParam) qs += '&lang=' + encodeURIComponent(langParam);
+    return qs;
+  }
+  window.backToPageEditor = function() {
+    loadPanel('/_panel/' + encodeURIComponent(DATASET_KEY) + '?_fragment=1' + getQuery()).then(function(loaded) {
+      if (loaded === false) return;
+      var frame = document.getElementById('previewFrame');
+      if (frame) {
+        frame.dataset.previewUrl = '/live_preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/index.html';
+        try { refreshPreview({ build: false }); } catch(e) {}
+      }
+    });
+  };
+  window.openDatasetPanelFromTemplates = function() {
+    loadPanel('/_dataset/' + encodeURIComponent(DATASET_KEY) + '?_fragment=1' + getQuery());
+  };
+})();
+</script>

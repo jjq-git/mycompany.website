@@ -52,6 +52,82 @@ bp = Blueprint('core', __name__)
 
 mimetypes.add_type('application/wasm', '.wasm')
 
+
+def _default_detail_template(dataset_key, label=None):
+    title = (label or dataset_key or '条目').strip() or '条目'
+    return {
+        'id': 'default',
+        'name': f'默认{title}详情',
+        'is_default': True,
+        'modules': [{'type': 'item_data', 'variant': 'default', 'data': {}}],
+        'required_fields': ['title', 'slug'],
+        'optional_fields': ['cover', 'summary', 'body', 'detail_images', 'specs', 'category', 'tags'],
+        'seo': {
+            'title': '{title} - {site_name}',
+            'description': '{summary}',
+            'image': 'cover',
+        },
+    }
+
+
+def _ensure_page_detail_templates(site_id, dataset_key, label=None, lang=None):
+    """Ensure list page config has a default detail template without touching existing data."""
+    page = read_yaml(site_id, f'pages/{dataset_key}.yaml', default={}, lang=lang) or {}
+    changed = False
+    if 'modules' not in page:
+        page['modules'] = []
+        changed = True
+    templates = page.get('detail_templates')
+    if not isinstance(templates, list) or not templates:
+        page['detail_templates'] = [_default_detail_template(dataset_key, label)]
+        changed = True
+    else:
+        has_default = any(
+            isinstance(tpl, dict) and (tpl.get('is_default') is True or str(tpl.get('is_default')).lower() == 'true')
+            for tpl in templates
+        )
+        if not has_default and isinstance(templates[0], dict):
+            templates[0]['is_default'] = True
+            changed = True
+    if changed:
+        write_yaml(site_id, f'pages/{dataset_key}.yaml', page, lang=lang)
+    return page
+
+
+def _detail_templates_for_page(page, dataset_key, label=None):
+    templates = (page or {}).get('detail_templates')
+    if not isinstance(templates, list) or not templates:
+        return [_default_detail_template(dataset_key, label)]
+    return [tpl for tpl in templates if isinstance(tpl, dict)] or [_default_detail_template(dataset_key, label)]
+
+
+def _default_detail_template_id(page, dataset_key, label=None):
+    templates = _detail_templates_for_page(page, dataset_key, label)
+    for tpl in templates:
+        if tpl.get('is_default') is True or str(tpl.get('is_default')).lower() == 'true':
+            return tpl.get('id') or 'default'
+    return templates[0].get('id') or 'default'
+
+
+def _unique_detail_template_id(templates, name):
+    existing = {str(tpl.get('id') or '') for tpl in templates if isinstance(tpl, dict)}
+    base = re.sub(r'[^a-z0-9-]+', '-', (name or '').strip().lower())
+    base = base.strip('-') or 'template'
+    candidate = base
+    index = 2
+    while candidate in existing:
+        candidate = f'{base}-{index}'
+        index += 1
+    return candidate
+
+
+def _ensure_detail_templates_for_menu(site_id, menu_items):
+    for entry in menu_lib.collect_list_targets(menu_items):
+        target = entry.get('target')
+        if target:
+            _ensure_page_detail_templates(site_id, target, entry.get('label'))
+
+
 def _hex_to_rgb(hex_color):
     """将 #rrggbb 转为 (r, g, b) 整数元组；无效输入返回黑色 (0, 0, 0)."""
     h = hex_color.lstrip('#')
@@ -2963,6 +3039,8 @@ def menu_edit():
             menu_labels[lang] = labels
             settings['menu_labels'] = menu_labels
         write_yaml(site.id, 'settings.yaml', settings)
+        if lang == default_lang:
+            _ensure_detail_templates_for_menu(site.id, items)
         flash('已保存，首页已保持为固定入口')
         if is_embed:
             return redirect(url_for('core.menu_edit', embed='1', site=site.id, lang=lang, saved='1'))
@@ -3486,6 +3564,8 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
             continue
         if key == '_show_detail_btn_mode':
             continue
+        if key in ('_advanced_modules_enabled', '_restore_template_modules'):
+            continue
         if key.startswith('module_') or key in ('module_count', 'csrf_token'):
             continue
         fields[key] = form.get(key, '').strip()
@@ -3521,8 +3601,10 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
             'images': gallery_images,
         }
 
+    if form.get('_restore_template_modules') == '1':
+        fields['modules'] = []
     module_count_str = form.get('module_count')
-    if module_count_str and module_count_str.isdigit():
+    if form.get('_restore_template_modules') != '1' and form.get('_advanced_modules_enabled') == '1' and module_count_str and module_count_str.isdigit():
         existing_modules = item.get('modules', [])
         modules = _parse_modules_form(form, existing_modules)
         for m in modules:
@@ -3535,7 +3617,7 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
                         keep[key] = value
                 m['data'] = keep
         fields['modules'] = modules
-    elif module_count_str is not None:
+    elif form.get('_restore_template_modules') != '1' and form.get('_advanced_modules_enabled') == '1' and module_count_str is not None:
         fields['modules'] = []
 
     draft = dict(item)
@@ -3978,6 +4060,97 @@ def dataset_panel(dataset_key):
                    preview_path=preview_path,
                    active=dataset_key)
 
+
+@bp.route('/_detail_templates/<path:dataset_key>', methods=['GET', 'POST'])
+def detail_templates_panel(dataset_key):
+    """Manage dataset detail templates stored on pages/<dataset_key>.yaml."""
+    _validate_key(dataset_key)
+    user, site = _current_context()
+    lang, languages, default_lang = _get_panel_lang(site)
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    menu_items = settings.get('menu') or []
+    meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
+    raw_menu = menu_lib.upgrade_old_format(menu_items, meta.get('datasets', []))
+    page_label = next(
+        (entry.get('label') for entry in menu_lib.collect_list_targets(raw_menu) if entry.get('target') == dataset_key),
+        dataset_key,
+    )
+    from app.core.menu import find_menu_path
+    preview_path = find_menu_path(raw_menu, dataset_key)
+    page = _ensure_page_detail_templates(site.id, dataset_key, page_label)
+
+    if request.method == 'POST':
+        page = _ensure_page_detail_templates(site.id, dataset_key, page_label)
+        templates = _detail_templates_for_page(page, dataset_key, page_label)
+        action = request.form.get('action', '').strip()
+        template_id = request.form.get('template_id', '').strip()
+
+        if action == 'add':
+            name = request.form.get('name', '').strip() or f'{page_label}详情模板'
+            new_template = _default_detail_template(dataset_key, page_label)
+            new_template['id'] = _unique_detail_template_id(templates, name)
+            new_template['name'] = name
+            new_template['is_default'] = False
+            templates.append(new_template)
+            flash('已创建详情模板')
+        elif action == 'copy':
+            source = next((tpl for tpl in templates if str(tpl.get('id') or '') == template_id), None)
+            if not source:
+                flash('要复制的模板不存在', 'error')
+            else:
+                name = request.form.get('name', '').strip() or f"{source.get('name') or template_id} 副本"
+                new_template = copy.deepcopy(source)
+                new_template['id'] = _unique_detail_template_id(templates, name)
+                new_template['name'] = name
+                new_template['is_default'] = False
+                templates.append(new_template)
+                flash('已复制详情模板')
+        elif action == 'set_default':
+            found = False
+            for tpl in templates:
+                is_match = str(tpl.get('id') or '') == template_id
+                tpl['is_default'] = is_match
+                found = found or is_match
+            if found:
+                flash('已设置默认详情模板')
+            else:
+                flash('模板不存在', 'error')
+        elif action == 'delete':
+            source = next((tpl for tpl in templates if str(tpl.get('id') or '') == template_id), None)
+            if not source:
+                flash('要删除的模板不存在', 'error')
+            elif source.get('is_default') is True or str(source.get('is_default')).lower() == 'true':
+                flash('默认模板不能删除，请先设置其他模板为默认', 'error')
+            elif len(templates) <= 1:
+                flash('至少需要保留一个详情模板', 'error')
+            else:
+                page['detail_templates'] = [tpl for tpl in templates if str(tpl.get('id') or '') != template_id]
+                write_yaml(site.id, f'pages/{dataset_key}.yaml', page)
+                flash('已删除详情模板')
+                return redirect(url_for('core.detail_templates_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
+        else:
+            flash('未知操作', 'error')
+
+        page['detail_templates'] = templates
+        write_yaml(site.id, f'pages/{dataset_key}.yaml', page)
+        return redirect(url_for('core.detail_templates_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
+
+    templates = _detail_templates_for_page(page, dataset_key, page_label)
+    default_template_id = _default_detail_template_id(page, dataset_key, page_label)
+    return _render('dashboard/panel_detail_templates.html',
+                   user=user, site=site,
+                   dataset_key=dataset_key,
+                   page_label=page_label,
+                   detail_templates=templates,
+                   default_template_id=default_template_id,
+                   current_lang=lang,
+                   languages=languages,
+                   default_lang=default_lang,
+                   preview_path=preview_path,
+                   active=dataset_key)
+
+
 @bp.route('/_dataset/<path:dataset_key>/new', methods=['POST'])
 def dataset_new(dataset_key):
     """通用数据集新建条目 — 支持 ?lang= 参数保存到对应语言."""
@@ -3985,9 +4158,11 @@ def dataset_new(dataset_key):
     _, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = _storage_lang(site, lang, default_lang)
+    page_cfg = _ensure_page_detail_templates(site.id, dataset_key)
+    default_template_id = _default_detail_template_id(page_cfg, dataset_key)
     n = len(datasets.load(site.id, dataset_key, lang=storage_lang)) + 1
     new_id = datasets.add(site.id, dataset_key, {
-        'title': f'新条目 {n}', 'slug': f'item-{n}',
+        'title': f'新条目 {n}', 'slug': f'item-{n}', 'template_id': default_template_id,
     }, lang=storage_lang)
     return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
 
@@ -4022,6 +4197,13 @@ def dataset_edit(dataset_key, item_id):
         meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
         raw_menu = menu_lib.upgrade_old_format(menu_items, meta.get('datasets', []))
         preview_path = find_menu_path(raw_menu, dataset_key)
+        page_label = next(
+            (entry.get('label') for entry in menu_lib.collect_list_targets(raw_menu) if entry.get('target') == dataset_key),
+            dataset_key,
+        )
+        page_cfg = _ensure_page_detail_templates(site.id, dataset_key, page_label)
+        detail_templates = _detail_templates_for_page(page_cfg, dataset_key, page_label)
+        default_template_id = _default_detail_template_id(page_cfg, dataset_key, page_label)
         all_list_datasets = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu))
         from .style_registry import STYLE_REGISTRY
         from .icon_registry import icon_names
@@ -4037,10 +4219,12 @@ def dataset_edit(dataset_key, item_id):
                        all_list_datasets=all_list_datasets,
                        is_list_page=is_list_page,
                        page_key=dataset_key,
-                       preview_slug=slug,
-                       preview_path=preview_path,
-                       style_registry=STYLE_REGISTRY,
-                       icon_list=icon_names())
+                        preview_slug=slug,
+                        preview_path=preview_path,
+                        detail_templates=detail_templates,
+                        default_template_id=default_template_id,
+                        style_registry=STYLE_REGISTRY,
+                        icon_list=icon_names())
 
     if request.method == 'POST':
         if storage_lang and not datasets.find(site.id, dataset_key, item_id, lang=storage_lang):
@@ -4058,6 +4242,8 @@ def dataset_edit(dataset_key, item_id):
             if key.startswith('detail_gallery_') or key in ('detail_gallery_count',):
                 continue
             if key == '_show_detail_btn_mode':
+                continue
+            if key in ('_advanced_modules_enabled', '_restore_template_modules'):
                 continue
             # 跳过模块配置字段和 CSRF 令牌（不参与数据存储）
             if key.startswith('module_') or key in ('module_count', 'csrf_token'):
@@ -4156,8 +4342,13 @@ def dataset_edit(dataset_key, item_id):
         # 保存模块配置到数据项 (item) 中
         # module_count 缺失表示表单不包含模块数据（例如用户未展开面板就保存），
         # 此时保留已有 modules 而非清空
+        if request.form.get('_restore_template_modules') == '1':
+            existing_modules = item.get('modules')
+            if isinstance(existing_modules, list) and existing_modules:
+                fields['modules_backup'] = copy.deepcopy(existing_modules)
+            fields['modules'] = []
         module_count_str = request.form.get('module_count')
-        if module_count_str and module_count_str.isdigit():
+        if request.form.get('_restore_template_modules') != '1' and request.form.get('_advanced_modules_enabled') == '1' and module_count_str and module_count_str.isdigit():
             try:
                 existing_modules = item.get('modules', [])
                 modules = _parse_modules_form(request.form, existing_modules)
@@ -4181,7 +4372,7 @@ def dataset_edit(dataset_key, item_id):
                 fields['modules'] = modules
             except Exception as exc:
                 current_app.logger.warning('数据集编辑保存模块配置失败: %s', exc)
-        elif module_count_str is not None:
+        elif request.form.get('_restore_template_modules') != '1' and request.form.get('_advanced_modules_enabled') == '1' and module_count_str is not None:
             # 明确传了 module_count 但非数字 → 清空
             fields['modules'] = []
         # 否则 module_count 不在表单中 → 保留旧 modules 不动
@@ -4289,6 +4480,10 @@ def page_panel(page_key):
         return False
 
     is_list_page = _find_list_in_menu(menu_items, page_key)
+    if is_list_page:
+        # Ensure every list page has a default detail template. This only adds
+        # missing config and never touches dataset items.
+        _ensure_page_detail_templates(site.id, page_key)
 
     # 收集数据集列表，供数据网格模块选择数据源，也供模板 datasetNamesJson 序列化
     from app.core.menu import upgrade_old_format, normalize_for_render, ensure_home

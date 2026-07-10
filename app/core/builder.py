@@ -928,6 +928,64 @@ def _normalize_preview_filepath(filepath):
     return rel
 
 
+def _default_detail_template(dataset_key):
+    label = (dataset_key or 'item').replace('_', ' ').replace('-', ' ').title()
+    return {
+        'id': 'default',
+        'name': f'默认{label}详情',
+        'is_default': True,
+        'modules': [{'type': 'item_data', 'variant': 'default', 'data': {}}],
+        'required_fields': ['title', 'slug'],
+        'optional_fields': ['cover', 'summary', 'body', 'detail_images', 'specs', 'category', 'tags'],
+        'seo': {
+            'title': '{title} - {site_name}',
+            'description': '{summary}',
+            'image': 'cover',
+        },
+    }
+
+
+def _detail_templates_for_page(page, dataset_key):
+    templates = page.get('detail_templates') if isinstance(page, dict) else None
+    if not isinstance(templates, list) or not templates:
+        return [_default_detail_template(dataset_key)]
+    return [tpl for tpl in templates if isinstance(tpl, dict)] or [_default_detail_template(dataset_key)]
+
+
+def _find_detail_template(page, dataset_key, template_id=None):
+    templates = _detail_templates_for_page(page, dataset_key)
+    if template_id:
+        for tpl in templates:
+            if str(tpl.get('id') or '') == str(template_id):
+                return tpl
+    for tpl in templates:
+        if tpl.get('is_default') is True or str(tpl.get('is_default')).lower() == 'true':
+            return tpl
+    return templates[0] if templates else _default_detail_template(dataset_key)
+
+
+def _resolve_detail_item_modules(item, page, dataset_key):
+    """Return an item copy with effective detail modules injected.
+
+    Existing item.modules stays highest priority so old per-item custom detail
+    pages keep rendering exactly as before. When absent, fall back to the
+    selected list-level detail template, then the default template, then the
+    system item_data block.
+    """
+    item_copy = dict(item or {})
+    existing_modules = item_copy.get('modules')
+    if isinstance(existing_modules, list) and existing_modules:
+        return item_copy
+
+    tpl = _find_detail_template(page or {}, dataset_key, item_copy.get('template_id'))
+    modules = tpl.get('modules') if isinstance(tpl, dict) else None
+    if not isinstance(modules, list) or not modules:
+        modules = [{'type': 'item_data', 'variant': 'default', 'data': {}}]
+    item_copy['modules'] = copy.deepcopy(modules)
+    item_copy['_detail_template_id'] = tpl.get('id', 'default') if isinstance(tpl, dict) else 'default'
+    return item_copy
+
+
 def _render_task_html(env, task, common, pages, data, meta, dataset_paths):
     tpl = env.get_template(task['template'])
     ctx = dict(common)
@@ -948,7 +1006,10 @@ def _render_task_html(env, task, common, pages, data, meta, dataset_paths):
         ctx['page'] = pages.get(task['page_key'], {})
     elif task['type'] == 'detail':
         ctx['page'] = pages.get(task['page_key'], {})
-        ctx[task['var_name']] = task['item']
+        ctx[task['var_name']] = _resolve_detail_item_modules(
+            task['item'], ctx['page'], task.get('dataset_key') or task.get('page_key')
+        )
+        ctx['item'] = ctx[task['var_name']]
         current = task['current_path'].rstrip('/')
         ctx['lang_switch_path'] = current.rsplit('/', 1)[0] + '/' if '/' in current else '/'
 
@@ -1007,7 +1068,10 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
                 ctx['page'] = pages.get(task['page_key'], {})
             elif task['type'] == 'detail':
                 ctx['page'] = pages.get(task['page_key'], {})
-                ctx[task['var_name']] = task['item']
+                ctx[task['var_name']] = _resolve_detail_item_modules(
+                    task['item'], ctx['page'], task.get('dataset_key') or task.get('page_key')
+                )
+                ctx['item'] = ctx[task['var_name']]
                 # 详情页降级: 去掉末尾 slug 段, 退到列表页(各语言都有列表页, 不会 404)
                 _p = task['current_path'].rstrip('/')
                 ctx['lang_switch_path'] = _p.rsplit('/', 1)[0] + '/' if '/' in _p else '/'
