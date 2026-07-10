@@ -4129,21 +4129,60 @@ def detail_templates_panel(dataset_key):
                 write_yaml(site.id, f'pages/{dataset_key}.yaml', page)
                 flash('已删除详情模板')
                 return redirect(url_for('core.detail_templates_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
+        elif action == 'save_modules':
+            source = next((tpl for tpl in templates if str(tpl.get('id') or '') == template_id), None)
+            if not source:
+                flash('要编辑的模板不存在', 'error')
+            else:
+                name = request.form.get('name', '').strip()
+                if name:
+                    source['name'] = name
+                existing_modules = source.get('modules') if isinstance(source.get('modules'), list) else []
+                modules = _parse_modules_form(request.form, existing_modules)
+                if not modules:
+                    modules = [{'type': 'item_data', 'variant': 'default', 'data': {}}]
+                source['modules'] = modules
+                seo_title = request.form.get('seo_title', '').strip()
+                seo_description = request.form.get('seo_description', '').strip()
+                seo_image = request.form.get('seo_image', '').strip()
+                source['seo'] = {
+                    'title': seo_title or '{title} - {site_name}',
+                    'description': seo_description or '{summary}',
+                    'image': seo_image or 'cover',
+                }
+                flash('已保存详情模板')
         else:
             flash('未知操作', 'error')
 
         page['detail_templates'] = templates
         write_yaml(site.id, f'pages/{dataset_key}.yaml', page)
-        return redirect(url_for('core.detail_templates_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
+        redirect_args = {'dataset_key': dataset_key, '_fragment': '1', 'site': site.id, 'lang': lang}
+        if action == 'save_modules' and template_id:
+            redirect_args['template_id'] = template_id
+        return redirect(url_for('core.detail_templates_panel', **redirect_args))
 
     templates = _detail_templates_for_page(page, dataset_key, page_label)
     default_template_id = _default_detail_template_id(page, dataset_key, page_label)
+    edit_template_id = request.args.get('template_id', '').strip()
+    edit_template = next(
+        (tpl for tpl in templates if str(tpl.get('id') or '') == edit_template_id),
+        None,
+    ) if edit_template_id else None
+    blocks = _get_available_blocks(site.template_name)
+    all_list_datasets = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu))
+    from .style_registry import STYLE_REGISTRY
+    from .icon_registry import icon_names
     return _render('dashboard/panel_detail_templates.html',
                    user=user, site=site,
                    dataset_key=dataset_key,
                    page_label=page_label,
                    detail_templates=templates,
                    default_template_id=default_template_id,
+                   edit_template=edit_template,
+                   blocks=blocks,
+                   all_list_datasets=all_list_datasets,
+                   style_registry=STYLE_REGISTRY,
+                   icon_list=icon_names(),
                    current_lang=lang,
                    languages=languages,
                    default_lang=default_lang,

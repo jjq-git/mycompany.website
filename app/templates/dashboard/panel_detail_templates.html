@@ -1,3 +1,4 @@
+{% set editing = edit_template is defined and edit_template %}
 <div class="d-flex align-items-center justify-content-between mb-2">
   <span class="fw-semibold">{{ page_label }}详情模板</span>
   <div class="d-flex gap-1">
@@ -21,13 +22,14 @@
   </form>
 </div>
 
-<div class="d-flex flex-column gap-2">
+<div class="d-flex flex-column gap-2 mb-3">
   {% for tpl in detail_templates %}
   {% set tpl_id = tpl.id | default(tpl.get('id')) %}
   {% set tpl_name = tpl.name | default(tpl.get('name', tpl_id)) %}
   {% set is_default = tpl_id == default_template_id %}
+  {% set is_current = editing and edit_template.id == tpl_id %}
   {% set modules = tpl.modules | default(tpl.get('modules', [])) %}
-  <div class="p-2 rounded" style="border:1px solid #e5e7eb;background:#fff">
+  <div class="p-2 rounded" style="border:1px solid {{ '#0d6efd' if is_current else '#e5e7eb' }};background:#fff">
     <div class="d-flex align-items-start justify-content-between gap-2">
       <div style="min-width:0">
         <div class="fw-semibold text-truncate">{{ tpl_name }}</div>
@@ -35,12 +37,15 @@
           ID: {{ tpl_id }} · 模块 {{ modules|length }} 个{% if is_default %} · 默认{% endif %}
         </div>
       </div>
-      {% if is_default %}
-      <span class="badge text-bg-primary">默认</span>
-      {% endif %}
+      <div class="d-flex gap-1">
+        {% if is_default %}<span class="badge text-bg-primary">默认</span>{% endif %}
+        {% if is_current %}<span class="badge text-bg-light border">编辑中</span>{% endif %}
+      </div>
     </div>
 
     <div class="mt-2 d-flex flex-wrap gap-1">
+      <button class="btn btn-sm btn-outline-primary" type="button" onclick="openTemplateEditor('{{ tpl_id }}')">编辑</button>
+
       {% if not is_default %}
       <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -67,13 +72,208 @@
       </form>
       {% endif %}
     </div>
-
-    <div class="mt-2 small text-muted">
-      模板模块编辑将在下一步接入页面模块编辑器；当前可先创建模板，并在数据条目中选择使用。
-    </div>
   </div>
   {% endfor %}
 </div>
+
+{% if editing %}
+{% set tpl_id = edit_template.id | default(edit_template.get('id')) %}
+{% set tpl_seo = edit_template.seo if edit_template.seo is mapping else {} %}
+{% include 'dashboard/_block_palette.html' %}
+
+<form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang, template_id=tpl_id) }}" id="detailTemplateForm" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="action" value="save_modules">
+  <input type="hidden" name="template_id" value="{{ tpl_id }}">
+  <input type="hidden" name="module_count" id="moduleCountTpl" value="0">
+
+  <div class="p-2 rounded mb-2" style="background:#f8f9fa;border:1px solid #e9ecef">
+    <div class="mb-2">
+      <label class="form-label small mb-1 text-muted">模板名称</label>
+      <input type="text" class="form-control form-control-sm" name="name" value="{{ edit_template.name | default(edit_template.get('name', tpl_id)) }}">
+    </div>
+    <div class="row g-2">
+      <div class="col-12">
+        <label class="form-label small mb-1 text-muted">SEO 标题规则</label>
+        <input type="text" class="form-control form-control-sm font-monospace" name="seo_title" value="{{ tpl_seo.title | default(tpl_seo.get('title', '{title} - {site_name}')) }}">
+      </div>
+      <div class="col-8">
+        <label class="form-label small mb-1 text-muted">SEO 描述字段</label>
+        <input type="text" class="form-control form-control-sm font-monospace" name="seo_description" value="{{ tpl_seo.description | default(tpl_seo.get('description', '{summary}')) }}">
+      </div>
+      <div class="col-4">
+        <label class="form-label small mb-1 text-muted">SEO 图片字段</label>
+        <input type="text" class="form-control form-control-sm font-monospace" name="seo_image" value="{{ tpl_seo.image | default(tpl_seo.get('image', 'cover')) }}">
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-2">
+    <button class="btn btn-outline-primary btn-sm w-100 panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal">
+      + 添加模块
+    </button>
+  </div>
+
+  <div class="small text-muted mb-2">模板模块会应用到所有未做单条高级自定义的数据。</div>
+  <div id="selectedModulesTpl"></div>
+
+  <div class="panel-save-bar">
+    <button type="submit" class="btn btn-primary btn-sm w-100">保存详情模板</button>
+  </div>
+</form>
+
+<script src="/static/js/admin_modules.js?v=99"></script>
+<script type="application/json" id="blockLibraryTplJson">{{ blocks | tojson }}</script>
+<script type="application/json" id="allListDatasetsTplJson">{{ all_list_datasets | tojson }}</script>
+<script type="application/json" id="styleRegistryTplJson">{{ style_registry | default({}) | tojson }}</script>
+<script type="application/json" id="templateModulesJson">{{ (edit_template.modules | default([])) | tojson }}</script>
+<script>
+(function() {
+  var restoringTemplateModules = true;
+  var blockLibrary = JSON.parse(document.getElementById('blockLibraryTplJson').textContent || '[]');
+  var allListDatasets = JSON.parse(document.getElementById('allListDatasetsTplJson').textContent || '[]');
+  var styleRegistry = JSON.parse(document.getElementById('styleRegistryTplJson').textContent || '{}');
+  window.blockLibrary = blockLibrary;
+  window._moduleCtx = {
+    blockLibrary: blockLibrary,
+    datasetNames: allListDatasets,
+    editItem: {},
+    styleRegistry: styleRegistry,
+    isDatasetMode: true,
+    containerId: 'selectedModulesTpl'
+  };
+
+  window._switchContentStyleTab = function(btn, tabName) {
+    var item = btn.closest('.module-item');
+    item.querySelectorAll('.content-style-tab').forEach(function(t) { t.classList.remove('active'); });
+    btn.classList.add('active');
+    item.querySelectorAll('.content-style-panel').forEach(function(c) { c.style.display = 'none'; });
+    var target = item.querySelector('.panel-' + tabName);
+    if (target) target.style.display = '';
+  };
+
+  window._moveModule = function(btn, dir) {
+    var item = btn.closest('.module-item');
+    var container = document.getElementById('selectedModulesTpl');
+    if (!item || !container) return;
+    var items = Array.from(container.querySelectorAll('.module-item'));
+    var idx = items.indexOf(item);
+    if (dir < 0 && idx > 0) container.insertBefore(item, items[idx - 1]);
+    if (dir > 0 && idx < items.length - 1) container.insertBefore(items[idx + 1], item);
+    window._reindexModules();
+  };
+
+  window._reindexModules = function() {
+    var items = document.querySelectorAll('#selectedModulesTpl .module-item');
+    items.forEach(function(item, i) {
+      item.dataset.moduleIndex = i;
+      item.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el) {
+        if (el.name && el.name.indexOf('module_') === 0) {
+          el.name = el.name.replace(/^module_\d+_/, 'module_' + i + '_');
+        }
+      });
+      var orderInp = item.querySelector('input[name$="_order"]');
+      if (orderInp) orderInp.value = i + 1;
+      var meta = item.querySelector('.module-title-meta');
+      var variantInp = item.querySelector('input[name$="_variant"]');
+      if (meta) meta.textContent = '#' + (i + 1) + ' · ' + ((variantInp && variantInp.value) || 'default');
+    });
+    var countEl = document.getElementById('moduleCountTpl');
+    if (countEl) countEl.value = items.length;
+  };
+
+  window._addIdImage = function(modIdx) {
+    var editor = document.querySelector('#selectedModulesTpl .id-images-editor[data-module-index="' + modIdx + '"]');
+    if (!editor) return;
+    var countEl = editor.querySelector('.id-image-count');
+    var list = editor.querySelector('.id-image-list');
+    var next = parseInt(countEl.value || '0', 10);
+    var html = '<div class="border rounded p-2 mb-2 id-image-item" data-image-index="' + next + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-image-item\').remove();window._reindexIdImages(' + modIdx + ')">删除</button></div><div class="mb-2"><label class="form-label small mb-1 text-muted">图片 URL</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_images_' + next + '_url"><input type="file" class="form-control form-control-sm mt-1" name="module_' + modIdx + '_data_images_' + next + '_url_file" accept="image/*"></div></div>';
+    list.insertAdjacentHTML('beforeend', html);
+    countEl.value = next + 1;
+  };
+
+  window._reindexIdImages = function(modIdx) {
+    var editor = document.querySelector('#selectedModulesTpl .id-images-editor[data-module-index="' + modIdx + '"]');
+    if (!editor) return;
+    var items = editor.querySelectorAll('.id-image-item');
+    editor.querySelector('.id-image-count').value = items.length;
+    items.forEach(function(item, i) {
+      item.dataset.imageIndex = i;
+      var title = item.querySelector('.small.fw-semibold');
+      if (title) title.textContent = '图片 ' + (i + 1);
+      item.querySelectorAll('input[name], textarea[name]').forEach(function(el) {
+        el.name = el.name.replace(/module_\d+_data_images_\d+_/, 'module_' + modIdx + '_data_images_' + i + '_');
+      });
+    });
+  };
+
+  window._addIdSpec = function(modIdx) {
+    var editor = document.querySelector('#selectedModulesTpl .id-specs-editor[data-module-index="' + modIdx + '"]');
+    if (!editor) return;
+    var countEl = editor.querySelector('.id-spec-count');
+    var list = editor.querySelector('.id-spec-list');
+    var next = parseInt(countEl.value || '0', 10);
+    var html = '<div class="border rounded p-2 mb-2 id-spec-item" data-spec-index="' + next + '"><div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">规格 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.id-spec-item\').remove();window._reindexIdSpecs(' + modIdx + ')">删除</button></div><div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">参数名</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_specs_' + next + '_name"></div><div class="col-6"><label class="form-label small mb-1 text-muted">参数值</label><input type="text" class="form-control form-control-sm" name="module_' + modIdx + '_data_specs_' + next + '_value"></div></div></div>';
+    list.insertAdjacentHTML('beforeend', html);
+    countEl.value = next + 1;
+  };
+
+  window._reindexIdSpecs = function(modIdx) {
+    var editor = document.querySelector('#selectedModulesTpl .id-specs-editor[data-module-index="' + modIdx + '"]');
+    if (!editor) return;
+    var items = editor.querySelectorAll('.id-spec-item');
+    editor.querySelector('.id-spec-count').value = items.length;
+    items.forEach(function(item, i) {
+      item.dataset.specIndex = i;
+      var title = item.querySelector('.small.fw-semibold');
+      if (title) title.textContent = '规格 ' + (i + 1);
+      item.querySelectorAll('input[name], textarea[name]').forEach(function(el) {
+        el.name = el.name.replace(/module_\d+_data_specs_\d+_/, 'module_' + modIdx + '_data_specs_' + i + '_');
+      });
+    });
+  };
+
+  window.addTemplateModule = function(type, variant, savedData) {
+    var container = document.getElementById('selectedModulesTpl');
+    var countEl = document.getElementById('moduleCountTpl');
+    if (!container || !countEl || typeof window._buildModuleHTML !== 'function') return false;
+    var idx = parseInt(countEl.value || '0', 10);
+    var result = window._buildModuleHTML(type, idx, savedData || {}, variant || 'default');
+    var div = document.createElement('div');
+    div.className = 'card mb-2 module-item expanded';
+    div.dataset.moduleIndex = idx;
+    div.dataset.moduleType = type;
+    if (result.borderStyle) div.style.cssText = result.borderStyle;
+    div.innerHTML = result.html;
+    container.appendChild(div);
+    if (typeof initColorPickers === 'function') initColorPickers(div);
+    var header = div.querySelector('.module-header');
+    if (header) {
+      header.addEventListener('click', function() {
+        if (typeof window._toggleModuleAccordion === 'function') window._toggleModuleAccordion(div);
+      });
+    }
+    window._reindexModules();
+    return true;
+  };
+
+  window.onBlockPaletteConfirm = function(type, variant, dataPreset) {
+    window.addTemplateModule(type, variant || 'default', dataPreset || {});
+  };
+
+  var savedModules = JSON.parse(document.getElementById('templateModulesJson').textContent || '[]');
+  if (savedModules.length) {
+    savedModules.forEach(function(mod) {
+      window.addTemplateModule(mod.type, mod.variant || 'default', mod.data || {});
+    });
+  } else {
+    window.addTemplateModule('item_data', 'default', {});
+  }
+  restoringTemplateModules = false;
+})();
+</script>
+{% endif %}
 
 <script>
 (function() {
@@ -99,6 +299,9 @@
   };
   window.openDatasetPanelFromTemplates = function() {
     loadPanel('/_dataset/' + encodeURIComponent(DATASET_KEY) + '?_fragment=1' + getQuery());
+  };
+  window.openTemplateEditor = function(templateId) {
+    loadPanel('/_detail_templates/' + encodeURIComponent(DATASET_KEY) + '?_fragment=1' + getQuery() + '&template_id=' + encodeURIComponent(templateId));
   };
 })();
 </script>
