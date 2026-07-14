@@ -48,7 +48,7 @@
   .dt-components-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
   .dt-components-title{font-size:13px;font-weight:700;color:#0f172a}
   .dt-components-note{font-size:12px;color:#64748b;line-height:1.55;margin:0}
-  #selectedModulesTpl{display:grid;gap:10px;margin-top:10px}
+  #selectedModulesTpl{display:grid;margin-top:10px}
   #selectedModulesTpl>.module-item{border-color:#d8e0ea;border-radius:8px;box-shadow:inset 3px 0 0 #d8e0ea,0 1px 0 rgba(15,23,42,.03)}
   #selectedModulesTpl>.module-item:focus-within{box-shadow:inset 3px 0 0 #0f9a8a,0 0 0 1px rgba(15,154,138,.14)}
   .dt-tool-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px}
@@ -366,6 +366,10 @@
   };
 
   window.onBlockPaletteConfirm = function(type, variant, dataPreset) {
+    if (type === 'detail_content_blocks' && document.querySelector('#selectedModulesTpl .module-item[data-module-type="detail_content_blocks"]')) {
+      alert('正文内容块是详情正文容器，一个模板里保留一个即可；需要更多内容请在数据详情编辑页的“正文”里继续添加文本、图片、视频、表格等内容块。');
+      return;
+    }
     window.addTemplateModule(type, variant || 'default', dataPreset || {});
   };
 

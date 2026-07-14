@@ -585,6 +585,8 @@ def _item_list(value):
 
 
 def _render_detail_content_blocks(item, data):
+    if _detail_int(data.get('_detail_content_blocks_index'), 0) > 0:
+        return Markup('')
     blocks = item.get('detail_content_blocks') or item.get('content_blocks') or []
     blocks = [entry for entry in _item_list(blocks) if isinstance(entry, dict)]
     if not blocks:
@@ -1961,10 +1963,11 @@ def _annotate_detail_modules(modules):
     link_index = 0
     table_index = 0
     specs_index = 0
+    content_blocks_index = 0
     for module in modules or []:
         if not isinstance(module, dict):
             continue
-        if module.get('type') in ('detail_link', 'detail_table'):
+        if module.get('type') in ('detail_link', 'detail_table', 'detail_content_blocks'):
             data = module.get('data') if isinstance(module.get('data'), dict) else {}
             module['data'] = data
         if module.get('type') == 'detail_link':
@@ -1978,6 +1981,9 @@ def _annotate_detail_modules(modules):
             module['data'] = data
             data['_detail_specs_index'] = specs_index
             specs_index += 1
+        if module.get('type') == 'detail_content_blocks':
+            data['_detail_content_blocks_index'] = content_blocks_index
+            content_blocks_index += 1
     return modules
 
 

@@ -64,6 +64,17 @@
       'image_carousel': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="7" height="13" rx="1"/><rect x="13" y="5" width="7" height="13" rx="1"/><path d="m1 10 2 2-2 2"/><path d="m23 14-2-2 2-2"/></svg>',
       'featured_picks': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M17.5 14l1.2 2.5 2.7.4-2 2 .5 2.7-2.4-1.3-2.4 1.3.5-2.7-2-2 2.7-.4z"/></svg>'
     };
+    icons.detail_media = icons.image_carousel;
+    icons.detail_text = icons.text_content;
+    icons.detail_content_blocks = icons.text_content;
+    icons.detail_specs = icons.data_grid;
+    icons.detail_table = icons.data_grid;
+    icons.detail_link = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"/></svg>';
+    icons.detail_intro = icons.section_title;
+    icons.detail_features = icons.feature_grid;
+    icons.detail_files = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>';
+    icons.detail_faq = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.9 1.4-2.5 2.3-.3.4-.4.8-.4 1.2"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>';
+    icons.detail_related = icons.featured_picks;
     return icons[type] || '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>';
   }
 
@@ -227,6 +238,43 @@
       },
       image_carousel: {
         default: function(){ return miniCarousel(4); }
+      },
+      detail_media: {
+        gallery_top: function(){ return '<div class="mini-detail-media mini-detail-media-top"><div class="mini-main-img"></div><div class="mini-thumbs"><span></span><span></span><span></span></div></div>'; },
+        gallery_left: function(){ return '<div class="mini-detail-media mini-detail-media-split"><div class="mini-main-img"></div><div class="mini-info"><i></i><b></b><span></span><span></span></div></div>'; }
+      },
+      detail_text: {
+        plain: function(){ return '<div class="mini-text-block"><div class="mini-w80"></div><div class="mini-w90"></div><div class="mini-w70"></div><div class="mini-w60"></div></div>'; },
+        centered: function(){ return '<div class="mini-text-block" style="align-items:center;text-align:center"><div class="mini-w80"></div><div class="mini-w70"></div><div class="mini-w60"></div></div>'; }
+      },
+      detail_content_blocks: {
+        blocks: function(){ return '<div class="mini-content-blocks"><div class="mini-block-line strong"></div><div class="mini-block-media"></div><div class="mini-block-line"></div><div class="mini-block-line short"></div></div>'; }
+      },
+      detail_specs: {
+        list: function(){ return '<div class="mini-spec-table"><div></div><div></div><div></div><div></div><div></div><div></div></div>'; }
+      },
+      detail_table: {
+        table: function(){ return '<div class="mini-custom-table"><div></div><div></div><div></div><div></div><div></div><div></div></div>'; }
+      },
+      detail_link: {
+        button: function(){ return '<div class="mini-link-preview"><div class="mini-link-button"></div></div>'; },
+        text_link: function(){ return '<div class="mini-link-preview"><div class="mini-link-text"></div></div>'; }
+      },
+      detail_intro: {
+        default: function(){ return '<div class="mini-intro-preview"><div class="mini-chip"></div><div class="mini-heading"></div><div class="mini-sub"></div><div class="mini-tags"><span></span><span></span><span></span></div></div>'; },
+        centered: function(){ return '<div class="mini-intro-preview centered"><div class="mini-chip"></div><div class="mini-heading"></div><div class="mini-sub"></div><div class="mini-tags"><span></span><span></span><span></span></div></div>'; }
+      },
+      detail_features: {
+        cards: function(){ return miniFeatureCards(3); }
+      },
+      detail_files: {
+        list: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-thumb"></div><div class="mini-line"></div></div>'; return '<div class="mini-list-v">'+h+'</div>'; }
+      },
+      detail_faq: {
+        list: function(){ return '<div class="mini-faq-preview"><div><b></b><span></span></div><div><b></b><span></span></div></div>'; }
+      },
+      detail_related: {
+        grid: function(){ return miniCarousel(4); }
       }
     };
     var blockBuilders = builders[blockType];
@@ -246,6 +294,20 @@
   function variantDisplayLabel(blockType, v) {
     if (!v) return '';
     var key = v.key || '';
+    var detailLabels = {
+      detail_media: { gallery_top: '大图在上', gallery_left: '左右分栏' },
+      detail_text: { plain: '普通文本', centered: '居中文本' },
+      detail_content_blocks: { blocks: '自由正文' },
+      detail_specs: { list: '参数列表' },
+      detail_table: { table: '手填表格' },
+      detail_link: { button: '按钮链接', text_link: '文字链接' },
+      detail_intro: { default: '标题摘要', centered: '居中标题摘要' },
+      detail_features: { cards: '卖点卡片' },
+      detail_files: { list: '资料列表' },
+      detail_faq: { list: '问答列表' },
+      detail_related: { grid: '推荐卡片' }
+    };
+    if (detailLabels[blockType] && detailLabels[blockType][key]) return detailLabels[blockType][key];
     var colsMatch = key.match(/(?:^|_)cols_(\d+)$/);
     if (colsMatch) {
       var colsLabel = (blockType === 'image_carousel' || blockType === 'featured_picks') ? colsMatch[1] + '张/屏' : colsMatch[1] + '列';
@@ -288,6 +350,162 @@
     return v.label || v.key;
   }
 
+  function variantDescription(blockType, v) {
+    var key = (v && v.key) || '';
+    var descriptions = {
+      detail_media: {
+        gallery_top: '主图和缩略图集中展示，适合以图片为核心的产品详情。',
+        gallery_left: '图片区域与标题摘要并列，适合首屏同时看图和看基础信息。'
+      },
+      detail_text: {
+        plain: '读取正文、简介或摘要字段，按普通段落输出。',
+        centered: '适合短介绍、宣传语或居中说明。'
+      },
+      detail_content_blocks: {
+        blocks: '在单条详情里自由添加文本、图片、视频、图文、多图、表格、提示和嵌入。'
+      },
+      detail_specs: {
+        list: '从规格、参数或属性字段读取键值数据，按参数表展示。'
+      },
+      detail_table: {
+        table: '每条数据单独填写行列内容，支持单元格链接。'
+      },
+      detail_link: {
+        button: '适合下载、询价、跳转详情等强操作入口。',
+        text_link: '适合正文之间的轻量跳转。'
+      },
+      detail_intro: {
+        default: '显示标题、摘要、分类、标签等基础信息。',
+        centered: '居中展示基础信息，适合独立标题区。'
+      },
+      detail_features: {
+        cards: '逐条填写卖点，支持图标、标题、说明。'
+      },
+      detail_files: {
+        list: '用于规格书、说明书、认证文件等资料下载。'
+      },
+      detail_faq: {
+        list: '用于常见问题、安装说明、售前问答。'
+      },
+      detail_related: {
+        grid: '自动推荐同分类、同标签或全部产品，可配置滚动。'
+      }
+    };
+    if (descriptions[blockType] && descriptions[blockType][key]) return descriptions[blockType][key];
+    var generalDescriptions = {
+      hero_banner: {
+        text_overlay: '文字覆盖在主视觉上，适合首屏品牌或产品主张。',
+        text_below_slide: '图片与说明分区，适合轮播图下方补充信息。',
+        fullscreen: '大面积主视觉，适合强视觉首页首屏。',
+        split_media: '媒体和文案左右分栏，适合产品介绍或活动入口。',
+        dir_row: '媒体在左、文案在右的分栏首屏。',
+        'dir_row-reverse': '文案在左、媒体在右的分栏首屏。',
+        dir_column: '媒体在上、文案在下的纵向首屏。'
+      },
+      section_title: {
+        default: '用于给一组内容添加标题、说明和视觉分隔。'
+      },
+      text_content: {
+        default: '用于普通正文、说明文字或较长介绍。'
+      },
+      highlight_card: {
+        media_left: '图片在左、文字在右，适合图文介绍。',
+        media_right: '文字在左、图片在右，适合交替排版。',
+        stack: '图片在上、文字在下，适合单张内容卡。',
+        bento: '错落卡片布局，适合展示多重点内容。'
+      },
+      data_grid: {
+        default: '从数据集中读取条目，渲染为卡片网格。',
+        grid_3: '三列数据卡片，适合常规产品或项目列表。'
+      },
+      feature_grid: {
+        default: '展示功能、优势、服务亮点等图标卡片。'
+      },
+      featured_picks: {
+        default: '精选条目横向展示，适合推荐内容。'
+      },
+      stat_counter: {
+        default: '展示数字指标、里程碑或经营数据。'
+      },
+      logo_cloud: {
+        default: '展示客户、伙伴、认证或品牌 Logo。'
+      },
+      contact_form: {
+        default: '表单与联系信息组合，用于询盘和留言。',
+        dir_row: '联系信息在左、表单在右。',
+        'dir_row-reverse': '表单在左、联系信息在右。',
+        dir_column: '联系信息和表单上下排列。'
+      },
+      contact_info: {
+        cards: '用卡片展示电话、邮箱、地址等联系信息。',
+        list: '用紧凑列表展示联系信息。'
+      },
+      process_steps: {
+        horizontal: '横向流程步骤，适合简短流程。',
+        vertical: '纵向时间线，适合较长流程。',
+        numbered: '数字序号步骤，适合操作流程。'
+      },
+      image_carousel: {
+        default: '多图横向轮播展示。'
+      },
+      item_detail: {
+        default: '用于数据详情页的基础详情展示。'
+      }
+    };
+    if (generalDescriptions[blockType] && generalDescriptions[blockType][key]) return generalDescriptions[blockType][key];
+    if (v && v.description) return v.description;
+    if (v && v.source === 'style') return '应用一组默认样式配置，添加后仍可在组件里调整。';
+    return '添加后可继续配置内容和样式。';
+  }
+
+  function presetLabel(key, value) {
+    var keyLabels = {
+      layout: '布局',
+      source: '来源',
+      text_align: '对齐',
+      style: '样式',
+      columns: '每行',
+      table_rows: '行数',
+      table_cols: '列数',
+      max_items: '最多',
+      match_by: '推荐',
+      auto_scroll: '滚动'
+    };
+    var valueLabels = {
+      gallery_top: '大图在上',
+      gallery_left: '左右分栏',
+      cover_and_gallery: '封面+细节图',
+      gallery_only: '细节图',
+      cover_only: '封面图',
+      left: '居左',
+      center: '居中',
+      button: '按钮',
+      text_link: '文字链接',
+      category: '同分类',
+      tags: '同标签',
+      all: '全部',
+      true: '开启',
+      false: '关闭'
+    };
+    var label = keyLabels[key] || key.replace(/_/g, ' ');
+    var val = valueLabels[String(value)] || value;
+    if (key === 'columns') val = value + ' 个';
+    if (key === 'table_rows') val = value + ' 行';
+    if (key === 'table_cols') val = value + ' 列';
+    return label + ': ' + val;
+  }
+
+  function variantPresetSummary(v) {
+    var preset = (v && v.data_preset) || {};
+    var keys = Object.keys(preset).filter(function(key) {
+      return preset[key] !== '' && preset[key] != null;
+    });
+    if (!keys.length) return '';
+    return '<div class="variant-preview-meta">' + keys.slice(0, 3).map(function(key) {
+      return '<span>' + paletteEsc(presetLabel(key, preset[key])) + '</span>';
+    }).join('') + '</div>';
+  }
+
   function getBlockLibrary() {
     if (window.blockLibrary && window.blockLibrary.length) return window.blockLibrary;
     var jsonEl = document.getElementById('blockLibraryJson') || document.getElementById('blockLibraryDsJson');
@@ -308,6 +526,7 @@
       return {
         type: b.name,
         name: b.display_name || b.name,
+        description: b.description || '',
         category: b.category || blockCategory(b.name),
         variants: b.variants || []
       };
@@ -315,6 +534,7 @@
   }
 
   function blockCategory(type) {
+    if (/^detail_/.test(type)) return 'detail';
     if (/hero|section_title|text_content|highlight_card/.test(type)) return 'content';
     if (/data|item|product|featured|carousel|logo|stat|feature|process/.test(type)) return 'data';
     if (/contact|form|message|social/.test(type)) return 'conversion';
@@ -363,7 +583,7 @@
     if (!listPanel) return;
     var paletteData = buildPaletteData();
     var filtered = filterPaletteData(paletteData);
-    var categories = ['all', 'content', 'data', 'conversion', 'basic'];
+    var categories = ['all', 'detail', 'content', 'data', 'conversion', 'basic'];
     var html = '<div class="block-library-tools">';
     html += '<div class="block-library-title"><span>组件库</span><strong>' + filtered.length + '/' + paletteData.length + '</strong></div>';
     html += '<input type="search" class="block-library-search" placeholder="搜索模块或排版" value="' + paletteEsc(paletteFilter.query) + '" oninput="window._filterBlockPalette(this.value)">';
@@ -379,7 +599,7 @@
       var vcount = blk.variants.length;
       html += '<div class="block-list-item" data-block-type="' + paletteEsc(blk.type) + '" onclick="window._selectBlockType(\'' + blk.type + '\')">';
       html += '<div class="block-list-icon">' + getBlockIconHTML(blk.type) + '</div>';
-      html += '<div class="block-list-text"><div class="block-list-name">' + paletteEsc(blk.name) + '</div><div class="block-list-count">' + categoryLabel(blk.category) + ' · ' + vcount + ' 种排版</div></div>';
+      html += '<div class="block-list-text"><div class="block-list-name">' + paletteEsc(blk.name) + '</div><div class="block-list-count">' + categoryLabel(blk.category) + ' · ' + (vcount ? vcount + ' 个选项' : '默认配置') + '</div></div>';
       html += '</div>';
     });
     listPanel.innerHTML = html;
@@ -446,7 +666,7 @@
 
     // 无变体：直接确认（不需要选变体）
     if (!variantCount) {
-      panel.innerHTML = '<div class="variant-empty-hint"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>该模块无排版变体</span></div>';
+      panel.innerHTML = '<div class="variant-panel-head"><div class="variant-panel-icon">' + getBlockIconHTML(blk.type) + '</div><div><div class="variant-panel-title">' + paletteEsc(blk.name) + '</div><div class="variant-panel-desc">' + paletteEsc(blk.description || '该组件使用默认配置，添加后可继续编辑。') + '</div></div></div><button type="button" class="variant-default-pick selected" onclick="window._selectDefaultBlock(\'' + blk.type + '\')"><span>默认配置</span><small>直接添加后再编辑内容和样式</small></button>';
       var btn = document.getElementById('confirmAddBtn');
       if (btn) btn.disabled = false;
       var hint = document.getElementById('variantConfirmHint');
@@ -463,16 +683,39 @@
       };
     });
 
-    var html = '<div class="variant-section-title">' + paletteEsc(blk.name) + ' — ' + variantCount + ' 种排版变体</div>';
+    var html = '<div class="variant-panel-head"><div class="variant-panel-icon">' + getBlockIconHTML(blk.type) + '</div><div><div class="variant-panel-title">' + paletteEsc(blk.name) + '</div><div class="variant-panel-desc">' + paletteEsc(blk.description || '选择一个起始配置，添加后可继续编辑。') + '</div></div></div>';
+    html += '<div class="variant-section-title">' + (variantCount > 1 ? '选择起始布局' : '默认配置') + '<span>' + variantCount + ' 个选项</span></div>';
     html += '<div class="variant-preview-grid">';
-    blk.variants.forEach(function(v) {
-      html += '<div class="variant-preview-card" data-block-type="' + blk.type + '" data-variant="' + v.key + '" onclick="window._selectVariant(this, \'' + blk.type + '\', \'' + v.key + '\')">';
+    blk.variants.forEach(function(v, idx) {
+      html += '<div class="variant-preview-card' + (idx === 0 ? ' selected' : '') + '" data-block-type="' + blk.type + '" data-variant="' + v.key + '" onclick="window._selectVariant(this, \'' + blk.type + '\', \'' + v.key + '\')">';
       html += '<div class="variant-preview-thumb">' + buildVariantThumb(blk.type, v.key, v) + '</div>';
-      html += '<div class="variant-preview-label">' + paletteEsc(variantDisplayLabel(blk.type, v)) + '</div>';
+      html += '<div class="variant-preview-body"><div class="variant-preview-label"><span>' + paletteEsc(variantDisplayLabel(blk.type, v)) + '</span><i></i></div>';
+      html += '<div class="variant-preview-desc">' + paletteEsc(variantDescription(blk.type, v)) + '</div>';
+      html += variantPresetSummary(v);
+      html += '</div>';
       html += '</div>';
     });
     html += '</div>';
     panel.innerHTML = html;
+    if (blk.variants[0]) {
+      selectedVariantKey = blk.variants[0].key;
+      selectedDataPreset = blk.variants[0].data_preset || null;
+      var btn = document.getElementById('confirmAddBtn');
+      if (btn) btn.disabled = false;
+      var hint = document.getElementById('variantConfirmHint');
+      if (hint) hint.textContent = '已选: ' + blk.name + ' / ' + variantDisplayLabel(blk.type, blk.variants[0]);
+    }
+  };
+
+  window._selectDefaultBlock = function(blockType) {
+    selectedBlockType = blockType;
+    selectedVariantKey = null;
+    selectedDataPreset = null;
+    document.querySelectorAll('#variantPanel .variant-default-pick').forEach(function(c) { c.classList.remove('selected'); });
+    var btnEl = document.querySelector('#variantPanel .variant-default-pick');
+    if (btnEl) btnEl.classList.add('selected');
+    var btn = document.getElementById('confirmAddBtn');
+    if (btn) btn.disabled = false;
   };
 
   window._selectVariant = function(card, blockType, variantKey) {

@@ -958,6 +958,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var detailLinkConfigs = [];
     var detailTableConfigs = [];
     var detailSpecConfigs = [];
+    var hasContentBlocksSection = false;
     var order = [];
     (tpl.modules || []).forEach(function(mod) {
       var type = mod && mod.type;
@@ -980,7 +981,10 @@ window._dsEditItemJson = {{ edit_item | tojson }};
       } else if (type === 'detail_faq') {
         order.push('detail_faqs');
       } else if (type === 'detail_content_blocks') {
-        order.push('detail_content_blocks');
+        if (!hasContentBlocksSection) {
+          order.push('detail_content_blocks');
+          hasContentBlocksSection = true;
+        }
       } else if (type === 'detail_related') {
         order.push('detail_related');
       } else if (type === 'detail_table') {
