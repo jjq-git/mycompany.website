@@ -13,7 +13,7 @@ detail_templates:
       max_images: 6
       empty_behavior: hide_module
       image_ratio: 4/3
-      image_radius: 8px
+      image_radius: 2px
       section_bg: ''
   - type: detail_content_blocks
     order: 2
@@ -74,6 +74,76 @@ detail_templates:
       columns: 4
       empty_behavior: hide_module
       card_bg: ''
+      section_bg: ''
+  - type: detail_text
+    order: 8
+    variant: centered
+    data:
+      title: 字段文本
+      content_field: body
+      empty_behavior: hide_module
+      text_align: center
+      section_bg: ''
+      text_color: ''
+  - type: detail_content_blocks
+    order: 9
+    variant: blocks
+    data:
+      title: 中文内容块
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
+  - type: detail_table
+    order: 10
+    variant: table
+    data:
+      title: 自定义表格
+      table_rows: 2
+      table_cols: 3
+      cell_links: optional
+      hide_empty_rows: 'true'
+      border_color: '#e5e7eb'
+      section_bg: ''
+  - type: detail_link
+    order: 11
+    variant: text_link
+    data:
+      title: 按钮/链接
+      label: 了解更多
+      url_field: link_url
+      style: text_link
+      hide_when_empty: 'true'
+      link_color: ''
+      section_bg: ''
+  - type: detail_link
+    order: 12
+    variant: button
+    data:
+      title: 按钮/链接
+      label: 了解更多
+      url_field: link_url
+      style: button
+      hide_when_empty: 'true'
+      link_color: ''
+      section_bg: ''
+  - type: detail_faq
+    order: 13
+    variant: list
+    data:
+      title: 常见问题
+      empty_behavior: hide_module
+      border_color: '#e5e7eb'
+      section_bg: ''
+  - type: detail_intro
+    order: 14
+    variant: default
+    data:
+      title_field: title
+      summary_field: summary
+      show_category: 'true'
+      show_tags: 'true'
+      show_price: 'true'
+      text_align: left
       section_bg: ''
   required_fields:
   - title
