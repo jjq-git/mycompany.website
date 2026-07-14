@@ -41,7 +41,18 @@
 (function(){
   const initialMenu = {{ items | tojson }};
   const typeLabels = {home: '首页', list: '列表', page: '单页', link: '链接', group: '容器'};
-  const typeIcons = {home: '⌂', list: '☰', page: '▣', link: '↗', group: '▤'};
+  const typeIcons = {
+    home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+    list: '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+    page: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+    link: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
+    group: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'
+  };
+  const ACTION_SVG = {
+    moveUp: '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>',
+    moveDown: '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>',
+    delete: '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+  };
   const tree = document.getElementById('menuTree');
   const form = document.getElementById('menuTreeForm');
   const jsonInput = document.getElementById('menuJson');
@@ -115,18 +126,19 @@
       var badgeHtml = childCount > 0 ? '<span class="menu-tree-child-count">' + childCount + '</span>' : '';
 
       row.innerHTML =
-        '<div class="menu-tree-card menu-tree-picker-card' + (isCollapsed ? ' menu-tree-collapsed' : '') + (item === selectedItem ? ' selected' : '') + '" data-type="' + item.type + '">' +
+        '<div class="menu-tree-card menu-tree-picker-card' + (isCollapsed ? ' menu-tree-collapsed' : '') + (item === selectedItem ? ' selected' : '') + '" data-type="' + item.type + '" draggable="' + (isHome ? 'false' : 'true') + '" ondragstart="menuDragStart(event, this)" ondragover="menuDragOver(event, this)" ondragleave="menuDragLeave(event, this)" ondrop="menuDrop(event, this)" ondragend="menuDragEnd(event, this)">' +
           '<div class="menu-tree-card-row">' +
             collapseHtml +
             '<button type="button" class="menu-tree-select">' +
-              '<span class="menu-tree-title">' + escapeAttr(itemLabel(item)) + '</span>' +
-              '<span class="menu-tree-meta">' + escapeAttr(typeLabels[item.type] || item.type || '菜单') + '</span>' +
+              '<span class="menu-tree-icon">' + (typeIcons[item.type] || typeIcons.page) + '</span>' +
+              '<span><span class="menu-tree-title">' + escapeAttr(itemLabel(item)) + '</span>' +
+              '<span class="menu-tree-meta">' + escapeAttr(typeLabels[item.type] || item.type || '菜单') + '</span></span>' +
             '</button>' +
             '<span class="menu-tree-actions">' +
               badgeHtml +
-              '<button type="button" class="menu-tree-btn move-up" title="上移"' + (isHome ? ' disabled' : '') + '>↑</button>' +
-              '<button type="button" class="menu-tree-btn move-down" title="下移"' + (isHome ? ' disabled' : '') + '>↓</button>' +
-              '<button type="button" class="menu-tree-btn menu-tree-btn-danger delete-item" title="删除"' + (isHome ? ' disabled' : '') + '>×</button>' +
+              '<button type="button" class="menu-tree-btn move-up" title="上移"' + (isHome ? ' disabled' : '') + '>' + ACTION_SVG.moveUp + '</button>' +
+              '<button type="button" class="menu-tree-btn move-down" title="下移"' + (isHome ? ' disabled' : '') + '>' + ACTION_SVG.moveDown + '</button>' +
+              '<button type="button" class="menu-tree-btn menu-tree-btn-danger delete-item" title="删除"' + (isHome ? ' disabled' : '') + '>' + ACTION_SVG.delete + '</button>' +
             '</span>' +
           '</div>' +
           '<div class="menu-tree-collapsible">' +
@@ -187,6 +199,17 @@
     const urlSection = inspector.querySelector('.menu-url-section');
     if (targetSection) targetSection.style.display = (type === 'home' || type === 'link') ? 'none' : '';
     if (urlSection) urlSection.style.display = type === 'link' ? '' : 'none';
+  }
+
+  /* ---- 拖拽排序状态 ---- */
+  let dragSourceItem = null;
+  let dragSourceParent = null;
+  let dragSourceIndex = -1;
+
+  function clearDragClasses() {
+    tree.querySelectorAll('.menu-tree-picker-card').forEach(function(c) {
+      c.classList.remove('drag-over-before', 'drag-over-after', 'drag-over-inside', 'drag-over-invalid', 'dragging');
+    });
   }
 
   function rerenderAll() {
@@ -275,6 +298,117 @@
     selectedItem = item;
     rerenderAll();
   });
+
+    /* ---- 拖拽排序事件 ---- */
+  window.menuDragStart = function(e, card) {
+    var row = card.closest('.menu-tree-row');
+    if (!row || !row._item || row._item.type === 'home') {
+      e.preventDefault();
+      return;
+    }
+    dragSourceItem = row._item;
+    var parentContainer = row.parentElement;
+    var parentRow = parentContainer.closest('.menu-tree-row');
+    dragSourceParent = parentRow ? parentRow._item.children : initialMenu;
+    dragSourceIndex = rowsIn(parentContainer).indexOf(row);
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
+  };
+
+  window.menuDragEnd = function(e, card) {
+    clearDragClasses();
+    dragSourceItem = null;
+    dragSourceParent = null;
+    dragSourceIndex = -1;
+  };
+
+  window.menuDragOver = function(e, card) {
+    e.preventDefault();
+    var row = card.closest('.menu-tree-row');
+    if (!row || !row._item || !dragSourceItem) return;
+    if (row._item === dragSourceItem) {
+      clearDragClasses();
+      card.classList.add('drag-over-invalid');
+      return;
+    }
+    // 不能拖到自己的子级（防止循环引用）
+    function isDescendant(ancestor, target) {
+      if (!target || !target.children) return false;
+      for (var i = 0; i < target.children.length; i++) {
+        if (target.children[i] === ancestor) return true;
+        if (isDescendant(ancestor, target.children[i])) return true;
+      }
+      return false;
+    }
+    if (isDescendant(row._item, dragSourceItem)) {
+      clearDragClasses();
+      card.classList.add('drag-over-invalid');
+      return;
+    }
+    clearDragClasses();
+    var rect = card.getBoundingClientRect();
+    var y = e.clientY - rect.top;
+    var h = rect.height;
+    if (y < h * 0.25) {
+      card.classList.add('drag-over-before');
+      e.dataTransfer.dropEffect = 'move';
+    } else if (y > h * 0.75) {
+      card.classList.add('drag-over-after');
+      e.dataTransfer.dropEffect = 'move';
+    } else {
+      card.classList.add('drag-over-inside');
+      e.dataTransfer.dropEffect = 'move';
+    }
+  };
+
+  window.menuDragLeave = function(e, card) {
+    card.classList.remove('drag-over-before', 'drag-over-after', 'drag-over-inside', 'drag-over-invalid');
+  };
+
+  window.menuDrop = function(e, card) {
+    e.preventDefault();
+    var row = card.closest('.menu-tree-row');
+    if (!row || !row._item || !dragSourceItem) {
+      clearDragClasses();
+      return;
+    }
+    if (row._item === dragSourceItem) { clearDragClasses(); return; }
+    if (row._item.type === 'home') { clearDragClasses(); return; }
+
+    var rect = card.getBoundingClientRect();
+    var y = e.clientY - rect.top;
+    var h = rect.height;
+    var position = y < h * 0.25 ? 'before' : (y > h * 0.75 ? 'after' : 'inside');
+
+    // 从原位置移除
+    var removed = dragSourceParent.splice(dragSourceIndex, 1)[0];
+
+    if (position === 'inside') {
+      if (!Array.isArray(row._item.children)) row._item.children = [];
+      row._item.children.push(removed);
+      row._item._collapsed = false;
+    } else {
+      var targetContainer = row.parentElement;
+      var targetParentRow = targetContainer.closest('.menu-tree-row');
+      var targetParent = targetParentRow ? targetParentRow._item.children : initialMenu;
+      var targetIndex = rowsIn(targetContainer).indexOf(row);
+      if (position === 'after') targetIndex += 1;
+      targetParent.splice(targetIndex, 0, removed);
+    }
+
+    clearDragClasses();
+    dragSourceItem = null;
+    dragSourceParent = null;
+    dragSourceIndex = -1;
+    if (selectedItem === removed) selectedItem = removed;
+    rerenderAll();
+  };
+
+  // tree 容器允许 drop（dragOver 默认阻止才能触发 drop）
+  tree.addEventListener('dragover', function(e) { e.preventDefault(); });
+  tree.addEventListener('drop', function(e) { e.preventDefault(); });
+
 
   form.addEventListener('submit', function() {
     jsonInput.value = JSON.stringify(initialMenu.map(cleanItem));
