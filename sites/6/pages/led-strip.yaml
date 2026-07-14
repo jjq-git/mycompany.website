@@ -1,0 +1,130 @@
+modules: []
+detail_templates:
+- id: default
+  name: 默认led-strip详情
+  is_default: true
+  modules:
+  - type: detail_media
+    order: 1
+    variant: gallery_left
+    data:
+      source: cover_and_gallery
+      layout: gallery_left
+      max_images: 6
+      empty_behavior: hide_module
+      image_ratio: 4/3
+      image_radius: 8px
+      section_bg: ''
+  - type: detail_content_blocks
+    order: 2
+    variant: blocks
+    data:
+      title: ''
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
+  - type: detail_specs
+    order: 3
+    variant: list
+    data:
+      title: 固定的参数
+      source_field: specs
+      max_rows: 10
+      columns: 3
+      hide_empty_rows: 'true'
+      border_color: '#e5e7eb'
+      section_bg: ''
+  - type: detail_specs
+    order: 4
+    variant: list
+    data:
+      title: 可定制的参数
+      source_field: specs
+      max_rows: 10
+      columns: 3
+      hide_empty_rows: 'true'
+      border_color: '#e5e7eb'
+      section_bg: ''
+  - type: detail_files
+    order: 5
+    variant: list
+    data:
+      title: 资料下载
+      empty_behavior: hide_module
+      link_color: ''
+      section_bg: ''
+  - type: detail_related
+    order: 6
+    variant: grid
+    data:
+      title: 相关推荐
+      match_by: category
+      max_items: 8
+      columns: 4
+      auto_scroll: 'true'
+      scroll_interval: 4
+      click_scroll: 'true'
+      show_dots: 'true'
+      section_bg: ''
+  - type: detail_features
+    order: 7
+    variant: cards
+    data:
+      title: ''
+      columns: 4
+      empty_behavior: hide_module
+      card_bg: ''
+      section_bg: ''
+  required_fields:
+  - title
+  - slug
+  optional_fields:
+  - cover
+  - summary
+  - detail_images
+  - specs
+  - category
+  - tags
+  - link_url
+  seo:
+    title: '{title} - {site_name}'
+    description: '{summary}'
+    image: cover
+- id: '01'
+  name: 项目详情01
+  is_default: false
+  modules:
+  - type: detail_media
+    order: 1
+    variant: gallery_left
+    data:
+      source: gallery_only
+      layout: gallery_left
+      max_images: 6
+      empty_behavior: hide_module
+      image_ratio: 4/3
+      image_radius: 8px
+      section_bg: ''
+    responsive:
+      tablet:
+        source: cover_and_gallery
+        layout: gallery_top
+        max_images: 6
+        empty_behavior: hide_module
+        image_ratio: 4/3
+        image_radius: 8px
+      mobile:
+        source: cover_and_gallery
+        layout: gallery_top
+        max_images: 6
+        empty_behavior: hide_module
+        image_ratio: 4/3
+        image_radius: 8px
+  required_fields:
+  - title
+  - slug
+  optional_fields: []
+  seo:
+    title: '{title} - {site_name}'
+    description: '{summary}'
+    image: cover

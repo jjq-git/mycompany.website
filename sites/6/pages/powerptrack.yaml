@@ -1,0 +1,46 @@
+modules: []
+detail_templates:
+- id: default
+  name: 默认powerptrack详情
+  is_default: true
+  modules:
+  - type: detail_media
+    variant: gallery_top
+    data:
+      source: cover_and_gallery
+      layout: gallery_top
+      max_images: 6
+      empty_behavior: hide_module
+      image_ratio: 4/3
+      image_radius: 8px
+  - type: detail_specs
+    variant: table
+    data:
+      title: ''
+      source_field: specs
+      max_rows: 10
+      hide_empty_rows: 'true'
+      mobile_layout: stacked
+      border_color: '#e5e7eb'
+  - type: detail_link
+    variant: button
+    data:
+      label: 了解更多
+      url_field: link_url
+      style: button
+      hide_when_empty: 'true'
+  required_fields:
+  - title
+  - slug
+  optional_fields:
+  - cover
+  - summary
+  - detail_images
+  - specs
+  - category
+  - tags
+  - link_url
+  seo:
+    title: '{title} - {site_name}'
+    description: '{summary}'
+    image: cover

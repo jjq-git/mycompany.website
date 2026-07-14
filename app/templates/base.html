@@ -8,7 +8,7 @@
   <link rel="icon" href="http://192.168.1.88:3000/attachments/74eb0913-3298-4a00-82f8-fe1c02db27ec">
   <title>{% block title %}{{ site.slug if site else '' }}{% endblock %} — {{ platform_domain }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260629-admin-layout">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260713-color-picker">
   <style>
     :root {
       --bs-primary: {{ admin_primary }};
@@ -317,14 +317,24 @@
         {# 外部“链接”用于前台导航，不属于后台可编辑内容，不在左侧内容栏显示。 #}
         {% if item.type not in ('home', 'link') %}
         {% set has_children = item.children | default([]) | length > 0 %}
+        {% if item.type == 'group' %}
+        {# 容器类型：无独立页面，仅作为分组标签。子项始终可见，不折叠。 #}
+        <span class="left-nav-item left-nav-parent-label" style="padding-left: {{ 16 + level * 16 }}px;"
+          title="{{ item.label }}">
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+          </svg>
+          {{ item.label }}
+        </span>
         {% if has_children %}
+        {{ render_left_menu(item.children, level + 1) }}
+        {% endif %}
+        {% elif has_children %}
         <div class="left-nav-group" data-level="{{ level }}">
-          <div class="left-nav-parent-row">
+          <div class="left-nav-parent-row" data-row-toggle="1" onclick="toggleLeftSubmenu(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLeftSubmenu(this)}" role="button" tabindex="0" aria-expanded="false">
             {% if item.type in ('list','page') and item.target %}
-            <a class="left-nav-item left-nav-parent-link flex-grow-1"
-              href="{{ url_for('core.page_panel', page_key=item.target) }}"
-              data-panel="{{ item.type }}_{{ item.target }}" data-preview-page="{{ item.url }}"
-              title="{{ item.label }}">
+            <span class="left-nav-item left-nav-parent-label flex-grow-1" title="{{ item.label }}">
               {% set is_list_icon = item.type == 'list' or item.target in (module_list_page_keys | default([])) or item.target == 'modules' %}
               {% if is_list_icon %}
               <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -349,20 +359,9 @@
               {% elif item.target == 'posts' %}<span class="nav-badge">{{ counts.posts }}</span>
               {% endif %}
               {% endif %}
-            </a>
-            {% elif item.type == 'link' %}
-            <a class="left-nav-item left-nav-parent-link flex-grow-1 external-link" href="{{ item.url | default('#') }}"
-              target="_blank" rel="noopener" title="{{ item.label }}">
-              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-              {{ item.label }}
-            </a>
+            </span>
             {% else %}
-            {# group, home 或未定义类型：纯容器，只展开不跳转 #}
+            {# 非 list/page 类型但带子项：纯容器，可折叠 #}
             <span class="left-nav-item left-nav-parent-label flex-grow-1" title="{{ item.label }}">
               <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
@@ -371,7 +370,7 @@
               {{ item.label }}
             </span>
             {% endif %}
-            <button class="left-nav-chevron-btn" type="button" onclick="toggleLeftSubmenu(this)" title="展开/折叠子菜单">
+            <button class="left-nav-chevron-btn" type="button" onclick="event.stopPropagation();toggleLeftSubmenu(this)" title="展开/折叠子菜单">
               <svg class="left-nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 18l6-6-6-6"/>
               </svg>
@@ -381,16 +380,6 @@
             {{ render_left_menu(item.children, level + 1) }}
           </div>
         </div>
-        {% elif item.type == 'group' %}
-        {# 容器类型：无独立页面，仅作为分组标签显示 #}
-        <span class="left-nav-item left-nav-parent-label" style="padding-left: {{ 16 + level * 16 }}px;"
-          title="{{ item.label }}">
-          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-          </svg>
-          {{ item.label }}
-        </span>
         {% elif item.type in ('list','page') and item.target %}
         <a class="left-nav-item" href="{{ url_for('core.page_panel', page_key=item.target) }}"
           data-panel="{{ item.type }}_{{ item.target }}" data-preview-page="{{ item.url }}"
