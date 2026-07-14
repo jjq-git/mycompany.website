@@ -8,7 +8,7 @@
   <link rel="icon" href="http://192.168.1.88:3000/attachments/74eb0913-3298-4a00-82f8-fe1c02db27ec">
   <title>{% block title %}{{ site.slug if site else '' }}{% endblock %} — {{ platform_domain }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260713-color-picker">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260714-menu">
   <style>
     :root {
       --bs-primary: {{ admin_primary }};
@@ -317,20 +317,7 @@
         {# 外部“链接”用于前台导航，不属于后台可编辑内容，不在左侧内容栏显示。 #}
         {% if item.type not in ('home', 'link') %}
         {% set has_children = item.children | default([]) | length > 0 %}
-        {% if item.type == 'group' %}
-        {# 容器类型：无独立页面，仅作为分组标签。子项始终可见，不折叠。 #}
-        <span class="left-nav-item left-nav-parent-label" style="padding-left: {{ 16 + level * 16 }}px;"
-          title="{{ item.label }}">
-          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-          </svg>
-          {{ item.label }}
-        </span>
         {% if has_children %}
-        {{ render_left_menu(item.children, level + 1) }}
-        {% endif %}
-        {% elif has_children %}
         <div class="left-nav-group" data-level="{{ level }}">
           <div class="left-nav-parent-row" data-row-toggle="1" onclick="toggleLeftSubmenu(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLeftSubmenu(this)}" role="button" tabindex="0" aria-expanded="false">
             {% if item.type in ('list','page') and item.target %}
@@ -1994,7 +1981,7 @@
         if (seoSiteParam) seoQuery.push('site=' + encodeURIComponent(seoSiteParam));
         if (seoLangParam) seoQuery.push('lang=' + encodeURIComponent(seoLangParam));
         var seoUrl = '{{ url_for("core.seo_workspace") }}' + (seoQuery.length ? '?' + seoQuery.join('&') : '');
-        openPreviewTab('seo', 'SEO 检查', seoUrl);
+        openPreviewTab('seo', 'SEO 检查', seoUrl, false, '正在加载 SEO 健康检查...');
         var seoPanelTitle = document.getElementById('rightPanelTitle');
         var seoPanelBody = document.getElementById('rightPanelBody');
         var seoPanelFooter = document.getElementById('rightPanelFooter');
