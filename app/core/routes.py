@@ -52,6 +52,399 @@ bp = Blueprint('core', __name__)
 
 mimetypes.add_type('application/wasm', '.wasm')
 
+DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
+    {
+        'name': 'detail_media',
+        'display_name': '图片/图集',
+        'category': 'detail',
+        'icon': '',
+        'description': '显示当前数据项的封面图、细节图或两者组合。',
+        'fields': [
+            {'key': 'source', 'label': '图片来源', 'type': 'select', 'group': '内容', 'default': 'cover_and_gallery', 'options': [
+                {'value': 'cover_and_gallery', 'label': '封面图 + 细节图'},
+                {'value': 'gallery_only', 'label': '只显示细节图'},
+                {'value': 'cover_only', 'label': '只显示封面图'},
+            ]},
+            {'key': 'layout', 'label': '布局', 'type': 'select', 'group': '显示规则', 'default': 'gallery_top', 'options': [
+                {'value': 'gallery_top', 'label': '大图在上'},
+                {'value': 'gallery_left', 'label': '左右分栏'},
+            ]},
+            {'key': 'max_images', 'label': '最多显示', 'type': 'number', 'group': '显示规则', 'default': 6},
+            {'key': 'empty_behavior', 'label': '无图片时', 'type': 'select', 'group': '显示规则', 'default': 'hide_module', 'options': [
+                {'value': 'hide_module', 'label': '隐藏组件'},
+                {'value': 'show_placeholder', 'label': '显示占位'},
+            ]},
+            {'key': 'image_ratio', 'label': '图片比例', 'type': 'select', 'group': '样式', 'default': '4/3', 'options': [
+                {'value': '4/3', 'label': '4:3'},
+                {'value': '1/1', 'label': '1:1'},
+                {'value': '16/9', 'label': '16:9'},
+                {'value': 'auto', 'label': '原始比例'},
+            ]},
+            {'key': 'image_radius', 'label': '圆角', 'type': 'text', 'group': '样式', 'default': '8px'},
+            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
+        ],
+        'variants': [
+            {'key': 'gallery_top', 'label': '上图下文', 'data_preset': {'layout': 'gallery_top'}},
+            {'key': 'gallery_left', 'label': '左图右文', 'data_preset': {'layout': 'gallery_left'}},
+        ],
+        'is_data_attr': False,
+        'schema': None,
+    },
+    {
+        'name': 'detail_text',
+        'display_name': '字段文本',
+        'category': 'detail',
+        'icon': '',
+        'description': '读取当前数据项的正文、简介或指定字段，渲染一个文本区块。',
+        'fields': [
+            {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
+            {'key': 'content_field', 'label': '读取内容', 'type': 'select', 'group': '内容', 'default': 'body', 'options': [
+                {'value': 'body', 'label': '正文'},
+                {'value': 'description', 'label': '描述'},
+                {'value': 'summary', 'label': '摘要'},
+                {'value': 'content', 'label': '内容'},
+            ]},
+            {'key': 'empty_behavior', 'label': '内容为空时', 'type': 'select', 'group': '显示规则', 'default': 'hide_module', 'options': [
+                {'value': 'hide_module', 'label': '隐藏组件'},
+                {'value': 'show_placeholder', 'label': '显示空状态'},
+            ]},
+            {'key': 'text_align', 'label': '文字排版', 'type': 'select', 'group': '样式', 'default': 'left', 'options': [
+                {'value': 'left', 'label': '居左'},
+                {'value': 'center', 'label': '居中'},
+            ]},
+            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
+            {'key': 'text_color', 'label': '正文颜色', 'type': 'color', 'group': '样式', 'default': ''},
+        ],
+        'variants': [
+            {'key': 'plain', 'label': '普通正文', 'data_preset': {'text_align': 'left'}},
+            {'key': 'centered', 'label': '居中正文', 'data_preset': {'text_align': 'center'}},
+        ],
+        'is_data_attr': False,
+        'schema': None,
+    },
+    {
+        'name': 'detail_content_blocks',
+        'display_name': '正文内容块',
+        'category': 'detail',
+        'icon': '',
+        'description': '在单条详情里按顺序添加文本、图片、视频、图文、多图、表格、提示和嵌入内容。',
+        'fields': [
+            {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
+            {'key': 'empty_behavior', 'label': '内容为空时', 'type': 'select', 'group': '显示规则', 'default': 'hide_module', 'options': [
+                {'value': 'hide_module', 'label': '隐藏组件'},
+                {'value': 'show_placeholder', 'label': '显示空状态'},
+            ]},
+            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
+            {'key': 'text_color', 'label': '正文颜色', 'type': 'color', 'group': '样式', 'default': ''},
+        ],
+        'variants': [
+            {'key': 'blocks', 'label': '内容块', 'data_preset': {}},
+        ],
+        'is_data_attr': False,
+        'schema': None,
+    },
+    {
+        'name': 'detail_specs',
+        'display_name': '规格参数',
+        'category': 'detail',
+        'icon': '',
+        'description': '读取当前数据项的 specs、parameters 或 attributes 字段，渲染紧凑的键值参数列表。',
+        'fields': [
+            {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
+            {'key': 'source_field', 'label': '参数来源', 'type': 'select', 'group': '内容', 'default': 'specs', 'options': [
+                {'value': 'specs', 'label': '规格'},
+                {'value': 'parameters', 'label': '参数'},
+                {'value': 'attributes', 'label': '属性'},
+            ]},
+            {'key': 'max_rows', 'label': '最多行数', 'type': 'number', 'group': '显示规则', 'default': 10},
+            {'key': 'columns', 'label': '每行列数', 'type': 'select', 'group': '显示规则', 'default': '1', 'options': [
+                {'value': '1', 'label': '1 列'},
+                {'value': '2', 'label': '2 列'},
+                {'value': '3', 'label': '3 列'},
+            ]},
+            {'key': 'hide_empty_rows', 'label': '空行处理', 'type': 'select', 'group': '显示规则', 'default': 'true', 'options': [
+                {'value': 'true', 'label': '隐藏空行'},
+                {'value': 'false', 'label': '保留空行'},
+            ]},
+            {'key': 'border_color', 'label': '分隔线颜色', 'type': 'color', 'group': '样式', 'default': '#e5e7eb'},
+            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
+        ],
+        'variants': [
+            {'key': 'list', 'label': '参数列表', 'data_preset': {}},
+        ],
+        'is_data_attr': False,
+        'schema': None,
+    },
+    {
+        'name': 'detail_table',
+        'display_name': '自定义表格',
+        'category': 'detail',
+        'icon': '',
+        'description': '按模板配置行列，逐格填写文字，可选择单元格文字链接。',
+        'fields': [
+            {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
+            {'key': 'table_rows', 'label': '行数', 'type': 'number', 'group': '表格', 'default': 3},
+            {'key': 'table_cols', 'label': '列数', 'type': 'number', 'group': '表格', 'default': 2},
+            {'key': 'cell_links', 'label': '单元格链接', 'type': 'select', 'group': '表格', 'default': 'optional', 'options': [
+                {'value': 'none', 'label': '不需要链接'},
+                {'value': 'optional', 'label': '可填写链接'},
+            ]},
+            {'key': 'hide_empty_rows', 'label': '空行处理', 'type': 'select', 'group': '显示规则', 'default': 'true', 'options': [
+                {'value': 'true', 'label': '隐藏空行'},
+                {'value': 'false', 'label': '保留空行'},
+            ]},
+            {'key': 'border_color', 'label': '边框颜色', 'type': 'color', 'group': '样式', 'default': '#e5e7eb'},
+            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
+        ],
+        'variants': [
+            {'key': 'table', 'label': '表格', 'data_preset': {'table_rows': 3, 'table_cols': 2}},
+        ],
+        'is_data_attr': False,
+        'schema': None,
+    },
+    {
+        'name': 'detail_link',
+        'display_name': '按钮/链接',
+        'category': 'detail',
+        'icon': '',
+        'description': '读取当前数据项的链接字段，渲染下载、跳转或联系按钮；每个组件对应一条链接。',
+        'fields': [
+            {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
+            {'key': 'label', 'label': '按钮文字', 'type': 'text', 'group': '内容', 'default': '了解更多'},
+            {'key': 'url_field', 'label': '链接来源', 'type': 'select', 'group': '内容', 'default': 'link_url', 'options': [
+                {'value': 'link_url', 'label': '链接'},
+                {'value': 'download_url', 'label': '下载'},
+                {'value': 'button_url', 'label': '按钮'},
+                {'value': 'url', 'label': '通用'},
+            ]},
+            {'key': 'style', 'label': '显示样式', 'type': 'select', 'group': '显示规则', 'default': 'button', 'options': [
+                {'value': 'button', 'label': '按钮'},
+                {'value': 'text_link', 'label': '文字链接'},
+            ]},
+            {'key': 'hide_when_empty', 'label': '链接为空时', 'type': 'select', 'group': '显示规则', 'default': 'true', 'options': [
+                {'value': 'true', 'label': '隐藏组件'},
+                {'value': 'false', 'label': '显示空状态'},
+            ]},
+            {'key': 'link_color', 'label': '链接颜色', 'type': 'color', 'group': '样式', 'default': ''},
+            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
+        ],
+        'variants': [
+            {'key': 'button', 'label': '按钮', 'data_preset': {'style': 'button'}},
+            {'key': 'text_link', 'label': '文字链接', 'data_preset': {'style': 'text_link'}},
+        ],
+        'is_data_attr': False,
+        'schema': None,
+    },
+    {
+        'name': 'detail_intro',
+        'display_name': '标题摘要',
+        'category': 'detail',
+        'icon': '',
+        'description': '显示当前数据项的标题、摘要、分类、标签和价格等基础信息。',
+        'fields': [
+            {'key': 'title_field', 'label': '标题字段', 'type': 'select', 'group': '内容', 'default': 'title', 'options': [
+                {'value': 'title', 'label': '标题'},
+                {'value': 'name', 'label': '名称'},
+            ]},
+            {'key': 'summary_field', 'label': '摘要字段', 'type': 'select', 'group': '内容', 'default': 'summary', 'options': [
+                {'value': 'summary', 'label': '摘要'},
+                {'value': 'description', 'label': '描述'},
+                {'value': 'excerpt', 'label': '摘录'},
+            ]},
+            {'key': 'show_category', 'label': '显示分类', 'type': 'select', 'group': '显示规则', 'default': 'true', 'options': [
+                {'value': 'true', 'label': '显示'},
+                {'value': 'false', 'label': '隐藏'},
+            ]},
+            {'key': 'show_tags', 'label': '显示标签', 'type': 'select', 'group': '显示规则', 'default': 'true', 'options': [
+                {'value': 'true', 'label': '显示'},
+                {'value': 'false', 'label': '隐藏'},
+            ]},
+            {'key': 'show_price', 'label': '显示价格', 'type': 'select', 'group': '显示规则', 'default': 'false', 'options': [
+                {'value': 'true', 'label': '显示'},
+                {'value': 'false', 'label': '隐藏'},
+            ]},
+            {'key': 'text_align', 'label': '文字排版', 'type': 'select', 'group': '样式', 'default': 'left', 'options': [
+                {'value': 'left', 'label': '居左'},
+                {'value': 'center', 'label': '居中'},
+            ]},
+            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
+        ],
+        'variants': [
+            {'key': 'default', 'label': '标题摘要', 'data_preset': {}},
+            {'key': 'centered', 'label': '居中标题', 'data_preset': {'text_align': 'center'}},
+        ],
+        'is_data_attr': False,
+        'schema': None,
+    },
+    {
+        'name': 'detail_features',
+        'display_name': '卖点特性',
+        'category': 'detail',
+        'icon': '',
+        'description': '逐条填写产品卖点，渲染为图标/标题/说明卡片。',
+        'fields': [
+            {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
+            {'key': 'columns', 'label': '每行个数', 'type': 'select', 'group': '显示规则', 'default': '3', 'options': [
+                {'value': '2', 'label': '2 个'},
+                {'value': '3', 'label': '3 个'},
+                {'value': '4', 'label': '4 个'},
+            ]},
+            {'key': 'empty_behavior', 'label': '内容为空时', 'type': 'select', 'group': '显示规则', 'default': 'hide_module', 'options': [
+                {'value': 'hide_module', 'label': '隐藏组件'},
+                {'value': 'show_placeholder', 'label': '显示空状态'},
+            ]},
+            {'key': 'card_bg', 'label': '卡片背景色', 'type': 'color', 'group': '样式', 'default': ''},
+            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
+        ],
+        'variants': [
+            {'key': 'cards', 'label': '卡片', 'data_preset': {'columns': '3'}},
+        ],
+        'is_data_attr': False,
+        'schema': None,
+    },
+    {
+        'name': 'detail_files',
+        'display_name': '资料下载',
+        'category': 'detail',
+        'icon': '',
+        'description': '填写规格书、说明书、认证文件等下载资料。',
+        'fields': [
+            {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': '资料下载'},
+            {'key': 'empty_behavior', 'label': '内容为空时', 'type': 'select', 'group': '显示规则', 'default': 'hide_module', 'options': [
+                {'value': 'hide_module', 'label': '隐藏组件'},
+                {'value': 'show_placeholder', 'label': '显示空状态'},
+            ]},
+            {'key': 'link_color', 'label': '链接颜色', 'type': 'color', 'group': '样式', 'default': ''},
+            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
+        ],
+        'variants': [
+            {'key': 'list', 'label': '列表', 'data_preset': {}},
+        ],
+        'is_data_attr': False,
+        'schema': None,
+    },
+    {
+        'name': 'detail_faq',
+        'display_name': 'FAQ 问答',
+        'category': 'detail',
+        'icon': '',
+        'description': '填写产品常见问题，渲染为问答列表。',
+        'fields': [
+            {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': '常见问题'},
+            {'key': 'empty_behavior', 'label': '内容为空时', 'type': 'select', 'group': '显示规则', 'default': 'hide_module', 'options': [
+                {'value': 'hide_module', 'label': '隐藏组件'},
+                {'value': 'show_placeholder', 'label': '显示空状态'},
+            ]},
+            {'key': 'border_color', 'label': '分隔线颜色', 'type': 'color', 'group': '样式', 'default': '#e5e7eb'},
+            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
+        ],
+        'variants': [
+            {'key': 'list', 'label': '问答列表', 'data_preset': {}},
+        ],
+        'is_data_attr': False,
+        'schema': None,
+    },
+    {
+        'name': 'detail_related',
+        'display_name': '相关推荐',
+        'category': 'detail',
+        'icon': '',
+        'description': '按分类或标签自动推荐同数据集中的其他条目。',
+        'fields': [
+            {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': '相关推荐'},
+            {'key': 'match_by', 'label': '推荐依据', 'type': 'select', 'group': '内容', 'default': 'category', 'options': [
+                {'value': 'category', 'label': '同分类'},
+                {'value': 'tags', 'label': '同标签'},
+                {'value': 'all', 'label': '全部产品'},
+            ]},
+            {'key': 'max_items', 'label': '最多显示', 'type': 'number', 'group': '显示规则', 'default': 8},
+            {'key': 'columns', 'label': '每行个数', 'type': 'select', 'group': '显示规则', 'default': '4', 'options': [
+                {'value': '2', 'label': '2 个'},
+                {'value': '3', 'label': '3 个'},
+                {'value': '4', 'label': '4 个'},
+            ]},
+            {'key': 'auto_scroll', 'label': '自动滚动', 'type': 'select', 'group': '显示规则', 'default': 'true', 'options': [
+                {'value': 'true', 'label': '开启'},
+                {'value': 'false', 'label': '关闭'},
+            ]},
+            {'key': 'scroll_interval', 'label': '滚动间隔秒', 'type': 'select', 'group': '显示规则', 'default': '4', 'options': [
+                {'value': '2', 'label': '2 秒'},
+                {'value': '3', 'label': '3 秒'},
+                {'value': '4', 'label': '4 秒'},
+                {'value': '5', 'label': '5 秒'},
+                {'value': '8', 'label': '8 秒'},
+            ]},
+            {'key': 'click_scroll', 'label': '点击滚动', 'type': 'select', 'group': '显示规则', 'default': 'true', 'options': [
+                {'value': 'true', 'label': '开启'},
+                {'value': 'false', 'label': '关闭'},
+            ]},
+            {'key': 'show_dots', 'label': '显示圆点', 'type': 'select', 'group': '显示规则', 'default': 'true', 'options': [
+                {'value': 'true', 'label': '显示'},
+                {'value': 'false', 'label': '隐藏'},
+            ]},
+            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
+        ],
+        'variants': [
+            {'key': 'grid', 'label': '卡片网格', 'data_preset': {'columns': '4'}},
+        ],
+        'is_data_attr': False,
+        'schema': None,
+    },
+]
+
+
+def _default_detail_modules():
+    return [
+        {
+            'type': 'detail_media',
+            'variant': 'gallery_top',
+            'data': {
+                'source': 'cover_and_gallery',
+                'layout': 'gallery_top',
+                'max_images': 6,
+                'empty_behavior': 'hide_module',
+                'image_ratio': '4/3',
+                'image_radius': '8px',
+            },
+        },
+        {
+            'type': 'detail_intro',
+            'variant': 'default',
+            'data': {
+                'title_field': 'title',
+                'summary_field': 'summary',
+                'show_category': 'true',
+                'show_tags': 'true',
+                'show_price': 'false',
+                'text_align': 'left',
+            },
+        },
+        {
+            'type': 'detail_specs',
+            'variant': 'list',
+            'data': {
+                'title': '',
+                'source_field': 'specs',
+                'max_rows': 10,
+                'columns': '1',
+                'hide_empty_rows': 'true',
+                'mobile_layout': 'stacked',
+                'border_color': '#e5e7eb',
+            },
+        },
+        {
+            'type': 'detail_link',
+            'variant': 'button',
+            'data': {
+                'title': '',
+                'label': '了解更多',
+                'url_field': 'link_url',
+                'style': 'button',
+                'hide_when_empty': 'true',
+            },
+        },
+    ]
+
 
 def _default_detail_template(dataset_key, label=None):
     title = (label or dataset_key or '条目').strip() or '条目'
@@ -59,15 +452,42 @@ def _default_detail_template(dataset_key, label=None):
         'id': 'default',
         'name': f'默认{title}详情',
         'is_default': True,
-        'modules': [{'type': 'item_data', 'variant': 'default', 'data': {}}],
+        'modules': _default_detail_modules(),
         'required_fields': ['title', 'slug'],
-        'optional_fields': ['cover', 'summary', 'body', 'detail_images', 'specs', 'category', 'tags'],
+        'optional_fields': ['cover', 'summary', 'detail_images', 'specs', 'category', 'tags', 'link_url'],
         'seo': {
             'title': '{title} - {site_name}',
             'description': '{summary}',
             'image': 'cover',
         },
     }
+
+
+def _blank_detail_template(dataset_key, name):
+    title = (name or dataset_key or '详情模板').strip() or '详情模板'
+    return {
+        'id': '',
+        'name': title,
+        'is_default': False,
+        'modules': [],
+        'required_fields': ['title', 'slug'],
+        'optional_fields': [],
+        'seo': {
+            'title': '{title} - {site_name}',
+            'description': '{summary}',
+            'image': 'cover',
+        },
+    }
+
+
+def _is_legacy_default_detail_template(tpl):
+    if not isinstance(tpl, dict):
+        return False
+    is_default = tpl.get('is_default') is True or str(tpl.get('is_default')).lower() == 'true'
+    if not is_default and str(tpl.get('id') or '') != 'default':
+        return False
+    modules = tpl.get('modules')
+    return isinstance(modules, list) and len(modules) == 1 and isinstance(modules[0], dict) and modules[0].get('type') == 'item_data'
 
 
 def _ensure_page_detail_templates(site_id, dataset_key, label=None, lang=None):
@@ -89,6 +509,11 @@ def _ensure_page_detail_templates(site_id, dataset_key, label=None, lang=None):
         if not has_default and isinstance(templates[0], dict):
             templates[0]['is_default'] = True
             changed = True
+        for tpl in templates:
+            if _is_legacy_default_detail_template(tpl):
+                tpl['modules'] = _default_detail_modules()
+                tpl['optional_fields'] = ['cover', 'summary', 'detail_images', 'specs', 'category', 'tags', 'link_url']
+                changed = True
     if changed:
         write_yaml(site_id, f'pages/{dataset_key}.yaml', page, lang=lang)
     return page
@@ -136,10 +561,16 @@ def _detail_template_field_requirements(template, item=None):
         'media': True,
         'category': True,
         'tags': True,
-        'body': True,
+        'body': False,
         'detail_images': False,
         'specs': False,
+        'detail_tables': False,
         'link': False,
+        'detail_features': False,
+        'detail_files': False,
+        'detail_faqs': False,
+        'detail_related': False,
+        'detail_content_blocks': False,
         'seo': False,
     }
     modules = template.get('modules') if isinstance(template, dict) else []
@@ -150,12 +581,26 @@ def _detail_template_field_requirements(template, item=None):
             continue
         m_type = module.get('type') or ''
         data = module.get('data') if isinstance(module.get('data'), dict) else {}
-        if m_type in ('item_detail', 'image_carousel'):
+        if m_type in ('item_detail', 'image_carousel', 'detail_media'):
             req['detail_images'] = True
-        if m_type in ('item_detail',):
+        if m_type in ('item_detail', 'detail_specs'):
             req['specs'] = True
-        if m_type in ('contact_info', 'contact_form', 'featured_picks'):
+        if m_type == 'detail_table':
+            req['detail_tables'] = True
+        if m_type in ('contact_info', 'contact_form', 'featured_picks', 'detail_link'):
             req['link'] = True
+        if m_type == 'detail_related':
+            req['detail_related'] = True
+        if m_type == 'detail_content_blocks':
+            req['detail_content_blocks'] = True
+        if m_type == 'detail_features':
+            req['detail_features'] = True
+        if m_type == 'detail_files':
+            req['detail_files'] = True
+        if m_type == 'detail_faq':
+            req['detail_faqs'] = True
+        if m_type in ('text_content', 'detail_text'):
+            req['body'] = True
         for key, value in data.items():
             key_l = str(key).lower()
             value_enabled = str(value).strip().lower() not in ('false', '0', 'no', 'off', '')
@@ -171,7 +616,10 @@ def _detail_template_field_requirements(template, item=None):
             if value_enabled and ('image' in key_l or key_l in ('show_arrows', 'show_dots', 'auto_scroll', 'scroll_interval')):
                 req['detail_images'] = True
             if value_enabled and ('spec' in key_l or key_l in ('table_rows', 'table_cols', 'table_columns')):
-                req['specs'] = True
+                if m_type == 'detail_table':
+                    req['detail_tables'] = True
+                else:
+                    req['specs'] = True
             if value_enabled and ('link' in key_l or key_l.endswith('_url') or key_l in ('btn_text', 'btn_url', 'button_text')):
                 req['link'] = True
             if key_l.startswith('seo_'):
@@ -186,6 +634,14 @@ def _detail_template_field_requirements(template, item=None):
         req['specs'] = True
     if item.get('link_url') or item.get('link_text') or item.get('button_url') or item.get('download_url'):
         req['link'] = True
+    if item.get('detail_features') or item.get('features'):
+        req['detail_features'] = True
+    if item.get('detail_files') or item.get('downloads'):
+        req['detail_files'] = True
+    if item.get('detail_faqs') or item.get('faqs'):
+        req['detail_faqs'] = True
+    if item.get('detail_content_blocks') or item.get('content_blocks'):
+        req['detail_content_blocks'] = True
     if item.get('seo_title') or item.get('seo_description') or item.get('seo_image'):
         req['seo'] = True
     return req
@@ -241,14 +697,36 @@ def _suggest_tags_from_fields(fields, limit=8):
     return result
 
 
+def _parse_tags_input(value):
+    """Parse the admin tags input without breaking phrases that contain spaces."""
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple)):
+        raw_parts = value
+    else:
+        raw = str(value).strip()
+        if not raw:
+            return []
+        raw_parts = re.split(r'[,，;；\n\r]+', raw)
+    result = []
+    seen = set()
+    for part in raw_parts:
+        tag = str(part or '').strip()
+        if not tag or tag in seen:
+            continue
+        seen.add(tag)
+        result.append(tag)
+    return result
+
+
 def _apply_detail_template_autofill(fields, template, page_label=None):
     if not isinstance(fields, dict):
         return fields
     auto_category = _detail_template_rule_value(template, 'auto_category', 'inherit')
-    if auto_category == 'inherit' and not str(fields.get('category') or '').strip() and page_label:
+    if auto_category == 'inherit' and 'category' not in fields and page_label:
         fields['category'] = page_label
     auto_tags = _detail_template_rule_value(template, 'auto_tags', 'suggest')
-    if auto_tags == 'suggest' and not fields.get('tags'):
+    if auto_tags == 'suggest' and 'tags' not in fields:
         suggested = _suggest_tags_from_fields(fields)
         if suggested:
             fields['tags'] = suggested
@@ -3677,6 +4155,240 @@ def preview_or_build(site_id):
     return _safe_send_from_directory(out, 'index.html')
 
 
+def _parse_detail_tables_form(form):
+    try:
+        tables_count = int(form.get('detail_tables_count', '0'))
+    except (ValueError, TypeError):
+        tables_count = 0
+    detail_tables = []
+    for ti in range(tables_count):
+        try:
+            row_count = int(form.get(f'detail_tables_{ti}_rows', '0'))
+        except (ValueError, TypeError):
+            row_count = 0
+        try:
+            col_count = int(form.get(f'detail_tables_{ti}_cols', '0'))
+        except (ValueError, TypeError):
+            col_count = 0
+        rows = []
+        has_content = False
+        for ri in range(max(0, row_count)):
+            cells = []
+            for ci in range(max(0, col_count)):
+                text = form.get(f'detail_tables_{ti}_r{ri}_c{ci}_text', '').strip()
+                url = form.get(f'detail_tables_{ti}_r{ri}_c{ci}_url', '').strip()
+                cell = {}
+                if text:
+                    cell['text'] = text
+                if url:
+                    cell['url'] = url
+                if cell:
+                    has_content = True
+                cells.append(cell)
+            rows.append({'cells': cells})
+        detail_tables.append({'rows': rows, 'visible': has_content})
+    return detail_tables
+
+
+def _parse_key_value_items_form(form, prefix):
+    try:
+        count = int(form.get(f'{prefix}_count', '0'))
+    except (ValueError, TypeError):
+        count = 0
+    items = []
+    for index in range(count):
+        name = form.get(f'{prefix}_{index}_name', '').strip()
+        value = form.get(f'{prefix}_{index}_value', '').strip()
+        if name or value:
+            items.append({'name': name, 'value': value})
+    return items
+
+
+def _parse_detail_specs_form(form):
+    try:
+        group_count = int(form.get('detail_specs_count', '0'))
+    except (ValueError, TypeError):
+        group_count = 0
+    groups = []
+    for group_index in range(group_count):
+        try:
+            row_count = int(form.get(f'detail_specs_{group_index}_count', '0'))
+        except (ValueError, TypeError):
+            row_count = 0
+        items = []
+        for row_index in range(row_count):
+            name = form.get(f'detail_specs_{group_index}_{row_index}_name', '').strip()
+            desc = form.get(f'detail_specs_{group_index}_{row_index}_desc', '').strip()
+            value = form.get(f'detail_specs_{group_index}_{row_index}_value', '').strip()
+            if name or desc or value:
+                items.append({'name': name, 'desc': desc, 'value': value})
+        groups.append({'items': items, 'visible': bool(items)})
+    return groups
+
+
+def _parse_detail_features_form(form):
+    try:
+        count = int(form.get('detail_features_count', '0'))
+    except (ValueError, TypeError):
+        count = 0
+    features = []
+    for idx in range(count):
+        title = form.get(f'detail_features_{idx}_title', '').strip()
+        text = form.get(f'detail_features_{idx}_text', '').strip()
+        icon = form.get(f'detail_features_{idx}_icon', '').strip()
+        if title or text or icon:
+            item = {}
+            if icon:
+                item['icon'] = icon
+            if title:
+                item['title'] = title
+            if text:
+                item['text'] = text
+            features.append(item)
+    return features
+
+
+def _parse_detail_files_form(form):
+    try:
+        count = int(form.get('detail_files_count', '0'))
+    except (ValueError, TypeError):
+        count = 0
+    files = []
+    for idx in range(count):
+        title = form.get(f'detail_files_{idx}_title', '').strip()
+        url = form.get(f'detail_files_{idx}_url', '').strip()
+        desc = form.get(f'detail_files_{idx}_desc', '').strip()
+        file_type = form.get(f'detail_files_{idx}_type', '').strip()
+        if title or url or desc or file_type:
+            item = {}
+            if title:
+                item['title'] = title
+            if url:
+                item['url'] = url
+            if desc:
+                item['desc'] = desc
+            if file_type:
+                item['type'] = file_type
+            files.append(item)
+    return files
+
+
+def _parse_detail_faqs_form(form):
+    try:
+        count = int(form.get('detail_faqs_count', '0'))
+    except (ValueError, TypeError):
+        count = 0
+    faqs = []
+    for idx in range(count):
+        question = form.get(f'detail_faqs_{idx}_question', '').strip()
+        answer = form.get(f'detail_faqs_{idx}_answer', '').strip()
+        if question or answer:
+            faqs.append({'question': question, 'answer': answer})
+    return faqs
+
+
+def _parse_detail_content_blocks_form(form, files=None, site_id=None, dataset_key='', fields=None, item=None):
+    try:
+        count = int(form.get('detail_content_blocks_count', '0'))
+    except (ValueError, TypeError):
+        count = 0
+    blocks = []
+    for idx in range(count):
+        block_type = form.get(f'detail_content_blocks_{idx}_type', 'text').strip() or 'text'
+        title = form.get(f'detail_content_blocks_{idx}_title', '').strip()
+        text = form.get(f'detail_content_blocks_{idx}_text', '').strip()
+        image = form.get(f'detail_content_blocks_{idx}_image', '').strip()
+        video = form.get(f'detail_content_blocks_{idx}_video', '').strip()
+        embed_url = form.get(f'detail_content_blocks_{idx}_embed_url', '').strip()
+        note_style = form.get(f'detail_content_blocks_{idx}_note_style', 'info').strip() or 'info'
+        table_text = form.get(f'detail_content_blocks_{idx}_table_text', '').strip()
+        try:
+            table_rows_count = max(0, int(form.get(f'detail_content_blocks_{idx}_table_rows', '0') or 0))
+        except (TypeError, ValueError):
+            table_rows_count = 0
+        try:
+            table_cols_count = max(0, int(form.get(f'detail_content_blocks_{idx}_table_cols', '0') or 0))
+        except (TypeError, ValueError):
+            table_cols_count = 0
+        alt = form.get(f'detail_content_blocks_{idx}_alt', '').strip()
+        caption = form.get(f'detail_content_blocks_{idx}_caption', '').strip()
+        layout = form.get(f'detail_content_blocks_{idx}_layout', 'image_left').strip() or 'image_left'
+        image_upload = files.get(f'detail_content_blocks_{idx}_image_file') if files else None
+        video_upload = files.get(f'detail_content_blocks_{idx}_video_file') if files else None
+        if image_upload and image_upload.filename and site_id:
+            try:
+                image = _save_uploaded_image(site_id, image_upload, prefix=f'{dataset_key}-content-{idx + 1}')
+                alt = alt or _context_alt(fields or {}, item or {}, fallback=_filename_alt(image_upload))
+            except Exception as exc:
+                current_app.logger.warning('详情内容图片上传失败: %s', exc)
+        if video_upload and video_upload.filename and site_id:
+            try:
+                video = _save_uploaded_media(site_id, video_upload, prefix=f'{dataset_key}-content-video-{idx + 1}')
+            except Exception as exc:
+                current_app.logger.warning('详情内容视频上传失败: %s', exc)
+        gallery = []
+        for gi in range(6):
+            gallery_image = form.get(f'detail_content_blocks_{idx}_gallery_{gi}_image', '').strip()
+            gallery_alt = form.get(f'detail_content_blocks_{idx}_gallery_{gi}_alt', '').strip()
+            gallery_caption = form.get(f'detail_content_blocks_{idx}_gallery_{gi}_caption', '').strip()
+            gallery_upload = files.get(f'detail_content_blocks_{idx}_gallery_{gi}_image_file') if files else None
+            if gallery_upload and gallery_upload.filename and site_id:
+                try:
+                    gallery_image = _save_uploaded_image(site_id, gallery_upload, prefix=f'{dataset_key}-content-gallery-{idx + 1}-{gi + 1}')
+                    gallery_alt = gallery_alt or _context_alt(fields or {}, item or {}, fallback=_filename_alt(gallery_upload))
+                except Exception as exc:
+                    current_app.logger.warning('详情内容多图上传失败: %s', exc)
+            if gallery_image:
+                gallery_item = {'image': gallery_image}
+                if gallery_alt:
+                    gallery_item['alt'] = gallery_alt
+                if gallery_caption:
+                    gallery_item['caption'] = gallery_caption
+                gallery.append(gallery_item)
+        table_cells = []
+        if table_rows_count and table_cols_count:
+            for tr in range(table_rows_count):
+                row = []
+                row_has_value = False
+                for tc in range(table_cols_count):
+                    cell = form.get(f'detail_content_blocks_{idx}_table_{tr}_{tc}', '').strip()
+                    if cell:
+                        row_has_value = True
+                    row.append(cell)
+                if row_has_value:
+                    table_cells.append(row)
+        block = {'type': block_type}
+        if title:
+            block['title'] = title
+        if text:
+            block['text'] = text
+        if image:
+            block['image'] = image
+        if video:
+            block['video'] = video
+        if embed_url:
+            block['embed_url'] = embed_url
+        if gallery:
+            block['images'] = gallery
+        if table_cells:
+            block['table'] = table_cells
+            block['table_rows'] = table_rows_count
+            block['table_cols'] = table_cols_count
+        elif table_text:
+            block['table_text'] = table_text
+        if block_type == 'note':
+            block['style'] = note_style
+        if alt:
+            block['alt'] = alt
+        if caption:
+            block['caption'] = caption
+        if block_type == 'media_text':
+            block['layout'] = layout
+        if len(block) > 1:
+            blocks.append(block)
+    return blocks
+
+
 def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, source_storage_lang):
     """Parse a dataset edit form into one draft item without writing YAML."""
     item = datasets.find(site.id, dataset_key, item_id, lang=storage_lang)
@@ -3702,7 +4414,25 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
             continue
         if key.startswith('specs_') or key in ('specs_count',):
             continue
-        if key.startswith('module_') or key in ('module_count', 'csrf_token'):
+        if key.startswith('detail_specs_') or key in ('detail_specs_count',):
+            continue
+        if key.startswith('parameters_') or key in ('parameters_count',):
+            continue
+        if key.startswith('attributes_') or key in ('attributes_count',):
+            continue
+        if key.startswith('detail_links_') or key in ('detail_links_count',):
+            continue
+        if key.startswith('detail_tables_') or key in ('detail_tables_count',):
+            continue
+        if key.startswith('detail_features_') or key in ('detail_features_count',):
+            continue
+        if key.startswith('detail_files_') or key in ('detail_files_count',):
+            continue
+        if key.startswith('detail_faqs_') or key in ('detail_faqs_count',):
+            continue
+        if key.startswith('detail_content_blocks_') or key in ('detail_content_blocks_count',):
+            continue
+        if key.startswith('module_') or key.startswith('_') or key in ('module_count', 'csrf_token'):
             continue
         fields[key] = form.get(key, '').strip()
 
@@ -3712,8 +4442,8 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
     elif detail_btn_mode in ('true', 'false'):
         fields['show_detail_btn'] = detail_btn_mode == 'true'
 
-    if 'tags' in fields and fields['tags'] and isinstance(fields['tags'], str):
-        fields['tags'] = [t.strip() for t in fields['tags'].replace(',', ' ').split() if t.strip()]
+    if 'tags' in fields:
+        fields['tags'] = _parse_tags_input(fields.get('tags'))
 
     if 'tags_visible' in fields:
         fields['tags_visible'] = str(fields.get('tags_visible')).lower() != 'false'
@@ -3737,19 +4467,39 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
             'images': gallery_images,
         }
 
-    if 'specs_count' in form:
-        specs_count = 0
+    for source_prefix in ('specs', 'parameters', 'attributes'):
+        if f'{source_prefix}_count' in form:
+            fields[source_prefix] = _parse_key_value_items_form(form, source_prefix)
+    if 'detail_specs_count' in form:
+        fields['detail_specs'] = _parse_detail_specs_form(form)
+
+    if 'detail_links_count' in form:
         try:
-            specs_count = int(form.get('specs_count', '0'))
+            links_count = int(form.get('detail_links_count', '0'))
         except (ValueError, TypeError):
-            specs_count = 0
-        specs = []
-        for si in range(specs_count):
-            name = form.get(f'specs_{si}_name', '').strip()
-            value = form.get(f'specs_{si}_value', '').strip()
-            if name or value:
-                specs.append({'name': name, 'value': value})
-        fields['specs'] = specs
+            links_count = 0
+        if links_count > 0:
+            detail_links = []
+            for li in range(links_count):
+                text = form.get(f'detail_links_{li}_text', '').strip()
+                url = form.get(f'detail_links_{li}_url', '').strip()
+                if text or url:
+                    detail_links.append({'text': text, 'url': url})
+            fields['detail_links'] = detail_links
+            if detail_links:
+                fields['link_text'] = detail_links[0].get('text', '')
+                fields['link_url'] = detail_links[0].get('url', '')
+
+    if 'detail_tables_count' in form:
+        fields['detail_tables'] = _parse_detail_tables_form(form)
+    if 'detail_features_count' in form:
+        fields['detail_features'] = _parse_detail_features_form(form)
+    if 'detail_files_count' in form:
+        fields['detail_files'] = _parse_detail_files_form(form)
+    if 'detail_faqs_count' in form:
+        fields['detail_faqs'] = _parse_detail_faqs_form(form)
+    if 'detail_content_blocks_count' in form:
+        fields['detail_content_blocks'] = _parse_detail_content_blocks_form(form, fields=fields, item=item)
 
     settings_for_templates = read_yaml(site.id, 'settings.yaml') or {}
     raw_menu_for_templates = settings_for_templates.get('menu') or []
@@ -3772,10 +4522,11 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
         )
     _apply_detail_template_autofill(fields, template_for_autofill or {}, page_label_for_templates)
 
-    if form.get('_restore_template_modules') == '1':
+    force_template_preview = form.get('_draft_force_template_preview') == '1'
+    if force_template_preview or form.get('_restore_template_modules') == '1':
         fields['modules'] = []
     module_count_str = form.get('module_count')
-    if form.get('_restore_template_modules') != '1' and form.get('_advanced_modules_enabled') == '1' and module_count_str and module_count_str.isdigit():
+    if not force_template_preview and form.get('_restore_template_modules') != '1' and form.get('_advanced_modules_enabled') == '1' and module_count_str and module_count_str.isdigit():
         existing_modules = item.get('modules', [])
         modules = _parse_modules_form(form, existing_modules)
         for m in modules:
@@ -3788,7 +4539,7 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
                         keep[key] = value
                 m['data'] = keep
         fields['modules'] = modules
-    elif form.get('_restore_template_modules') != '1' and form.get('_advanced_modules_enabled') == '1' and module_count_str is not None:
+    elif not force_template_preview and form.get('_restore_template_modules') != '1' and form.get('_advanced_modules_enabled') == '1' and module_count_str is not None:
         fields['modules'] = []
 
     draft = dict(item)
@@ -4256,14 +5007,15 @@ def detail_templates_panel(dataset_key):
         templates = _detail_templates_for_page(page, dataset_key, page_label)
         action = request.form.get('_template_action', request.form.get('action', '')).strip()
         template_id = request.form.get('template_id', '').strip()
+        redirect_template_id = ''
 
         if action == 'add':
             name = request.form.get('name', '').strip() or f'{page_label}详情模板'
-            new_template = _default_detail_template(dataset_key, page_label)
+            new_template = _blank_detail_template(dataset_key, name)
             new_template['id'] = _unique_detail_template_id(templates, name)
             new_template['name'] = name
-            new_template['is_default'] = False
             templates.append(new_template)
+            redirect_template_id = new_template['id']
             flash('已创建详情模板')
         elif action == 'copy':
             source = next((tpl for tpl in templates if str(tpl.get('id') or '') == template_id), None)
@@ -4276,6 +5028,7 @@ def detail_templates_panel(dataset_key):
                 new_template['name'] = name
                 new_template['is_default'] = False
                 templates.append(new_template)
+                redirect_template_id = new_template['id']
                 flash('已复制详情模板')
         elif action == 'set_default':
             found = False
@@ -4310,8 +5063,6 @@ def detail_templates_panel(dataset_key):
                     source['name'] = name
                 existing_modules = source.get('modules') if isinstance(source.get('modules'), list) else []
                 modules = _parse_modules_form(request.form, existing_modules)
-                if not modules:
-                    modules = [{'type': 'item_data', 'variant': 'default', 'data': {}}]
                 source['modules'] = modules
                 seo_title = request.form.get('seo_title', '').strip()
                 seo_description = request.form.get('seo_description', '').strip()
@@ -4328,7 +5079,9 @@ def detail_templates_panel(dataset_key):
         page['detail_templates'] = templates
         write_yaml(site.id, f'pages/{dataset_key}.yaml', page)
         redirect_args = {'dataset_key': dataset_key, '_fragment': '1', 'site': site.id, 'lang': lang}
-        if action == 'save_modules' and template_id:
+        if redirect_template_id:
+            redirect_args['template_id'] = redirect_template_id
+        elif action == 'save_modules' and template_id:
             redirect_args['template_id'] = template_id
         return redirect(url_for('core.detail_templates_panel', **redirect_args))
 
@@ -4339,16 +5092,25 @@ def detail_templates_panel(dataset_key):
         (tpl for tpl in templates if str(tpl.get('id') or '') == edit_template_id),
         None,
     ) if edit_template_id else None
-    blocks = _get_available_blocks(site.template_name)
+    blocks = _get_detail_template_components(site.template_name)
     all_list_datasets = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu))
     storage_lang = _storage_lang(site, lang, default_lang)
     dataset_items = datasets.load(site.id, dataset_key, lang=storage_lang)
     template_usage = {}
+    preview_items = []
     for item in dataset_items or []:
         if not isinstance(item, dict):
             continue
         tpl_id = str(item.get('template_id') or default_template_id)
         template_usage[tpl_id] = template_usage.get(tpl_id, 0) + 1
+        slug = str(item.get('slug') or '').strip()
+        if slug:
+            preview_items.append({
+                'id': item.get('id'),
+                'title': item.get('title') or item.get('name') or slug,
+                'slug': slug,
+                'template_id': tpl_id,
+            })
     from .style_registry import STYLE_REGISTRY
     from .icon_registry import icon_names
     return _render('dashboard/panel_detail_templates.html',
@@ -4360,6 +5122,7 @@ def detail_templates_panel(dataset_key):
                    edit_template=edit_template,
                    blocks=blocks,
                    all_list_datasets=all_list_datasets,
+                   preview_items=preview_items,
                    template_usage=template_usage,
                    style_registry=STYLE_REGISTRY,
                    icon_list=icon_names(),
@@ -4423,7 +5186,10 @@ def dataset_edit(dataset_key, item_id):
         page_cfg = _ensure_page_detail_templates(site.id, dataset_key, page_label)
         detail_templates = _detail_templates_for_page(page_cfg, dataset_key, page_label)
         default_template_id = _default_detail_template_id(page_cfg, dataset_key, page_label)
-        detail_requirements = _detail_template_requirements_map(detail_templates, current_item)
+        # Field visibility in the dataset editor must follow the selected
+        # detail template's components. Existing item data is preserved on
+        # save, but it should not make every template show every legacy field.
+        detail_requirements = _detail_template_requirements_map(detail_templates)
         all_list_datasets = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu))
         from .style_registry import STYLE_REGISTRY
         from .icon_registry import icon_names
@@ -4468,8 +5234,26 @@ def dataset_edit(dataset_key, item_id):
                 continue
             if key.startswith('specs_') or key in ('specs_count',):
                 continue
+            if key.startswith('detail_specs_') or key in ('detail_specs_count',):
+                continue
+            if key.startswith('parameters_') or key in ('parameters_count',):
+                continue
+            if key.startswith('attributes_') or key in ('attributes_count',):
+                continue
+            if key.startswith('detail_links_') or key in ('detail_links_count',):
+                continue
+            if key.startswith('detail_tables_') or key in ('detail_tables_count',):
+                continue
+            if key.startswith('detail_features_') or key in ('detail_features_count',):
+                continue
+            if key.startswith('detail_files_') or key in ('detail_files_count',):
+                continue
+            if key.startswith('detail_faqs_') or key in ('detail_faqs_count',):
+                continue
+            if key.startswith('detail_content_blocks_') or key in ('detail_content_blocks_count',):
+                continue
             # 跳过模块配置字段和 CSRF 令牌（不参与数据存储）
-            if key.startswith('module_') or key in ('module_count', 'csrf_token'):
+            if key.startswith('module_') or key.startswith('_') or key in ('module_count', 'csrf_token'):
                 continue
             val = request.form.get(key, '').strip()
             fields[key] = val
@@ -4498,11 +5282,8 @@ def dataset_edit(dataset_key, item_id):
                 invalid_item.update(fields)
                 return render_edit(invalid_item, source_item), 400
         # tags: 逗号/空格分隔的字符串 → 列表
-        if 'tags' in fields and fields['tags']:
-            raw_tags = fields['tags']
-            if isinstance(raw_tags, str):
-                tags_list = [t.strip() for t in raw_tags.replace(',', ' ').split() if t.strip()]
-                fields['tags'] = tags_list
+        if 'tags' in fields:
+            fields['tags'] = _parse_tags_input(fields.get('tags'))
         # 处理图片上传
         if 'tags_visible' in fields:
             fields['tags_visible'] = str(fields.get('tags_visible')).lower() != 'false'
@@ -4533,19 +5314,40 @@ def dataset_edit(dataset_key, item_id):
                 'visible': str(request.form.get('detail_gallery_visible', 'true')).lower() != 'false',
                 'images': gallery_images,
             }
-        if 'specs_count' in request.form:
-            specs_count = 0
+        for source_prefix in ('specs', 'parameters', 'attributes'):
+            if f'{source_prefix}_count' in request.form:
+                fields[source_prefix] = _parse_key_value_items_form(request.form, source_prefix)
+        if 'detail_specs_count' in request.form:
+            fields['detail_specs'] = _parse_detail_specs_form(request.form)
+        if 'detail_links_count' in request.form:
+            links_count = 0
             try:
-                specs_count = int(request.form.get('specs_count', '0'))
+                links_count = int(request.form.get('detail_links_count', '0'))
             except (ValueError, TypeError):
-                specs_count = 0
-            specs = []
-            for si in range(specs_count):
-                name = request.form.get(f'specs_{si}_name', '').strip()
-                value = request.form.get(f'specs_{si}_value', '').strip()
-                if name or value:
-                    specs.append({'name': name, 'value': value})
-            fields['specs'] = specs
+                links_count = 0
+            if links_count > 0:
+                detail_links = []
+                for li in range(links_count):
+                    text = request.form.get(f'detail_links_{li}_text', '').strip()
+                    url = request.form.get(f'detail_links_{li}_url', '').strip()
+                    if text or url:
+                        detail_links.append({'text': text, 'url': url})
+                fields['detail_links'] = detail_links
+                if detail_links:
+                    fields['link_text'] = detail_links[0].get('text', '')
+                    fields['link_url'] = detail_links[0].get('url', '')
+        if 'detail_tables_count' in request.form:
+            fields['detail_tables'] = _parse_detail_tables_form(request.form)
+        if 'detail_features_count' in request.form:
+            fields['detail_features'] = _parse_detail_features_form(request.form)
+        if 'detail_files_count' in request.form:
+            fields['detail_files'] = _parse_detail_files_form(request.form)
+        if 'detail_faqs_count' in request.form:
+            fields['detail_faqs'] = _parse_detail_faqs_form(request.form)
+        if 'detail_content_blocks_count' in request.form:
+            fields['detail_content_blocks'] = _parse_detail_content_blocks_form(
+                request.form, request.files, site.id, dataset_key, fields, item
+            )
         settings_for_templates = read_yaml(site.id, 'settings.yaml') or {}
         raw_menu_for_templates = settings_for_templates.get('menu') or []
         list_targets_for_templates = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu_for_templates))
@@ -4828,6 +5630,16 @@ def _get_available_blocks(template_name):
         return []
 
 
+def _get_detail_template_components(template_name):
+    """Components exposed in the detail-template editor.
+
+    They are data-bound virtual components rendered by builder.py. Existing
+    theme blocks may still be used internally as visual fallbacks, but the
+    editor only exposes detail-specific concepts to keep the workflow focused.
+    """
+    return copy.deepcopy(DETAIL_TEMPLATE_COMPONENT_BLOCKS)
+
+
 def _merge_block_defaults(modules, blocks):
     """将 meta.yaml 中非空 default 值合并到模块显示数据中（仅补全缺失的 key，不覆盖已有值）。
     这样属性面板的 Jinja2 模板用 mdata.get('key', '') 就能拿到 CSS 兜底值。
@@ -4866,8 +5678,8 @@ def _parse_modules_form(form, existing_modules=None):
     会从已有数据中保留，防止编辑器保存时丢失表单不表达的数据。
     """
     data_field_allowed_types = {
-        'columns': {'text_content', 'logo_cloud'},
-        'max_items': {'data_grid'},
+        'columns': {'text_content', 'logo_cloud', 'detail_specs', 'detail_features', 'detail_related'},
+        'max_items': {'data_grid', 'detail_related'},
         'items_per_page': {'data_grid'},
     }
 

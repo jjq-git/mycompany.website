@@ -7,6 +7,7 @@
 """
 import json
 import copy
+import re
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -18,6 +19,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape, pass_contex
 from markupsafe import Markup, escape
 
 from . import block_parser, block_renderer
+from .icon_registry import get_icon_svg
 from . import menu as menu_lib
 from .models import Site
 
@@ -215,6 +217,808 @@ def _load_block_for_render(tpl_root, template_name, block_type, variant):
     return result
 
 
+DETAIL_COMPONENT_TYPES = {
+    'detail_media',
+    'detail_text',
+    'detail_content_blocks',
+    'detail_specs',
+    'detail_table',
+    'detail_link',
+    'detail_intro',
+    'detail_features',
+    'detail_files',
+    'detail_faq',
+    'detail_related',
+}
+
+
+def _current_detail_item(jinja_ctx):
+    item_data = jinja_ctx.get('item')
+    if isinstance(item_data, dict):
+        return item_data
+    for var_name in ('product', 'post', 'feature', 'portfolio'):
+        candidate = jinja_ctx.get(var_name)
+        if isinstance(candidate, dict):
+            return candidate
+    return {}
+
+
+def _split_field_names(value, default=''):
+    raw = value if value not in (None, '') else default
+    if isinstance(raw, (list, tuple)):
+        return [str(v).strip() for v in raw if str(v).strip()]
+    return [part.strip() for part in str(raw or '').split(',') if part.strip()]
+
+
+def _detail_field_value(item, field_names, default=''):
+    for field in _split_field_names(field_names):
+        value = item.get(field)
+        if value not in (None, '', [], {}):
+            return value
+    return default
+
+
+def _truthy_detail(value, default=True):
+    if value in (None, ''):
+        return default
+    return str(value).strip().lower() not in ('0', 'false', 'no', 'off')
+
+
+def _detail_component_style(data):
+    styles = []
+    bg = data.get('section_bg')
+    color = data.get('text_color')
+    if bg:
+        styles.append(f'background:{escape(bg)}')
+    if color:
+        styles.append(f'color:{escape(color)}')
+    return f' style="{";".join(str(s) for s in styles)}"' if styles else ''
+
+
+def _normalize_detail_images(item, data):
+    images = []
+    source = data.get('source') or 'cover_and_gallery'
+    cover_field = data.get('cover_field') or 'cover,image,photo,logo'
+    gallery_field = data.get('gallery_field') or 'detail_images,detail_gallery,images'
+    cover = _detail_field_value(item, cover_field)
+    if source in ('cover_and_gallery', 'cover_only') and isinstance(cover, str) and cover.strip():
+        images.append({'url': cover.strip(), 'caption': item.get('title') or item.get('name') or ''})
+
+    gallery = _detail_field_value(item, gallery_field)
+    if isinstance(gallery, dict):
+        if gallery.get('visible') is False or str(gallery.get('visible')).strip().lower() == 'false':
+            gallery = []
+        else:
+            gallery = gallery.get('images') or gallery.get('items') or []
+    if not gallery and isinstance(item.get('detail_gallery'), dict):
+        detail_gallery = item.get('detail_gallery', {})
+        if detail_gallery.get('visible') is False or str(detail_gallery.get('visible')).strip().lower() == 'false':
+            gallery = []
+        else:
+            gallery = detail_gallery.get('images') or detail_gallery.get('items') or []
+    if source in ('cover_and_gallery', 'gallery_only') and isinstance(gallery, list):
+        for entry in gallery:
+            if isinstance(entry, dict):
+                url = entry.get('url') or entry.get('image') or entry.get('src')
+                caption = entry.get('caption') or entry.get('alt') or ''
+            else:
+                url = entry
+                caption = ''
+            if url:
+                images.append({'url': str(url), 'caption': str(caption or '')})
+    elif source in ('cover_and_gallery', 'gallery_only') and isinstance(gallery, str) and gallery.strip():
+        for part in re.split(r'[\n,]+', gallery):
+            if part.strip():
+                images.append({'url': part.strip(), 'caption': ''})
+
+    seen = set()
+    unique = []
+    for image in images:
+        url = image.get('url')
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        unique.append(image)
+    max_images = _detail_int(data.get('max_images') or data.get('gallery_max'), 0)
+    return unique[:max_images] if max_images else unique
+
+
+def _render_detail_media(item, data):
+    images = _normalize_detail_images(item, data)
+    title = item.get('title') or item.get('name') or ''
+    summary = _first_text(item.get('summary'), item.get('description'), item.get('excerpt'))
+    if not images and data.get('empty_behavior') != 'show_placeholder':
+        return Markup('')
+    layout = data.get('layout') or 'gallery_top'
+    radius = escape(data.get('image_radius') or '8px')
+    ratio = data.get('image_ratio') or '4/3'
+    ratio_style = '' if ratio == 'auto' else f'aspect-ratio:{escape(ratio)};'
+    section_style = _detail_component_style(data)
+    imgs_html = ''
+    if images:
+        imgs_html = ''.join(
+            f'<img src="{escape(img["url"])}" alt="{escape(img.get("caption") or title or "")}" loading="lazy" class="detail-gallery-img">'
+            for img in images
+        )
+    else:
+        imgs_html = '<div class="detail-media-placeholder" style="border:1px dashed #cbd5e1;border-radius:8px;padding:28px;text-align:center;color:#64748b">暂无图片</div>'
+
+    gallery_html = (
+        '<div class="detail-gallery item-data-gallery">'
+        '<div class="item-data-media" hidden></div>'
+        '<div class="detail-carousel-stage">'
+        f'<div class="detail-images">{imgs_html}</div>'
+        '<button type="button" class="detail-carousel-btn detail-carousel-prev" aria-label="Previous image"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>'
+        '<button type="button" class="detail-carousel-btn detail-carousel-next" aria-label="Next image"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>'
+        '<button type="button" class="detail-zoom-btn" aria-label="Zoom image"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>'
+        '</div>'
+        '<div class="detail-thumbs" aria-label="Image thumbnails"></div>'
+        '</div>'
+    )
+
+    if layout == 'gallery_left':
+        category = item.get('category')
+        tags = item.get('tags')
+        if isinstance(tags, list):
+            tags_html = ''.join(f'<span class="badge badge-primary item-data-tag">{escape(tag)}</span>' for tag in tags[:8] if tag)
+        elif isinstance(tags, str) and tags.strip():
+            tags_html = ''.join(f'<span class="badge badge-primary item-data-tag">{escape(tag.strip())}</span>' for tag in re.split(r'[,，]+', tags) if tag.strip())
+        else:
+            tags_html = ''
+        info_html = (
+            '<div class="item-data-info detail-media-copy">'
+            f'{f"<div class=\"item-data-category\">{escape(category)}</div>" if category else ""}'
+            f'{f"<h1 class=\"item-data-title\">{escape(title)}</h1>" if title else ""}'
+            f'{f"<p class=\"item-data-desc\">{escape(summary)}</p>" if summary else ""}'
+            f'{f"<div class=\"item-data-tags\">{tags_html}</div>" if tags_html else ""}'
+            '</div>'
+        )
+        body = f'<article class="item-data-article item-detail-carousel"><div class="item-data-layout">{gallery_html}{info_html}</div></article>'
+    else:
+        body = f'<article class="item-data-article item-detail-carousel">{gallery_html}</article>'
+    layout_class = 'detail-media--split' if layout == 'gallery_left' else 'detail-media--stack'
+    return Markup(f'<section class="section detail-component detail-media {layout_class} item-data-section"{section_style}><div class="container">{body}</div></section>')
+
+
+def _render_detail_text(item, data):
+    content = _detail_field_value(item, data.get('content_field') or 'body', data.get(''))
+    if not content:
+        content = _detail_field_value(item, data.get('fallback_field') or 'description,summary,content')
+    if not content:
+        if data.get('empty_behavior') != 'show_placeholder':
+            return Markup('')
+        content = '暂无内容'
+    title = data.get('title') or ''
+    align = data.get('text_align') or 'left'
+    section_style = _detail_component_style(data)
+    title_html = f'<h2 class="section-title">{escape(title)}</h2>' if title else ''
+    return Markup(
+        f'<section class="section detail-component detail-text detail-text--{escape(align)}"{section_style}>'
+        f'<div class="container" style="text-align:{escape(align)}">{title_html}<div class="tc-body detail-text-body" style="overflow-wrap:anywhere">{Markup(str(content))}</div></div>'
+        f'</section>'
+    )
+
+
+def _normalize_detail_specs(value, hide_empty=True, max_rows=0):
+    specs = []
+    if isinstance(value, list):
+        for entry in value:
+            if isinstance(entry, dict):
+                name = entry.get('name') or entry.get('label') or entry.get('key') or ''
+                desc = entry.get('desc') or entry.get('description') or entry.get('note') or ''
+                val = entry.get('value') or entry.get('text') or ''
+            else:
+                name = ''
+                desc = ''
+                val = entry
+            if hide_empty and not (name or desc or val):
+                continue
+            specs.append((str(name or ''), str(desc or ''), str(val or '')))
+    elif isinstance(value, dict):
+        for name, val in value.items():
+            if hide_empty and not (name or val):
+                continue
+            specs.append((str(name or ''), '', str(val or '')))
+    if max_rows:
+        specs = specs[:max_rows]
+    return specs
+
+
+def _render_detail_specs(item, data):
+    spec_index = data.get('_detail_specs_index')
+    spec_group = {}
+    detail_specs = item.get('detail_specs')
+    if isinstance(spec_index, int) and isinstance(detail_specs, list) and 0 <= spec_index < len(detail_specs) and isinstance(detail_specs[spec_index], dict):
+        spec_group = detail_specs[spec_index]
+    if spec_group.get('visible') is False:
+        return Markup('')
+    source_field = data.get('source_field') or 'specs'
+    specs_value = spec_group.get('items') if isinstance(spec_group.get('items'), list) else _detail_field_value(item, source_field)
+    max_rows = _detail_int(data.get('max_rows'), 0)
+    columns = max(1, min(3, _detail_int(data.get('columns'), 1) or 1))
+    hide_empty = _truthy_detail(data.get('hide_empty_rows'), True)
+    specs = _normalize_detail_specs(specs_value, hide_empty=hide_empty, max_rows=max_rows)
+    if not specs:
+        return Markup('')
+    title = data.get('title') or spec_group.get('title') or ''
+    title_html = f'<h2 class="section-title">{escape(title)}</h2>' if title else ''
+    border = escape(data.get('border_color') or '#e5e7eb')
+    section_style = _detail_component_style(data)
+    body_rows = []
+    for name, desc, val in specs:
+        cells = []
+        if columns == 1:
+            text = val or desc or name
+            cells.append(f'<div class="detail-spec-cell detail-spec-cell--value">{escape(text)}</div>')
+        elif columns == 2:
+            cells.append(f'<div class="detail-spec-cell detail-spec-cell--name">{escape(name)}</div>')
+            cells.append(f'<div class="detail-spec-cell detail-spec-cell--value">{escape(val or desc)}</div>')
+        else:
+            cells.append(f'<div class="detail-spec-cell detail-spec-cell--name">{escape(name)}</div>')
+            cells.append(f'<div class="detail-spec-cell detail-spec-cell--desc">{escape(desc)}</div>')
+            cells.append(f'<div class="detail-spec-cell detail-spec-cell--value">{escape(val)}</div>')
+        body_rows.append(
+            f'<div class="detail-spec-row" style="--detail-spec-columns:{columns};border-bottom:1px solid {border}">{"".join(cells)}</div>'
+        )
+    rows = ''.join(body_rows)
+    return Markup(
+        f'<section class="section detail-component detail-specs"{section_style}><div class="container">'
+        f'{title_html}'
+        f'<div class="detail-spec-list">{rows}</div>'
+        f'</div></section>'
+    )
+
+
+def _render_detail_table(item, data):
+    table_index = data.get('_detail_table_index')
+    tables = item.get('detail_tables')
+    table = {}
+    if isinstance(table_index, int) and isinstance(tables, list) and 0 <= table_index < len(tables) and isinstance(tables[table_index], dict):
+        table = tables[table_index]
+    if table.get('visible') is False:
+        return Markup('')
+    row_count = max(1, _detail_int(data.get('table_rows'), 3) or 3)
+    col_count = max(1, _detail_int(data.get('table_cols'), 2) or 2)
+    hide_empty = _truthy_detail(data.get('hide_empty_rows'), True)
+    rows_data = table.get('rows') if isinstance(table.get('rows'), list) else []
+    border = escape(data.get('border_color') or '#e5e7eb')
+    allow_links = str(data.get('cell_links') or 'optional') != 'none'
+    body_rows = []
+    has_content = False
+    for r in range(row_count):
+        row = rows_data[r] if r < len(rows_data) and isinstance(rows_data[r], dict) else {}
+        cells_data = row.get('cells') if isinstance(row.get('cells'), list) else []
+        cell_html = []
+        row_has_content = False
+        for c in range(col_count):
+            cell = cells_data[c] if c < len(cells_data) and isinstance(cells_data[c], dict) else {}
+            text = str(cell.get('text') or '')
+            url = str(cell.get('url') or '') if allow_links else ''
+            if text or url:
+                row_has_content = True
+                has_content = True
+            content = f'<a href="{escape(url)}">{escape(text or url)}</a>' if url else escape(text)
+            cell_html.append(f'<td style="border:1px solid {border};padding:12px 14px;vertical-align:top;overflow-wrap:anywhere">{content}</td>')
+        if row_has_content or not hide_empty:
+            body_rows.append('<tr>' + ''.join(cell_html) + '</tr>')
+    if not has_content and hide_empty:
+        return Markup('')
+    title = data.get('title') or table.get('title') or ''
+    title_html = f'<h2 class="section-title">{escape(title)}</h2>' if title else ''
+    section_style = _detail_component_style(data)
+    return Markup(
+        f'<section class="section detail-component detail-table"{section_style}><div class="container">'
+        f'{title_html}'
+        f'<div style="overflow-x:auto"><table class="detail-custom-table" style="width:100%;border-collapse:collapse"><tbody>{"".join(body_rows)}</tbody></table></div>'
+        f'</div></section>'
+    )
+
+
+def _render_detail_link(item, data):
+    link_index = data.get('_detail_link_index')
+    link_item = {}
+    links = item.get('detail_links')
+    if isinstance(link_index, int) and isinstance(links, list) and 0 <= link_index < len(links) and isinstance(links[link_index], dict):
+        link_item = links[link_index]
+
+    url = link_item.get('url') or link_item.get('link_url')
+    if not url and (link_index in (None, 0)):
+        url = _detail_field_value(item, data.get('url_field') or 'link_url')
+    if not url:
+        url = _detail_field_value(item, data.get('fallback_field') or 'download_url,button_url,url')
+    if not url and _truthy_detail(data.get('hide_when_empty'), True):
+        return Markup('')
+    label = link_item.get('text') or link_item.get('label')
+    if not label and link_index in (None, 0):
+        label = item.get('link_text') or item.get('button_text')
+    label = label or data.get('label') or '了解更多'
+    link_color = data.get('link_color')
+    color_style = f' style="color:{escape(link_color)}"' if link_color and data.get('style') == 'text_link' else ''
+    section_style = _detail_component_style(data)
+    if data.get('style') == 'text_link':
+        link_html = f'<a class="detail-link-text" href="{escape(url or "#")}"{color_style}>{escape(label)}</a>'
+    else:
+        link_html = f'<a class="btn-primary detail-link-button" href="{escape(url or "#")}" style="display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 18px;text-decoration:none">{escape(label)}</a>'
+    title = data.get('title') or ''
+    title_html = f'<h2 class="section-title">{escape(title)}</h2>' if title else ''
+    return Markup(
+        f'<section class="section detail-component detail-link"{section_style}><div class="container">'
+        f'{title_html}'
+        f'<div class="detail-link-actions" style="display:flex;flex-wrap:wrap;gap:12px">{link_html}</div>'
+        f'</div></section>'
+    )
+
+
+def _render_detail_intro(item, data):
+    title = _detail_field_value(item, data.get('title_field') or 'title,name')
+    summary = _detail_field_value(item, data.get('summary_field') or 'summary,description,excerpt')
+    category = item.get('category')
+    price = item.get('price')
+    tags = item.get('tags')
+    align = data.get('text_align') or 'left'
+    section_style = _detail_component_style(data)
+    tag_items = []
+    if _truthy_detail(data.get('show_tags'), True):
+        if isinstance(tags, list):
+            tag_items = [str(tag) for tag in tags if tag]
+        elif isinstance(tags, str):
+            tag_items = [part.strip() for part in re.split(r'[,，\s]+', tags) if part.strip()]
+    tags_html = ''.join(f'<span class="detail-intro-tag">{escape(tag)}</span>' for tag in tag_items[:12])
+    category_html = f'<div class="detail-intro-category">{escape(category)}</div>' if category and _truthy_detail(data.get('show_category'), True) else ''
+    price_html = f'<div class="detail-intro-price">{escape(price)}</div>' if price and _truthy_detail(data.get('show_price'), False) else ''
+    if not (title or summary or category_html or price_html or tags_html):
+        return Markup('')
+    return Markup(
+        f'<section class="section detail-component detail-intro detail-intro--{escape(align)}"{section_style}>'
+        f'<div class="container" style="text-align:{escape(align)}">'
+        f'{category_html}'
+        f'{f"<h1 class=\"detail-intro-title\">{escape(title)}</h1>" if title else ""}'
+        f'{f"<p class=\"detail-intro-summary\">{escape(summary)}</p>" if summary else ""}'
+        f'{price_html}'
+        f'{f"<div class=\"detail-intro-tags\">{tags_html}</div>" if tags_html else ""}'
+        f'</div></section>'
+    )
+
+
+def _item_list(value):
+    return value if isinstance(value, list) else []
+
+
+def _render_detail_content_blocks(item, data):
+    blocks = item.get('detail_content_blocks') or item.get('content_blocks') or []
+    blocks = [entry for entry in _item_list(blocks) if isinstance(entry, dict)]
+    if not blocks:
+        if data.get('empty_behavior') != 'show_placeholder':
+            return Markup('')
+        blocks = [{'type': 'text', 'text': '暂无内容'}]
+    title = data.get('title') or ''
+    rows = []
+    for entry in blocks:
+        block_type = entry.get('type') or 'text'
+        heading = entry.get('title') or ''
+        text = entry.get('text') or entry.get('body') or entry.get('description') or ''
+        image = entry.get('image') or entry.get('url') or ''
+        video = entry.get('video') or entry.get('video_url') or ''
+        alt = entry.get('alt') or heading or item.get('title') or item.get('name') or ''
+        caption = entry.get('caption') or ''
+        layout = entry.get('layout') or 'image_left'
+        if block_type == 'heading':
+            if not (heading or text):
+                continue
+            rows.append(
+                '<article class="detail-content-block detail-content-heading">'
+                f'{f"<h2>{escape(heading)}</h2>" if heading else ""}'
+                f'{f"<p>{escape(text)}</p>" if text else ""}'
+                '</article>'
+            )
+        elif block_type == 'image':
+            if not image:
+                continue
+            rows.append(
+                '<article class="detail-content-block detail-content-image">'
+                f'<figure><img src="{escape(image)}" alt="{escape(alt)}" loading="lazy">'
+                f'{f"<figcaption>{escape(caption)}</figcaption>" if caption else ""}'
+                '</figure></article>'
+            )
+        elif block_type == 'video':
+            if not video:
+                continue
+            rows.append(
+                '<article class="detail-content-block detail-content-video">'
+                f'{f"<h3>{escape(heading)}</h3>" if heading else ""}'
+                f'<video src="{escape(video)}" controls preload="metadata"></video>'
+                f'{f"<p>{escape(text)}</p>" if text else ""}'
+                '</article>'
+            )
+        elif block_type == 'gallery':
+            images = [img for img in _item_list(entry.get('images')) if isinstance(img, dict) and (img.get('image') or img.get('url'))]
+            if not images:
+                continue
+            gallery_html = ''.join(
+                '<figure>'
+                f'<img src="{escape(img.get("image") or img.get("url") or "")}" alt="{escape(img.get("alt") or alt)}" loading="lazy">'
+                f'{("<figcaption>" + escape(img.get("caption") or "") + "</figcaption>") if img.get("caption") else ""}'
+                '</figure>'
+                for img in images[:12]
+            )
+            rows.append(f'<article class="detail-content-block detail-content-gallery">{f"<h3>{escape(heading)}</h3>" if heading else ""}<div class="detail-content-gallery-grid">{gallery_html}</div></article>')
+        elif block_type == 'table':
+            table_rows = []
+            if isinstance(entry.get('table'), list):
+                for row in entry.get('table') or []:
+                    if isinstance(row, list):
+                        cells = [str(cell or '').strip() for cell in row]
+                        if any(cells):
+                            table_rows.append(cells)
+            if not table_rows:
+                raw = entry.get('table_text') or text
+                for line in str(raw or '').splitlines():
+                    cells = [cell.strip() for cell in line.split('|')]
+                    if any(cells):
+                        table_rows.append(cells)
+            if not table_rows:
+                continue
+            table_html = ''.join('<tr>' + ''.join(f'<td>{escape(cell)}</td>' for cell in row) + '</tr>' for row in table_rows)
+            rows.append(f'<article class="detail-content-block detail-content-inline-table">{f"<h3>{escape(heading)}</h3>" if heading else ""}<div class="detail-content-table-wrap"><table><tbody>{table_html}</tbody></table></div></article>')
+        elif block_type == 'note':
+            if not (heading or text):
+                continue
+            note_style = entry.get('style') or 'info'
+            rows.append(
+                f'<article class="detail-content-block detail-content-note detail-content-note--{escape(note_style)}">'
+                f'{f"<h3>{escape(heading)}</h3>" if heading else ""}'
+                f'{f"<p>{escape(text)}</p>" if text else ""}'
+                '</article>'
+            )
+        elif block_type == 'embed':
+            embed_url = entry.get('embed_url') or entry.get('url') or ''
+            if not embed_url:
+                continue
+            rows.append(
+                '<article class="detail-content-block detail-content-embed">'
+                f'{f"<h3>{escape(heading)}</h3>" if heading else ""}'
+                f'<iframe src="{escape(embed_url)}" loading="lazy" allowfullscreen></iframe>'
+                f'{f"<p>{escape(text)}</p>" if text else ""}'
+                '</article>'
+            )
+        elif block_type == 'media_text':
+            if not (image or text or heading):
+                continue
+            reverse_class = ' detail-content-media-text--reverse' if layout == 'image_right' else ''
+            media_html = ''
+            if image:
+                media_html = (
+                    f'<figure><img src="{escape(image)}" alt="{escape(alt)}" loading="lazy">'
+                    f'{f"<figcaption>{escape(caption)}</figcaption>" if caption else ""}'
+                    '</figure>'
+                )
+            rows.append(
+                f'<article class="detail-content-block detail-content-media-text{reverse_class}">'
+                f'{media_html}'
+                '<div class="detail-content-copy">'
+                f'{f"<h3>{escape(heading)}</h3>" if heading else ""}'
+                f'{f"<p>{escape(text)}</p>" if text else ""}'
+                '</div></article>'
+            )
+        else:
+            if not (heading or text):
+                continue
+            rows.append(
+                '<article class="detail-content-block detail-content-text">'
+                f'{f"<h3>{escape(heading)}</h3>" if heading else ""}'
+                f'{f"<p>{escape(text)}</p>" if text else ""}'
+                '</article>'
+            )
+    if not rows:
+        return Markup('')
+    section_style = _detail_component_style(data)
+    return Markup(
+        f'<section class="section detail-component detail-content-blocks"{section_style}><div class="container">'
+        f'{f"<h2 class=\"section-title\">{escape(title)}</h2>" if title else ""}'
+        f'<div class="detail-content-block-list">{"".join(rows)}</div>'
+        f'</div></section>'
+    )
+
+
+def _render_detail_features(item, data):
+    features = [entry for entry in _item_list(item.get('detail_features') or item.get('features')) if isinstance(entry, dict)]
+    if not features:
+        if data.get('empty_behavior') != 'show_placeholder':
+            return Markup('')
+        features = [{'title': '暂无特性', 'text': ''}]
+    title = data.get('title') or ''
+    cols = max(1, min(4, _detail_int(data.get('columns'), 3) or 3))
+    card_bg = data.get('card_bg') or ''
+    card_style = f' style="background:{escape(card_bg)}"' if card_bg else ''
+    cards = []
+    for entry in features:
+        icon_name = (entry.get('icon') or '').strip()
+        title_text = entry.get('title') or ''
+        body_text = entry.get('text') or entry.get('description') or ''
+        if not (title_text or body_text or icon_name):
+            continue
+        icon_svg = get_icon_svg(icon_name) if icon_name else ''
+        icon_html = ''
+        if icon_svg:
+            icon_html = f'<div class="detail-feature-icon" aria-hidden="true">{Markup(icon_svg)}</div>'
+        elif icon_name:
+            icon_html = f'<div class="detail-feature-icon detail-feature-icon--text">{escape(icon_name)}</div>'
+        cards.append(
+            '<article class="detail-feature-card"' + card_style + '>'
+            + icon_html
+            + (f'<h3>{escape(title_text)}</h3>' if title_text else '')
+            + (f'<p>{escape(body_text)}</p>' if body_text else '')
+            + '</article>'
+        )
+    cards = ''.join(cards)
+    if not cards:
+        return Markup('')
+    section_style = _detail_component_style(data)
+    return Markup(
+        f'<section class="section detail-component detail-features"{section_style}><div class="container">'
+        f'{f"<h2 class=\"section-title\">{escape(title)}</h2>" if title else ""}'
+        f'<div class="detail-feature-grid" style="--detail-columns:{cols}">{cards}</div>'
+        f'</div></section>'
+    )
+
+
+def _render_detail_files(item, data):
+    files = [entry for entry in _item_list(item.get('detail_files') or item.get('downloads')) if isinstance(entry, dict)]
+    if not files:
+        if data.get('empty_behavior') != 'show_placeholder':
+            return Markup('')
+        files = [{'title': '暂无资料', 'url': ''}]
+    title = data.get('title') or ''
+    link_color = data.get('link_color') or ''
+    color_style = f' style="color:{escape(link_color)}"' if link_color else ''
+    items = []
+    for entry in files:
+        url = entry.get('url') or entry.get('file') or entry.get('href') or ''
+        label = entry.get('title') or entry.get('name') or url or '资料'
+        desc = entry.get('desc') or entry.get('description') or ''
+        meta = entry.get('type') or entry.get('size') or ''
+        if not (label or url or desc):
+            continue
+        href = escape(url or '#')
+        items.append(
+            f'<a class="detail-file-item" href="{href}"{color_style}>'
+            f'<span class="detail-file-icon" aria-hidden="true">↓</span>'
+            f'<span class="detail-file-main">'
+            f'<span class="detail-file-name">{escape(label)}</span>'
+            f'{f"<span class=\"detail-file-desc\">{escape(desc)}</span>" if desc else ""}'
+            f'</span>'
+            f'{f"<span class=\"detail-file-meta\">{escape(meta)}</span>" if meta else ""}'
+            f'<span class="detail-file-action" aria-hidden="true">下载</span>'
+            f'</a>'
+        )
+    if not items:
+        return Markup('')
+    section_style = _detail_component_style(data)
+    return Markup(
+        f'<section class="section detail-component detail-files"{section_style}><div class="container">'
+        f'{f"<h2 class=\"section-title\">{escape(title)}</h2>" if title else ""}'
+        f'<div class="detail-file-list">{"".join(items)}</div>'
+        f'</div></section>'
+    )
+
+
+def _render_detail_faq(item, data):
+    faqs = [entry for entry in _item_list(item.get('detail_faqs') or item.get('faqs')) if isinstance(entry, dict)]
+    if not faqs:
+        if data.get('empty_behavior') != 'show_placeholder':
+            return Markup('')
+        faqs = [{'question': '暂无问题', 'answer': ''}]
+    title = data.get('title') or ''
+    border = escape(data.get('border_color') or '#e5e7eb')
+    rows = []
+    for entry in faqs:
+        q = entry.get('question') or entry.get('q') or ''
+        a = entry.get('answer') or entry.get('a') or ''
+        if not (q or a):
+            continue
+        rows.append(
+            f'<article class="detail-faq-item" style="border-bottom:1px solid {border}">'
+            f'{f"<h3><span>Q</span>{escape(q)}</h3>" if q else ""}'
+            f'{f"<p><span>A</span>{escape(a)}</p>" if a else ""}'
+            f'</article>'
+        )
+    if not rows:
+        return Markup('')
+    section_style = _detail_component_style(data)
+    return Markup(
+        f'<section class="section detail-component detail-faq"{section_style}><div class="container">'
+        f'{f"<h2 class=\"section-title\">{escape(title)}</h2>" if title else ""}'
+        f'<div class="detail-faq-list">{"".join(rows)}</div>'
+        f'</div></section>'
+    )
+
+
+def _render_detail_related(item, data, jinja_ctx):
+    dataset_key = jinja_ctx.get('page_key') or jinja_ctx.get('dataset_key')
+    all_data = jinja_ctx.get('data') if isinstance(jinja_ctx.get('data'), dict) else {}
+    if not all_data:
+        all_data = jinja_ctx.get('all_datasets') if isinstance(jinja_ctx.get('all_datasets'), dict) else {}
+    items = all_data.get(dataset_key) if dataset_key else None
+    if not isinstance(items, list):
+        return Markup('')
+    max_items = max(1, _detail_int(data.get('max_items'), 8) or 8)
+    match_by = data.get('match_by') or 'category'
+    if match_by == 'manual':
+        match_by = 'all'
+    current_id = item.get('id')
+    current_slug = item.get('slug')
+    def _tokens(value):
+        if isinstance(value, list):
+            return [str(v).strip() for v in value if str(v).strip()]
+        if isinstance(value, str):
+            return [part.strip() for part in re.split(r'[,，\s]+', value) if part.strip()]
+        return []
+
+    def _norm(value):
+        return re.sub(r'\s+', '', str(value or '')).lower()
+
+    current_tags = _tokens(item.get('tags'))
+    current_category = _norm(item.get('category'))
+    related = []
+    fallback = []
+    for candidate in items:
+        if not isinstance(candidate, dict):
+            continue
+        if candidate.get('id') == current_id or candidate.get('slug') == current_slug:
+            continue
+        fallback.append(candidate)
+        matched = False
+        if match_by == 'tags':
+            cand_tags = _tokens(candidate.get('tags'))
+            matched = bool(set(current_tags) & set(cand_tags))
+        elif match_by == 'all':
+            matched = True
+        else:
+            matched = bool(current_category and _norm(candidate.get('category')) == current_category)
+        if matched:
+            related.append(candidate)
+        if len(related) >= max_items:
+            break
+    if not related and match_by in ('category', 'tags'):
+        related = fallback[:max_items]
+    if not related:
+        return Markup('')
+    title = data.get('title') or ''
+    cols = max(1, min(4, _detail_int(data.get('columns'), 4) or 4))
+    auto_scroll = 'true' if _truthy_detail(data.get('auto_scroll'), True) else 'false'
+    click_scroll = 'true' if _truthy_detail(data.get('click_scroll'), True) else 'false'
+    show_dots = 'true' if _truthy_detail(data.get('show_dots'), True) else 'false'
+    interval = max(1, _detail_int(data.get('scroll_interval'), 4) or 4)
+    cards = []
+    for entry in related:
+        cover = entry.get('cover') or entry.get('image') or entry.get('photo') or ''
+        name = entry.get('title') or entry.get('name') or ''
+        summary = entry.get('summary') or entry.get('description') or ''
+        slug = entry.get('slug') or '#'
+        href = f'../{escape(slug)}/' if slug != '#' else '#'
+        cards.append(
+            f'<a class="fp-card detail-related-card" href="{href}">'
+            f'<div class="fp-card-img-wrap detail-related-media">{f"<img src=\"{escape(cover)}\" alt=\"{escape(name)}\" loading=\"lazy\" class=\"fp-card-img\">" if cover else ""}</div>'
+            f'<div class="fp-card-body detail-related-body">'
+            f'{f"<h3 class=\"fp-card-title\">{escape(name)}</h3>" if name else ""}'
+            f'{f"<p class=\"fp-card-desc\">{escape(summary)}</p>" if summary else ""}'
+            f'<span class="fp-card-link-text"><span>查看更多</span><span aria-hidden="true">→</span></span>'
+            f'</div>'
+            f'</a>'
+        )
+    style_parts = [f'--cols:{cols}']
+    if data.get('section_bg'):
+        style_parts.append(f'background:{escape(data.get("section_bg"))}')
+    if data.get('text_color'):
+        style_parts.append(f'color:{escape(data.get("text_color"))}')
+    section_style = f' style="{";".join(style_parts)}"'
+    script = """
+<script>
+(function(){
+  var sections = document.querySelectorAll('.detail-related-carousel');
+  sections.forEach(function(section){
+    if (section.__detailRelatedReady) return;
+    section.__detailRelatedReady = true;
+    var track = section.querySelector('.fp-track');
+    if (!track) return;
+    var cards = Array.prototype.slice.call(track.querySelectorAll('.fp-card'));
+    var total = cards.length;
+    if (!total) return;
+    var perRow = parseInt(section.getAttribute('data-cols') || '4', 10) || 4;
+    perRow = Math.max(1, Math.min(perRow, total));
+    var totalPages = Math.max(1, total - perRow + 1);
+    var current = 0;
+    var gapPx = 24;
+    var basisExpr = 'calc(' + (100 / perRow).toFixed(4) + '% - ' + ((perRow - 1) * gapPx / perRow) + 'px)';
+    cards.forEach(function(card){ card.style.flex = '0 0 ' + basisExpr; });
+    var stepPercent = (100 / perRow).toFixed(4);
+    var stepGap = gapPx / perRow;
+    var dots = section.querySelector('.fp-dots');
+    var prev = section.querySelector('.fp-arrow--left');
+    var next = section.querySelector('.fp-arrow--right');
+    var showDots = section.getAttribute('data-dots') !== 'false';
+    var clickScroll = section.getAttribute('data-click-scroll') !== 'false';
+    var autoScroll = section.getAttribute('data-auto-scroll') !== 'false';
+    var intervalMs = (parseInt(section.getAttribute('data-interval') || '4', 10) || 4) * 1000;
+    var timer = null;
+    if (!clickScroll || totalPages <= 1) {
+      if (prev) prev.hidden = true;
+      if (next) next.hidden = true;
+    }
+    if (dots && showDots && totalPages > 1) {
+      for (var i = 0; i < totalPages; i++) {
+        var dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = 'fp-dot';
+        dot.setAttribute('aria-label', 'Page ' + (i + 1));
+        dot.addEventListener('click', (function(idx){ return function(){ goTo(idx); reset(); }; })(i));
+        dots.appendChild(dot);
+      }
+    } else if (dots) {
+      dots.hidden = true;
+    }
+    function update() {
+      track.style.transform = 'translateX(calc(' + (-current) + ' * (' + stepPercent + '% + ' + stepGap + 'px)))';
+      if (dots) Array.prototype.forEach.call(dots.querySelectorAll('.fp-dot'), function(dot, i){ dot.classList.toggle('fp-dot--active', i === current); });
+      if (prev) prev.style.opacity = current === 0 ? '0.35' : '';
+      if (next) next.style.opacity = current === totalPages - 1 ? '0.35' : '';
+    }
+    function goTo(i) { current = Math.max(0, Math.min(i, totalPages - 1)); update(); }
+    function advance() { goTo(current < totalPages - 1 ? current + 1 : 0); }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } }
+    function start() { if (autoScroll && totalPages > 1) { stop(); timer = setInterval(advance, intervalMs); } }
+    function reset() { stop(); start(); }
+    if (prev && clickScroll) prev.addEventListener('click', function(){ goTo(current > 0 ? current - 1 : totalPages - 1); reset(); });
+    if (next && clickScroll) next.addEventListener('click', function(){ goTo(current < totalPages - 1 ? current + 1 : 0); reset(); });
+    section.addEventListener('mouseenter', stop);
+    section.addEventListener('mouseleave', start);
+    update();
+    start();
+  });
+})();
+</script>
+"""
+    return Markup(
+        f'<section class="section detail-component detail-related fp-section detail-related-carousel"{section_style} '
+        f'data-cols="{cols}" data-auto-scroll="{auto_scroll}" data-click-scroll="{click_scroll}" data-interval="{interval}" data-dots="{show_dots}"><div class="container">'
+        f'{f"<div class=\"section-header\"><h2 class=\"section-title\">{escape(title)}</h2></div>" if title else ""}'
+        f'<div class="fp-viewport"><button type="button" class="fp-arrow fp-arrow--left" aria-label="Previous">&#8249;</button><div class="fp-track">{"".join(cards)}</div><button type="button" class="fp-arrow fp-arrow--right" aria-label="Next">&#8250;</button></div>'
+        f'<div class="fp-dots"></div>'
+        f'</div></section>{script}'
+    )
+
+
+def _render_detail_component(jinja_ctx, module):
+    item = _current_detail_item(jinja_ctx)
+    if not item:
+        return Markup('')
+    data = module.get('data') if isinstance(module.get('data'), dict) else {}
+    block_type = module.get('type')
+    if block_type == 'detail_media':
+        return _render_detail_media(item, data)
+    if block_type == 'detail_text':
+        return _render_detail_text(item, data)
+    if block_type == 'detail_content_blocks':
+        return _render_detail_content_blocks(item, data)
+    if block_type == 'detail_specs':
+        return _render_detail_specs(item, data)
+    if block_type == 'detail_table':
+        return _render_detail_table(item, data)
+    if block_type == 'detail_link':
+        return _render_detail_link(item, data)
+    if block_type == 'detail_intro':
+        return _render_detail_intro(item, data)
+    if block_type == 'detail_features':
+        return _render_detail_features(item, data)
+    if block_type == 'detail_files':
+        return _render_detail_files(item, data)
+    if block_type == 'detail_faq':
+        return _render_detail_faq(item, data)
+    if block_type == 'detail_related':
+        return _render_detail_related(item, data, jinja_ctx)
+    return Markup('')
+
+
 def _make_render_block(env, tpl_root, template_name, enable_data_attr):
     """工厂：生成注册到 Jinja2 的 render_block 全局函数.
 
@@ -231,6 +1035,8 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
         variant = module.get('variant') or 'default'
         if not block_type:
             return Markup('')
+        if block_type in DETAIL_COMPONENT_TYPES:
+            return _render_detail_component(jinja_ctx, module)
 
         html, schema = _load_block_for_render(tpl_root, template_name, block_type, variant)
         if html is None:
@@ -643,6 +1449,11 @@ def _merge_page_content(default, override):
     clean_override = dict(override)
     if clean_override.get('modules') == [] and default.get('modules'):
         clean_override.pop('modules')
+    # Detail templates are structural configuration shared by all languages.
+    # Language page files can contain stale copies from earlier migrations; if
+    # they override the shared page template, the admin editor and preview drift.
+    if default.get('detail_templates') and clean_override.get('detail_templates'):
+        clean_override.pop('detail_templates')
     return _deep_merge(default, clean_override)
 
 
@@ -975,21 +1786,79 @@ def _normalize_preview_filepath(filepath):
     return rel
 
 
+def _default_detail_modules():
+    return [
+        {
+            'type': 'detail_media',
+            'variant': 'gallery_top',
+            'data': {
+                'source': 'cover_and_gallery',
+                'layout': 'gallery_top',
+                'max_images': 6,
+                'empty_behavior': 'hide_module',
+                'image_ratio': '4/3',
+                'image_radius': '8px',
+            },
+        },
+        {
+            'type': 'detail_specs',
+            'variant': 'table',
+            'data': {
+                'title': '',
+                'source_field': 'specs',
+                'max_rows': 10,
+                'hide_empty_rows': 'true',
+                'mobile_layout': 'stacked',
+                'border_color': '#e5e7eb',
+            },
+        },
+        {
+            'type': 'detail_link',
+            'variant': 'button',
+            'data': {
+                'label': '了解更多',
+                'url_field': 'link_url',
+                'style': 'button',
+                'hide_when_empty': 'true',
+            },
+        },
+    ]
+
+
 def _default_detail_template(dataset_key):
     label = (dataset_key or 'item').replace('_', ' ').replace('-', ' ').title()
     return {
         'id': 'default',
         'name': f'默认{label}详情',
         'is_default': True,
-        'modules': [{'type': 'item_data', 'variant': 'default', 'data': {}}],
+        'modules': _default_detail_modules(),
         'required_fields': ['title', 'slug'],
-        'optional_fields': ['cover', 'summary', 'body', 'detail_images', 'specs', 'category', 'tags'],
+        'optional_fields': ['cover', 'summary', 'detail_images', 'specs', 'category', 'tags', 'link_url'],
         'seo': {
             'title': '{title} - {site_name}',
             'description': '{summary}',
             'image': 'cover',
         },
     }
+
+
+def _is_legacy_default_detail_template(tpl):
+    if not isinstance(tpl, dict):
+        return False
+    is_default = tpl.get('is_default') is True or str(tpl.get('is_default')).lower() == 'true'
+    if not is_default and str(tpl.get('id') or '') != 'default':
+        return False
+    modules = tpl.get('modules')
+    return isinstance(modules, list) and len(modules) == 1 and isinstance(modules[0], dict) and modules[0].get('type') == 'item_data'
+
+
+def _normalize_detail_template(tpl):
+    if not _is_legacy_default_detail_template(tpl):
+        return tpl
+    normalized = copy.deepcopy(tpl)
+    normalized['modules'] = _default_detail_modules()
+    normalized['optional_fields'] = ['cover', 'summary', 'detail_images', 'specs', 'category', 'tags', 'link_url']
+    return normalized
 
 
 def _detail_bool(value, default=True):
@@ -1062,7 +1931,8 @@ def _detail_templates_for_page(page, dataset_key):
     templates = page.get('detail_templates') if isinstance(page, dict) else None
     if not isinstance(templates, list) or not templates:
         return [_default_detail_template(dataset_key)]
-    return [tpl for tpl in templates if isinstance(tpl, dict)] or [_default_detail_template(dataset_key)]
+    normalized = [_normalize_detail_template(tpl) for tpl in templates if isinstance(tpl, dict)]
+    return normalized or [_default_detail_template(dataset_key)]
 
 
 def _find_detail_template(page, dataset_key, template_id=None):
@@ -1077,24 +1947,101 @@ def _find_detail_template(page, dataset_key, template_id=None):
     return templates[0] if templates else _default_detail_template(dataset_key)
 
 
+def _is_legacy_item_detail_override(modules):
+    return (
+        isinstance(modules, list)
+        and len(modules) == 1
+        and isinstance(modules[0], dict)
+        and modules[0].get('type') == 'item_data'
+        and (modules[0].get('variant') in (None, '', 'default'))
+    )
+
+
+def _annotate_detail_modules(modules):
+    link_index = 0
+    table_index = 0
+    specs_index = 0
+    for module in modules or []:
+        if not isinstance(module, dict):
+            continue
+        if module.get('type') in ('detail_link', 'detail_table'):
+            data = module.get('data') if isinstance(module.get('data'), dict) else {}
+            module['data'] = data
+        if module.get('type') == 'detail_link':
+            data['_detail_link_index'] = link_index
+            link_index += 1
+        if module.get('type') == 'detail_table':
+            data['_detail_table_index'] = table_index
+            table_index += 1
+        if module.get('type') == 'detail_specs':
+            data = module.get('data') if isinstance(module.get('data'), dict) else {}
+            module['data'] = data
+            data['_detail_specs_index'] = specs_index
+            specs_index += 1
+    return modules
+
+
+def _intro_module():
+    return {
+        'type': 'detail_intro',
+        'variant': 'default',
+        'data': {
+            'title_field': 'title',
+            'summary_field': 'summary',
+            'show_category': 'true',
+            'show_tags': 'true',
+            'show_price': 'false',
+            'text_align': 'left',
+        },
+    }
+
+
+def _ensure_detail_intro_module(modules):
+    """Keep title/category/tags independent from the image/gallery component."""
+    modules = list(modules or [])
+    if any(isinstance(module, dict) and module.get('type') == 'detail_intro' for module in modules):
+        return modules
+    has_split_media_intro = any(
+        isinstance(module, dict)
+        and module.get('type') == 'detail_media'
+        and isinstance(module.get('data'), dict)
+        and module.get('data', {}).get('layout') == 'gallery_left'
+        for module in modules
+    )
+    if has_split_media_intro:
+        return modules
+    intro = _intro_module()
+    for index, module in enumerate(modules):
+        if isinstance(module, dict) and module.get('type') == 'detail_media':
+            return modules[:index + 1] + [intro] + modules[index + 1:]
+    return [intro] + modules
+
+
 def _resolve_detail_item_modules(item, page, dataset_key):
     """Return an item copy with effective detail modules injected.
 
     Existing item.modules stays highest priority so old per-item custom detail
     pages keep rendering exactly as before. When absent, fall back to the
     selected list-level detail template, then the default template, then the
-    system item_data block.
+    system item_data block. An explicit empty template stays empty so the
+    admin can build detail pages by adding only the components they need.
     """
     item_copy = dict(item or {})
     existing_modules = item_copy.get('modules')
-    if isinstance(existing_modules, list) and existing_modules:
+    if isinstance(existing_modules, list) and existing_modules and not _is_legacy_item_detail_override(existing_modules):
+        item_copy['modules'] = _annotate_detail_modules(_ensure_detail_intro_module(copy.deepcopy(existing_modules)))
         return item_copy
 
     tpl = _find_detail_template(page or {}, dataset_key, item_copy.get('template_id'))
     modules = tpl.get('modules') if isinstance(tpl, dict) else None
-    if not isinstance(modules, list) or not modules:
-        modules = [{'type': 'item_data', 'variant': 'default', 'data': {}}]
-    item_copy['modules'] = copy.deepcopy(modules)
+    if isinstance(modules, list):
+        modules = _ensure_detail_intro_module(copy.deepcopy(modules))
+        # Detail identity is a baseline of every dataset detail page, even when
+        # the visual/media component is omitted from the template.
+        item_copy['modules'] = _annotate_detail_modules(modules) if modules else [{'type': '_empty_detail_template', 'variant': 'default', 'data': {}}]
+    else:
+        modules = _ensure_detail_intro_module([{'type': 'item_data', 'variant': 'default', 'data': {}}])
+        item_copy['modules'] = _annotate_detail_modules(modules)
     item_copy['_detail_template_id'] = tpl.get('id', 'default') if isinstance(tpl, dict) else 'default'
     return item_copy
 
