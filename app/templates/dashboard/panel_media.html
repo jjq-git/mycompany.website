@@ -26,16 +26,6 @@
     <button type="button" class="btn btn-sm btn-light" id="mediaSortDir" title="切换升降序" style="font-size:14px;padding:2px 6px">升序</button>
   </div>
 
-  <label class="media-upload-zone" id="mediaUploadZone">
-    <input type="file" id="mediaUploadInput" hidden>
-    <span class="media-upload-icon">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
-    </span>
-    <span class="media-upload-text">拖拽文件到此处或点击上传</span>
-    <span class="media-upload-hint">支持图片、视频、文档；包含 index.html 的 zip 会作为网页包处理</span>
-  </label>
-  <div class="media-status" id="mediaStatus" hidden></div>
-
   <div class="media-manager-layout">
     <div class="media-list-pane">
       <div class="media-grid" id="mediaGrid">
@@ -76,8 +66,19 @@
       </div>
 
       <div class="media-empty" id="mediaEmpty" {% if files %}hidden{% endif %}>暂无媒体文件</div>
-      <div class="media-scroll-sentinel" id="mediaScrollSentinel" style="height:1px;width:100%"></div>
+      <button type="button" class="media-load-more-btn" id="mediaLoadMoreBtn" hidden>加载更多</button>
     </div>
+
+    <div class="media-right-col">
+      <label class="media-upload-zone" id="mediaUploadZone">
+        <input type="file" id="mediaUploadInput" hidden>
+        <span class="media-upload-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+        </span>
+        <span class="media-upload-text">拖拽文件到此处或点击上传</span>
+        <span class="media-upload-hint">支持图片、视频、文档；包含 index.html 的 zip 会作为网页包处理</span>
+      </label>
+      <div class="media-status" id="mediaStatus" hidden></div>
 
     <aside class="media-preview-card" aria-label="媒体预览">
       <div class="media-preview-resizer" data-preview-resizer role="separator" aria-orientation="vertical" tabindex="0" title="拖拽调整预览宽度"></div>
@@ -98,6 +99,7 @@
         <div class="media-preview-filename"><span>文件名</span><code data-preview-name title="点击修改文件名"></code></div>
       </div>
     </aside>
+    </div><!-- /.media-right-col -->
   </div>
 </div>
 
@@ -400,6 +402,7 @@
     }
     updateVisibleMediaCount();
     empty.hidden = matchingCards.length > 0;
+    updateLoadMoreBtn();
   }
 
   function showMoreCards() {
@@ -418,62 +421,50 @@
     var toShow = Math.min(PAGE_SIZE, hidden.length);
     for (var i = 0; i < toShow; i++) {
       hidden[i].hidden = false;
+      // 移到列表底部，确保新增卡片出现在已有内容下方
+      grid.appendChild(hidden[i]);
     }
     visibleCount += toShow;
     updateVisibleMediaCount();
     return toShow > 0;
   }
 
-  // 滚动加载：用 IntersectionObserver + scroll 事件双保险
-  var sentinel = document.getElementById('mediaScrollSentinel');
-  var scrollPane = grid.closest('.media-list-pane') || document.querySelector('.media-list-pane');
-  var loadingMore = false;  // 防止重复触发
+  // 加载更多按钮
+  var loadMoreBtn = document.getElementById('mediaLoadMoreBtn');
+  var loadingMore = false;  // 防止重复点击
+
+  function updateLoadMoreBtn() {
+    if (!loadMoreBtn) return;
+    // 只检查匹配当前筛选且仍隐藏的卡片
+    var active = panel.querySelector('.media-tab.active');
+    var filter = active ? active.dataset.mediaFilter : 'all';
+    var cards = grid.querySelectorAll('.media-card');
+    var hasHidden = false;
+    cards.forEach(function(c) {
+      if (!c.hidden) return;
+      var show = filter === 'all' || c.dataset.category === filter;
+      if (filter === 'unreferenced') show = Number(c.dataset.referenceCount || 0) === 0;
+      if (show) hasHidden = true;
+    });
+    loadMoreBtn.hidden = !hasHidden;
+  }
 
   function tryLoadMore() {
     if (loadingMore) return;
     loadingMore = true;
-    var hasMore = showMoreCards();
-    // 用 rAF 确保 DOM 已更新，再用 setTimeout 释放锁
+    showMoreCards();
+    updateLoadMoreBtn();
     requestAnimationFrame(function() {
-      setTimeout(function() { loadingMore = false; }, 100);
+      setTimeout(function() { loadingMore = false; }, 200);
     });
-    if (hasMore && sentinel) {
-      // 确保哨兵始终在列表末尾，触发下次滚动检测
-      sentinel.scrollIntoView({ block: 'end' });
-    }
   }
 
-  // 方案一：IntersectionObserver（现代浏览器）
-  if (sentinel && 'IntersectionObserver' in window) {
-    var observer = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) tryLoadMore();
-      });
-    }, { root: null, rootMargin: '300px', threshold: 0 });
-    observer.observe(sentinel);
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', tryLoadMore);
   }
 
-  // 方案二：scroll 事件兜底（IntersectionObserver 在某些嵌套滚动场景不触发）
-  if (scrollPane) {
-    var scrollTimer = null;
-    scrollPane.addEventListener('scroll', function() {
-      if (scrollTimer) clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(function() {
-        if (!sentinel) return;
-        var rect = sentinel.getBoundingClientRect();
-        var containerRect = scrollPane.getBoundingClientRect();
-        // 哨兵接近可视区域底部时加载更多
-        if (rect.top < containerRect.bottom + 400) tryLoadMore();
-      }, 150);
-    }, { passive: true });
-  }
-
-  // 初始检查：如果内容不足以填满视口，立即加载更多
-  setTimeout(function() {
-    if (!sentinel) return;
-    var rect = sentinel.getBoundingClientRect();
-    if (rect.top < window.innerHeight + 200) tryLoadMore();
-  }, 300);
+  // 初始检查：如果首屏内容不足，显示按钮
+  setTimeout(function() { updateLoadMoreBtn(); }, 100);
 
   function clampPreviewWidth(width) {
     if (!managerLayout) return width;

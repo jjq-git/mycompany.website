@@ -34,14 +34,20 @@
   color: var(--admin-primary-active, #045555);
 }
 
+.media-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
 .media-upload-zone {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 112px;
-  padding: 16px;
-  margin-bottom: 12px;
+  min-height: 64px;
+  padding: 10px 16px;
   border: 1px dashed #cbd5e1;
   border-radius: 8px;
   background: var(--media-soft);
@@ -58,9 +64,9 @@
 }
 
 .media-upload-icon {
-  width: 28px;
-  height: 28px;
-  margin-bottom: 6px;
+  width: 22px;
+  height: 22px;
+  margin-bottom: 4px;
   color: var(--admin-primary, #067a7a);
 }
 
@@ -77,14 +83,14 @@
 }
 
 .media-upload-text {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #334155;
 }
 
 .media-upload-hint {
-  margin-top: 3px;
-  font-size: 12px;
+  margin-top: 2px;
+  font-size: 11px;
 }
 
 .media-status {
@@ -117,7 +123,7 @@
   display: grid;
   grid-template-columns: minmax(360px, 1fr) minmax(360px, var(--media-preview-width));
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .media-list-pane {
@@ -132,6 +138,11 @@
   border-radius: 8px;
   background: #fff;
   overflow: hidden;
+}
+
+/* 强制隐藏分页卡片——display:flex 会覆盖浏览器默认 [hidden] 规则 */
+.media-card[hidden] {
+  display: none;
 }
 
 .media-card.active {
@@ -236,6 +247,26 @@
   color: var(--media-muted);
   text-align: center;
   font-size: 12px;
+}
+
+.media-load-more-btn {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 0;
+  border: 1px solid var(--media-border);
+  border-radius: 6px;
+  background: #fff;
+  color: #475569;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+}
+
+.media-load-more-btn:hover {
+  border-color: var(--admin-primary, #067a7a);
+  background: rgba(var(--admin-primary-rgb, 6, 122, 122), .06);
+  color: var(--admin-primary, #067a7a);
 }
 
 .media-modal {

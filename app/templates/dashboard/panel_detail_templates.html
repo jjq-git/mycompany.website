@@ -1,9 +1,65 @@
 {% set editing = edit_template is defined and edit_template %}
-<div class="d-flex align-items-center justify-content-between mb-2">
-  <span class="fw-semibold">{{ page_label }}详情模板</span>
+{% macro dt_icon(name) -%}
+  {% if name == 'arrow-left' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+  {% elif name == 'database' %}<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+  {% elif name == 'plus' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+  {% elif name == 'edit' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+  {% elif name == 'copy' %}<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+  {% elif name == 'trash' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>
+  {% elif name == 'star' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z"/></svg>
+  {% elif name == 'eye' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+  {% elif name == 'settings' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2 3.5-.2-.1a1.7 1.7 0 0 0-1.9.3 1.7 1.7 0 0 0-.8 1.6V22H9v-.3a1.7 1.7 0 0 0-.8-1.6 1.7 1.7 0 0 0-1.9-.3l-.2.1-2-3.5.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.4-1.1H3V9h.2a1.7 1.7 0 0 0 1.4-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 2-3.5.2.1a1.7 1.7 0 0 0 1.9-.3A1.7 1.7 0 0 0 9 1h6v.3a1.7 1.7 0 0 0 .8 1.6 1.7 1.7 0 0 0 1.9.3l.2-.1 2 3.5-.1.1a1.7 1.7 0 0 0-.3 1.9A1.7 1.7 0 0 0 21 9h.2v4H21a1.7 1.7 0 0 0-1.6 2Z"/></svg>
+  {% elif name == 'save' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+  {% endif %}
+{%- endmacro %}
+<style>
+  .dt-panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .dt-title{display:flex;align-items:center;gap:8px;font-weight:700;color:#0f172a}
+  .dt-icon-btn{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #d8e0ea;background:#fff;color:#334155;border-radius:6px}
+  .dt-title svg,.dt-section-title svg,summary svg,.dt-icon-btn svg,.dt-action svg,.dt-primary svg,.dt-save-button svg{width:16px;height:16px;flex:0 0 16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .dt-icon-btn:hover,.dt-action:hover{border-color:#0f9a8a;color:#0f766e;background:#f0fdfa}
+  .dt-section{background:#fff;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:12px}
+  .dt-section-head{background:#f8fafc}
+  .dt-template-manager{border-color:#d8e0ea;background:#f8fafc}
+  .dt-template-manager .dt-section-head{background:#eef3f8;border-bottom-color:#d8e0ea}
+  .dt-disclosure>summary{list-style:none;cursor:pointer}
+  .dt-disclosure>summary::-webkit-details-marker{display:none}
+  .dt-summary-caret{width:16px;height:16px;transition:transform .16s ease;color:#64748b}
+  .dt-disclosure[open] .dt-summary-caret{transform:rotate(180deg)}
+  .dt-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;border-bottom:1px solid #edf2f7;border-radius:8px 8px 0 0}
+  .dt-section-title{font-size:13px;font-weight:700;color:#111827}
+  .dt-create-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:10px}
+  .dt-primary{height:34px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid #0f9a8a;background:#0f9a8a;color:#fff;border-radius:6px;padding:0 12px;font-size:13px}
+  .dt-template-list{display:grid;gap:8px;padding:10px}
+  .dt-template-card{display:block;border:1px solid #dfe7ef;border-radius:8px;background:#fff;padding:10px;box-shadow:0 1px 0 rgba(15,23,42,.03)}
+  .dt-template-card.is-current{border-color:#0f9a8a;background:#f7fffd;box-shadow:inset 3px 0 0 #0f9a8a,0 0 0 1px rgba(15,154,138,.12)}
+  .dt-card-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:8px}
+  .dt-template-name{font-weight:700;color:#111827;overflow-wrap:anywhere;line-height:1.35;font-size:14px}
+  .dt-meta{font-size:12px;color:#64748b;margin-top:2px}
+  .dt-badges{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+  .dt-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .dt-actions form{display:inline-flex;margin:0}
+  .dt-action{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #d8e0ea;background:#fff;color:#334155;border-radius:6px}
+  .dt-action-danger{border-color:#fecaca;color:#dc2626}
+  .dt-editor-stack{background:#f6f8fb;border:1px solid #dfe7ef;border-radius:10px;padding:10px;margin-bottom:12px}
+  .dt-editor-stack .dt-section{margin-bottom:10px;box-shadow:0 1px 0 rgba(15,23,42,.03)}
+  .dt-editor-stack .dt-section:last-child{margin-bottom:0}
+  .dt-components-area{background:#fff;border:1px solid #dfe7ef;border-radius:10px;padding:10px;margin-top:12px}
+  .dt-components-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .dt-components-title{font-size:13px;font-weight:700;color:#0f172a}
+  .dt-components-note{font-size:12px;color:#64748b;line-height:1.55;margin:0}
+  #selectedModulesTpl{display:grid;gap:10px;margin-top:10px}
+  #selectedModulesTpl>.module-item{border-color:#d8e0ea;border-radius:8px;box-shadow:inset 3px 0 0 #d8e0ea,0 1px 0 rgba(15,23,42,.03)}
+  #selectedModulesTpl>.module-item:focus-within{box-shadow:inset 3px 0 0 #0f9a8a,0 0 0 1px rgba(15,154,138,.14)}
+  .dt-tool-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px}
+  .dt-muted-note{font-size:12px;color:#64748b;line-height:1.55;padding:0 10px 10px}
+  .dt-save-button{height:38px;display:flex;align-items:center;justify-content:center;gap:8px}
+</style>
+<div class="dt-panel-head">
+  <span class="dt-title">{{ dt_icon('settings') }}{{ page_label }}详情模板</span>
   <div class="d-flex gap-1">
-    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="backToPageEditor()">返回</button>
-    <button class="btn btn-sm btn-outline-primary" type="button" onclick="openDatasetPanelFromTemplates()">数据</button>
+    <button class="dt-icon-btn" type="button" onclick="backToPageEditor()" title="返回" aria-label="返回">{{ dt_icon('arrow-left') }}</button>
+    <button class="dt-icon-btn" type="button" onclick="openDatasetPanelFromTemplates()" title="数据" aria-label="数据">{{ dt_icon('database') }}</button>
   </div>
 </div>
 
@@ -13,54 +69,61 @@
   {% endfor %}
 {% endwith %}
 
-<div class="mb-3 p-2 rounded" style="background:#f8f9fa;border:1px solid #e9ecef">
-  <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}" class="d-flex gap-2">
+<details class="dt-section dt-disclosure dt-template-manager" open>
+  <summary class="dt-section-head">
+    <span class="dt-section-title">模板</span>
+    <span class="d-inline-flex align-items-center gap-2" style="min-width:0">
+      {% if editing %}
+      <span class="small text-muted text-truncate" style="max-width:180px">{{ edit_template.name | default(edit_template.get('name', edit_template.id | default(edit_template.get('id', '')))) }}</span>
+      {% endif %}
+      <span class="small text-muted">{{ detail_templates|length }} 个</span>
+      <svg class="dt-summary-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </span>
+  </summary>
+  <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}" class="dt-create-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="_template_action" value="add">
     <input type="text" class="form-control form-control-sm" name="name" placeholder="新模板名称，例如 LED灯条参数详情">
-    <button class="btn btn-sm btn-primary text-nowrap" type="submit">创建</button>
+    <button class="dt-primary" type="submit">{{ dt_icon('plus') }}创建</button>
   </form>
-</div>
-
-<div class="d-flex flex-column gap-2 mb-3">
+  <div class="dt-template-list">
   {% for tpl in detail_templates %}
   {% set tpl_id = tpl.id | default(tpl.get('id')) %}
   {% set tpl_name = tpl.name | default(tpl.get('name', tpl_id)) %}
   {% set is_default = tpl_id == default_template_id %}
   {% set is_current = editing and edit_template.id == tpl_id %}
   {% set modules = tpl.modules | default(tpl.get('modules', [])) %}
-  <div class="p-2 rounded" style="border:1px solid {{ '#0d6efd' if is_current else '#e5e7eb' }};background:#fff">
-    <div class="d-flex align-items-start justify-content-between gap-2">
+  <div class="dt-template-card{% if is_current %} is-current{% endif %}">
+    <div class="dt-card-row">
       <div style="min-width:0">
-        <div class="fw-semibold text-truncate">{{ tpl_name }}</div>
-        <div class="text-muted" style="font-size:12px">
-          ID: {{ tpl_id }} · 模块 {{ modules|length }} 个 · 使用 {{ (template_usage | default({})).get(tpl_id, 0) }} 条{% if is_default %} · 默认{% endif %}
+        <div class="dt-template-name">{{ tpl_name }}</div>
+        <div class="dt-meta">
+          ID: {{ tpl_id }} · {{ modules|length }} 组件 · {{ (template_usage | default({})).get(tpl_id, 0) }} 条使用
         </div>
       </div>
-      <div class="d-flex gap-1">
+      <div class="dt-badges">
         {% if is_default %}<span class="badge text-bg-primary">默认</span>{% endif %}
         {% if is_current %}<span class="badge text-bg-light border">编辑中</span>{% endif %}
       </div>
     </div>
 
-    <div class="mt-2 d-flex flex-wrap gap-1">
-      <button class="btn btn-sm btn-outline-primary" type="button" onclick="openTemplateEditor('{{ tpl_id }}')">编辑</button>
+    <div class="dt-actions">
+      <button class="dt-action" type="button" onclick="openTemplateEditor('{{ tpl_id }}')" title="编辑" aria-label="编辑">{{ dt_icon('edit') }}</button>
 
       {% if not is_default %}
       <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="_template_action" value="set_default">
         <input type="hidden" name="template_id" value="{{ tpl_id }}">
-        <button class="btn btn-sm btn-outline-primary" type="submit">设为默认</button>
+        <button class="dt-action" type="submit" title="设为默认" aria-label="设为默认">{{ dt_icon('star') }}</button>
       </form>
       {% endif %}
 
-      <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}" class="d-flex gap-1">
+      <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="_template_action" value="copy">
         <input type="hidden" name="template_id" value="{{ tpl_id }}">
-        <input type="text" class="form-control form-control-sm" name="name" placeholder="副本名称" style="width:130px">
-        <button class="btn btn-sm btn-outline-secondary" type="submit">复制</button>
+        <button class="dt-action" type="submit" title="复制为新模板" aria-label="复制为新模板">{{ dt_icon('copy') }}</button>
       </form>
 
       {% if not is_default %}
@@ -68,17 +131,22 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="_template_action" value="delete">
         <input type="hidden" name="template_id" value="{{ tpl_id }}">
-        <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('删除这个详情模板？当前有 {{ (template_usage | default({})).get(tpl_id, 0) }} 条数据选择它，删除后会自动回退到默认模板。')">删除</button>
+        <button class="dt-action dt-action-danger" type="submit" title="删除" aria-label="删除" onclick="return confirm('删除这个详情模板？当前有 {{ (template_usage | default({})).get(tpl_id, 0) }} 条数据选择它，删除后会自动回退到默认模板。')">{{ dt_icon('trash') }}</button>
       </form>
       {% endif %}
     </div>
   </div>
   {% endfor %}
-</div>
+  </div>
+</details>
 
 {% if editing %}
 {% set tpl_id = edit_template.id | default(edit_template.get('id')) %}
 {% set tpl_seo = edit_template.seo if edit_template.seo is mapping else {} %}
+{% set tpl_name_value = edit_template.name | default(edit_template.get('name', tpl_id)) %}
+{% set seo_title_value = tpl_seo.title | default(tpl_seo.get('title', '{title} - {site_name}')) %}
+{% set seo_description_value = tpl_seo.description | default(tpl_seo.get('description', '{summary}')) %}
+{% set seo_image_value = tpl_seo.image | default(tpl_seo.get('image', 'cover')) %}
 {% include 'dashboard/_block_palette.html' %}
 
 <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang, template_id=tpl_id) }}" id="detailTemplateForm" enctype="multipart/form-data">
@@ -86,43 +154,67 @@
   <input type="hidden" name="_template_action" value="save_modules">
   <input type="hidden" name="template_id" value="{{ tpl_id }}">
   <input type="hidden" name="module_count" id="moduleCountTpl" value="0">
+  <input type="hidden" name="seo_title" value="{{ seo_title_value }}">
+  <input type="hidden" name="seo_description" value="{{ seo_description_value }}">
+  <input type="hidden" name="seo_image" value="{{ seo_image_value }}">
 
-  <div class="p-2 rounded mb-2" style="background:#f8f9fa;border:1px solid #e9ecef">
-    <div class="mb-2">
-      <label class="form-label small mb-1 text-muted">模板名称</label>
-      <input type="text" class="form-control form-control-sm" name="name" value="{{ edit_template.name | default(edit_template.get('name', tpl_id)) }}">
+  <div class="dt-editor-stack">
+  <div class="dt-section">
+    <div class="dt-section-head">
+      <span class="dt-section-title d-inline-flex align-items-center gap-1">{{ dt_icon('settings') }}模板设置</span>
+      <span class="small text-muted text-truncate">{{ tpl_name_value }}</span>
     </div>
-    <div class="row g-2">
-      <div class="col-12">
-        <label class="form-label small mb-1 text-muted">SEO 标题规则</label>
-        <input type="text" class="form-control form-control-sm font-monospace" name="seo_title" value="{{ tpl_seo.title | default(tpl_seo.get('title', '{title} - {site_name}')) }}">
-      </div>
-      <div class="col-8">
-        <label class="form-label small mb-1 text-muted">SEO 描述字段</label>
-        <input type="text" class="form-control form-control-sm font-monospace" name="seo_description" value="{{ tpl_seo.description | default(tpl_seo.get('description', '{summary}')) }}">
-      </div>
-      <div class="col-4">
-        <label class="form-label small mb-1 text-muted">SEO 图片字段</label>
-        <input type="text" class="form-control form-control-sm font-monospace" name="seo_image" value="{{ tpl_seo.image | default(tpl_seo.get('image', 'cover')) }}">
-      </div>
+    <div class="p-2">
+      <label class="form-label small mb-1 text-muted">模板名称</label>
+      <input type="text" class="form-control form-control-sm" name="name" value="{{ tpl_name_value }}">
     </div>
   </div>
 
+  <div class="dt-section">
+    <div class="dt-section-head">
+      <span class="dt-section-title d-inline-flex align-items-center gap-1">{{ dt_icon('eye') }}预览详情页</span>
+    </div>
+    <div class="dt-tool-row">
+      <select class="form-select form-select-sm" id="detailTemplatePreviewItem">
+        <option value="">选择一条已使用此模板的数据</option>
+        {% for item in preview_items | default([]) %}
+          {% if (item.template_id|string) == (tpl_id|string) %}
+          <option value="{{ item.slug }}">{{ item.title }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+      <button type="button" class="dt-icon-btn" onclick="previewDetailTemplateItem()" title="预览" aria-label="预览">{{ dt_icon('eye') }}</button>
+    </div>
+    <div class="dt-muted-note">预览使用已保存模板。新模板如果没有数据使用它，请先到“数据”里给某条数据选择该模板。</div>
+  </div>
+  </div>
+
+  <div class="dt-components-area">
+  <div class="dt-components-head">
+    <div>
+      <div class="dt-components-title">组件编辑</div>
+      <p class="dt-components-note">按详情页展示顺序添加组件；数据录入页会按这里的组件顺序生成对应字段。</p>
+    </div>
+  </div>
   <div class="mb-2">
-    <button class="btn btn-outline-primary btn-sm w-100 panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal">
-      + 添加模块
+    <button class="dt-primary w-100 panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal">
+      {{ dt_icon('plus') }} 添加组件
     </button>
   </div>
 
-  <div class="small text-muted mb-2">模板模块会应用到所有未做单条高级自定义的数据。</div>
+  <div class="small text-muted mb-2">模板组件会应用到所有未做单条高级自定义的数据；需要表格、图片、文本、链接时分别添加对应组件。</div>
+  <div id="emptyTemplateHint" class="p-3 mb-2 text-center rounded small text-muted" style="border:1px dashed #cbd5e1;background:#f8fafc">
+    当前模板还没有组件。点击“添加组件”，按详情页需要加入图片、文本、表格、链接等组件。
+  </div>
   <div id="selectedModulesTpl"></div>
+  </div>
 
   <div class="panel-save-bar">
-    <button type="submit" class="btn btn-primary btn-sm w-100">保存详情模板</button>
+    <button type="submit" class="btn btn-primary btn-sm w-100 dt-save-button">{{ dt_icon('save') }}保存详情模板</button>
   </div>
 </form>
 
-<script src="/static/js/admin_modules.js?v=99"></script>
+<script src="/static/js/admin_modules.js?v=111"></script>
 <script type="application/json" id="blockLibraryTplJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="allListDatasetsTplJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryTplJson">{{ style_registry | default({}) | tojson }}</script>
@@ -145,11 +237,12 @@
   };
 
   window._switchContentStyleTab = function(btn, tabName) {
-    var item = btn.closest('.module-item');
-    item.querySelectorAll('.content-style-tab').forEach(function(t) { t.classList.remove('active'); });
+    var scope = btn.closest('.device-config') || btn.closest('.module-item');
+    if (!scope) return;
+    scope.querySelectorAll('.content-style-tab').forEach(function(t) { t.classList.remove('active'); });
     btn.classList.add('active');
-    item.querySelectorAll('.content-style-panel').forEach(function(c) { c.style.display = 'none'; });
-    var target = item.querySelector('.panel-' + tabName);
+    scope.querySelectorAll('.content-style-panel').forEach(function(c) { c.style.display = 'none'; });
+    var target = scope.querySelector('.panel-' + tabName);
     if (target) target.style.display = '';
   };
 
@@ -181,6 +274,8 @@
     });
     var countEl = document.getElementById('moduleCountTpl');
     if (countEl) countEl.value = items.length;
+    var emptyHint = document.getElementById('emptyTemplateHint');
+    if (emptyHint) emptyHint.style.display = items.length ? 'none' : '';
   };
 
   window._addIdImage = function(modIdx) {
@@ -235,7 +330,17 @@
     });
   };
 
-  window.addTemplateModule = function(type, variant, savedData) {
+  function collapseTemplateModule(div) {
+    if (!div) return;
+    div.classList.remove('expanded');
+    var cfg = div.querySelector('.module-config');
+    if (cfg) cfg.style.display = 'none';
+    div.querySelectorAll('.content-style-panel').forEach(function(panel) {
+      panel.style.display = 'none';
+    });
+  }
+
+  window.addTemplateModule = function(type, variant, savedData, collapseOnAdd) {
     var container = document.getElementById('selectedModulesTpl');
     var countEl = document.getElementById('moduleCountTpl');
     if (!container || !countEl || typeof window._buildModuleHTML !== 'function') return false;
@@ -255,6 +360,7 @@
         if (typeof window._toggleModuleAccordion === 'function') window._toggleModuleAccordion(div);
       });
     }
+    if (collapseOnAdd) collapseTemplateModule(div);
     window._reindexModules();
     return true;
   };
@@ -266,11 +372,10 @@
   var savedModules = JSON.parse(document.getElementById('templateModulesJson').textContent || '[]');
   if (savedModules.length) {
     savedModules.forEach(function(mod) {
-      window.addTemplateModule(mod.type, mod.variant || 'default', mod.data || {});
+      window.addTemplateModule(mod.type, mod.variant || 'default', mod.data || {}, true);
     });
-  } else {
-    window.addTemplateModule('item_data', 'default', {});
   }
+  window._reindexModules();
   restoringTemplateModules = false;
 })();
 </script>
@@ -303,6 +408,24 @@
   };
   window.openTemplateEditor = function(templateId) {
     loadPanel('/_detail_templates/' + encodeURIComponent(DATASET_KEY) + '?_fragment=1' + getQuery() + '&template_id=' + encodeURIComponent(templateId));
+  };
+  window.previewDetailTemplateItem = function() {
+    var sel = document.getElementById('detailTemplatePreviewItem');
+    var slug = sel && sel.value;
+    if (!slug) {
+      alert('请先选择一条已使用此模板的数据。');
+      return;
+    }
+    var url = '/live_preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/' + encodeURIComponent(slug) + '/index.html';
+    if (typeof openPreviewTab === 'function') {
+      openPreviewTab(DATASET_KEY + '/' + slug, '详情预览', url, false, '正在加载详情预览...');
+      return;
+    }
+    var frame = document.getElementById('previewFrame');
+    if (frame) {
+      frame.dataset.previewUrl = url;
+      try { refreshPreview({ build: false }); } catch(e) {}
+    }
   };
 })();
 </script>

@@ -317,12 +317,12 @@
     document.querySelectorAll('.icon-picker.open').forEach(function(openPicker) {
       if (openPicker !== picker) {
         openPicker.classList.remove('open');
-        var openItem = openPicker.closest('.module-item');
+        var openItem = openPicker.closest('.module-item, .detail-feature-item');
         if (openItem) openItem.classList.remove('icon-picker-open');
       }
     });
     picker.classList.toggle('open');
-    var item = picker.closest('.module-item');
+    var item = picker.closest('.module-item, .detail-feature-item');
     if (item) item.classList.toggle('icon-picker-open', picker.classList.contains('open'));
     if (picker.classList.contains('open')) {
       var search = picker.querySelector('.icon-picker-search');
@@ -353,7 +353,7 @@
       btn.classList.toggle('active', (btn.getAttribute('data-value') || '') === value);
     });
     picker.classList.remove('open');
-    var item = picker.closest('.module-item');
+    var item = picker.closest('.module-item, .detail-feature-item');
     if (item) item.classList.remove('icon-picker-open');
   };
 
@@ -370,7 +370,7 @@
   document.addEventListener('click', function() {
     document.querySelectorAll('.icon-picker.open').forEach(function(picker) {
       picker.classList.remove('open');
-      var item = picker.closest('.module-item');
+      var item = picker.closest('.module-item, .detail-feature-item');
       if (item) item.classList.remove('icon-picker-open');
     });
   });
@@ -436,9 +436,9 @@
     return '<div class="module-media-tools mt-1">' +
         '<label class="module-media-picker' + (value ? ' has-media' : '') + '" title="' + (isEmbed ? '上传网页包' : '点击上传') + '">' +
           preview +
-          (value ? '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' : '') +
+          (value ? moduleMediaPreviewButton() : '') +
           '<input type="file" name="' + safeName + '_file" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
-          (value ? '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>' : '') +
+          (value ? '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' : '') +
         '</label>' +
       '</div>' +
       '<div class="form-text mt-1">' + helpText + '</div>' +
@@ -453,7 +453,7 @@
     root = root || document;
     root.querySelectorAll('select.form-select').forEach(function(select) {
       if (select.dataset.segmentedEnhanced === '1') return;
-      if (select.multiple || select.classList.contains('unit-picker') || select.classList.contains('rte-heading-select') || select.dataset.noSegmented === '1') return;
+      if (select.multiple || select.classList.contains('unit-picker') || select.classList.contains('rte-heading-select') || select.classList.contains('detail-content-layout-field') || select.dataset.noSegmented === '1') return;
       if (select.closest('.input-group')) return;
       var options = Array.prototype.slice.call(select.options || []).filter(function(opt) {
         return opt.value !== '';
@@ -742,6 +742,7 @@
     var raw = String(field.label || '');
     var normalizedKey = normalizeLabelKey(key);
     var normalizedRaw = normalizeLabelKey(raw);
+    if (raw && /[\u4e00-\u9fff]/.test(raw)) return raw;
     return FIELD_LABEL_MAP[normalizedKey] || FIELD_LABEL_MAP[normalizedRaw] || translateLabel(raw || key);
   }
 
@@ -780,9 +781,11 @@
 
   function renderField(prefix, field, value, placeholder) {
     var key = field.key, type = (field.type || 'text').toLowerCase(), html = '';
+    var isBindingField = /(^|_)(field|source)(_|$)/i.test(key) || /_ratio$/i.test(key) || /_radius$/i.test(key);
     var isImage = type === 'image' || (
       /(^|_)(image|cover|background_image|photo|logo)(_|$)/i.test(key) &&
-      !/(images?_per|image_position|media_type)/i.test(key)
+      !/(images?_per|image_position|media_type)/i.test(key) &&
+      !isBindingField
     );
     var showIf = field.show_if || null;
     var wrapperAttrs = ' class="mb-2 module-field" data-field-key="' + esc(key) + '"';
@@ -829,6 +832,15 @@
       html += '</select>';
     } else if (type === 'icon') {
       html += iconPickerHtml(prefix + key, value);
+    } else if (type === 'color') {
+      var colorVal = value && String(value).trim();
+      var pickerVal = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(colorVal || '') ? colorVal : '#888888';
+      html += '<div class="module-color-control">' +
+        '<label class="module-color-swatch' + (colorVal ? '' : ' color-empty') + '" title="选择颜色" style="background:' + esc(pickerVal) + '">' +
+          '<input type="color" value="' + esc(pickerVal) + '" oninput="var wrap=this.closest(\'.module-color-control\');var sw=this.closest(\'.module-color-swatch\');var text=wrap&&wrap.querySelector(\'input[type=text]\');if(sw){sw.style.background=this.value;sw.classList.remove(\'color-empty\');}if(text){text.value=this.value;text.dispatchEvent(new Event(\'input\',{bubbles:true}));}">' +
+        '</label>' +
+        '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(colorVal || '') + '" placeholder="选择颜色" oninput="var wrap=this.closest(\'.module-color-control\');var sw=wrap&&wrap.querySelector(\'.module-color-swatch\');var c=wrap&&wrap.querySelector(\'input[type=color]\');var valid=/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(this.value);if(sw){sw.classList.toggle(\'color-empty\', !this.value);if(valid)sw.style.background=this.value;}if(c&&valid)c.value=this.value;">' +
+        '</div>';
     } else if (type === 'number') {
       html += '<input type="number" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '">';
     } else if (type === 'radio') {
@@ -1371,6 +1383,61 @@
     return html;
   }
 
+  function isDetailTemplateComponent(type) {
+    return !!(window._moduleCtx && window._moduleCtx.isDetailTemplateMode) && /^detail_/.test(String(type || ''));
+  }
+
+  function isDetailAdvancedField(field) {
+    var group = String((field && field.group) || '');
+    if (group === '样式') return true;
+    if (group === '内容' || group === '显示规则' || group === '表格') return false;
+    var key = String((field && field.key) || '').toLowerCase();
+    var label = String((field && field.label) || '').toLowerCase();
+    var styleKeys = [
+      'section_bg',
+      'text_color',
+      'link_color',
+      'border_color',
+      'image_radius',
+      'image_ratio',
+      'text_align',
+      'layout',
+      'style'
+    ];
+    if (styleKeys.indexOf(key) >= 0) return true;
+    if (/(^|_)(color|bg|background|border|radius|ratio|align|layout|style)$/.test(key)) return true;
+    return /(颜色|背景|边框|分隔线|圆角|比例|排版|布局|样式)/.test(label) &&
+      !/(来源|最多|为空|空行|显示|隐藏|开启|关闭|链接为空)/.test(label);
+  }
+
+  function renderDetailTemplateComponentFields(prefix, fields, values) {
+    values = values || {};
+    var primary = [];
+    var advanced = [];
+    (fields || []).forEach(function(field) {
+      (isDetailAdvancedField(field) ? advanced : primary).push(field);
+    });
+    function gridHtml(list, emptyText) {
+      if (!list.length) return '<div class="text-muted small py-2">' + emptyText + '</div>';
+      var out = '<div class="detail-template-field-grid">';
+      list.forEach(function(field) {
+        out += renderField(prefix, field, values[field.key] || field.default || '', '');
+      });
+      return out + '</div>';
+    }
+    var html = '<div class="d-flex mb-2 detail-template-tabs">' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="window._switchContentStyleTab(this, \'content\')">内容</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="window._switchContentStyleTab(this, \'style\')">样式</button>' +
+      '</div>' +
+      '<div class="content-style-panel panel-content detail-template-fields">' +
+        gridHtml(primary, '此组件没有内容配置') +
+      '</div>' +
+      '<div class="content-style-panel panel-style detail-template-fields" style="display:none">' +
+        gridHtml(advanced, '此组件没有样式配置') +
+      '</div>';
+    return html;
+  }
+
   function findNamedInput(root, name) {
     var inputs = root.querySelectorAll('[name="' + name + '"]');
     if (!inputs.length) return null;
@@ -1415,6 +1482,10 @@
       : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
   }
 
+  function moduleMediaPreviewButton() {
+    return '<button type="button" class="module-media-preview-icon" onclick="event.preventDefault();event.stopPropagation();var media=this.closest(&quot;.module-media-picker&quot;).querySelector(&quot;img,video&quot;);if(media)enlargeImage(media)" title="预览" aria-label="预览"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>';
+  }
+
   function renderModuleMediaPicker(picker, src, fileName, accept) {
     if (!picker) return;
     var existingFile = picker.querySelector('input[type=file]');
@@ -1429,15 +1500,15 @@
     // embed 类型无需预览，始终显示图标
     if (isEmbed && src) {
       picker.innerHTML = moduleMediaPlaceholderIcon(accept) +
-        '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' +
+        moduleMediaPreviewButton() +
         '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
-        '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>';
+        '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
     } else {
       picker.innerHTML = src
         ? (isVideo ? '<video src="' + safeSrc + '" muted></video>' : '<img src="' + safeSrc + '" alt="">') +
-          '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' +
+          moduleMediaPreviewButton() +
           '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
-          '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传">×</button>'
+          '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
         : moduleMediaPlaceholderIcon(accept) + '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">';
     }
     // innerHTML 替换会销毁旧的 file input，需把已选文件恢复到新 input 中
@@ -1479,7 +1550,7 @@
     root = root || document;
     root.querySelectorAll('.module-media-alt-input').forEach(function(input) {
       if (String(input.value || '').trim()) return;
-      var container = input.closest('.hero-slide-body') || input.closest('.mb-2') || input.parentElement;
+    var container = input.closest('.module-media-field') || input.closest('.hero-slide-body') || input.closest('.mb-2') || input.parentElement;
       input.value = mediaAltFromForm(container, null);
     });
   };
@@ -1487,7 +1558,7 @@
 
   window.handleModuleImageUpload = function(fileInput) {
     var file = fileInput.files[0];
-    var container = fileInput.closest('.hero-slide-body') || fileInput.closest('.mb-2');
+    var container = fileInput.closest('.module-media-field') || fileInput.closest('.hero-slide-body') || fileInput.closest('.mb-2');
     var picker = container ? container.querySelector('.module-media-picker') : null;
     if (!file || !picker) return;
     fillModuleMediaAlt(container, file);
@@ -1515,7 +1586,7 @@
 
   // 图片预览：删除按閽竻除图鐗?
   window.clearModuleImage = function(btn) {
-    var container = btn.closest('.hero-slide-body') || btn.closest('.mb-2');
+    var container = btn.closest('.module-media-field') || btn.closest('.hero-slide-body') || btn.closest('.mb-2');
     if (!container) return;
     var urlInput = container.querySelector('input[type="text"][name]') || container.querySelector('input[type="hidden"][name]:not([name$="_convert_webp"])');
     var fileInput = container.querySelector('input[type="file"]');
@@ -1527,7 +1598,7 @@
 
   // 图片预览锛歎RL 输入框变化时更新预览
   window.updateImagePreview = function(urlInput) {
-    var container = urlInput.closest('.hero-slide-body') || urlInput.closest('.mb-2');
+    var container = urlInput.closest('.module-media-field') || urlInput.closest('.hero-slide-body') || urlInput.closest('.mb-2');
     var picker = container ? container.querySelector('.module-media-picker') : null;
     if (!picker) return;
     var fileInput = picker.querySelector('input[type=file]');
@@ -1535,8 +1606,12 @@
   };
 
   window.openModuleMediaLibrary = function(btn) {
-    var container = btn.closest('.hero-slide-body') || btn.closest('.mb-2');
-    var urlInput = container ? (container.querySelector('input[type="hidden"][name], input[type="text"][name]')) : null;
+    var container = btn.closest('.module-media-field') || btn.closest('.module-media-url-row') || btn.closest('.hero-slide-body') || btn.closest('.mb-2');
+    var row = btn.closest('.module-media-url-row');
+    var urlInput = row ? row.querySelector('input[type="hidden"][name], input[type="text"][name]') : null;
+    if (!urlInput && container) {
+      urlInput = container.querySelector('.module-media-url-row input[type="hidden"][name], .module-media-url-row input[type="text"][name], input[type="hidden"][name], input[type="text"][name]');
+    }
     if (!urlInput) return;
     var overlay = document.getElementById('moduleMediaLibraryOverlay');
     if (!overlay) {
@@ -1544,7 +1619,7 @@
       overlay.id = 'moduleMediaLibraryOverlay';
       overlay.className = 'module-media-library-overlay';
       overlay.innerHTML = '<div class="module-media-library-dialog">' +
-        '<div class="module-media-library-head"><strong>选择媒体</strong><button type="button" class="module-media-library-close" title="关闭">×</button></div>' +
+        '<div class="module-media-library-head"><strong>选择媒体</strong><button type="button" class="module-media-library-close" title="关闭"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
         '<div class="module-media-library-grid"><div class="text-muted small p-3">加载中..</div></div>' +
         '</div>';
       document.body.appendChild(overlay);
@@ -1643,6 +1718,7 @@
     var fields = meta.fields || [];
     var displayName = meta.display_name || type.replace(/_/g, ' ');
     var isDataModule = (type === 'item_data');
+    var isDetailTplComponent = isDetailTemplateComponent(type);
     var variantLabel = variant || mdata.variant || 'default';
     var d = mdata;
     var isDsMode = !!(window._moduleCtx && window._moduleCtx.isDatasetMode);
@@ -1651,6 +1727,7 @@
     // 过滤掉由 specialEditor 自动渲染的字段（分页配置銆乧olumns 等），避免在通用表单区重复出鐜?
     var pagerKeys = ['show_pagination', 'pagination_style', 'items_per_page', 'pager_align', 'show_view_all', 'pager'];
     var desktopFieldList = fields.filter(function(f) {
+      if (isDetailTplComponent) return true;
       return ['columns', 'max_items'].concat(pagerKeys).indexOf(f.key) === -1;
     });
     var desktopFields = renderFieldsGrouped('module_' + idx + '_data_', desktopFieldList, d, '');
@@ -1778,7 +1855,7 @@
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">分类</label><input type="text" class="form-control form-control-sm" name="category" value="' + esc(item.category || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="title" value="' + esc(item.title || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">简介</label>' + richEditorHtml('description', item.description || item.excerpt || item.summary || '') + '</div>' +
-        '<div class="mb-2"><div class="d-flex align-items-center gap-2 mb-1"><label class="form-label small mb-0 text-muted">标签</label>' + visibilityEye('tags_visible', tagsVisible ? 'true' : 'false') + '</div><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="多个用逗号或空格分隔"><div class="form-text">例如：LED, 展示道具, 近期项目</div></div>' +
+        '<div class="mb-2"><div class="d-flex align-items-center gap-2 mb-1"><label class="form-label small mb-0 text-muted">标签</label>' + visibilityEye('tags_visible', tagsVisible ? 'true' : 'false') + '</div><input type="text" class="form-control form-control-sm" name="tags" value="' + esc(tagsVal) + '" placeholder="多个标签用逗号分隔"><div class="form-text">例如：LED, 展示道具, 近期项目</div></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">价格</label><input type="text" class="form-control form-control-sm" name="price" value="' + esc(item.price || '') + '" placeholder="例如 ¥199 / $3/million"></div>' +
         '<hr class="my-2">' +
         /* 富文本编辑器（详细介绍）——与其他模块统一使用 richEditorHtml */
@@ -2530,7 +2607,11 @@
       '<input type="hidden" name="module_' + idx + '_order" value="' + (idx + 1) + '">' +
       '<div class="module-config p-2 border-top" style="display:block">';
 
-    if (!isDataModule) {
+    if (isDetailTplComponent) {
+      html += '<div class="device-config device-desktop detail-template-component-config">' +
+        renderDetailTemplateComponentFields('module_' + idx + '_data_', desktopFieldList, d) +
+      '</div>';
+    } else if (!isDataModule) {
       // 电脑绔細tab 按钮 + 两个面板（结构与 Jinja 模板涓自动达級
       html += '<div class="device-config device-desktop">' +
         '<div class="d-flex mb-2">' +
@@ -2558,7 +2639,7 @@
     }
 
     // 平板端?/ 手机绔紙结构涓Jinja 模板涓自动达紝涓.device-desktop 同级锛?
-    if (!isDataModule) {
+    if (!isDataModule && !isDetailTplComponent) {
       html +=
         '<div class="device-config device-tablet" style="display:none">' +
           tabletFields +
@@ -3454,7 +3535,7 @@
       overlay.id = 'moduleMediaLibraryOverlay';
       overlay.className = 'module-media-library-overlay';
       overlay.innerHTML = '<div class="module-media-library-dialog">' +
-        '<div class="module-media-library-head"><strong>选择媒体</strong><button type="button" class="module-media-library-close" title="关闭">×</button></div>' +
+        '<div class="module-media-library-head"><strong>选择媒体</strong><button type="button" class="module-media-library-close" title="关闭"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
         '<div class="module-media-library-grid"><div class="text-muted small p-3">加载中...</div></div>' +
         '</div>';
       document.body.appendChild(overlay);

@@ -1,15 +1,223 @@
 {# 数据集列表面板 — 通用 CRUD + 模块选择器编辑 + 详情预览 #}
 {% from 'dashboard/_block_icons.html' import block_icon %}
 {% set is_edit = edit_item_id is defined %}
+{% macro ds_icon(name) -%}
+  {% if name == 'arrow-left' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+  {% elif name == 'list' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+  {% elif name == 'plus' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+  {% elif name == 'image' %}<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+  {% elif name == 'trash' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>
+  {% elif name == 'save' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+  {% endif %}
+{%- endmacro %}
+<style>
+  .ds-edit-head{width:100%;margin:0 0 12px;padding:12px 0 0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .ds-edit-title{display:flex;align-items:center;gap:8px;font-weight:700;color:#0f172a}
+  .ds-icon-btn{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #d8e0ea;background:#fff;color:#334155;border-radius:6px}
+  .ds-icon-btn svg,.ds-primary svg,.ds-danger-icon svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .ds-icon-btn:hover{border-color:#0f9a8a;color:#0f766e;background:#f0fdfa}
+  .dataset-edit-form{width:100%;padding:12px 24px 76px}
+  .ds-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:12px;overflow:hidden}
+  .ds-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid #edf2f7;background:#fbfcfd}
+  .ds-card-title{font-size:13px;font-weight:700;color:#111827}
+  .ds-card-body{padding:12px}
+  .ds-side-card{display:grid;grid-template-columns:140px minmax(0,1fr)}
+  .ds-side-card .ds-card-head{display:block;border-right:1px solid #edf2f7;border-bottom:0;padding:14px 12px}
+  .ds-side-card .ds-card-body{min-width:0}
+  .ds-template-row{display:grid;grid-template-columns:88px minmax(360px,1fr) minmax(260px,420px);gap:12px;align-items:center}
+  .ds-basic-grid{display:grid;grid-template-columns:minmax(260px,360px) minmax(420px,1fr);gap:12px}
+  .ds-basic-full{grid-column:1 / -1}
+  .ds-two-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .ds-media-grid{display:grid;grid-template-columns:240px minmax(420px,1fr);gap:18px;align-items:start}
+  .ds-media-preview-col{display:grid;gap:8px}
+  .ds-media-fields-col{min-width:0;display:grid;gap:10px}
+  .ds-template-options{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .ds-template-options .seg-radio-option{margin:0}
+  .dataset-edit-form .form-label{font-size:12px;color:#475569;margin-bottom:4px}
+  .dataset-edit-form .form-text,.ds-help{font-size:12px;color:#64748b;line-height:1.45; text-align:right;}
+  .dataset-edit-form textarea.form-control{min-height:72px}
+  .dataset-edit-form .detail-field-section{display:grid;grid-template-columns:140px minmax(0,1fr);background:#fff!important;border:1px solid #e5e7eb!important;border-radius:8px!important;padding:0!important;overflow:hidden;margin-bottom:12px!important}
+  .dataset-edit-form .detail-field-section>.small.fw-semibold,
+  .dataset-edit-form .detail-field-section>.d-flex:first-child{align-self:stretch;padding:14px 12px;margin:0!important;border-right:1px solid #edf2f7;border-bottom:0;background:#fbfcfd}
+  .dataset-edit-form .detail-field-section>*:first-child{grid-column:1;grid-row:1 / span 40}
+  .dataset-edit-form .detail-field-section>*:not(:first-child){grid-column:2}
+  .dataset-edit-form .detail-field-section>.d-flex:first-child{flex-direction:column;align-items:flex-start!important;justify-content:flex-start!important;gap:8px}
+  .dataset-edit-form .detail-field-section> :not(.small):not(.d-flex){margin:12px}
+  .dataset-edit-form .detail-field-section>.detail-section-note{margin:12px;line-height:1.6}
+  .dataset-edit-form .detail-field-section>.ds-card-body{margin:0}
+  .dataset-edit-form .detail-field-section[data-field-section="detail_features"]{overflow:visible!important;position:relative;z-index:5}
+  .dataset-edit-form .detail-feature-item{position:relative}
+  .dataset-edit-form .detail-feature-item.icon-picker-open{z-index:20}
+  .dataset-edit-form .detail-feature-item:has(.icon-picker.open){z-index:20}
+  .dataset-edit-form .detail-feature-item .icon-picker.open{z-index:1100}
+  .dataset-edit-form .module-media-url-row{align-items:stretch}
+  .dataset-edit-form .dataset-media-field,
+  .dataset-edit-form .detail-gallery-item,
+  .dataset-edit-form .detail-content-media-fields.module-media-field,
+  .dataset-edit-form .detail-content-gallery-fields .module-media-field{
+    display:grid;
+    grid-template-columns:112px minmax(0,1fr);
+    gap:8px 12px;
+    align-items:start;
+  }
+  .dataset-edit-form .dataset-media-field>.form-label,
+  .dataset-edit-form .detail-content-media-fields.module-media-field>.form-label,
+  .dataset-edit-form .detail-content-gallery-fields>.form-label,
+  .dataset-edit-form .detail-gallery-item>.d-flex{
+    grid-column:1 / -1;
+    margin-bottom:0!important;
+  }
+  .dataset-edit-form .dataset-media-field>.module-media-tools,
+  .dataset-edit-form .detail-gallery-item>.module-media-tools,
+  .dataset-edit-form .detail-content-media-fields.module-media-field>.module-media-tools,
+  .dataset-edit-form .detail-content-gallery-fields .module-media-field>.module-media-tools{
+    grid-column:1;
+    grid-row:auto / span 3;
+    margin:0!important;
+  }
+  .dataset-edit-form .dataset-media-field>.module-media-url-row,
+  .dataset-edit-form .dataset-media-field>input.form-control,
+  .dataset-edit-form .detail-gallery-item>.module-media-url-row,
+  .dataset-edit-form .detail-gallery-item>input.form-control,
+  .dataset-edit-form .detail-content-media-fields.module-media-field>.module-media-url-row,
+  .dataset-edit-form .detail-content-media-fields.module-media-field>input.form-control,
+  .dataset-edit-form .detail-content-gallery-fields .module-media-field>.module-media-url-row,
+  .dataset-edit-form .detail-content-gallery-fields .module-media-field>input.form-control{
+    grid-column:2;
+    min-width:0;
+    margin:0!important;
+  }
+  #detailGalleryList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  #detailGalleryList .detail-gallery-item{margin-bottom:0!important}
+  .detail-multi-section{background:transparent!important;border:0!important;border-radius:0!important;overflow:visible!important;margin-bottom:0!important}
+  .detail-multi-section>.small.fw-semibold{display:none!important}
+  .detail-multi-section>#detailTablesList,
+  .detail-multi-section>#detailLinksList{display:grid;grid-template-columns:1fr;gap:12px;margin:0 0 12px!important}
+  .detail-multi-section>#detailSpecsList{display:grid;grid-template-columns:1fr;gap:12px;margin:0 0 12px!important}
+  .dataset-edit-form .detail-table-item,
+  .dataset-edit-form .detail-link-item,
+  .dataset-edit-form .detail-spec-group-item{display:grid;grid-template-columns:140px minmax(0,1fr);background:#fff;border:1px solid #e5e7eb!important;border-radius:8px!important;padding:0!important;overflow:hidden;margin:0 0 12px!important}
+  .dataset-edit-form .detail-table-item>.small.fw-semibold,
+  .dataset-edit-form .detail-link-item>.small.fw-semibold,
+  .dataset-edit-form .detail-spec-group-item>.d-flex:first-child{grid-column:1;grid-row:1 / span 40;align-self:stretch;padding:14px 12px;margin:0!important;border-right:1px solid #edf2f7;background:#fbfcfd}
+  .dataset-edit-form .detail-spec-group-item>.d-flex:first-child{display:flex!important;flex-direction:column;align-items:flex-start!important;justify-content:flex-start!important;gap:8px}
+  .dataset-edit-form .detail-table-item>input[type="hidden"]{display:none}
+  .dataset-edit-form .detail-spec-group-item>input[type="hidden"]{display:none}
+  .dataset-edit-form .detail-table-input-grid{grid-column:2;margin:12px}
+  .dataset-edit-form .detail-spec-rows{grid-column:2;margin:12px;display:grid;grid-template-columns:1fr;gap:8px}
+  .dataset-edit-form .detail-spec-rows .dataset-spec-item{padding:0!important;border:0!important;margin:0!important}
+  .dataset-edit-form .detail-spec-input-row{display:grid;grid-template-columns:minmax(110px,1fr) minmax(130px,1fr) minmax(130px,1fr) 34px;gap:8px;align-items:center}
+  .dataset-edit-form .detail-spec-rows[data-columns="1"] .detail-spec-input-row{grid-template-columns:minmax(0,1fr) 34px}
+  .dataset-edit-form .detail-spec-rows[data-columns="2"] .detail-spec-input-row{grid-template-columns:minmax(110px,1fr) minmax(130px,1fr) 34px}
+  .dataset-edit-form .detail-spec-rows[data-columns="1"] .detail-spec-name-field,
+  .dataset-edit-form .detail-spec-rows[data-columns="1"] .detail-spec-desc-field,
+  .dataset-edit-form .detail-spec-rows[data-columns="2"] .detail-spec-desc-field{display:none!important}
+  .dataset-edit-form .detail-link-item>.mb-2,
+  .dataset-edit-form .detail-link-item>div:not(.small){grid-column:2;margin:12px}
+  .dataset-edit-form .detail-link-item>.mb-2+div{margin-top:0}
+  .detail-table-input-grid{display:grid;gap:8px}
+  .detail-table-row{display:grid;gap:8px}
+  .detail-table-cell{display:grid;gap:6px;min-width:0}
+  .detail-table-cell input{min-width:0}
+  .detail-content-table-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .detail-content-table-grid{display:grid;gap:6px;overflow-x:auto}
+  .detail-content-table-row{display:grid;gap:6px;min-width:0}
+  .detail-content-table-row input{min-width:96px}
+  .detail-content-block-editor{display:grid;gap:10px}
+  .detail-content-block-item{display:grid;grid-template-columns:minmax(130px,180px) minmax(0,1fr);gap:12px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px}
+  .detail-content-block-side{display:grid;gap:8px;align-content:start}
+  .detail-content-block-main{display:grid;gap:8px;min-width:0}
+  .detail-content-media-grid{display:grid;grid-template-columns:160px minmax(0,1fr);gap:10px;align-items:start}
+  .detail-content-block-item[data-block-type="text"] .detail-content-media-fields,
+  .detail-content-block-item[data-block-type="video"] .detail-content-image-fields,
+  .detail-content-block-item[data-block-type="media_text"] .detail-content-video-fields,
+  .detail-content-block-item[data-block-type="image"] .detail-content-video-fields,
+  .detail-content-block-item[data-block-type="image"] .detail-content-textarea-field,
+  .detail-content-layout-wrap{display:none!important}
+  .detail-content-block-item[data-block-type="media_text"] .detail-content-layout-wrap{display:block!important}
+  .detail-content-gallery-fields,
+  .detail-content-table-fields,
+  .detail-content-note-fields,
+  .detail-content-embed-fields{display:none!important}
+  .detail-content-block-item[data-block-type="gallery"] .detail-content-gallery-fields,
+  .detail-content-block-item[data-block-type="table"] .detail-content-table-fields,
+  .detail-content-block-item[data-block-type="note"] .detail-content-note-fields,
+  .detail-content-block-item[data-block-type="embed"] .detail-content-embed-fields{display:block!important}
+  .detail-content-block-item[data-block-type="heading"] .detail-content-media-fields,
+  .detail-content-block-item[data-block-type="heading"] .detail-content-layout-wrap,
+  .detail-content-block-item[data-block-type="gallery"] .detail-content-media-fields,
+  .detail-content-block-item[data-block-type="gallery"] .detail-content-textarea-field,
+  .detail-content-block-item[data-block-type="gallery"] .detail-content-layout-wrap,
+  .detail-content-block-item[data-block-type="table"] .detail-content-media-fields,
+  .detail-content-block-item[data-block-type="table"] .detail-content-textarea-field,
+  .detail-content-block-item[data-block-type="table"] .detail-content-layout-wrap,
+  .detail-content-block-item[data-block-type="note"] .detail-content-media-fields,
+  .detail-content-block-item[data-block-type="note"] .detail-content-layout-wrap,
+  .detail-content-block-item[data-block-type="embed"] .detail-content-media-fields,
+  .detail-content-block-item[data-block-type="embed"] .detail-content-layout-wrap{display:none!important}
+  .ds-danger-icon{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #fecaca;background:#fff;color:#dc2626;border-radius:6px}
+  .ds-danger-icon:hover{background:#fef2f2;border-color:#f87171;color:#b91c1c}
+  .ds-advanced-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:12px;padding:12px}
+  .ds-advanced-row{display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .ds-setting-row{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:42px}
+  .ds-setting-copy{min-width:0}
+  .ds-setting-title{font-size:13px;font-weight:700;color:#111827;margin-bottom:3px}
+  .ds-setting-help{font-size:12px;color:#64748b;line-height:1.45}
+  .ds-setting-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+  .dataset-edit-form .panel-save-bar .btn{display:flex;align-items:center;justify-content:center;gap:8px}
+  @media (max-width:900px){
+    .ds-edit-head{padding:10px 10px 0}
+    .dataset-edit-form{padding:10px 10px 76px}
+    .ds-template-row,.ds-basic-grid,.ds-two-grid,.ds-media-grid,.ds-side-card,.dataset-edit-form .detail-field-section,#detailGalleryList{grid-template-columns:1fr}
+    .detail-content-block-item,.detail-content-media-grid,
+    .dataset-edit-form .dataset-media-field,
+    .dataset-edit-form .detail-gallery-item,
+    .dataset-edit-form .detail-content-media-fields.module-media-field,
+    .dataset-edit-form .detail-content-gallery-fields .module-media-field{grid-template-columns:1fr}
+    .dataset-edit-form .detail-table-item,
+    .dataset-edit-form .detail-link-item,
+    .dataset-edit-form .detail-spec-group-item{grid-template-columns:1fr}
+    .dataset-edit-form .detail-table-item>.small.fw-semibold,
+    .dataset-edit-form .detail-link-item>.small.fw-semibold,
+    .dataset-edit-form .detail-spec-group-item>.d-flex:first-child{border-right:0;border-bottom:1px solid #edf2f7}
+    .dataset-edit-form .detail-table-input-grid,
+    .dataset-edit-form .detail-spec-rows,
+    .dataset-edit-form .detail-link-item>.mb-2,
+    .dataset-edit-form .detail-link-item>div:not(.small){grid-column:1}
+    .dataset-edit-form .detail-spec-input-row,
+    .dataset-edit-form .detail-spec-rows[data-columns="1"] .detail-spec-input-row,
+    .dataset-edit-form .detail-spec-rows[data-columns="2"] .detail-spec-input-row{grid-template-columns:1fr}
+    .dataset-edit-form .detail-spec-rows[data-columns="1"] .detail-spec-name-field,
+    .dataset-edit-form .detail-spec-rows[data-columns="1"] .detail-spec-desc-field,
+    .dataset-edit-form .detail-spec-rows[data-columns="2"] .detail-spec-desc-field{display:block!important}
+    .dataset-edit-form .dataset-media-field>.module-media-tools,
+    .dataset-edit-form .dataset-media-field>.module-media-url-row,
+    .dataset-edit-form .dataset-media-field>input.form-control,
+    .dataset-edit-form .detail-gallery-item>.module-media-tools,
+    .dataset-edit-form .detail-gallery-item>.module-media-url-row,
+    .dataset-edit-form .detail-gallery-item>input.form-control,
+    .dataset-edit-form .detail-content-media-fields.module-media-field>.module-media-tools,
+    .dataset-edit-form .detail-content-media-fields.module-media-field>.module-media-url-row,
+    .dataset-edit-form .detail-content-media-fields.module-media-field>input.form-control,
+    .dataset-edit-form .detail-content-gallery-fields .module-media-field>.module-media-tools,
+    .dataset-edit-form .detail-content-gallery-fields .module-media-field>.module-media-url-row,
+    .dataset-edit-form .detail-content-gallery-fields .module-media-field>input.form-control{grid-column:1;grid-row:auto}
+    .ds-side-card .ds-card-head,
+    .dataset-edit-form .detail-field-section>.small.fw-semibold,
+    .dataset-edit-form .detail-field-section>.d-flex:first-child{border-right:0;border-bottom:1px solid #edf2f7}
+    .ds-setting-row{align-items:flex-start;flex-direction:column}
+    .ds-setting-actions{justify-content:flex-start}
+  }
+</style>
 
-<div class="d-flex align-items-center justify-content-between mb-2">
-  <span class="fw-semibold">{{ dataset_key | title }}{% if is_edit %} · 编辑 #{{ edit_item_id }}{% endif %}</span>
+<div class="ds-edit-head">
+  <span class="ds-edit-title">{{ dataset_key | title }}{% if is_edit %} · 编辑 #{{ edit_item_id }}{% endif %}</span>
   <div class="d-flex gap-1">
-    <button class="btn btn-outline-secondary btn-sm" onclick="backToPageEditor()">← 返回</button>
+    <button class="ds-icon-btn" type="button" onclick="backToPageEditor()" title="返回页面" aria-label="返回页面">{{ ds_icon('arrow-left') }}</button>
     {% if not is_edit %}
-    <button class="btn btn-primary btn-sm" onclick="addDataItem()">+ 新建</button>
+    <button class="ds-icon-btn" type="button" onclick="addDataItem()" title="新建" aria-label="新建">{{ ds_icon('plus') }}</button>
     {% else %}
-    <button class="btn btn-outline-secondary btn-sm" onclick="loadDatasetList()">← 返回列表</button>
+    <button class="ds-icon-btn" type="button" onclick="loadDatasetList()" title="返回列表" aria-label="返回列表">{{ ds_icon('list') }}</button>
     {% endif %}
   </div>
 </div>
@@ -34,7 +242,8 @@
 {# ========== 编辑模式：模块选择器 ========== #}
 
 {% set saved_modules = edit_item.modules | default([]) %}
-{% set has_custom_modules = saved_modules and saved_modules|length > 0 %}
+{% set has_legacy_default_modules = saved_modules and saved_modules|length == 1 and saved_modules[0] is mapping and saved_modules[0].type == 'item_data' %}
+{% set has_custom_modules = saved_modules and saved_modules|length > 0 and not has_legacy_default_modules %}
 
 {# ---- 可用模块弹框（通用组件） ---- #}
 {% include 'dashboard/_block_palette.html' %}
@@ -63,90 +272,150 @@
 </div>
 
 {# ---- 已选模块列表 ---- #}
-<form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" data-page-key="{{ dataset_key }}" enctype="multipart/form-data">
+<form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" class="dataset-edit-form" data-page-key="{{ dataset_key }}" data-no-auto-save="1" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="_draft_dataset_key" value="{{ dataset_key }}">
   <input type="hidden" name="_draft_item_id" value="{{ edit_item_id }}">
   <input type="hidden" name="_draft_preview_path" value="{{ preview_path }}">
+  <input type="hidden" name="_draft_force_template_preview" id="draftForceTemplatePreview" value="0">
   <input type="hidden" name="_advanced_modules_enabled" id="advancedModulesEnabled" value="{{ '1' if has_custom_modules else '0' }}">
 
-  <div class="mb-2">
-    <label class="form-label small mb-1 text-muted">详情模板</label>
-    {% set current_template_id = edit_item.template_id | default(default_template_id) %}
-    <select class="form-select form-select-sm" name="template_id" id="detailTemplateSelect">
-      {% for tpl in detail_templates | default([]) %}
-      {% set tpl_id = tpl.id | default(tpl.get('id')) %}
-      <option value="{{ tpl_id }}" {% if tpl_id == current_template_id %}selected{% endif %}>
-        {{ tpl.name | default(tpl.get('name', tpl_id)) }}{% if tpl.is_default | default(tpl.get('is_default')) %}（默认）{% endif %}
-      </option>
-      {% endfor %}
-    </select>
-    <div class="form-text">未做单独自定义时，此条详情页会跟随所选模板。</div>
+  <div class="ds-card">
+    <div class="ds-card-body ds-template-row">
+      <label class="form-label mb-0">详情模板</label>
+      {% set current_template_id = edit_item.template_id | default(default_template_id) %}
+      <div class="ds-template-options" id="detailTemplateSelect">
+        {% for tpl in detail_templates | default([]) %}
+        {% set tpl_id = tpl.id | default(tpl.get('id')) %}
+        <label class="seg-radio-option">
+          <input type="radio" name="template_id" value="{{ tpl_id }}" {% if tpl_id == current_template_id %}checked{% endif %}>
+          <span class="seg-radio-dot" aria-hidden="true"></span>
+          <span>{{ tpl.name | default(tpl.get('name', tpl_id)) }}{% if tpl.is_default | default(tpl.get('is_default')) %}（默认）{% endif %}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <div class="ds-help">
+        {% if has_custom_modules %}
+        此条数据已启用单条详情覆盖，当前详情页优先使用自己的高级模块；恢复使用模板后才会跟随所选模板。
+        {% else %}
+        未做单独自定义时，此条详情页会跟随所选模板。
+        {% endif %}
+      </div>
+    </div>
   </div>
 
   {% set current_req = (detail_requirements | default({})).get(current_template_id, {}) %}
   {% set gallery_cfg = edit_item.detail_gallery if edit_item.detail_gallery is mapping else {} %}
   {% set gallery_images = gallery_cfg.images if gallery_cfg.images is iterable and gallery_cfg.images is not string else (edit_item.detail_images if edit_item.detail_images is iterable and edit_item.detail_images is not string else []) %}
   {% set specs_items = edit_item.specs if edit_item.specs is iterable and edit_item.specs is not string else [] %}
+  {% set parameters_items = edit_item.parameters if edit_item.parameters is iterable and edit_item.parameters is not string else [] %}
+  {% set attributes_items = edit_item.attributes if edit_item.attributes is iterable and edit_item.attributes is not string else [] %}
+  {% set feature_items = edit_item.detail_features if edit_item.detail_features is iterable and edit_item.detail_features is not string else (edit_item.features if edit_item.features is iterable and edit_item.features is not string else []) %}
+  {% set file_items = edit_item.detail_files if edit_item.detail_files is iterable and edit_item.detail_files is not string else (edit_item.downloads if edit_item.downloads is iterable and edit_item.downloads is not string else []) %}
+  {% set faq_items = edit_item.detail_faqs if edit_item.detail_faqs is iterable and edit_item.detail_faqs is not string else (edit_item.faqs if edit_item.faqs is iterable and edit_item.faqs is not string else []) %}
+  {% set content_block_items = edit_item.detail_content_blocks if edit_item.detail_content_blocks is iterable and edit_item.detail_content_blocks is not string else (edit_item.content_blocks if edit_item.content_blocks is iterable and edit_item.content_blocks is not string else []) %}
   {% set tags_val = edit_item.tags | join(', ') if edit_item.tags is iterable and edit_item.tags is not string else (edit_item.tags or '') %}
 
-  <div class="p-2 rounded mb-2" style="background:#fff;border:1px solid #e9ecef">
-    <div class="small fw-semibold mb-2">基础内容</div>
-    <div class="mb-2">
-      <label class="form-label small mb-1 text-muted">Slug <span class="text-danger">*</span></label>
-      <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required minlength="3" maxlength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" title="只能用小写字母、数字、连字符，3-30 字符，不能以连字符开头或结尾">
+  <div class="ds-card ds-side-card">
+    <div class="ds-card-head">
+      <div class="ds-card-title">基础内容</div>
     </div>
-    <div class="mb-2">
-      <label class="form-label small mb-1 text-muted">标题</label>
-      <input type="text" class="form-control form-control-sm" name="title" value="{{ edit_item.title or edit_item.name or '' }}">
-    </div>
-    <div class="mb-2">
-      <label class="form-label small mb-1 text-muted">简介</label>
-      <textarea class="form-control form-control-sm" name="summary" rows="2">{{ edit_item.summary or edit_item.description or edit_item.excerpt or '' }}</textarea>
-    </div>
-    <div class="row g-2">
-      <div class="col-6">
-        <label class="form-label small mb-1 text-muted">分类</label>
-        <input type="text" class="form-control form-control-sm" name="category" value="{{ edit_item.category or '' }}">
-      </div>
-      <div class="col-6">
-        <label class="form-label small mb-1 text-muted">标签</label>
-        <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val }}" placeholder="多个用逗号或空格分隔">
+    <div class="ds-card-body">
+      <div class="ds-basic-grid">
+        <div>
+          <label class="form-label">Slug <span class="text-danger">*</span></label>
+          <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required minlength="3" maxlength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" title="只能用小写字母、数字、连字符，3-30 字符，不能以连字符开头或结尾">
+        </div>
+        <div>
+          <label class="form-label">标题</label>
+          <input type="text" class="form-control form-control-sm" name="title" value="{{ edit_item.title or edit_item.name or '' }}">
+        </div>
+        <div class="ds-basic-full">
+          <label class="form-label">简介</label>
+          <textarea class="form-control form-control-sm" name="summary" rows="2">{{ edit_item.summary or edit_item.description or edit_item.excerpt or '' }}</textarea>
+        </div>
+        <div class="ds-basic-full ds-two-grid">
+          <div>
+            <label class="form-label">分类</label>
+            <input type="text" class="form-control form-control-sm" name="category" value="{{ edit_item.category or '' }}">
+          </div>
+          <div>
+            <label class="form-label">标签</label>
+            <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val }}" placeholder="多个标签用逗号分隔，例如：LED, 灯条, 工程案例">
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="media" style="background:#fff;border:1px solid #e9ecef">
-    <div class="small fw-semibold mb-2">媒体</div>
+  <div id="detailFieldSections">
+  <div class="detail-field-section" data-field-section="media">
+    <div class="small fw-semibold">媒体</div>
     {% set item_media_type = edit_item.media_type or ('embed' if edit_item.embed_url else ('video' if edit_item.video else 'image')) %}
-    <div class="mb-2">
-      <label class="form-label small mb-1 text-muted">媒体类型</label>
-      <select class="form-select form-select-sm" name="media_type">
-        <option value="image" {% if item_media_type == 'image' %}selected{% endif %}>图片</option>
-        <option value="video" {% if item_media_type == 'video' %}selected{% endif %}>视频</option>
-        <option value="embed" {% if item_media_type == 'embed' %}selected{% endif %}>嵌入页面</option>
-      </select>
-    </div>
-    <div class="mb-2">
-      <label class="form-label small mb-1 text-muted">封面图</label>
+    <div class="ds-card-body">
+      <div class="ds-media-grid">
+        <div class="ds-media-preview-col">
+          <label class="form-label">媒体类型</label>
+          <select class="form-select form-select-sm" name="media_type">
+            <option value="image" {% if item_media_type == 'image' %}selected{% endif %}>图片</option>
+            <option value="video" {% if item_media_type == 'video' %}selected{% endif %}>视频</option>
+            <option value="embed" {% if item_media_type == 'embed' %}selected{% endif %}>嵌入页面</option>
+          </select>
+        </div>
+        <div class="ds-media-fields-col">
+    <div class="dataset-media-field" data-media-kind="image" style="{% if item_media_type != 'image' %}display:none{% endif %}">
+      <label class="form-label">封面图</label>
       {% set cover_val = edit_item.cover or edit_item.image or edit_item.photo or edit_item.logo or '' %}
-      <input type="text" class="form-control form-control-sm" name="cover" value="{{ cover_val }}" placeholder="图片 URL 或上传">
-      <input type="file" class="form-control form-control-sm mt-1" name="cover_file" accept="image/*,.svg,.svgz">
-      {% if cover_val %}<img src="{{ cover_val }}" alt="预览" style="margin-top:6px;max-width:200px;max-height:120px;border-radius:6px;">{% endif %}
+      <div class="module-media-tools mt-1">
+        <label class="module-media-picker{% if cover_val %} has-media{% endif %}" title="点击上传">
+          {% if cover_val %}
+          <img src="{{ cover_val }}" alt="">
+          <button type="button" class="module-media-preview-icon" onclick="event.preventDefault();event.stopPropagation();enlargeImage(this.closest('.module-media-picker').querySelector('img,video'))" title="预览" aria-label="预览"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          {% else %}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          {% endif %}
+          <input type="file" name="cover_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none">
+        </label>
+      </div>
+      <div class="module-media-url-row">
+        <input type="text" class="form-control form-control-sm" name="cover" value="{{ cover_val }}" placeholder="图片 URL 或上传" oninput="updateImagePreview(this)">
+        <button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+        <input type="hidden" name="cover_convert_webp" value="false">
+        <label class="module-convert-check"><input type="checkbox" name="cover_convert_webp" value="true" checked><span></span>WebP</label>
+      </div>
+      <input type="text" class="form-control form-control-sm module-media-alt-input mt-1" name="cover_alt" value="{{ edit_item.cover_alt or '' }}" placeholder="图片 Alt：自动使用标题/产品名，可覆盖">
     </div>
-    <div class="mb-2">
-      <label class="form-label small mb-1 text-muted">视频</label>
-      <input type="text" class="form-control form-control-sm" name="video" value="{{ edit_item.video or '' }}" placeholder="MP4/WebM 视频 URL 或上传">
-      <input type="file" class="form-control form-control-sm mt-1" name="video_file" accept="video/mp4,video/webm,video/ogg,video/quicktime">
+    <div class="dataset-media-field" data-media-kind="video" style="{% if item_media_type != 'video' %}display:none{% endif %}">
+      <label class="form-label">视频</label>
+      <div class="module-media-tools mt-1">
+        <label class="module-media-picker{% if edit_item.video %} has-media{% endif %}" title="点击上传">
+          {% if edit_item.video %}
+          <video src="{{ edit_item.video }}" muted></video>
+          <button type="button" class="module-media-preview-icon" onclick="event.preventDefault();event.stopPropagation();enlargeImage(this.closest('.module-media-picker').querySelector('img,video'))" title="预览" aria-label="预览"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          {% else %}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          {% endif %}
+          <input type="file" name="video_file" accept="video/mp4,video/webm,video/ogg,video/quicktime" onchange="handleModuleImageUpload(this)" style="display:none">
+        </label>
+      </div>
+      <div class="module-media-url-row">
+        <input type="text" class="form-control form-control-sm" name="video" value="{{ edit_item.video or '' }}" placeholder="MP4/WebM 视频 URL 或上传" oninput="updateImagePreview(this)">
+        <button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+      </div>
     </div>
-    <div>
-      <label class="form-label small mb-1 text-muted">嵌入页面</label>
+    <div class="dataset-media-field" data-media-kind="embed" style="{% if item_media_type != 'embed' %}display:none{% endif %}">
+      <label class="form-label">嵌入页面</label>
       <input type="text" class="form-control form-control-sm" name="embed_url" value="{{ edit_item.embed_url or '' }}" placeholder="嵌入页面 URL，或上传包含 index.html 的 ZIP">
       <input type="file" class="form-control form-control-sm mt-1" name="embed_url_file" accept=".zip">
     </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="body" style="background:#fff;border:1px solid #e9ecef">
+  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="body" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('body') %}display:none{% endif %}">
     <div class="small fw-semibold mb-2">正文</div>
     <textarea class="form-control form-control-sm" name="body" rows="8" style="min-height:160px; font-family:monospace; white-space:pre-wrap;">{{ edit_item.body or edit_item.content or '' }}</textarea>
   </div>
@@ -165,47 +434,393 @@
       <div class="border rounded p-2 mb-2 detail-gallery-item" data-gallery-index="{{ loop.index0 }}">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span class="small fw-semibold">图片 {{ loop.index }}</span>
-          <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.detail-gallery-item').remove();reindexDatasetDetailImages()">删除</button>
+          <button type="button" class="ds-danger-icon" onclick="this.closest('.detail-gallery-item').remove();reindexDatasetDetailImages()" title="删除图片" aria-label="删除图片">{{ ds_icon('trash') }}</button>
         </div>
-        <input type="text" class="form-control form-control-sm mb-1" name="detail_gallery_{{ loop.index0 }}_url" value="{{ img_url }}" placeholder="图片 URL">
-        <input type="text" class="form-control form-control-sm mb-1" name="detail_gallery_{{ loop.index0 }}_url_alt" value="{{ img_alt }}" placeholder="图片说明">
-        <input type="file" class="form-control form-control-sm" name="detail_gallery_{{ loop.index0 }}_url_file" accept="image/*">
+        <div class="module-media-tools mt-1 mb-2">
+          <label class="module-media-picker{% if img_url %} has-media{% endif %}" title="点击上传">
+            {% if img_url %}
+            <img src="{{ img_url }}" alt="">
+            <button type="button" class="module-media-preview-icon" onclick="event.preventDefault();event.stopPropagation();enlargeImage(this.closest('.module-media-picker').querySelector('img,video'))" title="预览" aria-label="预览"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            <button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            {% else %}
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            {% endif %}
+            <input type="file" name="detail_gallery_{{ loop.index0 }}_url_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none">
+          </label>
+        </div>
+        <div class="module-media-url-row mb-1">
+          <input type="text" class="form-control form-control-sm" name="detail_gallery_{{ loop.index0 }}_url" value="{{ img_url }}" placeholder="图片 URL 或上传" oninput="updateImagePreview(this)">
+          <button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+        </div>
+        <input type="text" class="form-control form-control-sm module-media-alt-input" name="detail_gallery_{{ loop.index0 }}_url_alt" value="{{ img_alt }}" placeholder="图片说明">
       </div>
       {% endfor %}
     </div>
   </div>
 
-  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="specs" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('specs') %}display:none{% endif %}">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <div class="small fw-semibold">规格参数</div>
-      <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDatasetSpec()">+ 添加规格</button>
+  {% set current_spec_group_count = namespace(value=0) %}
+  {% set max_spec_group_count = namespace(value=0) %}
+  {% set max_spec_rows = namespace(value=1) %}
+  {% for tpl in detail_templates | default([]) %}
+    {% set tpl_id_tmp = tpl.id | default(tpl.get('id')) %}
+    {% set spec_count = namespace(value=0) %}
+    {% for mod in tpl.modules | default(tpl.get('modules', [])) %}
+      {% if mod.type | default(mod.get('type')) == 'detail_specs' %}
+        {% set spec_count.value = spec_count.value + 1 %}
+        {% set mod_data = mod.data | default(mod.get('data', {})) %}
+        {% set rows_tmp = (mod_data.max_rows | default(mod_data.get('max_rows', 10))) | int %}
+        {% if rows_tmp > max_spec_rows.value %}{% set max_spec_rows.value = rows_tmp %}{% endif %}
+      {% endif %}
+    {% endfor %}
+    {% if tpl_id_tmp == current_template_id %}{% set current_spec_group_count.value = spec_count.value %}{% endif %}
+    {% if spec_count.value > max_spec_group_count.value %}{% set max_spec_group_count.value = spec_count.value %}{% endif %}
+  {% endfor %}
+  {% set saved_detail_specs = edit_item.detail_specs if edit_item.detail_specs is iterable and edit_item.detail_specs is not string else [] %}
+  <div class="detail-multi-section" data-field-section="specs" style="{% if not current_req.get('specs') %}display:none{% endif %}">
+    <div class="small fw-semibold">规格参数</div>
+    <input type="hidden" name="detail_specs_count" id="detailSpecsCount" value="{{ current_spec_group_count.value }}">
+    <div id="detailSpecsList">
+      {% for spec_group_i in range(max_spec_group_count.value or 1) %}
+        {% set group_item = saved_detail_specs[spec_group_i] if saved_detail_specs|length > spec_group_i and saved_detail_specs[spec_group_i] is mapping else {} %}
+        {% set group_items_raw = group_item.get('items', []) if group_item is mapping else [] %}
+        {% set group_items = group_items_raw if saved_detail_specs|length > spec_group_i and group_items_raw is iterable and group_items_raw is not string else (specs_items if spec_group_i == 0 else []) %}
+        <div class="border rounded p-2 detail-spec-group-item" data-spec-group-index="{{ spec_group_i }}" style="{% if spec_group_i >= current_spec_group_count.value %}display:none{% endif %}">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="small fw-semibold">规格参数 {{ spec_group_i + 1 }}</span>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailSpecRow({{ spec_group_i }})">+ 添加参数</button>
+          </div>
+          <input type="hidden" name="detail_specs_{{ spec_group_i }}_count" class="detail-spec-row-count" value="{{ group_items|length }}">
+          <div class="detail-spec-rows">
+            {% for spec in group_items %}
+            <div class="border rounded p-2 mb-2 dataset-spec-item" data-spec-index="{{ loop.index0 }}">
+              <div class="detail-spec-legacy-head d-none">
+                <span class="small fw-semibold">参数 {{ loop.index }}</span>
+                <button type="button" class="ds-danger-icon" onclick="this.closest('.dataset-spec-item').remove();reindexDetailSpecRows({{ spec_group_i }})" title="删除参数" aria-label="删除参数">{{ ds_icon('trash') }}</button>
+              </div>
+              <div class="detail-spec-input-row">
+                <div class="detail-spec-name-field"><input type="text" class="form-control form-control-sm" name="detail_specs_{{ spec_group_i }}_{{ loop.index0 }}_name" value="{{ spec.name if spec is mapping else '' }}" placeholder="参数名"></div>
+                <div class="detail-spec-desc-field"><input type="text" class="form-control form-control-sm" name="detail_specs_{{ spec_group_i }}_{{ loop.index0 }}_desc" value="{{ spec.desc or spec.description if spec is mapping else '' }}" placeholder="说明"></div>
+                <div class="detail-spec-value-field"><input type="text" class="form-control form-control-sm" name="detail_specs_{{ spec_group_i }}_{{ loop.index0 }}_value" value="{{ spec.value if spec is mapping else '' }}" placeholder="参数值"></div>
+                <button type="button" class="ds-danger-icon" onclick="this.closest('.dataset-spec-item').remove();reindexDetailSpecRows({{ spec_group_i }})" title="删除参数" aria-label="删除参数">{{ ds_icon('trash') }}</button>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
     </div>
-    <input type="hidden" name="specs_count" id="datasetSpecsCount" value="{{ specs_items|length }}">
-    <div id="datasetSpecsList">
-      {% for spec in specs_items %}
-      <div class="border rounded p-2 mb-2 dataset-spec-item" data-spec-index="{{ loop.index0 }}">
+  </div>
+
+  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="detail_features" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_features') %}display:none{% endif %}">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="small fw-semibold">卖点特性</div>
+      <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailFeature()">+ 添加卖点</button>
+    </div>
+    <input type="hidden" name="detail_features_count" id="detailFeaturesCount" value="{{ feature_items|length }}">
+    <div id="detailFeaturesList">
+      {% for feature in feature_items %}
+      <div class="border rounded p-2 mb-2 detail-feature-item" data-feature-index="{{ loop.index0 }}">
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <span class="small fw-semibold">规格 {{ loop.index }}</span>
-          <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.dataset-spec-item').remove();reindexDatasetSpecs()">删除</button>
+          <span class="small fw-semibold">卖点 {{ loop.index }}</span>
+          <button type="button" class="ds-danger-icon" onclick="this.closest('.detail-feature-item').remove();reindexDetailFeatures()" title="删除卖点" aria-label="删除卖点">{{ ds_icon('trash') }}</button>
         </div>
         <div class="row g-2">
-          <div class="col-6"><input type="text" class="form-control form-control-sm" name="specs_{{ loop.index0 }}_name" value="{{ spec.name if spec is mapping else '' }}" placeholder="参数名"></div>
-          <div class="col-6"><input type="text" class="form-control form-control-sm" name="specs_{{ loop.index0 }}_value" value="{{ spec.value if spec is mapping else '' }}" placeholder="参数值"></div>
+          <div class="col-3">
+            {% if icon_list %}
+              <select class="form-select form-select-sm detail-feature-icon-select" name="detail_features_{{ loop.index0 }}_icon">
+                <option value="">选择图标</option>
+                {% for icon_name in icon_list %}
+                <option value="{{ icon_name }}"{% if feature is mapping and feature.icon == icon_name %} selected{% endif %}>{{ icon_name }}</option>
+                {% endfor %}
+              </select>
+            {% else %}
+              <input type="text" class="form-control form-control-sm" name="detail_features_{{ loop.index0 }}_icon" value="{{ feature.icon if feature is mapping else '' }}" placeholder="图标/短标">
+            {% endif %}
+          </div>
+          <div class="col-3"><input type="text" class="form-control form-control-sm" name="detail_features_{{ loop.index0 }}_title" value="{{ feature.title if feature is mapping else '' }}" placeholder="标题"></div>
+          <div class="col-6"><input type="text" class="form-control form-control-sm" name="detail_features_{{ loop.index0 }}_text" value="{{ feature.text or feature.description if feature is mapping else '' }}" placeholder="说明"></div>
         </div>
       </div>
       {% endfor %}
     </div>
   </div>
 
-  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="link" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('link') %}display:none{% endif %}">
-    <div class="small fw-semibold mb-2">链接</div>
-    <div class="mb-2">
-      <label class="form-label small mb-1 text-muted">链接文字</label>
-      <input type="text" class="form-control form-control-sm" name="link_text" value="{{ edit_item.link_text or edit_item.button_text or '' }}">
+  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="detail_files" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_files') %}display:none{% endif %}">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="small fw-semibold">资料下载</div>
+      <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailFile()">+ 添加资料</button>
     </div>
-    <div>
-      <label class="form-label small mb-1 text-muted">链接地址</label>
-      <input type="text" class="form-control form-control-sm" name="link_url" value="{{ edit_item.link_url or edit_item.button_url or edit_item.download_url or '' }}">
+    <input type="hidden" name="detail_files_count" id="detailFilesCount" value="{{ file_items|length }}">
+    <div id="detailFilesList">
+      {% for file in file_items %}
+      <div class="border rounded p-2 mb-2 detail-file-edit-item" data-file-index="{{ loop.index0 }}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="small fw-semibold">资料 {{ loop.index }}</span>
+          <button type="button" class="ds-danger-icon" onclick="this.closest('.detail-file-edit-item').remove();reindexDetailFiles()" title="删除资料" aria-label="删除资料">{{ ds_icon('trash') }}</button>
+        </div>
+        <div class="row g-2">
+          <div class="col-3"><input type="text" class="form-control form-control-sm" name="detail_files_{{ loop.index0 }}_title" value="{{ file.title or file.name if file is mapping else '' }}" placeholder="资料名称"></div>
+          <div class="col-4"><input type="text" class="form-control form-control-sm" name="detail_files_{{ loop.index0 }}_url" value="{{ file.url or file.file or file.href if file is mapping else '' }}" placeholder="文件 URL"></div>
+          <div class="col-3"><input type="text" class="form-control form-control-sm" name="detail_files_{{ loop.index0 }}_desc" value="{{ file.desc or file.description if file is mapping else '' }}" placeholder="说明"></div>
+          <div class="col-2"><input type="text" class="form-control form-control-sm" name="detail_files_{{ loop.index0 }}_type" value="{{ file.type or file.size if file is mapping else '' }}" placeholder="类型/大小"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="detail_faqs" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_faqs') %}display:none{% endif %}">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="small fw-semibold">FAQ 问答</div>
+      <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailFaq()">+ 添加问答</button>
+    </div>
+    <input type="hidden" name="detail_faqs_count" id="detailFaqsCount" value="{{ faq_items|length }}">
+    <div id="detailFaqsList">
+      {% for faq in faq_items %}
+      <div class="border rounded p-2 mb-2 detail-faq-edit-item" data-faq-index="{{ loop.index0 }}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="small fw-semibold">问答 {{ loop.index }}</span>
+          <button type="button" class="ds-danger-icon" onclick="this.closest('.detail-faq-edit-item').remove();reindexDetailFaqs()" title="删除问答" aria-label="删除问答">{{ ds_icon('trash') }}</button>
+        </div>
+        <input type="text" class="form-control form-control-sm mb-2" name="detail_faqs_{{ loop.index0 }}_question" value="{{ faq.question or faq.q if faq is mapping else '' }}" placeholder="问题">
+        <textarea class="form-control form-control-sm" name="detail_faqs_{{ loop.index0 }}_answer" rows="2" placeholder="回答">{{ faq.answer or faq.a if faq is mapping else '' }}</textarea>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="detail_content_blocks" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_content_blocks') %}display:none{% endif %}">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="small fw-semibold">正文</div>
+      <div class="d-flex gap-1 flex-wrap">
+        {% for t, label in [('text','文本'),('image','图片'),('video','视频'),('media_text','图文'),('gallery','多图'),('table','表格'),('heading','标题'),('note','提示'),('embed','嵌入')] %}
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailContentBlock('{{ t }}')">+ {{ label }}</button>
+        {% endfor %}
+      </div>
+    </div>
+    <input type="hidden" name="detail_content_blocks_count" id="detailContentBlocksCount" value="{{ content_block_items|length }}">
+    <div id="detailContentBlocksList" class="detail-content-block-editor">
+      {% for block in content_block_items %}
+      {% set block_type = block.type or 'text' %}
+      {% set block_image = block.image or block.url or '' %}
+      {% set block_video = block.video or block.video_url or '' %}
+      {% set block_images = block.images if block.images is iterable and block.images is not string else [] %}
+      <div class="detail-content-block-item" data-content-block-index="{{ loop.index0 }}" data-block-type="{{ block_type }}">
+        <div class="detail-content-block-side">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="small fw-semibold">内容块 {{ loop.index }}</span>
+            <button type="button" class="ds-danger-icon" onclick="this.closest('.detail-content-block-item').remove();reindexDetailContentBlocks()" title="删除内容块" aria-label="删除内容块">{{ ds_icon('trash') }}</button>
+          </div>
+          <select class="form-select form-select-sm detail-content-type-select" name="detail_content_blocks_{{ loop.index0 }}_type" onchange="updateDetailContentBlockType(this)">
+            {% for t, label in [('text','文本'),('image','图片'),('video','视频'),('media_text','图文'),('gallery','多图'),('table','表格'),('heading','标题'),('note','提示'),('embed','嵌入')] %}
+            <option value="{{ t }}"{% if block_type == t %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <div class="detail-content-layout-wrap">
+            <select class="form-select form-select-sm detail-content-layout-field" name="detail_content_blocks_{{ loop.index0 }}_layout" data-no-segmented="1">
+              <option value="image_left"{% if (block.layout or 'image_left') == 'image_left' %} selected{% endif %}>左图右文</option>
+              <option value="image_right"{% if block.layout == 'image_right' %} selected{% endif %}>右图左文</option>
+            </select>
+          </div>
+        </div>
+        <div class="detail-content-block-main">
+          <input type="text" class="form-control form-control-sm" name="detail_content_blocks_{{ loop.index0 }}_title" value="{{ block.title or '' }}" placeholder="标题，可选">
+          <textarea class="form-control form-control-sm detail-content-textarea-field" name="detail_content_blocks_{{ loop.index0 }}_text" rows="3" placeholder="文字内容">{{ block.text or block.body or block.description or '' }}</textarea>
+          <div class="detail-content-media-fields detail-content-image-fields module-media-field">
+            <label class="form-label small mb-1 text-muted">图片</label>
+            <div class="module-media-tools mt-1 mb-2">
+              <label class="module-media-picker{% if block_image %} has-media{% endif %}" title="点击上传">
+                {% if block_image %}
+                <img src="{{ block_image }}" alt="{{ block.alt or block.title or edit_item.title or edit_item.name or '' }}" loading="lazy">
+                <button type="button" class="module-media-preview-icon" onclick="event.preventDefault();event.stopPropagation();enlargeImage(this.closest('.module-media-picker').querySelector('img,video'))" title="预览" aria-label="预览"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                <button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                {% else %}
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                {% endif %}
+                <input type="file" name="detail_content_blocks_{{ loop.index0 }}_image_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none">
+              </label>
+            </div>
+            <div class="module-media-url-row mb-1">
+              <input type="text" class="form-control form-control-sm" name="detail_content_blocks_{{ loop.index0 }}_image" value="{{ block_image }}" placeholder="图片 URL" oninput="updateImagePreview(this)">
+              <button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+            </div>
+            <input type="text" class="form-control form-control-sm module-media-alt-input mb-1" name="detail_content_blocks_{{ loop.index0 }}_alt" value="{{ block.alt or '' }}" placeholder="图片 Alt">
+            <input type="text" class="form-control form-control-sm" name="detail_content_blocks_{{ loop.index0 }}_caption" value="{{ block.caption or '' }}" placeholder="说明，可选">
+          </div>
+          <div class="detail-content-media-fields detail-content-video-fields module-media-field">
+            <label class="form-label small mb-1 text-muted">视频</label>
+            <div class="module-media-tools mt-1 mb-2">
+              <label class="module-media-picker{% if block_video %} has-media{% endif %}" title="点击上传">
+                {% if block_video %}
+                <video src="{{ block_video }}" muted playsinline preload="metadata"></video>
+                <button type="button" class="module-media-preview-icon" onclick="event.preventDefault();event.stopPropagation();enlargeImage(this.closest('.module-media-picker').querySelector('img,video'))" title="预览" aria-label="预览"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                <button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                {% else %}
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                {% endif %}
+                <input type="file" name="detail_content_blocks_{{ loop.index0 }}_video_file" accept="video/mp4,video/webm,video/ogg,video/quicktime" onchange="handleModuleImageUpload(this)" style="display:none">
+              </label>
+            </div>
+            <div class="module-media-url-row mb-1">
+              <input type="text" class="form-control form-control-sm" name="detail_content_blocks_{{ loop.index0 }}_video" value="{{ block_video }}" placeholder="视频 URL" oninput="updateImagePreview(this)">
+              <button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+            </div>
+          </div>
+          <div class="detail-content-gallery-fields">
+            <label class="form-label small mb-1 text-muted">多图</label>
+            {% for gi in range(6) %}
+            {% set g = block_images[gi] if block_images|length > gi and block_images[gi] is mapping else {} %}
+            {% set gallery_image_val = g.image or g.url or '' %}
+            <div class="module-media-field mb-2">
+            <div class="module-media-tools mt-1 mb-2">
+              <label class="module-media-picker{% if gallery_image_val %} has-media{% endif %}" title="点击上传">
+                {% if gallery_image_val %}
+                <img src="{{ gallery_image_val }}" alt="{{ g.alt or g.caption or block.title or edit_item.title or edit_item.name or '' }}" loading="lazy">
+                <button type="button" class="module-media-preview-icon" onclick="event.preventDefault();event.stopPropagation();enlargeImage(this.closest('.module-media-picker').querySelector('img,video'))" title="预览" aria-label="预览"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                <button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                {% else %}
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                {% endif %}
+                <input type="file" name="detail_content_blocks_{{ loop.index0 }}_gallery_{{ gi }}_image_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none">
+              </label>
+            </div>
+            <div class="module-media-url-row mb-1">
+              <input type="text" class="form-control form-control-sm" name="detail_content_blocks_{{ loop.index0 }}_gallery_{{ gi }}_image" value="{{ gallery_image_val }}" placeholder="图片 {{ gi + 1 }} URL" oninput="updateImagePreview(this)">
+              <button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+            </div>
+            <input type="text" class="form-control form-control-sm mb-2" name="detail_content_blocks_{{ loop.index0 }}_gallery_{{ gi }}_caption" value="{{ g.caption or '' }}" placeholder="图片 {{ gi + 1 }} 说明，可选">
+            </div>
+            {% endfor %}
+          </div>
+          <div class="detail-content-table-fields">
+            {% set table_rows_value = block.table_rows or 4 %}
+            {% set table_cols_value = block.table_cols or 4 %}
+            <input type="hidden" class="detail-content-table-rows-input" name="detail_content_blocks_{{ loop.index0 }}_table_rows" value="{{ table_rows_value }}">
+            <input type="hidden" class="detail-content-table-cols-input" name="detail_content_blocks_{{ loop.index0 }}_table_cols" value="{{ table_cols_value }}">
+            <textarea class="detail-content-table-raw" name="detail_content_blocks_{{ loop.index0 }}_table_text" hidden>{{ block.table_text or '' }}</textarea>
+            <div class="detail-content-table-tools">
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailContentTableRow(this)">+ 行</button>
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailContentTableCol(this)">+ 列</button>
+              <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDetailContentTableRow(this)">- 行</button>
+              <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDetailContentTableCol(this)">- 列</button>
+            </div>
+            <div class="detail-content-table-grid" data-rows="{{ table_rows_value }}" data-cols="{{ table_cols_value }}">
+              {% for tr in range(table_rows_value|int) %}
+              <div class="detail-content-table-row" style="grid-template-columns:repeat({{ table_cols_value }}, minmax(96px, 1fr))">
+                {% for tc in range(table_cols_value|int) %}
+                {% set cell = block.table[tr][tc] if block.table is iterable and block.table is not string and block.table|length > tr and block.table[tr] is iterable and block.table[tr] is not string and block.table[tr]|length > tc else '' %}
+                <input type="text" class="form-control form-control-sm" name="detail_content_blocks_{{ loop.index0 }}_table_{{ tr }}_{{ tc }}" value="{{ cell }}" placeholder="单元格">
+                {% endfor %}
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="detail-content-note-fields">
+            <select class="form-select form-select-sm" name="detail_content_blocks_{{ loop.index0 }}_note_style">
+              {% for s, label in [('info','信息'),('success','成功'),('warning','警告'),('danger','危险')] %}
+              <option value="{{ s }}"{% if (block.style or 'info') == s %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="detail-content-embed-fields">
+            <input type="text" class="form-control form-control-sm" name="detail_content_blocks_{{ loop.index0 }}_embed_url" value="{{ block.embed_url or '' }}" placeholder="嵌入 iframe URL">
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="detail_related" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_related') %}display:none{% endif %}">
+    <div class="small fw-semibold mb-2">相关推荐</div>
+    <div class="text-muted small detail-section-note">
+      相关推荐由模板组件自动生成，不需要在单条数据中单独录入内容。推荐依据、显示数量和样式请在“详情模板”的相关推荐组件中配置。
+    </div>
+  </div>
+
+  {% set current_table_count = namespace(value=0) %}
+  {% set max_table_count = namespace(value=0) %}
+  {% set max_table_rows = namespace(value=1) %}
+  {% set max_table_cols = namespace(value=1) %}
+  {% for tpl in detail_templates | default([]) %}
+    {% set tpl_id_tmp = tpl.id | default(tpl.get('id')) %}
+    {% set table_count = namespace(value=0) %}
+    {% for mod in tpl.modules | default(tpl.get('modules', [])) %}
+      {% if mod.type | default(mod.get('type')) == 'detail_table' %}
+        {% set table_count.value = table_count.value + 1 %}
+        {% set mod_data = mod.data | default(mod.get('data', {})) %}
+        {% set rows_tmp = (mod_data.table_rows | default(mod_data.get('table_rows', 3))) | int %}
+        {% set cols_tmp = (mod_data.table_cols | default(mod_data.get('table_cols', 2))) | int %}
+        {% if rows_tmp > max_table_rows.value %}{% set max_table_rows.value = rows_tmp %}{% endif %}
+        {% if cols_tmp > max_table_cols.value %}{% set max_table_cols.value = cols_tmp %}{% endif %}
+      {% endif %}
+    {% endfor %}
+    {% if tpl_id_tmp == current_template_id %}{% set current_table_count.value = table_count.value %}{% endif %}
+    {% if table_count.value > max_table_count.value %}{% set max_table_count.value = table_count.value %}{% endif %}
+  {% endfor %}
+  {% set saved_detail_tables = edit_item.detail_tables if edit_item.detail_tables is iterable and edit_item.detail_tables is not string else [] %}
+  <div class="p-2 rounded mb-2 detail-field-section detail-multi-section" data-field-section="detail_tables" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_tables') %}display:none{% endif %}">
+    <div class="small fw-semibold mb-2">详情表格</div>
+    <input type="hidden" name="detail_tables_count" id="detailTablesCount" value="{{ current_table_count.value }}">
+    <div id="detailTablesList">
+      {% for table_i in range(max_table_count.value or 1) %}
+        {% set table_item = saved_detail_tables[table_i] if saved_detail_tables|length > table_i and saved_detail_tables[table_i] is mapping else {} %}
+        {% set table_rows_saved = table_item.rows if table_item.rows is iterable and table_item.rows is not string else [] %}
+        <div class="border rounded p-2 detail-table-item" data-table-index="{{ table_i }}" style="{% if table_i >= current_table_count.value %}display:none{% endif %}">
+          <div class="small fw-semibold mb-2">表格 {{ table_i + 1 }}</div>
+          <input type="hidden" name="detail_tables_{{ table_i }}_rows" class="detail-table-row-count" value="{{ max_table_rows.value }}">
+          <input type="hidden" name="detail_tables_{{ table_i }}_cols" class="detail-table-col-count" value="{{ max_table_cols.value }}">
+          <div class="detail-table-input-grid">
+            {% for row_i in range(max_table_rows.value or 1) %}
+              {% set row_item = table_rows_saved[row_i] if table_rows_saved|length > row_i and table_rows_saved[row_i] is mapping else {} %}
+              {% set cells_saved = row_item.cells if row_item.cells is iterable and row_item.cells is not string else [] %}
+              <div class="detail-table-row" data-row-index="{{ row_i }}">
+                {% for col_i in range(max_table_cols.value or 1) %}
+                  {% set cell_item = cells_saved[col_i] if cells_saved|length > col_i and cells_saved[col_i] is mapping else {} %}
+                  <div class="detail-table-cell" data-col-index="{{ col_i }}">
+                    <input type="text" class="form-control form-control-sm detail-table-cell-text" name="detail_tables_{{ table_i }}_r{{ row_i }}_c{{ col_i }}_text" value="{{ cell_item.text or '' }}" placeholder="第 {{ row_i + 1 }} 行第 {{ col_i + 1 }} 列文字">
+                    <input type="text" class="form-control form-control-sm detail-table-cell-url" name="detail_tables_{{ table_i }}_r{{ row_i }}_c{{ col_i }}_url" value="{{ cell_item.url or '' }}" placeholder="链接 URL，可选">
+                  </div>
+                {% endfor %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% set current_link_count = namespace(value=0) %}
+  {% set max_link_count = namespace(value=0) %}
+  {% for tpl in detail_templates | default([]) %}
+    {% set tpl_id_tmp = tpl.id | default(tpl.get('id')) %}
+    {% set link_count = namespace(value=0) %}
+    {% for mod in tpl.modules | default(tpl.get('modules', [])) %}
+      {% if mod.type | default(mod.get('type')) == 'detail_link' %}
+        {% set link_count.value = link_count.value + 1 %}
+      {% endif %}
+    {% endfor %}
+    {% if tpl_id_tmp == current_template_id %}{% set current_link_count.value = link_count.value %}{% endif %}
+    {% if link_count.value > max_link_count.value %}{% set max_link_count.value = link_count.value %}{% endif %}
+  {% endfor %}
+  {% set saved_detail_links = edit_item.detail_links if edit_item.detail_links is iterable and edit_item.detail_links is not string else [] %}
+  <div class="p-2 rounded mb-2 detail-field-section detail-multi-section" data-field-section="link" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('link') %}display:none{% endif %}">
+    <div class="small fw-semibold mb-2">链接</div>
+    <input type="hidden" name="detail_links_count" id="detailLinksCount" value="{{ current_link_count.value }}">
+    <div id="detailLinksList">
+      {% for i in range(max_link_count.value or 1) %}
+      {% set link_item = saved_detail_links[i] if saved_detail_links|length > i and saved_detail_links[i] is mapping else {} %}
+      <div class="border rounded p-2 detail-link-item" data-link-index="{{ i }}" style="{% if i >= current_link_count.value %}display:none{% endif %}">
+        <div class="small fw-semibold mb-2">链接 {{ i + 1 }}</div>
+        <div class="mb-2">
+          <label class="form-label small mb-1 text-muted">链接文字</label>
+          <input type="text" class="form-control form-control-sm" name="detail_links_{{ i }}_text" value="{{ link_item.text or link_item.label or (edit_item.link_text or edit_item.button_text or '') if i == 0 else '' }}">
+        </div>
+        <div>
+          <label class="form-label small mb-1 text-muted">链接地址</label>
+          <input type="text" class="form-control form-control-sm" name="detail_links_{{ i }}_url" value="{{ link_item.url or link_item.link_url or (edit_item.link_url or edit_item.button_url or edit_item.download_url or '') if i == 0 else '' }}">
+        </div>
+      </div>
+      {% endfor %}
     </div>
   </div>
 
@@ -215,13 +830,20 @@
     <textarea class="form-control form-control-sm mb-2" name="seo_description" rows="2" placeholder="SEO 描述，不填则使用模板规则">{{ edit_item.seo_description or '' }}</textarea>
     <input type="text" class="form-control form-control-sm" name="seo_image" value="{{ edit_item.seo_image or '' }}" placeholder="SEO 图片字段或 URL">
   </div>
+  </div>
 
   {% set detail_btn_raw = edit_item.get('show_detail_btn') %}
   {% set detail_btn_mode = 'inherit' if detail_btn_raw is none else ('true' if detail_btn_raw is sameas true or (detail_btn_raw|string|lower) == 'true' else 'false') %}
-  <div class="dataset-detail-button-field">
-    <div class="dataset-detail-button-row">
-      <label class="form-label small text-muted">列表卡片按钮</label>
-      <div class="dataset-detail-button-options" role="radiogroup" aria-label="列表卡片按钮">
+  <div class="ds-card ds-side-card">
+    <div class="ds-card-head">
+      <div class="ds-card-title">列表展示</div>
+    </div>
+    <div class="ds-card-body ds-setting-row">
+      <div class="ds-setting-copy">
+        <div class="ds-setting-title">列表卡片按钮</div>
+        <div class="ds-setting-help">只影响数据列表展示模块中这一条卡片的按钮，不影响详情页内容。</div>
+      </div>
+      <div class="dataset-detail-button-options ds-setting-actions" role="radiogroup" aria-label="列表卡片按钮">
         <label class="seg-radio-option">
           <input type="radio" name="_show_detail_btn_mode" value="inherit"{% if detail_btn_mode == 'inherit' %} checked{% endif %}>
           <span class="seg-radio-dot" aria-hidden="true"></span>
@@ -239,24 +861,35 @@
         </label>
       </div>
     </div>
-    <div class="dataset-detail-button-help">只影响数据列表展示模块中这一条卡片的按钮。</div>
   </div>
-  <div class="mb-2 p-2 rounded" style="background:#f8f9fa;border:1px solid #e9ecef">
-    <div class="d-flex align-items-center justify-content-between gap-2">
-      <div>
-        <div class="small fw-semibold">高级自定义此条详情页</div>
-        <div class="text-muted" style="font-size:12px">只有特殊条目才需要启用。启用后会优先使用此条自己的模块配置。</div>
+  <div class="ds-card ds-side-card">
+    <div class="ds-card-head">
+      <div class="ds-card-title">单条详情覆盖</div>
+    </div>
+    <div class="ds-card-body ds-setting-row">
+      <div class="ds-setting-copy">
+        <div class="ds-setting-title">高级自定义此条详情页</div>
+        <div class="ds-setting-help">
+          {% if has_custom_modules %}
+          当前这条数据正在覆盖详情模板。新建或切换模板不会删除这里的单条覆盖。
+          {% else %}
+          普通数据跟随详情模板；只有这条数据需要特殊排版时才启用单独模块。
+          {% endif %}
+        </div>
       </div>
-      <div class="d-flex gap-1">
+      <div class="ds-setting-actions">
+        <span id="advancedModulesStatus" class="badge text-bg-light border" style="{% if not has_custom_modules %}display:none{% endif %}">{% if has_custom_modules %}已覆盖模板{% else %}已启用，待保存{% endif %}</span>
         {% if has_custom_modules %}
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="enableDatasetAdvancedModules(false)">编辑高级</button>
         <button type="submit" class="btn btn-sm btn-outline-danger" name="_restore_template_modules" value="1" onclick="return confirm('将取消此条详情页的单独自定义，恢复使用详情模板。原内容字段不会删除。继续吗？')">恢复使用模板</button>
+        {% else %}
+        <button type="button" class="btn btn-sm btn-outline-primary" id="enableAdvancedModulesBtn" onclick="enableDatasetAdvancedModules()">启用高级</button>
         {% endif %}
-        <button type="button" class="btn btn-sm btn-outline-primary" onclick="enableDatasetAdvancedModules()">启用高级</button>
       </div>
     </div>
   </div>
 
-  <div id="datasetAdvancedModules" style="{% if not has_custom_modules %}display:none{% endif %}">
+  <div id="datasetAdvancedModules" style="display:none">
     <div class="mb-3">
       <button class="btn btn-outline-primary btn-sm w-100 panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal">
         + 添加模块
@@ -269,12 +902,12 @@
     <input type="hidden" name="module_count" id="moduleCountDs" value="0">
   </div>
   <div class="panel-save-bar">
-    <button type="submit" class="btn btn-primary btn-sm w-100">保存</button>
+    <button type="submit" class="btn btn-primary btn-sm w-100">{{ ds_icon('save') }}保存</button>
   </div>
 </form>
 
 {# JS: 模块选择器交互 #}
-<script src="/static/js/admin_modules.js?v=99"></script>
+<script src="/static/js/admin_modules.js?v=111"></script>
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="iconListDsJson">{{ icon_list | default([]) | tojson }}</script>
@@ -288,6 +921,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   var restoringDatasetModules = true;
   var HAS_CUSTOM_MODULES = {{ 'true' if has_custom_modules else 'false' }};
   var DETAIL_REQUIREMENTS = {{ detail_requirements | default({}) | tojson }};
+  var DETAIL_TEMPLATES = {{ detail_templates | default([]) | tojson }};
   var datasetForm = document.getElementById('datasetEditForm');
   if (datasetForm) {
     datasetForm.addEventListener('submit', function(e) {
@@ -304,22 +938,191 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   var iconList = JSON.parse((document.getElementById('iconListDsJson') || {}).textContent || '[]');
 
   function applyTemplateFieldVisibility() {
+    var checked = datasetForm ? datasetForm.querySelector('input[name="template_id"]:checked') : null;
     var select = document.getElementById('detailTemplateSelect');
-    var tplId = select ? select.value : '';
+    var tplId = checked ? checked.value : (select && select.value ? select.value : '');
     var req = DETAIL_REQUIREMENTS[tplId] || {};
+    var container = document.getElementById('detailFieldSections');
+    var sections = {};
+    var tableItems = Array.prototype.slice.call(document.querySelectorAll('.detail-table-item'));
+    var linkItems = Array.prototype.slice.call(document.querySelectorAll('.detail-link-item'));
+    var specSection = document.querySelector('[data-field-section="specs"]');
     document.querySelectorAll('.detail-field-section').forEach(function(section) {
-      var key = section.getAttribute('data-field-section');
-      if (!key || key === 'media' || key === 'body') {
-        section.style.display = '';
-        return;
+      if (!section.classList.contains('detail-multi-section')) {
+        sections[section.getAttribute('data-field-section')] = section;
       }
-      section.style.display = req[key] ? '' : 'none';
+    });
+    var tpl = DETAIL_TEMPLATES.find(function(item) {
+      return String(item.id || '') === String(tplId);
+    }) || {};
+    var detailLinkConfigs = [];
+    var detailTableConfigs = [];
+    var detailSpecConfigs = [];
+    var order = [];
+    (tpl.modules || []).forEach(function(mod) {
+      var type = mod && mod.type;
+      var data = (mod && mod.data) || {};
+      if (type === 'detail_media' || type === 'item_detail' || type === 'image_carousel') {
+        order.push('media', 'detail_images');
+      } else if (type === 'detail_text' || type === 'text_content') {
+        order.push('body');
+      } else if (type === 'detail_specs') {
+        detailSpecConfigs.push({
+          title: data.title || '',
+          rows: parseInt(data.max_rows || 10, 10) || 10,
+          columns: Math.max(1, Math.min(3, parseInt(data.columns || 1, 10) || 1))
+        });
+        order.push({kind: 'specs', index: detailSpecConfigs.length - 1});
+      } else if (type === 'detail_features') {
+        order.push('detail_features');
+      } else if (type === 'detail_files') {
+        order.push('detail_files');
+      } else if (type === 'detail_faq') {
+        order.push('detail_faqs');
+      } else if (type === 'detail_content_blocks') {
+        order.push('detail_content_blocks');
+      } else if (type === 'detail_related') {
+        order.push('detail_related');
+      } else if (type === 'detail_table') {
+        detailTableConfigs.push({
+          title: data.title || '',
+          rows: parseInt(data.table_rows || 3, 10) || 3,
+          cols: parseInt(data.table_cols || 2, 10) || 2,
+          links: String(data.cell_links || 'optional') !== 'none'
+        });
+        order.push({kind: 'table', index: detailTableConfigs.length - 1});
+      } else if (type === 'detail_link') {
+        detailLinkConfigs.push({
+          title: data.title || '',
+          text: data.text || data.label || ''
+        });
+        order.push({kind: 'link', index: detailLinkConfigs.length - 1});
+      }
+    });
+    ['media', 'detail_images', 'body', 'specs', 'detail_features', 'detail_files', 'detail_faqs', 'detail_content_blocks', 'detail_related', 'seo'].forEach(function(key) {
+      if (order.indexOf(key) === -1) order.push(key);
+    });
+    if (container) {
+      order.forEach(function(entry) {
+        if (typeof entry === 'string') {
+          if (sections[entry]) container.appendChild(sections[entry]);
+        } else if (entry && entry.kind === 'table' && tableItems[entry.index]) {
+          container.appendChild(tableItems[entry.index]);
+        } else if (entry && entry.kind === 'link' && linkItems[entry.index]) {
+          container.appendChild(linkItems[entry.index]);
+        } else if (entry && entry.kind === 'specs' && specSection) {
+          container.appendChild(specSection);
+        }
+      });
+    }
+    Object.keys(sections).forEach(function(key) {
+      if (key === 'media') {
+        sections[key].style.display = req.media === false ? 'none' : '';
+      } else {
+        sections[key].style.display = req[key] ? '' : 'none';
+      }
+    });
+    document.querySelectorAll('.detail-multi-section').forEach(function(section) {
+      section.style.display = 'none';
+    });
+    var linksCountInput = document.getElementById('detailLinksCount');
+    if (linksCountInput) linksCountInput.value = detailLinkConfigs.length;
+    document.querySelectorAll('.detail-link-item').forEach(function(item) {
+      var idx = parseInt(item.getAttribute('data-link-index') || '0', 10);
+      var config = detailLinkConfigs[idx];
+      item.style.display = config ? '' : 'none';
+      if (config) {
+        var titleEl = item.querySelector('.small.fw-semibold');
+        if (titleEl) titleEl.textContent = componentLabel(config.title, '详情链接', idx, detailLinkConfigs.length);
+      }
+    });
+    updateDetailTableFields(detailTableConfigs);
+    updateDetailSpecFields(detailSpecConfigs);
+  }
+
+  function updateDetailSpecFields(configs) {
+    configs = configs || [];
+    var section = document.querySelector('[data-field-section="specs"]');
+    if (section) section.style.display = configs.length ? '' : 'none';
+    var countInput = document.getElementById('detailSpecsCount');
+    if (countInput) countInput.value = configs.length;
+    document.querySelectorAll('.detail-spec-group-item').forEach(function(item) {
+      var idx = parseInt(item.getAttribute('data-spec-group-index') || '0', 10);
+      var config = configs[idx];
+      item.style.display = config ? '' : 'none';
+      if (!config) return;
+      var rowsEl = item.querySelector('.detail-spec-rows');
+      if (rowsEl) rowsEl.setAttribute('data-columns', String(config.columns || 1));
+      var titleEl = item.querySelector(':scope > .d-flex .small.fw-semibold');
+      if (titleEl) titleEl.textContent = componentLabel(config.title, '规格参数', idx, configs.length);
     });
   }
-  var detailTemplateSelect = document.getElementById('detailTemplateSelect');
-  if (detailTemplateSelect) {
-    detailTemplateSelect.addEventListener('change', applyTemplateFieldVisibility);
+  function componentLabel(title, fallback, index, total) {
+    title = String(title || '').trim();
+    if (title) return title;
+    return total > 1 ? fallback + ' ' + (index + 1) : fallback;
+  }
+  function updateDetailTableFields(configs) {
+    var countInput = document.getElementById('detailTablesCount');
+    if (countInput) countInput.value = configs.length;
+    document.querySelectorAll('.detail-table-item').forEach(function(item) {
+      var tableIndex = parseInt(item.getAttribute('data-table-index') || '0', 10);
+      var config = configs[tableIndex];
+      item.style.display = config ? '' : 'none';
+      if (!config) return;
+      var titleEl = item.querySelector('.small.fw-semibold');
+      if (titleEl) titleEl.textContent = componentLabel(config.title, '详情表格', tableIndex, configs.length);
+      var rows = Math.max(1, parseInt(config.rows || 3, 10) || 3);
+      var cols = Math.max(1, parseInt(config.cols || 2, 10) || 2);
+      var rowInput = item.querySelector('.detail-table-row-count');
+      var colInput = item.querySelector('.detail-table-col-count');
+      if (rowInput) rowInput.value = rows;
+      if (colInput) colInput.value = cols;
+      item.querySelectorAll('.detail-table-row').forEach(function(row) {
+        var rowIndex = parseInt(row.getAttribute('data-row-index') || '0', 10);
+        row.style.display = rowIndex < rows ? '' : 'none';
+        row.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))';
+        row.querySelectorAll('.detail-table-cell').forEach(function(cell) {
+          var colIndex = parseInt(cell.getAttribute('data-col-index') || '0', 10);
+          cell.style.display = colIndex < cols ? '' : 'none';
+          var urlInput = cell.querySelector('.detail-table-cell-url');
+          if (urlInput) urlInput.style.display = config.links ? '' : 'none';
+        });
+      });
+    });
+  }
+  var detailTemplateInputs = datasetForm ? datasetForm.querySelectorAll('input[name="template_id"]') : [];
+  if (detailTemplateInputs.length) {
+    detailTemplateInputs.forEach(function(input) {
+      input.addEventListener('change', function() {
+        applyTemplateFieldVisibility();
+        var forceTemplatePreview = document.getElementById('draftForceTemplatePreview');
+        if (forceTemplatePreview) forceTemplatePreview.value = '1';
+        if (typeof scheduleDatasetDraftPreview === 'function') {
+          scheduleDatasetDraftPreview(datasetForm);
+        }
+      });
+    });
     applyTemplateFieldVisibility();
+  } else {
+    var detailTemplateSelect = document.getElementById('detailTemplateSelect');
+    if (detailTemplateSelect) {
+      detailTemplateSelect.addEventListener('change', applyTemplateFieldVisibility);
+      applyTemplateFieldVisibility();
+    }
+  }
+
+  function updateDatasetMediaFields() {
+    var select = datasetForm ? datasetForm.querySelector('[name="media_type"]') : null;
+    var mediaType = select ? (select.value || 'image') : 'image';
+    document.querySelectorAll('.dataset-media-field').forEach(function(field) {
+      field.style.display = field.getAttribute('data-media-kind') === mediaType ? '' : 'none';
+    });
+  }
+  var mediaTypeSelect = datasetForm ? datasetForm.querySelector('[name="media_type"]') : null;
+  if (mediaTypeSelect) {
+    mediaTypeSelect.addEventListener('change', updateDatasetMediaFields);
+    updateDatasetMediaFields();
   }
 
   window.addDatasetDetailImage = function() {
@@ -327,11 +1130,12 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var countEl = document.getElementById('detailGalleryCount');
     if (!list || !countEl) return;
     var next = parseInt(countEl.value || '0', 10);
+    var trashIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>';
     var html = '<div class="border rounded p-2 mb-2 detail-gallery-item" data-gallery-index="' + next + '">' +
-      '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest(&quot;.detail-gallery-item&quot;).remove();reindexDatasetDetailImages()">删除</button></div>' +
-      '<input type="text" class="form-control form-control-sm mb-1" name="detail_gallery_' + next + '_url" placeholder="图片 URL">' +
-      '<input type="text" class="form-control form-control-sm mb-1" name="detail_gallery_' + next + '_url_alt" placeholder="图片说明">' +
-      '<input type="file" class="form-control form-control-sm" name="detail_gallery_' + next + '_url_file" accept="image/*">' +
+      '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 ' + (next + 1) + '</span><button type="button" class="ds-danger-icon" onclick="this.closest(&quot;.detail-gallery-item&quot;).remove();reindexDatasetDetailImages()" title="删除图片" aria-label="删除图片">' + trashIcon + '</button></div>' +
+      '<div class="module-media-tools mt-1 mb-2"><label class="module-media-picker" title="点击上传"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><input type="file" name="detail_gallery_' + next + '_url_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none"></label></div>' +
+      '<div class="module-media-url-row mb-1"><input type="text" class="form-control form-control-sm" name="detail_gallery_' + next + '_url" placeholder="图片 URL 或上传" oninput="updateImagePreview(this)"><button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button></div>' +
+      '<input type="text" class="form-control form-control-sm module-media-alt-input" name="detail_gallery_' + next + '_url_alt" placeholder="图片说明">' +
       '</div>';
     list.insertAdjacentHTML('beforeend', html);
     countEl.value = next + 1;
@@ -351,35 +1155,412 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     });
   };
 
-  window.addDatasetSpec = function() {
-    var list = document.getElementById('datasetSpecsList');
-    var countEl = document.getElementById('datasetSpecsCount');
+  function specSourceLabel(source) {
+    return source === 'parameters' ? '参数' : (source === 'attributes' ? '属性' : '规格');
+  }
+
+  window.addDatasetSpecSource = function(source) {
+    source = source || 'specs';
+    var list = document.getElementById('datasetSpecsList_' + source);
+    var countEl = document.getElementById('datasetSpecsCount_' + source);
     if (!list || !countEl) return;
     var next = parseInt(countEl.value || '0', 10);
+    var label = specSourceLabel(source);
+    var trashIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>';
     var html = '<div class="border rounded p-2 mb-2 dataset-spec-item" data-spec-index="' + next + '">' +
-      '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">规格 ' + (next + 1) + '</span><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest(&quot;.dataset-spec-item&quot;).remove();reindexDatasetSpecs()">删除</button></div>' +
-      '<div class="row g-2"><div class="col-6"><input type="text" class="form-control form-control-sm" name="specs_' + next + '_name" placeholder="参数名"></div>' +
-      '<div class="col-6"><input type="text" class="form-control form-control-sm" name="specs_' + next + '_value" placeholder="参数值"></div></div>' +
+      '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">' + label + ' ' + (next + 1) + '</span><button type="button" class="ds-danger-icon" onclick="this.closest(&quot;.dataset-spec-item&quot;).remove();reindexDatasetSpecsSource(&quot;' + source + '&quot;)" title="删除' + label + '" aria-label="删除' + label + '">' + trashIcon + '</button></div>' +
+      '<div class="row g-2"><div class="col-6"><input type="text" class="form-control form-control-sm" name="' + source + '_' + next + '_name" placeholder="参数名"></div>' +
+      '<div class="col-6"><input type="text" class="form-control form-control-sm" name="' + source + '_' + next + '_value" placeholder="参数值"></div></div>' +
       '</div>';
     list.insertAdjacentHTML('beforeend', html);
     countEl.value = next + 1;
   };
 
-  window.reindexDatasetSpecs = function() {
-    var items = document.querySelectorAll('#datasetSpecsList .dataset-spec-item');
-    var countEl = document.getElementById('datasetSpecsCount');
+  window.addDatasetSpec = function() {
+    window.addDatasetSpecSource('specs');
+  };
+
+  window.reindexDatasetSpecsSource = function(source) {
+    source = source || 'specs';
+    var items = document.querySelectorAll('#datasetSpecsList_' + source + ' .dataset-spec-item');
+    var countEl = document.getElementById('datasetSpecsCount_' + source);
+    var label = specSourceLabel(source);
     if (countEl) countEl.value = items.length;
     items.forEach(function(item, i) {
       item.dataset.specIndex = i;
       var title = item.querySelector('.small.fw-semibold');
-      if (title) title.textContent = '规格 ' + (i + 1);
+      if (title) title.textContent = label + ' ' + (i + 1);
       item.querySelectorAll('input[name]').forEach(function(el) {
-        el.name = el.name.replace(/specs_\d+_/, 'specs_' + i + '_');
+        el.name = el.name.replace(new RegExp(source + '_\\d+_'), source + '_' + i + '_');
+      });
+    });
+  };
+
+  window.reindexDatasetSpecs = function() {
+    window.reindexDatasetSpecsSource('specs');
+  };
+
+  window.addDetailSpecRow = function(groupIndex) {
+    var group = document.querySelector('.detail-spec-group-item[data-spec-group-index="' + groupIndex + '"]');
+    if (!group) return;
+    var list = group.querySelector('.detail-spec-rows');
+    var countEl = group.querySelector('.detail-spec-row-count');
+    if (!list || !countEl) return;
+    var next = parseInt(countEl.value || '0', 10);
+    var trashIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>';
+    var html = '<div class="border rounded p-2 mb-2 dataset-spec-item" data-spec-index="' + next + '">' +
+      '<div class="detail-spec-input-row">' +
+      '<div class="detail-spec-name-field"><input type="text" class="form-control form-control-sm" name="detail_specs_' + groupIndex + '_' + next + '_name" placeholder="参数名"></div>' +
+      '<div class="detail-spec-desc-field"><input type="text" class="form-control form-control-sm" name="detail_specs_' + groupIndex + '_' + next + '_desc" placeholder="说明"></div>' +
+      '<div class="detail-spec-value-field"><input type="text" class="form-control form-control-sm" name="detail_specs_' + groupIndex + '_' + next + '_value" placeholder="参数值"></div>' +
+      '<button type="button" class="ds-danger-icon" onclick="this.closest(&quot;.dataset-spec-item&quot;).remove();reindexDetailSpecRows(' + groupIndex + ')" title="删除参数" aria-label="删除参数">' + trashIcon + '</button></div>' +
+      '</div>';
+    list.insertAdjacentHTML('beforeend', html);
+    countEl.value = next + 1;
+  };
+
+  window.reindexDetailSpecRows = function(groupIndex) {
+    var group = document.querySelector('.detail-spec-group-item[data-spec-group-index="' + groupIndex + '"]');
+    if (!group) return;
+    var items = group.querySelectorAll('.dataset-spec-item');
+    var countEl = group.querySelector('.detail-spec-row-count');
+    if (countEl) countEl.value = items.length;
+    items.forEach(function(item, i) {
+      item.dataset.specIndex = i;
+      var title = item.querySelector('.small.fw-semibold');
+      if (title) title.textContent = '参数 ' + (i + 1);
+      item.querySelectorAll('input[name]').forEach(function(el) {
+        el.name = el.name.replace(/detail_specs_\d+_\d+_/, 'detail_specs_' + groupIndex + '_' + i + '_');
       });
     });
   };
 
   // ===== 设置共享模块上下文 =====
+  function detailTrashButton(itemClass, reindexFn, title) {
+    var trashIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>';
+    return '<button type="button" class="ds-danger-icon" onclick="this.closest(&quot;.' + itemClass + '&quot;).remove();' + reindexFn + '()" title="' + title + '" aria-label="' + title + '">' + trashIcon + '</button>';
+  }
+
+  window.addDetailFeature = function() {
+    var list = document.getElementById('detailFeaturesList');
+    var countEl = document.getElementById('detailFeaturesCount');
+    if (!list || !countEl) return;
+    var next = parseInt(countEl.value || '0', 10);
+    var iconField = window._iconPickerHtml
+      ? window._iconPickerHtml('detail_features_' + next + '_icon', '')
+      : '<input type="text" class="form-control form-control-sm" name="detail_features_' + next + '_icon" placeholder="图标/短标">';
+    var html = '<div class="border rounded p-2 mb-2 detail-feature-item" data-feature-index="' + next + '">' +
+      '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">卖点 ' + (next + 1) + '</span>' + detailTrashButton('detail-feature-item', 'reindexDetailFeatures', '删除卖点') + '</div>' +
+      '<div class="row g-2"><div class="col-3">' + iconField + '</div>' +
+      '<div class="col-3"><input type="text" class="form-control form-control-sm" name="detail_features_' + next + '_title" placeholder="标题"></div>' +
+      '<div class="col-6"><input type="text" class="form-control form-control-sm" name="detail_features_' + next + '_text" placeholder="说明"></div></div></div>';
+    list.insertAdjacentHTML('beforeend', html);
+    countEl.value = next + 1;
+  };
+
+  function enhanceDetailFeatureIconPickers(root) {
+    if (!window._iconPickerHtml) return;
+    (root || document).querySelectorAll('.detail-feature-icon-select').forEach(function(select) {
+      if (select.dataset.iconEnhanced === '1') return;
+      var name = select.getAttribute('name') || '';
+      var value = select.value || '';
+      var wrap = document.createElement('div');
+      wrap.innerHTML = window._iconPickerHtml(name, value);
+      select.replaceWith(wrap.firstElementChild);
+    });
+  }
+  window._enhanceDetailFeatureIconPickers = enhanceDetailFeatureIconPickers;
+
+  window.reindexDetailFeatures = function() {
+    var items = document.querySelectorAll('#detailFeaturesList .detail-feature-item');
+    var countEl = document.getElementById('detailFeaturesCount');
+    if (countEl) countEl.value = items.length;
+    items.forEach(function(item, i) {
+      item.dataset.featureIndex = i;
+      var title = item.querySelector('.small.fw-semibold');
+      if (title) title.textContent = '卖点 ' + (i + 1);
+      item.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el) {
+        el.name = el.name.replace(/detail_features_\d+_/, 'detail_features_' + i + '_');
+      });
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      enhanceDetailFeatureIconPickers(document);
+    });
+  } else {
+    enhanceDetailFeatureIconPickers(document);
+  }
+
+  window.addDetailFile = function() {
+    var list = document.getElementById('detailFilesList');
+    var countEl = document.getElementById('detailFilesCount');
+    if (!list || !countEl) return;
+    var next = parseInt(countEl.value || '0', 10);
+    var html = '<div class="border rounded p-2 mb-2 detail-file-edit-item" data-file-index="' + next + '">' +
+      '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">资料 ' + (next + 1) + '</span>' + detailTrashButton('detail-file-edit-item', 'reindexDetailFiles', '删除资料') + '</div>' +
+      '<div class="row g-2"><div class="col-3"><input type="text" class="form-control form-control-sm" name="detail_files_' + next + '_title" placeholder="资料名称"></div>' +
+      '<div class="col-4"><input type="text" class="form-control form-control-sm" name="detail_files_' + next + '_url" placeholder="文件 URL"></div>' +
+      '<div class="col-3"><input type="text" class="form-control form-control-sm" name="detail_files_' + next + '_desc" placeholder="说明"></div>' +
+      '<div class="col-2"><input type="text" class="form-control form-control-sm" name="detail_files_' + next + '_type" placeholder="类型/大小"></div></div></div>';
+    list.insertAdjacentHTML('beforeend', html);
+    countEl.value = next + 1;
+  };
+
+  window.reindexDetailFiles = function() {
+    var items = document.querySelectorAll('#detailFilesList .detail-file-edit-item');
+    var countEl = document.getElementById('detailFilesCount');
+    if (countEl) countEl.value = items.length;
+    items.forEach(function(item, i) {
+      item.dataset.fileIndex = i;
+      var title = item.querySelector('.small.fw-semibold');
+      if (title) title.textContent = '资料 ' + (i + 1);
+      item.querySelectorAll('input[name]').forEach(function(el) {
+        el.name = el.name.replace(/detail_files_\d+_/, 'detail_files_' + i + '_');
+      });
+    });
+  };
+
+  window.addDetailFaq = function() {
+    var list = document.getElementById('detailFaqsList');
+    var countEl = document.getElementById('detailFaqsCount');
+    if (!list || !countEl) return;
+    var next = parseInt(countEl.value || '0', 10);
+    var html = '<div class="border rounded p-2 mb-2 detail-faq-edit-item" data-faq-index="' + next + '">' +
+      '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">问答 ' + (next + 1) + '</span>' + detailTrashButton('detail-faq-edit-item', 'reindexDetailFaqs', '删除问答') + '</div>' +
+      '<input type="text" class="form-control form-control-sm mb-2" name="detail_faqs_' + next + '_question" placeholder="问题">' +
+      '<textarea class="form-control form-control-sm" name="detail_faqs_' + next + '_answer" rows="2" placeholder="回答"></textarea></div>';
+    list.insertAdjacentHTML('beforeend', html);
+    countEl.value = next + 1;
+  };
+
+  window.reindexDetailFaqs = function() {
+    var items = document.querySelectorAll('#detailFaqsList .detail-faq-edit-item');
+    var countEl = document.getElementById('detailFaqsCount');
+    if (countEl) countEl.value = items.length;
+    items.forEach(function(item, i) {
+      item.dataset.faqIndex = i;
+      var title = item.querySelector('.small.fw-semibold');
+      if (title) title.textContent = '问答 ' + (i + 1);
+      item.querySelectorAll('input[name], textarea[name]').forEach(function(el) {
+        el.name = el.name.replace(/detail_faqs_\d+_/, 'detail_faqs_' + i + '_');
+      });
+    });
+  };
+
+  function detailContentTypeOptions(type) {
+    var types = [['text','文本'],['image','图片'],['video','视频'],['media_text','图文'],['gallery','多图'],['table','表格'],['heading','标题'],['note','提示'],['embed','嵌入']];
+    return types.map(function(pair) {
+      return '<option value="' + pair[0] + '"' + (type === pair[0] ? ' selected' : '') + '>' + pair[1] + '</option>';
+    }).join('');
+  }
+
+  function mediaLibraryButton() {
+    return '<button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>';
+  }
+  function detailContentPicker(fileName, accept, icon) {
+    return '<div class="module-media-tools mt-1 mb-2"><label class="module-media-picker" title="点击上传">' +
+      icon + '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
+      '</label></div>';
+  }
+  function detailContentImagePicker(fileName) {
+    return detailContentPicker(fileName, 'image/*,.svg,.svgz', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>');
+  }
+  function detailContentVideoPicker(fileName) {
+    return detailContentPicker(fileName, 'video/mp4,video/webm,video/ogg,video/quicktime', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>');
+  }
+  function detailContentTableGrid(base, rows, cols) {
+    rows = rows || 4;
+    cols = cols || 4;
+    var html = '<input type="hidden" class="detail-content-table-rows-input" name="' + base + '_table_rows" value="' + rows + '">' +
+      '<input type="hidden" class="detail-content-table-cols-input" name="' + base + '_table_cols" value="' + cols + '">' +
+      '<textarea class="detail-content-table-raw" name="' + base + '_table_text" hidden></textarea>' +
+      '<div class="detail-content-table-tools"><button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailContentTableRow(this)">+ 行</button><button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailContentTableCol(this)">+ 列</button><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDetailContentTableRow(this)">- 行</button><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDetailContentTableCol(this)">- 列</button></div>' +
+      '<div class="detail-content-table-grid" data-rows="' + rows + '" data-cols="' + cols + '">';
+    for (var r = 0; r < rows; r++) {
+      html += '<div class="detail-content-table-row" style="grid-template-columns:repeat(' + cols + ', minmax(96px, 1fr))">';
+      for (var c = 0; c < cols; c++) {
+        html += '<input type="text" class="form-control form-control-sm" name="' + base + '_table_' + r + '_' + c + '" placeholder="单元格">';
+      }
+      html += '</div>';
+    }
+    return html + '</div>';
+  }
+
+  window.updateDetailContentBlockType = function(select) {
+    var item = select.closest('.detail-content-block-item');
+    if (!item) return;
+    item.setAttribute('data-block-type', select.value || 'text');
+    syncDetailContentLayoutVisibility(item);
+  };
+
+  function syncDetailContentLayoutVisibility(item) {
+    var isMediaText = item && item.getAttribute('data-block-type') === 'media_text';
+    if (!item) return;
+    item.querySelectorAll('.detail-content-layout-field').forEach(function(field) {
+      field.disabled = !isMediaText;
+    });
+  }
+
+  if (datasetForm) {
+    ['click', 'change'].forEach(function(eventName) {
+      document.addEventListener(eventName, function(e) {
+        var target = e.target;
+        if (!target || !target.closest) return;
+        var wrap = target.closest('.detail-content-layout-wrap');
+        var labelInput = target.closest('label') ? target.closest('label').querySelector('[name]') : null;
+        var fieldName = target.name || (labelInput && labelInput.name) || '';
+        var isLayoutField = /^detail_content_blocks_\d+_layout$/.test(fieldName);
+        if ((!wrap || !datasetForm.contains(wrap)) && !(isLayoutField && datasetForm.contains(target))) return;
+        e.stopPropagation();
+        if (eventName === 'change') {
+          datasetForm.dataset.panelGuard = '1';
+          datasetForm.dataset.panelDirty = '1';
+        }
+      }, true);
+    });
+  }
+
+  window.addDetailContentBlock = function(type) {
+    var list = document.getElementById('detailContentBlocksList');
+    var countEl = document.getElementById('detailContentBlocksCount');
+    if (!list || !countEl) return;
+    var next = parseInt(countEl.value || '0', 10);
+    type = type || 'text';
+    var base = 'detail_content_blocks_' + next;
+    var gallery = '';
+    for (var gi = 0; gi < 6; gi++) {
+      gallery += '<div class="module-media-field mb-2">' +
+        detailContentImagePicker(base + '_gallery_' + gi + '_image_file') +
+        '<div class="module-media-url-row mb-1"><input type="text" class="form-control form-control-sm" name="' + base + '_gallery_' + gi + '_image" placeholder="图片 ' + (gi + 1) + ' URL" oninput="updateImagePreview(this)">' + mediaLibraryButton() + '</div>' +
+        '<input type="text" class="form-control form-control-sm mb-2" name="' + base + '_gallery_' + gi + '_caption" placeholder="图片 ' + (gi + 1) + ' 说明，可选">' +
+        '</div>';
+    }
+    var html = '<div class="detail-content-block-item" data-content-block-index="' + next + '" data-block-type="' + type + '">' +
+      '<div class="detail-content-block-side">' +
+        '<div class="d-flex justify-content-between align-items-center"><span class="small fw-semibold">内容块 ' + (next + 1) + '</span>' + detailTrashButton('detail-content-block-item', 'reindexDetailContentBlocks', '删除内容块') + '</div>' +
+        '<select class="form-select form-select-sm detail-content-type-select" name="' + base + '_type" onchange="updateDetailContentBlockType(this)">' + detailContentTypeOptions(type) + '</select>' +
+        '<div class="detail-content-layout-wrap"><select class="form-select form-select-sm detail-content-layout-field" name="' + base + '_layout" data-no-segmented="1"><option value="image_left">左图右文</option><option value="image_right">右图左文</option></select></div>' +
+      '</div>' +
+      '<div class="detail-content-block-main">' +
+        '<input type="text" class="form-control form-control-sm" name="' + base + '_title" placeholder="标题，可选">' +
+        '<textarea class="form-control form-control-sm detail-content-textarea-field" name="' + base + '_text" rows="3" placeholder="文字内容"></textarea>' +
+        '<div class="detail-content-media-fields detail-content-image-fields module-media-field"><label class="form-label small mb-1 text-muted">图片</label>' + detailContentImagePicker(base + '_image_file') + '<div class="module-media-url-row mb-1"><input type="text" class="form-control form-control-sm" name="' + base + '_image" placeholder="图片 URL" oninput="updateImagePreview(this)">' + mediaLibraryButton() + '</div><input type="text" class="form-control form-control-sm module-media-alt-input mb-1" name="' + base + '_alt" placeholder="图片 Alt"><input type="text" class="form-control form-control-sm" name="' + base + '_caption" placeholder="说明，可选"></div>' +
+        '<div class="detail-content-media-fields detail-content-video-fields module-media-field"><label class="form-label small mb-1 text-muted">视频</label>' + detailContentVideoPicker(base + '_video_file') + '<div class="module-media-url-row mb-1"><input type="text" class="form-control form-control-sm" name="' + base + '_video" placeholder="视频 URL" oninput="updateImagePreview(this)">' + mediaLibraryButton() + '</div></div>' +
+        '<div class="detail-content-gallery-fields"><label class="form-label small mb-1 text-muted">多图</label>' + gallery + '</div>' +
+        '<div class="detail-content-table-fields">' + detailContentTableGrid(base, 4, 4) + '</div>' +
+        '<div class="detail-content-note-fields"><select class="form-select form-select-sm" name="' + base + '_note_style"><option value="info">信息</option><option value="success">成功</option><option value="warning">警告</option><option value="danger">危险</option></select></div>' +
+        '<div class="detail-content-embed-fields"><input type="text" class="form-control form-control-sm" name="' + base + '_embed_url" placeholder="嵌入 iframe URL"></div>' +
+      '</div></div>';
+    list.insertAdjacentHTML('beforeend', html);
+    countEl.value = next + 1;
+    syncDetailContentLayoutVisibility(list.lastElementChild);
+    initDetailContentTables(list.lastElementChild);
+  };
+
+  window.addDetailContentTableRow = function(btn) {
+    var fields = btn.closest('.detail-content-table-fields');
+    if (!fields) return;
+    var grid = fields.querySelector('.detail-content-table-grid');
+    var rowsInput = fields.querySelector('.detail-content-table-rows-input');
+    var colsInput = fields.querySelector('.detail-content-table-cols-input');
+    if (!grid || !rowsInput || !colsInput) return;
+    var rows = parseInt(rowsInput.value || grid.dataset.rows || '0', 10) || 0;
+    var cols = parseInt(colsInput.value || grid.dataset.cols || '1', 10) || 1;
+    var item = fields.closest('.detail-content-block-item');
+    var index = item ? parseInt(item.dataset.contentBlockIndex || '0', 10) : 0;
+    var row = document.createElement('div');
+    row.className = 'detail-content-table-row';
+    row.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(96px, 1fr))';
+    for (var c = 0; c < cols; c++) {
+      row.insertAdjacentHTML('beforeend', '<input type="text" class="form-control form-control-sm" name="detail_content_blocks_' + index + '_table_' + rows + '_' + c + '" placeholder="单元格">');
+    }
+    grid.appendChild(row);
+    rowsInput.value = rows + 1;
+    grid.dataset.rows = rows + 1;
+  };
+
+  window.addDetailContentTableCol = function(btn) {
+    var fields = btn.closest('.detail-content-table-fields');
+    if (!fields) return;
+    var grid = fields.querySelector('.detail-content-table-grid');
+    var colsInput = fields.querySelector('.detail-content-table-cols-input');
+    if (!grid || !colsInput) return;
+    var cols = parseInt(colsInput.value || grid.dataset.cols || '0', 10) || 0;
+    var item = fields.closest('.detail-content-block-item');
+    var index = item ? parseInt(item.dataset.contentBlockIndex || '0', 10) : 0;
+    grid.querySelectorAll('.detail-content-table-row').forEach(function(row, r) {
+      row.style.gridTemplateColumns = 'repeat(' + (cols + 1) + ', minmax(96px, 1fr))';
+      row.insertAdjacentHTML('beforeend', '<input type="text" class="form-control form-control-sm" name="detail_content_blocks_' + index + '_table_' + r + '_' + cols + '" placeholder="单元格">');
+    });
+    colsInput.value = cols + 1;
+    grid.dataset.cols = cols + 1;
+  };
+
+  window.removeDetailContentTableRow = function(btn) {
+    var fields = btn.closest('.detail-content-table-fields');
+    if (!fields) return;
+    var grid = fields.querySelector('.detail-content-table-grid');
+    var rowsInput = fields.querySelector('.detail-content-table-rows-input');
+    if (!grid || !rowsInput) return;
+    var rows = Array.prototype.slice.call(grid.querySelectorAll('.detail-content-table-row'));
+    if (rows.length <= 1) return;
+    rows[rows.length - 1].remove();
+    rowsInput.value = rows.length - 1;
+    grid.dataset.rows = rows.length - 1;
+  };
+
+  window.removeDetailContentTableCol = function(btn) {
+    var fields = btn.closest('.detail-content-table-fields');
+    if (!fields) return;
+    var grid = fields.querySelector('.detail-content-table-grid');
+    var colsInput = fields.querySelector('.detail-content-table-cols-input');
+    if (!grid || !colsInput) return;
+    var cols = parseInt(colsInput.value || grid.dataset.cols || '0', 10) || 0;
+    if (cols <= 1) return;
+    grid.querySelectorAll('.detail-content-table-row').forEach(function(row) {
+      var inputs = row.querySelectorAll('input[name]');
+      if (inputs.length > 1) inputs[inputs.length - 1].remove();
+      row.style.gridTemplateColumns = 'repeat(' + (cols - 1) + ', minmax(96px, 1fr))';
+    });
+    colsInput.value = cols - 1;
+    grid.dataset.cols = cols - 1;
+  };
+
+  function initDetailContentTables(root) {
+    root = root || document;
+    root.querySelectorAll('.detail-content-table-fields').forEach(function(fields) {
+      var raw = fields.querySelector('.detail-content-table-raw');
+      var grid = fields.querySelector('.detail-content-table-grid');
+      if (!raw || !grid || !raw.value.trim()) return;
+      var rows = raw.value.split(/\r?\n/).map(function(line) { return line.split('|'); });
+      rows.forEach(function(cells, r) {
+        cells.forEach(function(value, c) {
+          var input = grid.querySelector('input[name$="_table_' + r + '_' + c + '"]');
+          if (input && !input.value) input.value = value.trim();
+        });
+      });
+    });
+  }
+
+  window.reindexDetailContentBlocks = function() {
+    var items = document.querySelectorAll('#detailContentBlocksList .detail-content-block-item');
+    var countEl = document.getElementById('detailContentBlocksCount');
+    if (countEl) countEl.value = items.length;
+    items.forEach(function(item, i) {
+      item.dataset.contentBlockIndex = i;
+      var title = item.querySelector('.small.fw-semibold');
+      if (title) title.textContent = '内容块 ' + (i + 1);
+      item.querySelectorAll('input[name], textarea[name], select[name]').forEach(function(el) {
+        el.name = el.name.replace(/detail_content_blocks_\d+_/, 'detail_content_blocks_' + i + '_');
+      });
+    });
+  };
+  window.setTimeout(function() {
+    initDetailContentTables(document);
+    document.querySelectorAll('#detailContentBlocksList .detail-content-block-item').forEach(syncDetailContentLayoutVisibility);
+  }, 0);
   window._moduleCtx = {
     blockLibrary: blockLibrary,
     datasetNames: [],
@@ -611,11 +1792,14 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   window.enableDatasetAdvancedModules = function(addDefault) {
     var enabled = document.getElementById('advancedModulesEnabled');
     var panel = document.getElementById('datasetAdvancedModules');
+    var button = document.getElementById('enableAdvancedModulesBtn');
+    var status = document.getElementById('advancedModulesStatus');
+    var forceTemplatePreview = document.getElementById('draftForceTemplatePreview');
     if (enabled) enabled.value = '1';
+    if (forceTemplatePreview) forceTemplatePreview.value = '0';
     if (panel) panel.style.display = '';
-    if (addDefault !== false && !document.querySelector('#selectedModulesDs .module-item')) {
-      window.addModuleDs('item_data', 'default');
-    }
+    if (button) button.style.display = 'none';
+    if (status) status.style.display = '';
     if (typeof scheduleDatasetDraftPreview === 'function') {
       scheduleDatasetDraftPreview(document.getElementById('datasetEditForm'));
     }
@@ -632,10 +1816,6 @@ window._dsEditItemJson = {{ edit_item | tojson }};
           console.error('[dataset modules restore] failed', mod && mod.type, err);
         }
       });
-      // 如果没有 item_data，追加一个
-      if (!savedModules.find(function(m) { return m.type === 'item_data'; })) {
-        window.addModuleDs('item_data', 'default');
-      }
     }
   })();
   restoringDatasetModules = false;
@@ -654,7 +1834,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 
 {% elif is_edit and edit_item %}
 {# ========== 编辑模式：简单表单（无 blocks） ========== #}
-<form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" data-page-key="{{ dataset_key }}" enctype="multipart/form-data">
+<form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" data-page-key="{{ dataset_key }}" data-no-auto-save="1" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="_draft_dataset_key" value="{{ dataset_key }}">
   <input type="hidden" name="_draft_item_id" value="{{ edit_item_id }}">
@@ -697,7 +1877,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">标签</label>
     {% set tags_val = edit_item.tags | join(', ') if edit_item.tags is iterable and edit_item.tags is not string else (edit_item.tags or '') %}
-    <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val }}" placeholder="多个用逗号或空格分隔">
+    <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val }}" placeholder="多个标签用逗号分隔，例如：LED, 灯条, 工程案例">
   </div>
   <div class="mb-2"><label class="form-label small mb-1 text-muted">详细介绍</label><textarea class="form-control form-control-sm" name="body" rows="10" style="min-height:200px; font-family:monospace; white-space:pre-wrap;">{{ edit_item.body or edit_item.content or '' }}</textarea></div>
   <div class="dataset-detail-button-field">

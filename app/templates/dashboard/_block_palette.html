@@ -1,4 +1,4 @@
-{# 通用模块选择弹框（左右分栏：左侧类型列表 + 右侧变体预览）
+{# 通用组件选择弹框（左右分栏：左侧类型列表 + 右侧变体预览）
    使用方式：
    1. 引入前设置 blockLibrary JS 变量
    2. 定义 onBlockPaletteConfirm(type, variant) 回调
@@ -9,7 +9,7 @@
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header py-2">
-        <h5 class="modal-title">添加模块</h5>
+        <h5 class="modal-title">添加组件</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body p-0">
@@ -18,7 +18,7 @@
           <div class="variant-preview-panel" id="variantPanel">
             <div class="variant-empty-hint">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-              <span>从左侧选择一个模块类型</span>
+              <span>从左侧选择一个组件类型</span>
             </div>
           </div>
         </div>
@@ -308,7 +308,7 @@
       return {
         type: b.name,
         name: b.display_name || b.name,
-        category: blockCategory(b.name),
+        category: b.category || blockCategory(b.name),
         variants: b.variants || []
       };
     });
@@ -324,6 +324,7 @@
   function categoryLabel(category) {
     return {
       all: '全部',
+      detail: '详情',
       content: '内容',
       data: '数据',
       conversion: '转化',

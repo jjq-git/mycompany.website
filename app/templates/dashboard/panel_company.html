@@ -54,7 +54,7 @@
             {% endif %}
             <input type="file" name="company_logo_file" accept="image/*,.svg,.svgz" onchange="handleCompanyMediaUpload(this)" style="display:none">
             {% if current_logo %}
-            <button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearCompanyMedia(this)" title="删除后重新上传">×</button>
+            <button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearCompanyMedia(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             {% endif %}
           </label>
         </div>
@@ -80,7 +80,7 @@
             {% endif %}
             <input type="file" name="company_favicon_file" accept="image/*,.svg,.svgz,.ico" onchange="handleCompanyMediaUpload(this)" style="display:none">
             {% if current_favicon %}
-            <button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearCompanyMedia(this)" title="删除后重新上传">×</button>
+            <button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearCompanyMedia(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             {% endif %}
           </label>
         </div>
@@ -129,9 +129,11 @@
         <input class="form-control form-control-sm" name="contact.email" value="{{ contact.get('email', '') }}">
       </div>
     </div>
-    <div class="mb-0 d-flex align-items-center gap-2">
-      <label class="form-label small mb-0 text-nowrap">地址</label>
-      <input class="form-control form-control-sm" name="contact.address" value="{{ contact.get('address', '') }}">
+    <div class="row g-2 mb-0">
+      <div class="col-6">
+        <label class="form-label small mb-1">地址</label>
+        <input class="form-control form-control-sm" name="contact.address" value="{{ contact.get('address', '') }}">
+      </div>
     </div>
   </div>
 
@@ -166,7 +168,7 @@ function renderCompanyMediaPicker(picker, src, fileName, accept) {
     ? '<img src="' + safeSrc + '" alt="" onclick="event.stopPropagation();enlargeCompanyMedia(this)">' +
       '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' +
       '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleCompanyMediaUpload(this)" style="display:none">' +
-      '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearCompanyMedia(this)" title="删除后重新上传">×</button>'
+      '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearCompanyMedia(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
     : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>' +
       '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleCompanyMediaUpload(this)" style="display:none">';
 
@@ -254,7 +256,7 @@ function openCompanyMediaLibrary(btn) {
     overlay.id = 'moduleMediaLibraryOverlay';
     overlay.className = 'module-media-library-overlay';
     overlay.innerHTML = '<div class="module-media-library-dialog">' +
-      '<div class="module-media-library-head"><strong>选择媒体</strong><button type="button" class="module-media-library-close" title="关闭">×</button></div>' +
+      '<div class="module-media-library-head"><strong>选择媒体</strong><button type="button" class="module-media-library-close" title="关闭"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
       '<div class="module-media-library-grid"><div class="text-muted small p-3">加载中..</div></div>' +
       '</div>';
     document.body.appendChild(overlay);

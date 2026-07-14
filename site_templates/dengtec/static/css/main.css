@@ -5335,7 +5335,7 @@ h6 { font-size: var(--font-size-md); }
 }
 
 .dg-card-image {
-  aspect-ratio: 16/10;
+  aspect-ratio: 1;
   background-size: cover;
   background-position: center;
   background-color: var(--color-bg-secondary, #f5f7fa);
@@ -5444,7 +5444,7 @@ h6 { font-size: var(--font-size-md); }
 }
 /* 折叠态：限制约 2 行高度 */
 .dg-filter-options[data-collapsed="true"] {
-  max-height: 4.25rem;
+  max-height: 75px;
 }
 .dg-filter-options[data-collapsed="false"] {
   max-height: none;
@@ -5453,7 +5453,7 @@ h6 { font-size: var(--font-size-md); }
 .dg-filter-toggle {
   display: none;
   position: absolute;
-  right: 0; bottom: 0;
+  right: 0; bottom: 3px;
   width: 1.65rem; height: 1.65rem;
   border: 1px solid var(--color-border, #e2e8f0);
   border-radius: var(--radius-sm, 4px);
@@ -5618,7 +5618,7 @@ h6 { font-size: var(--font-size-md); }
     flex: auto;                   /* 重置 50% flex-basis */
     width: 100%;
     min-height: 180px;
-    aspect-ratio: 16/10;          /* 恢复默认比例 */
+    aspect-ratio: 1;              /* 正方形 */
   }
   .dg-card--horizontal .dg-card-body,
   .dg-card--horizontal-reverse .dg-card-body {
