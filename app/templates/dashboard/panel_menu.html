@@ -381,19 +381,32 @@
     var h = rect.height;
     var position = y < h * 0.25 ? 'before' : (y > h * 0.75 ? 'after' : 'inside');
 
+    // 先算目标位置再移除源（同父级时 splice 会影响后续索引）
+    var targetContainer, targetParent, targetIndex;
+    if (position === 'inside') {
+      if (!Array.isArray(row._item.children)) row._item.children = [];
+      targetParent = row._item.children;
+      targetIndex = row._item.children.length;
+    } else {
+      targetContainer = row.parentElement;
+      var targetParentRow = targetContainer.closest('.menu-tree-row');
+      targetParent = targetParentRow ? targetParentRow._item.children : initialMenu;
+      targetIndex = rowsIn(targetContainer).indexOf(row);
+      if (position === 'after') targetIndex += 1;
+    }
+
     // 从原位置移除
     var removed = dragSourceParent.splice(dragSourceIndex, 1)[0];
 
+    // 同父级且源在目标之前 → 目标索引需减 1
+    if (position !== 'inside' && dragSourceParent === targetParent && dragSourceIndex < targetIndex) {
+      targetIndex -= 1;
+    }
+
     if (position === 'inside') {
-      if (!Array.isArray(row._item.children)) row._item.children = [];
       row._item.children.push(removed);
       row._item._collapsed = false;
     } else {
-      var targetContainer = row.parentElement;
-      var targetParentRow = targetContainer.closest('.menu-tree-row');
-      var targetParent = targetParentRow ? targetParentRow._item.children : initialMenu;
-      var targetIndex = rowsIn(targetContainer).indexOf(row);
-      if (position === 'after') targetIndex += 1;
       targetParent.splice(targetIndex, 0, removed);
     }
 
