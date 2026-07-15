@@ -386,6 +386,24 @@
 
   function segmentedControl(name, options, value, escapeFn) {
     var escFn = escapeFn || esc;
+    var isPagerAlign = /(?:^|_)pager_align$/.test(String(name || ''));
+    function pagerAlignIcon(alignment) {
+      var widths = alignment === 'left'
+        ? [12, 8, 10]
+        : alignment === 'right'
+          ? [12, 8, 10]
+          : [12, 8, 10];
+      var positions = alignment === 'left'
+        ? [2, 2, 2]
+        : alignment === 'right'
+          ? [2, 6, 4]
+          : [2, 4, 3];
+      return '<svg class="seg-radio-align-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">' +
+        widths.map(function(width, i) {
+          return '<path d="M' + positions[i] + ' ' + (4 + i * 4) + 'h' + width + '" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>';
+        }).join('') +
+      '</svg>';
+    }
     var opts = (options || []).map(function(opt) {
       return {
         value: String(typeof opt === 'object' ? opt.value : opt),
@@ -400,7 +418,9 @@
         var id = (name + '_' + opt.value).replace(/[^a-zA-Z0-9_-]/g, '_');
         return '<label class="seg-radio-option' + (active ? ' active' : '') + '" role="radio" aria-checked="' + (active ? 'true' : 'false') + '" for="' + escFn(id) + '">' +
           '<input type="radio" id="' + escFn(id) + '" name="' + escFn(name) + '" value="' + escFn(opt.value) + '"' + (active ? ' checked' : '') + ' onchange="var input=this;var g=input.closest(\'.seg-radio\');g.querySelectorAll(\'.seg-radio-option\').forEach(function(b){b.classList.toggle(\'active\', b.contains(input));b.setAttribute(\'aria-checked\', b.contains(input)?\'true\':\'false\');});">' +
-          '<span class="seg-radio-dot" aria-hidden="true"></span><span class="seg-radio-label">' + escFn(opt.label) + '</span>' +
+          '<span class="seg-radio-dot" aria-hidden="true"></span><span class="seg-radio-label"' + (isPagerAlign ? ' title="' + escFn(opt.label) + '"' : '') + '>' +
+            (isPagerAlign ? pagerAlignIcon(opt.value) + '<span class="visually-hidden">' + escFn(opt.label) + '</span>' : escFn(opt.label)) +
+          '</span>' +
           '</label>';
       }).join('') +
       '</div>';
@@ -2741,6 +2761,22 @@
         '<input type="hidden" name="module_' + idx + '_data_card_show_border" value="' + (d.card_show_border === 'false' ? 'false' : 'true') + '">' +
       '</div>' +
       '<hr class="my-2">' +
+      '<div class="small fw-semibold mb-1 text-muted">筛选</div>' +
+      '<div class="form-check form-switch mb-2">' +
+        '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_filters"' +
+        (d.show_filters === false || d.show_filters === 'false' ? '' : ' checked') +
+        ' onchange="this.nextElementSibling.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
+        '<label class="form-check-label small" for="module_' + idx + '_show_filters">显示筛选</label>' +
+        '<input type="hidden" name="module_' + idx + '_data_show_filters" value="' + (d.show_filters === false || d.show_filters === 'false' ? 'false' : 'true') + '">' +
+      '</div>' +
+      '<div class="form-check form-switch mb-2">' +
+        '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_search"' +
+        (d.show_search === true || d.show_search === 'true' ? ' checked' : '') +
+        ' onchange="this.nextElementSibling.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
+        '<label class="form-check-label small" for="module_' + idx + '_show_search">显示搜索框</label>' +
+        '<input type="hidden" name="module_' + idx + '_data_show_search" value="' + (d.show_search === true || d.show_search === 'true' ? 'true' : 'false') + '">' +
+      '</div>' +
+      '<hr class="my-2">' +
       '<div class="small fw-semibold mb-1 text-muted">分页</div>' +
       '<div class="form-check form-switch mb-3">' +
         '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_pagination"' +
@@ -2763,8 +2799,8 @@
       '<div class="mb-2">' +
         '<label class="form-label small mb-1 text-muted">分页对齐</label>' +
         '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align">' +
-          '<option value="center"' + (d.pager_align === 'center' || !d.pager_align ? ' selected' : '') + '>居中</option>' +
           '<option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option>' +
+          '<option value="center"' + (d.pager_align === 'center' || !d.pager_align ? ' selected' : '') + '>居中</option>' +
           '<option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option>' +
         '</select></div>';
     return { specialEditor: specialEditor };
@@ -2820,8 +2856,8 @@
       '<div class="mb-2">' +
         '<label class="form-label small mb-1 text-muted">分页对齐</label>' +
         '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align">' +
-          '<option value="center"' + (d.pager_align === 'center' || !d.pager_align ? ' selected' : '') + '>居中</option>' +
           '<option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option>' +
+          '<option value="center"' + (d.pager_align === 'center' || !d.pager_align ? ' selected' : '') + '>居中</option>' +
           '<option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option>' +
         '</select></div>' +
       sw('show_view_all', '显示查看全部', false) +
