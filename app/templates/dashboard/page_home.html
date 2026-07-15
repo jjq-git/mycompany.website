@@ -60,7 +60,7 @@
             {# 文本内容专属表单 #}
             <div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title" value="{{ mdata.get('title', '') }}"></div>
             <div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label>
-              <div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">
+              <div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius: 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">
                 <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'bold')" title="加粗" style="font-size:14px;line-height:1"><b>B</b></button>
                 <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'italic')" title="斜体" style="font-size:14px;line-height:1"><i>I</i></button>
                 <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'underline')" title="下划线" style="font-size:14px;line-height:1"><u>U</u></button>
@@ -78,7 +78,7 @@
                 <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorTable(this,event)" title="插入表格" style="font-size:14px;line-height:1">▦</button>
                 <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorLink(this,event)" title="插入链接" style="font-size:14px;line-height:1">🔗</button>
               </div>
-              <div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">{{ mdata.get('body', '') | safe }}</div>
+              <div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius: 0;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">{{ mdata.get('body', '') | safe }}</div>
               <textarea class="form-control form-control-sm d-none" name="module_{{ i }}_data_body">{{ mdata.get('body', '') }}</textarea>
             </div>
             <div class="row g-2">
@@ -125,7 +125,7 @@
                 <label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:14px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor='#94a3b8';this.style.background='#f1f5f9'" onmouseleave="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="{{ prefix }}{{ key }}_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label>
                 <div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>
                 <div class="module-image-url-text mt-1" style="font-size:12px;color:#94a3b8;word-break:break-all;display:none"></div>
-                <div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display='none'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:14px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div>
+                <div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius: 0;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display='none'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius: 0;background:#dc3545;color:#fff;font-size:14px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div>
                 {% else %}
                 <input type="text" class="form-control form-control-sm"
                        name="{{ prefix }}{{ key }}" value="{{ val }}">
@@ -246,7 +246,7 @@ function richEditorEscape(value) {
 
 function richEditorHtml(name, value) {
   var safeName = richEditorEscape(name);
-  return '<div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
+  return '<div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius: 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
     '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'bold\')" title="加粗" style="font-size:14px;line-height:1"><b>B</b></button>' +
     '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'italic\')" title="斜体" style="font-size:14px;line-height:1"><i>I</i></button>' +
     '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'underline\')" title="下划线" style="font-size:14px;line-height:1"><u>U</u></button>' +
@@ -264,7 +264,7 @@ function richEditorHtml(name, value) {
     '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorTable(this,event)" title="插入表格" style="font-size:14px;line-height:1">▦</button>' +
     '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorLink(this,event)" title="插入链接" style="font-size:14px;line-height:1">🔗</button>' +
     '</div>' +
-    '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (value || '') + '</div>' +
+    '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius: 0;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (value || '') + '</div>' +
     '<textarea class="form-control form-control-sm d-none" name="' + safeName + '">' + richEditorEscape(value || '') + '</textarea>';
 }
 
@@ -290,7 +290,7 @@ function richEditorHtml(name, value) {
     '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'undo\')" title="Undo">↩</button>' +
     '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'redo\')" title="Redo">↪</button>' +
     '</div>' +
-    '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (value || '') + '</div>' +
+    '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius: 0;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (value || '') + '</div>' +
     '<textarea class="form-control form-control-sm d-none" name="' + safeName + '">' + richEditorEscape(value || '') + '</textarea>';
 }
 
@@ -538,7 +538,7 @@ function handleModuleImageUpload(fileInput) {
     preview = document.createElement('div');
     preview.className = 'mt-2 module-image-preview';
     preview.style.display = 'none';
-    preview.innerHTML = "<div style=\"position:relative;display:inline-block\"><img src=\"\" style=\"max-width:120px;max-height:90px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer\" onclick=\"enlargeImage(this)\" onerror=\"this.parentElement.parentElement.style.display='none'\"><button type=\"button\" class=\"btn btn-sm\" onclick=\"clearModuleImage(this)\" style=\"position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:14px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center\" title=\"移除图片\">&times;</button></div>";
+    preview.innerHTML = "<div style=\"position:relative;display:inline-block\"><img src=\"\" style=\"max-width:120px;max-height:90px;border-radius: 0;border:1px solid #dee2e6;cursor:pointer\" onclick=\"enlargeImage(this)\" onerror=\"this.parentElement.parentElement.style.display='none'\"><button type=\"button\" class=\"btn btn-sm\" onclick=\"clearModuleImage(this)\" style=\"position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius: 0;background:#dc3545;color:#fff;font-size:14px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center\" title=\"移除图片\">&times;</button></div>";
     container.appendChild(preview);
   }
   var img = preview ? preview.querySelector('img') : null;
@@ -565,7 +565,7 @@ function enlargeImage(img) {
     overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:pointer';
     overlay.onclick = function() { overlay.style.display = 'none'; };
     var lbImg = document.createElement('img');
-    lbImg.style.cssText = 'max-width:95vw;max-height:95vh;object-fit:contain;background-color:#fff;background-image:linear-gradient(45deg,#eef2f7 25%,transparent 25%),linear-gradient(-45deg,#eef2f7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef2f7 75%),linear-gradient(-45deg,transparent 75%,#eef2f7 75%);background-position:0 0,0 8px,8px -8px,-8px 0;background-size:16px 16px;border-radius:6px;padding:12px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
+    lbImg.style.cssText = 'max-width:95vw;max-height:95vh;object-fit:contain;background-color:#fff;background-image:linear-gradient(45deg,#eef2f7 25%,transparent 25%),linear-gradient(-45deg,#eef2f7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef2f7 75%),linear-gradient(-45deg,transparent 75%,#eef2f7 75%);background-position:0 0,0 8px,8px -8px,-8px 0;background-size:16px 16px;border-radius: 0;padding:12px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
     overlay.appendChild(lbImg);
     document.body.appendChild(overlay);
   }
@@ -608,9 +608,9 @@ function updateImagePreview(urlInput) {
 
 <style>
 {# 可用模块面板卡片 #}
-.block-palette-card { cursor: pointer; border: 1px solid #dee2e6; border-radius: 8px; transition: all 0.15s ease; }
+.block-palette-card { cursor: pointer; border: 1px solid #dee2e6; border-radius: 0; transition: all 0.15s ease; }
 .block-palette-card:hover { border-color: #067a7a; background: #f0f7ff; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(6,122,122,0.1); }
-.block-palette-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 8px; background: rgba(6,122,122,0.06); color: #067a7a; }
+.block-palette-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 0; background: rgba(6,122,122,0.06); color: #067a7a; }
 .module-item.expanded .module-config { display: block !important; }
 .device-config { padding: 4px 0; }
 </style>

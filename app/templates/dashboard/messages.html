@@ -12,7 +12,7 @@
     border: 1px solid #e2e8f0;
     background: #fff;
     color: #334155;
-    border-radius: 6px;
+    border-radius: 0;
     padding: 5px 10px;
     font-size: 14px;
     line-height: 1.2;
@@ -26,7 +26,7 @@
     color: var(--admin-primary-active, #045555);
   }
   .inbox-tab .badge {
-    font-size: 14px; margin-left: 4px; padding: 1px 5px; border-radius: 10px;
+    font-size: 14px; margin-left: 4px; padding: 1px 5px; border-radius: 0;
     background: #e2e8f0; color: #64748b;
   }
   .inbox-tab.active .badge { background: var(--admin-primary, #067a7a); color: #fff; }
@@ -35,7 +35,7 @@
     text-align: center; padding: 64px 24px; color: #94a3b8;
   }
   .inbox-empty-icon {
-    width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 50%;
+    width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 0;
     background: #f1f5f9; display: flex; align-items: center; justify-content: center;
   }
   .inbox-empty h3 { font-size: 16px; font-weight: 600; color: #64748b; margin: 0 0 6px; }
@@ -43,17 +43,16 @@
 
   .msg-row {
     display: flex; align-items: center; gap: 12px;
-    padding: 10px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    cursor: pointer;
-    transition: background .1s;
+    padding: 14px 14px 8px; margin-top: 12px;
+    border: 1px solid #e2e8f0; border-bottom: 0;
+    background: #fff;
+    transition: border-color .15s, box-shadow .15s;
   }
-  .msg-row:hover { background: #f8fafc; }
-  .msg-row.unread { background: #fefdf7; }
-  .msg-row:last-child { border-bottom: none; }
+  .msg-row:hover { border-color: #cbd5e1; }
+  .msg-row.unread { border-left: 3px solid var(--admin-primary, #067a7a); background: #fbfefe; }
 
   .msg-avatar {
-    width: 36px; height: 36px; border-radius: 50%;
+    width: 36px; height: 36px; border-radius: 0;
     display: flex; align-items: center; justify-content: center;
     font-size: 14px; font-weight: 700; color: #fff;
     flex-shrink: 0;
@@ -68,22 +67,20 @@
   .msg-sender { font-weight: 600; font-size: 14px; color: #0f172a; }
   .msg-contact { font-size: 14px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .msg-text {
-    font-size: 14px; color: #64748b; line-height: 1.5;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    max-width: 600px;
+    display: none;
   }
   .msg-row.unread .msg-text { color: #475569; }
 
   .msg-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .msg-time { font-size: 14px; color: #94a3b8; white-space: nowrap; }
-  .msg-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .msg-dot { width: 7px; height: 7px; border-radius: 0; flex-shrink: 0; }
   .msg-dot.unread { background: var(--admin-primary, #067a7a); }
   .msg-dot.read { background: #e2e8f0; }
 
   .msg-actions { display: flex; gap: 2px; flex-shrink: 0; }
   .msg-action {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 28px; height: 28px; border-radius: 5px; border: 1px solid transparent;
+    width: 28px; height: 28px; border-radius: 0; border: 1px solid transparent;
     background: transparent; color: #94a3b8; cursor: pointer;
     transition: .12s;
   }
@@ -93,12 +90,21 @@
   .msg-action.btn-reply:hover { background: #eff6ff; color: #2563eb; border-color: #dbeafe; }
 
   .msg-detail-row {
-    display: none; padding: 12px 12px 12px 60px; border-bottom: 1px solid #f1f5f9;
+    display: block; padding: 0 14px 14px 62px; border: 1px solid #e2e8f0; border-top: 0;
     font-size: 14px; color: #334155; white-space: pre-wrap; line-height: 1.7;
-    background: #fafbfc;
+    background: #fff;
   }
   .msg-detail-row.open { display: block; }
-  .msg-detail-box { padding: 14px 16px; background: #f1f5f9; border-radius: 8px; }
+  .msg-row:hover + .msg-detail-row { border-color: #cbd5e1; }
+  .msg-row.unread + .msg-detail-row { border-left: 3px solid var(--admin-primary, #067a7a); background: #fbfefe; }
+  .msg-detail-box { padding: 10px 0 0; border-top: 1px solid #edf1f5; background: transparent; border-radius: 0; }
+
+  @media (max-width: 720px) {
+    .msg-row { align-items: flex-start; padding: 12px 12px 8px; }
+    .msg-body-top { align-items: flex-start; flex-direction: column; gap: 3px; }
+    .msg-meta { margin-left: auto; }
+    .msg-detail-row { padding: 0 12px 12px 60px; }
+  }
 </style>
 
 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -197,7 +203,12 @@
       tab.classList.add('active');
       var filter = tab.dataset.filter;
       rows.forEach(function(r) {
-        r.style.display = (filter === 'all') ? '' : (r.dataset.read === '0' ? '' : 'none');
+        var visible = filter === 'all' || r.dataset.read === '0';
+        r.style.display = visible ? '' : 'none';
+        var detail = r.nextElementSibling;
+        if (detail && detail.classList.contains('msg-detail-row')) {
+          detail.style.display = visible ? '' : 'none';
+        }
       });
     });
   });

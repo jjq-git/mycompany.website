@@ -28,7 +28,7 @@
         <span class="small fw-semibold">菜单</span>
       </div> -->
       <div id="menuTree" class="menu-tree menu-tree-picker"></div>
-      <button type="button" class="btn btn-outline-primary btn-sm w-100 mt-3" id="addRootMenu">+ 添加一级菜单</button>
+      <button type="button" class="btn btn-outline-primary btn-sm mt-3 menu-add-button" id="addRootMenu">+ 添加一级菜单</button>
     </section>
     <aside class="menu-config-inspector" id="menuInspector"></aside>
   </div>
@@ -188,7 +188,7 @@
         '</label>' +
       '</div>' +
       '<div class="menu-inspector-actions">' +
-        '<button type="button" class="btn btn-outline-primary btn-sm w-100 menu-inspector-add-child">+ 添加子菜单</button>' +
+        '<button type="button" class="btn btn-outline-primary btn-sm menu-inspector-add-child menu-add-button">+ 添加子菜单</button>' +
       '</div>';
     updateInspectorFields();
   }
@@ -223,7 +223,12 @@
     if (!row) return;
     const action = e.target.closest('button');
     if (!action || action.classList.contains('menu-tree-select')) {
+      const wasSelected = selectedItem === row._item;
       selectedItem = row._item;
+      // 首次选中父菜单时展开；再次点击同一个父菜单时切换收起/展开。
+      if (row._item.children && row._item.children.length > 0) {
+        row._item._collapsed = wasSelected ? !row._item._collapsed : false;
+      }
       rerenderAll();
       return;
     }
@@ -332,34 +337,24 @@
       card.classList.add('drag-over-invalid');
       return;
     }
-    // 不能拖到自己的子级（防止循环引用）
-    function isDescendant(ancestor, target) {
-      if (!target || !target.children) return false;
-      for (var i = 0; i < target.children.length; i++) {
-        if (target.children[i] === ancestor) return true;
-        if (isDescendant(ancestor, target.children[i])) return true;
-      }
-      return false;
-    }
-    if (isDescendant(row._item, dragSourceItem)) {
+    var targetContainer = row.parentElement;
+    var targetParentRow = targetContainer.closest('.menu-tree-row');
+    var targetParent = targetParentRow ? targetParentRow._item.children : initialMenu;
+    if (targetParent !== dragSourceParent || row._item.type === 'home') {
       clearDragClasses();
       card.classList.add('drag-over-invalid');
+      e.dataTransfer.dropEffect = 'none';
       return;
     }
     clearDragClasses();
     var rect = card.getBoundingClientRect();
     var y = e.clientY - rect.top;
-    var h = rect.height;
-    if (y < h * 0.25) {
+    if (y < rect.height / 2) {
       card.classList.add('drag-over-before');
-      e.dataTransfer.dropEffect = 'move';
-    } else if (y > h * 0.75) {
-      card.classList.add('drag-over-after');
-      e.dataTransfer.dropEffect = 'move';
     } else {
-      card.classList.add('drag-over-inside');
-      e.dataTransfer.dropEffect = 'move';
+      card.classList.add('drag-over-after');
     }
+    e.dataTransfer.dropEffect = 'move';
   };
 
   window.menuDragLeave = function(e, card) {
@@ -376,39 +371,23 @@
     if (row._item === dragSourceItem) { clearDragClasses(); return; }
     if (row._item.type === 'home') { clearDragClasses(); return; }
 
+    var targetContainer = row.parentElement;
+    var targetParentRow = targetContainer.closest('.menu-tree-row');
+    var targetParent = targetParentRow ? targetParentRow._item.children : initialMenu;
+    if (targetParent !== dragSourceParent) { clearDragClasses(); return; }
     var rect = card.getBoundingClientRect();
-    var y = e.clientY - rect.top;
-    var h = rect.height;
-    var position = y < h * 0.25 ? 'before' : (y > h * 0.75 ? 'after' : 'inside');
-
-    // 先算目标位置再移除源（同父级时 splice 会影响后续索引）
-    var targetContainer, targetParent, targetIndex;
-    if (position === 'inside') {
-      if (!Array.isArray(row._item.children)) row._item.children = [];
-      targetParent = row._item.children;
-      targetIndex = row._item.children.length;
-    } else {
-      targetContainer = row.parentElement;
-      var targetParentRow = targetContainer.closest('.menu-tree-row');
-      targetParent = targetParentRow ? targetParentRow._item.children : initialMenu;
-      targetIndex = rowsIn(targetContainer).indexOf(row);
-      if (position === 'after') targetIndex += 1;
-    }
+    var position = (e.clientY - rect.top) < rect.height / 2 ? 'before' : 'after';
+    var targetIndex = rowsIn(targetContainer).indexOf(row);
+    if (position === 'after') targetIndex += 1;
 
     // 从原位置移除
     var removed = dragSourceParent.splice(dragSourceIndex, 1)[0];
 
     // 同父级且源在目标之前 → 目标索引需减 1
-    if (position !== 'inside' && dragSourceParent === targetParent && dragSourceIndex < targetIndex) {
+    if (dragSourceIndex < targetIndex) {
       targetIndex -= 1;
     }
-
-    if (position === 'inside') {
-      row._item.children.push(removed);
-      row._item._collapsed = false;
-    } else {
-      targetParent.splice(targetIndex, 0, removed);
-    }
+    targetParent.splice(targetIndex, 0, removed);
 
     clearDragClasses();
     dragSourceItem = null;

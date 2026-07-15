@@ -15,10 +15,10 @@
 <style>
   .dt-panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
   .dt-title{display:flex;align-items:center;gap:8px;font-weight:700;color:#0f172a}
-  .dt-icon-btn{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #d8e0ea;background:#fff;color:#334155;border-radius:6px}
+  .dt-icon-btn{width:34px;height:34px;flex:0 0 34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #d8e0ea;background:#fff;color:#334155;border-radius:0}
   .dt-title svg,.dt-section-title svg,summary svg,.dt-icon-btn svg,.dt-action svg,.dt-primary svg,.dt-save-button svg{width:16px;height:16px;flex:0 0 16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .dt-icon-btn:hover,.dt-action:hover{border-color:#0f9a8a;color:#0f766e;background:#f0fdfa}
-  .dt-section{background:#fff;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:12px}
+  .dt-section{background:#fff;border:1px solid #e5e7eb;border-radius: 0;margin-bottom:12px}
   .dt-section-head{background:#f8fafc}
   .dt-template-manager{border-color:#d8e0ea;background:#f8fafc}
   .dt-template-manager .dt-section-head{background:#eef3f8;border-bottom-color:#d8e0ea}
@@ -26,12 +26,13 @@
   .dt-disclosure>summary::-webkit-details-marker{display:none}
   .dt-summary-caret{width:16px;height:16px;transition:transform .16s ease;color:#64748b}
   .dt-disclosure[open] .dt-summary-caret{transform:rotate(180deg)}
-  .dt-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;border-bottom:1px solid #edf2f7;border-radius:8px 8px 0 0}
-  .dt-section-title{font-size:13px;font-weight:700;color:#111827}
+  .dt-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;border-bottom:1px solid #edf2f7;border-radius: 0;font-weight:700;color:#111827}
   .dt-create-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:10px}
-  .dt-primary{height:34px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid #0f9a8a;background:#0f9a8a;color:#fff;border-radius:6px;padding:0 12px;font-size:13px}
+  .dt-primary{height:34px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid #0f9a8a;background:#0f9a8a;color:#fff;border-radius: 0;padding:0 12px;font-size:13px}
   .dt-template-list{display:grid;gap:8px;padding:10px}
-  .dt-template-card{display:block;border:1px solid #dfe7ef;border-radius:8px;background:#fff;padding:10px;box-shadow:0 1px 0 rgba(15,23,42,.03)}
+  .dt-template-card{display:block;border:1px solid #dfe7ef;border-radius:0;background:#fff;padding:10px;box-shadow:0 1px 0 rgba(15,23,42,.03);cursor:pointer;transition:border-color .15s,background-color .15s,box-shadow .15s}
+  .dt-template-card:hover{border-color:#9ccfc9;background:#fbfffe}
+  .dt-template-card:focus-visible{outline:2px solid #0f9a8a;outline-offset:2px}
   .dt-template-card.is-current{border-color:#0f9a8a;background:#f7fffd;box-shadow:inset 3px 0 0 #0f9a8a,0 0 0 1px rgba(15,154,138,.12)}
   .dt-card-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:8px}
   .dt-template-name{font-weight:700;color:#111827;overflow-wrap:anywhere;line-height:1.35;font-size:14px}
@@ -39,27 +40,40 @@
   .dt-badges{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
   .dt-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
   .dt-actions form{display:inline-flex;margin:0}
-  .dt-action{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #d8e0ea;background:#fff;color:#334155;border-radius:6px}
+  .dt-action{width:34px;height:34px;flex:0 0 34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #d8e0ea;background:#fff;color:#334155;border-radius:0}
   .dt-action-danger{border-color:#fecaca;color:#dc2626}
-  .dt-editor-stack{background:#f6f8fb;border:1px solid #dfe7ef;border-radius:10px;padding:10px;margin-bottom:12px}
+  .dt-editor-stack{background:#f6f8fb;border:1px solid #dfe7ef;border-radius: 0;padding:10px;margin-bottom:12px}
   .dt-editor-stack .dt-section{margin-bottom:10px;box-shadow:0 1px 0 rgba(15,23,42,.03)}
   .dt-editor-stack .dt-section:last-child{margin-bottom:0}
-  .dt-components-area{background:#fff;border:1px solid #dfe7ef;border-radius:10px;padding:10px;margin-top:12px}
+  .dt-components-area{background:#fff;border:1px solid #dfe7ef;border-radius: 0;padding:10px;margin-top:12px}
   .dt-components-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
   .dt-components-title{font-size:13px;font-weight:700;color:#0f172a}
   .dt-components-note{font-size:12px;color:#64748b;line-height:1.55;margin:0}
+  .dt-add-component-row{display:flex;justify-content:flex-end;flex:0 0 auto}
+  .dt-add-component-row .panel-add-module-btn{width:auto;min-width:116px;height:34px;padding:0 12px;background:#fff;color:var(--theme-primary,#0f9a8a);border-color:var(--theme-primary,#0f9a8a)}
+  .dt-add-component-row .panel-add-module-btn:hover{background:rgba(var(--bs-primary-rgb),.08);color:var(--theme-primary-hover,#0f766e);border-color:var(--theme-primary-hover,#0f766e)}
   #selectedModulesTpl{display:grid;margin-top:10px}
-  #selectedModulesTpl>.module-item{border-color:#d8e0ea;border-radius:8px;box-shadow:inset 3px 0 0 #d8e0ea,0 1px 0 rgba(15,23,42,.03)}
+  #selectedModulesTpl>.module-item{border-color:#d8e0ea;border-radius: 0;box-shadow:inset 3px 0 0 #d8e0ea,0 1px 0 rgba(15,23,42,.03)}
   #selectedModulesTpl>.module-item:focus-within{box-shadow:inset 3px 0 0 #0f9a8a,0 0 0 1px rgba(15,154,138,.14)}
-  .dt-tool-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px}
-  .dt-muted-note{font-size:12px;color:#64748b;line-height:1.55;padding:0 10px 10px}
+  #selectedModulesTpl>.module-item>.module-header{cursor:grab!important;user-select:none}
+  #selectedModulesTpl>.module-item.is-dragging{opacity:.42;box-shadow:inset 3px 0 0 #0f9a8a,0 8px 20px rgba(15,23,42,.12)}
+  #selectedModulesTpl.is-sorting>.module-item:not(.is-dragging){transition:transform .12s ease}
   .dt-save-button{height:38px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .dt-wide-layout{display:grid;grid-template-columns:minmax(300px,360px) minmax(0,1fr);gap:16px;align-items:start}
+  .dt-template-sidebar,.dt-template-editor{min-width:0}
+  .dt-template-sidebar{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto;overscroll-behavior:contain}
+  .dt-template-sidebar .dt-template-manager{margin-bottom:0}
+  .dt-template-editor .dt-editor-stack{display:block}
+  .dt-template-editor .dt-editor-stack>.dt-section{margin-bottom:0}
+  .dt-template-editor .dt-components-area{margin-top:0}
+  .dt-empty-editor{display:grid;place-items:center;min-height:280px;border:1px dashed #cbd5e1;background:#f8fafc;color:#64748b;text-align:center;padding:32px}
+  @media (max-width:1100px){.dt-wide-layout{grid-template-columns:1fr}.dt-template-sidebar{position:static;max-height:none;overflow:visible}}
 </style>
 <div class="dt-panel-head">
   <span class="dt-title">{{ dt_icon('settings') }}{{ page_label }}详情模板</span>
   <div class="d-flex gap-1">
-    <button class="dt-icon-btn" type="button" onclick="backToPageEditor()" title="返回" aria-label="返回">{{ dt_icon('arrow-left') }}</button>
-    <button class="dt-icon-btn" type="button" onclick="openDatasetPanelFromTemplates()" title="数据" aria-label="数据">{{ dt_icon('database') }}</button>
+    <button class="dt-icon-btn" type="button" onclick="openContentWorkspaceFromTemplates('templates')" title="返回内容模板" aria-label="返回内容模板">{{ dt_icon('arrow-left') }}</button>
+    <button class="dt-icon-btn" type="button" onclick="openContentWorkspaceFromTemplates('list')" title="查看该分类内容" aria-label="查看该分类内容">{{ dt_icon('database') }}</button>
   </div>
 </div>
 
@@ -69,6 +83,8 @@
   {% endfor %}
 {% endwith %}
 
+<div class="dt-wide-layout">
+<aside class="dt-template-sidebar">
 <details class="dt-section dt-disclosure dt-template-manager" open>
   <summary class="dt-section-head">
     <span class="dt-section-title">模板</span>
@@ -80,7 +96,7 @@
       <svg class="dt-summary-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
     </span>
   </summary>
-  <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}" class="dt-create-form">
+  <form method="post" action="{{ url_for(detail_templates_endpoint, dataset_key=dataset_key, site=site.id, lang=current_lang, **({'_fragment':'1'} if not workspace_mode else {})) }}" class="dt-create-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="_template_action" value="add">
     <input type="text" class="form-control form-control-sm" name="name" placeholder="新模板名称，例如 LED灯条参数详情">
@@ -93,7 +109,7 @@
   {% set is_default = tpl_id == default_template_id %}
   {% set is_current = editing and edit_template.id == tpl_id %}
   {% set modules = tpl.modules | default(tpl.get('modules', [])) %}
-  <div class="dt-template-card{% if is_current %} is-current{% endif %}">
+  <div class="dt-template-card{% if is_current %} is-current{% endif %}" data-template-id="{{ tpl_id }}" role="button" tabindex="0" aria-label="编辑模板：{{ tpl_name }}">
     <div class="dt-card-row">
       <div style="min-width:0">
         <div class="dt-template-name">{{ tpl_name }}</div>
@@ -111,7 +127,7 @@
       <button class="dt-action" type="button" onclick="openTemplateEditor('{{ tpl_id }}')" title="编辑" aria-label="编辑">{{ dt_icon('edit') }}</button>
 
       {% if not is_default %}
-      <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}">
+      <form method="post" action="{{ url_for(detail_templates_endpoint, dataset_key=dataset_key, site=site.id, lang=current_lang, **({'_fragment':'1'} if not workspace_mode else {})) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="_template_action" value="set_default">
         <input type="hidden" name="template_id" value="{{ tpl_id }}">
@@ -119,7 +135,7 @@
       </form>
       {% endif %}
 
-      <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}">
+      <form method="post" action="{{ url_for(detail_templates_endpoint, dataset_key=dataset_key, site=site.id, lang=current_lang, **({'_fragment':'1'} if not workspace_mode else {})) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="_template_action" value="copy">
         <input type="hidden" name="template_id" value="{{ tpl_id }}">
@@ -127,7 +143,7 @@
       </form>
 
       {% if not is_default %}
-      <form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang) }}">
+      <form method="post" action="{{ url_for(detail_templates_endpoint, dataset_key=dataset_key, site=site.id, lang=current_lang, **({'_fragment':'1'} if not workspace_mode else {})) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="_template_action" value="delete">
         <input type="hidden" name="template_id" value="{{ tpl_id }}">
@@ -139,6 +155,9 @@
   {% endfor %}
   </div>
 </details>
+</aside>
+
+<main class="dt-template-editor">
 
 {% if editing %}
 {% set tpl_id = edit_template.id | default(edit_template.get('id')) %}
@@ -149,7 +168,7 @@
 {% set seo_image_value = tpl_seo.image | default(tpl_seo.get('image', 'cover')) %}
 {% include 'dashboard/_block_palette.html' %}
 
-<form method="post" action="{{ url_for('core.detail_templates_panel', dataset_key=dataset_key, site=site.id, _fragment='1', lang=current_lang, template_id=tpl_id) }}" id="detailTemplateForm" enctype="multipart/form-data">
+<form method="post" action="{{ url_for(detail_templates_endpoint, dataset_key=dataset_key, site=site.id, lang=current_lang, template_id=tpl_id, **({'_fragment':'1'} if not workspace_mode else {})) }}" id="detailTemplateForm" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="_template_action" value="save_modules">
   <input type="hidden" name="template_id" value="{{ tpl_id }}">
@@ -170,23 +189,6 @@
     </div>
   </div>
 
-  <div class="dt-section">
-    <div class="dt-section-head">
-      <span class="dt-section-title d-inline-flex align-items-center gap-1">{{ dt_icon('eye') }}预览详情页</span>
-    </div>
-    <div class="dt-tool-row">
-      <select class="form-select form-select-sm" id="detailTemplatePreviewItem">
-        <option value="">选择一条已使用此模板的数据</option>
-        {% for item in preview_items | default([]) %}
-          {% if (item.template_id|string) == (tpl_id|string) %}
-          <option value="{{ item.slug }}">{{ item.title }}</option>
-          {% endif %}
-        {% endfor %}
-      </select>
-      <button type="button" class="dt-icon-btn" onclick="previewDetailTemplateItem()" title="预览" aria-label="预览">{{ dt_icon('eye') }}</button>
-    </div>
-    <div class="dt-muted-note">预览使用已保存模板。新模板如果没有数据使用它，请先到“数据”里给某条数据选择该模板。</div>
-  </div>
   </div>
 
   <div class="dt-components-area">
@@ -195,11 +197,11 @@
       <div class="dt-components-title">组件编辑</div>
       <p class="dt-components-note">按详情页展示顺序添加组件；数据录入页会按这里的组件顺序生成对应字段。</p>
     </div>
-  </div>
-  <div class="mb-2">
-    <button class="dt-primary w-100 panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal">
-      {{ dt_icon('plus') }} 添加组件
-    </button>
+    <div class="dt-add-component-row">
+      <button class="dt-primary panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal">
+        {{ dt_icon('plus') }} 添加组件
+      </button>
+    </div>
   </div>
 
   <div class="small text-muted mb-2">模板组件会应用到所有未做单条高级自定义的数据；需要表格、图片、文本、链接时分别添加对应组件。</div>
@@ -214,7 +216,7 @@
   </div>
 </form>
 
-<script src="/static/js/admin_modules.js?v=111"></script>
+<script src="/static/js/admin_modules.js?v=112"></script>
 <script type="application/json" id="blockLibraryTplJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="allListDatasetsTplJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryTplJson">{{ style_registry | default({}) | tojson }}</script>
@@ -268,15 +270,78 @@
       });
       var orderInp = item.querySelector('input[name$="_order"]');
       if (orderInp) orderInp.value = i + 1;
-      var meta = item.querySelector('.module-title-meta');
-      var variantInp = item.querySelector('input[name$="_variant"]');
-      if (meta) meta.textContent = '#' + (i + 1) + ' · ' + ((variantInp && variantInp.value) || 'default');
+      var order = item.querySelector('.module-order');
+      if (order) order.textContent = '#' + (i + 1);
     });
     var countEl = document.getElementById('moduleCountTpl');
     if (countEl) countEl.value = items.length;
     var emptyHint = document.getElementById('emptyTemplateHint');
     if (emptyHint) emptyHint.style.display = items.length ? 'none' : '';
   };
+
+  (function initTemplateModuleSorting() {
+    var container = document.getElementById('selectedModulesTpl');
+    if (!container) return;
+    var dragged = null;
+    var suppressHeaderClick = false;
+
+    container.addEventListener('click', function(event) {
+      if (!suppressHeaderClick || !event.target.closest('.module-header')) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      suppressHeaderClick = false;
+    }, true);
+
+    container.addEventListener('pointerdown', function(event) {
+      var header = event.target.closest('.module-header');
+      if (!header || event.target.closest('button,a,input,select,textarea,label')) return;
+      var item = header.closest('.module-item');
+      if (item) item.draggable = true;
+    });
+
+    container.addEventListener('dragstart', function(event) {
+      var item = event.target.closest('.module-item');
+      if (!item || !item.draggable) {
+        event.preventDefault();
+        return;
+      }
+      dragged = item;
+      suppressHeaderClick = true;
+      container.classList.add('is-sorting');
+      item.classList.add('is-dragging');
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', item.dataset.moduleIndex || '');
+    });
+
+    container.addEventListener('dragover', function(event) {
+      if (!dragged) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      var siblings = Array.from(container.querySelectorAll(':scope > .module-item:not(.is-dragging)'));
+      var next = siblings.find(function(item) {
+        var rect = item.getBoundingClientRect();
+        return event.clientY < rect.top + rect.height / 2;
+      });
+      container.insertBefore(dragged, next || null);
+    });
+
+    function finishSorting() {
+      if (!dragged) return;
+      dragged.classList.remove('is-dragging');
+      dragged.draggable = false;
+      dragged = null;
+      container.classList.remove('is-sorting');
+      window._reindexModules();
+      window.setTimeout(function() { suppressHeaderClick = false; }, 200);
+    }
+    container.addEventListener('drop', function(event) { event.preventDefault(); finishSorting(); });
+    container.addEventListener('dragend', finishSorting);
+    document.addEventListener('pointerup', function() {
+      container.querySelectorAll(':scope > .module-item[draggable="true"]:not(.is-dragging)').forEach(function(item) {
+        item.draggable = false;
+      });
+    });
+  })();
 
   window._addIdImage = function(modIdx) {
     var editor = document.querySelector('#selectedModulesTpl .id-images-editor[data-module-index="' + modIdx + '"]');
@@ -383,7 +448,13 @@
   restoringTemplateModules = false;
 })();
 </script>
+{% else %}
+<div class="dt-empty-editor">
+  <div><strong class="d-block mb-1 text-dark">选择一个详情模板</strong><span class="small">从左侧模板列表选择模板后，在这里编辑模板设置与详情组件。</span></div>
+</div>
 {% endif %}
+</main>
+</div>
 
 <script>
 (function() {
@@ -397,39 +468,39 @@
     if (langParam) qs += '&lang=' + encodeURIComponent(langParam);
     return qs;
   }
-  window.backToPageEditor = function() {
-    loadPanel('/_panel/' + encodeURIComponent(DATASET_KEY) + '?_fragment=1' + getQuery()).then(function(loaded) {
-      if (loaded === false) return;
-      var frame = document.getElementById('previewFrame');
-      if (frame) {
-        frame.dataset.previewUrl = '/live_preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/index.html';
-        try { refreshPreview({ build: false }); } catch(e) {}
-      }
-    });
-  };
-  window.openDatasetPanelFromTemplates = function() {
-    loadPanel('/_dataset/' + encodeURIComponent(DATASET_KEY) + '?_fragment=1' + getQuery());
+  window.openContentWorkspaceFromTemplates = function(mode) {
+    {% if workspace_mode %}
+    var target = '/content/workspace?mode=' + encodeURIComponent(mode) + '&site=' + encodeURIComponent(SITE_ID) + '&lang=' + encodeURIComponent('{{ current_lang }}');
+    if (mode === 'list') target += '&dataset=' + encodeURIComponent(DATASET_KEY);
+    window.location.href = target;
+    return;
+    {% endif %}
+    var link = document.querySelector('.left-nav-item[data-content-mode="' + mode + '"]');
+    if (!link) return;
+    if (mode === 'list') link.dataset.contentDataset = DATASET_KEY;
+    link.click();
+    delete link.dataset.contentDataset;
   };
   window.openTemplateEditor = function(templateId) {
+    {% if workspace_mode %}
+    window.location.href = '/content/templates/' + encodeURIComponent(DATASET_KEY) + '?site=' + encodeURIComponent(SITE_ID) + '&lang=' + encodeURIComponent('{{ current_lang }}') + '&template_id=' + encodeURIComponent(templateId);
+    return;
+    {% endif %}
     loadPanel('/_detail_templates/' + encodeURIComponent(DATASET_KEY) + '?_fragment=1' + getQuery() + '&template_id=' + encodeURIComponent(templateId));
   };
-  window.previewDetailTemplateItem = function() {
-    var sel = document.getElementById('detailTemplatePreviewItem');
-    var slug = sel && sel.value;
-    if (!slug) {
-      alert('请先选择一条已使用此模板的数据。');
-      return;
+  document.querySelectorAll('.dt-template-card[data-template-id]').forEach(function(card) {
+    function isActionTarget(target) {
+      return !!target.closest('button,a,input,select,textarea,form,label');
     }
-    var url = '/live_preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/' + encodeURIComponent(slug) + '/index.html';
-    if (typeof openPreviewTab === 'function') {
-      openPreviewTab(DATASET_KEY + '/' + slug, '详情预览', url, false, '正在加载详情预览...');
-      return;
-    }
-    var frame = document.getElementById('previewFrame');
-    if (frame) {
-      frame.dataset.previewUrl = url;
-      try { refreshPreview({ build: false }); } catch(e) {}
-    }
-  };
+    card.addEventListener('click', function(event) {
+      if (isActionTarget(event.target)) return;
+      window.openTemplateEditor(card.dataset.templateId);
+    });
+    card.addEventListener('keydown', function(event) {
+      if (isActionTarget(event.target) || (event.key !== 'Enter' && event.key !== ' ')) return;
+      event.preventDefault();
+      window.openTemplateEditor(card.dataset.templateId);
+    });
+  });
 })();
 </script>

@@ -1614,6 +1614,201 @@ def overview():
     return redirect(url_for('core.index'))
 
 
+def _content_catalog(site, lang, default_lang):
+    """汇总站点菜单中的列表数据集，供内容中心统一检索。
+
+    内容中心只暴露菜单中明确声明为 list 的数据集，避免把内部配置型 YAML
+    （例如旧版 products/posts 兼容数据）误当成可编辑内容展示给用户。
+    """
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
+    raw_menu = menu_lib.upgrade_old_format(settings.get('menu') or [], meta.get('datasets', []))
+    menu_labels = (settings.get('menu_labels') or {}).get(lang, {}) or {}
+    storage_lang = _storage_lang(site, lang, default_lang)
+    source_storage_lang = _storage_lang(site, default_lang, default_lang)
+    catalog = []
+
+    def localized_label(item):
+        key = item.get('target') or ('__home__' if item.get('type') == 'home' else item.get('url'))
+        return menu_labels.get(key) or item.get('label') or item.get('target') or '未命名'
+
+    def walk(items, parents=None):
+        parents = parents or []
+        for item in items or []:
+            if not isinstance(item, dict):
+                continue
+            item_type = item.get('type')
+            target = str(item.get('target') or '').strip()
+            label = localized_label(item)
+            next_parents = parents
+            if item_type == 'group':
+                next_parents = parents + [{'label': label, 'target': target}]
+            if item_type == 'list' and target:
+                # 内容中心是索引入口，浏览列表不能顺带迁移或改写站点文件。
+                page = read_yaml(site.id, f'pages/{target}.yaml', default={}) or {}
+                templates = _detail_templates_for_page(page, target, label)
+                default_template_id = _default_detail_template_id(page, target, label)
+                rows = datasets.load(site.id, target, lang=storage_lang)
+                if storage_lang and not rows:
+                    rows = datasets.load(site.id, target, lang=source_storage_lang)
+                # 未显式选择模板的旧内容实际使用默认模板，统计时也必须计入。
+                for template in templates:
+                    template_id = str(template.get('id') or '')
+                    template['content_usage'] = sum(
+                        1 for row in (rows or [])
+                        if str(row.get('template_id') or default_template_id) == template_id
+                    )
+                parent_key = parents[0]['target'] if parents else ''
+                category = parents[0]['label'] if parents else ''
+                path_parts = [p.get('target') for p in parents if p.get('target')] + [target]
+                catalog.append({
+                    'key': target,
+                    'label': label,
+                    'category': category,
+                    'parent_key': parent_key,
+                    'path': '/'.join(path_parts),
+                    'items': rows or [],
+                    'templates': templates,
+                    'default_template_id': default_template_id,
+                })
+            walk(item.get('children') or [], next_parents)
+
+    walk(raw_menu)
+    return catalog
+
+
+@bp.route('/content/workspace')
+def content_workspace():
+    """全站列表详情内容的统一查找、新建和模板入口。"""
+    user, site = _current_context()
+    lang, languages, default_lang = _get_panel_lang(site)
+    mode = request.args.get('mode', 'list').strip()
+    if mode not in ('list', 'new', 'templates'):
+        mode = 'list'
+    catalog = _content_catalog(site, lang, default_lang)
+    # 左侧分类树保留菜单顺序；有上级的聚合为可展开节点，独立列表直接作为一级节点。
+    content_facets = []
+    facet_groups = {}
+    for entry in catalog:
+        parent_key = entry.get('parent_key') or ''
+        if not parent_key:
+            content_facets.append({
+                'type': 'dataset', 'key': entry['key'], 'label': entry['label'],
+                'count': len(entry.get('items') or []), 'entry': entry,
+            })
+            continue
+        node = facet_groups.get(parent_key)
+        if node is None:
+            node = {
+                'type': 'group', 'key': parent_key, 'label': entry['category'],
+                'count': 0, 'children': [],
+            }
+            facet_groups[parent_key] = node
+            content_facets.append(node)
+        node['children'].append(entry)
+        node['count'] += len(entry.get('items') or [])
+    template_names = {
+        f"{entry['key']}:{tpl.get('id')}": tpl.get('name') or tpl.get('id')
+        for entry in catalog for tpl in entry.get('templates') or [] if isinstance(tpl, dict)
+    }
+    total_items = sum(len(entry.get('items') or []) for entry in catalog)
+    requested_dataset = request.args.get('dataset', '').strip()
+    initial_dataset = requested_dataset if any(entry['key'] == requested_dataset for entry in catalog) else ''
+    return render_template('dashboard/content_workspace.html',
+                           user=user, site=site, active=f'content_{mode}', mode=mode,
+                           catalog=catalog, content_facets=content_facets,
+                           template_names=template_names,
+                           total_items=total_items, initial_dataset=initial_dataset,
+                           current_lang=lang,
+                           languages=languages, default_lang=default_lang)
+
+
+@bp.route('/content/create', methods=['POST'])
+def content_create():
+    """由内容中心创建条目，并把现有数据集编辑器地址返回给中间工作区。"""
+    _, site = _current_context()
+    lang, _, default_lang = _get_panel_lang(site)
+    dataset_key = request.form.get('dataset_key', '').strip()
+    template_id = request.form.get('template_id', '').strip()
+    catalog = _content_catalog(site, lang, default_lang)
+    entry = next((item for item in catalog if item.get('key') == dataset_key), None)
+    if not entry:
+        return jsonify({'ok': False, 'error': '请选择有效的内容分类'}), 400
+    valid_template_ids = {str(tpl.get('id') or '') for tpl in entry.get('templates') or []}
+    if template_id not in valid_template_ids:
+        return jsonify({'ok': False, 'error': '请选择有效的详情模板'}), 400
+    storage_lang = _storage_lang(site, lang, default_lang)
+    existing = datasets.load(site.id, dataset_key, lang=storage_lang)
+    next_number = max((int(item.get('id') or 0) for item in existing), default=0) + 1
+    slug = f'item-{next_number}'
+    used_slugs = {str(item.get('slug') or '') for item in existing}
+    while slug in used_slugs:
+        next_number += 1
+        slug = f'item-{next_number}'
+    item_id = datasets.add(site.id, dataset_key, {
+        'title': f'新条目 {next_number}',
+        'slug': slug,
+        'template_id': template_id,
+    }, lang=storage_lang)
+    return jsonify({
+        'ok': True,
+        'item_id': item_id,
+        'dataset_key': dataset_key,
+        'editor_url': url_for('core.content_item_workspace', dataset_key=dataset_key, item_id=item_id,
+                              site=site.id, lang=lang),
+        'preview_path': entry.get('path') or dataset_key,
+        'slug': slug,
+    })
+
+
+@bp.route('/content/<path:dataset_key>/<int:item_id>/duplicate', methods=['POST'])
+def content_duplicate(dataset_key, item_id):
+    """在同一数据集中创建独立副本，并生成不冲突的 slug。"""
+    _validate_key(dataset_key)
+    _, site = _current_context()
+    lang, _, default_lang = _get_panel_lang(site)
+    catalog = _content_catalog(site, lang, default_lang)
+    if not any(entry.get('key') == dataset_key for entry in catalog):
+        return jsonify({'ok': False, 'error': '内容分类不存在'}), 404
+    storage_lang = _storage_lang(site, lang, default_lang)
+    items = datasets.load(site.id, dataset_key, lang=storage_lang)
+    source = next((item for item in items if item.get('id') == item_id), None)
+    if not source:
+        return jsonify({'ok': False, 'error': '内容不存在'}), 404
+    new_item = copy.deepcopy(source)
+    base_slug = str(source.get('slug') or f'item-{item_id}').strip()
+    used_slugs = {str(item.get('slug') or '') for item in items}
+    candidate = f'{base_slug}-copy'
+    suffix = 2
+    while candidate in used_slugs:
+        candidate = f'{base_slug}-copy-{suffix}'
+        suffix += 1
+    title_key = 'title' if source.get('title') is not None else ('name' if source.get('name') is not None else 'title')
+    source_title = str(source.get(title_key) or '未命名内容').strip()
+    new_item.pop('id', None)
+    new_item['slug'] = candidate
+    new_item[title_key] = f'{source_title} 副本'
+    new_id = datasets.add(site.id, dataset_key, new_item, lang=storage_lang)
+    return jsonify({'ok': True, 'item_id': new_id, 'slug': candidate})
+
+
+@bp.route('/content/<path:dataset_key>/<int:item_id>/delete', methods=['POST'])
+def content_delete(dataset_key, item_id):
+    """从内容中心删除条目并返回 JSON。"""
+    _validate_key(dataset_key)
+    _, site = _current_context()
+    lang, _, default_lang = _get_panel_lang(site)
+    catalog = _content_catalog(site, lang, default_lang)
+    if not any(entry.get('key') == dataset_key for entry in catalog):
+        return jsonify({'ok': False, 'error': '内容分类不存在'}), 404
+    storage_lang = _storage_lang(site, lang, default_lang)
+    if not datasets.find(site.id, dataset_key, item_id, lang=storage_lang):
+        return jsonify({'ok': False, 'error': '内容不存在'}), 404
+    datasets.remove(site.id, dataset_key, item_id, lang=storage_lang)
+    return jsonify({'ok': True})
+
+
 @bp.route('/company/workspace')
 def company_workspace():
     """Open company settings in the center workspace instead of the side panel."""
@@ -4983,9 +5178,12 @@ def dataset_panel(dataset_key):
                    active=dataset_key)
 
 
+@bp.route('/content/templates/<path:dataset_key>', methods=['GET', 'POST'], endpoint='detail_templates_workspace')
 @bp.route('/_detail_templates/<path:dataset_key>', methods=['GET', 'POST'])
 def detail_templates_panel(dataset_key):
     """Manage dataset detail templates stored on pages/<dataset_key>.yaml."""
+    workspace_mode = request.endpoint == 'core.detail_templates_workspace'
+    detail_templates_endpoint = 'core.detail_templates_workspace' if workspace_mode else 'core.detail_templates_panel'
     _validate_key(dataset_key)
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
@@ -4998,8 +5196,6 @@ def detail_templates_panel(dataset_key):
         (entry.get('label') for entry in menu_lib.collect_list_targets(raw_menu) if entry.get('target') == dataset_key),
         dataset_key,
     )
-    from app.core.menu import find_menu_path
-    preview_path = find_menu_path(raw_menu, dataset_key)
     page = _ensure_page_detail_templates(site.id, dataset_key, page_label)
 
     if request.method == 'POST':
@@ -5052,7 +5248,10 @@ def detail_templates_panel(dataset_key):
                 page['detail_templates'] = [tpl for tpl in templates if str(tpl.get('id') or '') != template_id]
                 write_yaml(site.id, f'pages/{dataset_key}.yaml', page)
                 flash('已删除详情模板')
-                return redirect(url_for('core.detail_templates_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
+                redirect_args = {'dataset_key': dataset_key, 'site': site.id, 'lang': lang}
+                if not workspace_mode:
+                    redirect_args['_fragment'] = '1'
+                return redirect(url_for(detail_templates_endpoint, **redirect_args))
         elif action == 'save_modules':
             source = next((tpl for tpl in templates if str(tpl.get('id') or '') == template_id), None)
             if not source:
@@ -5078,12 +5277,14 @@ def detail_templates_panel(dataset_key):
 
         page['detail_templates'] = templates
         write_yaml(site.id, f'pages/{dataset_key}.yaml', page)
-        redirect_args = {'dataset_key': dataset_key, '_fragment': '1', 'site': site.id, 'lang': lang}
+        redirect_args = {'dataset_key': dataset_key, 'site': site.id, 'lang': lang}
+        if not workspace_mode:
+            redirect_args['_fragment'] = '1'
         if redirect_template_id:
             redirect_args['template_id'] = redirect_template_id
         elif action == 'save_modules' and template_id:
             redirect_args['template_id'] = template_id
-        return redirect(url_for('core.detail_templates_panel', **redirect_args))
+        return redirect(url_for(detail_templates_endpoint, **redirect_args))
 
     templates = _detail_templates_for_page(page, dataset_key, page_label)
     default_template_id = _default_detail_template_id(page, dataset_key, page_label)
@@ -5097,23 +5298,15 @@ def detail_templates_panel(dataset_key):
     storage_lang = _storage_lang(site, lang, default_lang)
     dataset_items = datasets.load(site.id, dataset_key, lang=storage_lang)
     template_usage = {}
-    preview_items = []
     for item in dataset_items or []:
         if not isinstance(item, dict):
             continue
         tpl_id = str(item.get('template_id') or default_template_id)
         template_usage[tpl_id] = template_usage.get(tpl_id, 0) + 1
-        slug = str(item.get('slug') or '').strip()
-        if slug:
-            preview_items.append({
-                'id': item.get('id'),
-                'title': item.get('title') or item.get('name') or slug,
-                'slug': slug,
-                'template_id': tpl_id,
-            })
     from .style_registry import STYLE_REGISTRY
     from .icon_registry import icon_names
-    return _render('dashboard/panel_detail_templates.html',
+    template_name = 'dashboard/detail_templates_workspace.html' if workspace_mode else 'dashboard/panel_detail_templates.html'
+    return _render(template_name,
                    user=user, site=site,
                    dataset_key=dataset_key,
                    page_label=page_label,
@@ -5122,14 +5315,14 @@ def detail_templates_panel(dataset_key):
                    edit_template=edit_template,
                    blocks=blocks,
                    all_list_datasets=all_list_datasets,
-                   preview_items=preview_items,
                    template_usage=template_usage,
                    style_registry=STYLE_REGISTRY,
                    icon_list=icon_names(),
                    current_lang=lang,
                    languages=languages,
                    default_lang=default_lang,
-                   preview_path=preview_path,
+                   workspace_mode=workspace_mode,
+                   detail_templates_endpoint=detail_templates_endpoint,
                    active=dataset_key)
 
 
@@ -5148,9 +5341,12 @@ def dataset_new(dataset_key):
     }, lang=storage_lang)
     return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
 
+@bp.route('/content/edit/<path:dataset_key>/<int:item_id>', methods=['GET', 'POST'], endpoint='content_item_workspace')
 @bp.route('/_dataset/<path:dataset_key>/<int:item_id>/edit', methods=['GET', 'POST'])
 def dataset_edit(dataset_key, item_id):
     """通用数据集编辑 — 支持 ?lang= 参数编辑不同语言版本."""
+    workspace_mode = request.endpoint == 'core.content_item_workspace'
+    dataset_edit_endpoint = 'core.content_item_workspace' if workspace_mode else 'core.dataset_edit'
     _validate_key(dataset_key)
     user, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
@@ -5193,7 +5389,8 @@ def dataset_edit(dataset_key, item_id):
         all_list_datasets = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu))
         from .style_registry import STYLE_REGISTRY
         from .icon_registry import icon_names
-        return _render('dashboard/panel_data_list.html',
+        template_name = 'dashboard/content_item_workspace.html' if workspace_mode else 'dashboard/panel_data_list.html'
+        return _render(template_name,
                        user=user, site=site,
                        dataset_key=dataset_key, items=[current_item],
                        edit_prefix=f'_dataset/{dataset_key}',
@@ -5211,7 +5408,10 @@ def dataset_edit(dataset_key, item_id):
                         default_template_id=default_template_id,
                         detail_requirements=detail_requirements,
                         style_registry=STYLE_REGISTRY,
-                        icon_list=icon_names())
+                        icon_list=icon_names(),
+                        workspace_mode=workspace_mode,
+                        dataset_edit_endpoint=dataset_edit_endpoint,
+                        page_label=page_label)
 
     if request.method == 'POST':
         if storage_lang and not datasets.find(site.id, dataset_key, item_id, lang=storage_lang):
@@ -5437,7 +5637,11 @@ def dataset_edit(dataset_key, item_id):
 
         datasets.update(site.id, dataset_key, item_id, fields, lang=storage_lang)
         flash('已保存')
-        return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
+        # 保存后留在当前内容编辑器；统一列表入口已经迁移到“内容列表”。
+        redirect_args = {'dataset_key': dataset_key, 'item_id': item_id, 'site': site.id, 'lang': lang}
+        if not workspace_mode:
+            redirect_args['_fragment'] = '1'
+        return redirect(url_for(dataset_edit_endpoint, **redirect_args))
 
     return render_edit(item, source_item)
 

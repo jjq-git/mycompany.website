@@ -1,13 +1,7 @@
 {# 单页模块编辑器 — 所有菜单页面共用同一个模块库（blocks/），各自保存不同的模块数据 #}
 {% from 'dashboard/_block_icons.html' import block_icon %}
-<div class="d-flex align-items-center justify-content-between mb-2">
+<div class="d-flex align-items-center mb-2">
   <span class="fw-semibold">{{ page_display_name }}</span>
-  <div class="d-flex gap-1">
-    {% if is_list_page %}
-    <button class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" onclick="openDatasetPanel('{{ page_key }}')" title="管理 {{ page_key }} 数据"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg> 数据</button>
-    <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" onclick="openDetailTemplatesPanel('{{ page_key }}')" title="管理 {{ page_key }} 详情模板"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h5"/></svg> 详情模板</button>
-    {% endif %}
-  </div>
 </div>
 {% if translation_enabled and languages and languages|length > 1 and current_lang != default_lang %}
 {# AI 翻译栏 — 独立一行，与语言标签区分 #}
@@ -32,7 +26,7 @@
 
 {# ---- 已选模块列表 ---- #}
 <div>
-  <div class="small text-muted mb-2">已选模块（点击箭头排序 | 点击配置）</div>
+  <div class="small text-muted mb-2">已选模块（拖拽标题或使用箭头排序，点击标题展开配置）</div>
   <form method="post" action="{{ url_for('core.page_panel', page_key=page_key, site=site.id, _fragment='1', lang=current_lang) }}" id="modulesForm" data-page-key="{{ page_key }}" enctype="multipart/form-data" onsubmit="submitModuleFormAjax(this, event)">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="_draft_page_key" value="{{ page_key }}">
@@ -52,6 +46,8 @@
       <div class="card mb-2 module-item" data-index="{{ i }}" data-module-index="{{ i }}">
         <div class="d-flex align-items-center justify-content-between p-2 module-header"
              onclick="toggleModuleAccordion(this.closest('.module-item'))">
+          <span class="module-title-group">
+          <span class="module-order">#{{ i + 1 }}</span>
           <span class="module-title-stack">
             <span class="module-title-main">
               <svg class="module-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -60,8 +56,9 @@
               {{ block_icon(module.type) }} {{ mod_title }}
             </span>
             <span class="module-title-meta">
-              #{{ i + 1 }} · {{ module.variant | default('default') }}
+              {{ module.variant | default('default') }}
             </span>
+          </span>
           </span>
           <div class="d-flex gap-1">
             <button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)"><svg viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
@@ -191,7 +188,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=111"></script>
+<script src="/static/js/admin_modules.js?v=112"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -217,16 +214,6 @@ window._moduleCtx = {
   isDatasetMode: false,
   containerId: 'selectedModules'
 };
-
-function openDetailTemplatesPanel(datasetKey) {
-  var params = new URLSearchParams(window.location.search);
-  var siteParam = params.get('site') || '{{ site.id }}';
-  var langParam = params.get('lang') || '{{ current_lang }}';
-  var url = '/_detail_templates/' + encodeURIComponent(datasetKey) + '?_fragment=1&site=' + encodeURIComponent(siteParam);
-  if (langParam) url += '&lang=' + encodeURIComponent(langParam);
-  if (typeof loadPanel === 'function') loadPanel(url);
-  else window.location.href = url;
-}
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>'"]/g, function(ch) {
@@ -635,7 +622,7 @@ function mediaUploadHtml(name, value, type, placeholder, altValue) {
     '<div class="module-media-alt-row mt-1">' +
       '<input type="text" class="form-control form-control-sm module-media-alt-input" name="' + safeName + '_alt" value="' + safeAlt + '" placeholder="图片 Alt：自动使用标题/产品名，可覆盖">' +
     '</div>';
-  return '<div class="module-media-tools mt-1">' +
+  return '<div class="module-media-layout"><div class="module-media-tools">' +
       '<label class="module-media-picker' + (value ? ' has-media' : '') + '" title="' + (isEmbed ? '上传网页包' : '点击上传') + '">' +
         preview +
         (value ? '<span class="module-media-preview-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' : '') +
@@ -643,12 +630,11 @@ function mediaUploadHtml(name, value, type, placeholder, altValue) {
         (value ? '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' : '') +
       '</label>' +
     '</div>' +
-    '<div class="form-text mt-1">' + helpText + '</div>' +
-    '<div class="module-media-url-row">' +
+    '<div class="module-media-content"><div class="module-media-url-row">' +
       '<input type="text" class="form-control form-control-sm" name="' + safeName + '" value="' + safeValue + '" placeholder="' + (_schemaEsc ? _schemaEsc(placeholder || '') : escapeHtml(placeholder || '')) + '" oninput="updateImagePreview(this)">' +
       '<button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>' +
       (isVideo || isEmbed ? '' : '<input type="hidden" name="' + safeName + '_convert_webp" value="false"><label class="module-convert-check"><input type="checkbox" name="' + safeName + '_convert_webp" value="true" checked><span></span>WebP</label>') +
-    '</div>' + altInput;
+    '</div>' + altInput + '<div class="form-text">' + helpText + '</div></div></div>';
 }
 
 /* 单个内容字段 → 编辑控件 */
@@ -1556,7 +1542,7 @@ function onBlockPaletteConfirm(type, variant, dataPreset) {
       var variantInput = item.querySelector('input[name$="_variant"]');
       if (variantInput) variantInput.value = variant || 'default';
       var meta = item.querySelector('.module-title-meta');
-      if (meta) meta.textContent = '#' + (switchTargetIndex + 1) + ' · ' + (variant || 'default');
+      if (meta) meta.textContent = variant || 'default';
       applyDataPresetToModule(item, switchTargetIndex, dataPreset);
     }
     switchTargetIndex = null;
@@ -2057,7 +2043,7 @@ function addModule(type, variant, dataPreset) {
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle"></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label>' +
-    '<div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius:4px 4px 0 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
+    '<div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius: 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
       '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'bold\',false,null);event.preventDefault()" title="加粗" style="font-size:14px;line-height:1"><b>B</b></button>' +
       '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'italic\',false,null);event.preventDefault()" title="斜体" style="font-size:14px;line-height:1"><i>I</i></button>' +
       '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="document.execCommand(\'underline\',false,null);event.preventDefault()" title="下划线" style="font-size:14px;line-height:1"><u>U</u></button>' +
@@ -2075,7 +2061,7 @@ function addModule(type, variant, dataPreset) {
       '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorTable(this,event)" title="插入表格" style="font-size:14px;line-height:1">?</button>' +
       '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorLink(this,event)" title="插入链接" style="font-size:14px;line-height:1">??</button>' +
     '</div>' +
-    '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius:0 0 4px 4px;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML"></div>' +
+    '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius: 0;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML"></div>' +
     '<textarea class="form-control form-control-sm d-none" name="module_' + idx + '_data_body"></textarea></div>';
     specialEditor =
     '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
@@ -2530,10 +2516,10 @@ function addModule(type, variant, dataPreset) {
   div.dataset.moduleIndex = idx;
   div.innerHTML =
     '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="cursor:pointer">' +
-      '<span class="module-title-stack">' +
+      '<span class="module-title-group"><span class="module-order">#' + (idx + 1) + '</span><span class="module-title-stack">' +
         '<span class="module-title-main">' + getBlockIconHTML(type) + ' ' + escapeHtml(displayName) + '</span>' +
-        '<span class="module-title-meta">#' + (idx + 1) + ' · ' + escapeHtml(variant || 'default') + '</span>' +
-      '</span>' +
+        '<span class="module-title-meta">' + escapeHtml(variant || 'default') + '</span>' +
+      '</span></span>' +
       '<div class="d-flex gap-1">' +
 	        '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)"><svg viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>' +
 	        '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg></button>' +
@@ -2665,9 +2651,8 @@ function reindexModules() {
     // 更新 data-index 和 data-module-index
     item.dataset.index = i;
     item.dataset.moduleIndex = i;
-    var meta = item.querySelector('.module-title-meta');
-    var variantInp = item.querySelector('input[name$="_variant"]');
-    if (meta) meta.textContent = '#' + (i + 1) + ' · ' + ((variantInp && variantInp.value) || 'default');
+    var order = item.querySelector('.module-order');
+    if (order) order.textContent = '#' + (i + 1);
   });
   scheduleModuleDraftPreview();
 }
@@ -2894,7 +2879,7 @@ function enlargeImage(img) {
     overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:pointer';
     overlay.onclick = function() { overlay.style.display = 'none'; };
     var lbImg = document.createElement('img');
-    lbImg.style.cssText = 'max-width:95vw;max-height:95vh;object-fit:contain;background-color:#fff;background-image:linear-gradient(45deg,#eef2f7 25%,transparent 25%),linear-gradient(-45deg,#eef2f7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef2f7 75%),linear-gradient(-45deg,transparent 75%,#eef2f7 75%);background-position:0 0,0 8px,8px -8px,-8px 0;background-size:16px 16px;border-radius:6px;padding:12px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
+    lbImg.style.cssText = 'max-width:95vw;max-height:95vh;object-fit:contain;background-color:#fff;background-image:linear-gradient(45deg,#eef2f7 25%,transparent 25%),linear-gradient(-45deg,#eef2f7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef2f7 75%),linear-gradient(-45deg,transparent 75%,#eef2f7 75%);background-position:0 0,0 8px,8px -8px,-8px 0;background-size:16px 16px;border-radius: 0;padding:12px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
     overlay.appendChild(lbImg);
     document.body.appendChild(overlay);
   }
@@ -3374,11 +3359,11 @@ function loadPickerDatasetItems(datasetName) {
       dsPickerCache.forEach(function(item, i) {
         var cover = item.cover || '';
         var covHtml = cover
-          ? '<img src="' + _schemaEsc(cover) + '" alt="" loading="lazy" style="width:100%;height:90px;object-fit:cover;border-radius:4px 4px 0 0" onerror="this.style.display=\'none\'">'
-          : '<div style="width:100%;height:90px;background:#f1f5f9;border-radius:4px 4px 0 0;display:flex;align-items:center;justify-content:center;font-size:24px;color:#cbd5e1">??</div>';
+          ? '<img src="' + _schemaEsc(cover) + '" alt="" loading="lazy" style="width:100%;height:90px;object-fit:cover;border-radius:0" onerror="this.style.display=\'none\'">'
+          : '<div style="width:100%;height:90px;background:#f1f5f9;border-radius:0;display:flex;align-items:center;justify-content:center;font-size:24px;color:#cbd5e1">无图</div>';
         html += '<div class="col-4 col-md-3 mb-2">' +
           '<div onclick="selectFeaturedItem(' + i + ')" ' +
-          'style="cursor:pointer;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;transition:all .15s;height:100%" ' +
+          'style="cursor:pointer;border:1px solid #e2e8f0;border-radius: 0;overflow:hidden;transition:all .15s;height:100%" ' +
           'onmouseenter="this.style.borderColor=\'#067a7a\';this.style.boxShadow=\'0 2px 10px rgba(6,122,122,.18)\';this.style.transform=\'translateY(-2px)\'" ' +
           'onmouseleave="this.style.borderColor=\'#e2e8f0\';this.style.boxShadow=\'none\';this.style.transform=\'none\'">' +
           covHtml +

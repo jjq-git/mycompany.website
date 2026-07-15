@@ -433,7 +433,7 @@
       '<div class="module-media-alt-row mt-1">' +
         '<input type="text" class="form-control form-control-sm module-media-alt-input" name="' + safeName + '_alt" value="' + safeAlt + '" placeholder="图片 Alt：自动使用标题/产品名，可覆盖">' +
       '</div>';
-    return '<div class="module-media-tools mt-1">' +
+    return '<div class="module-media-layout"><div class="module-media-tools">' +
         '<label class="module-media-picker' + (value ? ' has-media' : '') + '" title="' + (isEmbed ? '上传网页包' : '点击上传') + '">' +
           preview +
           (value ? moduleMediaPreviewButton() : '') +
@@ -441,12 +441,11 @@
           (value ? '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' : '') +
         '</label>' +
       '</div>' +
-      '<div class="form-text mt-1">' + helpText + '</div>' +
-      '<div class="module-media-url-row">' +
+      '<div class="module-media-content"><div class="module-media-url-row">' +
         '<input type="text" class="form-control form-control-sm" name="' + safeName + '" value="' + safeValue + '" placeholder="' + esc(placeholder || '') + '" oninput="updateImagePreview(this)">' +
         '<button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>' +
         (isVideo || isEmbed ? '' : '<input type="hidden" name="' + safeName + '_convert_webp" value="false"><label class="module-convert-check"><input type="checkbox" name="' + safeName + '_convert_webp" value="true" checked><span></span>WebP</label>') +
-      '</div>' + altInput;
+      '</div>' + altInput + '<div class="form-text">' + helpText + '</div></div></div>';
 }
 
   function enhanceCompactSelects(root) {
@@ -571,7 +570,7 @@
   function detailGalleryItemHtml(index, url, collapsed) {
     var hasUrl = !!url;
     return '<div class="border rounded mb-2 detail-gallery-item' + (collapsed ? ' collapsed' : '') + '" data-image-index="' + index + '">' +
-      '<div class="detail-gallery-item-header d-flex justify-content-between align-items-center px-2 py-2" style="cursor:pointer;background:#f8fafc;border-radius:4px 4px 0 0" onclick="window._toggleDetailGalleryItem(this)">' +
+      '<div class="detail-gallery-item-header d-flex justify-content-between align-items-center px-2 py-2" style="cursor:pointer;background:#f8fafc;border-radius:0" onclick="window._toggleDetailGalleryItem(this)">' +
         '<div class="d-flex align-items-center gap-2">' +
           detailGalleryIcon('chevron') +
           '<span class="small fw-semibold">图片 ' + (index + 1) + '</span>' +
@@ -1305,7 +1304,7 @@
         itemsEl.innerHTML = items.map(function(item, i) {
           var cover = item.cover || item.image || item.photo || '';
           return '<div class="col-4 col-md-3 mb-2">' +
-            '<div onclick="window.selectFeaturedItem(' + i + ')" style="cursor:pointer;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;height:100%">' +
+            '<div onclick="window.selectFeaturedItem(' + i + ')" style="cursor:pointer;border:1px solid #e2e8f0;border-radius: 0;overflow:hidden;height:100%">' +
               (cover ? '<img src="' + esc(cover) + '" alt="" loading="lazy" style="width:100%;height:90px;object-fit:cover" onerror="this.style.display=\'none\'">' : '<div style="width:100%;height:90px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8">无图</div>') +
               '<div style="padding:6px 8px"><div style="font-size:14px;font-weight:600;line-height:1.3;color:#1e293b">' + esc(item.title || item.name || item.slug || '') + '</div></div>' +
             '</div></div>';
@@ -1576,7 +1575,7 @@
       overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:pointer';
       overlay.onclick = function() { overlay.style.display = 'none'; };
       var lbImg = document.createElement('img');
-      lbImg.style.cssText = 'max-width:95vw;max-height:95vh;object-fit:contain;background-color:#fff;background-image:linear-gradient(45deg,#eef2f7 25%,transparent 25%),linear-gradient(-45deg,#eef2f7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef2f7 75%),linear-gradient(-45deg,transparent 75%,#eef2f7 75%);background-position:0 0,0 8px,8px -8px,-8px 0;background-size:16px 16px;border-radius:6px;padding:12px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
+      lbImg.style.cssText = 'max-width:95vw;max-height:95vh;object-fit:contain;background-color:#fff;background-image:linear-gradient(45deg,#eef2f7 25%,transparent 25%),linear-gradient(-45deg,#eef2f7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef2f7 75%),linear-gradient(-45deg,transparent 75%,#eef2f7 75%);background-position:0 0,0 8px,8px -8px,-8px 0;background-size:16px 16px;border-radius: 0;padding:12px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
       overlay.appendChild(lbImg);
       document.body.appendChild(overlay);
     }
@@ -2592,10 +2591,10 @@
     /* ====== 构建 HTML (结构涓Jinja 模板对齐) ====== */
     var html =
       '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="' + headerBg + 'cursor:pointer">' +
-        '<span class="module-title-stack ' + titleColor + '">' +
+        '<span class="module-title-group ' + titleColor + '"><span class="module-order">#' + (idx + 1) + '</span><span class="module-title-stack">' +
           '<span class="module-title-main">' + getBlockIconHTML(type) + ' ' + esc(displayName) + '</span>' +
-          '<span class="module-title-meta">#' + (idx + 1) + ' · ' + esc(variantLabel) + '</span>' +
-        '</span>' +
+          '<span class="module-title-meta">' + esc(variantLabel) + '</span>' +
+        '</span></span>' +
         '<div class="d-flex gap-1 flex-shrink-0 flex-nowrap">' +
           '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();window._moveModule(this, -1)">' + detailGalleryIcon('up') + '</button>' +
           '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();window._moveModule(this, 1)">' + detailGalleryIcon('down') + '</button>' +
@@ -3168,7 +3167,7 @@
     var MAX_COLS = 10, MAX_ROWS = 8;
     var popover = document.createElement('div');
     popover.className = 'rte-table-grid-popover';
-    popover.style.cssText = 'position:absolute;z-index:99999;background:#fff;border:1px solid #dee2e6;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.15);padding:8px';
+    popover.style.cssText = 'position:absolute;z-index:99999;background:#fff;border:1px solid #dee2e6;border-radius: 0;box-shadow:0 6px 20px rgba(0,0,0,.15);padding:8px';
     var header = document.createElement('div');
     header.className = 'rte-table-grid-header';
     header.style.cssText = 'text-align:center;font-size:14px;color:#6c757d;margin-bottom:6px;font-weight:500';
@@ -3181,7 +3180,7 @@
       for (var c = 1; c <= MAX_COLS; c++) {
         var cell = document.createElement('div');
         cell.className = 'rte-table-grid-cell';
-        cell.style.cssText = 'width:22px;height:22px;border:1px solid #e0e0e0;border-radius:2px;cursor:pointer;transition:background .08s';
+        cell.style.cssText = 'width:22px;height:22px;border:1px solid #e0e0e0;border-radius: 0;cursor:pointer;transition:background .08s';
         cell.dataset.row = r;
         cell.dataset.col = c;
         grid.appendChild(cell);
@@ -3421,7 +3420,7 @@
     restoreRteSelection(rte);
     var safeUrl = String(url || '').replace(/"/g, '&quot;');
     if (!safeUrl) return;
-    document.execCommand('insertHTML', false, '<img src="' + safeUrl + '" style="max-width:100%;border-radius:6px">');
+    document.execCommand('insertHTML', false, '<img src="' + safeUrl + '" style="max-width:100%;border-radius:0">');
     syncRteBody(rte);
   }
 
@@ -3441,7 +3440,7 @@
     toolbar.className = 'rte-media-toolbar';
     toolbar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
       'padding:3px 6px;background:#f5f5f5;border:1px solid #e0e0e0;border-bottom:none;' +
-      'border-radius:6px 6px 0 0;font-size:14px;color:#888';
+      'border-radius: 0;font-size:14px;color:#888';
     toolbar.innerHTML = '<span>馃幀 视频</span>';
 
     var delBtn = document.createElement('button');
@@ -3450,7 +3449,7 @@
     delBtn.setAttribute('contenteditable', 'false');
     delBtn.textContent = '✕?删除';
     delBtn.style.cssText = 'border:1px solid #ddd;background:#fff;color:#e74c3c;' +
-      'border-radius:3px;cursor:pointer;font-size:14px;padding:1px 8px;line-height:1.6';
+      'border-radius: 0;cursor:pointer;font-size:14px;padding:1px 8px;line-height:1.6';
     toolbar.appendChild(delBtn);
     wrapper.appendChild(toolbar);
 
@@ -3459,7 +3458,7 @@
     video.setAttribute('controls', '');
     video.setAttribute('playsinline', '');
     video.setAttribute('preload', 'metadata');
-    video.style.cssText = 'max-width:100%;display:block;border-radius:0 0 6px 6px';
+    video.style.cssText = 'max-width:100%;display:block;border-radius:0';
     wrapper.appendChild(video);
 
     // 鐢?Range.insertNode 直接插入 DOM 节点，避鍏?execCommand insertHTML
@@ -3489,7 +3488,7 @@
     iframe.setAttribute('frameborder', '0');
     iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
     iframe.setAttribute('allowfullscreen', '');
-    iframe.style.cssText = 'width:100%;aspect-ratio:16/9;display:block;border:none;border-radius:8px;margin:1rem 0';
+    iframe.style.cssText = 'width:100%;aspect-ratio:16/9;display:block;border:none;border-radius: 0;margin:1rem 0';
 
     var sel = window.getSelection();
     if (sel.rangeCount) {
@@ -3511,7 +3510,7 @@
     var safeUrl = String(url || '').replace(/"/g, '&quot;');
     var safeName = String(name || url || 'media').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     if (category === 'image') {
-      document.execCommand('insertHTML', false, '<img src="' + safeUrl + '" alt="' + safeName + '" style="max-width:100%;border-radius:6px">');
+      document.execCommand('insertHTML', false, '<img src="' + safeUrl + '" alt="' + safeName + '" style="max-width:100%;border-radius:0">');
     } else if (category === 'video') {
       insertRteVideo(rte, url);
       return;
@@ -3916,7 +3915,7 @@
     overlay.style.cssText = 'display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.35);align-items:center;justify-content:center';
     // 弹窗含三标签页（外部链接 / 本站页面 / 媒体文件）+ 共用 URL 预览栏
     overlay.innerHTML =
-      '<div class="rte-url-dialog" style="background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);padding:20px;width:520px;max-width:92vw;max-height:85vh;display:flex;flex-direction:column">' +
+      '<div class="rte-url-dialog" style="background:#fff;border-radius: 0;box-shadow:0 8px 32px rgba(0,0,0,.18);padding:20px;width:520px;max-width:92vw;max-height:85vh;display:flex;flex-direction:column">' +
         '<div class="rte-url-dialog-title small fw-semibold mb-3" style="font-size:14px;color:#343a40;flex-shrink:0"></div>' +
         // 标签页（仅 link 模式可见）
         '<div class="rte-url-tabs" style="display:none;flex-shrink:0;border-bottom:2px solid #e9ecef;margin-bottom:12px">' +
@@ -4233,6 +4232,63 @@
   });
 
   // HTML 源码切换：在 contenteditable 与 textarea 之间切换
+  function initModuleDragSort(container) {
+    if (!container || container.dataset.moduleDragSortReady === '1') return;
+    container.dataset.moduleDragSortReady = '1';
+    var dragged = null;
+    var suppressClick = false;
+    container.addEventListener('click', function(event) {
+      if (!suppressClick || !event.target.closest('.module-header')) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      suppressClick = false;
+    }, true);
+    container.addEventListener('pointerdown', function(event) {
+      var header = event.target.closest('.module-header');
+      if (!header || event.target.closest('button,a,input,select,textarea,label')) return;
+      var item = header.closest('.module-item');
+      if (item) item.draggable = true;
+    });
+    container.addEventListener('dragstart', function(event) {
+      var item = event.target.closest('.module-item');
+      if (!item || !item.draggable) { event.preventDefault(); return; }
+      dragged = item;
+      suppressClick = true;
+      container.classList.add('module-list-sorting');
+      item.classList.add('is-dragging');
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', item.dataset.moduleIndex || item.dataset.index || '');
+    });
+    container.addEventListener('dragover', function(event) {
+      if (!dragged) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      var siblings = Array.prototype.slice.call(container.querySelectorAll(':scope > .module-item:not(.is-dragging)'));
+      var next = siblings.find(function(item) {
+        var rect = item.getBoundingClientRect();
+        return event.clientY < rect.top + rect.height / 2;
+      });
+      container.insertBefore(dragged, next || null);
+    });
+    function finish() {
+      if (!dragged) return;
+      dragged.classList.remove('is-dragging');
+      dragged.draggable = false;
+      dragged = null;
+      container.classList.remove('module-list-sorting');
+      if (container.id === 'selectedModules' && typeof window.reindexModules === 'function') window.reindexModules();
+      if (container.id === 'selectedModulesDs' && typeof window._reindexModules === 'function') window._reindexModules();
+      window.setTimeout(function() { suppressClick = false; }, 180);
+    }
+    container.addEventListener('drop', function(event) { event.preventDefault(); finish(); });
+    container.addEventListener('dragend', finish);
+    document.addEventListener('pointerup', function() {
+      container.querySelectorAll(':scope > .module-item[draggable="true"]:not(.is-dragging)').forEach(function(item) { item.draggable = false; });
+    });
+  }
+  initModuleDragSort(document.getElementById('selectedModules'));
+  initModuleDragSort(document.getElementById('selectedModulesDs'));
+
   function toggleRteSource(rte) {
     if (!rte) return;
     var wrapper = rte.closest('.rte-wrapper');

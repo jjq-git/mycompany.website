@@ -184,6 +184,8 @@ def _register_context_processors(app):
         result = {
             'translation_enabled': translator_ready(),
             'platform_domain': app.config.get('PLATFORM_DOMAIN', '') or 'mycompany.website',
+            'content_count': 0,
+            'message_count': 0,
         }
         try:
             site_id = request.args.get('site', type=int)
@@ -197,6 +199,16 @@ def _register_context_processors(app):
                 result['unread_count'] = ContactMessage.query.filter_by(
                     site_id=site.id, is_read=False, is_spam=False
                 ).count()
+                result['message_count'] = ContactMessage.query.filter_by(
+                    site_id=site.id, is_spam=False
+                ).count()
+                # 内容中心统计来自站点菜单声明的列表数据集，侧栏在所有后台页面保持一致。
+                from .core.routes import _content_catalog, _get_panel_lang
+                lang, _languages, default_lang = _get_panel_lang(site)
+                result['content_count'] = sum(
+                    len(entry.get('items') or [])
+                    for entry in _content_catalog(site, lang, default_lang)
+                )
         except Exception:
             # 不再静默吞: meta 读取失败要留痕, 但不影响 translation_enabled
             app.logger.exception('注入 template_meta 失败')

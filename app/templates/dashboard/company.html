@@ -28,8 +28,8 @@
     {# 图片预览容器必须有 min-width/min-height，防止图片为 0×0 时容器塌陷导致移除按钮飘在外面 #}
     <div class="mt-2 module-image-preview" style="{% if not current_logo %}display:none{% endif %}">
       <div style="position:relative;display:inline-block;min-width:44px;min-height:34px;vertical-align:top">
-        <img src="{{ current_logo }}" style="max-width:160px;max-height:100px;min-width:44px;min-height:20px;border-radius:4px;border:1px solid #dee2e6;cursor:pointer;object-fit:contain;background:#f8fafc" onclick="enlargeCompanyLogo(this)" onerror="showCompanyImageError(this)">
-        <button type="button" class="btn btn-sm" onclick="clearCompanyLogo(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:14px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button>
+        <img src="{{ current_logo }}" style="max-width:160px;max-height:100px;min-width:44px;min-height:20px;border-radius: 0;border:1px solid #dee2e6;cursor:pointer;object-fit:contain;background:#f8fafc" onclick="enlargeCompanyLogo(this)" onerror="showCompanyImageError(this)">
+        <button type="button" class="btn btn-sm" onclick="clearCompanyLogo(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius: 0;background:#dc3545;color:#fff;font-size:14px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button>
       </div>
     </div>
   </div>
@@ -48,8 +48,8 @@
     {# Favicon 预览容器同样需要 min-width/min-height 防止塌陷 #}
     <div class="mt-2 module-image-preview" style="{% if not current_favicon %}display:none{% endif %}">
       <div style="position:relative;display:inline-block;min-width:36px;min-height:36px;vertical-align:top">
-        <img src="{{ current_favicon }}" style="max-width:32px;max-height:32px;min-width:32px;min-height:32px;border-radius:2px;border:1px solid #dee2e6;cursor:pointer;object-fit:contain" onclick="enlargeCompanyFavicon(this)" onerror="showCompanyImageError(this)">
-        <button type="button" class="btn btn-sm" onclick="clearCompanyFavicon(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:#dc3545;color:#fff;font-size:14px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button>
+        <img src="{{ current_favicon }}" style="max-width:32px;max-height:32px;min-width:32px;min-height:32px;border-radius: 0;border:1px solid #dee2e6;cursor:pointer;object-fit:contain" onclick="enlargeCompanyFavicon(this)" onerror="showCompanyImageError(this)">
+        <button type="button" class="btn btn-sm" onclick="clearCompanyFavicon(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius: 0;background:#dc3545;color:#fff;font-size:14px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button>
       </div>
     </div>
   </div>
@@ -124,7 +124,7 @@ function enlargeCompanyLogo(img) {
     overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:pointer';
     overlay.onclick = function() { overlay.style.display = 'none'; };
     var lbImg = document.createElement('img');
-    lbImg.style.cssText = 'max-width:95vw;max-height:95vh;object-fit:contain;background-color:#fff;background-image:linear-gradient(45deg,#eef2f7 25%,transparent 25%),linear-gradient(-45deg,#eef2f7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef2f7 75%),linear-gradient(-45deg,transparent 75%,#eef2f7 75%);background-position:0 0,0 8px,8px -8px,-8px 0;background-size:16px 16px;border-radius:6px;padding:12px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
+    lbImg.style.cssText = 'max-width:95vw;max-height:95vh;object-fit:contain;background-color:#fff;background-image:linear-gradient(45deg,#eef2f7 25%,transparent 25%),linear-gradient(-45deg,#eef2f7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef2f7 75%),linear-gradient(-45deg,transparent 75%,#eef2f7 75%);background-position:0 0,0 8px,8px -8px,-8px 0;background-size:16px 16px;border-radius: 0;padding:12px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
     overlay.appendChild(lbImg);
     document.body.appendChild(overlay);
   }
@@ -141,7 +141,7 @@ function showCompanyImageError(img) {
   if (container.querySelector('.image-error-placeholder')) return;
   var errorEl = document.createElement('div');
   errorEl.className = 'image-error-placeholder';
-  errorEl.style.cssText = 'min-width:44px;min-height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px dashed #e5e7eb;border-radius:4px;background:#fef2f2;padding:6px 10px;font-size:14px;color:#dc3545;white-space:nowrap';
+  errorEl.style.cssText = 'min-width:44px;min-height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px dashed #e5e7eb;border-radius: 0;background:#fef2f2;padding:6px 10px;font-size:14px;color:#dc3545;white-space:nowrap';
   errorEl.textContent = '图片加载失败';
   container.insertBefore(errorEl, container.firstChild);
 }

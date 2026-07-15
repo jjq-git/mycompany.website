@@ -13,11 +13,11 @@
 <style>
   .ds-edit-head{width:100%;margin:0 0 12px;padding:12px 0 0;display:flex;align-items:center;justify-content:space-between;gap:12px}
   .ds-edit-title{display:flex;align-items:center;gap:8px;font-weight:700;color:#0f172a}
-  .ds-icon-btn{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #d8e0ea;background:#fff;color:#334155;border-radius:6px}
-  .ds-icon-btn svg,.ds-primary svg,.ds-danger-icon svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .ds-icon-btn{width:34px;height:34px;flex:0 0 34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #d8e0ea;background:#fff;color:#334155;border-radius:0}
+  .ds-edit-title svg,.ds-icon-btn svg{width:16px;height:16px;flex:0 0 16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .ds-icon-btn:hover{border-color:#0f9a8a;color:#0f766e;background:#f0fdfa}
   .dataset-edit-form{width:100%;padding:12px 24px 76px}
-  .ds-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:12px;overflow:hidden}
+  .ds-card{background:#fff;border:1px solid #e5e7eb;border-radius: 0;margin-bottom:12px;overflow:hidden}
   .ds-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid #edf2f7;background:#fbfcfd}
   .ds-card-title{font-size:13px;font-weight:700;color:#111827}
   .ds-card-body{padding:12px}
@@ -36,7 +36,7 @@
   .dataset-edit-form .form-label{font-size:12px;color:#475569;margin-bottom:4px}
   .dataset-edit-form .form-text,.ds-help{font-size:12px;color:#64748b;line-height:1.45; text-align:right;}
   .dataset-edit-form textarea.form-control{min-height:72px}
-  .dataset-edit-form .detail-field-section{display:grid;grid-template-columns:140px minmax(0,1fr);background:#fff!important;border:1px solid #e5e7eb!important;border-radius:8px!important;padding:0!important;overflow:hidden;margin-bottom:12px!important}
+  .dataset-edit-form .detail-field-section{display:grid;grid-template-columns:140px minmax(0,1fr);background:#fff!important;border:1px solid #e5e7eb!important;border-radius: 0;padding:0!important;overflow:hidden;margin-bottom:12px!important}
   .dataset-edit-form .detail-field-section>.small.fw-semibold,
   .dataset-edit-form .detail-field-section>.d-flex:first-child{align-self:stretch;padding:14px 12px;margin:0!important;border-right:1px solid #edf2f7;border-bottom:0;background:#fbfcfd}
   .dataset-edit-form .detail-field-section>*:first-child{grid-column:1;grid-row:1 / span 40}
@@ -89,14 +89,14 @@
   }
   #detailGalleryList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   #detailGalleryList .detail-gallery-item{margin-bottom:0!important}
-  .detail-multi-section{background:transparent!important;border:0!important;border-radius:0!important;overflow:visible!important;margin-bottom:0!important}
+  .detail-multi-section{background:transparent!important;border:0!important;border-radius: 0;overflow:visible!important;margin-bottom:0!important}
   .detail-multi-section>.small.fw-semibold{display:none!important}
   .detail-multi-section>#detailTablesList,
   .detail-multi-section>#detailLinksList{display:grid;grid-template-columns:1fr;gap:12px;margin:0 0 12px!important}
   .detail-multi-section>#detailSpecsList{display:grid;grid-template-columns:1fr;gap:12px;margin:0 0 12px!important}
   .dataset-edit-form .detail-table-item,
   .dataset-edit-form .detail-link-item,
-  .dataset-edit-form .detail-spec-group-item{display:grid;grid-template-columns:140px minmax(0,1fr);background:#fff;border:1px solid #e5e7eb!important;border-radius:8px!important;padding:0!important;overflow:hidden;margin:0 0 12px!important}
+  .dataset-edit-form .detail-spec-group-item{display:grid;grid-template-columns:140px minmax(0,1fr);background:#fff;border:1px solid #e5e7eb!important;border-radius: 0;padding:0!important;overflow:hidden;margin:0 0 12px!important}
   .dataset-edit-form .detail-table-item>.small.fw-semibold,
   .dataset-edit-form .detail-link-item>.small.fw-semibold,
   .dataset-edit-form .detail-spec-group-item>.d-flex:first-child{grid-column:1;grid-row:1 / span 40;align-self:stretch;padding:14px 12px;margin:0!important;border-right:1px solid #edf2f7;background:#fbfcfd}
@@ -124,7 +124,7 @@
   .detail-content-table-row{display:grid;gap:6px;min-width:0}
   .detail-content-table-row input{min-width:96px}
   .detail-content-block-editor{display:grid;gap:10px}
-  .detail-content-block-item{display:grid;grid-template-columns:minmax(130px,180px) minmax(0,1fr);gap:12px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px}
+  .detail-content-block-item{display:grid;grid-template-columns:minmax(130px,180px) minmax(0,1fr);gap:12px;background:#fff;border:1px solid #e5e7eb;border-radius: 0;padding:12px}
   .detail-content-block-side{display:grid;gap:8px;align-content:start}
   .detail-content-block-main{display:grid;gap:8px;min-width:0}
   .detail-content-media-grid{display:grid;grid-template-columns:160px minmax(0,1fr);gap:10px;align-items:start}
@@ -155,9 +155,10 @@
   .detail-content-block-item[data-block-type="note"] .detail-content-layout-wrap,
   .detail-content-block-item[data-block-type="embed"] .detail-content-media-fields,
   .detail-content-block-item[data-block-type="embed"] .detail-content-layout-wrap{display:none!important}
-  .ds-danger-icon{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #fecaca;background:#fff;color:#dc2626;border-radius:6px}
-  .ds-danger-icon:hover{background:#fef2f2;border-color:#f87171;color:#b91c1c}
-  .ds-advanced-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:12px;padding:12px}
+  .ds-danger-icon{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;color:#64748b;border-radius:0;padding:0}
+  .ds-danger-icon svg{width:16px;height:16px;flex:0 0 16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .ds-danger-icon:hover{background:#eef1f4;color:#334155}
+  .ds-advanced-card{background:#fff;border:1px solid #e5e7eb;border-radius: 0;margin-bottom:12px;padding:12px}
   .ds-advanced-row{display:flex;align-items:center;justify-content:space-between;gap:14px}
   .ds-setting-row{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:42px}
   .ds-setting-copy{min-width:0}
@@ -213,11 +214,15 @@
 <div class="ds-edit-head">
   <span class="ds-edit-title">{{ dataset_key | title }}{% if is_edit %} · 编辑 #{{ edit_item_id }}{% endif %}</span>
   <div class="d-flex gap-1">
+    {% if workspace_mode %}
+    <button class="ds-icon-btn" type="button" onclick="loadDatasetList()" title="返回内容列表" aria-label="返回内容列表">{{ ds_icon('list') }}</button>
+    {% else %}
     <button class="ds-icon-btn" type="button" onclick="backToPageEditor()" title="返回页面" aria-label="返回页面">{{ ds_icon('arrow-left') }}</button>
     {% if not is_edit %}
     <button class="ds-icon-btn" type="button" onclick="addDataItem()" title="新建" aria-label="新建">{{ ds_icon('plus') }}</button>
     {% else %}
     <button class="ds-icon-btn" type="button" onclick="loadDatasetList()" title="返回列表" aria-label="返回列表">{{ ds_icon('list') }}</button>
+    {% endif %}
     {% endif %}
   </div>
 </div>
@@ -272,7 +277,7 @@
 </div>
 
 {# ---- 已选模块列表 ---- #}
-<form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" class="dataset-edit-form" data-page-key="{{ dataset_key }}" data-no-auto-save="1" enctype="multipart/form-data">
+<form method="post" action="{{ url_for(dataset_edit_endpoint, dataset_key=dataset_key, item_id=edit_item_id, site=site.id, lang=current_lang, **({'_fragment':'1'} if not workspace_mode else {})) }}" id="datasetEditForm" class="dataset-edit-form" data-page-key="{{ dataset_key }}" data-no-auto-save="1" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="_draft_dataset_key" value="{{ dataset_key }}">
   <input type="hidden" name="_draft_item_id" value="{{ edit_item_id }}">
@@ -280,8 +285,8 @@
   <input type="hidden" name="_draft_force_template_preview" id="draftForceTemplatePreview" value="0">
   <input type="hidden" name="_advanced_modules_enabled" id="advancedModulesEnabled" value="{{ '1' if has_custom_modules else '0' }}">
 
-  <div class="ds-card">
-    <div class="ds-card-body ds-template-row">
+  <div class="ds-card ds-template-card">
+    <div class="ds-card-body ds-template-row ds-template-card__body">
       <label class="form-label mb-0">详情模板</label>
       {% set current_template_id = edit_item.template_id | default(default_template_id) %}
       <div class="ds-template-options" id="detailTemplateSelect">
@@ -316,43 +321,43 @@
   {% set content_block_items = edit_item.detail_content_blocks if edit_item.detail_content_blocks is iterable and edit_item.detail_content_blocks is not string else (edit_item.content_blocks if edit_item.content_blocks is iterable and edit_item.content_blocks is not string else []) %}
   {% set tags_val = edit_item.tags | join(', ') if edit_item.tags is iterable and edit_item.tags is not string else (edit_item.tags or '') %}
 
-  <div class="ds-card ds-side-card">
-    <div class="ds-card-head">
+  <div class="ds-card ds-side-card editor-component">
+    <div class="ds-card-head editor-component__header">
       <div class="ds-card-title">基础内容</div>
     </div>
-    <div class="ds-card-body">
+    <div class="ds-card-body editor-component__body">
       <div class="ds-basic-grid">
-        <div>
-          <label class="form-label">Slug <span class="text-danger">*</span></label>
-          <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required minlength="3" maxlength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" title="只能用小写字母、数字、连字符，3-30 字符，不能以连字符开头或结尾">
-        </div>
-        <div>
-          <label class="form-label">标题</label>
-          <input type="text" class="form-control form-control-sm" name="title" value="{{ edit_item.title or edit_item.name or '' }}">
-        </div>
-        <div class="ds-basic-full">
-          <label class="form-label">简介</label>
-          <textarea class="form-control form-control-sm" name="summary" rows="2">{{ edit_item.summary or edit_item.description or edit_item.excerpt or '' }}</textarea>
-        </div>
-        <div class="ds-basic-full ds-two-grid">
+        <div class="ds-basic-full ds-basic-meta-grid">
+          <div>
+            <label class="form-label">Slug <span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required minlength="3" maxlength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" title="只能用小写字母、数字、连字符，3-30 字符，不能以连字符开头或结尾">
+          </div>
+          <div>
+            <label class="form-label">标题</label>
+            <input type="text" class="form-control form-control-sm" name="title" value="{{ edit_item.title or edit_item.name or '' }}">
+          </div>
           <div>
             <label class="form-label">分类</label>
             <input type="text" class="form-control form-control-sm" name="category" value="{{ edit_item.category or '' }}">
           </div>
-          <div>
-            <label class="form-label">标签</label>
-            <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val }}" placeholder="多个标签用逗号分隔，例如：LED, 灯条, 工程案例">
-          </div>
+        </div>
+        <div class="ds-basic-full">
+          <label class="form-label">标签</label>
+          <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val }}" placeholder="多个标签用逗号分隔，例如：LED, 灯条, 工程案例">
+        </div>
+        <div class="ds-basic-full">
+          <label class="form-label">简介</label>
+          <textarea class="form-control form-control-sm" name="summary" rows="2">{{ edit_item.summary or edit_item.description or edit_item.excerpt or '' }}</textarea>
         </div>
       </div>
     </div>
   </div>
 
   <div id="detailFieldSections">
-  <div class="detail-field-section" data-field-section="media">
-    <div class="small fw-semibold">媒体</div>
+  <div class="detail-field-section editor-component" data-field-section="media">
+    <div class="small fw-semibold editor-component__header">媒体</div>
     {% set item_media_type = edit_item.media_type or ('embed' if edit_item.embed_url else ('video' if edit_item.video else 'image')) %}
-    <div class="ds-card-body">
+    <div class="ds-card-body editor-component__body">
       <div class="ds-media-grid">
         <div class="ds-media-preview-col">
           <label class="form-label">媒体类型</label>
@@ -415,23 +420,25 @@
     </div>
   </div>
 
-  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="body" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('body') %}display:none{% endif %}">
-    <div class="small fw-semibold mb-2">正文</div>
-    <textarea class="form-control form-control-sm" name="body" rows="8" style="min-height:160px; font-family:monospace; white-space:pre-wrap;">{{ edit_item.body or edit_item.content or '' }}</textarea>
+  <div class="p-2 rounded mb-2 detail-field-section editor-component" data-field-section="body" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('body') %}display:none{% endif %}">
+    <div class="small fw-semibold mb-2 editor-component__header">正文</div>
+    <div class="editor-component__body">
+      <textarea class="form-control form-control-sm" name="body" rows="8" style="min-height:160px; font-family:monospace; white-space:pre-wrap;">{{ edit_item.body or edit_item.content or '' }}</textarea>
+    </div>
   </div>
 
-  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="detail_images" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_images') %}display:none{% endif %}">
-    <div class="d-flex justify-content-between align-items-center mb-2">
+  <div class="p-2 rounded mb-2 detail-field-section editor-component" data-field-section="detail_images" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_images') %}display:none{% endif %}">
+    <div class="d-flex justify-content-between align-items-center mb-2 editor-component__header">
       <div class="small fw-semibold">细节图</div>
       <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDatasetDetailImage()">+ 添加图片</button>
     </div>
     <input type="hidden" name="detail_gallery_visible" value="{{ 'true' if gallery_cfg.get('visible', True) is not sameas false else 'false' }}">
     <input type="hidden" name="detail_gallery_count" id="detailGalleryCount" value="{{ gallery_images|length }}">
-    <div id="detailGalleryList">
+    <div id="detailGalleryList" class="editor-component__body editor-component__collection">
       {% for img in gallery_images %}
       {% set img_url = img.url if img is mapping else img %}
       {% set img_alt = img.alt if img is mapping else '' %}
-      <div class="border rounded p-2 mb-2 detail-gallery-item" data-gallery-index="{{ loop.index0 }}">
+      <div class="border rounded p-2 mb-2 detail-gallery-item editor-component__item" data-gallery-index="{{ loop.index0 }}">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span class="small fw-semibold">图片 {{ loop.index }}</span>
           <button type="button" class="ds-danger-icon" onclick="this.closest('.detail-gallery-item').remove();reindexDatasetDetailImages()" title="删除图片" aria-label="删除图片">{{ ds_icon('trash') }}</button>
@@ -476,21 +483,20 @@
     {% if spec_count.value > max_spec_group_count.value %}{% set max_spec_group_count.value = spec_count.value %}{% endif %}
   {% endfor %}
   {% set saved_detail_specs = edit_item.detail_specs if edit_item.detail_specs is iterable and edit_item.detail_specs is not string else [] %}
-  <div class="detail-multi-section" data-field-section="specs" style="{% if not current_req.get('specs') %}display:none{% endif %}">
-    <div class="small fw-semibold">规格参数</div>
+  <div class="detail-specs-section editor-component-stack" data-field-section="specs" style="{% if not current_req.get('specs') %}display:none{% endif %}">
     <input type="hidden" name="detail_specs_count" id="detailSpecsCount" value="{{ current_spec_group_count.value }}">
-    <div id="detailSpecsList">
+    <div id="detailSpecsList" class="editor-component-stack__body">
       {% for spec_group_i in range(max_spec_group_count.value or 1) %}
         {% set group_item = saved_detail_specs[spec_group_i] if saved_detail_specs|length > spec_group_i and saved_detail_specs[spec_group_i] is mapping else {} %}
         {% set group_items_raw = group_item.get('items', []) if group_item is mapping else [] %}
         {% set group_items = group_items_raw if saved_detail_specs|length > spec_group_i and group_items_raw is iterable and group_items_raw is not string else (specs_items if spec_group_i == 0 else []) %}
-        <div class="border rounded p-2 detail-spec-group-item" data-spec-group-index="{{ spec_group_i }}" style="{% if spec_group_i >= current_spec_group_count.value %}display:none{% endif %}">
-          <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="border rounded p-2 detail-spec-group-item editor-component" data-spec-group-index="{{ spec_group_i }}" style="{% if spec_group_i >= current_spec_group_count.value %}display:none{% endif %}">
+          <div class="d-flex justify-content-between align-items-center mb-2 editor-component__header">
             <span class="small fw-semibold">规格参数 {{ spec_group_i + 1 }}</span>
             <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailSpecRow({{ spec_group_i }})">+ 添加参数</button>
           </div>
           <input type="hidden" name="detail_specs_{{ spec_group_i }}_count" class="detail-spec-row-count" value="{{ group_items|length }}">
-          <div class="detail-spec-rows">
+          <div class="detail-spec-rows editor-component__body">
             {% for spec in group_items %}
             <div class="border rounded p-2 mb-2 dataset-spec-item" data-spec-index="{{ loop.index0 }}">
               <div class="detail-spec-legacy-head d-none">
@@ -511,15 +517,15 @@
     </div>
   </div>
 
-  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="detail_features" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_features') %}display:none{% endif %}">
-    <div class="d-flex justify-content-between align-items-center mb-2">
+  <div class="p-2 rounded mb-2 detail-field-section editor-component" data-field-section="detail_features" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_features') %}display:none{% endif %}">
+    <div class="d-flex justify-content-between align-items-center mb-2 editor-component__header">
       <div class="small fw-semibold">卖点特性</div>
       <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailFeature()">+ 添加卖点</button>
     </div>
     <input type="hidden" name="detail_features_count" id="detailFeaturesCount" value="{{ feature_items|length }}">
-    <div id="detailFeaturesList">
+    <div id="detailFeaturesList" class="editor-component__body editor-component__collection">
       {% for feature in feature_items %}
-      <div class="border rounded p-2 mb-2 detail-feature-item" data-feature-index="{{ loop.index0 }}">
+      <div class="border rounded p-2 mb-2 detail-feature-item editor-component__item" data-feature-index="{{ loop.index0 }}">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span class="small fw-semibold">卖点 {{ loop.index }}</span>
           <button type="button" class="ds-danger-icon" onclick="this.closest('.detail-feature-item').remove();reindexDetailFeatures()" title="删除卖点" aria-label="删除卖点">{{ ds_icon('trash') }}</button>
@@ -545,15 +551,15 @@
     </div>
   </div>
 
-  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="detail_files" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_files') %}display:none{% endif %}">
-    <div class="d-flex justify-content-between align-items-center mb-2">
+  <div class="p-2 rounded mb-2 detail-field-section editor-component" data-field-section="detail_files" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_files') %}display:none{% endif %}">
+    <div class="d-flex justify-content-between align-items-center mb-2 editor-component__header">
       <div class="small fw-semibold">资料下载</div>
       <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailFile()">+ 添加资料</button>
     </div>
     <input type="hidden" name="detail_files_count" id="detailFilesCount" value="{{ file_items|length }}">
-    <div id="detailFilesList">
+    <div id="detailFilesList" class="editor-component__body editor-component__collection">
       {% for file in file_items %}
-      <div class="border rounded p-2 mb-2 detail-file-edit-item" data-file-index="{{ loop.index0 }}">
+      <div class="border rounded p-2 mb-2 detail-file-edit-item editor-component__item" data-file-index="{{ loop.index0 }}">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span class="small fw-semibold">资料 {{ loop.index }}</span>
           <button type="button" class="ds-danger-icon" onclick="this.closest('.detail-file-edit-item').remove();reindexDetailFiles()" title="删除资料" aria-label="删除资料">{{ ds_icon('trash') }}</button>
@@ -569,15 +575,15 @@
     </div>
   </div>
 
-  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="detail_faqs" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_faqs') %}display:none{% endif %}">
-    <div class="d-flex justify-content-between align-items-center mb-2">
+  <div class="p-2 rounded mb-2 detail-field-section editor-component" data-field-section="detail_faqs" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_faqs') %}display:none{% endif %}">
+    <div class="d-flex justify-content-between align-items-center mb-2 editor-component__header">
       <div class="small fw-semibold">FAQ 问答</div>
       <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailFaq()">+ 添加问答</button>
     </div>
     <input type="hidden" name="detail_faqs_count" id="detailFaqsCount" value="{{ faq_items|length }}">
-    <div id="detailFaqsList">
+    <div id="detailFaqsList" class="editor-component__body editor-component__collection">
       {% for faq in faq_items %}
-      <div class="border rounded p-2 mb-2 detail-faq-edit-item" data-faq-index="{{ loop.index0 }}">
+      <div class="border rounded p-2 mb-2 detail-faq-edit-item editor-component__item" data-faq-index="{{ loop.index0 }}">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span class="small fw-semibold">问答 {{ loop.index }}</span>
           <button type="button" class="ds-danger-icon" onclick="this.closest('.detail-faq-edit-item').remove();reindexDetailFaqs()" title="删除问答" aria-label="删除问答">{{ ds_icon('trash') }}</button>
@@ -589,8 +595,8 @@
     </div>
   </div>
 
-  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="detail_content_blocks" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_content_blocks') %}display:none{% endif %}">
-    <div class="d-flex justify-content-between align-items-center mb-2">
+  <div class="p-2 rounded mb-2 detail-field-section editor-component" data-field-section="detail_content_blocks" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_content_blocks') %}display:none{% endif %}">
+    <div class="d-flex justify-content-between align-items-center mb-2 editor-component__header">
       <div class="small fw-semibold">正文</div>
       <div class="d-flex gap-1 flex-wrap">
         {% for t, label in [('text','文本'),('image','图片'),('video','视频'),('media_text','图文'),('gallery','多图'),('table','表格'),('heading','标题'),('note','提示'),('embed','嵌入')] %}
@@ -599,13 +605,13 @@
       </div>
     </div>
     <input type="hidden" name="detail_content_blocks_count" id="detailContentBlocksCount" value="{{ content_block_items|length }}">
-    <div id="detailContentBlocksList" class="detail-content-block-editor">
+    <div id="detailContentBlocksList" class="detail-content-block-editor editor-component__body editor-component__collection">
       {% for block in content_block_items %}
       {% set block_type = block.type or 'text' %}
       {% set block_image = block.image or block.url or '' %}
       {% set block_video = block.video or block.video_url or '' %}
       {% set block_images = block.images if block.images is iterable and block.images is not string else [] %}
-      <div class="detail-content-block-item" data-content-block-index="{{ loop.index0 }}" data-block-type="{{ block_type }}">
+      <div class="detail-content-block-item editor-component__item" data-content-block-index="{{ loop.index0 }}" data-block-type="{{ block_type }}">
         <div class="detail-content-block-side">
           <div class="d-flex justify-content-between align-items-center">
             <span class="small fw-semibold">内容块 {{ loop.index }}</span>
@@ -730,9 +736,9 @@
       {% endfor %}
     </div>
   </div>
-  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="detail_related" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_related') %}display:none{% endif %}">
-    <div class="small fw-semibold mb-2">相关推荐</div>
-    <div class="text-muted small detail-section-note">
+  <div class="p-2 rounded mb-2 detail-field-section editor-component" data-field-section="detail_related" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_related') %}display:none{% endif %}">
+    <div class="small fw-semibold mb-2 editor-component__header">相关推荐</div>
+    <div class="text-muted small detail-section-note editor-component__body">
       相关推荐由模板组件自动生成，不需要在单条数据中单独录入内容。推荐依据、显示数量和样式请在“详情模板”的相关推荐组件中配置。
     </div>
   </div>
@@ -758,14 +764,14 @@
     {% if table_count.value > max_table_count.value %}{% set max_table_count.value = table_count.value %}{% endif %}
   {% endfor %}
   {% set saved_detail_tables = edit_item.detail_tables if edit_item.detail_tables is iterable and edit_item.detail_tables is not string else [] %}
-  <div class="p-2 rounded mb-2 detail-field-section detail-multi-section" data-field-section="detail_tables" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_tables') %}display:none{% endif %}">
-    <div class="small fw-semibold mb-2">详情表格</div>
+  <div class="p-2 rounded mb-2 detail-field-section detail-multi-section editor-component" data-field-section="detail_tables" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_tables') %}display:none{% endif %}">
+    <div class="small fw-semibold mb-2 editor-component__header">详情表格</div>
     <input type="hidden" name="detail_tables_count" id="detailTablesCount" value="{{ current_table_count.value }}">
-    <div id="detailTablesList">
+    <div id="detailTablesList" class="editor-component__body editor-component__collection">
       {% for table_i in range(max_table_count.value or 1) %}
         {% set table_item = saved_detail_tables[table_i] if saved_detail_tables|length > table_i and saved_detail_tables[table_i] is mapping else {} %}
         {% set table_rows_saved = table_item.rows if table_item.rows is iterable and table_item.rows is not string else [] %}
-        <div class="border rounded p-2 detail-table-item" data-table-index="{{ table_i }}" style="{% if table_i >= current_table_count.value %}display:none{% endif %}">
+        <div class="border rounded p-2 detail-table-item editor-component__item" data-table-index="{{ table_i }}" style="{% if table_i >= current_table_count.value %}display:none{% endif %}">
           <div class="small fw-semibold mb-2">表格 {{ table_i + 1 }}</div>
           <input type="hidden" name="detail_tables_{{ table_i }}_rows" class="detail-table-row-count" value="{{ max_table_rows.value }}">
           <input type="hidden" name="detail_tables_{{ table_i }}_cols" class="detail-table-col-count" value="{{ max_table_cols.value }}">
@@ -803,13 +809,13 @@
     {% if link_count.value > max_link_count.value %}{% set max_link_count.value = link_count.value %}{% endif %}
   {% endfor %}
   {% set saved_detail_links = edit_item.detail_links if edit_item.detail_links is iterable and edit_item.detail_links is not string else [] %}
-  <div class="p-2 rounded mb-2 detail-field-section detail-multi-section" data-field-section="link" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('link') %}display:none{% endif %}">
-    <div class="small fw-semibold mb-2">链接</div>
+  <div class="p-2 rounded mb-2 detail-field-section detail-multi-section editor-component" data-field-section="link" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('link') %}display:none{% endif %}">
+    <div class="small fw-semibold mb-2 editor-component__header">链接</div>
     <input type="hidden" name="detail_links_count" id="detailLinksCount" value="{{ current_link_count.value }}">
-    <div id="detailLinksList">
+    <div id="detailLinksList" class="editor-component__body editor-component__collection">
       {% for i in range(max_link_count.value or 1) %}
       {% set link_item = saved_detail_links[i] if saved_detail_links|length > i and saved_detail_links[i] is mapping else {} %}
-      <div class="border rounded p-2 detail-link-item" data-link-index="{{ i }}" style="{% if i >= current_link_count.value %}display:none{% endif %}">
+      <div class="border rounded p-2 detail-link-item editor-component__item" data-link-index="{{ i }}" style="{% if i >= current_link_count.value %}display:none{% endif %}">
         <div class="small fw-semibold mb-2">链接 {{ i + 1 }}</div>
         <div class="mb-2">
           <label class="form-label small mb-1 text-muted">链接文字</label>
@@ -824,21 +830,23 @@
     </div>
   </div>
 
-  <div class="p-2 rounded mb-2 detail-field-section" data-field-section="seo" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('seo') %}display:none{% endif %}">
-    <div class="small fw-semibold mb-2">SEO 覆盖</div>
-    <input type="text" class="form-control form-control-sm mb-2" name="seo_title" value="{{ edit_item.seo_title or '' }}" placeholder="SEO 标题，不填则使用模板规则">
-    <textarea class="form-control form-control-sm mb-2" name="seo_description" rows="2" placeholder="SEO 描述，不填则使用模板规则">{{ edit_item.seo_description or '' }}</textarea>
-    <input type="text" class="form-control form-control-sm" name="seo_image" value="{{ edit_item.seo_image or '' }}" placeholder="SEO 图片字段或 URL">
+  <div class="p-2 rounded mb-2 detail-field-section editor-component" data-field-section="seo" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('seo') %}display:none{% endif %}">
+    <div class="small fw-semibold mb-2 editor-component__header">SEO 覆盖</div>
+    <div class="editor-component__body">
+      <input type="text" class="form-control form-control-sm mb-2" name="seo_title" value="{{ edit_item.seo_title or '' }}" placeholder="SEO 标题，不填则使用模板规则">
+      <textarea class="form-control form-control-sm mb-2" name="seo_description" rows="2" placeholder="SEO 描述，不填则使用模板规则">{{ edit_item.seo_description or '' }}</textarea>
+      <input type="text" class="form-control form-control-sm" name="seo_image" value="{{ edit_item.seo_image or '' }}" placeholder="SEO 图片字段或 URL">
+    </div>
   </div>
   </div>
 
   {% set detail_btn_raw = edit_item.get('show_detail_btn') %}
   {% set detail_btn_mode = 'inherit' if detail_btn_raw is none else ('true' if detail_btn_raw is sameas true or (detail_btn_raw|string|lower) == 'true' else 'false') %}
-  <div class="ds-card ds-side-card">
-    <div class="ds-card-head">
+  <div class="ds-card ds-side-card editor-component">
+    <div class="ds-card-head editor-component__header">
       <div class="ds-card-title">列表展示</div>
     </div>
-    <div class="ds-card-body ds-setting-row">
+    <div class="ds-card-body ds-setting-row editor-component__body">
       <div class="ds-setting-copy">
         <div class="ds-setting-title">列表卡片按钮</div>
         <div class="ds-setting-help">只影响数据列表展示模块中这一条卡片的按钮，不影响详情页内容。</div>
@@ -862,11 +870,11 @@
       </div>
     </div>
   </div>
-  <div class="ds-card ds-side-card">
-    <div class="ds-card-head">
+  <div class="ds-card ds-side-card editor-component">
+    <div class="ds-card-head editor-component__header">
       <div class="ds-card-title">单条详情覆盖</div>
     </div>
-    <div class="ds-card-body ds-setting-row">
+    <div class="ds-card-body ds-setting-row editor-component__body">
       <div class="ds-setting-copy">
         <div class="ds-setting-title">高级自定义此条详情页</div>
         <div class="ds-setting-help">
@@ -880,23 +888,27 @@
       <div class="ds-setting-actions">
         <span id="advancedModulesStatus" class="badge text-bg-light border" style="{% if not has_custom_modules %}display:none{% endif %}">{% if has_custom_modules %}已覆盖模板{% else %}已启用，待保存{% endif %}</span>
         {% if has_custom_modules %}
-        <button type="button" class="btn btn-sm btn-outline-primary" onclick="enableDatasetAdvancedModules(false)">编辑高级</button>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="toggleAdvancedModulesBtn" onclick="toggleDatasetAdvancedModules(false)">编辑高级</button>
         <button type="submit" class="btn btn-sm btn-outline-danger" name="_restore_template_modules" value="1" onclick="return confirm('将取消此条详情页的单独自定义，恢复使用详情模板。原内容字段不会删除。继续吗？')">恢复使用模板</button>
         {% else %}
-        <button type="button" class="btn btn-sm btn-outline-primary" id="enableAdvancedModulesBtn" onclick="enableDatasetAdvancedModules()">启用高级</button>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="toggleAdvancedModulesBtn" onclick="toggleDatasetAdvancedModules(true)">启用高级</button>
         {% endif %}
       </div>
     </div>
   </div>
 
-  <div id="datasetAdvancedModules" style="display:none">
-    <div class="mb-3">
-      <button class="btn btn-outline-primary btn-sm w-100 panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal">
+  <div id="datasetAdvancedModules" class="dataset-advanced-editor" style="display:none">
+    <div class="dataset-advanced-toolbar">
+      <button class="btn btn-primary btn-sm panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal">
         + 添加模块
       </button>
+      <div class="dataset-advanced-toolbar-copy">
+        <strong>高级模块</strong>
+        <span>拖动或使用箭头排序，点击模块标题展开配置。</span>
+      </div>
+      <button class="btn btn-sm btn-outline-secondary" type="button" onclick="collapseDatasetAdvancedModules()">收起高级编辑</button>
     </div>
-    <div class="small text-muted mb-2">已选模块（点击箭头排序 | 点击展开配置）</div>
-    <div id="selectedModulesDs">
+    <div id="selectedModulesDs" class="dataset-advanced-module-list">
     </div>
 
     <input type="hidden" name="module_count" id="moduleCountDs" value="0">
@@ -907,7 +919,7 @@
 </form>
 
 {# JS: 模块选择器交互 #}
-<script src="/static/js/admin_modules.js?v=111"></script>
+<script src="/static/js/admin_modules.js?v=112"></script>
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="iconListDsJson">{{ icon_list | default([]) | tojson }}</script>
@@ -1135,7 +1147,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     if (!list || !countEl) return;
     var next = parseInt(countEl.value || '0', 10);
     var trashIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>';
-    var html = '<div class="border rounded p-2 mb-2 detail-gallery-item" data-gallery-index="' + next + '">' +
+    var html = '<div class="border rounded p-2 mb-2 detail-gallery-item editor-component__item" data-gallery-index="' + next + '">' +
       '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">图片 ' + (next + 1) + '</span><button type="button" class="ds-danger-icon" onclick="this.closest(&quot;.detail-gallery-item&quot;).remove();reindexDatasetDetailImages()" title="删除图片" aria-label="删除图片">' + trashIcon + '</button></div>' +
       '<div class="module-media-tools mt-1 mb-2"><label class="module-media-picker" title="点击上传"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><input type="file" name="detail_gallery_' + next + '_url_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none"></label></div>' +
       '<div class="module-media-url-row mb-1"><input type="text" class="form-control form-control-sm" name="detail_gallery_' + next + '_url" placeholder="图片 URL 或上传" oninput="updateImagePreview(this)"><button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button></div>' +
@@ -1253,7 +1265,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var iconField = window._iconPickerHtml
       ? window._iconPickerHtml('detail_features_' + next + '_icon', '')
       : '<input type="text" class="form-control form-control-sm" name="detail_features_' + next + '_icon" placeholder="图标/短标">';
-    var html = '<div class="border rounded p-2 mb-2 detail-feature-item" data-feature-index="' + next + '">' +
+    var html = '<div class="border rounded p-2 mb-2 detail-feature-item editor-component__item" data-feature-index="' + next + '">' +
       '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">卖点 ' + (next + 1) + '</span>' + detailTrashButton('detail-feature-item', 'reindexDetailFeatures', '删除卖点') + '</div>' +
       '<div class="row g-2"><div class="col-3">' + iconField + '</div>' +
       '<div class="col-3"><input type="text" class="form-control form-control-sm" name="detail_features_' + next + '_title" placeholder="标题"></div>' +
@@ -1302,7 +1314,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var countEl = document.getElementById('detailFilesCount');
     if (!list || !countEl) return;
     var next = parseInt(countEl.value || '0', 10);
-    var html = '<div class="border rounded p-2 mb-2 detail-file-edit-item" data-file-index="' + next + '">' +
+    var html = '<div class="border rounded p-2 mb-2 detail-file-edit-item editor-component__item" data-file-index="' + next + '">' +
       '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">资料 ' + (next + 1) + '</span>' + detailTrashButton('detail-file-edit-item', 'reindexDetailFiles', '删除资料') + '</div>' +
       '<div class="row g-2"><div class="col-3"><input type="text" class="form-control form-control-sm" name="detail_files_' + next + '_title" placeholder="资料名称"></div>' +
       '<div class="col-4"><input type="text" class="form-control form-control-sm" name="detail_files_' + next + '_url" placeholder="文件 URL"></div>' +
@@ -1331,7 +1343,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var countEl = document.getElementById('detailFaqsCount');
     if (!list || !countEl) return;
     var next = parseInt(countEl.value || '0', 10);
-    var html = '<div class="border rounded p-2 mb-2 detail-faq-edit-item" data-faq-index="' + next + '">' +
+    var html = '<div class="border rounded p-2 mb-2 detail-faq-edit-item editor-component__item" data-faq-index="' + next + '">' +
       '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">问答 ' + (next + 1) + '</span>' + detailTrashButton('detail-faq-edit-item', 'reindexDetailFaqs', '删除问答') + '</div>' +
       '<input type="text" class="form-control form-control-sm mb-2" name="detail_faqs_' + next + '_question" placeholder="问题">' +
       '<textarea class="form-control form-control-sm" name="detail_faqs_' + next + '_answer" rows="2" placeholder="回答"></textarea></div>';
@@ -1441,7 +1453,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         '<input type="text" class="form-control form-control-sm mb-2" name="' + base + '_gallery_' + gi + '_caption" placeholder="图片 ' + (gi + 1) + ' 说明，可选">' +
         '</div>';
     }
-    var html = '<div class="detail-content-block-item" data-content-block-index="' + next + '" data-block-type="' + type + '">' +
+    var html = '<div class="detail-content-block-item editor-component__item" data-content-block-index="' + next + '" data-block-type="' + type + '">' +
       '<div class="detail-content-block-side">' +
         '<div class="d-flex justify-content-between align-items-center"><span class="small fw-semibold">内容块 ' + (next + 1) + '</span>' + detailTrashButton('detail-content-block-item', 'reindexDetailContentBlocks', '删除内容块') + '</div>' +
         '<select class="form-select form-select-sm detail-content-type-select" name="' + base + '_type" onchange="updateDetailContentBlockType(this)">' + detailContentTypeOptions(type) + '</select>' +
@@ -1593,6 +1605,11 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   }
 
   window.backToPageEditor = function() {
+    {% if workspace_mode %}
+    if (window.history.length > 1) window.history.back();
+    else window.loadDatasetList();
+    return;
+    {% endif %}
     loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()).then(function(loaded) {
       if (loaded === false) return;
       var frame = document.getElementById('previewFrame');
@@ -1600,11 +1617,19 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     });
   };
   window.loadDatasetList = function() {
-    loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()).then(function(loaded) {
-      if (loaded === false) return;
-      var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/live_preview/' + SITE_ID + '/{{ current_lang }}/{{ preview_path }}/index.html'; try { refreshPreview({ build: false }); } catch(e) {} }
-    });
+    var workspaceUrl = '/content/workspace?mode=list&site=' + encodeURIComponent(SITE_ID)
+      + '&lang=' + encodeURIComponent('{{ current_lang }}') + '&dataset=' + encodeURIComponent(DATASET_KEY);
+    {% if workspace_mode %}
+    window.location.href = workspaceUrl;
+    return;
+    {% endif %}
+    if (typeof openPreviewTab === 'function') {
+      openPreviewTab('content_list', '内容列表', workspaceUrl, false, '正在返回内容列表...');
+    }
+    var panel = document.getElementById('rightPanel');
+    if (panel && !panel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
+      togglePanelCollapse();
+    }
   };
   window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getSiteQuery()); };
   window.addDataItem = function() {
@@ -1656,9 +1681,8 @@ window._dsEditItemJson = {{ edit_item | tojson }};
       });
       var orderInp = item.querySelector('input[name$="_order"]');
       if (orderInp) orderInp.value = i + 1;
-      var meta = item.querySelector('.module-title-meta');
-      var variantInp = item.querySelector('input[name$="_variant"]');
-      if (meta) meta.textContent = '#' + (i + 1) + ' · ' + ((variantInp && variantInp.value) || 'default');
+      var order = item.querySelector('.module-order');
+      if (order) order.textContent = '#' + (i + 1);
     });
     var countEl = document.getElementById('moduleCountDs');
     if (countEl) countEl.value = items.length;
@@ -1796,17 +1820,31 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   window.enableDatasetAdvancedModules = function(addDefault) {
     var enabled = document.getElementById('advancedModulesEnabled');
     var panel = document.getElementById('datasetAdvancedModules');
-    var button = document.getElementById('enableAdvancedModulesBtn');
+    var button = document.getElementById('toggleAdvancedModulesBtn');
     var status = document.getElementById('advancedModulesStatus');
     var forceTemplatePreview = document.getElementById('draftForceTemplatePreview');
     if (enabled) enabled.value = '1';
     if (forceTemplatePreview) forceTemplatePreview.value = '0';
     if (panel) panel.style.display = '';
-    if (button) button.style.display = 'none';
+    if (button) button.textContent = '收起高级编辑';
     if (status) status.style.display = '';
     if (typeof scheduleDatasetDraftPreview === 'function') {
       scheduleDatasetDraftPreview(document.getElementById('datasetEditForm'));
     }
+  };
+
+  window.collapseDatasetAdvancedModules = function() {
+    var panel = document.getElementById('datasetAdvancedModules');
+    var button = document.getElementById('toggleAdvancedModulesBtn');
+    if (panel) panel.style.display = 'none';
+    if (button) button.textContent = '编辑高级';
+  };
+
+  window.toggleDatasetAdvancedModules = function(addDefault) {
+    var panel = document.getElementById('datasetAdvancedModules');
+    var isOpen = panel && panel.style.display !== 'none';
+    if (isOpen) window.collapseDatasetAdvancedModules();
+    else window.enableDatasetAdvancedModules(addDefault);
   };
 
   // ===== 恢复已保存的模块 =====
@@ -1838,7 +1876,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 
 {% elif is_edit and edit_item %}
 {# ========== 编辑模式：简单表单（无 blocks） ========== #}
-<form method="post" action="/_dataset/{{ dataset_key }}/{{ edit_item_id }}/edit?site={{ site.id }}&_fragment=1&lang={{ current_lang }}" id="datasetEditForm" data-page-key="{{ dataset_key }}" data-no-auto-save="1" enctype="multipart/form-data">
+<form method="post" action="{{ url_for(dataset_edit_endpoint, dataset_key=dataset_key, item_id=edit_item_id, site=site.id, lang=current_lang, **({'_fragment':'1'} if not workspace_mode else {})) }}" id="datasetEditForm" data-page-key="{{ dataset_key }}" data-no-auto-save="1" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="_draft_dataset_key" value="{{ dataset_key }}">
   <input type="hidden" name="_draft_item_id" value="{{ edit_item_id }}">
@@ -1866,7 +1904,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     {% set cover_val = edit_item.cover or edit_item.image or edit_item.photo or '' %}
     <input type="text" class="form-control form-control-sm" name="cover" value="{{ cover_val }}" placeholder="图片 URL 或上传">
     <input type="file" class="form-control form-control-sm mt-1" name="cover_file" accept="image/*,.svg,.svgz">
-    {% if cover_val %}<img src="{{ cover_val }}" alt="预览" style="margin-top:6px;max-width:200px;max-height:120px;border-radius:6px;">{% endif %}
+    {% if cover_val %}<img src="{{ cover_val }}" alt="预览" style="margin-top:6px;max-width:200px;max-height:120px;border-radius: 0;">{% endif %}
   </div>
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">视频</label>
@@ -1931,7 +1969,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         <td class="text-muted">{{ it.id }}</td>
         <td>
           {% set thumb = it.cover or it.image or it.photo or '' %}
-          {% if thumb %}<img src="{{ thumb }}" alt="" style="width:40px;height:30px;object-fit:cover;border-radius:4px;">
+          {% if thumb %}<img src="{{ thumb }}" alt="" style="width:40px;height:30px;object-fit:cover;border-radius: 0;">
           {% else %}<span class="text-muted" style="font-size:18px">🖼️</span>{% endif %}
         </td>
         <td><strong>{{ it.title or it.name }}</strong></td>
@@ -1977,6 +2015,11 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     return qs;
   }
   window.backToPageEditor = function() {
+    {% if workspace_mode %}
+    if (window.history.length > 1) window.history.back();
+    else window.loadDatasetList();
+    return;
+    {% endif %}
     loadPanel('/_panel/' + DATASET_KEY + '?_fragment=1' + getQuery()).then(function(loaded) {
       if (loaded === false) return;
       var frame = document.getElementById('previewFrame');
@@ -1984,11 +2027,19 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     });
   };
   window.loadDatasetList = function() {
-    loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getQuery()).then(function(loaded) {
-      if (loaded === false) return;
-      var frame = document.getElementById('previewFrame');
-      if (frame) { frame.dataset.previewUrl = '/live_preview/' + SITE_ID + '/' + CURRENT_LANG + '/{{ preview_path }}/index.html'; try { refreshPreview({ build: false }); } catch(e) {} }
-    });
+    var workspaceUrl = '/content/workspace?mode=list&site=' + encodeURIComponent(SITE_ID)
+      + '&lang=' + encodeURIComponent(CURRENT_LANG) + '&dataset=' + encodeURIComponent(DATASET_KEY);
+    {% if workspace_mode %}
+    window.location.href = workspaceUrl;
+    return;
+    {% endif %}
+    if (typeof openPreviewTab === 'function') {
+      openPreviewTab('content_list', '内容列表', workspaceUrl, false, '正在返回内容列表...');
+    }
+    var panel = document.getElementById('rightPanel');
+    if (panel && !panel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
+      togglePanelCollapse();
+    }
   };
   window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getQuery()); };
   window.addDataItem = function() {

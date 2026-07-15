@@ -114,14 +114,14 @@
       <div class="header-divider header-brand-divider"></div>
         <div class="header-flags" role="list" aria-label="选择语言">
           {% for lang in admin_languages|default([]) %}
-          {% set flag_code = 'cn' if lang.code == 'zh-CN' else ('tw' if lang.code == 'zh-TW' else 'us') %}
+          {% set lang_label = '简' if lang.code == 'zh-CN' else ('繁' if lang.code == 'zh-TW' else 'EN') %}
           <a class="header-flag-link{% if lang.code == current_lang %} active{% endif %}"
              href="?site={{ site.id }}&lang={{ lang.code }}"
              data-lang-code="{{ lang.code }}"
              onclick="return switchAccountLanguage(event,this)"
              title="{{ lang.name }}" aria-label="切换到{{ lang.name }}"
              {% if lang.code == current_lang %}aria-current="true"{% endif %}>
-            <img src="{{ url_for('static', filename='flags/' ~ flag_code ~ '.svg') }}?v=4" alt="">
+            {{ lang_label }}
           </a>
           {% endfor %}
         </div>
@@ -209,12 +209,31 @@
       {# 站点信息区 #}
       <div class="left-nav-site-info px-3 py-2">
         <div class="site-label">{{ site.name or site.slug if site else '未选择' }}</div>
-        {% set current_flag = 'cn' if current_lang == 'zh-CN' else ('tw' if current_lang == 'zh-TW' else 'us') %}
-        <div class="site-name"><img class="left-nav-language-flag" src="{{ url_for('static', filename='flags/' ~ current_flag ~ '.svg') }}?v=4" alt="{{ current_language_label if current_language_label else '当前语言' }}" title="{{ current_language_label if current_language_label else '当前语言' }}"></div>
+        {% set current_lang_label = '简' if current_lang == 'zh-CN' else ('繁' if current_lang == 'zh-TW' else 'EN') %}
+        <div class="site-name"><span class="left-nav-language-label">{{ current_lang_label }}</span></div>
       </div>
 
       <div class="flex-grow-1 overflow-auto left-nav-menu">
         {% if site %}
+        {# ---- 内容中心：仅管理列表数据详情，不包含普通页面 ---- #}
+        <div class="left-nav-section-title">内容</div>
+        <a class="left-nav-item {% if active == 'content_new' %}active{% endif %}" href="{{ url_for('core.content_workspace', mode='new') }}"
+          data-panel="content_new" data-content-mode="new" title="新建内容">
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          新建内容
+        </a>
+        <a class="left-nav-item {% if active == 'content_list' %}active{% endif %}" href="{{ url_for('core.content_workspace', mode='list') }}"
+          data-panel="content_list" data-content-mode="list" title="内容列表">
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+          内容列表
+          <span class="nav-badge">{{ content_count|default(0) }}</span>
+        </a>
+        <a class="left-nav-item {% if active == 'content_templates' %}active{% endif %}" href="{{ url_for('core.content_workspace', mode='templates') }}"
+          data-panel="content_templates" data-content-mode="templates" title="内容模板">
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h5"/></svg>
+          内容模板
+        </a>
+
         {# ---- 设置 ---- #}
         <div class="left-nav-section-title">设置</div>
         <div class="left-nav-group" data-level="0">
@@ -251,7 +270,7 @@
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
               留言管理
-              {% if unread_count is defined and unread_count > 0 %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}
+              <span class="nav-badge">{{ message_count|default(0) }}</span>
             </a>
           </div>
         </div>
@@ -540,7 +559,7 @@
     </div>
 
     {# 右栏：统一面板（头像打开账号管理，左侧项目打开对应编辑内容） #}
-    <aside class="right-panel bg-white border-start flex-shrink-0 d-flex flex-column" style="width:380px"
+    <aside class="right-panel bg-white border-start flex-shrink-0 d-flex flex-column" style="width:430px"
       id="rightPanel">
       <div class="right-panel-header d-flex align-items-center justify-content-between flex-shrink-0">
         <div class="d-flex align-items-center gap-2">
@@ -944,7 +963,7 @@
         // 如果之前是折叠状态，恢复宽度
         if (panel.classList.contains('panel-collapsed')) {
           panel.classList.remove('panel-collapsed');
-          panel.style.width = (panel.dataset.savedWidth || '280') + 'px';
+          panel.style.width = (panel.dataset.savedWidth || '430') + 'px';
         }
         if (reopenBtn) reopenBtn.style.display = 'none';
         if (collapseBtn) {
@@ -967,7 +986,7 @@
 
       if (panel.classList.contains('panel-collapsed')) {
         // 展开：恢复之前保存的宽度
-        var savedWidth = panel.dataset.savedWidth || '280';
+        var savedWidth = panel.dataset.savedWidth || '430';
         panel.style.width = savedWidth + 'px';
         panel.classList.remove('panel-collapsed');
         if (btn) {
@@ -988,9 +1007,9 @@
     function isDatasetPanelUrl(url) {
       try {
         var parsed = new URL(url, window.location.origin);
-        return /^\/_dataset(?:\/|$)/.test(parsed.pathname);
+        return /^\/(?:_dataset|_detail_templates)(?:\/|$)/.test(parsed.pathname);
       } catch (e) {
-        return /^\/_dataset(?:\/|$)/.test(String(url || '').split('?')[0]);
+        return /^\/(?:_dataset|_detail_templates)(?:\/|$)/.test(String(url || '').split('?')[0]);
       }
     }
 
@@ -1297,7 +1316,7 @@
       activeTabKey = key;
       renderPreviewTabs();
       updatePreviewUrlBar(url);
-      setPreviewChromeMode(key === 'seo' || key === 'media' || key === 'messages' || key === 'basic_settings' || key === 'header_footer' || key === 'menu');
+      setPreviewChromeMode(key === 'seo' || key === 'media' || key === 'messages' || key === 'basic_settings' || key === 'header_footer' || key === 'menu' || String(key).indexOf('content_') === 0);
       var frame = document.getElementById('previewFrame');
       if (frame) {
         frame.dataset.previewUrl = url;
@@ -1974,6 +1993,25 @@
       if (typeof exitDatasetWideMode === 'function') exitDatasetWideMode();
       document.querySelectorAll('.left-nav-item').forEach(el => el.classList.remove('active'));
       link.classList.add('active');
+      if (link.dataset.contentMode) {
+        var contentSiteParam = currentSiteParam();
+        var contentLangParam = currentLangParam();
+        var contentQuery = ['mode=' + encodeURIComponent(link.dataset.contentMode)];
+        if (contentSiteParam) contentQuery.push('site=' + encodeURIComponent(contentSiteParam));
+        if (contentLangParam) contentQuery.push('lang=' + encodeURIComponent(contentLangParam));
+        if (link.dataset.contentDataset) contentQuery.push('dataset=' + encodeURIComponent(link.dataset.contentDataset));
+        var contentTitles = { list: '内容列表', new: '新建内容', templates: '内容模板' };
+        var contentTitle = contentTitles[link.dataset.contentMode] || '内容';
+        var contentUrl = '{{ url_for("core.content_workspace") }}' + '?' + contentQuery.join('&');
+        openPreviewTab('content_' + link.dataset.contentMode, contentTitle, contentUrl, false, '正在打开' + contentTitle + '...');
+        var contentPanel = document.getElementById('rightPanel');
+        var contentFooter = document.getElementById('rightPanelFooter');
+        var contentBody = document.getElementById('rightPanelBody');
+        if (contentBody) contentBody.innerHTML = '<div class="p-3 text-muted small">' + contentTitle + '已在中间栏打开。</div>';
+        if (contentFooter) contentFooter.style.display = 'none';
+        if (contentPanel && !contentPanel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') togglePanelCollapse();
+        return;
+      }
       if (link.dataset.panel === 'seo') {
         var seoSiteParam = currentSiteParam();
         var seoLangParam = currentLangParam();
@@ -2409,16 +2447,6 @@
       if (toggle) toggle.setAttribute('aria-expanded', String(!isOpen));
     }
 
-    function openDatasetPanel(datasetKey) {
-      var params = new URLSearchParams(window.location.search);
-      var siteParam = currentSiteParam();
-      var langParam = currentLangParam();
-      var url = '/_dataset/' + encodeURIComponent(datasetKey) + '?_fragment=1';
-      if (siteParam) url += '&site=' + encodeURIComponent(siteParam);
-      if (langParam) url += '&lang=' + encodeURIComponent(langParam);
-      loadPanel(url);
-    }
-
     // 切换面板语言并同步预览 iframe
     function switchPanelLang(url, langCode) {
       currentAdminLang = langCode || currentAdminLang;
@@ -2518,7 +2546,7 @@
       // 创建浮动 tooltip，挂到 body 上避免被 overflow 裁剪
       var tooltip = document.createElement('div');
       tooltip.id = 'leftNavTooltip';
-      tooltip.style.cssText = 'position:fixed;pointer-events:none;z-index:10000;padding:6px 12px;background:#0f172a;color:#f1f5f9;font-size:12px;font-weight:500;line-height:1.4;border-radius:6px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:0;visibility:hidden;transition:opacity 0.12s,visibility 0.12s;';
+      tooltip.style.cssText = 'position:fixed;pointer-events:none;z-index:10000;padding:6px 12px;background:#0f172a;color:#f1f5f9;font-size:12px;font-weight:500;line-height:1.4;border-radius: 0;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:0;visibility:hidden;transition:opacity 0.12s,visibility 0.12s;';
       document.body.appendChild(tooltip);
 
       var tooltipTimer = null;

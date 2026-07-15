@@ -5,6 +5,24 @@
    3. {% include 'dashboard/_block_palette.html' %}
    4. 按钮 data-bs-target="#blockPaletteModal" 触发 #}
 
+<style>
+  #blockPaletteModal #confirmAddBtn {
+    min-width: 96px;
+    height: 34px;
+    padding: 0 14px;
+    border-color: var(--theme-primary, var(--bs-primary)) !important;
+    background: var(--theme-primary, var(--bs-primary)) !important;
+    color: #fff !important;
+  }
+  #blockPaletteModal #confirmAddBtn:hover:not(:disabled) {
+    border-color: var(--theme-primary-hover, var(--bs-primary)) !important;
+    background: var(--theme-primary-hover, var(--bs-primary)) !important;
+  }
+  #blockPaletteModal #confirmAddBtn:disabled {
+    opacity: .48;
+  }
+</style>
+
 <div class="modal fade" id="blockPaletteModal" tabindex="-1">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
