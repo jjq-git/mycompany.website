@@ -64,7 +64,7 @@
   {%- set href = menu_href(item) -%}
   {%- if children -%}
     <div class="nav-dropdown{% if level > 0 %} nav-dropdown-nested{% endif %}">
-      <div class="nav-dropdown-parent">
+      <div class="nav-dropdown-parent" onclick="toggleMenuDropdown(event, this)">
         {%- if item.type == 'group' -%}
           <span class="{% if level == 0 %}nav-link{% else %}nav-dropdown-item{% endif %} nav-dropdown-label">{{ item['label'] }}</span>
         {%- else -%}
@@ -313,6 +313,7 @@ function toggleMobileMenu() {
 
 // --- Navigation dropdowns ---
 function toggleMenuDropdown(e, button) {
+  e.preventDefault();
   e.stopPropagation();
   var dropdown = button.closest('.nav-dropdown');
   if (!dropdown) return;
@@ -323,7 +324,10 @@ function toggleMenuDropdown(e, button) {
     });
   }
   dropdown.classList.toggle('open', !isOpen);
-  button.setAttribute('aria-expanded', String(!isOpen));
+  var trigger = dropdown.querySelector(':scope > .nav-dropdown-parent');
+  var arrow = dropdown.querySelector(':scope > .nav-dropdown-parent > .nav-dropdown-arrow');
+  if (trigger) trigger.setAttribute('aria-expanded', String(!isOpen));
+  if (arrow) arrow.setAttribute('aria-expanded', String(!isOpen));
 }
 
 // --- Language dropdown ---
