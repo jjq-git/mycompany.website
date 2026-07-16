@@ -11,7 +11,7 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import quote, urljoin
+from urllib.parse import quote, urljoin, urlparse
 
 import yaml
 from flask import current_app
@@ -1116,6 +1116,7 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
                 'vars': {
                     'base_url': jinja_ctx.get('base_url', '') or '',
                     'lang': jinja_ctx.get('lang', '') or '',
+                    'language_codes': [item.get('code') for item in (jinja_ctx.get('languages') or []) if isinstance(item, dict)],
                     'current_path': jinja_ctx.get('current_path', '') or '',
                     'dataset': dataset_name,
                     'dataset_path': dataset_path,
@@ -1198,9 +1199,75 @@ def _site_base_url(site=None, base_url=''):
     if base:
         return base
     if site is not None and getattr(site, 'slug', None):
+        custom_domain = str(getattr(site, 'domain', '') or '').strip().strip('/')
+        if custom_domain:
+            if custom_domain.startswith(('http://', 'https://')):
+                return custom_domain
+            return f'https://{custom_domain}'
         domain = current_app.config.get('PLATFORM_DOMAIN', '').strip().strip('/')
-        return f'https://{site.slug}.{domain}'
+        if domain:
+            return f'https://{site.slug}.{domain}'
     return ''
+
+
+_PREVIEW_URL_RE = re.compile(
+    r'(?:(?:https?:)?//[^/\s"\']+)?(?:/[a-z]{2}(?:-[A-Z]{2})?)?/(?:live_)?preview/\d+(?=/|[?#\s"\']|$)',
+    re.IGNORECASE,
+)
+
+
+def _rewrite_preview_urls(html, base_url=''):
+    """移除内容中误保存的预览地址，再按本次构建目标注入前缀。
+
+    数据层始终应保存 `/zh-CN/...` 等逻辑路径；此处兼容历史数据并保证
+    预览 URL 不会进入导出包、平台子域名或自定义域名产物。
+    """
+    prefix = (base_url or '').rstrip('/')
+    return _PREVIEW_URL_RE.sub(prefix, html or '')
+
+
+_HTML_URL_RE = re.compile(r'(?:href|src|action)=["\']([^"\']+)["\']', re.IGNORECASE)
+
+
+def _validate_output_links(output_root, base_url='', site_base_url=''):
+    """检查构建产物中的站内链接是否能映射到实际文件。"""
+    root = Path(output_root).resolve()
+    build_prefix = urlparse(base_url).path.rstrip('/') if base_url else ''
+    internal_host = urlparse(site_base_url).netloc.lower() if site_base_url else ''
+    failures = []
+    seen = set()
+    for source in root.rglob('*.html'):
+        html = source.read_text(encoding='utf-8', errors='ignore')
+        for raw_url in _HTML_URL_RE.findall(html):
+            url = raw_url.strip()
+            if not url or url.startswith(('#', 'mailto:', 'tel:', 'data:', 'javascript:')):
+                continue
+            parsed = urlparse(url)
+            if parsed.scheme in {'http', 'https'} and parsed.netloc.lower() != internal_host:
+                continue
+            path = parsed.path or '/'
+            if build_prefix and (path == build_prefix or path.startswith(build_prefix + '/')):
+                path = path[len(build_prefix):] or '/'
+            if path.startswith('/'):
+                relative = path.lstrip('/')
+                target = root / relative
+            else:
+                target = source.parent / path
+            candidates = [target]
+            if path.endswith('/') or not Path(path).suffix:
+                candidates.append(target / 'index.html')
+            if any(candidate.resolve().is_file() and root in candidate.resolve().parents
+                   for candidate in candidates):
+                continue
+            key = (source.relative_to(root).as_posix(), url)
+            if key in seen:
+                continue
+            seen.add(key)
+            failures.append({
+                'lang': '', 'template': key[0], 'type': 'broken_link',
+                'error': f'站内链接没有对应文件：{url}',
+            })
+    return failures
 
 
 def _seo_url(site_base_url, lang_code, path):
@@ -2080,7 +2147,7 @@ def _render_task_html(env, task, common, pages, data, meta, dataset_paths):
         ctx['lang_switch_path'] = current.rsplit('/', 1)[0] + '/' if '/' in current else '/'
 
     ctx['seo'] = _build_seo_context(task, ctx, common, meta)
-    return tpl.render(**ctx)
+    return _rewrite_preview_urls(tpl.render(**ctx), common.get('base_url', ''))
 
 
 def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, pages, data, meta, seo_records=None):
@@ -2309,7 +2376,7 @@ def render_site_page(site_id, filepath='index.html', base_url='', lang_code=None
     return _render_task_html(env, task, common, render_pages, render_data, meta, dataset_paths)
 
 
-def build_site(site_id, base_url='', report=None):
+def build_site(site_id, base_url='', report=None, output_root=None):
     """生成站点到 output/<site_id>/. 返回输出根目录.
 
     支持多语言: 每种语言一个子目录, 根路径生成语言选择首页.
@@ -2363,7 +2430,7 @@ def build_site(site_id, base_url='', report=None):
     _enable_da = current_app.config.get('ENABLE_DATA_ATTR_BLOCKS', False)
     env.globals['render_block'] = _make_render_block(env, tpl_root, site.template_name, _enable_da)
 
-    output_root = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
+    output_root = Path(output_root) if output_root is not None else Path(current_app.config['OUTPUT_DIR']) / str(site_id)
     # Windows 下 rmtree 极易因文件锁定/目录竞态抛异常；
     # 清理失败无所谓，后面 copytree(dirs_exist_ok=True) 会原地覆盖写入。
     if output_root.exists():
@@ -2503,6 +2570,7 @@ def build_site(site_id, base_url='', report=None):
         )
 
     _write_site_seo_files(output_root, seo_records, settings, site_base_url)
+    _all_failures.extend(_validate_output_links(output_root, base_url, site_base_url))
 
     # #13: 汇总缺页。有失败时统一记 warning, 并填入调用方传入的 report。
     if _all_failures:

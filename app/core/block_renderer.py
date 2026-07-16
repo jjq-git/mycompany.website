@@ -259,13 +259,23 @@ def _inject_href(node, data_dict, context=None):
         return
     href_val = data_dict.get(href_field)
     if href_val:
+        if isinstance(href_val, str):
+            preview_match = re.search(r'/(?:live_)?preview/\d+(?=/|$)', href_val, re.IGNORECASE)
+            if preview_match:
+                href_val = href_val[preview_match.end():] or '/'
+                if not href_val.startswith('/'):
+                    href_val = '/' + href_val
         # 以 / 开头的站内相对路径拼上 base_url/lang，保证预览和发布都正确
         # （与 _base.html 中 menu_href 宏的 base_url/lang/href 拼接模式一致）
         if isinstance(href_val, str) and href_val.startswith('/') and not href_val.startswith('//'):
             vars_ctx = ((context or {}).get('vars') or {})
             base = (vars_ctx.get('base_url') or '').rstrip('/')
             lang = vars_ctx.get('lang') or ''
-            if base and lang:
+            language_codes = set(vars_ctx.get('language_codes') or [])
+            first_segment = href_val.lstrip('/').split('/', 1)[0]
+            if first_segment in language_codes or first_segment in {'assets', 'static'}:
+                href_val = f'{base}{href_val}'
+            elif lang:
                 href_val = f'{base}/{lang}{href_val}'
             elif base:
                 href_val = f'{base}{href_val}'
