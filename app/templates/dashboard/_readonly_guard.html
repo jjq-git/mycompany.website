@@ -1,0 +1,73 @@
+{% if site and not site_can_edit %}
+<script>
+(function () {
+  'use strict';
+  window.SITE_CAN_EDIT = false;
+  var message = '当前账号为只读权限，无法修改站点内容';
+  var writeLabel = /保存|新建|创建|添加|删除|移除|上传|发布|复制|设为|排序/;
+
+  function isSiteWriteForm(form) {
+    if (!form || (form.method || 'get').toLowerCase() === 'get') return false;
+    try {
+      return new URL(form.action || location.href, location.href).pathname !== '/logout';
+    } catch (_) {
+      return true;
+    }
+  }
+
+  function lockForm(form) {
+    if (!isSiteWriteForm(form) || form.dataset.readonlyLocked === '1') return;
+    form.dataset.readonlyLocked = '1';
+    form.setAttribute('aria-disabled', 'true');
+    form.querySelectorAll('input:not([type="hidden"]), textarea, select, button').forEach(function (control) {
+      control.disabled = true;
+      control.setAttribute('title', message);
+    });
+    form.querySelectorAll('[contenteditable="true"]').forEach(function (control) {
+      control.setAttribute('contenteditable', 'false');
+      control.setAttribute('title', message);
+    });
+  }
+
+  function lockWrites(root) {
+    (root || document).querySelectorAll('form').forEach(lockForm);
+    (root || document).querySelectorAll('button, [role="button"]').forEach(function (button) {
+      var label = ((button.getAttribute('title') || '') + ' ' + (button.getAttribute('aria-label') || '') + ' ' + (button.textContent || '')).trim();
+      if (!writeLabel.test(label) || button.closest('form[action$="/logout"]')) return;
+      button.disabled = true;
+      button.setAttribute('aria-disabled', 'true');
+      button.setAttribute('title', message);
+      button.classList.add('readonly-write-control');
+    });
+  }
+
+  document.addEventListener('submit', function (event) {
+    if (!isSiteWriteForm(event.target)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (typeof window.setPanelEditStatus === 'function') {
+      window.setPanelEditStatus('error', message);
+    } else {
+      window.alert(message);
+    }
+  }, true);
+
+  function start() {
+    document.body.classList.add('admin-readonly');
+    lockWrites(document);
+    new MutationObserver(function (records) {
+      records.forEach(function (record) {
+        record.addedNodes.forEach(function (node) {
+          if (node.nodeType !== 1) return;
+          if (node.matches && node.matches('form')) lockForm(node);
+          lockWrites(node);
+        });
+      });
+    }).observe(document.body, {childList: true, subtree: true});
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
+</script>
+{% endif %}

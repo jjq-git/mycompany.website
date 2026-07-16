@@ -1,0 +1,184 @@
+{% macro action_icon(name) -%}
+<svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{% if name == 'save' %}<path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/>
+{% elif name == 'add' %}<path d="M12 5v14M5 12h14"/>
+{% elif name == 'edit' %}<path d="M12 20h9"/><path d="m16.5 3.5 4 4L8 20H4v-4z"/>
+{% elif name == 'view' %}<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>
+{% elif name == 'download' %}<path d="M12 3v12m-5-5 5 5 5-5M5 21h14"/>
+{% elif name == 'publish' %}<path d="M16 16l-4-4-4 4M12 12v9"/><path d="M20.4 17.5A5 5 0 0 0 18 8.2 7 7 0 0 0 4.3 10.6 4.5 4.5 0 0 0 5.5 19H7"/>
+{% elif name == 'trash' %}<path d="M3 6h18M8 6l1-3h6l1 3m3 3-1 12H6L5 9"/>
+{% elif name == 'restore' %}<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>
+{% elif name == 'star' %}<path d="m12 2 3 6 7 .9-5 4.8 1.3 6.8L12 17l-6.3 3.5L7 13.7 2 8.9 9 8z"/>
+{% elif name == 'key' %}<circle cx="8" cy="15" r="5"/><path d="m12 12 9-9m-3 3 3 3m-6 0 3 3"/>
+{% elif name == 'send' %}<path d="m22 2-7 20-4-9-9-4zM22 2 11 13"/>
+{% elif name == 'upload' %}<path d="M12 16V4m-5 5 5-5 5 5"/><path d="M5 20h14"/>
+{% elif name == 'check' %}<path d="m5 12 4 4L19 6"/>
+{% elif name == 'logout' %}<path d="M10 17l5-5-5-5m5 5H3M15 3h6v18h-6"/>
+{% elif name == 'user-add' %}<path d="M15 19a6 6 0 0 0-12 0M9 11a4 4 0 1 0 0-8m9 5v6m-3-3h6"/>
+{% elif name == 'link' %}<path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1"/>
+{% elif name == 'unlink' %}<path d="m3 3 18 18M10 13a5 5 0 0 0 5.2 1.2M14 11a5 5 0 0 0-5.2-1.2M5 16l-.5.5a5 5 0 0 0 7 7l1.1-1.1M19 8l.5-.5a5 5 0 0 0-7-7l-1.1 1.1"/>
+{% elif name == 'refresh' %}<path d="M20 6v5h-5M4 18v-5h5"/><path d="M18 9a7 7 0 0 0-12-3L4 8m2 7a7 7 0 0 0 12 3l2-2"/>
+{% elif name == 'wechat' %}<path d="M8 5c-3.3 0-6 2.1-6 4.8 0 1.5.8 2.8 2.2 3.7L3.5 16l2.7-1.4c.6.2 1.2.3 1.8.3 3.3 0 6-2.1 6-4.8S11.3 5 8 5z"/><path d="M16 10c3.3 0 6 2.1 6 4.8 0 1.5-.8 2.8-2.2 3.7l.7 2.5-2.7-1.4c-.6.2-1.2.3-1.8.3-3.3 0-6-2.1-6-4.8"/>
+{% elif name == 'order' %}<rect x="3" y="5" width="18" height="14"/><path d="M3 10h18M7 15h4"/>
+{% elif name == 'search' %}<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>
+{% elif name == 'left' %}<path d="m15 18-6-6 6-6"/>
+{% elif name == 'right' %}<path d="m9 18 6-6-6-6"/>
+{% else %}<circle cx="12" cy="12" r="9"/><path d="M12 8v4m0 4h.01"/>{% endif %}
+</svg>
+{%- endmacro %}
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>账户中心</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-account.css') }}?v=20260716-15">
+</head>
+<body>
+  {% if request.args.get('workspace_changed') %}
+  <script>if(parent&&parent!==window){parent.accountWorkspaceNeedsReload=true;}</script>
+  {% endif %}
+  {% set visible_identifier = account_identifier or user.email %}
+  {% set account_name = user.display_name or visible_identifier.split('@')[0] %}
+  <div class="account-shell">
+    <aside class="account-nav">
+      <div class="account-nav-head">
+        <a class="account-workbench-return" href="{{ account_return_url }}" target="_top" onclick="if(parent&&parent!==window&&typeof parent.closeAccountWorkspace==='function'){parent.closeAccountWorkspace();return false}" title="返回工作台" aria-label="返回工作台">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          <span>返回工作台</span>
+        </a>
+      </div>
+      <nav aria-label="账户中心导航">
+        <a class="account-nav-link {{ 'active' if section == 'profile' else '' }}" href="{{ url_for('core.account', section='profile') }}">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>个人资料
+        </a>
+        <a class="account-nav-link {{ 'active' if section == 'sites' else '' }}" href="{{ url_for('core.account', section='sites') }}">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16"/><path d="M3 9h18M8 9v11"/></svg>我的站点
+          <span>{{ active_sites|length }}</span>
+        </a>
+        <a class="account-nav-link {{ 'active' if section == 'security' else '' }}" href="{{ url_for('core.account', section='security') }}">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>账号与安全
+        </a>
+        <a class="account-nav-link {{ 'active' if section == 'organization' else '' }}" href="{{ url_for('core.account', section='organization') }}"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2"/><path d="M2 20a6 6 0 0 1 12 0M14 20a4 4 0 0 1 8 0"/></svg>组织与成员</a>
+        <a class="account-nav-link {{ 'active' if section == 'audit' else '' }}" href="{{ url_for('core.account', section='audit') }}"><svg viewBox="0 0 24 24"><path d="M5 3h14v18H5zM8 8h8M8 12h8M8 16h5"/></svg>操作日志</a>
+        <a class="account-nav-link {{ 'active' if section == 'credits' else '' }}" href="{{ url_for('core.account', section='credits') }}"><svg viewBox="0 0 24 24"><path d="m13 2-9 12h7l-1 8 9-12h-7z"/></svg>AI 额度</a>
+        <a class="account-nav-link {{ 'active' if section == 'integrations' else '' }}" href="{{ url_for('core.account', section='integrations') }}"><svg viewBox="0 0 24 24"><path d="M8 12h8M12 8v8"/><circle cx="12" cy="12" r="9"/></svg>安全与绑定</a>
+        <a class="account-nav-link {{ 'active' if section == 'billing' else '' }}" href="{{ url_for('core.account', section='billing') }}"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14"/><path d="M3 10h18"/></svg>会员与账单</a>
+        <a class="account-nav-link {{ 'active' if section == 'trash' else '' }}" href="{{ url_for('core.account', section='trash') }}">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6l1-3h6l1 3M19 6l-1 15H6L5 6"/></svg>回收站
+          {% if deleted_sites %}<span>{{ deleted_sites|length }}</span>{% endif %}
+        </a>
+        {% if user.role == 'admin' %}<div class="account-platform-group"><span class="account-platform-label">平台后台</span><a class="account-nav-link {{ 'active' if section == 'platform' else '' }}" href="{{ url_for('core.account', section='platform') }}"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M9 12h6M12 9v6"/></svg>用户管理</a></div>{% endif %}
+      </nav>
+      <div class="account-user">
+        {% if account_avatar_url %}<img class="account-user-avatar" src="{{ account_avatar_url }}" alt="{{ account_name }}">{% else %}<b>{{ account_name[:1] }}</b>{% endif %}
+        <span><strong>{{ account_name }}</strong><small>{{ visible_identifier }}</small></span>
+      </div>
+    </aside>
+
+    <main class="account-main">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}<div class="account-alert {{ category }}">{{ message }}</div>{% endfor %}
+      {% endwith %}
+
+      {% if section == 'profile' %}
+      <header class="account-heading"><h1>个人资料</h1><p>管理账户显示信息和后台使用偏好。</p></header>
+      <form method="post" action="{{ url_for('core.account_profile_save') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <section class="account-card">
+          <h2>基本资料</h2>
+          <div class="profile-avatar-row">
+            <label class="profile-avatar" for="accountAvatarInput" title="点击上传或更换头像">{% if account_avatar_url %}<img id="accountAvatarPreview" src="{{ account_avatar_url }}" alt="{{ account_name }}">{% else %}<span id="accountAvatarFallback">{{ account_name[:1] }}</span><img id="accountAvatarPreview" alt="{{ account_name }}" hidden>{% endif %}<span class="avatar-edit-overlay">{{ action_icon('upload') }}</span></label>
+            <div class="profile-avatar-copy"><strong>{{ account_name }}</strong><p>点击头像可更换；支持 JPG、PNG、WebP、GIF，最大 5MB，上传后自动适配圆形头像。</p></div>
+            <input id="accountAvatarInput" class="avatar-file-input" type="file" name="avatar" accept="image/jpeg,image/png,image/webp,image/gif">
+          </div>
+          <div class="form-grid">
+            <label>昵称<input name="display_name" maxlength="80" value="{{ user.display_name or '' }}" placeholder="用于后台显示"></label>
+            <label>登录账号<input value="{{ visible_identifier }}" readonly><small>账号标识由安全验证流程管理，不能在普通资料中直接修改。</small></label>
+            <label>账户权限<input value="{{ '平台管理员' if user.role == 'admin' else ('独立建站账户' if can_create_sites else '受邀团队成员') }}" readonly></label>
+          </div>
+          <div class="card-actions"><button class="primary-btn icon-btn" type="submit" title="保存资料" aria-label="保存资料">{{ action_icon('save') }}</button></div>
+        </section>
+        <section class="account-card account-facts"><h2>账户信息</h2><dl><div><dt>注册时间</dt><dd>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else '—' }}</dd></div><div><dt>最近登录</dt><dd>{{ user.last_login_at.strftime('%Y-%m-%d %H:%M') if user.last_login_at else '暂无记录' }}</dd></div><div><dt>主账号状态</dt><dd>{{ '已验证' if account_identity and account_identity.verified_at else '待迁移' }}</dd></div></dl></section>
+      </form>
+
+      {% elif section == 'sites' %}
+      {% if site_create_step %}
+      {% include "dashboard/account_site_create.html" %}
+      {% else %}
+      <header class="account-heading heading-row"><div><h1>我的站点</h1><p>集中查看站点状态；内容编辑和发布仍在工作台完成。</p></div>{% if can_create_sites %}<a class="primary-btn icon-btn" href="{{ url_for('core.account', section='sites', create='templates') }}" title="新建站点" aria-label="新建站点">{{ action_icon('add') }}</a>{% endif %}</header>
+      {% if active_sites %}<div class="site-grid">
+        {% for item in active_sites %}<article class="account-card site-card">
+          <div class="site-card-head"><div><h2>{{ item.name }}</h2><code>/{{ item.slug }}</code></div><span class="status {{ item.status }}">{{ {'draft':'草稿','published':'已发布','suspended':'已停用'}.get(item.status,item.status) }}</span></div>
+          <dl><div><dt>模板</dt><dd>{{ item.template_name }}{% if item.template_version %} · {{ item.template_version }}{% endif %}</dd></div><div><dt>语言</dt><dd>{{ (item.enabled_languages or [item.default_language])|join('、') }}</dd></div><div><dt>最近发布</dt><dd>{{ item.last_published_at.strftime('%Y-%m-%d %H:%M') if item.last_published_at else '尚未发布' }}</dd></div></dl>
+          <div class="site-actions"><a class="primary-btn icon-btn" href="{{ url_for('core.index', site=item.id) }}" target="_top" title="进入编辑" aria-label="进入编辑">{{ action_icon('edit') }}</a><a class="secondary-btn icon-btn" href="{{ url_for('core.preview_site', site_id=item.id) }}" target="_blank" title="预览" aria-label="预览">{{ action_icon('view') }}</a><a class="secondary-btn icon-btn" href="{{ url_for('core.export_zip', site=item.id) }}" target="_top" title="导出" aria-label="导出">{{ action_icon('download') }}</a><form class="site-publish-form" method="post" action="{{ url_for('core.publish_site', site=item.id) }}" onsubmit="return confirm('确认发布站点“{{ item.name }}”？')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-btn icon-btn" type="submit" title="发布站点" aria-label="发布站点">{{ action_icon('publish') }}</button></form><form class="site-trash-form" method="post" action="{{ url_for('core.account_site_trash', site_id=item.id) }}" onsubmit="return confirm('将站点“{{ item.name }}”移入回收站？站点文件不会被删除。')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="danger-link icon-btn" type="submit" title="移入回收站" aria-label="移入回收站">{{ action_icon('trash') }}</button></form></div>
+        </article>{% endfor %}
+      </div>{% else %}<section class="account-card empty-state"><h2>还没有个人站点</h2><p>{% if can_create_sites %}可以从模板库创建站点，或到回收站恢复已有站点。{% else %}这是受邀成员账号，请到“组织与成员”查看团队共享站点。{% endif %}</p></section>{% endif %}
+      {% endif %}
+
+      {% elif section == 'security' %}
+      <header class="account-heading"><h1>账号与安全</h1><p>查看当前账号标识、验证状态和近期登录活动。</p></header>
+      <section class="account-card security-list"><h2>账号标识</h2>{% if account_identities %}{% for identity in account_identities %}<div class="security-row"><div><strong>{{ '邮箱' if identity.identity_type == 'email' else '手机号' }}</strong><p>{{ identity.identifier }}{% if identity.is_primary %} · 主账号{% endif %}</p></div><div class="inline-actions">{% if not identity.is_primary %}<form method="post" action="{{ url_for('core.account_identity_primary', identity_id=identity.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="text-btn icon-btn" type="submit" title="设为主账号" aria-label="设为主账号">{{ action_icon('star') }}</button></form><form method="post" action="{{ url_for('core.account_identity_delete', identity_id=identity.id) }}" onsubmit="return confirm('确认解绑这个账号标识？')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="danger-link icon-btn" type="submit" title="解绑账号" aria-label="解绑账号">{{ action_icon('unlink') }}</button></form>{% else %}<span class="security-state">已验证</span>{% endif %}</div></div>{% endfor %}{% else %}<div class="security-row"><div><strong>旧邮箱账户</strong><p>{{ visible_identifier }}</p></div><a class="secondary-btn icon-btn" href="{{ url_for('core.password_setup') }}" target="_top" title="验证并设置密码" aria-label="验证并设置密码">{{ action_icon('key') }}</a></div>{% endif %}<form class="bind-identity" method="post" action="{{ url_for('core.account_identity_request') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>绑定新邮箱或手机号<input name="identifier" required placeholder="name@example.com / +86 13800000000"></label><button class="secondary-btn icon-btn" type="submit" title="获取验证码" aria-label="获取验证码">{{ action_icon('send') }}</button></form>{% if pending_identity %}<form class="bind-identity pending" method="post" action="{{ url_for('core.account_identity_verify') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>验证 {{ pending_identity.identifier }}<input name="code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="6 位验证码"></label><button class="primary-btn icon-btn" type="submit" title="确认绑定" aria-label="确认绑定">{{ action_icon('check') }}</button>{% if pending_identity.dev_code %}<small>开发验证码：{{ pending_identity.dev_code }}</small>{% endif %}</form>{% endif %}<div class="security-row"><div><strong>登录密码</strong><p>密码至少 8 位，并同时包含字母和数字。</p></div><a class="secondary-btn icon-btn" href="{{ url_for('core.password_setup') }}" target="_top" title="修改密码" aria-label="修改密码">{{ action_icon('key') }}</a></div></section>
+      <section class="account-card"><h2>登录设备</h2>{% if user_sessions %}<div class="login-list">{% for item in user_sessions %}<div><span><strong>{{ item.user_agent[:60] or '未知设备' }}</strong><small>{{ item.ip_address or '未知 IP' }} · 最近活动 {{ item.last_seen_at.strftime('%Y-%m-%d %H:%M') }}</small></span>{% if item.token_hash == current_session_hash %}<em>当前设备</em>{% else %}<form method="post" action="{{ url_for('core.account_session_revoke', session_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-btn icon-btn" type="submit" title="退出此设备" aria-label="退出此设备">{{ action_icon('logout') }}</button></form>{% endif %}</div>{% endfor %}</div>{% else %}<p class="muted">当前登录来自旧会话，重新登录后即可管理设备。</p>{% endif %}</section>
+
+      {% elif section == 'organization' %}
+      <header class="account-heading"><h1>组织与成员</h1><p>可先邀请尚未注册的邮箱或手机号；受邀注册者不会自动获得个人建站权限。</p></header>
+      <div class="org-tabs">{% for membership in organizations %}<a class="{{ 'active' if membership.organization_id == organization.id else '' }}" href="{{ url_for('core.account', section='organization', org=membership.organization_id) }}">{{ membership.organization.name }} · {{ membership.role }}</a>{% endfor %}</div>
+      <section class="account-card"><h2>团队资料 <span class="feature-badge ready">可用</span></h2><form class="simple-form" method="post" action="{{ url_for('core.account_organization_save') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="organization_id" value="{{ organization.id }}"><label>团队名称<input name="name" maxlength="120" value="{{ organization.name }}" required {{ 'disabled' if organization_membership.role not in ['owner','admin'] else '' }}></label><button class="primary-btn icon-btn" type="submit" title="保存团队资料" aria-label="保存团队资料" {{ 'disabled' if organization_membership.role not in ['owner','admin'] else '' }}>{{ action_icon('save') }}</button></form></section>
+      <section class="account-card"><h2>成员与邀请</h2>{% if organization_membership.role in ['owner','admin'] %}<form class="simple-form" method="post" action="{{ url_for('core.account_organization_member_add') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="organization_id" value="{{ organization.id }}"><label>成员邮箱或手机号<input name="identifier" required></label><label>组织角色<select name="role"><option value="editor">编辑者</option><option value="viewer">只读成员</option><option value="admin">管理员</option></select></label><button class="secondary-btn icon-btn" type="submit" title="创建团队邀请" aria-label="创建团队邀请">{{ action_icon('user-add') }}</button></form>{% endif %}{% if organization_invite_url %}<div class="invitation-link"><strong>开发阶段邀请链接</strong><input value="{{ organization_invite_url }}" readonly onclick="this.select()"><small>复制后发送给受邀成员；链接仅显示一次，7 天内有效。</small></div>{% endif %}<div class="data-list member-list">{% for member in org_members %}{% set contacts = org_member_contacts.get(member.user_id, {}) %}{% set member_name = member.user.display_name or contacts.get('email') or contacts.get('phone') or member.user.email %}{% set member_avatar = org_member_avatars.get(member.user_id, '') %}<div><span class="member-avatar">{% if member_avatar %}<img src="{{ member_avatar }}" alt="{{ member_name }}">{% else %}{{ member_name[:1] }}{% endif %}</span><span class="member-summary"><strong>{{ member_name }}</strong><span class="member-contacts"><small><b>邮箱</b>{{ contacts.get('email') or '未绑定' }}</small><small><b>手机</b>{{ contacts.get('phone') or '未绑定' }}</small></span><small class="member-role">{{ member.role }}</small></span>{% if organization_membership.role in ['owner','admin'] and member.role != 'owner' %}<form class="member-actions" method="post" action="{{ url_for('core.account_organization_member_update', member_id=member.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><select name="role"><option value="admin" {{ 'selected' if member.role == 'admin' else '' }}>管理员</option><option value="editor" {{ 'selected' if member.role == 'editor' else '' }}>编辑者</option><option value="viewer" {{ 'selected' if member.role == 'viewer' else '' }}>只读</option></select><button class="text-btn icon-btn" name="action" value="role" type="submit" title="更新成员角色" aria-label="更新成员角色">{{ action_icon('refresh') }}</button><button class="danger-link icon-btn" name="action" value="remove" type="submit" title="移除成员" aria-label="移除成员">{{ action_icon('trash') }}</button></form>{% else %}<em>{{ member.status }}</em>{% endif %}</div>{% endfor %}{% for invitation in pending_invitations %}<div class="pending-invitation"><span><strong>{{ invitation.identifier }}</strong><small>待接受 · {{ invitation.role }} · {{ invitation.expires_at.strftime('%Y-%m-%d %H:%M') }} 到期</small></span>{% if organization_membership.role in ['owner','admin'] %}<form method="post" action="{{ url_for('core.account_organization_invitation_revoke', invitation_id=invitation.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="danger-link icon-btn" type="submit" title="撤销邀请" aria-label="撤销邀请">{{ action_icon('trash') }}</button></form>{% endif %}</div>{% endfor %}</div></section>
+      <section class="account-card"><h2>共享站点</h2><div class="data-list">{% if organization_membership.role == 'owner' %}{% for item in active_sites %}<div><span><strong>{{ item.name }}</strong><small>/{{ item.slug }}</small></span><form method="post" action="{{ url_for('core.account_organization_site_toggle', site_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="organization_id" value="{{ organization.id }}"><button class="secondary-btn icon-btn" type="submit" title="{{ '取消关联' if item.id in org_site_ids else '关联团队' }}" aria-label="{{ '取消关联' if item.id in org_site_ids else '关联团队' }}">{{ action_icon('unlink' if item.id in org_site_ids else 'link') }}</button></form></div>{% else %}<div class="empty-state">当前没有个人站点可共享。</div>{% endfor %}{% else %}{% for item in org_shared_sites %}<div><span><strong>{{ item.name }}</strong><small>/{{ item.slug }}</small></span><a class="secondary-btn icon-btn" href="{{ url_for('core.overview', site=item.id) }}" target="_top" title="进入站点" aria-label="进入站点">{{ action_icon('right') }}</a></div>{% else %}<div class="empty-state">团队负责人尚未关联共享站点，请先由所有者在此栏目关联站点。</div>{% endfor %}{% endif %}</div></section>
+
+      {% elif section == 'audit' %}
+      <header class="account-heading"><h1>操作日志</h1><p>当前记录账户、安全、站点归档、组织与账单等账户中心关键操作；普通用户不能修改。</p></header>
+      <section class="account-card audit-card">
+        <h2>日志记录 <span class="feature-badge ready">共 {{ audit_page.total }} 条</span></h2>
+        <form class="audit-filters" method="get" action="{{ url_for('core.account') }}">
+          <input type="hidden" name="section" value="audit">
+          <label>搜索<input name="q" value="{{ audit_filters.q }}" placeholder="操作内容、类型或 IP"></label>
+          <label>类型<select name="category"><option value="">全部类型</option><option value="account" {{ 'selected' if audit_filters.category == 'account' else '' }}>账户资料</option><option value="security" {{ 'selected' if audit_filters.category == 'security' else '' }}>账号安全</option><option value="site" {{ 'selected' if audit_filters.category == 'site' else '' }}>站点管理</option><option value="organization" {{ 'selected' if audit_filters.category == 'organization' else '' }}>组织成员</option><option value="billing" {{ 'selected' if audit_filters.category == 'billing' else '' }}>会员账单</option></select></label>
+          <label>开始日期<input type="date" name="date_from" value="{{ audit_filters.date_from }}"></label>
+          <label>结束日期<input type="date" name="date_to" value="{{ audit_filters.date_to }}"></label>
+          <button class="primary-btn icon-btn" type="submit" title="筛选日志" aria-label="筛选日志">{{ action_icon('search') }}</button>
+          {% if audit_filters.q or audit_filters.category or audit_filters.date_from or audit_filters.date_to %}<a class="secondary-btn icon-btn" href="{{ url_for('core.account', section='audit') }}" title="清除筛选" aria-label="清除筛选">{{ action_icon('refresh') }}</a>{% endif %}
+        </form>
+        <div class="data-list">{% for log in audit_logs %}<div><span><strong>{{ log.summary }}</strong><small>{{ log.action }} · {{ log.ip_address or '未知 IP' }}</small></span><time>{{ log.created_at.strftime('%Y-%m-%d %H:%M') }}</time></div>{% else %}<div class="empty-state">没有符合条件的操作记录。</div>{% endfor %}</div>
+        {% if audit_page.pages > 1 %}<nav class="audit-pagination" aria-label="操作日志分页"><span>第 {{ audit_page.page }} / {{ audit_page.pages }} 页</span><div>{% if audit_page.has_prev %}<a class="page-link icon-btn" href="{{ url_for('core.account', section='audit', page=audit_page.prev_num, q=audit_filters.q, category=audit_filters.category, date_from=audit_filters.date_from, date_to=audit_filters.date_to) }}" title="上一页" aria-label="上一页">{{ action_icon('left') }}</a>{% endif %}{% for page_number in audit_page.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}{% if page_number %}<a class="page-link {{ 'active' if page_number == audit_page.page else '' }}" href="{{ url_for('core.account', section='audit', page=page_number, q=audit_filters.q, category=audit_filters.category, date_from=audit_filters.date_from, date_to=audit_filters.date_to) }}" {{ 'aria-current=page' if page_number == audit_page.page else '' }}>{{ page_number }}</a>{% else %}<span class="page-ellipsis">…</span>{% endif %}{% endfor %}{% if audit_page.has_next %}<a class="page-link icon-btn" href="{{ url_for('core.account', section='audit', page=audit_page.next_num, q=audit_filters.q, category=audit_filters.category, date_from=audit_filters.date_from, date_to=audit_filters.date_to) }}" title="下一页" aria-label="下一页">{{ action_icon('right') }}</a>{% endif %}</div></nav>{% endif %}
+      </section>
+
+      {% elif section == 'credits' %}
+      <header class="account-heading"><h1>AI 额度</h1><p>额度使用整数点数记录，流水不可修改。</p></header><section class="account-card credit-summary"><h2>当前余额 <span class="feature-badge ready">可用</span></h2><strong>{{ credit_account.balance }}</strong><p>点</p></section><section class="account-card"><h2>额度流水</h2><div class="data-list">{% for tx in credit_transactions %}<div><span><strong>{{ tx.description or tx.source }}</strong><small>余额 {{ tx.balance_after }}</small></span><em class="{{ 'positive' if tx.amount > 0 else 'negative' }}">{{ '+' if tx.amount > 0 else '' }}{{ tx.amount }}</em></div>{% endfor %}</div></section>
+
+      {% elif section == 'integrations' %}
+      <header class="account-heading"><h1>安全与第三方绑定</h1><p>外部平台未配置时只提供明确标记的开发占位。</p></header><section class="account-card"><h2>两步验证 <span class="feature-badge waiting">等待安全密钥配置</span></h2><div class="feature-row"><div><strong>验证器 TOTP</strong><p>数据模型已经建立；在密钥加密存储接入前禁止启用，避免明文保存验证器密钥。</p></div><button class="secondary-btn icon-btn" type="button" disabled title="暂不可用" aria-label="两步验证暂不可用">{{ action_icon('key') }}</button></div></section><section class="account-card"><h2>微信 <span class="feature-badge {{ 'mock' if wechat_identity and wechat_identity.is_mock else 'waiting' }}">{{ '开发模拟' if wechat_identity and wechat_identity.is_mock else '等待开放平台资质' }}</span></h2><div class="feature-row"><div><strong>{{ wechat_identity.nickname if wechat_identity else '绑定微信' }}</strong><p>{{ '当前为开发模拟身份，不能用于真实微信登录。' if wechat_identity else '真实绑定需要 AppID、AppSecret、HTTPS 回调域名和应用审核。' }}</p></div>{% if wechat_identity %}<form method="post" action="{{ url_for('core.account_wechat_unbind') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-btn icon-btn" type="submit" title="解绑微信" aria-label="解绑微信">{{ action_icon('unlink') }}</button></form>{% else %}<form method="post" action="{{ url_for('core.account_wechat_mock') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-btn icon-btn" type="submit" title="开发模拟绑定微信" aria-label="开发模拟绑定微信">{{ action_icon('wechat') }}</button></form>{% endif %}</div></section>
+
+      {% elif section == 'billing' %}
+      <header class="account-heading"><h1>会员与账单</h1><p>支付渠道尚未接入，订单只会保持待支付状态。</p></header><div class="site-grid">{% for plan in plans %}<section class="account-card site-card"><div class="site-card-head"><div><h2>{{ plan.name }}</h2><code>{{ plan.code }}</code></div><span class="feature-badge waiting">支付占位</span></div><div class="plan-price">{{ '待定价' if plan.price_cents == 0 and plan.code != 'free' else '¥%.2f'|format(plan.price_cents / 100) }}</div><form class="card-actions" method="post" action="{{ url_for('core.account_billing_order_create') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="plan_id" value="{{ plan.id }}"><button class="secondary-btn icon-btn" type="submit" title="创建待支付订单" aria-label="创建待支付订单">{{ action_icon('order') }}</button></form></section>{% endfor %}</div><section class="account-card"><h2>订单记录</h2><div class="data-list">{% for order in orders %}<div><span><strong>订单 #{{ order.id }}</strong><small>{{ order.provider }} · ¥{{ '%.2f'|format(order.amount_cents / 100) }}</small></span><em>{{ order.status }}</em></div>{% else %}<div class="empty-state">暂无订单</div>{% endfor %}</div></section>
+
+      {% elif section == 'platform' %}
+      <header class="account-heading"><h1>平台管理</h1><p>管理平台账号和平台级角色；组织角色与建站资格不在这里调整。</p></header>
+      <section class="platform-summary"><article><span>平台用户</span><strong>{{ platform_users|length }}</strong></article><article><span>平台管理员</span><strong>{{ platform_users|selectattr('role', 'equalto', 'admin')|list|length }}</strong></article><article><span>站点总数</span><strong>{{ platform_users|sum(attribute='site_count') }}</strong></article></section>
+      <section class="account-card platform-users-card"><h2>用户与平台角色</h2><div class="platform-user-list">{% for row in platform_users %}<article class="platform-user-row"><div class="platform-user-main"><span class="platform-avatar">{{ (row.display_name if row.display_name != '未设置昵称' else row.identifier)[:1].upper() }}</span><span><strong>{{ row.display_name }}</strong><small>{{ row.identifier }} · ID {{ row.id }}</small></span></div><dl><div><dt>状态</dt><dd><span class="status {{ row.status }}">{{ {'active':'正常','suspended':'已停用','deleted':'已删除'}.get(row.status,row.status) }}</span></dd></div><div><dt>站点</dt><dd>{{ row.site_count }}</dd></div><div><dt>注册时间</dt><dd>{{ row.created_at.strftime('%Y-%m-%d') if row.created_at else '—' }}</dd></div><div><dt>最近登录</dt><dd>{{ row.last_login_at.strftime('%Y-%m-%d %H:%M') if row.last_login_at else '从未登录' }}</dd></div></dl><div class="platform-role-control">{% if row.is_current %}<span class="feature-badge ready">当前管理员</span>{% else %}<form method="post" action="{{ url_for('admin.user_role_update', user_id=row.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><select name="role" aria-label="{{ row.identifier }} 的平台角色"><option value="user" {{ 'selected' if row.role == 'user' else '' }}>普通用户</option><option value="admin" {{ 'selected' if row.role == 'admin' else '' }}>平台管理员</option></select><button class="primary-btn icon-btn" type="submit" title="保存平台角色" aria-label="保存平台角色">{{ action_icon('save') }}</button></form>{% endif %}</div></article>{% endfor %}</div></section>
+
+      {% elif section == 'trash' %}
+      <header class="account-heading"><h1>回收站</h1><p>站点文件不会立即删除，可随时恢复。</p></header>
+      <section class="account-card"><h2>已删除站点</h2>{% if deleted_sites %}<div class="trash-list">{% for item in deleted_sites %}<div><span><strong>{{ item.name }}</strong><small>/{{ item.slug }} · {{ item.soft_deleted_at.strftime('%Y-%m-%d %H:%M') if item.soft_deleted_at else '' }}</small></span><form method="post" action="{{ url_for('core.account_site_restore', site_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-btn icon-btn" type="submit" title="恢复站点" aria-label="恢复站点">{{ action_icon('restore') }}</button></form></div>{% endfor %}</div>{% else %}<div class="empty-state"><p>回收站为空。</p></div>{% endif %}</section>
+      {% endif %}
+    </main>
+  </div>
+  <script>
+  (function(){
+    var input=document.getElementById('accountAvatarInput');
+    if(!input)return;
+    input.addEventListener('change',function(){
+      var file=this.files&&this.files[0];
+      if(!file)return;
+      if(file.size>5*1024*1024){alert('头像文件不能超过 5MB');this.value='';return;}
+      var preview=document.getElementById('accountAvatarPreview');
+      var fallback=document.getElementById('accountAvatarFallback');
+      if(preview){preview.src=URL.createObjectURL(file);preview.hidden=false;}
+      if(fallback)fallback.hidden=true;
+    });
+  })();
+  </script>
+</body>
+</html>

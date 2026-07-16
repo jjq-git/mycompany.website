@@ -5,7 +5,7 @@
 {# 与 panel_templates.html 保持一致的卡片样式 #}
 <div class="d-flex align-items-center justify-content-between mb-3">
   <span class="fw-semibold">模板库</span>
-  <a class="btn btn-sm btn-primary" href="{{ url_for('core.site_new') }}" style="font-size:14px">+ 新建站点</a>
+  {% if can_create_sites %}<a class="btn btn-sm btn-primary" href="{{ url_for('core.site_new') }}" style="font-size:14px">+ 新建站点</a>{% endif %}
 </div>
 <div class="d-flex flex-column gap-3">
   {% for tpl in templates %}
@@ -25,7 +25,7 @@
       <p class="text-muted mb-2" style="font-size:12px; line-height: 1.4;">{{ tpl.description }}</p>
       <div class="d-flex gap-1">
         <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('core.template_preview', template_name=tpl.name) }}" target="_blank" style="font-size:14px">预览</a>
-        <a class="btn btn-sm btn-primary" href="{{ url_for('core.site_new', template=tpl.name) }}" style="font-size:14px">用这个</a>
+        {% if can_create_sites %}<a class="btn btn-sm btn-primary" href="{{ url_for('core.site_new', template=tpl.name) }}" style="font-size:14px">用这个</a>{% endif %}
       </div>
     </div>
   </div>

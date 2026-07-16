@@ -8,7 +8,7 @@
   <link rel="icon" href="http://192.168.1.88:3000/attachments/74eb0913-3298-4a00-82f8-fe1c02db27ec">
   <title>{% block title %}{{ site.slug if site else '' }}{% endblock %} — {{ platform_domain }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260714-menu">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260716-account-header">
   <style>
     :root {
       --bs-primary: {{ admin_primary }};
@@ -83,6 +83,7 @@
       <a href="{{ url_for('core.index') }}" class="d-flex align-items-center gap-2 text-decoration-none">
         <img class="admin-logo" width="28" height="28" src="http://192.168.1.88:3000/attachments/74eb0913-3298-4a00-82f8-fe1c02db27ec" alt="">
       </a>
+      <span class="header-account-mode-title">账户中心</span>
 
       {% if site %}
       <div class="header-divider header-brand-divider"></div>
@@ -97,8 +98,7 @@
             {% for opt in available_sites|default([]) %}
             <li>
               <a class="dropdown-item{% if opt.id == site.id %} active{% endif %}"
-                 href="{{ request.path }}?site={{ opt.id }}{% if current_lang %}&lang={{ current_lang }}{% endif %}"
-                 data-site-id="{{ opt.id }}" onclick="return switchAdminSite(event,this)">
+                 href="{{ url_for('core.index', site=opt.id) }}">
                 <span class="header-site-option">
                   <strong>{{ opt.name or opt.slug }}</strong>
                   {% if (opt.name or opt.slug) != opt.slug %}<small>/{{ opt.slug }}</small>{% endif %}
@@ -109,6 +109,10 @@
               </a>
             </li>
             {% endfor %}
+            {% if can_create_sites|default(false) %}
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('core.account', section='sites', create='templates') }}" onclick="event.preventDefault();openAccountWorkspaceUrl(this.href)">＋ 新建站点</a></li>
+            {% endif %}
           </ul>
         </div>
       <div class="header-divider header-brand-divider"></div>
@@ -125,6 +129,13 @@
           </a>
           {% endfor %}
         </div>
+      </div>
+      {% endif %}
+
+      {% if site and not site_can_edit %}
+      <div class="admin-readonly-badge" title="当前团队角色只能查看站点内容，不能保存修改">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+        <span>只读模式</span>
       </div>
       {% endif %}
 
@@ -175,6 +186,15 @@
       #}
 
       {% if site %}
+      <div class="header-site-actions">
+      <button class="header-btn" type="button" onclick="doPublish()"
+        title="{{ '发布站点' if site_can_edit else '只读权限无法发布站点' }}"
+        aria-label="发布站点" {{ 'disabled' if not site_can_edit else '' }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M16 16l-4-4-4 4M12 12v9"/><path d="M20.4 17.5A5 5 0 0 0 18 8.2 7 7 0 0 0 4.3 10.6 4.5 4.5 0 0 0 5.5 19H7"/>
+        </svg>
+      </button>
       <a class="header-btn" href="{{ url_for('core.preview_site', site_id=site.id) }}" target="_blank"
         title="预览" aria-label="预览">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -184,6 +204,7 @@
         </svg>
       </a>
       <div class="header-divider"></div>
+      </div>
       {% endif %}
 
       <form method="post" action="{{ url_for('core.logout') }}" style="display:inline">
@@ -432,11 +453,11 @@
 
       </div>
       {% if user %}
-      <div class="left-nav-account" title="{{ user.email }}" onclick="openAccountPanel()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAccountPanel()}" role="button" tabindex="0" aria-label="打开用户菜单">
-        <span class="left-nav-account-avatar">{{ user.email[:1].upper() }}</span>
+      <div class="left-nav-account" id="accountWorkspaceTrigger" title="{{ account_identifier or user.email }}" onclick="openAccountWorkspace()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAccountWorkspace()}" role="button" tabindex="0" aria-label="打开账户中心">
+        <span class="left-nav-account-avatar">{% if account_avatar_url %}<img src="{{ account_avatar_url }}" alt="">{% else %}{{ (user.display_name or account_identifier or user.email)[:1] }}{% endif %}</span>
         <span class="left-nav-account-info">
-          <strong>{{ user.email.split('@')[0] }}</strong>
-          <small>{{ user.email }}</small>
+          <strong>{{ user.display_name or (account_identifier or user.email).split('@')[0] }}</strong>
+          <small>{{ account_identifier or user.email }}</small>
         </span>
         <svg class="left-nav-account-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
       </div>
@@ -536,7 +557,7 @@
             </svg>
           </div>
           <h5 class="text-muted mb-2">尚未创建站点</h5>
-          <p class="text-muted small mb-3">在左侧 <strong>模板库</strong> 中选择一个模板来新建站点</p>
+          <p class="text-muted small mb-3">请到账户中心的 <strong>我的站点</strong> 中创建站点</p>
         </div>
         {% endif %}
       </div>
@@ -566,7 +587,7 @@
     </div>
 
     {# 右栏：统一面板（头像打开账号管理，左侧项目打开对应编辑内容） #}
-    <aside class="right-panel bg-white border-start flex-shrink-0 d-flex flex-column" style="width:430px"
+    <aside class="right-panel bg-white border-start flex-shrink-0 d-flex flex-column{% if initial_panel_collapsed|default(false) %} panel-collapsed{% endif %}" style="width:430px"
       id="rightPanel">
       <div class="right-panel-header d-flex align-items-center justify-content-between flex-shrink-0">
         <div class="d-flex align-items-center gap-2">
@@ -576,7 +597,7 @@
             <path
               d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
-          <span class="fw-semibold small" id="rightPanelTitle">账号管理</span>
+          <span class="fw-semibold small" id="rightPanelTitle">编辑面板</span>
         </div>
       </div>
       <div class="right-panel-body flex-grow-1 overflow-auto" id="rightPanelBody">
@@ -590,9 +611,6 @@
         {% endif %}
         {% endwith %}
         {% block content %}
-        {% if initial_account_panel|default(false) %}
-        {% include "dashboard/panel_account.html" %}
-        {% else %}
         <div class="panel-empty-state">
           <div class="panel-empty-icon">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
@@ -603,11 +621,15 @@
           </div>
           <p class="text-muted small">← 在左侧选择一项开始编辑</p>
         </div>
-        {% endif %}
         {% endblock %}
       </div>
       <div class="right-panel-footer flex-shrink-0" id="rightPanelFooter" style="display:none;"></div>
     </aside>
+  </div>
+
+  {# 账户中心覆盖编辑区但不销毁编辑器 DOM，关闭后可原样恢复当前工作状态。 #}
+  <div class="account-workspace-overlay" id="accountWorkspaceOverlay" hidden aria-hidden="true">
+    <iframe id="accountWorkspaceFrame" title="账户中心" loading="lazy"></iframe>
   </div>
 
   {# 拖拽遮罩 — iframe 失焦时用 #}
@@ -2243,14 +2265,28 @@
     }
 
     function doPublish() {
-      if (confirm('确认发布站点？')) {
-        buildCurrentSite('正在发布并生成站点...')
-          .then(function(data) {
-            alert(data.ok ? '发布完成' : '发布失败');
-            return refreshPreview({ build: false });
-          })
-          .finally(hideBuildLoading);
-      }
+      if (!{{ site_can_edit|tojson }}) return;
+      if (!confirm('确认发布站点？')) return;
+      var siteParam = currentSiteParam();
+      var publishUrl = '/publish';
+      if (siteParam) publishUrl += '?site=' + encodeURIComponent(siteParam);
+      showBuildLoading('正在发布并生成站点...');
+      fetch(publishUrl, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        }
+      }).then(function(response) {
+        return response.json().then(function(data) {
+          if (!response.ok || !data.ok) throw new Error(data.error || '发布失败');
+          alert('发布完成');
+          return refreshPreview({ build: false });
+        });
+      }).catch(function(error) {
+        alert(error.message || '发布失败');
+      }).finally(hideBuildLoading);
     }
 
     function pageKeyFromPreviewPath(pathname) {
@@ -2427,17 +2463,48 @@
       }, true);
     }
 
-    function openAccountPanel() {
-      document.querySelectorAll('.left-nav-item').forEach(function(el) { el.classList.remove('active'); });
-      var panelTitle = document.getElementById('rightPanelTitle');
-      if (panelTitle) panelTitle.textContent = '账号管理';
-      var params = new URLSearchParams(window.location.search);
-      var siteParam = currentSiteParam();
-      var langParam = currentLangParam();
-      var qs = siteParam ? '&site=' + siteParam : '';
-      if (langParam) qs += '&lang=' + encodeURIComponent(langParam);
-      loadPanel('{{ url_for("core.account") }}?_fragment=1' + qs);
+    function openAccountWorkspaceUrl(target) {
+      var overlay = document.getElementById('accountWorkspaceOverlay');
+      var frame = document.getElementById('accountWorkspaceFrame');
+      if (!overlay || !frame) return;
+      if (frame.getAttribute('src') !== target) frame.setAttribute('src', target);
+      overlay.hidden = false;
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('account-workspace-open');
+      frame.addEventListener('load', function focusAccountFrame() {
+        frame.removeEventListener('load', focusAccountFrame);
+        frame.focus();
+      });
     }
+
+    function openAccountWorkspace(section) {
+      var target = '{{ url_for("core.account") }}' + (section ? '?section=' + encodeURIComponent(section) : '');
+      openAccountWorkspaceUrl(target);
+    }
+
+    function closeAccountWorkspace() {
+      var overlay = document.getElementById('accountWorkspaceOverlay');
+      if (!overlay) return;
+      overlay.hidden = true;
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('account-workspace-open');
+      if (window.accountWorkspaceNeedsReload) {
+        window.accountWorkspaceNeedsReload = false;
+        window.location.reload();
+        return;
+      }
+      var trigger = document.getElementById('accountWorkspaceTrigger');
+      if (trigger) trigger.focus();
+    }
+
+    // 兼容可能仍引用旧函数名的缓存页面或扩展脚本。
+    function openAccountPanel() { openAccountWorkspace(); }
+
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape' && document.body.classList.contains('account-workspace-open')) {
+        closeAccountWorkspace();
+      }
+    });
 
     function toggleLeftSubmenu(button) {
       var group = button.closest('.left-nav-group');
@@ -2726,6 +2793,7 @@
   </script>
 
   {% block scripts %}{% endblock %}
+  {% include "dashboard/_readonly_guard.html" %}
 </body>
 
 </html>

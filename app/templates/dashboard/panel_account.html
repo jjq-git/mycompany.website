@@ -1,123 +1,16 @@
-{# 账号管理面板；初始化与头像点击共用本模板 #}
-{% if not initial_account_panel|default(false) %}<div class="fw-semibold mb-3">账号管理</div>{% endif %}
+{# 兼容旧的右侧账户面板：账户管理已迁移到独立工作区，这里只保留入口。 #}
+{% set visible_identifier = account_identifier or user.email %}
+{% set account_name = user.display_name or visible_identifier.split('@')[0] %}
+{% if not initial_account_panel|default(false) %}<div class="fw-semibold mb-3">账户中心</div>{% endif %}
 <div class="account-profile">
-  <div class="account-profile-avatar" aria-hidden="true">{{ user.email[:1].upper() }}</div>
+  <div class="account-profile-avatar" aria-hidden="true">{{ account_name[:1].upper() }}</div>
   <div class="account-profile-main">
-    <div class="account-profile-email">{{ user.email }}</div>
-    <div class="account-profile-meta">{{ site_count }} 个站点 · 当前 {{ site.name }}</div>
+    <div class="account-profile-email">{{ account_name }}</div>
+    <div class="account-profile-meta">{{ visible_identifier }}{% if site_count is defined %} · {{ site_count }} 个站点{% endif %}</div>
   </div>
-  <button class="account-profile-delete" type="button" onclick="showDeleteSiteModal()"
-          title="删除当前站点" aria-label="删除当前站点">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18"/><path d="m8 6 1-3h6l1 3"/><path d="m19 6-1 15H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
-  </button>
 </div>
-
 <div class="panel-section account-section">
-  <div class="panel-section-title">站点操作</div>
-  <div class="account-quick-actions">
-    <button class="account-quick-action" type="button" onclick="openTemplatesPanel()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>模板库</span>
-    </button>
-    <a class="account-quick-action" href="{{ url_for('core.export_zip') }}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>下载</span>
-    </a>
-    <button class="account-quick-action primary" type="button" onclick="doPublish()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>发布</span>
-    </button>
-  </div>
+  <div class="panel-section-title">账户管理</div>
+  <p class="small text-muted mb-3">个人资料、站点管理和账号安全已集中到账户中心。</p>
+  <button class="btn btn-primary btn-sm w-100" type="button" onclick="openAccountWorkspace()">打开账户中心</button>
 </div>
-
-{# 删除站点确认对话框 #}
-<div class="modal fade" id="deleteSiteModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">确认删除站点</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <p class="text-danger fw-semibold">此操作不可撤销！</p>
-        <p>将删除站点 <strong>{{ site.name }}</strong> ({{ site.slug }}) 的全部数据：</p>
-        <ul>
-          <li>数据库记录</li>
-          <li>站点文件夹（sites/{{ site.id }}/）</li>
-          <li>生成的输出文件（output/{{ site.id }}/）</li>
-        </ul>
-        <p>请输入站点 slug <code>{{ site.slug }}</code> 确认删除：</p>
-        <input type="text" class="form-control form-control-sm" id="deleteConfirmSlug" placeholder="{{ site.slug }}"
-               oninput="var btn=document.getElementById('confirmDeleteBtn'); var v=this.value.trim(); if(v===''){btn.disabled=true;btn.title='请先输入 slug'}else if(v==='{{ site.slug }}'){btn.disabled=false;btn.title=''}else{btn.disabled=true;btn.title='Slug 不匹配'}">
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">取消</button>
-        <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteBtn"
-                onclick="deleteSite()">确认删除</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-function switchAccountLanguage(event, link) {
-  if (event) event.preventDefault();
-  var langCode = link && link.dataset ? link.dataset.langCode : '';
-  if (!langCode) return false;
-  var url = new URL(window.location.href);
-  url.searchParams.set('site', '{{ site.id }}');
-  url.searchParams.set('lang', langCode);
-  window.location.assign(url.toString());
-  return false;
-}
-function showDeleteSiteModal() {
-  console.log('[DEBUG] showDeleteSiteModal called');
-  var modalEl = document.getElementById('deleteSiteModal');
-  console.log('[DEBUG] modalEl:', modalEl);
-  if (!modalEl) { alert('找不到删除对话框元素'); return; }
-  var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-  console.log('[DEBUG] modal instance:', modal);
-  modal.show();
-  console.log('[DEBUG] modal shown');
-  // 延迟检查输入和按钮状态
-  setTimeout(function(){
-    var inp = document.getElementById('deleteConfirmSlug');
-    var btn = document.getElementById('confirmDeleteBtn');
-    console.log('[DEBUG] input:', inp, 'value:', inp ? inp.value : 'N/A');
-    console.log('[DEBUG] button:', btn, 'disabled:', btn ? btn.disabled : 'N/A');
-    console.log('[DEBUG] button oninput attr:', inp ? inp.getAttribute('oninput') : 'N/A');
-  }, 500);
-}
-function deleteSite() {
-  console.log('[DEBUG] deleteSite called');
-  var input = document.getElementById('deleteConfirmSlug');
-  var btn = document.getElementById('confirmDeleteBtn');
-  console.log('[DEBUG] input value:', input.value.trim());
-  console.log('[DEBUG] expected slug: {{ site.slug }}');
-  if (input.value.trim() !== '{{ site.slug }}') {
-    alert('Slug 不匹配，请重新输入');
-    return;
-  }
-  btn.disabled = true;
-  btn.textContent = '删除中...';
-  var formData = new FormData();
-  formData.append('csrf_token', '{{ csrf_token() }}');
-  fetch('{{ url_for("core.site_delete") }}', {
-    method: 'POST',
-    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-    body: formData
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.ok) {
-      window.location.href = data.redirect;
-    } else {
-      alert('删除失败：' + (data.error || '未知错误'));
-      btn.disabled = false;
-      btn.textContent = '确认删除';
-    }
-  })
-  .catch(function(err) {
-    alert('请求失败：' + err);
-    btn.disabled = false;
-    btn.textContent = '确认删除';
-  });
-}
-</script>
