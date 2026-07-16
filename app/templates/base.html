@@ -198,9 +198,6 @@
         </button>
       </form>
 
-      <div class="admin-avatar" title="{{ user.email if user else '' }}" onclick="openAccountPanel()" role="button" tabindex="0" aria-label="打开用户菜单">
-        {{ (user.email[:1].upper() if user else '?') }}
-      </div>
     </div>
   </header>
 
@@ -215,8 +212,40 @@
 
       <div class="flex-grow-1 overflow-auto left-nav-menu">
         {% if site %}
+        {# 侧栏页面图标：优先按页面用途匹配，未知页面回退为通用文件图标。 #}
+        {% macro left_page_icon(item) %}
+          {% set target = item.target | default('') | lower %}
+          {% set label = item.label | default('') | lower %}
+          {% set is_list = item.type == 'list' or target in (module_list_page_keys | default([])) or target == 'modules' %}
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            {% if target in ('products', 'product') or label in ('产品', 'products', 'product') %}
+            <rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/>
+            {% elif target in ('projects', 'project', 'portfolio', 'cases') %}
+            <rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            {% elif target in ('posts', 'post', 'blog', 'news') %}
+            <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Z"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M10 6h8"/><path d="M10 10h8"/><path d="M10 14h4"/>
+            {% elif target in ('contact', 'contacts', 'contact-us') %}
+            <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            {% elif target in ('about', 'about-us', 'company') %}
+            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+            {% elif target in ('pods', 'pod', 'silent-booth', 'silent_booth') %}
+            <rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22V6h6v16"/><path d="M12 14h.01"/>
+            {% elif is_list %}
+            <rect width="18" height="4" x="3" y="3" rx="1"/><rect width="18" height="4" x="3" y="10" rx="1"/><rect width="18" height="4" x="3" y="17" rx="1"/>
+            {% else %}
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>
+            {% endif %}
+          </svg>
+        {% endmacro %}
         {# ---- 内容中心：仅管理列表数据详情，不包含普通页面 ---- #}
-        <div class="left-nav-section-title">内容</div>
+        <button class="left-nav-section-title" type="button" data-section="content" onclick="toggleLeftSection(this)" aria-expanded="true" aria-controls="leftNavSectionContent">
+          <span>内容</span>
+          <span class="left-nav-section-chevron" aria-hidden="true">
+<svg class="section-chevron-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7 4 3 4-3"/><path d="m8 17 4-3 4 3"/></svg>
+<svg class="section-chevron-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m8 10 4-3 4 3"/><path d="m8 14 4 3 4-3"/></svg>
+          </span>
+        </button>
+        <div class="left-nav-section-body" id="leftNavSectionContent">
         <a class="left-nav-item {% if active == 'content_new' %}active{% endif %}" href="{{ url_for('core.content_workspace', mode='new') }}"
           data-panel="content_new" data-content-mode="new" title="新建内容">
           <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
@@ -224,7 +253,7 @@
         </a>
         <a class="left-nav-item {% if active == 'content_list' %}active{% endif %}" href="{{ url_for('core.content_workspace', mode='list') }}"
           data-panel="content_list" data-content-mode="list" title="内容列表">
-          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 11v6c0 1.66 4.03 3 9 3s9-1.34 9-3v-6"/></svg>
           内容列表
           <span class="nav-badge">{{ content_count|default(0) }}</span>
         </a>
@@ -233,9 +262,17 @@
           <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h5"/></svg>
           内容模板
         </a>
+        </div>
 
         {# ---- 设置 ---- #}
-        <div class="left-nav-section-title">设置</div>
+        <button class="left-nav-section-title" type="button" data-section="settings" onclick="toggleLeftSection(this)" aria-expanded="true" aria-controls="leftNavSectionSettings">
+          <span>设置</span>
+          <span class="left-nav-section-chevron" aria-hidden="true">
+<svg class="section-chevron-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7 4 3 4-3"/><path d="m8 17 4-3 4 3"/></svg>
+<svg class="section-chevron-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m8 10 4-3 4 3"/><path d="m8 14 4 3 4-3"/></svg>
+          </span>
+        </button>
+        <div class="left-nav-section-body" id="leftNavSectionSettings">
         <div class="left-nav-group" data-level="0">
           <div class="left-nav-parent-row" data-row-toggle="1" onclick="toggleLeftSubmenu(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLeftSubmenu(this)}" role="button" tabindex="0" aria-expanded="false">
             <span class="left-nav-item left-nav-parent-label flex-grow-1" title="展开/收起网站设置">
@@ -258,8 +295,7 @@
               data-panel="basic_settings" style="padding-left:32px" title="基本设置">
               <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
+                <path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 16h6"/>
               </svg>
               基本设置
             </a>
@@ -278,11 +314,7 @@
           data-panel="seo" title="SEO 检查">
           <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            <polyline points="7 11 9 9 11 11 15 7" />
-            <line x1="15" y1="12" x2="15" y2="7" />
-            <line x1="10" y1="7" x2="15" y2="7" />
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="m8 11 2 2 4-4"/>
           </svg>
           SEO 检查
         </a>
@@ -290,9 +322,7 @@
           data-panel="media" title="媒体管理">
           <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-            <path d="M8 14l2.5-2.5L13 14l2-2 3 3" />
-            <circle cx="8" cy="10" r="1" />
+            <rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>
           </svg>
           媒体管理
         </a>
@@ -300,10 +330,7 @@
           data-panel="header_footer" title="页头页脚">
           <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="5" rx="1.5" />
-            <rect x="3" y="16" width="18" height="5" rx="1.5" />
-            <line x1="7" y1="5.5" x2="7.01" y2="5.5" />
-            <line x1="7" y1="18.5" x2="7.01" y2="18.5" />
+            <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/>
           </svg>
           页头页脚
         </a>
@@ -311,15 +338,21 @@
           data-panel="menu" title="菜单配置">
           <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
+            <path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h16"/><path d="m17 9 3 3-3 3"/>
           </svg>
           菜单配置
         </a>
+        </div>
 
         {# ---- 内容 ---- #}
-        <div class="left-nav-section-title">页面</div>
+        <button class="left-nav-section-title" type="button" data-section="pages" onclick="toggleLeftSection(this)" aria-expanded="true" aria-controls="leftNavSectionPages">
+          <span>页面</span>
+          <span class="left-nav-section-chevron" aria-hidden="true">
+<svg class="section-chevron-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7 4 3 4-3"/><path d="m8 17 4-3 4 3"/></svg>
+<svg class="section-chevron-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m8 10 4-3 4 3"/><path d="m8 14 4 3 4-3"/></svg>
+          </span>
+        </button>
+        <div class="left-nav-section-body" id="leftNavSectionPages">
         <a class="left-nav-item {% if active in ('pages_home', 'home') %}active{% endif %}" href="{{ url_for('core.page_panel', page_key='home') }}"
           data-panel="pages_home" data-preview-page="home" title="首页">
           <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -341,24 +374,7 @@
           <div class="left-nav-parent-row" data-row-toggle="1" onclick="toggleLeftSubmenu(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLeftSubmenu(this)}" role="button" tabindex="0" aria-expanded="false">
             {% if item.type in ('list','page') and item.target %}
             <span class="left-nav-item left-nav-parent-label flex-grow-1" title="{{ item.label }}">
-              {% set is_list_icon = item.type == 'list' or item.target in (module_list_page_keys | default([])) or item.target == 'modules' %}
-              {% if is_list_icon %}
-              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <line x1="8" y1="6" x2="21" y2="6" />
-                <line x1="8" y1="12" x2="21" y2="12" />
-                <line x1="8" y1="18" x2="21" y2="18" />
-                <line x1="3" y1="6" x2="3.01" y2="6" />
-                <line x1="3" y1="12" x2="3.01" y2="12" />
-                <line x1="3" y1="18" x2="3.01" y2="18" />
-              </svg>
-              {% else %}
-              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
-              {% endif %}
+              {{ left_page_icon(item) }}
               {{ item.label }}
               {% if item.type == 'list' %}
               {% if item.target == 'products' %}<span class="nav-badge">{{ counts.products }}</span>
@@ -369,10 +385,7 @@
             {% else %}
             {# 非 list/page 类型但带子项：纯容器，可折叠 #}
             <span class="left-nav-item left-nav-parent-label flex-grow-1" title="{{ item.label }}">
-              <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-              </svg>
+              {{ left_page_icon(item) }}
               {{ item.label }}
             </span>
             {% endif %}
@@ -390,24 +403,7 @@
         <a class="left-nav-item" href="{{ url_for('core.page_panel', page_key=item.target) }}"
           data-panel="{{ item.type }}_{{ item.target }}" data-preview-page="{{ item.url }}"
           style="padding-left: {{ 16 + level * 16 }}px;" title="{{ item.label }}">
-          {% set is_list_icon = item.type == 'list' or item.target in (module_list_page_keys | default([])) or item.target == 'modules' %}
-          {% if is_list_icon %}
-          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <line x1="8" y1="6" x2="21" y2="6" />
-            <line x1="8" y1="12" x2="21" y2="12" />
-            <line x1="8" y1="18" x2="21" y2="18" />
-            <line x1="3" y1="6" x2="3.01" y2="6" />
-            <line x1="3" y1="12" x2="3.01" y2="12" />
-            <line x1="3" y1="18" x2="3.01" y2="18" />
-          </svg>
-          {% else %}
-          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-          </svg>
-          {% endif %}
+          {{ left_page_icon(item) }}
           {{ item.label }}
           {% if item.type == 'list' %}
           {% if item.target == 'products' %}<span class="nav-badge">{{ counts.products }}</span>
@@ -431,9 +427,20 @@
         {% endfor %}
         {% endmacro %}
         {{ render_left_menu(left_menu_items) }}
+        </div>
         {% endif %}
 
       </div>
+      {% if user %}
+      <div class="left-nav-account" title="{{ user.email }}" onclick="openAccountPanel()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAccountPanel()}" role="button" tabindex="0" aria-label="打开用户菜单">
+        <span class="left-nav-account-avatar">{{ user.email[:1].upper() }}</span>
+        <span class="left-nav-account-info">
+          <strong>{{ user.email.split('@')[0] }}</strong>
+          <small>{{ user.email }}</small>
+        </span>
+        <svg class="left-nav-account-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+      {% endif %}
     </nav>
 
     {# 左侧栏拖拽分隔条 #}
@@ -2446,6 +2453,43 @@
       var toggle = group.querySelector(':scope > .left-nav-parent-row .left-nav-chevron-btn');
       if (toggle) toggle.setAttribute('aria-expanded', String(!isOpen));
     }
+
+    var LEFT_NAV_SECTION_STORAGE_KEY = 'adminLeftNavSections:{{ site.id if site else "none" }}';
+
+    function readLeftSectionState() {
+      try {
+        return JSON.parse(localStorage.getItem(LEFT_NAV_SECTION_STORAGE_KEY) || '{}');
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function setLeftSectionExpanded(button, expanded) {
+      var bodyId = button.getAttribute('aria-controls');
+      var body = bodyId ? document.getElementById(bodyId) : null;
+      if (!body) return;
+      button.setAttribute('aria-expanded', String(expanded));
+      button.classList.toggle('collapsed', !expanded);
+      body.hidden = !expanded;
+    }
+
+    function toggleLeftSection(button) {
+      var expanded = button.getAttribute('aria-expanded') === 'true';
+      setLeftSectionExpanded(button, !expanded);
+      var state = readLeftSectionState();
+      state[button.dataset.section] = !expanded;
+      try {
+        localStorage.setItem(LEFT_NAV_SECTION_STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {}
+    }
+
+    (function initLeftNavSections() {
+      var state = readLeftSectionState();
+      document.querySelectorAll('.left-nav-section-title[data-section]').forEach(function (button) {
+        var expanded = state[button.dataset.section] !== false;
+        setLeftSectionExpanded(button, expanded);
+      });
+    })();
 
     // 切换面板语言并同步预览 iframe
     function switchPanelLang(url, langCode) {

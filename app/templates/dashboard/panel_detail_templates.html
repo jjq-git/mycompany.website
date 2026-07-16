@@ -16,7 +16,7 @@
   .dt-panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
   .dt-title{display:flex;align-items:center;gap:8px;font-weight:700;color:#0f172a}
   .dt-icon-btn{width:34px;height:34px;flex:0 0 34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #d8e0ea;background:#fff;color:#334155;border-radius:0}
-  .dt-title svg,.dt-section-title svg,summary svg,.dt-icon-btn svg,.dt-action svg,.dt-primary svg,.dt-save-button svg{width:16px;height:16px;flex:0 0 16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .dt-title svg,.dt-section-title svg,summary svg,.dt-icon-btn svg,.dt-action svg,.dt-primary svg,.dt-save-button svg,.dt-status-icon svg{width:16px;height:16px;flex:0 0 16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .dt-icon-btn:hover,.dt-action:hover{border-color:#0f9a8a;color:#0f766e;background:#f0fdfa}
   .dt-section{background:#fff;border:1px solid #e5e7eb;border-radius: 0;margin-bottom:12px}
   .dt-section-head{background:#f8fafc}
@@ -38,6 +38,9 @@
   .dt-template-name{font-weight:700;color:#111827;overflow-wrap:anywhere;line-height:1.35;font-size:14px}
   .dt-meta{font-size:12px;color:#64748b;margin-top:2px}
   .dt-badges{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+  .dt-status-icon{width:25px;height:25px;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;color:#64748b}
+  .dt-status-icon.is-default{color:#0f9a8a}
+  .dt-status-icon.is-current{color:#334155}
   .dt-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
   .dt-actions form{display:inline-flex;margin:0}
   .dt-action{width:34px;height:34px;flex:0 0 34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #d8e0ea;background:#fff;color:#334155;border-radius:0}
@@ -118,14 +121,12 @@
         </div>
       </div>
       <div class="dt-badges">
-        {% if is_default %}<span class="badge text-bg-primary">默认</span>{% endif %}
-        {% if is_current %}<span class="badge text-bg-light border">编辑中</span>{% endif %}
+        {% if is_default %}<span class="dt-status-icon is-default" title="默认模板" role="img" aria-label="默认模板">{{ dt_icon('star') }}</span>{% endif %}
+        {% if is_current %}<span class="dt-status-icon is-current" title="正在编辑" role="img" aria-label="正在编辑">{{ dt_icon('edit') }}</span>{% endif %}
       </div>
     </div>
 
     <div class="dt-actions">
-      <button class="dt-action" type="button" onclick="openTemplateEditor('{{ tpl_id }}')" title="编辑" aria-label="编辑">{{ dt_icon('edit') }}</button>
-
       {% if not is_default %}
       <form method="post" action="{{ url_for(detail_templates_endpoint, dataset_key=dataset_key, site=site.id, lang=current_lang, **({'_fragment':'1'} if not workspace_mode else {})) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

@@ -25,6 +25,7 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="_section" value="footer">
   <input type="hidden" name="_header_footer_tab" value="footer">
+  {% if header_footer_embed|default(false) %}<input type="hidden" name="_use_company_meta" value="1">{% endif %}
   {# Footer 变体选择 - 卡片式，与头部布局风格一致 #}
   {% set current_variant = current_footer.get('variant', 'columns') %}
   <div class="footer-settings-left">
@@ -63,7 +64,8 @@
 
     <hr>
 
-  {# 版权文本 #}
+  {% if not header_footer_embed|default(false) %}
+  {# 独立编辑页保留覆盖字段；组合工作台统一使用公司资料。 #}
   <div class="mb-2 footer-meta-field footer-meta-copyright">
     <label class="form-label small mb-1 text-muted">版权文本</label>
     <input class="form-control form-control-sm" name="copyright"
@@ -76,6 +78,7 @@
     <input class="form-control form-control-sm" name="icp"
            value="{{ current_footer.get('icp', '') }}" placeholder="如: 苏ICP备xxx号（留空=使用公司信息中的备案号）">
   </div>
+  {% endif %}
   </div>
 
   <div class="footer-settings-right">

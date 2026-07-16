@@ -6,6 +6,25 @@
   --admin-font-base: 14px;
 }
 
+/* 后台交互控件统一使用直角，覆盖 Bootstrap 和组件的默认圆角。 */
+button,
+.btn,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+.form-check-input,
+.form-switch .form-check-input {
+  border-radius: 0 !important;
+}
+
+/* Bootstrap 开关默认使用圆形 SVG 滑块，后台统一替换为方形。 */
+.form-switch .form-check-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='5' y='5' width='14' height='14' fill='%2394a3b8'/%3E%3C/svg%3E") !important;
+}
+.form-switch .form-check-input:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='5' y='5' width='14' height='14' fill='%23fff'/%3E%3C/svg%3E") !important;
+}
+
 /* ---- 顶部头部 ---- */
 .admin-header {
   background: #fff;
@@ -333,6 +352,96 @@
   cursor: pointer;
 }
 
+/* 左侧栏底部账户入口 */
+.left-nav-account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 66px;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.08);
+  color: rgba(255,255,255,.9);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.left-nav-account:hover,
+.left-nav-account:focus-visible {
+  background: rgba(0,0,0,.16);
+  outline: none;
+}
+.left-nav-account-avatar {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,.18);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+.left-nav-account-info {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  line-height: 1.35;
+}
+.left-nav-account-info strong {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.left-nav-account-info small {
+  overflow: hidden;
+  color: rgba(255,255,255,.58);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.left-nav-account-chevron {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  color: rgba(255,255,255,.5);
+}
+#leftNav.left-nav-collapsed .left-nav-account {
+  justify-content: center;
+  min-height: 56px;
+  padding: 10px 0;
+}
+#leftNav.left-nav-collapsed .left-nav-account-info,
+#leftNav.left-nav-collapsed .left-nav-account-chevron {
+  display: none;
+}
+#leftNav.nav-light .left-nav-account,
+#leftNav.nav-white .left-nav-account {
+  border-top-color: #e2e8f0;
+  background: #fff;
+  color: #334155;
+}
+#leftNav.nav-light .left-nav-account:hover,
+#leftNav.nav-light .left-nav-account:focus-visible,
+#leftNav.nav-white .left-nav-account:hover,
+#leftNav.nav-white .left-nav-account:focus-visible {
+  background: #f1f5f9;
+}
+#leftNav.nav-light .left-nav-account-avatar,
+#leftNav.nav-white .left-nav-account-avatar {
+  background: var(--bs-primary);
+  color: #fff;
+}
+#leftNav.nav-light .left-nav-account-info small,
+#leftNav.nav-white .left-nav-account-info small,
+#leftNav.nav-light .left-nav-account-chevron,
+#leftNav.nav-white .left-nav-account-chevron {
+  color: #94a3b8;
+}
+
 .account-profile { display:flex; align-items:center; gap:11px; padding:2px 2px 14px; border-bottom:1px solid #e8ecf0; margin-bottom:12px; }
 .account-profile-avatar { width:38px; height:38px; flex:0 0 38px; display:flex; align-items:center; justify-content:center; border-radius: 0; background:var(--bs-primary); color:#fff; font-size:16px; font-weight:700; }
 .account-profile-main { min-width:0; flex:1; }
@@ -540,12 +649,64 @@
 
 /* 分类标题 */
 .left-nav-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: 0;
+  background: transparent;
   color: rgba(255, 255, 255, 0.5);
   font-size: 14px;
+  line-height: 1.4;
   text-transform: uppercase;
   letter-spacing: .08em;
   font-weight: 600;
   padding: 14px 16px 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: color .15s ease, background .15s ease;
+}
+
+.left-nav-section-title:hover,
+.left-nav-section-title:focus-visible {
+  color: rgba(255, 255, 255, .82);
+  background: rgba(255, 255, 255, .05);
+  outline: none;
+}
+
+.left-nav-section-chevron {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  /* opacity: .7; */
+  transition: opacity .18s ease;
+}
+
+.left-nav-section-chevron svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  stroke-width: 1.75;
+}
+
+.left-nav-section-chevron .section-chevron-expand {
+  display: none;
+}
+
+.left-nav-section-title.collapsed .left-nav-section-chevron {
+  opacity: .9;
+}
+
+.left-nav-section-title.collapsed .section-chevron-collapse {
+  display: none;
+}
+
+.left-nav-section-title.collapsed .section-chevron-expand {
+  display: block;
+}
+
+.left-nav-section-body[hidden] {
+  display: none !important;
 }
 
 /* 导航项基础 */
@@ -673,7 +834,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 8px;
+  margin-right: 11px;
   padding: 0;
   border: none;
   border-radius: 0;
@@ -1761,7 +1922,7 @@ body.dataset-wide-mode #rightPanel .right-panel-body {
   }
 
   .settings-workspace--menu .menu-tree-children {
-    padding-left: 18px;
+    /* padding-left: 18px; */
     margin-top: 10px !important;
   }
 }
@@ -1822,7 +1983,7 @@ body.dataset-wide-mode #rightPanel .right-panel-body {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding-left: 16px;
+  /* padding-left: 16px; */
   border-left: 1.5px solid #e8ecf0;
   margin-left: 10px;
   position: relative;
@@ -4715,7 +4876,7 @@ body:not(.dataset-wide-mode) #rightPanel.panel-collapsed {
 /* 后台媒体字段统一结构：左侧预览，右侧地址、替代文本与格式说明。 */
 .module-media-layout {
   display: grid;
-  grid-template-columns: 100px minmax(0, 1fr);
+  grid-template-columns: 80px minmax(0, 1fr);
   column-gap: 12px;
   width: 100%;
   min-width: 0;
@@ -4793,8 +4954,8 @@ body:not(.dataset-wide-mode) #rightPanel.panel-collapsed {
 }
 
 .module-media-picker {
-  width: 100px;
-  height: 100px;
+  width: 80px;
+  height: 80px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

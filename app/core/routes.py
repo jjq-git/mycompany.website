@@ -3547,8 +3547,12 @@ def footer_variant_edit():
     if request.method == 'POST':
         footer = settings.setdefault(footer_key, {})
         footer['variant'] = request.form.get('footer_variant', 'columns')
-        footer['copyright'] = request.form.get('copyright', '').strip()
-        footer['icp'] = request.form.get('icp', '').strip()
+        if request.form.get('_use_company_meta'):
+            footer.pop('copyright', None)
+            footer.pop('icp', None)
+        else:
+            footer['copyright'] = request.form.get('copyright', '').strip()
+            footer['icp'] = request.form.get('icp', '').strip()
 
         if any(k == 'social_enabled' or k.startswith('social_') for k in request.form):
             social = settings.setdefault('social', {})
@@ -3675,8 +3679,12 @@ def header_footer_edit():
         else:
             footer = settings.setdefault(footer_key, {})
             footer['variant'] = request.form.get('footer_variant', 'columns')
-            footer['copyright'] = request.form.get('copyright', '').strip()
-            footer['icp'] = request.form.get('icp', '').strip()
+            if request.form.get('_use_company_meta'):
+                footer.pop('copyright', None)
+                footer.pop('icp', None)
+            else:
+                footer['copyright'] = request.form.get('copyright', '').strip()
+                footer['icp'] = request.form.get('icp', '').strip()
 
             if any(k == 'social_enabled' or k.startswith('social_') for k in request.form):
                 social = settings.setdefault('social', {})

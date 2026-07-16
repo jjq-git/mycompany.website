@@ -28,8 +28,8 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       font-size: 14px;
     }
-    .basic-workspace { min-height: 100vh; padding: 16px; }
-    .basic-workspace-inner { max-width: 1540px; margin: 0 auto; }
+    .basic-workspace { min-height: 100vh; padding: 28px 32px 88px; }
+    .basic-workspace-inner { max-width: 1200px; margin: 0 auto; }
     .basic-workspace-panel {
       /* padding: 18px;
       border: 1px solid #dfe4ea;
@@ -48,6 +48,61 @@
       backdrop-filter: blur(8px);
     }
     .basic-workspace-panel--combined .basic-settings-pane .panel-save-bar { display: none; }
+    .basic-workspace-panel.basic-workspace-panel--combined {
+      display: block;
+    }
+    .basic-workspace-panel--combined > .basic-settings-pane {
+      min-width: 0;
+      margin: 0 0 28px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .basic-workspace-panel--combined > .basic-settings-pane > .d-flex:first-child {
+      margin: 0 0 12px !important;
+      padding: 0;
+      color: #718096;
+      font-size: 15px;
+    }
+    .basic-workspace-panel--combined #companyForm,
+    .basic-workspace-panel--combined #themeForm {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      align-items: stretch;
+    }
+    .basic-workspace-panel--combined #themeForm {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .basic-workspace-panel--combined #companyForm > .panel-section:first-of-type {
+      grid-column: 1 / -1;
+    }
+    .basic-workspace-panel--combined #companyForm > .panel-section,
+    .basic-workspace-panel--combined #themeForm > .panel-section {
+      height: auto;
+      margin: 0;
+      padding: 20px 26px 22px;
+      border: 1px solid #e1e6eb;
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, .08);
+    }
+    .basic-workspace-panel--combined .panel-section-title {
+      margin: -20px -26px 20px;
+      padding: 16px 26px 14px;
+      border-bottom: 1px solid #e8ecf0;
+      color: #172033;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .basic-workspace-panel--combined .form-control,
+    .basic-workspace-panel--combined .form-select,
+    .basic-workspace-panel--combined .input-group-text {
+      border-color: #d9e0e7;
+      border-radius: 0;
+    }
     .basic-settings-combined-save {
       position: sticky;
       bottom: 0;
@@ -59,6 +114,16 @@
       background: rgba(255,255,255,.94);
       backdrop-filter: blur(8px);
       box-shadow: 0 -8px 24px rgba(15,23,42,.05);
+    }
+    @media (max-width: 900px) {
+      .basic-workspace { padding: 18px 16px 80px; }
+      .basic-workspace-panel--combined #companyForm,
+      .basic-workspace-panel--combined #themeForm {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .basic-workspace-panel--combined #companyForm > .panel-section:first-of-type {
+        grid-column: auto;
+      }
     }
     .flash-toast {
       padding: 8px 14px; border-radius: 0; font-size: 14px;

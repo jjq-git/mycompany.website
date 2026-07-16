@@ -25,6 +25,142 @@
     grid-template-columns: repeat(3, minmax(128px, 1fr));
   }
 }
+
+/* 与基本设置工作台一致的区块卡片布局。 */
+.settings-workspace--header_footer {
+  padding: 28px 32px 88px;
+}
+.settings-workspace--header_footer .settings-workspace-inner {
+  max-width: 1200px;
+}
+.settings-workspace--header_footer .settings-workspace-panel {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.settings-workspace--header_footer .header-footer-editor {
+  display: block;
+}
+.settings-workspace--header_footer #headerFooterHeaderPane,
+.settings-workspace--header_footer #headerFooterFooterPane {
+  min-width: 0;
+  margin: 0 0 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.settings-workspace--header_footer .header-footer-pane > .d-flex:first-child {
+  margin: 0 0 12px !important;
+  padding: 0;
+  color: #718096;
+  font-size: 15px;
+}
+.settings-workspace--header_footer #headerForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.settings-workspace--header_footer #footerForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.settings-workspace--header_footer #footerForm > .footer-settings-left,
+.settings-workspace--header_footer #footerForm > .footer-settings-right {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.settings-workspace--header_footer #footerForm > .footer-settings-left {
+  grid-column: 1;
+}
+.settings-workspace--header_footer #footerForm > .footer-settings-right {
+  grid-column: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+.settings-workspace--header_footer #headerForm > .panel-section,
+.settings-workspace--header_footer .footer-settings-left > .panel-section,
+.settings-workspace--header_footer .footer-settings-left > .footer-meta-field,
+.settings-workspace--header_footer #footerColumnsSection,
+.settings-workspace--header_footer #footerSocialSection {
+  height: auto;
+  margin: 0 !important;
+  padding: 20px 26px 22px;
+  border: 1px solid #e1e6eb;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, .08);
+}
+.settings-workspace--header_footer #headerForm > .panel-section > .panel-section-title,
+.settings-workspace--header_footer .footer-settings-left > .panel-section > .panel-section-title {
+  margin: -20px -26px 20px;
+  padding: 16px 26px 14px;
+  border-bottom: 1px solid #e8ecf0;
+  color: #172033;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.settings-workspace--header_footer #footerForm hr {
+  display: none;
+}
+.settings-workspace--header_footer .header-footer-editor--combined #headerForm > .panel-save-bar,
+.settings-workspace--header_footer .header-footer-editor--combined #footerForm > .panel-save-bar {
+  display: none;
+}
+.settings-workspace--header_footer .header-footer-combined-save {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 0 0 auto;
+  padding: 7px;
+  border: 1px solid #e2e8f0;
+  background: rgba(255,255,255,.94);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 -8px 24px rgba(15,23,42,.05);
+}
+.settings-workspace--header_footer .form-control,
+.settings-workspace--header_footer .form-select {
+  border-color: #d9e0e7;
+  border-radius: 0;
+}
+.settings-workspace--header_footer .footer-link-item .btn-outline-danger {
+  color: #64748b;
+  border-color: #cbd5e1;
+  background: #fff;
+}
+.settings-workspace--header_footer .footer-link-item .btn-outline-danger:hover,
+.settings-workspace--header_footer .footer-link-item .btn-outline-danger:focus-visible {
+  color: #334155;
+  border-color: #94a3b8;
+  background: #f1f5f9;
+  box-shadow: none;
+}
+@media (max-width: 900px) {
+  .settings-workspace--header_footer {
+    padding: 18px 16px 80px;
+  }
+  .settings-workspace--header_footer #footerForm {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-workspace--header_footer #footerForm > .footer-settings-left,
+  .settings-workspace--header_footer #footerForm > .footer-settings-right {
+    grid-column: 1;
+  }
+  .settings-workspace--header_footer #footerForm > .footer-settings-right {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 </style>
 
 <div class="header-footer-editor header-footer-editor--combined">

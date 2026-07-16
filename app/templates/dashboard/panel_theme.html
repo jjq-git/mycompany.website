@@ -17,7 +17,7 @@
     <div class="panel-section-title">颜色配置</div>
 <div class="row g-2">
   {% for key, label, default_key in [('color-primary','主色','color-primary'),('color-bg','背景','color-bg'),('color-surface','面板色','color-surface'),('color-text','文字色','color-text'),('color-text-secondary','次要文字','color-text-secondary'),('color-border','边框色','color-border')] %}
-    <div class="col-6 mb-2">
+    <div class="col-12 col-sm-4 mb-2">
       <label class="form-label small mb-1">{{ label }}
         <span class="text-muted">(默认: {{ default_theme.get(key, '') }})</span></label>
       <div class="input-group input-group-sm">
