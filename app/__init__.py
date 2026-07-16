@@ -164,6 +164,7 @@ def create_app(config_override=None):
     with app.app_context():
         db.create_all()
         _migrate_login_tokens_table()
+        _migrate_platform_roles()
 
     _register_context_processors(app)
     return app
@@ -189,7 +190,8 @@ def _register_context_processors(app):
         }
         try:
             site_id = request.args.get('site', type=int)
-            site = Site.query.get(site_id) if site_id else Site.query.order_by(Site.id.desc()).first()
+            site = (Site.query.filter_by(id=site_id).filter(Site.soft_deleted_at.is_(None)).first()
+                    if site_id else Site.query.filter(Site.soft_deleted_at.is_(None)).order_by(Site.id.desc()).first())
             if site:
                 meta_path = Path(app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
                 result['template_meta'] = (
@@ -240,3 +242,10 @@ def _migrate_login_tokens_table():
         """))
         conn.execute(text("CREATE INDEX ix_login_tokens_email ON login_tokens (email)"))
         conn.execute(text("CREATE UNIQUE INDEX ix_login_tokens_token_hash ON login_tokens (token_hash)"))
+
+
+def _migrate_platform_roles():
+    """把历史平台普通角色 owner 迁移为 user；组织 owner 不在 users 表，不受影响。"""
+    from sqlalchemy import text
+    with db.engine.begin() as conn:
+        conn.execute(text("UPDATE users SET role = 'user' WHERE role = 'owner'"))

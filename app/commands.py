@@ -9,7 +9,7 @@ from flask.cli import with_appcontext
 
 from .core.builder import build_site
 from .core.db import db
-from .core.models import SLUG_RESERVED, Site, Template, User
+from .core.models import AccountIdentity, SLUG_RESERVED, Site, Template, User
 from .core.site_storage import copy_seed_data, init_site_folder, site_root
 from .core.template_loader import scan_templates
 
@@ -24,6 +24,7 @@ def init_app(app):
     app.cli.add_command(list_sites_cmd)
     app.cli.add_command(list_users_cmd)
     app.cli.add_command(promote_admin_cmd)
+    app.cli.add_command(demote_admin_cmd)
     app.cli.add_command(build_site_cmd)
 
 
@@ -145,20 +146,40 @@ def list_users_cmd():
 
 
 @click.command('promote-admin')
-@click.argument('email')
+@click.argument('identifier')
 @with_appcontext
-def promote_admin_cmd(email):
-    """把指定邮箱的用户提升为平台管理员 (role=admin)."""
-    user = User.query.filter_by(email=email).first()
+def promote_admin_cmd(identifier):
+    """按邮箱或手机号把用户提升为平台管理员。"""
+    identity = AccountIdentity.query.filter_by(identifier=identifier.strip().lower()).first()
+    user = identity.user if identity else User.query.filter_by(email=identifier.strip().lower()).first()
     if not user:
-        click.echo(f'用户不存在: {email}')
+        click.echo(f'用户不存在: {identifier}')
         return
     if user.role == 'admin':
-        click.echo(f'已经是 admin: {email}')
+        click.echo(f'已经是 admin: {identifier}')
         return
     user.role = 'admin'
     db.session.commit()
-    click.echo(f'已将 {email} 提升为 admin')
+    click.echo(f'已将 {identifier} 提升为 admin')
+
+
+@click.command('demote-admin')
+@click.argument('identifier')
+@with_appcontext
+def demote_admin_cmd(identifier):
+    """把平台管理员降为普通用户；至少保留一个管理员。"""
+    identity = AccountIdentity.query.filter_by(identifier=identifier.strip().lower()).first()
+    user = identity.user if identity else User.query.filter_by(email=identifier.strip().lower()).first()
+    if not user:
+        raise click.ClickException(f'用户不存在: {identifier}')
+    if user.role != 'admin':
+        click.echo(f'已经是普通用户: {identifier}')
+        return
+    if User.query.filter_by(role='admin', status='active').count() <= 1:
+        raise click.ClickException('不能降级最后一个有效平台管理员')
+    user.role = 'user'
+    db.session.commit()
+    click.echo(f'已将 {identifier} 降为 user')
 
 
 @click.command('build-site')

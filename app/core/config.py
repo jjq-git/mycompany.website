@@ -59,6 +59,19 @@ def load_config(override=None):
 
         # 平台
         'PLATFORM_DOMAIN': os.environ.get('PLATFORM_DOMAIN', ''),  # 生产部署时必须在 .env 中设置真实域名
+        # 邮件/短信发送器接入后设为 1。开发/测试环境仍可在页面回显验证码；
+        # 生产环境未接发送器时认证路由会明确拒绝，不能假装发送成功。
+        'SMTP_HOST': os.environ.get('SMTP_HOST', '').strip(),
+        'SMTP_PORT': int(os.environ.get('SMTP_PORT', '587')),
+        'SMTP_USERNAME': os.environ.get('SMTP_USERNAME', '').strip(),
+        'SMTP_PASSWORD': os.environ.get('SMTP_PASSWORD', ''),
+        'SMTP_FROM': os.environ.get('SMTP_FROM', '').strip(),
+        'SMTP_USE_TLS': os.environ.get('SMTP_USE_TLS', '1').strip() != '0',
+        'SMS_WEBHOOK_URL': os.environ.get('SMS_WEBHOOK_URL', '').strip(),
+        'SMS_WEBHOOK_TOKEN': os.environ.get('SMS_WEBHOOK_TOKEN', '').strip(),
+        # 本地开发可设为 display：生成随机验证码并在验证页直接显示，不调用外部服务。
+        # 默认 send，避免生产环境因漏配环境变量而意外回显验证码。
+        'VERIFICATION_CODE_MODE': os.environ.get('VERIFICATION_CODE_MODE', 'send').strip().lower(),
 
         # data-* 声明式 block 总开关。已转 9/14 个 block + 现有模块编辑器统一走 schema
         # 表单（新旧键名一致），默认开。设 ENABLE_DATA_ATTR_BLOCKS=0 可回退到旧 Jinja2

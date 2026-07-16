@@ -1,7 +1,7 @@
 ﻿"""店主后台路由.
 
-MVP 登录：邮箱魔法链接，不存密码。开发环境默认把登录链接打印到控制台，
-并在页面提示中展示，方便本地调试；接入邮件服务后替换发送逻辑即可。
+登录使用邮箱或手机号身份、密码凭据和一次性验证码。
+旧魔法链接路由仅兼容迁移前已经生成的链接。
 """
 import hashlib
 import copy
@@ -9,6 +9,10 @@ import mimetypes
 import secrets
 import time
 import zipfile
+import json
+import smtplib
+import urllib.request
+from email.message import EmailMessage
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -16,10 +20,13 @@ from flask import (Blueprint, abort, current_app, flash, jsonify, redirect,
                    render_template, request, send_file, send_from_directory,
                    session, url_for)
 from werkzeug.utils import secure_filename
+from werkzeug.security import check_password_hash, generate_password_hash
 
 import re
 
 import yaml as _yaml
+from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 
 _LIVE_PREVIEW_CACHE = {}
 _LIVE_PREVIEW_VERSION_CACHE = {}
@@ -40,7 +47,12 @@ from flask_cors import cross_origin
 # CSRF 豁免：静态站点公开 API 无法提供 CSRF token, 需要豁免
 # csrf 是 app/__init__.py 模块级变量, 在 create_app() 调用时已初始化
 from app import csrf
-from .models import ContactMessage, LoginToken, Site, Template, User
+from .models import (AccountEntitlement, AccountIdentity, AiCreditAccount, AiCreditTransaction,
+                     AuditLog, BillingOrder, BillingPlan, ContactMessage,
+                     ExternalIdentity, LoginToken, Organization,
+                     OrganizationInvitation, OrganizationMember, OrganizationSite, PasswordCredential,
+                     Site, Subscription, Template, TotpCredential, User,
+                     UserSession, VerificationCode)
 from .site_storage import (copy_seed_data, init_site_folder, lang_root,
                             list_media_files, list_yaml_files, read_yaml,
                             rename_media_file, delete_media_file,
@@ -782,6 +794,11 @@ MAX_MEDIA_PACKAGE_DEPTH = 10
 
 AUTH_EXEMPT_ENDPOINTS = {
     'core.login',
+    'core.register',
+    'core.register_verify',
+    'core.organization_invitation_accept',
+    'core.password_setup',
+    'core.password_setup_verify',
     'core.magic_login',
     # template_preview 只渲染模板自带的种子数据, 不涉及任何用户私有内容, 可免登录。
     'core.template_preview',
@@ -817,6 +834,241 @@ def _hash_token(raw_token):
 
 def _normalize_email(email):
     return (email or '').strip().lower()
+
+
+def _normalize_identity(value):
+    """规范化邮箱或国际手机号，返回 (类型, 值)；非法输入返回 (None, None)。"""
+    value = (value or '').strip()
+    if '@' in value:
+        email = value.lower()
+        if re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', email):
+            return 'email', email
+        return None, None
+    phone = re.sub(r'[\s()-]', '', value)
+    if phone.startswith('00'):
+        phone = '+' + phone[2:]
+    if re.fullmatch(r'\+?[1-9]\d{7,14}', phone):
+        return 'phone', phone
+    return None, None
+
+
+def _valid_password(password):
+    return (len(password or '') >= 8
+            and bool(re.search(r'[A-Za-z]', password or ''))
+            and bool(re.search(r'\d', password or '')))
+
+
+def _identity_for_user(user):
+    """优先返回主身份；旧账户在完成迁移前回退到原邮箱。"""
+    identity = AccountIdentity.query.filter_by(user_id=user.id, is_primary=True).first()
+    if not identity:
+        identity = AccountIdentity.query.filter_by(user_id=user.id).order_by(AccountIdentity.id).first()
+    return identity
+
+
+def _public_identifier(user):
+    identity = _identity_for_user(user)
+    return identity.identifier if identity else user.email
+
+
+def _account_avatar_path(user_id):
+    return Path(current_app.config['UPLOADS_DIR']) / 'avatars' / f'{int(user_id)}.webp'
+
+
+def _account_avatar_url(user):
+    if not user:
+        return ''
+    path = _account_avatar_path(user.id)
+    return (url_for('core.account_avatar', user_id=user.id, v=int(path.stat().st_mtime))
+            if path.is_file() else '')
+
+
+def _user_can_create_sites(user):
+    """旧账户无资格记录时保持原有建站能力；受邀注册会显式写入 false。"""
+    if not user:
+        return False
+    if user.role == 'admin':
+        return True
+    entitlement = AccountEntitlement.query.filter_by(user_id=user.id).first()
+    return entitlement.can_create_sites if entitlement else True
+
+
+def _pending_organization_invitation(token):
+    """按一次性明文令牌读取有效邀请；数据库只保存 SHA-256。"""
+    if not token:
+        return None
+    invitation = OrganizationInvitation.query.filter_by(
+        token_hash=_hash_token(token), status='pending'
+    ).first()
+    if not invitation:
+        return None
+    expires_at = invitation.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at <= datetime.now(timezone.utc):
+        invitation.status = 'expired'
+        db.session.commit()
+        return None
+    return invitation
+
+
+def _user_matches_invitation(user, invitation):
+    return bool(AccountIdentity.query.filter_by(
+        user_id=user.id, identifier=invitation.identifier
+    ).filter(AccountIdentity.verified_at.isnot(None)).first())
+
+
+def _accept_organization_invitation(invitation, user):
+    """调用方负责提交；成员关系和邀请消费必须同事务完成。"""
+    membership = OrganizationMember.query.filter_by(
+        organization_id=invitation.organization_id, user_id=user.id
+    ).first()
+    if membership:
+        membership.status = 'active'
+        if membership.role != 'owner':
+            membership.role = invitation.role
+    else:
+        db.session.add(OrganizationMember(
+            organization_id=invitation.organization_id, user_id=user.id,
+            role=invitation.role, status='active',
+        ))
+    invitation.status = 'accepted'
+    invitation.accepted_by = user.id
+    invitation.accepted_at = datetime.now(timezone.utc)
+
+
+def _invitation_landing_url(invitation):
+    site = db.session.query(Site).join(
+        OrganizationSite, OrganizationSite.site_id == Site.id
+    ).filter(
+        OrganizationSite.organization_id == invitation.organization_id,
+        Site.soft_deleted_at.is_(None),
+    ).order_by(Site.updated_at.desc()).first()
+    if site:
+        return url_for('core.overview', site=site.id)
+    return url_for('core.account', section='organization', org=invitation.organization_id)
+
+
+def _complete_invitation_for_user(invitation, user):
+    if not _user_matches_invitation(user, invitation):
+        flash('当前登录账号与团队邀请的邮箱或手机号不一致', 'danger')
+        return redirect(url_for('core.account', section='organization'))
+    _accept_organization_invitation(invitation, user)
+    _write_audit(user, 'organization.invitation.accept',
+                 f'接受团队“{invitation.organization.name}”邀请',
+                 organization_id=invitation.organization_id,
+                 details={'role': invitation.role, 'invitation_id': invitation.id})
+    db.session.commit()
+    session.pop('pending_invitation_token', None)
+    flash(f'已加入团队“{invitation.organization.name}”', 'success')
+    return redirect(_invitation_landing_url(invitation))
+
+
+def _start_user_session(user):
+    """创建可撤销会话，Cookie session 中只保存随机令牌。"""
+    raw_token = secrets.token_urlsafe(32)
+    now = datetime.now(timezone.utc)
+    login_session = UserSession(
+        user_id=user.id,
+        token_hash=_hash_token(raw_token),
+        ip_address=(request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()[:45]),
+        user_agent=(request.headers.get('User-Agent') or '')[:500],
+        last_seen_at=now,
+        expires_at=now + timedelta(days=30),
+    )
+    user.last_login_at = now
+    db.session.add(login_session)
+    db.session.commit()
+    session.clear()
+    session['user_id'] = user.id  # 兼容尚未迁移的内部代码。
+    session['auth_session_token'] = raw_token
+
+
+def _create_verification_code(identity_type, identifier, purpose, payload=None):
+    """生成一次性验证码；开发环境可回显，生产环境必须接入真实发送器。"""
+    display_code = (current_app.testing or current_app.debug
+                    or current_app.config.get('VERIFICATION_CODE_MODE') == 'display')
+    code = f'{secrets.randbelow(1_000_000):06d}'
+    # 同一用途的新验证码会立即作废旧验证码，避免多个有效码并存。
+    VerificationCode.query.filter_by(
+        identifier=identifier, purpose=purpose, consumed_at=None
+    ).update({'consumed_at': datetime.now(timezone.utc)})
+    record = VerificationCode(
+        identity_type=identity_type,
+        identifier=identifier,
+        purpose=purpose,
+        code_hash=_hash_token(code),
+        payload=payload or {},
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+        ip_address=(request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()[:45]),
+    )
+    db.session.add(record)
+    db.session.commit()
+    if display_code:
+        current_app.logger.info('Verification code purpose=%s identifier=%s code=%s', purpose, identifier, code)
+        return code
+    try:
+        _deliver_verification_code(identity_type, identifier, purpose, code)
+    except Exception as exc:
+        # 发送失败的验证码绝不能留在数据库中继续有效。
+        db.session.delete(record)
+        db.session.commit()
+        current_app.logger.exception('验证码发送失败: type=%s purpose=%s', identity_type, purpose)
+        raise RuntimeError('验证码发送失败，请稍后重试或联系管理员') from exc
+    return None
+
+
+def _deliver_verification_code(identity_type, identifier, purpose, code):
+    """通过标准 SMTP 或短信 Webhook 发送验证码，不绑定具体供应商。"""
+    if identity_type == 'email':
+        host = current_app.config.get('SMTP_HOST')
+        sender = current_app.config.get('SMTP_FROM') or current_app.config.get('SMTP_USERNAME')
+        if not host or not sender:
+            raise RuntimeError('SMTP 未配置')
+        message = EmailMessage()
+        message['Subject'] = '网站工作台验证码'
+        message['From'] = sender
+        message['To'] = identifier
+        message.set_content(f'你的验证码是 {code}，10 分钟内有效。用途：{purpose}。如非本人操作请忽略。')
+        with smtplib.SMTP(host, current_app.config.get('SMTP_PORT', 587), timeout=10) as smtp:
+            if current_app.config.get('SMTP_USE_TLS'):
+                smtp.starttls()
+            username = current_app.config.get('SMTP_USERNAME')
+            if username:
+                smtp.login(username, current_app.config.get('SMTP_PASSWORD', ''))
+            smtp.send_message(message)
+        return
+    webhook = current_app.config.get('SMS_WEBHOOK_URL')
+    if not webhook:
+        raise RuntimeError('短信 Webhook 未配置')
+    body = json.dumps({'phone': identifier, 'code': code, 'purpose': purpose}).encode('utf-8')
+    headers = {'Content-Type': 'application/json'}
+    token = current_app.config.get('SMS_WEBHOOK_TOKEN')
+    if token:
+        headers['Authorization'] = f'Bearer {token}'
+    req = urllib.request.Request(webhook, data=body, headers=headers, method='POST')
+    with urllib.request.urlopen(req, timeout=10) as response:
+        if response.status < 200 or response.status >= 300:
+            raise RuntimeError(f'短信服务返回 {response.status}')
+
+
+def _consume_verification_code(identifier, purpose, code):
+    record = VerificationCode.query.filter_by(
+        identifier=identifier, purpose=purpose, consumed_at=None
+    ).order_by(VerificationCode.id.desc()).first()
+    if not record or record.attempt_count >= 5:
+        return None
+    record.attempt_count += 1
+    now = datetime.now(timezone.utc)
+    expires = record.expires_at
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    if expires < now or not secrets.compare_digest(record.code_hash, _hash_token((code or '').strip())):
+        db.session.commit()
+        return None
+    record.consumed_at = now
+    db.session.commit()
+    return record
 
 
 # 图片单边像素上限, 防御解码炸弹 (1KB PNG 解开成 1GB 那种)
@@ -1160,7 +1412,46 @@ def _current_user():
     if not user or user.status != 'active':
         session.pop('user_id', None)
         return None
+    raw_token = session.get('auth_session_token')
+    if raw_token:
+        login_session = UserSession.query.filter_by(token_hash=_hash_token(raw_token), user_id=user.id).first()
+        if not login_session or login_session.revoked_at:
+            session.clear()
+            return None
+        expires = login_session.expires_at
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        if expires < datetime.now(timezone.utc):
+            session.clear()
+            return None
+        # 限制写频率，避免每个静态资源请求都更新数据库。
+        last_seen = login_session.last_seen_at
+        if last_seen.tzinfo is None:
+            last_seen = last_seen.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) - last_seen > timedelta(minutes=5):
+            login_session.last_seen_at = datetime.now(timezone.utc)
+            db.session.commit()
     return user
+
+
+def _organization_role_for_site(user, site):
+    """返回用户在关联站点上的最高组织角色；站点所有者不走此分支。"""
+    roles = db.session.query(OrganizationMember.role).join(
+        OrganizationSite, OrganizationSite.organization_id == OrganizationMember.organization_id
+    ).filter(
+        OrganizationMember.user_id == user.id,
+        OrganizationMember.status == 'active',
+        OrganizationSite.site_id == site.id,
+    ).all()
+    order = {'viewer': 1, 'editor': 2, 'admin': 3, 'owner': 4}
+    return max((row[0] for row in roles), key=lambda value: order.get(value, 0), default=None)
+
+
+def _user_can_access_site(user, site, write=False):
+    if user.role == 'admin' or site.owner_id == user.id:
+        return True
+    role = _organization_role_for_site(user, site)
+    return bool(role) and (not write or role in {'owner', 'admin', 'editor'})
 
 
 def _require_site_access(site):
@@ -1178,7 +1469,7 @@ def _require_site_access(site):
     user = _current_user()
     if not user:
         abort(401)
-    if user.role != 'admin' and site.owner_id != user.id:
+    if not _user_can_access_site(user, site, write=request.method not in {'GET', 'HEAD', 'OPTIONS'}):
         abort(403)
     return user
 
@@ -1210,15 +1501,15 @@ def inject_context():
     site_id = request.args.get('site', type=int)
     if not site_id:
         if user and user.role == 'admin':
-            site = Site.query.order_by(Site.id.desc()).first()
+            site = Site.query.filter(Site.soft_deleted_at.is_(None)).order_by(Site.id.desc()).first()
         elif user:
-            site = Site.query.filter_by(owner_id=user.id).order_by(Site.id.desc()).first()
+            site = Site.query.filter_by(owner_id=user.id).filter(Site.soft_deleted_at.is_(None)).order_by(Site.id.desc()).first()
         else:
             site = None
         site_id = site.id if site else None
     else:
-        site = Site.query.get(site_id)
-        if site and user and user.role != 'admin' and site.owner_id != user.id:
+        site = Site.query.filter_by(id=site_id).filter(Site.soft_deleted_at.is_(None)).first()
+        if site and user and not _user_can_access_site(user, site):
             site = None
 
     ctx = {
@@ -1229,15 +1520,28 @@ def inject_context():
         'admin_languages': [],
         'current_lang': '',
         'current_language_label': '',
+        'account_identifier': _public_identifier(user) if user else '',
+        'account_avatar_url': _account_avatar_url(user),
+        'can_create_sites': _user_can_create_sites(user) if user else False,
+        'site_can_edit': False,
+        'site_access_role': '',
     }
 
     if user:
-        query = Site.query
+        query = Site.query.filter(Site.soft_deleted_at.is_(None))
         if user.role != 'admin':
-            query = query.filter_by(owner_id=user.id)
+            shared_ids = db.session.query(OrganizationSite.site_id).join(
+                OrganizationMember, OrganizationMember.organization_id == OrganizationSite.organization_id
+            ).filter(OrganizationMember.user_id == user.id, OrganizationMember.status == 'active')
+            query = query.filter(or_(Site.owner_id == user.id, Site.id.in_(shared_ids)))
         ctx['available_sites'] = query.order_by(Site.id.desc()).all()
 
     if site and site_id:
+        site_role = ('platform_admin' if user and user.role == 'admin'
+                     else 'owner' if user and site.owner_id == user.id
+                     else _organization_role_for_site(user, site) if user else None)
+        ctx['site_access_role'] = site_role or ''
+        ctx['site_can_edit'] = bool(site_role in {'platform_admin', 'owner', 'admin', 'editor'})
         ctx['counts']['products'] = len(datasets.load(site_id, 'products') or [])
         ctx['counts']['posts'] = len(datasets.load(site_id, 'posts') or [])
         ctx['counts']['features'] = len(datasets.load(site_id, 'features') or [])
@@ -1311,23 +1615,28 @@ def _current_context():
     site_id = request.args.get('site', type=int)
     if site_id:
         session['current_site_id'] = site_id  # 记住当前浏览的站点
-        site = Site.query.get(site_id)
+        site = Site.query.filter_by(id=site_id).filter(Site.soft_deleted_at.is_(None)).first()
     else:
         # 从 session 中取缓存的站点 ID，确保资源请求也能找到正确的站点
         site_id = session.get('current_site_id')
         if site_id is not None:
-            site = Site.query.get(int(site_id))
+            site = Site.query.filter_by(id=int(site_id)).filter(Site.soft_deleted_at.is_(None)).first()
         else:
             site = None
         if not site:
-            query = Site.query
+            query = Site.query.filter(Site.soft_deleted_at.is_(None))
             if user.role != 'admin':
-                query = query.filter_by(owner_id=user.id)
+                shared_ids = db.session.query(OrganizationSite.site_id).join(
+                    OrganizationMember, OrganizationMember.organization_id == OrganizationSite.organization_id
+                ).filter(OrganizationMember.user_id == user.id, OrganizationMember.status == 'active')
+                query = query.filter(or_(Site.owner_id == user.id, Site.id.in_(shared_ids)))
             site = query.order_by(Site.id.desc()).first()
     if not site:
         abort(404, "尚无站点，请先从模板库创建站点")
-    if user.role != 'admin' and site.owner_id != user.id:
+    if not _user_can_access_site(user, site):
         abort(403, "无权访问该站点")
+    if request.method not in {'GET', 'HEAD', 'OPTIONS'} and not _user_can_access_site(user, site, write=True):
+        abort(403, "当前账号为只读权限，无法修改站点内容")
     return user, site
 
 
@@ -1350,27 +1659,6 @@ def _safe_next_url(candidate):
     if not candidate.startswith('/'):
         return None
     return candidate
-
-
-def _create_magic_link(email, request):
-    """创建一次性魔法链接 token，返回完整登录 URL."""
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        user = User(email=email, status='active')
-        db.session.add(user)
-        db.session.flush()
-
-    raw_token = secrets.token_urlsafe(32)
-    token = LoginToken(
-        user_id=user.id,
-        email=email,
-        token_hash=_hash_token(raw_token),
-        expires_at=datetime.now(timezone.utc) + timedelta(minutes=15),
-        ip_address=request.headers.get('X-Forwarded-For', request.remote_addr or '')[:45],
-    )
-    db.session.add(token)
-    db.session.commit()
-    return url_for('core.magic_login', token=raw_token, _external=True)
 
 
 # #9: /login 的轻量内存限流。MVP 不引入 Redis/flask-limiter 新依赖(符合"依赖能少则少"),
@@ -1398,32 +1686,244 @@ def _login_rate_limited(*keys):
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
-    """邮箱魔法链接登录入口."""
+    """邮箱或手机号加密码登录。"""
     if _current_user() and request.method == 'GET':
         return redirect(_safe_next_url(request.args.get('next')) or url_for('core.overview'))
-
-    magic_link = None
-    email = ''
+    identifier_value = ''
     if request.method == 'POST':
-        email = _normalize_email(request.form.get('email'))
-        if not email or '@' not in email:
-            flash('请输入有效邮箱地址', 'danger')
+        identifier_value = request.form.get('identifier', '')
+        identity_type, identifier = _normalize_identity(identifier_value)
+        password = request.form.get('password', '')
+        client_ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
+        if not identifier:
+            flash('请输入有效的邮箱或手机号', 'danger')
+        elif _login_rate_limited(client_ip, identifier):
+            flash('请求过于频繁，请稍后再试。', 'danger')
         else:
-            client_ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
-            if _login_rate_limited(client_ip, email):
-                # 中性提示, 不暴露"邮箱是否已注册", 也不告知具体是被限流
-                current_app.logger.warning('登录请求被限流: ip=%s email=%s', client_ip, email)
-                flash('请求过于频繁，请稍后再试。', 'danger')
+            identity = AccountIdentity.query.filter_by(identifier=identifier).first()
+            # 旧邮箱用户尚未建立身份时，不自动创建凭据，必须走邮箱验证设置密码。
+            user = identity.user if identity else None
+            credential = PasswordCredential.query.filter_by(user_id=user.id).first() if user else None
+            if user and user.status == 'active' and credential and check_password_hash(credential.password_hash, password):
+                _start_user_session(user)
+                flash('已登录', 'success')
+                return redirect(_safe_next_url(request.args.get('next')) or url_for('core.overview'))
             else:
-                magic_link = _create_magic_link(email, request)
-                current_app.logger.info('Magic login link for %s: %s', email, magic_link)
-                flash('登录链接已生成。开发环境中可直接点击下方链接；生产环境将通过邮件发送。', 'success')
-    return render_template('auth/login.html', email=email, magic_link=magic_link)
+                flash('账号或密码不正确', 'danger')
+    return render_template('auth/login.html', identifier=identifier_value)
+
+
+@bp.route('/invite/<token>')
+def organization_invitation_accept(token):
+    invitation = _pending_organization_invitation(token)
+    if not invitation:
+        flash('团队邀请无效、已过期或已被使用', 'danger')
+        return redirect(url_for('core.login'))
+    session['pending_invitation_token'] = token
+    user = _current_user()
+    if user:
+        return _complete_invitation_for_user(invitation, user)
+    existing_identity = AccountIdentity.query.filter_by(identifier=invitation.identifier).first()
+    if existing_identity:
+        flash('请登录受邀账号后接受团队邀请', 'info')
+        return redirect(url_for('core.login', next=url_for('core.organization_invitation_resume')))
+    return redirect(url_for('core.register'))
+
+
+@bp.route('/invite/pending')
+def organization_invitation_resume():
+    invitation = _pending_organization_invitation(session.get('pending_invitation_token', ''))
+    if not invitation:
+        session.pop('pending_invitation_token', None)
+        flash('团队邀请无效、已过期或已被使用', 'danger')
+        return redirect(url_for('core.account', section='organization'))
+    user = _current_user()
+    if not user:
+        return redirect(url_for('core.login', next=request.path))
+    return _complete_invitation_for_user(invitation, user)
+
+
+@bp.route('/register', methods=['GET', 'POST'])
+def register():
+    """提交注册资料并发送邮箱/手机验证码。"""
+    if _current_user():
+        return redirect(url_for('core.overview'))
+    invitation_token = session.get('pending_invitation_token', '')
+    invitation = _pending_organization_invitation(invitation_token) if invitation_token else None
+    if invitation_token and not invitation:
+        session.pop('pending_invitation_token', None)
+    form = {'identifier': invitation.identifier if invitation else '', 'display_name': ''}
+    if request.method == 'POST':
+        form['identifier'] = request.form.get('identifier', '')
+        form['display_name'] = request.form.get('display_name', '').strip()
+        identity_type, identifier = _normalize_identity(form['identifier'])
+        password = request.form.get('password', '')
+        if not identifier:
+            flash('请输入有效的邮箱或手机号', 'danger')
+        elif invitation and identifier != invitation.identifier:
+            flash('注册账号必须与团队邀请的邮箱或手机号一致', 'danger')
+        elif AccountIdentity.query.filter_by(identifier=identifier).first():
+            flash('该邮箱或手机号已注册', 'danger')
+        elif identity_type == 'email' and User.query.filter_by(email=identifier).first():
+            # 旧账户尚无 AccountIdentity，不能再次注册；通过原邮箱验证后设置密码完成迁移。
+            flash('该邮箱已有旧账号，请验证邮箱并设置登录密码', 'warning')
+            return redirect(url_for('core.password_setup', identifier=identifier))
+        elif _login_rate_limited(f'register:{identifier}'):
+            flash('验证码请求过于频繁，请稍后再试', 'danger')
+        elif not _valid_password(password):
+            flash('密码至少 8 位，并同时包含字母和数字', 'danger')
+        elif password != request.form.get('password_confirm', ''):
+            flash('两次输入的密码不一致', 'danger')
+        else:
+            try:
+                dev_code = _create_verification_code(identity_type, identifier, 'register', {
+                    'password_hash': generate_password_hash(password),
+                    'display_name': form['display_name'][:80],
+                    'invitation_id': invitation.id if invitation else None,
+                })
+            except RuntimeError as exc:
+                flash(str(exc), 'danger')
+                return render_template('auth/register.html', form=form, invitation=invitation)
+            return render_template('auth/verify.html', purpose='register', identifier=identifier,
+                                   identity_type=identity_type, dev_code=dev_code)
+    return render_template('auth/register.html', form=form, invitation=invitation)
+
+
+@bp.route('/register/verify', methods=['POST'])
+def register_verify():
+    identity_type, identifier = _normalize_identity(request.form.get('identifier'))
+    if not identifier:
+        flash('账号标识无效，请重新注册', 'danger')
+        return redirect(url_for('core.register'))
+    # 验证码页面可能在另一标签页停留较久，落库前必须重新检查新身份和旧用户表。
+    if AccountIdentity.query.filter_by(identifier=identifier).first():
+        flash('该账号已经注册，请直接登录', 'warning')
+        return redirect(url_for('core.login'))
+    if identity_type == 'email' and User.query.filter_by(email=identifier).first():
+        flash('该邮箱已有旧账号，请验证邮箱并设置登录密码', 'warning')
+        return redirect(url_for('core.password_setup', identifier=identifier))
+    record = _consume_verification_code(identifier, 'register', request.form.get('code'))
+    if not record:
+        flash('验证码错误、已过期或尝试次数过多', 'danger')
+        return render_template('auth/verify.html', purpose='register', identifier=identifier,
+                               identity_type=identity_type, dev_code=None)
+    if AccountIdentity.query.filter_by(identifier=identifier).first():
+        flash('该账号已经注册，请直接登录', 'warning')
+        return redirect(url_for('core.login'))
+    if identity_type == 'email' and User.query.filter_by(email=identifier).first():
+        flash('该邮箱已有旧账号，请验证邮箱并设置登录密码', 'warning')
+        return redirect(url_for('core.password_setup', identifier=identifier))
+    # 旧 users.email 不可空；手机号账户使用不可登录、不可展示的内部占位值保持兼容。
+    legacy_email = identifier if identity_type == 'email' else f'phone_{_hash_token(identifier)[:20]}@identity.invalid'
+    user = User(email=legacy_email, display_name=(record.payload or {}).get('display_name') or None,
+                email_verified_at=datetime.now(timezone.utc) if identity_type == 'email' else None)
+    invitation_id = (record.payload or {}).get('invitation_id')
+    invitation = OrganizationInvitation.query.filter_by(id=invitation_id, status='pending').first() if invitation_id else None
+    if invitation_id:
+        expires_at = invitation.expires_at if invitation else None
+        if not invitation or invitation.identifier != identifier or not expires_at:
+            flash('团队邀请已失效，请联系邀请人重新发送', 'danger')
+            return redirect(url_for('core.register'))
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if expires_at <= datetime.now(timezone.utc):
+            invitation.status = 'expired'
+            db.session.commit()
+            flash('团队邀请已过期，请联系邀请人重新发送', 'danger')
+            return redirect(url_for('core.register'))
+    try:
+        db.session.add(user)
+        db.session.flush()
+        db.session.add(AccountIdentity(user_id=user.id, identity_type=identity_type, identifier=identifier,
+                                       verified_at=datetime.now(timezone.utc), is_primary=True))
+        db.session.add(PasswordCredential(user_id=user.id, password_hash=(record.payload or {})['password_hash']))
+        db.session.add(AccountEntitlement(user_id=user.id, can_create_sites=not bool(invitation)))
+        if invitation:
+            _accept_organization_invitation(invitation, user)
+            _write_audit(user, 'organization.invitation.accept',
+                         f'接受团队“{invitation.organization.name}”邀请',
+                         organization_id=invitation.organization_id,
+                         details={'role': invitation.role, 'invitation_id': invitation.id})
+        db.session.commit()
+    except IntegrityError:
+        # 并发注册或旧数据竞争只能转成用户可理解的提示，绝不能暴露数据库调试页。
+        db.session.rollback()
+        current_app.logger.warning('注册身份发生唯一约束冲突: %s', identifier)
+        if identity_type == 'email' and User.query.filter_by(email=identifier).first():
+            flash('该邮箱已有账号，请验证邮箱并设置登录密码', 'warning')
+            return redirect(url_for('core.password_setup', identifier=identifier))
+        flash('该邮箱或手机号已注册，请直接登录', 'warning')
+        return redirect(url_for('core.login'))
+    _start_user_session(user)
+    session.pop('pending_invitation_token', None)
+    flash('注册成功', 'success')
+    return redirect(_invitation_landing_url(invitation) if invitation else url_for('core.templates_gallery'))
+
+
+@bp.route('/password/setup', methods=['GET', 'POST'])
+def password_setup():
+    """旧邮箱账户迁移和忘记密码共用的身份验证入口。"""
+    identifier_value = request.args.get('identifier', '').strip()
+    if request.method == 'POST':
+        identifier_value = request.form.get('identifier', '')
+        identity_type, identifier = _normalize_identity(identifier_value)
+        user = None
+        identity = AccountIdentity.query.filter_by(identifier=identifier).first() if identifier else None
+        if identity:
+            user = identity.user
+        elif identity_type == 'email':
+            user = User.query.filter_by(email=identifier).first()
+        # 中性反馈只在用户存在时创建验证码，避免泄露注册状态。
+        if identifier and _login_rate_limited(f'password-setup:{identifier}'):
+            flash('验证码请求过于频繁，请稍后再试', 'danger')
+            return render_template('auth/password_setup.html', identifier=identifier_value)
+        try:
+            dev_code = _create_verification_code(identity_type, identifier, 'password_setup', {'user_id': user.id}) if user else None
+        except RuntimeError as exc:
+            flash(str(exc), 'danger')
+            return render_template('auth/password_setup.html', identifier=identifier_value)
+        # 无论账号是否存在都进入同一页面，避免通过响应差异枚举账号。
+        flash('如果该账号存在，验证码已发送', 'info')
+        return render_template('auth/verify.html', purpose='password_setup', identifier=identifier or identifier_value,
+                               identity_type=identity_type or 'email', dev_code=dev_code, set_password=True)
+    return render_template('auth/password_setup.html', identifier=identifier_value)
+
+
+@bp.route('/password/setup/verify', methods=['POST'])
+def password_setup_verify():
+    identity_type, identifier = _normalize_identity(request.form.get('identifier'))
+    password = request.form.get('password', '')
+    if not identifier or not _valid_password(password) or password != request.form.get('password_confirm', ''):
+        flash('验证码或密码格式不正确', 'danger')
+        return redirect(url_for('core.password_setup'))
+    record = _consume_verification_code(identifier, 'password_setup', request.form.get('code'))
+    if not record:
+        flash('验证码错误、已过期或尝试次数过多', 'danger')
+        return redirect(url_for('core.password_setup'))
+    user = User.query.get((record.payload or {}).get('user_id'))
+    if not user:
+        abort(400)
+    identity = AccountIdentity.query.filter_by(identifier=identifier).first()
+    if not identity:
+        identity = AccountIdentity(user_id=user.id, identity_type=identity_type, identifier=identifier,
+                                   verified_at=datetime.now(timezone.utc), is_primary=True)
+        db.session.add(identity)
+    credential = PasswordCredential.query.filter_by(user_id=user.id).first()
+    if credential:
+        credential.password_hash = generate_password_hash(password)
+        credential.password_changed_at = datetime.now(timezone.utc)
+    else:
+        db.session.add(PasswordCredential(user_id=user.id, password_hash=generate_password_hash(password)))
+    UserSession.query.filter_by(user_id=user.id, revoked_at=None).update({'revoked_at': datetime.now(timezone.utc)})
+    db.session.commit()
+    _start_user_session(user)
+    flash('登录密码已设置', 'success')
+    return redirect(url_for('core.overview'))
 
 
 @bp.route('/auth/magic/<token>')
 def magic_login(token):
-    """消费一次性 token 并写入 session."""
+    """旧用户迁移期兼容入口；新登录页不再创建魔法链接。"""
     now = datetime.now(timezone.utc)
     login_token = LoginToken.query.filter_by(token_hash=_hash_token(token)).first()
     if not login_token or login_token.used_at:
@@ -1446,22 +1946,27 @@ def magic_login(token):
     user.last_login_at = now
     db.session.commit()
 
-    session.clear()
-    session['user_id'] = user.id
+    _start_user_session(user)
     flash('已登录', 'success')
     if user.role == 'admin':
-        if Site.query.first():
+        if Site.query.filter(Site.soft_deleted_at.is_(None)).first():
             return redirect(url_for('core.overview'))
         else:
             flash("尚无站点，请先从模板库创建站点", "warning")
             return redirect(url_for('core.templates_gallery'))
-    if Site.query.filter_by(owner_id=user.id).first():
+    if Site.query.filter_by(owner_id=user.id).filter(Site.soft_deleted_at.is_(None)).first():
         return redirect(url_for('core.overview'))
     return redirect(url_for('core.templates_gallery'))
 
 
 @bp.route('/logout', methods=['POST'])
 def logout():
+    raw_token = session.get('auth_session_token')
+    if raw_token:
+        login_session = UserSession.query.filter_by(token_hash=_hash_token(raw_token)).first()
+        if login_session:
+            login_session.revoked_at = datetime.now(timezone.utc)
+            db.session.commit()
     session.clear()
     flash('已退出登录', 'success')
     return redirect(url_for('core.login'))
@@ -1591,6 +2096,16 @@ def media_package_asset(package_name, filename):
     return _safe_send_from_directory(package_dir, filename)
 
 
+@bp.errorhandler(403)
+def forbidden(error):
+    """区分无访问权与只读写入拦截，避免向后台面板输出默认英文错误页。"""
+    description = getattr(error, 'description', '') or '当前账号无权执行此操作'
+    if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest' \
+            or request.accept_mimetypes.best == 'application/json':
+        return jsonify({'ok': False, 'error': description, 'code': 'read_only' if '只读' in description else 'forbidden'}), 403
+    return render_template('dashboard/permission_denied.html', message=description), 403
+
+
 @bp.errorhandler(404)
 def not_found(error):
     """捕获 404，无站点时重定向到模板库."""
@@ -1604,14 +2119,16 @@ def not_found(error):
 @bp.route('/')
 def index():
     user, site = _current_context()
-    site_count = Site.query.filter_by(owner_id=user.id).count() if user else 0
     return render_template('base.html', user=user, site=site, active='',
-                           initial_account_panel=True, site_count=site_count)
+                           initial_panel_collapsed=True)
 
 
 @bp.route('/overview')
 def overview():
-    return redirect(url_for('core.index'))
+    # 保留站点和语言等查询参数。账户中心、团队邀请和共享站点入口都会
+    # 通过 /overview?site=N 返回工作台；丢掉 site 会让成员落到无权访问
+    # 的缓存站点，或看起来始终困在账户中心。
+    return redirect(url_for('core.index', **request.args.to_dict(flat=True)))
 
 
 def _content_catalog(site, lang, default_lang):
@@ -3371,49 +3888,611 @@ def pages():
     return redirect(url_for('core.index'))
 
 
+def _account_site_or_404(user, site_id):
+    """账户中心的站点权限边界；普通用户不能通过篡改 ID 操作他人站点。"""
+    site = Site.query.get_or_404(site_id)
+    if user.role != 'admin' and site.owner_id != user.id:
+        abort(403, '无权操作该站点')
+    return site
+
+
+def _write_audit(user, action, summary, organization_id=None, site_id=None, details=None):
+    """追加审计日志；调用方与业务修改在同一事务提交。"""
+    db.session.add(AuditLog(
+        user_id=user.id if user else None, organization_id=organization_id,
+        site_id=site_id, action=action, summary=summary, details=details or {},
+        ip_address=(request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()[:45]),
+    ))
+
+
+def _ensure_personal_organization(user):
+    """为旧账户惰性建立个人组织，不批量改动历史站点。"""
+    membership = OrganizationMember.query.filter_by(user_id=user.id, role='owner', status='active').first()
+    if membership:
+        return membership.organization
+    # 受邀注册用户只属于受邀组织，不能因打开账户中心而被动获得个人组织和所有者语义。
+    if not _user_can_create_sites(user):
+        membership = OrganizationMember.query.filter_by(user_id=user.id, status='active').first()
+        if membership:
+            return membership.organization
+        abort(403, '当前账号没有可管理的组织')
+    slug = f'account-{user.id}'
+    organization = Organization.query.filter_by(slug=slug).first()
+    if not organization:
+        organization = Organization(name=f'{user.display_name or _public_identifier(user)}的团队', slug=slug, created_by=user.id)
+        db.session.add(organization)
+        db.session.flush()
+    db.session.add(OrganizationMember(organization_id=organization.id, user_id=user.id, role='owner'))
+    db.session.commit()
+    return organization
+
+
+def _account_organization_for_user(user, organization_id=None, manage=False):
+    if organization_id:
+        membership = OrganizationMember.query.filter_by(
+            organization_id=organization_id, user_id=user.id, status='active'
+        ).first_or_404()
+        if manage and membership.role not in {'owner', 'admin'}:
+            abort(403)
+        return membership.organization, membership
+    organization = _ensure_personal_organization(user)
+    return organization, OrganizationMember.query.filter_by(
+        organization_id=organization.id, user_id=user.id, status='active'
+    ).first()
+
+
 @bp.route('/account')
 def account():
-    user, site = _current_context()
-    site_count = Site.query.filter_by(owner_id=user.id).count() if user else 0
+    user = _current_user()
+    if not user:
+        abort(401)
+
+    # 兼容旧的右侧账户面板；新的左下角入口使用完整账户工作区。
     if request.args.get('_fragment'):
+        site_query = Site.query.filter(Site.soft_deleted_at.is_(None))
+        if user.role != 'admin':
+            site_query = site_query.filter_by(owner_id=user.id)
+        site = site_query.order_by(Site.id.desc()).first()
         return render_template('dashboard/panel_account.html',
-                               user=user, site=site, site_count=site_count)
-    lang, _, _ = _get_panel_lang(site)
-    return redirect(url_for('core.index', site=site.id, lang=lang))
+                               user=user, site=site, site_count=site_query.count())
+
+    section = request.args.get('section', 'profile').strip().lower()
+    allowed_sections = {'profile', 'sites', 'security', 'organization', 'audit', 'credits', 'integrations', 'billing', 'trash', 'platform'}
+    if section not in allowed_sections:
+        section = 'profile'
+    if section == 'platform' and user.role != 'admin':
+        abort(403)
+
+    site_query = Site.query
+    if user.role != 'admin':
+        site_query = site_query.filter_by(owner_id=user.id)
+    active_sites = site_query.filter(Site.soft_deleted_at.is_(None)).order_by(Site.updated_at.desc()).all()
+    deleted_sites = site_query.filter(Site.soft_deleted_at.isnot(None)).order_by(Site.soft_deleted_at.desc()).all()
+    account_identity = _identity_for_user(user)
+    account_identities = AccountIdentity.query.filter_by(user_id=user.id).order_by(
+        AccountIdentity.is_primary.desc(), AccountIdentity.id
+    ).all()
+    user_sessions = UserSession.query.filter_by(user_id=user.id, revoked_at=None).order_by(
+        UserSession.last_seen_at.desc()
+    ).all()
+    organization, organization_membership = _account_organization_for_user(
+        user, request.args.get('org', type=int)
+    )
+    organizations = OrganizationMember.query.filter_by(user_id=user.id, status='active').all()
+    org_members = OrganizationMember.query.filter_by(organization_id=organization.id, status='active').all()
+    member_user_ids = [member.user_id for member in org_members]
+    org_member_contacts = {
+        member_id: {'email': '', 'phone': ''} for member_id in member_user_ids
+    }
+    org_member_avatars = {
+        member.user_id: _account_avatar_url(member.user) for member in org_members
+    }
+    if member_user_ids:
+        identities = AccountIdentity.query.filter(
+            AccountIdentity.user_id.in_(member_user_ids),
+            AccountIdentity.verified_at.isnot(None),
+            AccountIdentity.identity_type.in_(['email', 'phone']),
+        ).order_by(AccountIdentity.is_primary.desc(), AccountIdentity.id).all()
+        for identity in identities:
+            contacts = org_member_contacts[identity.user_id]
+            if not contacts[identity.identity_type]:
+                contacts[identity.identity_type] = identity.identifier
+        # 兼容尚未迁移到 AccountIdentity 的旧邮箱账户。
+        for member in org_members:
+            contacts = org_member_contacts[member.user_id]
+            legacy_email = (member.user.email or '').strip()
+            if not contacts['email'] and legacy_email and not legacy_email.endswith('@identity.invalid'):
+                contacts['email'] = legacy_email
+    org_site_ids = [row.site_id for row in OrganizationSite.query.filter_by(organization_id=organization.id).all()]
+    org_shared_sites = Site.query.filter(
+        Site.id.in_(org_site_ids), Site.soft_deleted_at.is_(None)
+    ).order_by(Site.updated_at.desc()).all() if org_site_ids else []
+    pending_invitations = OrganizationInvitation.query.filter_by(
+        organization_id=organization.id, status='pending'
+    ).filter(OrganizationInvitation.expires_at > datetime.now(timezone.utc)).order_by(
+        OrganizationInvitation.created_at.desc()
+    ).all()
+    organization_invite_url = session.pop('organization_invite_url', None)
+    audit_filters = {
+        'q': request.args.get('q', '').strip()[:100],
+        'category': request.args.get('category', '').strip().lower()[:30],
+        'date_from': request.args.get('date_from', '').strip()[:10],
+        'date_to': request.args.get('date_to', '').strip()[:10],
+    }
+    audit_query = AuditLog.query.filter_by(user_id=user.id)
+    category_prefixes = {
+        'account': ('account.',),
+        'security': ('security.', 'wechat.'),
+        'site': ('site.',),
+        'organization': ('organization.',),
+        'billing': ('billing.',),
+    }
+    prefixes = category_prefixes.get(audit_filters['category'])
+    if prefixes:
+        audit_query = audit_query.filter(or_(*[AuditLog.action.startswith(prefix) for prefix in prefixes]))
+    if audit_filters['q']:
+        keyword = f"%{audit_filters['q']}%"
+        audit_query = audit_query.filter(or_(
+            AuditLog.summary.ilike(keyword), AuditLog.action.ilike(keyword),
+            AuditLog.ip_address.ilike(keyword),
+        ))
+    try:
+        if audit_filters['date_from']:
+            audit_query = audit_query.filter(
+                AuditLog.created_at >= datetime.fromisoformat(audit_filters['date_from']).replace(tzinfo=timezone.utc)
+            )
+        if audit_filters['date_to']:
+            audit_query = audit_query.filter(
+                AuditLog.created_at < (datetime.fromisoformat(audit_filters['date_to']) + timedelta(days=1)).replace(tzinfo=timezone.utc)
+            )
+    except ValueError:
+        audit_filters['date_from'] = ''
+        audit_filters['date_to'] = ''
+    audit_page = audit_query.order_by(AuditLog.created_at.desc(), AuditLog.id.desc()).paginate(
+        page=max(request.args.get('page', 1, type=int), 1), per_page=20, error_out=False
+    )
+    audit_logs = audit_page.items
+    credit_account = AiCreditAccount.query.filter_by(user_id=user.id).first()
+    if not credit_account:
+        credit_account = AiCreditAccount(user_id=user.id, balance=100)
+        db.session.add(credit_account)
+        db.session.flush()
+        db.session.add(AiCreditTransaction(account_id=credit_account.id, amount=100, balance_after=100,
+                                           source='welcome', description='新账户体验额度'))
+        db.session.commit()
+    credit_transactions = AiCreditTransaction.query.filter_by(account_id=credit_account.id).order_by(AiCreditTransaction.id.desc()).limit(50).all()
+    totp = TotpCredential.query.filter_by(user_id=user.id).first()
+    wechat_identity = ExternalIdentity.query.filter_by(user_id=user.id, provider='wechat').first()
+    plans = BillingPlan.query.filter_by(is_active=True).order_by(BillingPlan.price_cents).all()
+    if not plans:
+        db.session.add_all([
+            BillingPlan(code='free', name='基础版', price_cents=0, billing_period='year'),
+            BillingPlan(code='pro-placeholder', name='专业版（待定价）', price_cents=0, billing_period='year'),
+        ])
+        db.session.commit()
+        plans = BillingPlan.query.filter_by(is_active=True).order_by(BillingPlan.id).all()
+    subscription = Subscription.query.filter_by(user_id=user.id).order_by(Subscription.id.desc()).first()
+    orders = BillingOrder.query.filter_by(user_id=user.id).order_by(BillingOrder.id.desc()).limit(20).all()
+    platform_users = []
+    if user.role == 'admin':
+        for platform_user in User.query.order_by(User.id).all():
+            identity = AccountIdentity.query.filter_by(user_id=platform_user.id, is_primary=True).first()
+            platform_users.append({
+                'id': platform_user.id,
+                'identifier': identity.identifier if identity else platform_user.email,
+                'display_name': platform_user.display_name or '未设置昵称',
+                'role': platform_user.role,
+                'status': platform_user.status,
+                'site_count': Site.query.filter_by(owner_id=platform_user.id).count(),
+                'created_at': platform_user.created_at,
+                'last_login_at': platform_user.last_login_at,
+                'is_current': platform_user.id == user.id,
+            })
+    accessible_site_query = Site.query.filter(Site.soft_deleted_at.is_(None))
+    if user.role != 'admin':
+        shared_site_ids = db.session.query(OrganizationSite.site_id).join(
+            OrganizationMember, OrganizationMember.organization_id == OrganizationSite.organization_id
+        ).filter(OrganizationMember.user_id == user.id, OrganizationMember.status == 'active')
+        accessible_site_query = accessible_site_query.filter(or_(
+            Site.owner_id == user.id, Site.id.in_(shared_site_ids)
+        ))
+    account_return_site = accessible_site_query.order_by(Site.updated_at.desc()).first()
+    account_return_url = (url_for('core.overview', site=account_return_site.id)
+                          if account_return_site else url_for('core.templates_gallery'))
+    site_create_step = request.args.get('create', '').strip().lower() if section == 'sites' else ''
+    site_templates = []
+    selected_site_template = None
+    selected_template_languages = []
+    if site_create_step in {'templates', 'form'} and _user_can_create_sites(user):
+        scan_templates()
+        site_templates = _visible_templates_query().all()
+        selected_name = request.args.get('template', '').strip()
+        if site_create_step == 'form':
+            selected_site_template = next((item for item in site_templates if item.name == selected_name), None)
+            if not selected_site_template:
+                return redirect(url_for('core.account', section='sites', create='templates'))
+            meta_path = Path(current_app.config['TEMPLATES_DIR']) / selected_site_template.name / 'meta.yaml'
+            meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) or {} if meta_path.exists() else {}
+            selected_template_languages = meta.get('languages') or [{'code': 'zh-CN', 'name': '简体中文'}]
+    return render_template('dashboard/account_workspace.html',
+                           user=user, section=section, active_sites=active_sites,
+                           deleted_sites=deleted_sites,
+                           account_identity=account_identity,
+                           account_identities=account_identities,
+                           account_identifier=_public_identifier(user), user_sessions=user_sessions,
+                           current_session_hash=_hash_token(session.get('auth_session_token', '')) if session.get('auth_session_token') else '',
+                           pending_identity=session.get('pending_account_identity'), organization=organization,
+                           organization_membership=organization_membership, organizations=organizations,
+                           org_members=org_members, org_member_contacts=org_member_contacts,
+                           org_member_avatars=org_member_avatars,
+                           org_site_ids=org_site_ids,
+                           pending_invitations=pending_invitations,
+                           organization_invite_url=organization_invite_url,
+                           org_shared_sites=org_shared_sites,
+                           site_create_step=site_create_step, site_templates=site_templates,
+                           selected_site_template=selected_site_template,
+                           selected_template_languages=selected_template_languages,
+                           can_create_sites=_user_can_create_sites(user), audit_logs=audit_logs,
+                           audit_page=audit_page, audit_filters=audit_filters,
+                           credit_account=credit_account, credit_transactions=credit_transactions,
+                           totp=totp, wechat_identity=wechat_identity, plans=plans,
+                           subscription=subscription, orders=orders,
+                           platform_users=platform_users,
+                           account_return_url=account_return_url)
+
+
+@bp.route('/account/profile', methods=['POST'])
+def account_profile_save():
+    """保存平台级个人资料；邮箱身份由认证流程维护，不在普通资料表单中修改。"""
+    user = _current_user()
+    if not user:
+        abort(401)
+    display_name = request.form.get('display_name', '').strip()
+    if len(display_name) > 80:
+        flash('昵称不能超过 80 个字符', 'danger')
+        return redirect(url_for('core.account', section='profile'))
+    avatar = request.files.get('avatar')
+    avatar_updated = False
+    if avatar and avatar.filename:
+        if request.content_length and request.content_length > 6 * 1024 * 1024:
+            flash('头像文件不能超过 5MB', 'danger')
+            return redirect(url_for('core.account', section='profile'))
+        try:
+            from PIL import Image, ImageOps, UnidentifiedImageError
+            from PIL.Image import DecompressionBombError
+            Image.MAX_IMAGE_PIXELS = 25_000_000
+            image = Image.open(avatar.stream)
+            if image.format not in {'JPEG', 'PNG', 'WEBP', 'GIF'}:
+                raise ValueError('头像仅支持 JPG、PNG、WebP 或 GIF 图片')
+            image.seek(0)
+            image = ImageOps.exif_transpose(image).convert('RGB')
+            image = ImageOps.fit(image, (512, 512), method=Image.Resampling.LANCZOS)
+            avatar_path = _account_avatar_path(user.id)
+            avatar_path.parent.mkdir(parents=True, exist_ok=True)
+            temp_path = avatar_path.with_suffix('.tmp.webp')
+            image.save(temp_path, 'WEBP', quality=88, method=6)
+            temp_path.replace(avatar_path)
+            avatar_updated = True
+        except (UnidentifiedImageError, DecompressionBombError, OSError, ValueError) as exc:
+            current_app.logger.warning('用户 %s 上传头像失败: %s', user.id, exc)
+            flash(str(exc) if isinstance(exc, ValueError) else '头像文件无效或已损坏', 'danger')
+            return redirect(url_for('core.account', section='profile'))
+    user.display_name = display_name or None
+    _write_audit(user, 'account.profile.update', '更新个人资料和头像' if avatar_updated else '更新个人资料',
+                 details={'avatar_updated': avatar_updated})
+    db.session.commit()
+    flash('个人资料已保存', 'success')
+    return redirect(url_for('core.account', section='profile',
+                            workspace_changed='1' if avatar_updated else None))
+
+
+@bp.route('/account/avatar/<int:user_id>.webp')
+def account_avatar(user_id):
+    if not _current_user():
+        abort(401)
+    avatar_path = _account_avatar_path(user_id)
+    if not avatar_path.is_file():
+        abort(404)
+    response = send_from_directory(avatar_path.parent, avatar_path.name, mimetype='image/webp')
+    response.cache_control.public = False
+    response.cache_control.max_age = 3600
+    return response
+
+
+@bp.route('/account/sites/<int:site_id>/trash', methods=['POST'])
+def account_site_trash(site_id):
+    """将站点移入回收站，只改状态，不删除任何用户文件。"""
+    user = _current_user()
+    if not user:
+        abort(401)
+    site = _account_site_or_404(user, site_id)
+    if site.soft_deleted_at is None:
+        site.soft_deleted_at = datetime.now(timezone.utc)
+        _write_audit(user, 'site.trash', f'将站点“{site.name}”移入回收站', site_id=site.id)
+        db.session.commit()
+    if session.get('current_site_id') == site.id:
+        session.pop('current_site_id', None)
+    flash(f'站点“{site.name}”已移入回收站', 'success')
+    return redirect(url_for('core.account', section='sites', workspace_changed='1'))
+
+
+@bp.route('/account/sites/<int:site_id>/restore', methods=['POST'])
+def account_site_restore(site_id):
+    """恢复软删除站点，数据库记录和磁盘文件保持原位。"""
+    user = _current_user()
+    if not user:
+        abort(401)
+    site = _account_site_or_404(user, site_id)
+    site.soft_deleted_at = None
+    _write_audit(user, 'site.restore', f'恢复站点“{site.name}”', site_id=site.id)
+    db.session.commit()
+    flash(f'站点“{site.name}”已恢复', 'success')
+    return redirect(url_for('core.account', section='trash', workspace_changed='1'))
+
+
+@bp.route('/account/sessions/<int:session_id>/revoke', methods=['POST'])
+def account_session_revoke(session_id):
+    """撤销本人的指定设备会话，禁止通过 ID 操作其他用户。"""
+    user = _current_user()
+    if not user:
+        abort(401)
+    login_session = UserSession.query.filter_by(id=session_id, user_id=user.id).first_or_404()
+    login_session.revoked_at = datetime.now(timezone.utc)
+    _write_audit(user, 'security.session.revoke', '撤销登录设备', details={'session_id': session_id})
+    db.session.commit()
+    if session.get('auth_session_token') and login_session.token_hash == _hash_token(session['auth_session_token']):
+        session.clear()
+        flash('当前设备已退出登录', 'success')
+        return redirect(url_for('core.login'))
+    flash('设备会话已退出', 'success')
+    return redirect(url_for('core.account', section='security'))
+
+
+@bp.route('/account/identities/request', methods=['POST'])
+def account_identity_request():
+    """为已登录用户绑定新的邮箱或手机号，验证前不写入身份表。"""
+    user = _current_user()
+    if not user:
+        abort(401)
+    identity_type, identifier = _normalize_identity(request.form.get('identifier'))
+    if not identifier:
+        flash('请输入有效的邮箱或手机号', 'danger')
+    elif AccountIdentity.query.filter_by(identifier=identifier).first():
+        flash('该邮箱或手机号已被其他账号使用', 'danger')
+    elif _login_rate_limited(f'bind:{user.id}:{identifier}'):
+        flash('验证码请求过于频繁，请稍后再试', 'danger')
+    else:
+        try:
+            dev_code = _create_verification_code(identity_type, identifier, 'bind_identity', {'user_id': user.id})
+        except RuntimeError as exc:
+            flash(str(exc), 'danger')
+        else:
+            session['pending_account_identity'] = {
+                'type': identity_type, 'identifier': identifier, 'dev_code': dev_code,
+            }
+            flash('验证码已发送，请完成验证', 'success')
+    return redirect(url_for('core.account', section='security'))
+
+
+@bp.route('/account/identities/verify', methods=['POST'])
+def account_identity_verify():
+    user = _current_user()
+    if not user:
+        abort(401)
+    pending = session.get('pending_account_identity') or {}
+    identifier = pending.get('identifier')
+    record = _consume_verification_code(identifier, 'bind_identity', request.form.get('code')) if identifier else None
+    if not record or (record.payload or {}).get('user_id') != user.id:
+        flash('验证码错误、已过期或尝试次数过多', 'danger')
+    elif AccountIdentity.query.filter_by(identifier=identifier).first():
+        flash('该身份已经被绑定', 'warning')
+    else:
+        db.session.add(AccountIdentity(
+            user_id=user.id, identity_type=pending['type'], identifier=identifier,
+            verified_at=datetime.now(timezone.utc), is_primary=not bool(user.identities),
+        ))
+        _write_audit(user, 'security.identity.bind', f'绑定{pending["type"]}身份 {identifier}')
+        db.session.commit()
+        session.pop('pending_account_identity', None)
+        flash('新账号标识已绑定', 'success')
+    return redirect(url_for('core.account', section='security'))
+
+
+@bp.route('/account/identities/<int:identity_id>/primary', methods=['POST'])
+def account_identity_primary(identity_id):
+    user = _current_user()
+    if not user:
+        abort(401)
+    identity = AccountIdentity.query.filter_by(id=identity_id, user_id=user.id).first_or_404()
+    AccountIdentity.query.filter_by(user_id=user.id).update({'is_primary': False})
+    identity.is_primary = True
+    _write_audit(user, 'security.identity.primary', f'设置主登录身份 {identity.identifier}')
+    db.session.commit()
+    flash('主登录账号已更新', 'success')
+    return redirect(url_for('core.account', section='security'))
+
+
+@bp.route('/account/identities/<int:identity_id>/delete', methods=['POST'])
+def account_identity_delete(identity_id):
+    user = _current_user()
+    if not user:
+        abort(401)
+    identity = AccountIdentity.query.filter_by(id=identity_id, user_id=user.id).first_or_404()
+    if identity.is_primary or AccountIdentity.query.filter_by(user_id=user.id).count() <= 1:
+        flash('主账号或唯一账号不能解绑', 'danger')
+    else:
+        _write_audit(user, 'security.identity.unbind', f'解绑身份 {identity.identifier}')
+        db.session.delete(identity)
+        db.session.commit()
+        flash('账号标识已解绑', 'success')
+    return redirect(url_for('core.account', section='security'))
+
+
+@bp.route('/account/organization', methods=['POST'])
+def account_organization_save():
+    user = _current_user()
+    organization, actor = _account_organization_for_user(user, request.form.get('organization_id', type=int), manage=True)
+    name = request.form.get('name', '').strip()
+    if not name or len(name) > 120:
+        flash('团队名称不能为空且不能超过 120 个字符', 'danger')
+    else:
+        organization.name = name
+        _write_audit(user, 'organization.update', f'修改团队名称为“{name}”', organization_id=organization.id)
+        db.session.commit()
+        flash('团队资料已保存', 'success')
+    return redirect(url_for('core.account', section='organization'))
+
+
+@bp.route('/account/organization/members', methods=['POST'])
+def account_organization_member_add():
+    user = _current_user()
+    organization, actor = _account_organization_for_user(user, request.form.get('organization_id', type=int), manage=True)
+    identity_type, identifier = _normalize_identity(request.form.get('identifier'))
+    role = request.form.get('role', 'viewer')
+    if role not in {'admin', 'editor', 'viewer'}:
+        abort(400)
+    identity = AccountIdentity.query.filter_by(identifier=identifier).first() if identifier else None
+    if not identifier:
+        flash('请输入有效的邮箱或手机号', 'danger')
+    elif identity and identity.user_id == user.id:
+        flash('不能邀请自己加入当前团队', 'warning')
+    elif identity and OrganizationMember.query.filter_by(organization_id=organization.id, user_id=identity.user_id).first():
+        flash('该用户已经是团队成员', 'warning')
+    else:
+        OrganizationInvitation.query.filter_by(
+            organization_id=organization.id, identifier=identifier, status='pending'
+        ).update({'status': 'revoked'})
+        raw_token = secrets.token_urlsafe(32)
+        invitation = OrganizationInvitation(
+            organization_id=organization.id, identity_type=identity_type,
+            identifier=identifier, role=role, token_hash=_hash_token(raw_token),
+            invited_by=user.id, expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+        )
+        db.session.add(invitation)
+        db.session.flush()
+        _write_audit(user, 'organization.invitation.create', f'邀请成员 {identifier}',
+                     organization_id=organization.id,
+                     details={'role': role, 'invitation_id': invitation.id})
+        db.session.commit()
+        session['organization_invite_url'] = url_for(
+            'core.organization_invitation_accept', token=raw_token, _external=True
+        )
+        flash('团队邀请已创建，7 天内有效', 'success')
+    return redirect(url_for('core.account', section='organization', org=organization.id))
+
+
+@bp.route('/account/organization/invitations/<int:invitation_id>/revoke', methods=['POST'])
+def account_organization_invitation_revoke(invitation_id):
+    user = _current_user()
+    invitation = OrganizationInvitation.query.get_or_404(invitation_id)
+    organization, actor = _account_organization_for_user(user, invitation.organization_id, manage=True)
+    if invitation.status != 'pending':
+        flash('该邀请已不能撤销', 'warning')
+    else:
+        invitation.status = 'revoked'
+        _write_audit(user, 'organization.invitation.revoke', f'撤销成员邀请 {invitation.identifier}',
+                     organization_id=organization.id, details={'invitation_id': invitation.id})
+        db.session.commit()
+        flash('团队邀请已撤销', 'success')
+    return redirect(url_for('core.account', section='organization', org=organization.id))
+
+
+@bp.route('/account/organization/members/<int:member_id>', methods=['POST'])
+def account_organization_member_update(member_id):
+    user = _current_user()
+    member = OrganizationMember.query.get_or_404(member_id)
+    organization, actor = _account_organization_for_user(user, member.organization_id, manage=True)
+    if member.role == 'owner':
+        flash('组织所有者不能在此删除或降级', 'danger')
+        return redirect(url_for('core.account', section='organization', org=organization.id))
+    action = request.form.get('action')
+    if action == 'remove':
+        _write_audit(user, 'organization.member.remove', f'移除成员 {member.user_id}', organization_id=organization.id)
+        db.session.delete(member)
+        flash('成员已移除', 'success')
+    else:
+        role = request.form.get('role')
+        if role not in {'admin', 'editor', 'viewer'}:
+            abort(400)
+        member.role = role
+        _write_audit(user, 'organization.member.role', f'调整成员 {member.user_id} 的角色', organization_id=organization.id,
+                     details={'role': role})
+        flash('成员角色已更新', 'success')
+    db.session.commit()
+    return redirect(url_for('core.account', section='organization', org=organization.id))
+
+
+@bp.route('/account/organization/sites/<int:site_id>', methods=['POST'])
+def account_organization_site_toggle(site_id):
+    user = _current_user()
+    organization, actor = _account_organization_for_user(user, request.form.get('organization_id', type=int), manage=True)
+    site = _account_site_or_404(user, site_id)
+    link = OrganizationSite.query.filter_by(organization_id=organization.id, site_id=site.id).first()
+    if link:
+        db.session.delete(link)
+        action, summary = 'organization.site.remove', f'取消关联站点“{site.name}”'
+    else:
+        db.session.add(OrganizationSite(organization_id=organization.id, site_id=site.id))
+        action, summary = 'organization.site.add', f'关联站点“{site.name}”'
+    _write_audit(user, action, summary, organization_id=organization.id, site_id=site.id)
+    db.session.commit()
+    return redirect(url_for('core.account', section='organization'))
+
+
+@bp.route('/account/integrations/wechat/mock', methods=['POST'])
+def account_wechat_mock():
+    """开发环境模拟微信绑定；生产环境必须走开放平台 OAuth。"""
+    user = _current_user()
+    if not (current_app.debug or current_app.testing):
+        abort(403, '生产环境禁止模拟微信绑定')
+    identity = ExternalIdentity.query.filter_by(user_id=user.id, provider='wechat').first()
+    if not identity:
+        identity = ExternalIdentity(user_id=user.id, provider='wechat',
+                                    provider_user_id=f'mock-{user.id}', nickname='微信开发模拟', is_mock=True)
+        db.session.add(identity)
+        _write_audit(user, 'wechat.bind.mock', '绑定微信开发模拟身份')
+        db.session.commit()
+    flash('已绑定微信开发模拟身份；这不是真实微信授权', 'warning')
+    return redirect(url_for('core.account', section='integrations'))
+
+
+@bp.route('/account/integrations/wechat/unbind', methods=['POST'])
+def account_wechat_unbind():
+    user = _current_user()
+    identity = ExternalIdentity.query.filter_by(user_id=user.id, provider='wechat').first()
+    if identity:
+        db.session.delete(identity)
+        _write_audit(user, 'wechat.unbind', '解绑微信身份')
+        db.session.commit()
+    flash('微信身份已解绑', 'success')
+    return redirect(url_for('core.account', section='integrations'))
+
+
+@bp.route('/account/billing/orders', methods=['POST'])
+def account_billing_order_create():
+    """创建待支付订单；未接支付渠道时绝不改变为已支付。"""
+    user = _current_user()
+    plan = BillingPlan.query.filter_by(id=request.form.get('plan_id', type=int), is_active=True).first_or_404()
+    order = BillingOrder(user_id=user.id, plan_id=plan.id, amount_cents=plan.price_cents,
+                         status='pending', provider='placeholder')
+    db.session.add(order)
+    _write_audit(user, 'billing.order.create', f'创建套餐“{plan.name}”待支付订单')
+    db.session.commit()
+    flash('已创建待支付订单；支付渠道尚未接入，未发生真实扣款', 'warning')
+    return redirect(url_for('core.account', section='billing'))
 
 
 @bp.route('/sites/delete', methods=['POST'])
 def site_delete():
-    """删除当前站点：清除数据库记录 + 站点文件夹 + output 文件."""
-    from .db import db
-
-    import shutil as _shutil
-
+    """兼容旧入口：改为可恢复的软删除，禁止直接清除用户站点文件。"""
     user, site = _current_context()
-    site_id = site.id
+    if user.role != 'admin' and site.owner_id != user.id:
+        abort(403)
     site_name = site.name
-
-    # 删除站点文件夹
-    site_folder = Path(current_app.config['SITES_DIR']) / str(site_id)
-    if site_folder.exists():
-        try:
-            _shutil.rmtree(site_folder)
-        except OSError as exc:
-            current_app.logger.warning('删除站点文件夹 %s 失败: %s', site_folder, exc)
-
-    # 删除 output
-    output_dir = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
-    if output_dir.exists():
-        try:
-            _shutil.rmtree(output_dir)
-        except OSError as exc:
-            current_app.logger.warning('删除 output 目录 %s 失败: %s', output_dir, exc)
-
-    # 删除数据库记录
-    db.session.delete(site)
+    site.soft_deleted_at = datetime.now(timezone.utc)
     db.session.commit()
-
-    flash(f'站点 "{site_name}" 已删除', 'success')
+    session.pop('current_site_id', None)
+    flash(f'站点“{site_name}”已移入回收站', 'success')
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('_fragment'):
         return jsonify({'ok': True, 'redirect': url_for('core.overview')})
     return redirect(url_for('core.overview'))
@@ -4034,14 +5113,22 @@ def _validate_key(key):
 
 @bp.route('/templates')
 def templates_gallery():
-    user, site = _current_context()
+    # 新注册用户尚无站点时也必须能进入模板库创建第一个站点。
+    user = _current_user()
+    if not user:
+        abort(401)
+    query = Site.query.filter(Site.soft_deleted_at.is_(None))
+    if user.role != 'admin':
+        query = query.filter_by(owner_id=user.id)
+    site = query.order_by(Site.id.desc()).first()
     scan_templates()
     templates = _visible_templates_query().all()
     if request.args.get('_fragment'):
         return render_template('dashboard/panel_templates.html',
-                               user=user, site=site, templates=templates)
-    return render_template('dashboard/templates_gallery.html',
-                           user=user, site=site, templates=templates, active='templates')
+                               user=user, site=site, templates=templates,
+                               can_create_sites=_user_can_create_sites(user))
+    # 完整的新建流程属于账号级资源管理；工作台仅保留 _fragment 模板预览面板。
+    return redirect(url_for('core.account', section='sites', create='templates'))
 
 
 @bp.route('/templates/<template_name>/preview/')
@@ -4088,6 +5175,8 @@ def site_new():
     user = _current_user()
     if not user:
         return redirect(url_for('core.login'))
+    if not _user_can_create_sites(user):
+        abort(403, '受邀成员账号没有创建个人站点的权限')
 
     is_fragment = request.args.get('_fragment') is not None
 
@@ -4236,6 +5325,49 @@ def build():
     return redirect(url_for('core.preview_site', site_id=site.id))
 
 
+@bp.route('/publish', methods=['POST'])
+def publish_site():
+    """构建并发布当前站点，同时记录可追踪的发布状态与时间。"""
+    user, site = _current_context()
+    report = []
+    try:
+        # 正式产物按域名根目录构建，不能携带 /preview/<id>。使用独立临时目录，
+        # 避免覆盖编辑器正在使用的预览产物；后续 OSS/CDN 上传直接消费此目录。
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory(prefix=f'publish-{site.id}-') as temp_dir:
+            build_site(site.id, base_url='', report=report,
+                       output_root=Path(temp_dir) / site.slug)
+            if report:
+                message = f'发布检查发现 {len(report)} 个页面或链接问题，请修复后重试'
+                payload = {'ok': False, 'error': message, 'report': report}
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest' \
+                        or request.accept_mimetypes.best == 'application/json':
+                    return jsonify(payload), 422
+                flash(message, 'danger')
+                return redirect(url_for('core.account', section='sites'))
+        site.status = 'published'
+        site.last_published_at = datetime.now(timezone.utc)
+        _write_audit(user, 'site.publish', f'发布站点“{site.name or site.slug}”',
+                     site_id=site.id, details={'report_count': len(report)})
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.exception('站点 %s 发布失败', site.id)
+        return jsonify({'ok': False, 'error': str(exc), 'report': report}), 500
+    payload = {
+        'ok': True,
+        'status': site.status,
+        'published_at': site.last_published_at.isoformat(),
+        'preview_url': f'/preview_site/{site.id}',
+        'report': report,
+    }
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' \
+            or request.accept_mimetypes.best == 'application/json':
+        return jsonify(payload)
+    flash(f'站点“{site.name or site.slug}”发布完成', 'success')
+    return redirect(url_for('core.account', section='sites'))
+
+
 @bp.route('/export.zip')
 def export_zip():
     """导出当前站点的静态文件 ZIP."""
@@ -4246,18 +5378,22 @@ def export_zip():
     _, site = _current_context()
     # #13: 传入 report 收集缺页, 有失败时在 ZIP 内附一份说明, 不让店主拿到缺页站还不自知。
     report = []
-    output_root = build_site(site.id, base_url='', report=report)
-
     buffer = BytesIO()
-    with ZipFile(buffer, 'w', ZIP_DEFLATED) as zf:
-        for path in output_root.rglob('*'):
-            if path.is_file():
-                zf.write(path, path.relative_to(output_root).as_posix())
+    from tempfile import TemporaryDirectory
+    with TemporaryDirectory(prefix=f'export-{site.id}-') as temp_dir:
+        output_root = build_site(site.id, base_url='', report=report,
+                                 output_root=Path(temp_dir) / site.slug)
         if report:
-            warn_lines = ['本次导出有以下页面构建失败、未包含在内：', '']
-            warn_lines += [f"- [{f['lang'] or '默认'}] {f['template']} ({f['type']}): {f['error']}"
-                           for f in report]
-            zf.writestr('_构建警告.txt', '\n'.join(warn_lines) + '\n')
+            message = f'导出检查发现 {len(report)} 个页面或链接问题，请修复后重试'
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' \
+                    or request.accept_mimetypes.best == 'application/json':
+                return jsonify({'ok': False, 'error': message, 'report': report}), 422
+            flash(message, 'danger')
+            return redirect(url_for('core.account', section='sites'))
+        with ZipFile(buffer, 'w', ZIP_DEFLATED) as zf:
+            for path in output_root.rglob('*'):
+                if path.is_file():
+                    zf.write(path, path.relative_to(output_root).as_posix())
     buffer.seek(0)
 
     filename = f'{site.slug or "site"}-static.zip'
