@@ -150,25 +150,6 @@ class Site(db.Model):
     template = db.relationship('Template')
 
 
-class ContactMessage(db.Model):
-    """静态站点留言. contact_form 模块通过 API POST 存入, 店主后台查看."""
-    __tablename__ = 'contact_messages'
-
-    id = db.Column(db.Integer, primary_key=True)
-    site_id = db.Column(db.Integer, db.ForeignKey('sites.id', ondelete='CASCADE'), nullable=False, index=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(255), nullable=False)
-    phone = db.Column(db.String(50))
-    company = db.Column(db.String(200))
-    message = db.Column(db.Text, nullable=False)
-    is_read = db.Column(db.Boolean, default=False, nullable=False)
-    is_spam = db.Column(db.Boolean, default=False, nullable=False)
-    ip_address = db.Column(db.String(45))  # IPv6 最长 45 字符
-    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
-
-    site = db.relationship('Site', backref='messages')
-
-
 class Organization(db.Model):
     """团队协作边界；站点所有权仍由 Site.owner_id 兜底。"""
     __tablename__ = 'organizations'

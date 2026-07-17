@@ -58,6 +58,7 @@
           <span class="input-group-text text-muted">.{{ platform_domain }}</span>
         </div>
         <div class="form-text">3-30 字符，小写字母/数字/连字符。发布后可通过此地址访问。</div>
+        <div class="small mt-1" id="siteSlugStatus" aria-live="polite"></div>
       </div>
     </div>
 
@@ -118,6 +119,31 @@
   });
   renderLanguageOptions();
 
+  var slugCheckTimer = null;
+  var slugInput = document.getElementById('siteSlug');
+  function checkSlugAvailability() {
+    if (!slugInput) return;
+    var slug = slugInput.value.trim().toLowerCase();
+    slugInput.value = slug;
+    var status = document.getElementById('siteSlugStatus');
+    if (!slug) { slugInput.dataset.available = ''; if (status) status.textContent = ''; return; }
+    fetch('{{ url_for("core.site_slug_available") }}?slug=' + encodeURIComponent(slug))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        slugInput.dataset.available = data.available ? 'true' : 'false';
+        if (status) {
+          status.textContent = data.message || '';
+          status.className = 'small mt-1 ' + (data.available ? 'text-success' : 'text-danger');
+        }
+      });
+  }
+  slugInput?.addEventListener('input', function(){
+    slugInput.dataset.available = '';
+    clearTimeout(slugCheckTimer);
+    slugCheckTimer = setTimeout(checkSlugAvailability, 350);
+  });
+  slugInput?.addEventListener('blur', checkSlugAvailability);
+
   createBtn.addEventListener('click', function(){
     var tplSelect = document.getElementById('tplSelect');
     var tplName = tplSelect ? tplSelect.value.trim() : '{{ template.name if template else "" }}';
@@ -128,6 +154,7 @@
 
     if (!name) { alert('请填写站点名称'); return; }
     if (!slug) { alert('请填写 Slug'); return; }
+    if (slugEl && slugEl.dataset.available === 'false') { alert('该 Slug 不可用，请更换'); return; }
 
     var checkedLangs = Array.from(document.querySelectorAll('#templateLanguageOptions input[name="enabled_lang"]:checked')).map(function(el){ return el.value; });
     if (!checkedLangs.length) {

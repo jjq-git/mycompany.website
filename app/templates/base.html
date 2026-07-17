@@ -8,7 +8,7 @@
   <link rel="icon" href="http://192.168.1.88:3000/attachments/74eb0913-3298-4a00-82f8-fe1c02db27ec">
   <title>{% block title %}{{ site.slug if site else '' }}{% endblock %} — {{ platform_domain }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260716-account-header">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260717-link-disabled">
   <style>
     :root {
       --bs-primary: {{ admin_primary }};
@@ -76,6 +76,43 @@
 </head>
 
 <body class="d-flex flex-column vh-100">
+  <svg id="menuIconSprite" width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
+    <defs>
+      <symbol id="menu-icon-alert-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+      <symbol id="menu-icon-alert-triangle" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+      <symbol id="menu-icon-arrow-down" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></symbol>
+      <symbol id="menu-icon-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+      <symbol id="menu-icon-arrow-right" viewBox="0 0 24 24"><path d="m12 5 7 7-7 7"/><path d="M5 12h14"/></symbol>
+      <symbol id="menu-icon-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+      <symbol id="menu-icon-audio" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
+      <symbol id="menu-icon-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></symbol>
+      <symbol id="menu-icon-bar-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16v-5"/><path d="M12 16V8"/><path d="M17 16V5"/></symbol>
+      <symbol id="menu-icon-bluetooth" viewBox="0 0 24 24"><path d="m7 7 10 10-5 5V2l5 5L7 17"/></symbol>
+      <symbol id="menu-icon-bookmark" viewBox="0 0 24 24"><path d="M19 21 12 16 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></symbol>
+      <symbol id="menu-icon-briefcase" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></symbol>
+      <symbol id="menu-icon-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+      <symbol id="menu-icon-camera" viewBox="0 0 24 24"><path d="M14.5 4 16 7h4a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h4l1.5-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+      <symbol id="menu-icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+      <symbol id="menu-icon-cpu" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></symbol>
+      <symbol id="menu-icon-external-link" viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+      <symbol id="menu-icon-file-text" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></symbol>
+      <symbol id="menu-icon-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+      <symbol id="menu-icon-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></symbol>
+      <symbol id="menu-icon-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
+      <symbol id="menu-icon-heart" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></symbol>
+      <symbol id="menu-icon-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></symbol>
+      <symbol id="menu-icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+      <symbol id="menu-icon-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></symbol>
+      <symbol id="menu-icon-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+      <symbol id="menu-icon-package" viewBox="0 0 24 24"><path d="m16.5 9.4-9-5.2M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/></symbol>
+      <symbol id="menu-icon-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7A2 2 0 0 1 22 16.9Z"/></symbol>
+      <symbol id="menu-icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+      <symbol id="menu-icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+      <symbol id="menu-icon-star" viewBox="0 0 24 24"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2L5.8 21 7 14.2l-5-4.9 6.9-1z"/></symbol>
+      <symbol id="menu-icon-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/></symbol>
+      <symbol id="menu-icon-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+    </defs>
+  </svg>
 
   <header class="admin-header">
     <div class="d-flex align-items-center h-100 px-3 gap-2">
@@ -98,7 +135,7 @@
             {% for opt in available_sites|default([]) %}
             <li>
               <a class="dropdown-item{% if opt.id == site.id %} active{% endif %}"
-                 href="{{ url_for('core.index', site=opt.id) }}">
+                 href="{{ url_for('core.index', site=opt.slug) }}">
                 <span class="header-site-option">
                   <strong>{{ opt.name or opt.slug }}</strong>
                   {% if (opt.name or opt.slug) != opt.slug %}<small>/{{ opt.slug }}</small>{% endif %}
@@ -120,7 +157,7 @@
           {% for lang in admin_languages|default([]) %}
           {% set lang_label = '简' if lang.code == 'zh-CN' else ('繁' if lang.code == 'zh-TW' else 'EN') %}
           <a class="header-flag-link{% if lang.code == current_lang %} active{% endif %}"
-             href="?site={{ site.id }}&lang={{ lang.code }}"
+             href="?site={{ site.slug }}&lang={{ lang.code }}"
              data-lang-code="{{ lang.code }}"
              onclick="return switchAccountLanguage(event,this)"
              title="{{ lang.name }}" aria-label="切换到{{ lang.name }}"
@@ -195,7 +232,7 @@
           <path d="M16 16l-4-4-4 4M12 12v9"/><path d="M20.4 17.5A5 5 0 0 0 18 8.2 7 7 0 0 0 4.3 10.6 4.5 4.5 0 0 0 5.5 19H7"/>
         </svg>
       </button>
-      <a class="header-btn" href="{{ url_for('core.preview_site', site_id=site.id) }}" target="_blank"
+      <a class="header-btn" href="{{ url_for('core.preview_site', site_id=site.slug) }}" target="_blank"
         title="预览" aria-label="预览">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round">
@@ -239,7 +276,9 @@
           {% set label = item.label | default('') | lower %}
           {% set is_list = item.type == 'list' or target in (module_list_page_keys | default([])) or target == 'modules' %}
           <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            {% if target in ('products', 'product') or label in ('产品', 'products', 'product') %}
+            {% if item.icon | default('') %}
+            <use href="#menu-icon-{{ item.icon }}"/>
+            {% elif target in ('products', 'product') or label in ('产品', 'products', 'product') %}
             <rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/>
             {% elif target in ('projects', 'project', 'portfolio', 'cases') %}
             <rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
@@ -320,14 +359,13 @@
               </svg>
               基本设置
             </a>
-            <a class="left-nav-item {% if active == 'messages' %}active{% endif %}" href="{{ url_for('core.messages') }}"
-              data-panel="messages" style="padding-left:32px" title="留言管理">
+            <a class="left-nav-item {% if active == 'header_footer' %}active{% endif %}" href="{{ url_for('core.header_footer_edit') }}"
+              data-panel="header_footer" style="padding-left:32px" title="页头页脚">
               <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/>
               </svg>
-              留言管理
-              <span class="nav-badge">{{ message_count|default(0) }}</span>
+              页头页脚
             </a>
           </div>
         </div>
@@ -346,14 +384,6 @@
             <rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>
           </svg>
           媒体管理
-        </a>
-        <a class="left-nav-item {% if active == 'header_footer' %}active{% endif %}" href="{{ url_for('core.header_footer_edit') }}"
-          data-panel="header_footer" title="页头页脚">
-          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/>
-          </svg>
-          页头页脚
         </a>
         <a class="left-nav-item {% if active == 'menu' %}active{% endif %}" href="{{ url_for('core.menu_edit') }}"
           data-panel="menu" title="菜单配置">
@@ -374,12 +404,17 @@
           </span>
         </button>
         <div class="left-nav-section-body" id="leftNavSectionPages">
+        {% set home_item = left_menu_items | selectattr('type', 'equalto', 'home') | list | first %}
         <a class="left-nav-item {% if active in ('pages_home', 'home') %}active{% endif %}" href="{{ url_for('core.page_panel', page_key='home') }}"
           data-panel="pages_home" data-preview-page="home" title="首页">
           <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
+            {% if home_item and home_item.icon | default('') %}
+            <use href="#menu-icon-{{ home_item.icon }}"/>
+            {% else %}
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
             <polyline points="9 22 9 12 15 12 15 22" />
+            {% endif %}
           </svg>
           首页
         </a>
@@ -387,8 +422,7 @@
         {# ---- 菜单渲染 ---- #}
         {% macro render_left_menu(items, level=0) %}
         {% for item in items %}
-        {# 外部“链接”用于前台导航，不属于后台可编辑内容，不在左侧内容栏显示。 #}
-        {% if item.type not in ('home', 'link') %}
+        {% if item.type != 'home' %}
         {% set has_children = item.children | default([]) | length > 0 %}
         {% if has_children %}
         <div class="left-nav-group" data-level="{{ level }}">
@@ -433,21 +467,48 @@
           {% endif %}
         </a>
         {% else %}
-        <a class="left-nav-item external-link" href="{{ item.url | default('#') }}" target="_blank" rel="noopener"
-          style="padding-left: {{ 16 + level * 16 }}px;" title="{{ item.label }}">
-          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-            <polyline points="15 3 21 3 21 9" />
-            <line x1="10" y1="14" x2="21" y2="3" />
-          </svg>
+        <div class="left-nav-item left-nav-link-display" style="padding-left: {{ 16 + level * 16 }}px;"
+          title="{{ item.label }}（链接类型，仅展示）" aria-disabled="true">
+          {{ left_page_icon(item) }}
           {{ item.label }}
-        </a>
+        </div>
         {% endif %}
         {% endif %}
         {% endfor %}
         {% endmacro %}
-        {{ render_left_menu(left_menu_items) }}
+        {# 首页不参与分类；其余一级菜单按菜单类型归入两个后台展示分组。 #}
+        {% set page_groups = namespace(list_pages=[], independent_pages=[]) %}
+        {% for item in left_menu_items %}
+          {% if item.type in ('list', 'group') %}
+            {% set page_groups.list_pages = page_groups.list_pages + [item] %}
+          {% elif item.type in ('page', 'link') %}
+            {% set page_groups.independent_pages = page_groups.independent_pages + [item] %}
+          {% endif %}
+        {% endfor %}
+        {% if page_groups.list_pages %}
+        <div class="left-nav-page-type-group">
+          <button class="left-nav-page-group-toggle" type="button" onclick="togglePageGroup(this)" aria-expanded="true">
+            <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 9h9"/><path d="M8 15h9"/><path d="M5.5 9h.01"/><path d="M5.5 15h.01"/></svg>
+            <span class="left-nav-item-text">列表页</span>
+            <svg class="left-nav-page-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+          <div class="left-nav-page-group-body">
+            {{ render_left_menu(page_groups.list_pages, 1) }}
+          </div>
+        </div>
+        {% endif %}
+        {% if page_groups.independent_pages %}
+        <div class="left-nav-page-type-group">
+          <button class="left-nav-page-group-toggle" type="button" onclick="togglePageGroup(this)" aria-expanded="true">
+            <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/><path d="M9 13h8"/><path d="M9 17h6"/></svg>
+            <span class="left-nav-item-text">独立页面</span>
+            <svg class="left-nav-page-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+          <div class="left-nav-page-group-body">
+            {{ render_left_menu(page_groups.independent_pages, 1) }}
+          </div>
+        </div>
+        {% endif %}
         </div>
         {% endif %}
 
@@ -483,7 +544,7 @@
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
         </svg>
-        <span class="url-text" id="previewUrlText">{{ url_for('core.live_preview', site_id=site.id, filepath=(current_lang | default(site.default_language or 'zh-CN', true)) ~ '/index.html') if site else
+        <span class="url-text" id="previewUrlText">{{ url_for('core.live_preview', site_id=site.slug, filepath=(current_lang | default(site.default_language or 'zh-CN', true)) ~ '/index.html') if site else
           'about:blank' }}</span>
         <span class="preview-dirty-badge" id="previewDirtyBadge" hidden>预览待刷新</span>
         <div class="flex-grow-1"></div>
@@ -533,8 +594,8 @@
       <div class="preview-frame-wrap flex-grow-1 overflow-auto d-flex justify-content-center" style="background:#e8eaed">
         {% if site %}
         <iframe class="border-0 bg-white shadow preview-frame desktop" id="previewFrame"
-          src="{{ url_for('core.live_preview', site_id=site.id, filepath=(current_lang | default(site.default_language or 'zh-CN', true)) ~ '/index.html') if site else 'about:blank' }}"
-          data-preview-url="{{ url_for('core.live_preview', site_id=site.id, filepath=(current_lang | default(site.default_language or 'zh-CN', true)) ~ '/index.html') if site else 'about:blank' }}">
+          src="{{ url_for('core.live_preview', site_id=site.slug, filepath=(current_lang | default(site.default_language or 'zh-CN', true)) ~ '/index.html') if site else 'about:blank' }}"
+          data-preview-url="{{ url_for('core.live_preview', site_id=site.slug, filepath=(current_lang | default(site.default_language or 'zh-CN', true)) ~ '/index.html') if site else 'about:blank' }}">
         </iframe>
         <div class="preview-loading-overlay" id="previewLoadingOverlay" aria-live="polite" aria-hidden="true">
           <div class="preview-loading-box">
@@ -599,6 +660,7 @@
           </svg>
           <span class="fw-semibold small" id="rightPanelTitle">编辑面板</span>
         </div>
+        <div class="right-panel-header-actions" id="rightPanelHeaderActions"></div>
       </div>
       <div class="right-panel-body flex-grow-1 overflow-auto" id="rightPanelBody">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -1230,7 +1292,7 @@
     var previewTabs = [];
     var activeTabKey = null;
     var currentAdminLang = '{{ current_lang | default("") }}';
-    var currentSiteId = '{{ site.id if site else "" }}';
+    var currentSiteId = '{{ site.slug if site else "" }}';
 
     function currentSiteParam() {
       return new URLSearchParams(window.location.search).get('site') || currentSiteId;
@@ -1345,7 +1407,7 @@
       activeTabKey = key;
       renderPreviewTabs();
       updatePreviewUrlBar(url);
-      setPreviewChromeMode(key === 'seo' || key === 'media' || key === 'messages' || key === 'basic_settings' || key === 'header_footer' || key === 'menu' || String(key).indexOf('content_') === 0);
+      setPreviewChromeMode(key === 'seo' || key === 'media' || key === 'basic_settings' || key === 'header_footer' || key === 'menu' || String(key).indexOf('content_') === 0);
       var frame = document.getElementById('previewFrame');
       if (frame) {
         frame.dataset.previewUrl = url;
@@ -1429,6 +1491,8 @@
       }
       var footerStatus = document.querySelector('#rightPanelFooter .panel-live-status');
       if (footerStatus) return footerStatus;
+      var headerStatus = document.querySelector('#rightPanelHeaderActions .panel-live-status');
+      if (headerStatus) return headerStatus;
       var visibleStatuses = Array.from(document.querySelectorAll('#rightPanelBody .panel-live-status'));
       return visibleStatuses.find(function(el) { return el.getClientRects().length > 0; }) || visibleStatuses[0] || null;
     }
@@ -1458,18 +1522,19 @@
     }
 
     function preparePanelSaveBar(saveBar, footer) {
-      if (!saveBar || !footer) return;
+      if (!saveBar) return;
       ensurePanelSaveStatus(saveBar);
       var form = saveBar.closest('form');
       var btn = saveBar.querySelector('button[type="submit"]');
       if (btn && form) {
         form.dataset.panelGuard = '1';
         if (!form.id) form.id = '_panelForm_' + Date.now();
-        btn.setAttribute('form', form.id);
+        btn.removeAttribute('form');
       }
-      footer.innerHTML = '';
-      footer.appendChild(saveBar);
-      footer.style.display = '';
+      if (footer) {
+        footer.innerHTML = '';
+        footer.style.display = 'none';
+      }
     }
 
     function initializeInlinePanelSaveBars(container) {
@@ -1715,8 +1780,10 @@
       }
       var body = document.getElementById('rightPanelBody');
       var footer = document.getElementById('rightPanelFooter');
+      var headerActions = document.getElementById('rightPanelHeaderActions');
       body.innerHTML = '<div class="p-3 text-muted text-center py-5"><div class="spinner-border spinner-border-sm me-2"></div>加载中...</div>';
       if (footer) footer.style.display = 'none';
+      if (headerActions) headerActions.innerHTML = '';
       return fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + '_t=' + Date.now()).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
         .then(html => {
           body.innerHTML = html;
@@ -1727,6 +1794,7 @@
             if (rpt) rpt.textContent = titleEl.textContent.trim();
             titleEl.textContent = '';
           }
+          preparePanelHeaderActions(body);
           return runPanelScripts(body).then(function() {
             // 将保存按钮移到面板底部悬浮栏
             var saveBar = body.querySelector('.basic-settings-pane') ? null : body.querySelector('.panel-save-bar');
@@ -1735,6 +1803,15 @@
           });
         })
         .catch(error => { body.innerHTML = '<div class="p-3 text-danger">加载失败</div>'; throw error; });
+    }
+
+    function preparePanelHeaderActions(container) {
+      var target = document.getElementById('rightPanelHeaderActions');
+      if (!target) return;
+      target.innerHTML = '';
+      var actions = container && container.querySelector('.panel-top-actions');
+      if (!actions) return;
+      target.appendChild(actions);
     }
 
     function openSeoActionLink(rawUrl) {
@@ -1860,11 +1937,43 @@
       });
     }
 
+    function refreshLeftNavigation() {
+      var hostWindow = window;
+      try {
+        if (window.parent !== window && window.parent.document.getElementById('leftNavSectionPages')) {
+          hostWindow = window.parent;
+        }
+      } catch (e) {}
+      var target = hostWindow.document.getElementById('leftNavSectionPages');
+      if (!target) return Promise.resolve(false);
+      var params = new URLSearchParams(hostWindow.location.search);
+      var siteParam = params.get('site') || (typeof hostWindow.currentSiteParam === 'function' ? hostWindow.currentSiteParam() : '');
+      var langParam = params.get('lang') || (typeof hostWindow.currentLangParam === 'function' ? hostWindow.currentLangParam() : '');
+      var url = '/?site=' + encodeURIComponent(siteParam || '');
+      if (langParam) url += '&lang=' + encodeURIComponent(langParam);
+      url += '&_nav_refresh=' + Date.now();
+      return fetch(url, { credentials: 'same-origin' })
+        .then(function(response) { if (!response.ok) throw new Error('HTTP ' + response.status); return response.text(); })
+        .then(function(html) {
+          var doc = new DOMParser().parseFromString(html, 'text/html');
+          var source = doc.getElementById('leftNavSectionPages');
+          if (!source) return false;
+          target.innerHTML = source.innerHTML;
+          return true;
+        })
+        .catch(function(error) {
+          console.warn('刷新左侧菜单失败:', error);
+          return false;
+        });
+    }
+    window.refreshLeftNavigation = refreshLeftNavigation;
+
     document.getElementById('rightPanelBody').addEventListener('submit', function (e) {
       var form = e.target.closest('form');
       if (!form) return;
       if (form.dataset.ajaxHandled === '1' || e.defaultPrevented) return;
       e.preventDefault();
+      var isMenuSave = form.id === 'menuTreeForm';
       normalizeUnitInputs(form);
       if (typeof cancelModuleDraftPreview === 'function') cancelModuleDraftPreview();
       if (typeof cancelDatasetDraftPreview === 'function') cancelDatasetDraftPreview();
@@ -1895,6 +2004,7 @@
             if (result.ok) {
               setPanelEditStatus('saved', '已保存');
               markPreviewDirty();
+              if (isMenuSave) refreshLeftNavigation();
             } else {
               setPanelEditStatus('error', '保存失败，请重试');
             }
@@ -2166,26 +2276,6 @@
         if (mediaPanelFooter) mediaPanelFooter.style.display = 'none';
         var mediaPanel = document.getElementById('rightPanel');
         if (mediaPanel && !mediaPanel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
-          togglePanelCollapse();
-        }
-        return;
-      }
-      if (link.dataset.panel === 'messages') {
-        var msgSiteParam = currentSiteParam();
-        var msgQuery = [];
-        if (msgSiteParam) msgQuery.push('site=' + encodeURIComponent(msgSiteParam));
-        var msgUrl = '{{ url_for("core.messages") }}' + (msgQuery.length ? '?embed=1&' + msgQuery.join('&') : '?embed=1');
-        openPreviewTab('messages', '留言管理', msgUrl, false, '正在加载留言管理...');
-        var msgPanelTitle = document.getElementById('rightPanelTitle');
-        var msgPanelBody = document.getElementById('rightPanelBody');
-        var msgPanelFooter = document.getElementById('rightPanelFooter');
-        if (msgPanelTitle) msgPanelTitle.textContent = '留言管理';
-        if (msgPanelBody) {
-          msgPanelBody.innerHTML = '<div class="p-3 text-muted small">留言管理已在中间栏打开。</div>';
-        }
-        if (msgPanelFooter) msgPanelFooter.style.display = 'none';
-        var msgPanel = document.getElementById('rightPanel');
-        if (msgPanel && !msgPanel.classList.contains('panel-collapsed') && typeof togglePanelCollapse === 'function') {
           togglePanelCollapse();
         }
         return;
@@ -2519,6 +2609,15 @@
       if (row) row.setAttribute('aria-expanded', String(!isOpen));
       var toggle = group.querySelector(':scope > .left-nav-parent-row .left-nav-chevron-btn');
       if (toggle) toggle.setAttribute('aria-expanded', String(!isOpen));
+    }
+
+    function togglePageGroup(button) {
+      var group = button.closest('.left-nav-page-type-group');
+      var body = group && group.querySelector(':scope > .left-nav-page-group-body');
+      if (!body) return;
+      var expanded = button.getAttribute('aria-expanded') === 'true';
+      button.setAttribute('aria-expanded', String(!expanded));
+      body.hidden = expanded;
     }
 
     var LEFT_NAV_SECTION_STORAGE_KEY = 'adminLeftNavSections:{{ site.id if site else "none" }}';

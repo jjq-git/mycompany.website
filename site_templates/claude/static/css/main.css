@@ -1451,7 +1451,8 @@ hr {
 
 /* 社交图标 */
 .social-links {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, 32px);
   gap: var(--space-sm);
   margin-top: var(--space-md);
 }
@@ -3631,6 +3632,33 @@ a.ci-value:hover { color: var(--color-primary); }
   margin: 0 0 var(--space-lg, 3rem);
   justify-content: flex-start;  /* 搜索框和计数文字紧凑排列，不撑满整行 */
 }
+
+.dg-sort-controls {
+  display: inline-flex;
+  gap: 0;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+.dg-sort-btn {
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.dg-sort-icon {
+  display: inline-block; width: 8px; height: 8px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+}
+.dg-sort-btn[data-sort-direction="asc"] .dg-sort-icon { transform: translateY(2px) rotate(225deg); }
+.dg-sort-btn[data-sort-direction="desc"] .dg-sort-icon { transform: translateY(-2px) rotate(45deg); }
+.dg-sort-btn:hover,
+.dg-sort-btn.active { color: var(--color-accent, #0d9488); }
 
 .dg-filter-panel {
   display: grid; gap: var(--space-md);

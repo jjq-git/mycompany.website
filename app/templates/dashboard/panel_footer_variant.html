@@ -11,6 +11,18 @@
   {% endfor %}
 {% endwith %}
 
+<style>
+.footer-social-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+.footer-social-options-grid > .mb-2 {
+  min-width: 0;
+  margin-bottom: 0 !important;
+}
+</style>
+
 {% if translation_enabled and languages and languages|length > 1 and current_lang != default_lang %}
 <div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
   {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
@@ -79,6 +91,27 @@
            value="{{ current_footer.get('icp', '') }}" placeholder="如: 苏ICP备xxx号（留空=使用公司信息中的备案号）">
   </div>
   {% endif %}
+  {% set social = settings.get('social', {}) %}
+  <div id="footerSocialSection" {% if current_variant != 'columns_social' %}style="display:none"{% endif %}>
+    <hr>
+    <div class="mb-2">
+      <label class="form-label small mb-1 fw-semibold">社交链接</label>
+      <div class="form-check form-switch mb-2">
+        <input class="form-check-input" type="checkbox" name="social_enabled" value="1"
+               id="footerSocialToggle"
+               {% if social.get('enabled', True) %}checked{% endif %}>
+        <label class="form-check-label small" for="footerSocialToggle">显示社交链接图标</label>
+      </div>
+    </div>
+    <div id="footerSocialOptions" class="footer-social-options-grid" {% if not social.get('enabled', True) %}style="display:none"{% endif %}>
+      {% for platform in ('github','twitter','facebook','instagram','linkedin','youtube','tiktok','whatsapp','telegram','wechat','weibo','xiaohongshu','pinterest','discord') %}
+      <div class="mb-2">
+        <label class="form-label small mb-1 text-muted">{{ platform | title }}</label>
+        <input class="form-control form-control-sm" name="social_{{ platform }}" value="{{ social.get(platform, '') }}" placeholder="https://...">
+      </div>
+      {% endfor %}
+    </div>
+  </div>
   </div>
 
   <div class="footer-settings-right">
@@ -92,6 +125,7 @@
     <input type="hidden" name="footer_column_count" id="footerColumnCount" value="{{ current_footer.get('columns', []) | length }}">
     <div id="footerColumnsList">
       {% set footer_columns = current_footer.get('columns', []) %}
+      {% set footer_choice_urls = footer_link_choices | default([]) | map(attribute='url') | list %}
       {% if footer_columns %}
       {% for col in footer_columns %}
       <div class="border rounded p-2 mb-2 footer-column-item collapsed">
@@ -117,6 +151,7 @@
               <input type="text" class="form-control form-control-sm" name="footer_col_{{ loop.index0 }}_title" value="{{ col.title | default('') }}">
             </div>
           </div>
+          <div class="footer-col-menu-fields" {% if col.type == 'text' %}style="display:none"{% endif %}>
           <div class="footer-col-links">
             {% set links = col.links | default([]) %}
             {% set col_idx = loop.index0 %}
@@ -127,7 +162,13 @@
                 <input type="text" class="form-control form-control-sm" name="footer_col_{{ col_idx }}_link_{{ loop.index0 }}_label" value="{{ link.label | default('') }}" placeholder="名称">
               </div>
               <div class="flex-fill">
-                <input type="text" class="form-control form-control-sm" name="footer_col_{{ col_idx }}_link_{{ loop.index0 }}_url" value="{{ link.url | default('') }}" placeholder="链接">
+                <select class="form-select form-select-sm footer-link-target" name="footer_col_{{ col_idx }}_link_{{ loop.index0 }}_url" onchange="syncFooterLinkTarget(this)">
+                  <option value="">选择站内链接</option>
+                  {% if link.url and link.url not in footer_choice_urls %}<option value="{{ link.url }}" data-label="{{ link.label | default('') }}" selected>当前链接：{{ link.url }}</option>{% endif %}
+                  {% for choice in footer_link_choices | default([]) %}
+                  <option value="{{ choice.url }}" data-label="{{ choice.label | replace('— ', '') }}" {% if link.url == choice.url %}selected{% endif %}>{{ choice.label }}</option>
+                  {% endfor %}
+                </select>
               </div>
               <div class="flex-shrink-0">
                 <button type="button" class="btn btn-sm btn-outline-danger px-2" title="删除链接" onclick="this.closest('.footer-link-item').remove()">✕</button>
@@ -136,6 +177,11 @@
             {% endfor %}
           </div>
           <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addFooterLink(this)">+ 添加链接</button>
+          </div>
+          <div class="footer-col-text-fields" {% if col.type != 'text' %}style="display:none"{% endif %}>
+            <label class="form-label small mb-1 text-muted">文本内容</label>
+            <textarea class="form-control form-control-sm" rows="5" name="footer_col_{{ loop.index0 }}_text" placeholder="输入该栏目的文字内容">{{ col.text | default('') }}</textarea>
+          </div>
         </div>
       </div>
       {% endfor %}
@@ -149,27 +195,6 @@
     </div>
   </div>
 
-  {% set social = settings.get('social', {}) %}
-  <div id="footerSocialSection" {% if current_variant != 'columns_social' %}style="display:none"{% endif %}>
-    <hr>
-    <div class="mb-2">
-      <label class="form-label small mb-1 fw-semibold">社交链接</label>
-      <div class="form-check form-switch mb-2">
-        <input class="form-check-input" type="checkbox" name="social_enabled" value="1"
-               id="footerSocialToggle"
-               {% if social.get('enabled', True) %}checked{% endif %}>
-        <label class="form-check-label small" for="footerSocialToggle">显示社交链接图标</label>
-      </div>
-    </div>
-    <div id="footerSocialOptions" {% if not social.get('enabled', True) %}style="display:none"{% endif %}>
-      {% for platform in ('github','twitter','facebook','linkedin','youtube') %}
-      <div class="mb-2">
-        <label class="form-label small mb-1 text-muted">{{ platform | title }}</label>
-        <input class="form-control form-control-sm" name="social_{{ platform }}" value="{{ social.get(platform, '') }}" placeholder="https://...">
-      </div>
-      {% endfor %}
-    </div>
-  </div>
   </div>
 
   <div class="panel-save-bar">
@@ -178,6 +203,31 @@
 </form>
 
 <script>
+var FOOTER_LINK_CHOICES = {{ footer_link_choices | default([]) | tojson }};
+function footerEscapeHtml(value) {
+  return String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function footerLinkOptions() {
+  return '<option value="">选择站内链接</option>' + FOOTER_LINK_CHOICES.map(function(choice) {
+    return '<option value="' + footerEscapeHtml(choice.url) + '" data-label="' + footerEscapeHtml(String(choice.label || '').replace(/— /g, '')) + '">' + footerEscapeHtml(choice.label) + '</option>';
+  }).join('');
+}
+function syncFooterLinkTarget(select) {
+  var row = select.closest('.footer-link-item');
+  var label = row && row.querySelector('input[name$="_label"]');
+  var option = select.options[select.selectedIndex];
+  if (label && option && option.dataset.label) label.value = option.dataset.label;
+}
+function syncFooterColumnType(select) {
+  var item = select.closest('.footer-column-item');
+  if (!item) return;
+  var isText = select.value === 'text';
+  var menuFields = item.querySelector('.footer-col-menu-fields');
+  var textFields = item.querySelector('.footer-col-text-fields');
+  if (menuFields) menuFields.style.display = isText ? 'none' : '';
+  if (textFields) textFields.style.display = isText ? '' : 'none';
+}
 // 底部布局卡片点击切换——与头部布局卡片风格一致
 document.querySelectorAll('#footerForm .variant-card').forEach(function(card) {
   card.addEventListener('click', function() {
@@ -215,11 +265,12 @@ function addFooterColumn() {
     '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation(); this.closest(\'.footer-column-item\').remove();reindexFooterColumns()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
     '<div class="footer-column-body" style="margin-top:8px;">' +
     '<div class="row g-2 mb-2"><div class="col-6"><label class="form-label small mb-1 text-muted">类型</label>' +
-    '<select class="form-select form-select-sm footer-col-type" name="footer_col_' + idx + '_type"><option value="menu">菜单列</option><option value="text">文本列</option></select></div>' +
+    '<select class="form-select form-select-sm footer-col-type" name="footer_col_' + idx + '_type" onchange="syncFooterColumnType(this)"><option value="menu">菜单列</option><option value="text">文本列</option></select></div>' +
     '<div class="col-6"><label class="form-label small mb-1 text-muted">标题</label>' +
     '<input type="text" class="form-control form-control-sm" name="footer_col_' + idx + '_title"></div></div>' +
-    '<div class="footer-col-links"><input type="hidden" name="footer_col_' + idx + '_link_count" value="0"></div>' +
-    '<button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addFooterLink(this)">+ 添加链接</button>' +
+    '<div class="footer-col-menu-fields"><div class="footer-col-links"><input type="hidden" name="footer_col_' + idx + '_link_count" value="0"></div>' +
+    '<button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addFooterLink(this)">+ 添加链接</button></div>' +
+    '<div class="footer-col-text-fields" style="display:none"><label class="form-label small mb-1 text-muted">文本内容</label><textarea class="form-control form-control-sm" rows="5" name="footer_col_' + idx + '_text" placeholder="输入该栏目的文字内容"></textarea></div>' +
     '</div></div>';
   list.insertAdjacentHTML('beforeend', html);
 }
@@ -233,7 +284,7 @@ function addFooterLink(btn) {
   if (countInp) countInp.value = idx + 1;
   var html = '<div class="d-flex gap-1 mb-1 footer-link-item">' +
     '<div class="flex-fill"><input type="text" class="form-control form-control-sm" name="footer_col_' + colIdx + '_link_' + idx + '_label" placeholder="名称"></div>' +
-    '<div class="flex-fill"><input type="text" class="form-control form-control-sm" name="footer_col_' + colIdx + '_link_' + idx + '_url" placeholder="链接"></div>' +
+    '<div class="flex-fill"><select class="form-select form-select-sm footer-link-target" name="footer_col_' + colIdx + '_link_' + idx + '_url" onchange="syncFooterLinkTarget(this)">' + footerLinkOptions() + '</select></div>' +
     '<div class="flex-shrink-0"><button type="button" class="btn btn-sm btn-outline-danger px-2" title="删除链接" onclick="this.closest(\'.footer-link-item\').remove()">✕</button></div></div>';
   linksDiv.insertAdjacentHTML('beforeend', html);
 }
@@ -280,6 +331,9 @@ document.getElementById('footerColumnsSection').addEventListener('input', functi
     updateFooterColumnLabel(item, i);
   }
 });
+document.getElementById('footerColumnsSection').addEventListener('change', function(e) {
+  if (e.target.classList.contains('footer-col-type')) syncFooterColumnType(e.target);
+});
 </script>
 
 {% if translation_enabled and current_lang != default_lang %}
@@ -316,13 +370,18 @@ document.getElementById('footerColumnsSection').addEventListener('input', functi
       var link = col2 && col2.links ? col2.links[parseInt(linkMatch[2], 10)] : null;
       return link ? link.label : null;
     }
+    var textMatch = String(name || '').match(/^footer_col_(\d+)_text$/);
+    if (textMatch) {
+      var col3 = (SOURCE_FOOTER.columns || [])[parseInt(textMatch[1], 10)];
+      return col3 ? col3.text : null;
+    }
     return null;
   }
 
   function doTranslate() {
     var texts = {};
     var fields = [];
-    document.querySelectorAll('#footerForm input[type="text"]:not([name$="_url"])').forEach(function(el){
+    document.querySelectorAll('#footerForm input[type="text"]:not([name$="_url"]), #footerForm textarea[name$="_text"]').forEach(function(el){
       var name = el.name || '';
       var sourceVal = sourceValueForField(name);
       var val = sourceVal == null ? el.value : sourceVal;

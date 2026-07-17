@@ -100,6 +100,22 @@ def create_app(config_override=None):
     app.register_blueprint(core_bp)
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
+    @app.url_defaults
+    def _use_site_slugs_in_urls(endpoint, values):
+        """Keep internal IDs in storage while emitting readable site slugs in public URLs."""
+        from .core.models import Site
+        site_value = values.get('site')
+        if isinstance(site_value, int):
+            site = db.session.get(Site, site_value)
+            if site:
+                values['site'] = site.slug
+        if endpoint in {'core.preview', 'core.live_preview', 'core.preview_site', 'core.preview_or_build'}:
+            preview_value = values.get('site_id')
+            if isinstance(preview_value, int):
+                site = db.session.get(Site, preview_value)
+                if site:
+                    values['site_id'] = site.slug
+
     @app.route('/favicon.ico', endpoint='favicon')
     def _serve_favicon():
         return send_from_directory(str((Path(__file__).parent / 'static').resolve()), 'icon.svg',
@@ -177,7 +193,7 @@ def _register_context_processors(app):
 
     @app.context_processor
     def inject_template_meta():
-        from .core.models import ContactMessage, Site
+        from .core.models import Site
         from .core.translator import is_configured as translator_ready
         from flask import request
         # #32: translation_enabled 与 template_meta 无关, 移出 try ——
@@ -186,24 +202,20 @@ def _register_context_processors(app):
             'translation_enabled': translator_ready(),
             'platform_domain': app.config.get('PLATFORM_DOMAIN', '') or 'mycompany.website',
             'content_count': 0,
-            'message_count': 0,
         }
         try:
-            site_id = request.args.get('site', type=int)
-            site = (Site.query.filter_by(id=site_id).filter(Site.soft_deleted_at.is_(None)).first()
-                    if site_id else Site.query.filter(Site.soft_deleted_at.is_(None)).order_by(Site.id.desc()).first())
+            site_ref = request.args.get('site', '').strip().lower()
+            if site_ref:
+                site = Site.query.filter_by(slug=site_ref).filter(Site.soft_deleted_at.is_(None)).first()
+                if site is None and site_ref.isdigit():
+                    site = Site.query.filter_by(id=int(site_ref)).filter(Site.soft_deleted_at.is_(None)).first()
+            else:
+                site = Site.query.filter(Site.soft_deleted_at.is_(None)).order_by(Site.id.desc()).first()
             if site:
                 meta_path = Path(app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
                 result['template_meta'] = (
                     _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
                 )
-                # 留言未读数, 供侧边栏 badge 使用
-                result['unread_count'] = ContactMessage.query.filter_by(
-                    site_id=site.id, is_read=False, is_spam=False
-                ).count()
-                result['message_count'] = ContactMessage.query.filter_by(
-                    site_id=site.id, is_spam=False
-                ).count()
                 # 内容中心统计来自站点菜单声明的列表数据集，侧栏在所有后台页面保持一致。
                 from .core.routes import _content_catalog, _get_panel_lang
                 lang, _languages, default_lang = _get_panel_lang(site)

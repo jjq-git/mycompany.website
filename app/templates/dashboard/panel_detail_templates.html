@@ -460,7 +460,7 @@
 <script>
 (function() {
   var DATASET_KEY = '{{ dataset_key }}';
-  var SITE_ID = '{{ site.id }}';
+  var SITE_ID = '{{ site.slug }}';
   function getQuery() {
     var params = new URLSearchParams(window.location.search);
     var siteParam = params.get('site') || SITE_ID;

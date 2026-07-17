@@ -132,7 +132,17 @@
     return false;
   };
 
-  function richEditorHtml(name, value) {
+  function richEditorHtml(name, value, compact) {
+    var currentType = (window._moduleCtx && window._moduleCtx.currentModuleType) || '';
+    var moduleMatch = String(name || '').match(/^module_(\d+)_/);
+    if (moduleMatch && typeof document !== 'undefined') {
+      var moduleTypeInput = document.querySelector('[name="module_' + moduleMatch[1] + '_type"]');
+      if (moduleTypeInput && moduleTypeInput.value) currentType = moduleTypeInput.value;
+    }
+    compact = !!(compact || (
+      (currentType === 'section_title' || currentType === 'highlight_card') &&
+      /(^|_)desc(ription)?$/i.test(String(name || ''))
+    ));
     var icons = {
       bold: '<svg viewBox="0 0 24 24"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>',
       italic: '<svg viewBox="0 0 24 24"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>',
@@ -171,48 +181,52 @@
       return '<button type="button" class="' + cls + '" data-cmd="' + cmd + '" data-arg="' + arg + '" title="' + title + '" aria-label="' + title + '">' + html + '</button>';
     }
     // ----- 工具栏 HTML：按功能分组，rte-sep 竖线分隔 -----
-    var tb = '<div class="rich-toolbar rte-toolbar" style="display:flex;gap:1px;margin-bottom:3px;flex-wrap:wrap;align-items:center">';
+    var tb = '<div class="rich-toolbar rte-toolbar" style="display:flex;gap:1px;flex-wrap:wrap;align-items:center">';
     // G1 内联格式
     tb += btn('bold', '加粗 (Ctrl+B)', icons.bold);
     tb += btn('italic', '斜体 (Ctrl+I)', icons.italic);
     tb += btn('underline', '下划线 (Ctrl+U)', icons.underline);
     tb += btn('strikeThrough', '删除线', icons.strike);
     tb += '<span class="rte-sep"></span>';
-    // G2 标题（直接显示 H2/H3/H4/P 按钮）
-    tb += btnArg('formatBlock', 'h2', '二级标题', 'H2', 'rte-heading-btn');
-    tb += btnArg('formatBlock', 'h3', '三级标题', 'H3', 'rte-heading-btn');
-    tb += btnArg('formatBlock', 'h4', '四级标题', 'H4', 'rte-heading-btn');
-    tb += btnArg('formatBlock', 'p', '正文段落', 'P', 'rte-heading-btn');
-    tb += '<span class="rte-sep"></span>';
+    if (!compact) {
+      // G2 标题（完整正文编辑器使用）
+      tb += btnArg('formatBlock', 'h2', '二级标题', 'H2', 'rte-heading-btn');
+      tb += btnArg('formatBlock', 'h3', '三级标题', 'H3', 'rte-heading-btn');
+      tb += btnArg('formatBlock', 'h4', '四级标题', 'H4', 'rte-heading-btn');
+      tb += btnArg('formatBlock', 'p', '正文段落', 'P', 'rte-heading-btn');
+      tb += '<span class="rte-sep"></span>';
+    }
     // G3 对齐
     tb += btn('justifyLeft', '左对齐', icons.alignLeft);
     tb += btn('justifyCenter', '居中', icons.alignCenter);
     tb += btn('justifyRight', '右对齐', icons.alignRight);
     tb += '<span class="rte-sep"></span>';
-    // G4 列表 & 缩进
-    tb += btn('insertUnorderedList', '无序列表', icons.ul);
-    tb += btn('insertOrderedList', '有序列表', icons.ol);
-    tb += btn('indent', '增加缩进', icons.indent);
-    tb += btn('outdent', '减少缩进', icons.outdent);
-    tb += '<span class="rte-sep"></span>';
-    // G5 插入元素（表格/链接/图片/视频）
-    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-btn" title="插入表格" aria-label="插入表格">' + icons.table + '</button>';
-    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-settings-btn" title="表格设置（修改列宽/边框）" aria-label="表格设置">' + icons.settings + '</button>';
-    tb += '<span class="rte-sep rte-media-sep"></span>';
-    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-link-btn" title="插入链接 (Ctrl+K)" aria-label="插入链接">' + icons.link + '</button>';
-    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-image-btn" title="插入图片链接" aria-label="插入图片链接">' + icons.imageUrl + '</button>';
-    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-upload-image-btn" title="上传图片" aria-label="上传图片">' + icons.imageUpload + '</button>';
-    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-video-url-btn" title="插入视频链接" aria-label="插入视频链接">' + icons.videoUrl + '</button>';
-    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-upload-video-btn" title="上传视频" aria-label="上传视频">' + icons.videoUpload + '</button>';
-    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-media-library-btn" title="从媒体库选择" aria-label="从媒体库选择">' + icons.mediaLibrary + '</button>';
-    tb += '<span class="rte-sep"></span>';
-    // G6 结构元素
-    tb += btnArg('formatBlock', '<blockquote>', '引用块', icons.blockquote);
-    tb += btn('insertHorizontalRule', '分割线', icons.hr);
-    tb += '<span class="rte-sep"></span>';
-    // G7 文字样式
-    tb += btn('subscript', '下标', icons.sub);
-    tb += btn('superscript', '上标', icons.sup);
+    if (!compact) {
+      // G4 列表 & 缩进
+      tb += btn('insertUnorderedList', '无序列表', icons.ul);
+      tb += btn('insertOrderedList', '有序列表', icons.ol);
+      tb += btn('indent', '增加缩进', icons.indent);
+      tb += btn('outdent', '减少缩进', icons.outdent);
+      tb += '<span class="rte-sep"></span>';
+      // G5 插入元素（表格/链接/图片/视频）
+      tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-btn" title="插入表格" aria-label="插入表格">' + icons.table + '</button>';
+      tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-table-settings-btn" title="表格设置（修改列宽/边框）" aria-label="表格设置">' + icons.settings + '</button>';
+      tb += '<span class="rte-sep rte-media-sep"></span>';
+      tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-link-btn" title="插入链接 (Ctrl+K)" aria-label="插入链接">' + icons.link + '</button>';
+      tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-image-btn" title="插入图片链接" aria-label="插入图片链接">' + icons.imageUrl + '</button>';
+      tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-upload-image-btn" title="上传图片" aria-label="上传图片">' + icons.imageUpload + '</button>';
+      tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-video-url-btn" title="插入视频链接" aria-label="插入视频链接">' + icons.videoUrl + '</button>';
+      tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-upload-video-btn" title="上传视频" aria-label="上传视频">' + icons.videoUpload + '</button>';
+      tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-media-library-btn" title="从媒体库选择" aria-label="从媒体库选择">' + icons.mediaLibrary + '</button>';
+      tb += '<span class="rte-sep"></span>';
+      // G6 结构元素
+      tb += btnArg('formatBlock', '<blockquote>', '引用块', icons.blockquote);
+      tb += btn('insertHorizontalRule', '分割线', icons.hr);
+      tb += '<span class="rte-sep"></span>';
+      // G7 文字样式
+      tb += btn('subscript', '下标', icons.sub);
+      tb += btn('superscript', '上标', icons.sup);
+    }
     tb += '<input type="color" class="rte-color-picker" value="#141413" title="文字颜色">';
     tb += btn('removeFormat', '清除格式', icons.clear);
     tb += '<span class="rte-sep"></span>';
@@ -220,8 +234,10 @@
     tb += btn('undo', '撤销', icons.undo);
     tb += btn('redo', '重做', icons.redo);
     tb += '<span class="rte-sep"></span>';
-    // G9 HTML 源码切换
-    tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-source-btn" title="查看/编辑 HTML 源码" aria-label="查看源码">' + icons.code + '</button>';
+    // G9 HTML 源码切换（仅完整正文编辑器使用）
+    if (!compact) {
+      tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-source-btn" title="查看/编辑 HTML 源码" aria-label="查看源码">' + icons.code + '</button>';
+    }
     tb += '</div>';
     return '<div class="rte-wrapper">' +
       tb +
@@ -541,6 +557,20 @@
   var EYE_OFF = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72 1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
   window.EYE_OPEN_SVG = window.EYE_OPEN_SVG || EYE_OPEN;
   window.EYE_OFF_SVG = window.EYE_OFF_SVG || EYE_OFF;
+  window.toggleModuleVisibility = function(btn) {
+    var item = btn && btn.closest('.module-item');
+    if (!item) return;
+    var input = item.querySelector('.module-root-hidden');
+    if (!input) return;
+    var visible = btn.getAttribute('data-visible') === 'true';
+    var nextVisible = !visible;
+    btn.setAttribute('data-visible', nextVisible ? 'true' : 'false');
+    btn.innerHTML = nextVisible ? window.EYE_OPEN_SVG : window.EYE_OFF_SVG;
+    btn.title = nextVisible ? '隐藏模块' : '显示模块';
+    btn.setAttribute('aria-label', btn.title);
+    input.value = nextVisible ? 'false' : 'true';
+    input.dispatchEvent(new Event('change', {bubbles: true}));
+  };
   if (typeof window.toggleVisibilityEye !== 'function') {
     window.toggleVisibilityEye = function(btn) {
       var isVisible = btn.getAttribute('data-visible') === 'true';
@@ -574,6 +604,32 @@
       '</button>' +
       '<span class="vis-label">' + label + '</span>' +
       '<input type="hidden" name="' + name + '" value="' + dv + '">' +
+      '</div>';
+  }
+
+  function contactInfoEditor(prefix, values) {
+    values = values || {};
+    function toggle(key, label, fallback) {
+      var value = values[key];
+      if (value == null || value === '') value = fallback;
+      return visToggle(prefix + key, label, String(value));
+    }
+    return '<div class="alert alert-info py-2 px-3 mb-3" style="font-size:14px;line-height:1.5">' +
+        '<div class="fw-semibold mb-1">此模块数据来自网站设置</div>' +
+        '<div>数据源：<code>settings:contact</code>，电话、手机、邮箱、地址和营业时间请在「网站设置」中修改。</div>' +
+      '</div>' +
+      '<div class="row g-2">' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="' + esc(prefix + 'title') + '" value="' + esc(values.title || '') + '"></div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="' + esc(prefix + 'subtitle') + '" value="' + esc(values.subtitle || '') + '"></div>' +
+      '</div>' +
+      '<hr class="my-2">' +
+      '<div class="small fw-semibold mb-2 text-muted">显示项目</div>' +
+      '<div class="d-flex flex-wrap gap-2">' +
+        toggle('show_phone', '电话', 'true') +
+        toggle('show_mobile', '手机', 'true') +
+        toggle('show_email', '邮箱', 'true') +
+        toggle('show_address', '地址', 'true') +
+        toggle('show_business_hours', '营业时间', 'false') +
       '</div>';
   }
 
@@ -1051,10 +1107,7 @@
       }
     });
     flushPendingHalf();
-    if (schema && schema.hideable) {
-      var hiddenVal = values._hidden === true || values._hidden === 'true' ? 'true' : 'false';
-      html += '<div class="mt-2 pt-2 border-top">' + schemaHideToggle(prefix + '_hidden', '整块显示', hiddenVal) + '</div>';
-    }
+    // 整块显隐已移到模块标题栏，避免在配置区重复显示。
     return html;
   }
 
@@ -1705,7 +1758,7 @@
       'data_list_showcase': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="5" rx="1"/><rect x="3" y="14" width="18" height="5" rx="1"/><path d="M8 5v5"/><path d="M8 14v5"/></svg>',
       'stat_counter': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>',
       'contact_info': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h4"/><circle cx="8.5" cy="8.5" r="0.5" fill="currentColor"/><circle cx="8.5" cy="12.5" r="0.5" fill="currentColor"/></svg>',
-      'contact_form': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h4"/><path d="M17 17l2 2"/><path d="M19 15a4 4 0 1 0-8 0"/></svg>',
+      'contact_form': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l5-3 8 3 5-3v15l-5 3-8-3-5 3z"/><path d="M8 3v15M16 6v15"/><path d="M12 10a2 2 0 1 1 4 0c0 2-2 4-2 4s-2-2-2-4z"/></svg>',
       'process_steps': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><path d="M8 12h1"/><path d="M15 12h1"/></svg>',
       'logo_cloud': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>',
       'item_detail': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><path d="M13 15h4"/><path d="M13 19h6"/></svg>',
@@ -1775,9 +1828,15 @@
         var featuredEditors = featuredPicksEditors('module_' + idx + '_data_', meta, d);
         specialEditor = featuredEditors.content;
         styleEditor = featuredEditors.style;
+      } else if (type === 'contact_info') {
+        specialEditor = contactInfoEditor('module_' + idx + '_data_', d);
+        styleEditor = schemaStyleForm('module_' + idx + '_data_', mergedSchema, d);
       } else {
+        var previousModuleType = window._moduleCtx && window._moduleCtx.currentModuleType;
+        if (window._moduleCtx) window._moduleCtx.currentModuleType = type;
         specialEditor = renderSchemaForm('module_' + idx + '_data_', mergedSchema, d);
         styleEditor = schemaStyleForm('module_' + idx + '_data_', mergedSchema, d);
+        if (window._moduleCtx) window._moduleCtx.currentModuleType = previousModuleType || '';
       }
     }
 
@@ -1953,7 +2012,7 @@
         '<div class="small fw-semibold mb-1 text-muted">内容</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag" value="' + esc(d.tag || '') + '" placeholder="模块上方小标绛?></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述文字</label>' + richEditorHtml('module_' + idx + '_data_desc', d.desc || '') + '</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述文字</label>' + richEditorHtml('module_' + idx + '_data_desc', d.desc || '', true) + '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">按钮</div>' +
         '<div class="row g-2">' +
@@ -2020,7 +2079,11 @@
     /* ====== data_grid ====== */
     } else if (type === 'data_grid') {
       specialEditor = dataGridEditors(idx, d).specialEditor;
-      // styleEditor 由上方 schemaManaged 分支的 schemaStyleForm 生成（data-style → cols/bg/bg-color）
+      // 每行个数与每页数量同属显示数量配置，统一放在内容页；样式页只保留视觉样式。
+      var dataGridStyleSchema = Object.assign({}, getMergedSchema(meta));
+      dataGridStyleSchema.style_tokens = (dataGridStyleSchema.style_tokens || []).filter(function(token) { return token !== 'cols'; });
+      dataGridStyleSchema.element_style_tokens = (dataGridStyleSchema.element_style_tokens || []).filter(function(token) { return token !== 'cols'; });
+      styleEditor = schemaStyleForm('module_' + idx + '_data_', dataGridStyleSchema, d);
 
     } else if (type === 'data_list_showcase') {
       specialEditor = dataListShowcaseEditors(idx, d).specialEditor;
@@ -2146,7 +2209,7 @@
         '<hr class="my-2">' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag" value="' + esc(d.tag || '') + '"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label>' + richEditorHtml('module_' + idx + '_data_desc', d.desc || '') + '</div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述</label>' + richEditorHtml('module_' + idx + '_data_desc', d.desc || '', true) + '</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">图片</label>' + mediaUploadHtml('module_' + idx + '_data_image', d.image || '', 'image', '图片 URL', d.image_alt || d.alt || '') + '</div>' +
         '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">主按閽枃瀛?</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryBtn" value="' + esc(d.primaryBtn || '') + '"></div>' +
@@ -2459,7 +2522,7 @@
         '</div>';
 
     /* ====== contact_form ====== */
-    } else if (type === 'contact_form') {
+    } else if (type === '__legacy_contact_form_editor') {
       specialEditor =
         '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title || '') + '"></div>' +
@@ -2611,19 +2674,19 @@
     /* ====== 构建 HTML (结构涓Jinja 模板对齐) ====== */
     var html =
       '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="' + headerBg + 'cursor:pointer">' +
-        '<span class="module-title-group ' + titleColor + '"><span class="module-order">#' + (idx + 1) + '</span><span class="module-title-stack">' +
+        '<span class="module-title-group ' + titleColor + '"><span class="module-drag-handle" title="拖动排序" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="1"/><circle cx="15" cy="7" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="17" r="1"/><circle cx="15" cy="17" r="1"/></svg></span><svg class="module-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><span class="module-order">' + (idx + 1) + '</span><span class="module-title-stack">' +
           '<span class="module-title-main">' + getBlockIconHTML(type) + ' ' + esc(displayName) + '</span>' +
           '<span class="module-title-meta">' + esc(variantLabel) + '</span>' +
         '</span></span>' +
         '<div class="d-flex gap-1 flex-shrink-0 flex-nowrap">' +
-          '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();window._moveModule(this, -1)">' + detailGalleryIcon('up') + '</button>' +
-          '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();window._moveModule(this, 1)">' + detailGalleryIcon('down') + '</button>' +
+          '<button type="button" class="module-action-btn module-visibility-action" data-visible="' + ((d._hidden === true || String(d._hidden).toLowerCase() === 'true') ? 'false' : 'true') + '" title="' + ((d._hidden === true || String(d._hidden).toLowerCase() === 'true') ? '显示模块' : '隐藏模块') + '" aria-label="' + ((d._hidden === true || String(d._hidden).toLowerCase() === 'true') ? '显示模块' : '隐藏模块') + '" onclick="event.stopPropagation();window.toggleModuleVisibility(this)">' + ((d._hidden === true || String(d._hidden).toLowerCase() === 'true') ? window.EYE_OFF_SVG : window.EYE_OPEN_SVG) + '</button>' +
           '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();window._reindexModules()">' + detailGalleryIcon('trash') + '</button>' +
         '</div>' +
       '</div>' +
       '<input type="hidden" name="module_' + idx + '_type" value="' + esc(type) + '">' +
       '<input type="hidden" name="module_' + idx + '_variant" value="' + esc(variantLabel) + '">' +
       '<input type="hidden" name="module_' + idx + '_order" value="' + (idx + 1) + '">' +
+      '<input type="hidden" class="module-root-hidden" name="module_' + idx + '_data__hidden" value="' + ((d._hidden === true || String(d._hidden).toLowerCase() === 'true') ? 'true' : 'false') + '">' +
       '<div class="module-config p-2 border-top" style="display:block">';
 
     if (isDetailTplComponent) {
@@ -2791,11 +2854,12 @@
           '<option value="load_more"' + (d.pagination_style !== 'page_numbers' ? ' selected' : '') + '>加载更多</option>' +
           '<option value="page_numbers"' + (d.pagination_style === 'page_numbers' ? ' selected' : '') + '>页码导航</option>' +
         '</select></div>' +
-      '<div class="mb-2">' +
-        '<label class="form-label small mb-1 text-muted">每页显示数量</label>' +
-        '<select class="form-select form-select-sm" name="module_' + idx + '_data_items_per_page">' +
-          ['3','4','6','8','10','12','18','24'].map(function(n) { return '<option value="' + n + '"' + ((d.items_per_page || '6') === n ? ' selected' : '') + '>' + n + ' 条/页</option>'; }).join('') +
-        '</select></div>' +
+      '<div class="row g-2 mb-2">' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">每页显示数量</label>' +
+          '<input type="number" min="1" step="1" inputmode="numeric" class="form-control form-control-sm" name="module_' + idx + '_data_items_per_page" value="' + esc(d.items_per_page || '6') + '"></div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">每行个数</label>' +
+          '<input type="number" min="1" step="1" inputmode="numeric" class="form-control form-control-sm" name="module_' + idx + '_data_style_cols" value="' + esc(d.style_cols || '3') + '"></div>' +
+      '</div>' +
       '<div class="mb-2">' +
         '<label class="form-label small mb-1 text-muted">分页对齐</label>' +
         '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align">' +

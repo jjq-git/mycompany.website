@@ -254,7 +254,7 @@
 {% include 'dashboard/_block_palette.html' %}
 
 {# ---- 数据集选取弹框（从已有数据集导入条目） ---- #}
-<div class="modal fade" id="datasetPickerModal" tabindex="-1" aria-labelledby="dsPickerTitle" aria-hidden="true" data-site="{{ site.id }}" data-lang="{{ current_lang }}" data-default-lang="{{ default_lang }}">
+<div class="modal fade" id="datasetPickerModal" tabindex="-1" aria-labelledby="dsPickerTitle" aria-hidden="true" data-site="{{ site.slug }}" data-lang="{{ current_lang }}" data-default-lang="{{ default_lang }}">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header py-2">
@@ -923,13 +923,14 @@
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="iconListDsJson">{{ icon_list | default([]) | tojson }}</script>
+<script type="application/json" id="iconRegistryDsJson">{{ icon_registry | default({}) | tojson }}</script>
 <script>
 window._dsEditItemJson = {{ edit_item | tojson }};
 </script>
 <script>
 (function() {
   var DATASET_KEY = '{{ dataset_key }}';
-  var SITE_ID = '{{ site.id }}';
+  var SITE_ID = '{{ site.slug }}';
   var restoringDatasetModules = true;
   var HAS_CUSTOM_MODULES = {{ 'true' if has_custom_modules else 'false' }};
   var DETAIL_REQUIREMENTS = {{ detail_requirements | default({}) | tojson }};
@@ -948,6 +949,10 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   window.blockLibrary = blockLibrary;
   var styleRegistry = JSON.parse((document.getElementById('styleRegistryDsJson') || {}).textContent || '{}');
   var iconList = JSON.parse((document.getElementById('iconListDsJson') || {}).textContent || '[]');
+  var iconRegistry = JSON.parse((document.getElementById('iconRegistryDsJson') || {}).textContent || '{}');
+  // The shared icon picker reads its SVG markup from the global/module context.
+  // Without this registry it can list icon names, but every preview stays empty.
+  window.iconRegistry = iconRegistry;
 
   function applyTemplateFieldVisibility() {
     var checked = datasetForm ? datasetForm.querySelector('input[name="template_id"]:checked') : null;
@@ -1582,6 +1587,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     datasetNames: [],
     editItem: window._dsEditItemJson,
     styleRegistry: styleRegistry,
+    iconRegistry: iconRegistry,
     isDatasetMode: true,
     containerId: 'selectedModulesDs'
   };
@@ -2000,7 +2006,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 <script>
 (function() {
   var DATASET_KEY = '{{ dataset_key }}';
-  var SITE_ID = '{{ site.id }}';
+  var SITE_ID = '{{ site.slug }}';
   var CURRENT_LANG = '{{ current_lang }}';
   function getQuery() {
     var params = new URLSearchParams(window.location.search);
@@ -2095,7 +2101,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 <script>
 (function() {
   var dsKey = '{{ dataset_key }}';
-  var siteId = '{{ site.id }}';
+  var siteId = '{{ site.slug }}';
   var langCode = '{{ current_lang }}';
 
   if (typeof window.addDataItem !== 'function') {
@@ -2394,10 +2400,10 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         bsModal.hide();
         modalEl2.addEventListener('hidden.bs.modal', function h(){
           modalEl2.removeEventListener('hidden.bs.modal', h);
-          switchPanelLang('/_dataset/{{ dataset_key }}{% if is_edit %}/{{ edit_item_id }}/edit{% endif %}?_fragment=1&site={{ site.id }}&lang=' + targetLang, targetLang);
+          switchPanelLang('/_dataset/{{ dataset_key }}{% if is_edit %}/{{ edit_item_id }}/edit{% endif %}?_fragment=1&site={{ site.slug }}&lang=' + targetLang, targetLang);
         });
       } else {
-        switchPanelLang('/_dataset/{{ dataset_key }}{% if is_edit %}/{{ edit_item_id }}/edit{% endif %}?_fragment=1&site={{ site.id }}&lang=' + targetLang, targetLang);
+        switchPanelLang('/_dataset/{{ dataset_key }}{% if is_edit %}/{{ edit_item_id }}/edit{% endif %}?_fragment=1&site={{ site.slug }}&lang=' + targetLang, targetLang);
       }
     })
     .catch(function(err){

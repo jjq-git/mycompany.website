@@ -11,6 +11,8 @@ type 取值:
     page  - 单页, target = 页面 key
 """
 
+import re
+
 DATASET_LABELS = {
     'products': '产品',
     'features': '功能',
@@ -27,6 +29,14 @@ DATASET_DETAIL_MAP = {
 }
 
 VALID_TYPES = {'home', 'list', 'page', 'link', 'group'}
+VALID_MENU_ICONS = {
+    'alert-circle', 'alert-triangle', 'arrow-down', 'arrow-left', 'arrow-right',
+    'arrow-up', 'audio', 'award', 'bar-chart', 'bluetooth', 'bookmark',
+    'briefcase', 'calendar', 'camera', 'clock', 'cpu', 'external-link',
+    'file-text', 'folder', 'globe', 'grid', 'heart', 'image', 'info',
+    'mail', 'map-pin', 'package', 'phone', 'search', 'settings', 'star',
+    'user', 'users',
+}
 
 # 菜单嵌套深度上限. 超出部分的 children 会被裁掉.
 # 防御恶意 settings.yaml 通过深嵌套触发 Python 递归栈溢出 / 渲染期 OOM.
@@ -189,6 +199,12 @@ def clean_for_storage(items):
                 continue
 
             item = {'label': label, 'type': item_type}
+            item_id = str(raw.get('id') or '').strip()
+            if re.fullmatch(r'[a-z0-9]{8,32}', item_id):
+                item['id'] = item_id
+            icon = str(raw.get('icon') or '').strip().lower()
+            if icon in VALID_MENU_ICONS:
+                item['icon'] = icon
             if raw.get('hidden') is True:
                 item['hidden'] = True
             if item_type in ('list', 'page', 'group'):

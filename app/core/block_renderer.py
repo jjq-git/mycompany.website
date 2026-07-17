@@ -677,6 +677,9 @@ def _sanitize_style_value(sdef, val):
     """
     control = sdef.get('control')
     val = val.strip()
+    # --cols 在数据网格中允许直接输入任意正整数；仍严格限制为纯数字，避免 CSS 注入。
+    if sdef.get('css_var') == '--cols':
+        return val if val.isdigit() and int(val) >= 1 else None
     if control in ('select', 'switch'):
         allowed = {o['value'] for o in sdef.get('options', [])}
         return val if val in allowed else None
@@ -709,10 +712,32 @@ def render(block_html, schema, data_dict, context=None):
     # 从 context 取对应数据作为基底，module.data 中的值可覆盖（开店者手动调）
     from_data = _resolve_from_source(schema, context)
     if from_data:
-        # from_data 作底，data_dict 的值优先
-        merged = dict(from_data)
-        merged.update(data_dict)
+        if schema.from_source == 'settings:contact':
+            # 联系方式以网站设置为唯一数据源。历史页面模块可能仍保存着电话、邮箱等旧值，
+            # 这些旧值不能覆盖网站设置；模块只负责标题、显隐和样式配置。
+            merged = dict(data_dict)
+            for contact_field in ('phone', 'mobile', 'email', 'address', 'business_hours', 'wechat'):
+                merged.pop(contact_field, None)
+            merged.update(from_data)
+        else:
+            # 其它数据源维持原有规则：来源数据作底，模块数据允许覆盖。
+            merged = dict(from_data)
+            merged.update(data_dict)
         data_dict = merged
+
+    if schema.from_source == 'settings:contact':
+        # 编辑器使用直观的 show_* 字段；声明式模板使用 _hidden_<group> 控制卡片。
+        # 仅在 show_* 已明确保存时转换，以兼容尚未保存这些字段的历史模块。
+        visibility_fields = {
+            'show_phone': 'phone_card',
+            'show_mobile': 'mobile_card',
+            'show_email': 'email_card',
+            'show_address': 'address_card',
+            'show_business_hours': 'hours_card',
+        }
+        for show_key, group_name in visibility_fields.items():
+            if show_key in data_dict:
+                data_dict[f'_hidden_{group_name}'] = not _is_truthy(data_dict.get(show_key))
 
     # 重新解析成可变节点树（不污染传入的 schema）
     b = bp._DomBuilder()

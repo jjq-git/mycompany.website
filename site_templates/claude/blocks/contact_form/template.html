@@ -1,140 +1,15 @@
-<!-- 联系表单模块 - 访客在线留言 + 可选嵌入地图（data-* 声明式） -->
-<!-- form_action 留空 → 使用平台内置留言 API；填了外部 URL → 走第三方服务 -->
-<section data-name="contact_form" data-type="group" data-hideable class="section" data-style="dir,bg-color">
+<!-- 历史联系模块兼容：留言功能已移除，仅保留地图展示。 -->
+<section data-name="contact_form" data-type="group" data-hideable class="section" data-style="bg-color">
   <div class="container">
     <div class="section-header">
       <h2 data-name="title" data-type="text" class="section-title"></h2>
       <p data-name="subtitle" data-type="text" class="section-description"></p>
     </div>
-    <!-- 表单 action URL 由 JS 读取并注入到 form.action -->
-    <span class="js-form-action" data-name="form_action" data-type="text" style="display:none"></span>
-    <!-- 平台内置留言 API 地址 + 站点 ID, 构建时由 block_renderer 注入 -->
-    <span class="js-platform-api" data-name="platform_api_url" data-type="text" style="display:none"></span>
-    <span class="js-site-id" data-name="site_id" data-type="text" style="display:none"></span>
     <div class="cf-layout">
-      <!-- 地图列（可独立隐藏） -->
-      <div data-name="map_panel" data-type="group" data-hideable class="cf-map-col">
-        <iframe data-name="map_src" data-type="embed" src="" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" class="cf-map-iframe"></iframe>
-      </div>
-      <!-- 表单列（可独立隐藏） -->
-      <div data-name="form_panel" data-type="group" data-hideable class="cf-form-col">
-        <form class="cf-form" method="POST">
-          <!-- 蜜罐反垃圾：人类看不到，bot 会填充 -->
-          <div style="position: absolute; left: -9999px;" aria-hidden="true">
-            <label for="cf-hp">Leave empty</label>
-            <input type="text" name="__hp" id="cf-hp" tabindex="-1" autocomplete="off">
-          </div>
-          <!-- 隐藏站点 ID，服务端校验用 -->
-          <input type="hidden" name="__site_id" value="" class="js-hidden-site-id">
-          <div data-name="name_field" data-type="group" data-hideable class="cf-field">
-            <label class="cf-label" data-i18n="contact.formName">Name</label>
-            <input type="text" name="name" class="cf-input" required placeholder="Name" data-i18n-placeholder="contact.formName">
-          </div>
-          <div data-name="email_field" data-type="group" data-hideable class="cf-field">
-            <label class="cf-label" data-i18n="contact.formEmail">Email</label>
-            <input type="email" name="email" class="cf-input" required placeholder="Email" data-i18n-placeholder="contact.formEmail">
-          </div>
-          <div data-name="phone_field" data-type="group" data-hideable class="cf-field">
-            <label class="cf-label" data-i18n="contact.formPhone">Phone</label>
-            <input type="tel" name="phone" class="cf-input" placeholder="Phone" data-i18n-placeholder="contact.formPhone">
-          </div>
-          <div data-name="company_field" data-type="group" data-hideable class="cf-field">
-            <label class="cf-label" data-i18n="contact.formCompany">Company</label>
-            <input type="text" name="company" class="cf-input" placeholder="Company" data-i18n-placeholder="contact.formCompany">
-          </div>
-          <div data-name="message_field" data-type="group" data-hideable class="cf-field">
-            <label class="cf-label" data-i18n="contact.formMessage">Message</label>
-            <textarea name="message" class="cf-input cf-textarea" rows="4" required placeholder="Message" data-i18n-placeholder="contact.formMessage"></textarea>
-          </div>
-          <div class="cf-actions">
-            <button type="submit" class="cf-btn" data-i18n="contact.formSend">Send Message</button>
-          </div>
-          <p class="cf-form-status" aria-live="polite" hidden></p>
-        </form>
-        <!-- 提交成功提示 -->
-        <div class="cf-success" hidden>
-          <p data-i18n="contact.formSuccess">感谢您的留言，我们会尽快回复！</p>
-        </div>
+      <div class="cf-map-col">
+        <iframe data-name="map_src" data-type="embed" src="" allowfullscreen="" loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade" class="cf-map-iframe"></iframe>
       </div>
     </div>
   </div>
-  <span class="js-form-missing-action" data-i18n="contact.formMissingAction" hidden>Please configure the form submission URL first.</span>
-  <script>
-    (function() {
-      var section = document.currentScript.parentElement;
-      /* 从隐藏 span 读取配置并注入 form.action */
-      var actionEl = section.querySelector('.js-form-action');
-      var platformApiEl = section.querySelector('.js-platform-api');
-      var siteIdEl = section.querySelector('.js-site-id');
-      var hiddenSiteId = section.querySelector('.js-hidden-site-id');
-      var form = section.querySelector('.cf-form');
-      var missingActionEl = section.querySelector('.js-form-missing-action');
-      var successEl = section.querySelector('.cf-success');
-
-      /* 注入隐藏 site_id */
-      if (hiddenSiteId && siteIdEl) {
-        var sid = (siteIdEl.textContent || '').trim();
-        if (sid && sid !== '0') hiddenSiteId.value = sid;
-      }
-
-      if (actionEl && form) {
-        var v = (actionEl.textContent || '').trim();
-        if (v) {
-          /* 店主填了外部地址 → 走第三方 */
-          form.action = v;
-        } else if (platformApiEl) {
-          /* 留空 → 使用平台内置留言 API */
-          var apiBase = (platformApiEl.textContent || '').trim();
-          var siteIdVal = (siteIdEl ? siteIdEl.textContent || '' : '').trim();
-          if (apiBase && siteIdVal) {
-            form.action = apiBase + '/api/contact/' + siteIdVal;
-          }
-        }
-      }
-
-      /* 仍然没有 action → 拦截提示 */
-      if (form && !form.getAttribute('action')) {
-        form.addEventListener('submit', function(e) {
-          e.preventDefault();
-          var status = form.querySelector('.cf-form-status');
-          if (!status) return;
-          status.textContent = (missingActionEl && missingActionEl.textContent.trim())
-            || 'Please configure the form submission URL first.';
-          status.hidden = false;
-        });
-      }
-
-      /* AJAX 提交：成功时隐藏表单、显示成功提示 */
-      if (form) {
-        form.addEventListener('submit', function(e) {
-          /* 已有 action 的才走 AJAX，否则走上面的拦截路径 */
-          if (!form.getAttribute('action')) return;
-          e.preventDefault();
-          var status = form.querySelector('.cf-form-status');
-          var data = new FormData(form);
-          fetch(form.action, {
-            method: 'POST',
-            body: data,
-            headers: { 'Accept': 'application/json' }
-          })
-          .then(function(r) { return r.json(); })
-          .then(function(result) {
-            if (result.ok || result.error === undefined) {
-              form.style.display = 'none';
-              if (successEl) successEl.hidden = false;
-            } else {
-              if (status) {
-                status.textContent = result.error || '提交失败，请稍后再试';
-                status.hidden = false;
-              }
-            }
-          })
-          .catch(function() {
-            /* 网络错误时回退到传统表单提交 */
-            form.submit();
-          });
-        });
-      }
-    })();
-  </script>
 </section>

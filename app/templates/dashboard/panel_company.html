@@ -131,14 +131,24 @@
         <input class="form-control form-control-sm" name="contact.phone" value="{{ contact.get('phone', '') }}">
       </div>
       <div class="col-6">
+        <label class="form-label small mb-1">手机</label>
+        <input class="form-control form-control-sm" name="contact.mobile" value="{{ contact.get('mobile', '') }}">
+      </div>
+    </div>
+    <div class="row g-2 mb-2">
+      <div class="col-6">
         <label class="form-label small mb-1">邮箱</label>
         <input class="form-control form-control-sm" name="contact.email" value="{{ contact.get('email', '') }}">
       </div>
-    </div>
-    <div class="row g-2 mb-0">
       <div class="col-6">
         <label class="form-label small mb-1">地址</label>
         <input class="form-control form-control-sm" name="contact.address" value="{{ contact.get('address', '') }}">
+      </div>
+    </div>
+    <div class="row g-2 mb-0">
+      <div class="col-12">
+        <label class="form-label small mb-1">营业时间</label>
+        <input class="form-control form-control-sm" name="contact.business_hours" value="{{ contact.get('business_hours', '') }}" placeholder="例如：周一至周五 09:00–18:00">
       </div>
     </div>
   </div>

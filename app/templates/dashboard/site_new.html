@@ -64,6 +64,7 @@
           <span class="input-group-text text-muted">.{{ platform_domain }}</span>
         </div>
         <div class="form-text">3-30 字符，小写字母/数字/连字符。发布后可通过此地址访问。</div>
+        <div class="small mt-1" id="siteSlugStatus" aria-live="polite"></div>
       </div>
     </div>
 
@@ -123,6 +124,31 @@
     renderLanguageOptions();
   });
   renderLanguageOptions();
+
+  var slugInput = form.querySelector('input[name="slug"]');
+  var slugCheckTimer = null;
+  function checkSlugAvailability() {
+    if (!slugInput) return;
+    var slug = slugInput.value.trim().toLowerCase();
+    slugInput.value = slug;
+    var status = document.getElementById('siteSlugStatus');
+    if (!slug) { slugInput.setCustomValidity(''); if (status) status.textContent = ''; return; }
+    fetch('{{ url_for("core.site_slug_available") }}?slug=' + encodeURIComponent(slug))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        slugInput.setCustomValidity(data.available ? '' : (data.message || '该 Slug 不可用'));
+        if (status) {
+          status.textContent = data.message || '';
+          status.className = 'small mt-1 ' + (data.available ? 'text-success' : 'text-danger');
+        }
+      });
+  }
+  slugInput?.addEventListener('input', function(){
+    slugInput.setCustomValidity('');
+    clearTimeout(slugCheckTimer);
+    slugCheckTimer = setTimeout(checkSlugAvailability, 350);
+  });
+  slugInput?.addEventListener('blur', checkSlugAvailability);
 
   form.addEventListener('submit', function(e){
     e.preventDefault();

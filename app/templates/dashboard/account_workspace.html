@@ -1,6 +1,6 @@
 {% macro action_icon(name) -%}
 <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-{% if name == 'save' %}<path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/>
+{% if name == 'save' %}<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/>
 {% elif name == 'add' %}<path d="M12 5v14M5 12h14"/>
 {% elif name == 'edit' %}<path d="M12 20h9"/><path d="m16.5 3.5 4 4L8 20H4v-4z"/>
 {% elif name == 'view' %}<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>

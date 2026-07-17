@@ -12,7 +12,7 @@
 {% endwith %}
 <form method="post" action="{{ url_for('core.social_edit', site=site.id) }}" style="max-width: 720px;">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  {% for platform in ('github','twitter','facebook','linkedin','youtube') %}
+  {% for platform in ('github','twitter','facebook','instagram','linkedin','youtube','tiktok','whatsapp','telegram','wechat','weibo','xiaohongshu','pinterest','discord') %}
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">{{ platform | title }}</label>
     <input class="form-control form-control-sm" name="{{ platform }}" value="{{ social.get(platform, '') }}" placeholder="https://...">

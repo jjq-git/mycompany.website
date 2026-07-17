@@ -163,20 +163,6 @@ def _normalize_language_flags(languages):
     return normalized
 
 
-def _get_platform_base_url():
-    """返回平台后端的基础 URL, 供静态站点 contact_form 表单提交.
-
-    开发环境始终回退 localhost, 避免把表单指到生产域名.
-    生产环境从 PLATFORM_DOMAIN 配置拼 https 地址.
-    """
-    if current_app.debug:
-        return 'http://localhost:5000'
-    domain = current_app.config.get('PLATFORM_DOMAIN', '')
-    if domain:
-        return f'https://{domain}'
-    return 'http://localhost:5000'
-
-
 def _load_block_for_render(tpl_root, template_name, block_type, variant):
     """加载 block 模板并判断走新/旧路径，带缓存。
 
@@ -1037,6 +1023,9 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
         variant = module.get('variant') or 'default'
         if not block_type:
             return Markup('')
+        # 留言功能下线后，仅兼容保留原联系页中的地图；其他模板的纯表单模块不再输出。
+        if block_type == 'contact_form' and template_name not in ('dengtec', 'claude'):
+            return Markup('')
         if block_type in DETAIL_COMPONENT_TYPES:
             return _render_detail_component(jinja_ctx, module)
 
@@ -1047,10 +1036,6 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
         # 新路径：开关开 + 是 data-* 声明式
         if enable_data_attr and schema is not None:
             data_dict = module.get('data') if isinstance(module.get('data'), dict) else {}
-            # contact_form 内置留言：注入平台 API 地址和站点 ID, 供模板 JS 使用
-            if block_type == 'contact_form':
-                data_dict['platform_api_url'] = jinja_ctx.get('platform_api_url', '')
-                data_dict['site_id'] = str(jinja_ctx.get('site_id', ''))
             dataset_name = data_dict.get('dataset', '')
             dataset_path = ((jinja_ctx.get('dataset_paths') or {}).get(dataset_name) or '')
             base_prefix = (jinja_ctx.get('base_url', '') or '').rstrip('/')
@@ -2359,7 +2344,6 @@ def render_site_page(site_id, filepath='index.html', base_url='', lang_code=None
         'features': render_data.get('features', []),
         'all_datasets': render_data,
         'site_id': site_id,
-        'platform_api_url': _get_platform_base_url(),
     }
 
     tasks = menu_lib.collect_render_tasks(full_menu, tpl_html_dir, render_data, render_pages)
@@ -2532,9 +2516,7 @@ def build_site(site_id, base_url='', report=None, output_root=None):
                 'posts': lang_data.get('posts', []),
                 'features': lang_data.get('features', []),
                 'all_datasets': lang_data,
-                # contact_form 内置留言所需：平台 API 地址 + 站点 ID
                 'site_id': site_id,
-                'platform_api_url': _get_platform_base_url(),
             }
 
             _all_failures.extend(
@@ -2561,9 +2543,7 @@ def build_site(site_id, base_url='', report=None, output_root=None):
             'posts': data.get('posts', []),
             'features': data.get('features', []),
             'all_datasets': data,
-            # contact_form 内置留言所需：平台 API 地址 + 站点 ID
             'site_id': site_id,
-            'platform_api_url': _get_platform_base_url(),
         }
         _all_failures.extend(
             _render_for_language(env, tpl_html_dir, output_root, '', common, pages, data, meta, seo_records)
@@ -2721,7 +2701,6 @@ def build_template_preview(template_name, base_url=''):
                 'features': lang_data.get('features', []),
                 'all_datasets': lang_data,
                 'site_id': 0,  # 预览无真实站点, 留 0
-                'platform_api_url': _get_platform_base_url(),
             }
             _render_for_language(env, tpl_html_dir, output_root, lang_code, common, lang_pages, lang_data, meta, seo_records)
     else:
@@ -2737,7 +2716,6 @@ def build_template_preview(template_name, base_url=''):
             'posts': data.get('posts', []),
             'features': data.get('features', []),
             'site_id': 0,  # 预览无真实站点
-            'platform_api_url': _get_platform_base_url(),
         }
         _render_for_language(env, tpl_html_dir, output_root, '', common, pages, data, meta, seo_records)
 

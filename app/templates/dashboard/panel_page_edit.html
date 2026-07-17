@@ -14,10 +14,13 @@
 {% endif %}
 
 {% if is_modules_format %}
-{# ---- 添加模块按钮 ---- #}
-<div class="mb-3">
-  <button class="btn btn-outline-primary btn-sm w-100 panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal">
-    + 添加模块
+<div class="panel-top-actions">
+  <span class="panel-live-status" id="moduleLiveStatus" data-state="saved">已保存</span>
+  <button class="panel-top-action-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal" title="添加模块" aria-label="添加模块">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+  <button type="submit" class="panel-top-action-btn panel-top-save-btn" form="modulesForm" title="保存模块配置" aria-label="保存模块配置">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
   </button>
 </div>
 
@@ -26,7 +29,7 @@
 
 {# ---- 已选模块列表 ---- #}
 <div>
-  <div class="small text-muted mb-2">已选模块（拖拽标题或使用箭头排序，点击标题展开配置）</div>
+  <div class="small text-muted mb-2">已选模块（拖拽标题排序，点击标题展开配置）</div>
   <form method="post" action="{{ url_for('core.page_panel', page_key=page_key, site=site.id, _fragment='1', lang=current_lang) }}" id="modulesForm" data-page-key="{{ page_key }}" enctype="multipart/form-data" onsubmit="submitModuleFormAjax(this, event)">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="_draft_page_key" value="{{ page_key }}">
@@ -43,16 +46,19 @@
       {% for module in page.modules %}
       {% set i = loop.index0 %}
       {% set mod_title = display_names.get(module.type, module.type | replace('_', ' ') | title) %}
+      {% set mdata = module.data if module.data is mapping else {} %}
+      {% set module_hidden = mdata.get('_hidden') == true or mdata.get('_hidden') == 'true' %}
       <div class="card mb-2 module-item" data-index="{{ i }}" data-module-index="{{ i }}">
         <div class="d-flex align-items-center justify-content-between p-2 module-header"
              onclick="toggleModuleAccordion(this.closest('.module-item'))">
           <span class="module-title-group">
-          <span class="module-order">#{{ i + 1 }}</span>
+          <span class="module-drag-handle" title="拖动排序" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="1"/><circle cx="15" cy="7" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="17" r="1"/><circle cx="15" cy="17" r="1"/></svg></span>
+          <svg class="module-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+          <span class="module-order">{{ i + 1 }}</span>
           <span class="module-title-stack">
             <span class="module-title-main">
-              <svg class="module-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
               {{ block_icon(module.type) }} {{ mod_title }}
             </span>
             <span class="module-title-meta">
@@ -61,8 +67,9 @@
           </span>
           </span>
           <div class="d-flex gap-1">
-            <button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)"><svg viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
-	            <button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg></button>
+	            <button type="button" class="module-action-btn module-visibility-action" data-visible="{{ 'false' if module_hidden else 'true' }}" title="{{ '显示模块' if module_hidden else '隐藏模块' }}" aria-label="{{ '显示模块' if module_hidden else '隐藏模块' }}" onclick="event.stopPropagation();window.toggleModuleVisibility(this)">
+                {% if module_hidden %}<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72 1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>{% else %}<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{% endif %}
+              </button>
 	            <button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch({{ i }})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>
 	            <button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest('.module-item').remove();reindexModules()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -75,9 +82,9 @@
         <input type="hidden" name="module_{{ i }}_type" value="{{ module.type }}">
         <input type="hidden" name="module_{{ i }}_variant" value="{{ module.variant | default('default') }}">
         <input type="hidden" name="module_{{ i }}_order" value="{{ module.order | default(i + 1) }}">
+        <input type="hidden" class="module-root-hidden" name="module_{{ i }}_data__hidden" value="{{ 'true' if module_hidden else 'false' }}">
 
         <div class="module-config p-2 border-top" style="display:none">
-{% set mdata = module.data if module.data is mapping else {} %}
           {% set resp = module.get('responsive', {}) if module.get('responsive', {}) is mapping else {} %}
           {% set mdata_tablet = resp.get('tablet', {}) %}
           {% set mdata_mobile = resp.get('mobile', {}) %}
@@ -181,14 +188,10 @@
       {% endfor %}
     </div>
 
-    <div class="panel-save-bar">
-      <div class="panel-live-status" id="moduleLiveStatus" data-state="saved">已保存</div>
-      <button type="submit" class="btn btn-primary btn-sm w-100 rounded-0">保存模块配置</button>
-    </div>
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=114"></script>
+<script src="/static/js/admin_modules.js?v=122"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -209,7 +212,7 @@ window._moduleCtx = {
   datasetNames: datasetNames,
   styleRegistry: styleRegistry,
   iconRegistry: iconRegistry,
-  siteId: '{{ site.id }}',
+  siteId: '{{ site.slug }}',
   currentLang: '{{ current_lang }}',
   isDatasetMode: false,
   containerId: 'selectedModules'
@@ -365,7 +368,6 @@ var FIELD_LABEL_MAP = {
   'company_field': '公司',
   'message_field': '留言',
   'map_src': '地图链接',
-  'platform_api_url': '平台接口地址',
   'site_id': '站点 ID',
   'phone_card': '电话',
   'mobile_card': '手机',
@@ -789,12 +791,7 @@ function generateSchemaForm(prefix, schema, mdata, vTFn) {
   });
   flushPendingHalf();
   // data-hideable → 整块显隐开关（复用 addModule 里的 vT）。显示存 'false'，隐藏存 'true'
-  if (schema.hideable && typeof vTFn === 'function') {
-    var hiddenVal = mdata._hidden === true || mdata._hidden === 'true' ? 'true' : 'false';
-    // vT 的 dv 是"是否可见"：可见=true → _hidden 应反过来。这里用独立开关语义：直接控制 _hidden
-    html += '<div class="mt-2 pt-2 border-top">' +
-      _schemaHideToggle(prefix + '_hidden', '整块显示', hiddenVal) + '</div>';
-  }
+  // 整块显隐已移到模块标题栏，避免在配置区重复显示。
   return html;
 }
 
@@ -1072,7 +1069,7 @@ function getBlockIconHTML(type) {
     'data_grid': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>',
     'stat_counter': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>',
     'contact_info': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h4"/><circle cx="8.5" cy="8.5" r="0.5" fill="currentColor"/><circle cx="8.5" cy="12.5" r="0.5" fill="currentColor"/></svg>',
-    'contact_form': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h4"/><path d="M17 17l2 2"/><path d="M19 15a4 4 0 1 0-8 0"/></svg>',
+    'contact_form': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l5-3 8 3 5-3v15l-5 3-8-3-5 3z"/><path d="M8 3v15M16 6v15"/><path d="M12 10a2 2 0 1 1 4 0c0 2-2 4-2 4s-2-2-2-4z"/></svg>',
     'process_steps': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><path d="M8 12h1"/><path d="M15 12h1"/></svg>',
     'logo_cloud': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>',
     'item_detail': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><path d="M13 15h4"/><path d="M13 19h6"/></svg>',
@@ -1674,8 +1671,47 @@ function _getMergedSchema(meta) {
   };
 }
 
+function contactInfoVisibilityToggle(name, label, value) {
+  var visible = value === true || String(value == null ? 'true' : value).toLowerCase() === 'true';
+  var eyeOpen = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var eyeClosed = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72 1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+  return '<div class="visibility-item">' +
+    '<button type="button" class="eye-toggle-btn" data-target="' + _schemaEsc(name) + '" data-visible="' + (visible ? 'true' : 'false') + '" onclick="toggleVisibilityEye(this)" title="' + (visible ? '点击隐藏' : '点击显示') + '">' + (visible ? eyeOpen : eyeClosed) + '</button>' +
+    '<span class="vis-label">' + _schemaEsc(label) + '</span>' +
+    '<input type="hidden" name="' + _schemaEsc(name) + '" value="' + (visible ? 'true' : 'false') + '">' +
+    '</div>';
+}
+
+function contactInfoEditorHtml(prefix, values, toggleRenderer) {
+  values = values || {};
+  toggleRenderer = toggleRenderer || contactInfoVisibilityToggle;
+  function toggle(key, label, fallback) {
+    var value = values[key];
+    if (value == null || value === '') value = fallback;
+    return toggleRenderer(prefix + key, label, String(value));
+  }
+  return '<div class="alert alert-info py-2 px-3 mb-3" style="font-size:14px;line-height:1.5">' +
+      '<div class="fw-semibold mb-1">此模块数据来自网站设置</div>' +
+      '<div>数据源：<code>settings:contact</code>，电话、手机、邮箱、地址和营业时间请在「网站设置」中修改。</div>' +
+    '</div>' +
+    '<div class="row g-2">' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="' + _schemaEsc(prefix + 'title') + '" value="' + _schemaEsc(values.title || '') + '"></div>' +
+      '<div class="col-6"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="' + _schemaEsc(prefix + 'subtitle') + '" value="' + _schemaEsc(values.subtitle || '') + '"></div>' +
+    '</div>' +
+    '<hr class="my-2">' +
+    '<div class="small fw-semibold mb-2 text-muted">显示项目</div>' +
+    '<div class="d-flex flex-wrap gap-2">' +
+      toggle('show_phone', '电话', 'true') +
+      toggle('show_mobile', '手机', 'true') +
+      toggle('show_email', '邮箱', 'true') +
+      toggle('show_address', '地址', 'true') +
+      toggle('show_business_hours', '营业时间', 'false') +
+    '</div>';
+}
+
 function addModule(type, variant, dataPreset) {
   dataPreset = dataPreset || {};
+  var moduleHidden = dataPreset._hidden === true || String(dataPreset._hidden).toLowerCase() === 'true';
   var meta = findBlockMeta(type);
   var fields = meta.fields || [];
   var displayName = meta.display_name || type.replace(/_/g, ' ');
@@ -1730,6 +1766,12 @@ function addModule(type, variant, dataPreset) {
       styleEditor = tcEditors.styleEditor;
     } else if (type === 'data_grid' && typeof window._dataGridEditors === 'function') {
       specialEditor = window._dataGridEditors(idx, dataPreset).specialEditor;
+      var dataGridStyleSchema = Object.assign({}, mergedSchema);
+      dataGridStyleSchema.style_tokens = (dataGridStyleSchema.style_tokens || []).filter(function(token) { return token !== 'cols'; });
+      dataGridStyleSchema.element_style_tokens = (dataGridStyleSchema.element_style_tokens || []).filter(function(token) { return token !== 'cols'; });
+      styleEditor = generateSchemaStyleForm('module_' + idx + '_data_', dataGridStyleSchema, dataPreset);
+    } else if (type === 'contact_info') {
+      specialEditor = contactInfoEditorHtml('module_' + idx + '_data_', dataPreset, vT);
       styleEditor = generateSchemaStyleForm('module_' + idx + '_data_', mergedSchema, dataPreset);
     } else {
       specialEditor = generateSchemaForm('module_' + idx + '_data_', mergedSchema, {}, vT);
@@ -2277,7 +2319,7 @@ function addModule(type, variant, dataPreset) {
       '</select>' +
     '</div>' +
     '</div>';
-  } else if (type === 'contact_form') {
+  } else if (type === '__legacy_contact_form_editor') {
     specialEditor =
     '<div class="row g-2">' +
       '<div class="col-6"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
@@ -2516,13 +2558,12 @@ function addModule(type, variant, dataPreset) {
   div.dataset.moduleIndex = idx;
   div.innerHTML =
     '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="cursor:pointer">' +
-      '<span class="module-title-group"><span class="module-order">#' + (idx + 1) + '</span><span class="module-title-stack">' +
+      '<span class="module-title-group"><span class="module-drag-handle" title="拖动排序" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="1"/><circle cx="15" cy="7" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="17" r="1"/><circle cx="15" cy="17" r="1"/></svg></span><svg class="module-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><span class="module-order">' + (idx + 1) + '</span><span class="module-title-stack">' +
         '<span class="module-title-main">' + getBlockIconHTML(type) + ' ' + escapeHtml(displayName) + '</span>' +
         '<span class="module-title-meta">' + escapeHtml(variant || 'default') + '</span>' +
       '</span></span>' +
       '<div class="d-flex gap-1">' +
-	        '<button type="button" class="module-action-btn" title="上移" onclick="event.stopPropagation();moveModule(this, -1)"><svg viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>' +
-	        '<button type="button" class="module-action-btn" title="下移" onclick="event.stopPropagation();moveModule(this, 1)"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg></button>' +
+	        '<button type="button" class="module-action-btn module-visibility-action" data-visible="' + (moduleHidden ? 'false' : 'true') + '" title="' + (moduleHidden ? '显示模块' : '隐藏模块') + '" aria-label="' + (moduleHidden ? '显示模块' : '隐藏模块') + '" onclick="event.stopPropagation();window.toggleModuleVisibility(this)">' + (moduleHidden ? window.EYE_OFF_SVG : window.EYE_OPEN_SVG) + '</button>' +
 	        '<button type="button" class="module-action-btn module-action-switch" title="换变体" onclick="event.stopPropagation();openVariantSwitch(' + idx + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>' +
 	        '<button type="button" class="module-action-btn module-action-del" title="删除" onclick="event.stopPropagation();this.closest(\'.module-item\').remove();reindexModules()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
 	      '</div>' +
@@ -2530,6 +2571,7 @@ function addModule(type, variant, dataPreset) {
     '<input type="hidden" name="module_' + idx + '_type" value="' + type + '">' +
     '<input type="hidden" name="module_' + idx + '_variant" value="' + (variant || 'default') + '">' +
     '<input type="hidden" name="module_' + idx + '_order" value="' + (idx + 1) + '">' +
+    '<input type="hidden" class="module-root-hidden" name="module_' + idx + '_data__hidden" value="' + (moduleHidden ? 'true' : 'false') + '">' +
     '<div class="module-config p-2 border-top" style="display:block">' +
       '<div class="device-config device-desktop">' +
         '<div class="d-flex mb-2">' +
@@ -2652,7 +2694,7 @@ function reindexModules() {
     item.dataset.index = i;
     item.dataset.moduleIndex = i;
     var order = item.querySelector('.module-order');
-    if (order) order.textContent = '#' + (i + 1);
+    if (order) order.textContent = String(i + 1);
   });
   scheduleModuleDraftPreview();
 }
@@ -2979,13 +3021,18 @@ function submitModuleFormAjax(form, event) {
   var formData = new FormData(form);
   // 按钮可能已被移到 footer，从全局查找
   var btn = form.querySelector('button[type="submit"]') || document.querySelector('button[form="' + form.id + '"][type="submit"]');
-  if (btn) { btn.disabled = true; btn.textContent = '保存中...'; }
+  if (btn) {
+    btn.disabled = true;
+    btn.title = '保存中...';
+    btn.setAttribute('aria-label', '保存中...');
+  }
   fetch(form.action, {method:'POST', body: formData})
     .then(function(r) { return r.text().then(function(html) { return {ok: r.ok, html: html}; }); })
     .then(function(result) {
       var panel = document.getElementById('rightPanelBody');
       var footer = document.getElementById('rightPanelFooter');
       panel.innerHTML = result.html;
+      if (typeof preparePanelHeaderActions === 'function') preparePanelHeaderActions(panel);
       return runPanelScripts(panel).then(function() {
         // 移动保存按钮到 footer
         var saveBar = panel.querySelector('.panel-save-bar');
@@ -3017,7 +3064,11 @@ function submitModuleFormAjax(form, event) {
     })
     .catch(function(err) {
       console.error('Save failed:', err);
-      if (btn) { btn.disabled = false; btn.textContent = '保存模块配置'; }
+      if (btn) {
+        btn.disabled = false;
+        btn.title = '保存模块配置';
+        btn.setAttribute('aria-label', '保存模块配置');
+      }
       form.dataset.saving = '';
       setModuleLiveStatus('error', '保存失败，请重试');
     });
@@ -3037,7 +3088,7 @@ function setModuleLiveStatus(state, text) {
 
 function currentLivePreviewUrlForForm(form) {
   var frame = document.getElementById('previewFrame');
-  var siteId = (typeof currentSiteParam === 'function' && currentSiteParam()) || '{{ site.id }}';
+  var siteId = (typeof currentSiteParam === 'function' && currentSiteParam()) || '{{ site.slug }}';
   var lang = (typeof currentPreviewLanguage === 'function' && currentPreviewLanguage()) || '{{ current_lang }}';
   var pageKey = (form && form.dataset.pageKey) || '{{ page_key }}';
   var current = frame ? (frame.dataset.previewUrl || frame.src || '') : '';
@@ -3262,6 +3313,10 @@ function initSchemaMounts() {
     var dataEl = document.querySelector('.schema-mount-data[data-module-index="' + idx + '"][data-device="' + device + '"]');
     if (dataEl) { try { mdata = JSON.parse(dataEl.textContent || '{}') || {}; } catch (e) { mdata = {}; } }
     var prefix = device === 'desktop' ? 'module_' + idx + '_data_' : 'module_' + idx + '_resp_' + device + '_data_';
+    // Schema 挂载是现有模块的实际渲染路径；把模块类型传给共享富文本生成器，
+    // 让标题模块/图文模块的描述字段使用精简工具栏。
+    var previousSchemaModuleType = window._moduleCtx && window._moduleCtx.currentModuleType;
+    if (window._moduleCtx) window._moduleCtx.currentModuleType = typeEl.value;
     if (typeEl.value === 'featured_picks' && typeof window._featuredPicksEditors === 'function') {
       var fpEditors = window._featuredPicksEditors(prefix, mdata);
       mount.innerHTML = fpEditors.content;
@@ -3275,16 +3330,26 @@ function initSchemaMounts() {
     } else if (typeEl.value === 'data_grid' && typeof window._dataGridEditors === 'function') {
       mount.innerHTML = window._dataGridEditors(idx, mdata).specialEditor;
       var dgInitStyleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
-      if (dgInitStyleMount) dgInitStyleMount.innerHTML = generateSchemaStyleForm(prefix, schema, mdata);
+      if (dgInitStyleMount) {
+        var dgStyleSchema = Object.assign({}, schema);
+        dgStyleSchema.style_tokens = (dgStyleSchema.style_tokens || []).filter(function(token) { return token !== 'cols'; });
+        dgStyleSchema.element_style_tokens = (dgStyleSchema.element_style_tokens || []).filter(function(token) { return token !== 'cols'; });
+        dgInitStyleMount.innerHTML = generateSchemaStyleForm(prefix, dgStyleSchema, mdata);
+      }
     } else if (typeEl.value === 'data_list_showcase' && typeof window._dataListShowcaseEditors === 'function') {
       mount.innerHTML = window._dataListShowcaseEditors(idx, mdata).specialEditor;
       var dlsInitStyleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
       if (dlsInitStyleMount) dlsInitStyleMount.innerHTML = generateSchemaStyleForm(prefix, schema, mdata);
+    } else if (typeEl.value === 'contact_info') {
+      mount.innerHTML = contactInfoEditorHtml(prefix, mdata);
+      var ciInitStyleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
+      if (ciInitStyleMount) ciInitStyleMount.innerHTML = generateSchemaStyleForm(prefix, schema, mdata);
     } else {
       mount.innerHTML = generateSchemaForm(prefix, schema, mdata, function() { return ''; });
       var styleMount = document.querySelector('.schema-mount[data-mount="style"][data-module-index="' + idx + '"][data-device="' + device + '"]');
       if (styleMount) styleMount.innerHTML = generateSchemaStyleForm(prefix, schema, mdata);
     }
+    if (window._moduleCtx) window._moduleCtx.currentModuleType = previousSchemaModuleType || '';
     mount.dataset.mounted = '1';
     if (typeof enhanceCompactSelects === 'function') enhanceCompactSelects(mount.closest('.module-item') || mount);
     updateConditionalFields(mount.closest('.module-item') || mount);
@@ -3755,7 +3820,7 @@ function _fpSetItemField(itemEl, fieldName, value) {
 </style>
 
 {# ── 数据集选取器模态框（featured_picks 用）── #}
-<div class="modal fade" id="datasetPickerModal" tabindex="-1" aria-labelledby="dsPickerTitle" aria-hidden="true" data-site="{{ site.id }}" data-lang="{{ current_lang }}" data-default-lang="{{ default_lang }}">
+<div class="modal fade" id="datasetPickerModal" tabindex="-1" aria-labelledby="dsPickerTitle" aria-hidden="true" data-site="{{ site.slug }}" data-lang="{{ current_lang }}" data-default-lang="{{ default_lang }}">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header py-2">

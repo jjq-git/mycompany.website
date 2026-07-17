@@ -184,14 +184,17 @@ def demote_admin_cmd(identifier):
 
 @click.command('build-site')
 @click.argument('site_id', type=int)
-@click.option('--preview', is_flag=True, help='使用 /preview/<id> 作为 base_url，方便开发时通过 Flask dev server 预览')
+@click.option('--preview', is_flag=True, help='使用 /preview/<slug> 作为 base_url，方便开发时通过 Flask dev server 预览')
 @with_appcontext
 def build_site_cmd(site_id, preview):
-    """生成静态站点到 output/<site_id>/. 加 --preview 后可通过 /preview/<id>/ 在浏览器预览."""
-    base_url = f'/preview/{site_id}' if preview else ''
+    """生成静态站点到 output/<site_id>/. 加 --preview 后可通过 /preview/<slug>/ 在浏览器预览."""
+    site = db.session.get(Site, site_id)
+    if not site:
+        raise click.ClickException(f'站点不存在: {site_id}')
+    base_url = f'/preview/{site.slug}' if preview else ''
     out = build_site(site_id, base_url=base_url)
     if preview:
         click.echo(f'已生成: {out}')
-        click.echo(f'预览: http://localhost:5000/preview/{site_id}/')
+        click.echo(f'预览: http://localhost:5000/preview/{site.slug}/')
     else:
         click.echo(f'已生成: {out}')

@@ -2306,7 +2306,7 @@ h6 { font-size: var(--font-size-md); }
 }
 
 .footer-social-brand .footer-social {
-  /* justify-content: flex-end; */
+  /* grid 布局下 justify-content 无效，已移除 */
 }
 
 .footer-col {
@@ -2363,9 +2363,9 @@ h6 { font-size: var(--font-size-md); }
 }
 
 .footer-social {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, 36px);
   gap: var(--spacing-sm);
-  flex-wrap: wrap;
 }
 
 .social-link {
@@ -2508,7 +2508,7 @@ h6 { font-size: var(--font-size-md); }
   }
 
   .footer-social-brand .footer-social {
-    justify-content: flex-start;
+    /* grid 布局下 justify-content 无效，靠 grid-template-columns 控制每行 5 个 */
   }
 }
 
@@ -5418,6 +5418,46 @@ h6 { font-size: var(--font-size-md); }
   width: 100%;
   margin: 0 0 var(--spacing-xl, 1.5rem);
   justify-content: flex-start;  /* 搜索框和计数文字紧凑排列，不撑满整行 */
+}
+
+.dg-sort-controls {
+  display: inline-flex;
+  gap: 0;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.dg-sort-btn {
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary, #64748b);
+  cursor: pointer;
+}
+
+.dg-sort-icon {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+}
+
+.dg-sort-btn[data-sort-direction="asc"] .dg-sort-icon {
+  transform: translateY(2px) rotate(225deg);
+}
+
+.dg-sort-btn[data-sort-direction="desc"] .dg-sort-icon {
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.dg-sort-btn:hover,
+.dg-sort-btn.active {
+  color: var(--color-primary, #0d9488);
 }
 
 .dg-filter-group {

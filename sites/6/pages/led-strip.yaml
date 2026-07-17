@@ -8,6 +8,7 @@ detail_templates:
     order: 1
     variant: gallery_left
     data:
+      _hidden: 'false'
       source: cover_and_gallery
       layout: gallery_left
       max_images: 6
@@ -19,6 +20,7 @@ detail_templates:
     order: 2
     variant: blocks
     data:
+      _hidden: 'false'
       title: ''
       empty_behavior: hide_module
       section_bg: ''
@@ -27,6 +29,7 @@ detail_templates:
     order: 3
     variant: list
     data:
+      _hidden: 'false'
       title: 固定的参数
       source_field: specs
       max_rows: 10
@@ -38,6 +41,7 @@ detail_templates:
     order: 4
     variant: list
     data:
+      _hidden: 'false'
       title: 可定制的参数
       source_field: specs
       max_rows: 10
@@ -49,6 +53,7 @@ detail_templates:
     order: 5
     variant: list
     data:
+      _hidden: 'false'
       title: 资料下载
       empty_behavior: hide_module
       link_color: ''
@@ -57,6 +62,7 @@ detail_templates:
     order: 6
     variant: grid
     data:
+      _hidden: 'false'
       title: 相关推荐
       match_by: category
       max_items: 8
@@ -65,6 +71,16 @@ detail_templates:
       scroll_interval: 4
       click_scroll: 'true'
       show_dots: 'true'
+      section_bg: ''
+  - type: detail_features
+    order: 7
+    variant: cards
+    data:
+      _hidden: 'false'
+      title: ''
+      columns: 3
+      empty_behavior: hide_module
+      card_bg: ''
       section_bg: ''
   required_fields:
   - title

@@ -39,13 +39,12 @@
     }
     .settings-workspace-panel form { max-width: none; }
     .settings-workspace-panel .panel-save-bar {
-      position: sticky;
-      bottom: 0;
-      margin: 16px -18px -18px;
-      padding: 12px 18px;
-      border-top: 1px solid #e2e8f0;
-      background: rgba(255,255,255,.94);
-      backdrop-filter: blur(8px);
+      position: static;
+      margin: 16px 0 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      backdrop-filter: none;
     }
     .btn-outline-primary {
       --bs-btn-color: var(--admin-primary);
@@ -68,6 +67,14 @@
   </style>
 </head>
 <body>
+  <script>
+    try {
+      if (window.parent && window.parent !== window) {
+        var parentMenuSprite = window.parent.document.getElementById('menuIconSprite');
+        if (parentMenuSprite) document.body.appendChild(parentMenuSprite.cloneNode(true));
+      }
+    } catch (e) {}
+  </script>
   <main class="settings-workspace settings-workspace--{{ active|default('settings') }}">
     <div class="settings-workspace-inner">
       <section class="settings-workspace-panel">
@@ -98,6 +105,9 @@
       try {
         if (typeof window.parent.markPreviewDirty === 'function') {
           window.parent.markPreviewDirty();
+        }
+        if (typeof window.parent.refreshLeftNavigation === 'function') {
+          window.parent.refreshLeftNavigation();
         }
       } catch (e) {}
     }

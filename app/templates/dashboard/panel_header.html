@@ -58,6 +58,20 @@
   opacity: 0;
   pointer-events: none;
 }
+.header-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.header-settings-grid .panel-section {
+  min-width: 0;
+  height: 100%;
+  background: #fff;
+}
+.header-settings-grid .variant-card-grid {
+  grid-template-columns: 1fr;
+}
 </style>
 <form method="post" action="{{ header_form_action }}" id="headerForm">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -65,6 +79,7 @@
   <input type="hidden" name="_header_footer_tab" value="header">
   {# Header 变体选择 - 卡片式 #}
   {% set selected_variant = current_header.get('variant', header_variants[0].key) %}
+  <div class="header-settings-grid">
   <div class="panel-section">
     <div class="panel-section-title">头部布局</div>
     <div class="variant-card-grid">
@@ -126,6 +141,7 @@
         {% endfor %}
       </div>
     </div>
+  </div>
   </div>
 
   <div class="panel-save-bar">

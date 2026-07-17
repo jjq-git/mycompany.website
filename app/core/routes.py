@@ -43,12 +43,11 @@ from .builder import build_site, build_template_preview, render_site_page
 from .db import db
 from . import media_service
 from .template_loader import scan_templates
-from flask_cors import cross_origin
 # CSRF 豁免：静态站点公开 API 无法提供 CSRF token, 需要豁免
 # csrf 是 app/__init__.py 模块级变量, 在 create_app() 调用时已初始化
 from app import csrf
 from .models import (AccountEntitlement, AccountIdentity, AiCreditAccount, AiCreditTransaction,
-                     AuditLog, BillingOrder, BillingPlan, ContactMessage,
+                     AuditLog, BillingOrder, BillingPlan,
                      ExternalIdentity, LoginToken, Organization,
                      OrganizationInvitation, OrganizationMember, OrganizationSite, PasswordCredential,
                      Site, Subscription, Template, TotpCredential, User,
@@ -809,8 +808,6 @@ AUTH_EXEMPT_ENDPOINTS = {
     'core.site_asset',
     'core.media_package_index',
     'core.media_package_asset',
-    # api_contact_submit 是公开留言接收端点, 静态站点访客无需登录
-    'core.api_contact_submit',
 }
 
 
@@ -1474,6 +1471,20 @@ def _require_site_access(site):
     return user
 
 
+def _site_from_ref(site_ref, include_deleted=False):
+    """Resolve a public site slug, with numeric database IDs kept as legacy input."""
+    raw = str(site_ref or '').strip().lower()
+    if not raw:
+        return None
+    query = Site.query
+    if not include_deleted:
+        query = query.filter(Site.soft_deleted_at.is_(None))
+    site = query.filter_by(slug=raw).first()
+    if site is None and raw.isdigit():
+        site = query.filter_by(id=int(raw)).first()
+    return site
+
+
 @bp.before_request
 def require_login():
     """保护后台页面：除登录和静态预览外都需要登录.
@@ -1489,8 +1500,18 @@ def require_login():
     PREVIEW_ENDPOINTS = {'core.preview', 'core.preview_site', 'core.preview_or_build'}
     if request.endpoint in PREVIEW_ENDPOINTS and not current_app.config.get('PREVIEW_REQUIRE_LOGIN'):
         return None
-    if not _current_user():
+    user = _current_user()
+    if not user:
         return redirect(url_for('core.login', next=request.full_path if request.query_string else request.path))
+    # Legacy admin links used ?site=<numeric id>. Canonicalize them to the public slug.
+    raw_site = request.args.get('site', '').strip()
+    if request.method == 'GET' and raw_site.isdigit():
+        legacy_site = Site.query.filter_by(id=int(raw_site)).filter(Site.soft_deleted_at.is_(None)).first()
+        if legacy_site and _user_can_access_site(user, legacy_site):
+            from urllib.parse import urlencode
+            args = request.args.to_dict(flat=False)
+            args['site'] = [legacy_site.slug]
+            return redirect(f'{request.path}?{urlencode(args, doseq=True)}', code=302)
     return None
 
 
@@ -1498,8 +1519,8 @@ def require_login():
 def inject_context():
     """给所有模板注入站点上下文."""
     user = _current_user()
-    site_id = request.args.get('site', type=int)
-    if not site_id:
+    site_ref = request.args.get('site', '').strip()
+    if not site_ref:
         if user and user.role == 'admin':
             site = Site.query.filter(Site.soft_deleted_at.is_(None)).order_by(Site.id.desc()).first()
         elif user:
@@ -1508,9 +1529,10 @@ def inject_context():
             site = None
         site_id = site.id if site else None
     else:
-        site = Site.query.filter_by(id=site_id).filter(Site.soft_deleted_at.is_(None)).first()
+        site = _site_from_ref(site_ref)
         if site and user and not _user_can_access_site(user, site):
             site = None
+        site_id = site.id if site else None
 
     ctx = {
         'counts': {},
@@ -1606,16 +1628,17 @@ def inject_context():
 def _current_context():
     """取当前登录用户和站点；普通用户只能访问自己的站点，admin 可访问全部.
 
-    URL 中带 ?site=N 时存入 session，后续资源请求（如 /assets/uploads/...）
+    URL 中带 ?site=slug 时存入 session，后续资源请求（如 /assets/uploads/...）
     不带 ?site= 也能从 session 中取到正确的站点.
     """
     user = _current_user()
     if not user:
         abort(401)
-    site_id = request.args.get('site', type=int)
-    if site_id:
-        session['current_site_id'] = site_id  # 记住当前浏览的站点
-        site = Site.query.filter_by(id=site_id).filter(Site.soft_deleted_at.is_(None)).first()
+    site_ref = request.args.get('site', '').strip()
+    if site_ref:
+        site = _site_from_ref(site_ref)
+        if site:
+            session['current_site_id'] = site.id  # session 和存储层继续使用稳定的内部 ID
     else:
         # 从 session 中取缓存的站点 ID，确保资源请求也能找到正确的站点
         site_id = session.get('current_site_id')
@@ -2391,7 +2414,7 @@ def basic_settings():
     if tab not in ('company', 'theme'):
         tab = 'company'
 
-    # 中间栏嵌入模式：渲染无外壳的独立页面（类似留言管理的 embed 模式）
+    # 中间栏嵌入模式：渲染无外壳的独立页面。
     if request.args.get('embed') == '1':
         return render_template('dashboard/basic_settings_embed.html',
                                user=user, site=site,
@@ -2511,78 +2534,6 @@ def api_site_pages():
         pass
 
     return jsonify({'pages': pages})
-
-
-@bp.route('/api/contact/<int:site_id>', methods=['POST', 'OPTIONS'])
-@csrf.exempt
-@cross_origin(origins='*')
-def api_contact_submit(site_id):
-    """公开留言接收端点 —— 供静态站点 contact_form 表单 POST 提交.
-
-    CSRF 豁免原因：静态 HTML 页面无法生成 CSRF token, 且此端点无登录态、只写公开数据.
-    CORS 开放原因：静态站点可能托管在不同域（CDN / 自定义域名）.
-    反垃圾：蜜罐字段 __hp + 同站速率限制.
-    """
-    # ---- OPTIONS 预检 ----
-    if request.method == 'OPTIONS':
-        return jsonify({'ok': True})
-
-    # ---- 蜜罐反垃圾：bot 会填充隐藏字段, 人类看不到 ----
-    if request.form.get('__hp', '').strip():
-        return jsonify({'ok': True})  # 静默丢弃, 不让 bot 知道被拦截
-
-    # ---- 字段提取 ----
-    name = request.form.get('name', '').strip()
-    email = request.form.get('email', '').strip()
-    phone = request.form.get('phone', '').strip()
-    company = request.form.get('company', '').strip()
-    message_text = request.form.get('message', '').strip()
-    internal_site_id = request.form.get('__site_id', '').strip()
-
-    # ---- 基本校验 ----
-    if not name or not email or not message_text:
-        return jsonify({'error': '请填写姓名、邮箱和留言内容'}), 400
-
-    if len(message_text) > 5000:
-        return jsonify({'error': '留言内容过长（上限 5000 字符）'}), 400
-
-    if '@' not in email:
-        return jsonify({'error': '邮箱格式不正确'}), 400
-
-    # ---- 站点校验：优先用隐藏字段, 兜底 URL 参数 ----
-    try:
-        resolved_site_id = int(internal_site_id) if internal_site_id else site_id
-    except (ValueError, TypeError):
-        resolved_site_id = site_id
-
-    site = Site.query.get(resolved_site_id)
-    if not site:
-        return jsonify({'error': '站点不存在'}), 404
-
-    # ---- 速率限制：同站每分钟最多 10 条 ----
-    one_min_ago = datetime.now(timezone.utc) - timedelta(minutes=1)
-    recent = ContactMessage.query.filter(
-        ContactMessage.site_id == resolved_site_id,
-        ContactMessage.created_at >= one_min_ago
-    ).count()
-    if recent > 10:
-        return jsonify({'error': '提交过于频繁，请稍后再试'}), 429
-
-    # ---- 存储 ----
-    msg = ContactMessage(
-        site_id=resolved_site_id,
-        name=name,
-        email=email,
-        phone=phone or None,
-        company=company or None,
-        message=message_text,
-        ip_address=request.remote_addr,
-    )
-    db.session.add(msg)
-    db.session.commit()
-
-    current_app.logger.info('新留言: site_id=%d name=%s email=%s', resolved_site_id, name, email)
-    return jsonify({'ok': True})
 
 
 @bp.route('/api/media/upload', methods=['POST'])
@@ -3167,7 +3118,7 @@ def _seo_health_report(site, lang=None):
                 current_path = task.get('current_path') or ''
                 preview_url = ''
                 if current_path:
-                    preview_url = f"/preview/{site.id}/{lang}{current_path if current_path.startswith('/') else '/' + current_path}"
+                    preview_url = f"/preview/{site.slug}/{lang}{current_path if current_path.startswith('/') else '/' + current_path}"
                 add('warn', f'{dataset_key} / {item_title} 缺少摘要',
                     '详情页 description 和 llms.txt 摘要会变弱，建议补一段简短说明。',
                     url_for('core.dataset_edit', dataset_key=dataset_key, item_id=item.get('id'),
@@ -3517,12 +3468,13 @@ def company():
                 return redirect(url_for('core.company', site=site.id, lang=lang))
         elif 'company.favicon' in request.form:
             settings['company']['favicon'] = request.form.get('company.favicon', '').strip()
-        for field in ('phone', 'email', 'wechat'):
+        # 电话、手机和邮箱属于跨语言联系方式；地址与营业时间允许按站点语言分别维护。
+        for field in ('phone', 'mobile', 'email', 'wechat'):
             settings['contact'][field] = request.form.get(f'contact.{field}', '').strip()
         if contact_key != 'contact':
             for field in ('phone', 'email', 'mobile', 'wechat'):
                 settings[contact_key].pop(field, None)
-        for field in ('address',):
+        for field in ('address', 'business_hours'):
             settings[contact_key][field] = request.form.get(f'contact.{field}', '').strip()
         admin_settings = settings.setdefault('admin', {})
         admin_settings['auto_save'] = bool(request.form.get('admin.auto_save'))
@@ -3565,54 +3517,6 @@ def company():
                            default_lang=default_lang,
                            admin_settings=settings.get('admin') or {},
                            active='company')
-
-
-# ---- 留言管理 ----
-
-@bp.route('/messages')
-def messages():
-    """店主后台：留言列表页, 按时间倒序展示非垃圾留言.
-
-    支持 ?embed=1 参数: 在中间栏 iframe 内展示时, 使用无外壳的嵌入版模板.
-    """
-    user, site = _current_context()
-    msgs = ContactMessage.query.filter_by(site_id=site.id, is_spam=False)\
-        .order_by(ContactMessage.created_at.desc()).all()
-    # 未读计数, 供侧边栏 badge 使用
-    unread_count = ContactMessage.query.filter_by(site_id=site.id, is_read=False, is_spam=False).count()
-    # 中间栏嵌入模式: 去掉外壳 (侧栏/顶栏), 只渲染内容区域
-    if request.args.get('embed') == '1':
-        return render_template('dashboard/messages_embed.html',
-                               user=user, site=site, messages=msgs,
-                               unread_count=unread_count, active='messages')
-    return render_template('dashboard/messages.html',
-                           user=user, site=site, messages=msgs,
-                           unread_count=unread_count, active='messages')
-
-
-@bp.route('/messages/<int:msg_id>/read', methods=['POST'])
-def message_mark_read(msg_id):
-    """标记留言为已读."""
-    _, site = _current_context()
-    msg = ContactMessage.query.filter_by(id=msg_id, site_id=site.id).first()
-    if msg:
-        msg.is_read = True
-        db.session.commit()
-    embed = request.form.get('_embed', '')
-    return redirect(url_for('core.messages', embed=embed) if embed else url_for('core.messages'))
-
-
-@bp.route('/messages/<int:msg_id>/spam', methods=['POST'])
-def message_mark_spam(msg_id):
-    """软删除：标记留言为垃圾."""
-    _, site = _current_context()
-    msg = ContactMessage.query.filter_by(id=msg_id, site_id=site.id).first()
-    if msg:
-        msg.is_spam = True
-        db.session.commit()
-        flash('已标记为垃圾')
-    embed = request.form.get('_embed', '')
-    return redirect(url_for('core.messages', embed=embed) if embed else url_for('core.messages'))
 
 
 @bp.route('/products')
@@ -4605,6 +4509,33 @@ def header_edit():
                            active='header')
 
 
+def _footer_link_choices(settings, template_meta):
+    """Flatten configured navigation into selectable footer link targets."""
+    raw_menu = menu_lib.upgrade_old_format(
+        settings.get('menu') or template_meta.get('default_menu', []),
+        template_meta.get('datasets', []),
+    )
+    normalized = menu_lib.normalize_for_render(raw_menu)
+    choices = []
+    seen = set()
+
+    def walk(items, depth=0):
+        for item in items or []:
+            if not isinstance(item, dict):
+                continue
+            url = str(item.get('url') or '').strip()
+            if url and url != '#' and item.get('type') != 'group':
+                if url.startswith('/') and url != '/' and '?' not in url and '#' not in url and not url.endswith('/'):
+                    url += '/'
+                if url not in seen:
+                    choices.append({'label': f"{'— ' * depth}{item.get('label') or url}", 'url': url})
+                    seen.add(url)
+            walk(item.get('children') or [], depth + 1)
+
+    walk(normalized)
+    return choices
+
+
 @bp.route('/settings/footer_variant', methods=['GET', 'POST'])
 def footer_variant_edit():
     """网站底部变体选择."""
@@ -4617,6 +4548,7 @@ def footer_variant_edit():
     # Footer 变体列表
     tpl_meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
     tpl_meta = _yaml.safe_load(tpl_meta_path.read_text(encoding='utf-8')) if tpl_meta_path.exists() else {}
+    footer_link_choices = _footer_link_choices(settings, tpl_meta)
     footer_variants = tpl_meta.get('footer_variants', [
         {'key': 'columns', 'label': '栏目模式', 'description': '多列链接和文本栏目'},
         {'key': 'minimal', 'label': '极简模式', 'description': '仅显示版权和备案信息'},
@@ -4636,7 +4568,9 @@ def footer_variant_edit():
         if any(k == 'social_enabled' or k.startswith('social_') for k in request.form):
             social = settings.setdefault('social', {})
             social['enabled'] = bool(request.form.get('social_enabled'))
-            for platform in ('github', 'twitter', 'facebook', 'linkedin', 'youtube'):
+            for platform in ('github', 'twitter', 'facebook', 'instagram', 'linkedin', 'youtube',
+                             'tiktok', 'whatsapp', 'telegram', 'wechat', 'weibo',
+                             'xiaohongshu', 'pinterest', 'discord'):
                 social[platform] = request.form.get(f'social_{platform}', '').strip()
 
         # 解析底部栏目
@@ -4651,6 +4585,10 @@ def footer_variant_edit():
                 'type': request.form.get(f'footer_col_{ci}_type', 'menu').strip(),
                 'title': request.form.get(f'footer_col_{ci}_title', '').strip(),
             }
+            if col['type'] not in ('menu', 'text'):
+                col['type'] = 'menu'
+            if col['type'] == 'text':
+                col['text'] = request.form.get(f'footer_col_{ci}_text', '').strip()
             link_count = 0
             try:
                 link_count = int(request.form.get(f'footer_col_{ci}_link_count', '0'))
@@ -4691,7 +4629,8 @@ def footer_variant_edit():
                                settings=settings,
                                current_lang=lang,
                                languages=languages,
-                               default_lang=default_lang)
+                               default_lang=default_lang,
+                               footer_link_choices=footer_link_choices)
     return render_template('dashboard/footer_variant.html',
                            user=user, site=site,
                            footer_variants=footer_variants,
@@ -4701,6 +4640,7 @@ def footer_variant_edit():
                            current_lang=lang,
                            languages=languages,
                            default_lang=default_lang,
+                           footer_link_choices=footer_link_choices,
                            active='footer_variant')
 
 
@@ -4735,6 +4675,7 @@ def header_footer_edit():
         {'key': 'columns_social', 'label': '栏目 + 社交', 'description': '左侧公司 Logo 和社交图标，右侧栏目'},
     ])
     footer_key = _lang_key('footer', site, lang, default_lang)
+    footer_link_choices = _footer_link_choices(settings, tpl_meta)
 
     if request.method == 'POST':
         section = request.form.get('_section') or tab
@@ -4768,7 +4709,9 @@ def header_footer_edit():
             if any(k == 'social_enabled' or k.startswith('social_') for k in request.form):
                 social = settings.setdefault('social', {})
                 social['enabled'] = bool(request.form.get('social_enabled'))
-                for platform in ('github', 'twitter', 'facebook', 'linkedin', 'youtube'):
+                for platform in ('github', 'twitter', 'facebook', 'instagram', 'linkedin', 'youtube',
+                                 'tiktok', 'whatsapp', 'telegram', 'wechat', 'weibo',
+                                 'xiaohongshu', 'pinterest', 'discord'):
                     social[platform] = request.form.get(f'social_{platform}', '').strip()
 
             try:
@@ -4781,6 +4724,10 @@ def header_footer_edit():
                     'type': request.form.get(f'footer_col_{ci}_type', 'menu').strip(),
                     'title': request.form.get(f'footer_col_{ci}_title', '').strip(),
                 }
+                if col['type'] not in ('menu', 'text'):
+                    col['type'] = 'menu'
+                if col['type'] == 'text':
+                    col['text'] = request.form.get(f'footer_col_{ci}_text', '').strip()
                 try:
                     link_count = int(request.form.get(f'footer_col_{ci}_link_count', '0'))
                 except (ValueError, TypeError):
@@ -4844,7 +4791,71 @@ def header_footer_edit():
                            header_footer_tab=tab,
                            header_form_action=header_form_action,
                            footer_form_action=footer_form_action,
+                           footer_link_choices=footer_link_choices,
                            settings_workspace=True)
+
+
+def _ensure_menu_item_ids(items):
+    """Add stable IDs used to distinguish saved menu items from newly added ones."""
+    changed = False
+    used = set()
+
+    def walk(nodes):
+        nonlocal changed
+        for item in nodes or []:
+            if not isinstance(item, dict):
+                continue
+            item_id = str(item.get('id') or '').strip()
+            if not re.fullmatch(r'[a-z0-9]{8,32}', item_id) or item_id in used:
+                item_id = secrets.token_hex(6)
+                while item_id in used:
+                    item_id = secrets.token_hex(6)
+                item['id'] = item_id
+                changed = True
+            used.add(item_id)
+            walk(item.get('children') or [])
+
+    walk(items)
+    return changed
+
+
+def _lock_saved_menu_types(existing_items, submitted_items):
+    """Server-side enforcement for menu types that were already persisted."""
+    saved_items = {}
+
+    def index(nodes):
+        for item in nodes or []:
+            if not isinstance(item, dict):
+                continue
+            item_id = str(item.get('id') or '')
+            if item_id:
+                saved_items[item_id] = item
+            index(item.get('children') or [])
+
+    def apply(nodes):
+        for item in nodes or []:
+            if not isinstance(item, dict):
+                continue
+            item_id = str(item.get('id') or '')
+            old = saved_items.get(item_id)
+            if old:
+                old_type = old.get('type') or 'link'
+                item['type'] = old_type
+                if old_type in {'list', 'page', 'group'}:
+                    item.pop('url', None)
+                    if not item.get('target') and old.get('target'):
+                        item['target'] = old['target']
+                elif old_type == 'link':
+                    item.pop('target', None)
+                    if not item.get('url') and old.get('url'):
+                        item['url'] = old['url']
+                else:
+                    item.pop('target', None)
+                    item.pop('url', None)
+            apply(item.get('children') or [])
+
+    index(existing_items)
+    apply(submitted_items)
 
 
 @bp.route('/settings/menu', methods=['GET', 'POST'])
@@ -4881,6 +4892,8 @@ def menu_edit():
         settings['menu_labels'] = menu_labels
 
     if request.method == 'POST':
+        existing_menu = copy.deepcopy(settings.get('menu') or [])
+        _ensure_menu_item_ids(existing_menu)
         menu_json = request.form.get('menu_json', '').strip()
         if menu_json:
             try:
@@ -4921,6 +4934,9 @@ def menu_edit():
                 raw_items.append(raw)
             items = menu_lib.clean_for_storage(raw_items)
 
+        _lock_saved_menu_types(existing_menu, items)
+        _ensure_menu_item_ids(items)
+
         # 保存：结构写入 menu，标签写入 menu_labels.<lang>
         # 默认语言直接覆盖 menu；非默认语言用 merge_structure 保留已有标签
         if lang == default_lang:
@@ -4946,6 +4962,9 @@ def menu_edit():
     meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
     meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
     raw_menu = settings.get('menu') or meta.get('default_menu', [])
+    if _ensure_menu_item_ids(raw_menu):
+        settings['menu'] = raw_menu
+        write_yaml(site.id, 'settings.yaml', settings)
     items = menu_lib.ensure_home(
         menu_lib.upgrade_old_format(raw_menu, meta.get('datasets', []))
     )
@@ -5011,7 +5030,9 @@ def social_edit():
     is_fragment = request.args.get('_fragment') is not None
     if request.method == 'POST':
         social = settings.setdefault('social', {})
-        for platform in ('github', 'twitter', 'facebook', 'linkedin', 'youtube'):
+        for platform in ('github', 'twitter', 'facebook', 'instagram', 'linkedin', 'youtube',
+                         'tiktok', 'whatsapp', 'telegram', 'wechat', 'weibo',
+                         'xiaohongshu', 'pinterest', 'discord'):
             social[platform] = request.form.get(platform, '').strip()
         write_yaml(site.id, 'settings.yaml', settings)
         flash('已保存')
@@ -5149,6 +5170,21 @@ def template_preview(template_name, filepath='index.html'):
     return _safe_send_from_directory(out, filepath)
 
 
+@bp.route('/api/sites/slug-available')
+def site_slug_available():
+    """Validate a site slug while the create-site form is being filled in."""
+    from .models import SLUG_RESERVED
+    slug = request.args.get('slug', '').strip().lower()
+    if not SLUG_PATTERN.match(slug):
+        return jsonify({'valid': False, 'available': False,
+                        'message': '请输入 3–30 位小写字母、数字或连字符'})
+    if slug in SLUG_RESERVED:
+        return jsonify({'valid': True, 'available': False, 'message': '该 Slug 为系统保留字'})
+    available = not Site.query.filter_by(slug=slug).first()
+    return jsonify({'valid': True, 'available': available,
+                    'message': '该 Slug 可以使用' if available else '该 Slug 已被占用'})
+
+
 @bp.route('/sites/new', methods=['GET', 'POST'])
 def site_new():
     from .models import SLUG_RESERVED
@@ -5281,8 +5317,8 @@ def site_new():
                                            active='templates')
                 flash(f'已创建站点 #{site.id} ({form["slug"]})')
                 if is_fragment:
-                    return jsonify({'ok': True, 'redirect': url_for('core.overview', site=site.id)})
-                return redirect(url_for('core.overview', site=site.id))
+                    return jsonify({'ok': True, 'redirect': url_for('core.overview', site=site.slug)})
+                return redirect(url_for('core.overview', site=site.slug))
 
         # POST 验证失败 -> fragment 模式返回 JSON，普通模式重渲染页面
         if is_fragment:
@@ -5312,7 +5348,7 @@ def build():
     _, site = _current_context()
     report = []
     try:
-        build_site(site.id, base_url=f'/preview/{site.id}', report=report)
+        build_site(site.id, base_url=f'/preview/{site.slug}', report=report)
     except Exception as exc:
         current_app.logger.exception('站点 %s 构建失败', site.id)
         if request.method == 'POST' or request.args.get('_fragment'):
@@ -5320,9 +5356,9 @@ def build():
         abort(500, f'构建失败: {exc}')
 
     if request.method == 'POST' or request.args.get('_fragment'):
-        return jsonify({'ok': True, 'preview_url': f'/preview_site/{site.id}', 'report': report})
+        return jsonify({'ok': True, 'preview_url': f'/preview_site/{site.slug}', 'report': report})
 
-    return redirect(url_for('core.preview_site', site_id=site.id))
+    return redirect(url_for('core.preview_site', site_id=site.slug))
 
 
 @bp.route('/publish', methods=['POST'])
@@ -5358,7 +5394,7 @@ def publish_site():
         'ok': True,
         'status': site.status,
         'published_at': site.last_published_at.isoformat(),
-        'preview_url': f'/preview_site/{site.id}',
+        'preview_url': f'/preview_site/{site.slug}',
         'report': report,
     }
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' \
@@ -5452,36 +5488,44 @@ def _preview_needs_rebuild(site_id, out):
         return True
 
 
-@bp.route('/preview_site/<int:site_id>')
+@bp.route('/preview_site/<site_id>')
 def preview_site(site_id):
     """确保已构建，重定向到根 index.html（多语言站走 JS 浏览器语言检测）."""
-    session['current_site_id'] = site_id  # 后续 /assets/ 资源请求需要
     from flask import redirect, request, url_for
-    site = Site.query.get_or_404(site_id)
+    site = _site_from_ref(site_id)
+    if not site:
+        abort(404)
     _require_site_access(site)
-    out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
+    if str(site_id) != site.slug:
+        return redirect(url_for('core.preview_site', site_id=site.slug), code=302)
+    session['current_site_id'] = site.id  # 后续 /assets/ 资源请求需要
+    out = Path(current_app.config['OUTPUT_DIR']) / str(site.id)
 
     # 构建条件：不存在任何产出。?_ 只是浏览器 cache-busting 参数，不触发重建。
-    if _preview_needs_rebuild(site_id, out):
-        build_site(site_id, base_url=f'/preview/{site_id}')
+    if _preview_needs_rebuild(site.id, out):
+        build_site(site.id, base_url=f'/preview/{site.slug}')
 
     # 返回根 index.html：多语言站走 JS 浏览器语言检测，单语言站直接渲染
-    return redirect(url_for('core.preview', site_id=site_id))
+    return redirect(url_for('core.preview', site_id=site.slug))
 
 
-@bp.route('/preview_or_build/<int:site_id>')
+@bp.route('/preview_or_build/<site_id>')
 def preview_or_build(site_id):
     """确保已构建，返回根 index.html（多语言站走 JS 浏览器语言检测）或默认语言首页."""
-    session['current_site_id'] = site_id  # 后续 /assets/ 资源请求需要
-    site = Site.query.get_or_404(site_id)
+    site = _site_from_ref(site_id)
+    if not site:
+        abort(404)
     _require_site_access(site)
-    out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
+    if str(site_id) != site.slug:
+        return redirect(url_for('core.preview_or_build', site_id=site.slug), code=302)
+    session['current_site_id'] = site.id
+    out = Path(current_app.config['OUTPUT_DIR']) / str(site.id)
 
     # 优先返回根 index.html（多语言站含 JS 浏览器语言检测），
     # 不存在则回退到默认语言首页（单语言站点无根选择页）
     root_index = out / 'index.html'
-    if _preview_needs_rebuild(site_id, out):
-        build_site(site_id, base_url=f'/preview/{site_id}')
+    if _preview_needs_rebuild(site.id, out):
+        build_site(site.id, base_url=f'/preview/{site.slug}')
 
     if (out / 'index.html').exists():
         return _safe_send_from_directory(out, 'index.html')
@@ -5933,13 +5977,22 @@ def _live_preview_cache_set(key, html):
     _LIVE_PREVIEW_CACHE[key] = (time.monotonic(), html)
 
 
-@bp.route('/live_preview/<int:site_id>/')
-@bp.route('/live_preview/<int:site_id>/<path:filepath>', methods=['GET', 'POST'])
+@bp.route('/live_preview/<site_id>/')
+@bp.route('/live_preview/<site_id>/<path:filepath>', methods=['GET', 'POST'])
 def live_preview(site_id, filepath='index.html'):
     """Editor live preview: render one page without running the full static build."""
-    session['current_site_id'] = site_id
-    site = Site.query.get_or_404(site_id)
+    site_ref = site_id
+    site = _site_from_ref(site_ref)
+    if not site:
+        abort(404)
     _require_site_access(site)
+    if request.method == 'GET' and str(site_ref) != site.slug:
+        canonical = url_for('core.live_preview', site_id=site.slug, filepath=filepath)
+        if request.query_string:
+            canonical += '?' + request.query_string.decode('utf-8', errors='ignore')
+        return redirect(canonical, code=302)
+    session['current_site_id'] = site.id
+    site_id = site.id
 
     filepath = (filepath or 'index.html').replace('\\', '/').lstrip('/')
     if filepath.startswith('static/'):
@@ -5949,7 +6002,7 @@ def live_preview(site_id, filepath='index.html'):
 
     if filepath in ('', 'index.html'):
         return redirect(url_for('core.live_preview',
-                                site_id=site_id,
+                                site_id=site.slug,
                                 filepath=f'{_default_lang_code(site)}/index.html'))
 
     cache_key = None
@@ -6023,7 +6076,7 @@ def live_preview(site_id, filepath='index.html'):
         html = render_site_page(
             site_id,
             filepath=filepath,
-            base_url=f'/live_preview/{site_id}',
+            base_url=f'/live_preview/{site.slug}',
             draft_page_key=draft_page_key or None,
             draft_page=draft_page,
             draft_data=draft_data,
@@ -6038,14 +6091,23 @@ def live_preview(site_id, filepath='index.html'):
     return current_app.response_class(html, mimetype='text/html; charset=utf-8')
 
 
-@bp.route('/preview/<int:site_id>/')
-@bp.route('/preview/<int:site_id>/<path:filepath>')
+@bp.route('/preview/<site_id>/')
+@bp.route('/preview/<site_id>/<path:filepath>')
 def preview(site_id, filepath='index.html'):
     """预览 output/<site_id>/ 下的静态文件，自动构建."""
-    session['current_site_id'] = site_id  # 后续 /assets/ 资源请求需要
-    site = Site.query.get_or_404(site_id)
+    site_ref = site_id
+    site = _site_from_ref(site_ref)
+    if not site:
+        abort(404)
     _require_site_access(site)
-    out = Path(current_app.config['OUTPUT_DIR']) / str(site_id)
+    if str(site_ref) != site.slug:
+        canonical = url_for('core.preview', site_id=site.slug, filepath=filepath)
+        if request.query_string:
+            canonical += '?' + request.query_string.decode('utf-8', errors='ignore')
+        return redirect(canonical, code=302)
+    session['current_site_id'] = site.id  # 后续 /assets/ 资源请求需要
+    site_id = site.id
+    out = Path(current_app.config['OUTPUT_DIR']) / str(site.id)
     parts = [part for part in str(filepath).replace('\\', '/').split('/') if part]
     if parts:
         asset_index = 0 if parts[0] == 'assets' else (1 if len(parts) > 1 and parts[1] == 'assets' else -1)
@@ -6057,14 +6119,14 @@ def preview(site_id, filepath='index.html'):
     if filepath == 'index.html':
         if _preview_needs_rebuild(site_id, out):
             try:
-                build_site(site_id, base_url=f'/preview/{site_id}')
+                build_site(site.id, base_url=f'/preview/{site.slug}')
             except Exception:
                 current_app.logger.exception('预览构建站点 %s 失败', site_id)
         if (out / 'index.html').exists():
             return _safe_send_from_directory(out, 'index.html')
     elif _preview_needs_rebuild(site_id, out):
         try:
-            build_site(site_id, base_url=f'/preview/{site_id}')
+            build_site(site.id, base_url=f'/preview/{site.slug}')
         except Exception:
             current_app.logger.exception('预览构建站点 %s 失败', site_id)
 
@@ -6075,7 +6137,7 @@ def preview(site_id, filepath='index.html'):
         filepath = f'{filepath.rstrip("/")}/index.html'
     if not full.exists():
         try:
-            build_site(site_id, base_url=f'/preview/{site_id}')
+            build_site(site.id, base_url=f'/preview/{site.slug}')
         except Exception:
             current_app.logger.exception('预览构建站点 %s 失败', site_id)  # #15: 留痕
     if not out.exists():
@@ -6251,7 +6313,7 @@ def api_richtext_upload_package():
     return jsonify({'ok': True, 'url': result.get('url') or result.get('entry_url'), 'name': result.get('name')})
 
 
-@bp.route('/api/site/<int:site_id>/dataset/<string:dataset_name>/items')
+@bp.route('/api/site/<site_id>/dataset/<string:dataset_name>/items')
 def api_dataset_items(site_id, dataset_name):
     """返回某数据集下的条目摘要（供精选推荐等模块的"从数据集选取"功能调用）。
 
@@ -6259,12 +6321,13 @@ def api_dataset_items(site_id, dataset_name):
     前端选取器据此展示列表、自动填入表单。
     """
     user, site = _current_context()
-    if not user or site.id != site_id:
+    requested_site = _site_from_ref(site_id)
+    if not user or not requested_site or site.id != requested_site.id:
         abort(404)
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = _storage_lang(site, lang, default_lang)
     try:
-        items = datasets.load(site_id, dataset_name, lang=storage_lang)
+        items = datasets.load(site.id, dataset_name, lang=storage_lang)
     except Exception:
         return jsonify({'error': f'无法加载数据集: {dataset_name}'}), 404
     # 提取轻量摘要字段（名称有多种可能：title / name、cover / image / photo）
@@ -6973,7 +7036,10 @@ def _get_available_blocks(template_name):
     """获取模板的可用模块列表."""
     from .template_loader import scan_blocks
     try:
-        return scan_blocks(template_name)
+        blocks = scan_blocks(template_name)
+        if template_name not in ('dengtec', 'claude'):
+            blocks = [block for block in blocks if block.get('name') != 'contact_form']
+        return blocks
     except Exception:
         return []
 

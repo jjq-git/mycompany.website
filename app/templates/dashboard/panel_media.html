@@ -136,13 +136,13 @@
 
   function refreshPanel() {
     if (typeof loadPanel === 'function') {
-      return loadPanel('{{ url_for("core.media") }}?_fragment=1&site={{ site.id }}');
+      return loadPanel('{{ url_for("core.media") }}?_fragment=1&site={{ site.slug }}');
     }
     window.location.reload();
   }
 
   function references(name) {
-    return fetch('/api/media/references?filename=' + encodeURIComponent(name) + '&site={{ site.id }}')
+    return fetch('/api/media/references?filename=' + encodeURIComponent(name) + '&site={{ site.slug }}')
       .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); });
   }
 
@@ -218,7 +218,7 @@
       loading.hidden = false;
       input.disabled = true;
       setStatus('正在保存文件名...', 'muted');
-      fetch('/api/media/rename?site={{ site.id }}', {
+      fetch('/api/media/rename?site={{ site.slug }}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ old_name: oldName, new_name: newName })
@@ -320,7 +320,7 @@
         return;
       }
       if (!confirm('Delete this media file?')) return;
-      return fetch('/api/media/delete?site={{ site.id }}', {
+      return fetch('/api/media/delete?site={{ site.slug }}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filename: name })
@@ -342,7 +342,7 @@
     var fd = new FormData();
     fd.append('file', file);
     setStatus('正在上传...', 'muted');
-    fetch('/api/media/upload?site={{ site.id }}', { method: 'POST', body: fd })
+    fetch('/api/media/upload?site={{ site.slug }}', { method: 'POST', body: fd })
       .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
       .then(function(result) {
         if (!result.ok || result.data.ok === false) throw new Error(result.data.error || '上传失败');

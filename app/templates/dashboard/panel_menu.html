@@ -108,7 +108,132 @@
   font-size: 16px;
 }
 .settings-workspace--menu .menu-tree-icon {
-  display: none;
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  color: var(--admin-primary);
+}
+.settings-workspace--menu .menu-tree-icon svg,
+.settings-workspace--menu .menu-icon-current svg,
+.settings-workspace--menu .menu-icon-option svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.settings-workspace--menu .menu-type-locked-note {
+  margin-top: 5px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+.settings-workspace--menu .menu-inspector-primary-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+.settings-workspace--menu .menu-inspector-primary-row > .menu-inspector-section {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+}
+.settings-workspace--menu .menu-inspector-primary-row + .menu-inspector-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e8ecf0;
+}
+.settings-workspace--menu .menu-inspector-secondary-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e8ecf0;
+  align-items: start;
+}
+.settings-workspace--menu .menu-inspector-secondary-row.has-target {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.settings-workspace--menu .menu-inspector-secondary-row > .menu-inspector-section {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+}
+.settings-workspace--menu .menu-inspector-secondary-row + .menu-url-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e8ecf0;
+}
+@media (max-width: 640px) {
+  .settings-workspace--menu .menu-inspector-primary-row,
+  .settings-workspace--menu .menu-inspector-secondary-row.has-target {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.settings-workspace--menu .menu-icon-picker {
+  position: relative;
+}
+.settings-workspace--menu .menu-icon-picker-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid #d8e0e8;
+  background: #fff;
+  color: #475569;
+  text-align: left;
+}
+.settings-workspace--menu .menu-icon-picker-toggle::after {
+  content: '▾';
+  margin-left: auto;
+  color: #94a3b8;
+}
+.settings-workspace--menu .menu-icon-popover {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(15,23,42,.16);
+}
+.settings-workspace--menu .menu-icon-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: 250px;
+  margin-top: 8px;
+  overflow: auto;
+}
+.settings-workspace--menu .menu-icon-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 0;
+  background: transparent;
+  color: #475569;
+  text-align: left;
+}
+.settings-workspace--menu .menu-icon-option:hover,
+.settings-workspace--menu .menu-icon-option.selected {
+  color: var(--admin-primary);
+  background: rgba(var(--admin-primary-rgb), .09);
+}
+.settings-workspace--menu .menu-icon-option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .settings-workspace--menu .menu-tree-title {
   color: #172033;
@@ -159,18 +284,17 @@
   margin: 0;
 }
 .settings-workspace--menu #menuTreeForm > .panel-save-bar {
-  position: sticky;
-  bottom: 0;
+  position: static;
   display: flex;
   justify-content: flex-end;
   width: max-content;
   max-width: 100%;
   margin: 16px 0 0 auto;
-  padding: 7px;
-  border: 1px solid #e2e8f0;
-  background: rgba(255,255,255,.94);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 -8px 24px rgba(15,23,42,.05);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
 }
 @media (max-width: 900px) {
   .settings-workspace--menu {
@@ -237,6 +361,12 @@
     link: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
     group: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'
   };
+  const menuIcons = [
+    'alert-circle','alert-triangle','arrow-down','arrow-left','arrow-right','arrow-up',
+    'audio','award','bar-chart','bluetooth','bookmark','briefcase','calendar','camera',
+    'clock','cpu','external-link','file-text','folder','globe','grid','heart','image','info',
+    'mail','map-pin','package','phone','search','settings','star','user','users'
+  ];
   const ACTION_SVG = {
     moveUp: '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>',
     moveDown: '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>',
@@ -252,6 +382,10 @@
     return {label: '新菜单', type: 'page', target: '', children: []};
   }
 
+  function menuIconSvg(name) {
+    return name ? '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#menu-icon-' + name + '"></use></svg>' : '';
+  }
+
   function escapeAttr(value) {
     return String(value || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   }
@@ -263,6 +397,8 @@
       type: type,
       children: (item.children || []).map(cleanItem)
     };
+    if (item.id) result.id = String(item.id);
+    if (menuIcons.indexOf(item.icon) !== -1) result.icon = item.icon;
     if (item.hidden === true && type !== 'home') result.hidden = true;
     if (type === 'list' || type === 'page' || type === 'group') {
       const target = String(item.target || '').trim();
@@ -330,6 +466,7 @@
             '<button type="button" class="menu-tree-select">' +
               branchHtml +
               '<span class="menu-tree-drag-handle" aria-hidden="true">⠿</span>' +
+              '<span class="menu-tree-icon" aria-hidden="true">' + (item.icon ? menuIconSvg(item.icon) : (typeIcons[item.type] || typeIcons.page)) + '</span>' +
               '<span><span class="menu-tree-title">' + escapeAttr(itemLabel(item)) + '</span>' +
               '<span class="menu-tree-meta">' + escapeAttr(itemPath(item)) + '</span></span>' +
             '</button>' +
@@ -360,21 +497,41 @@
       return;
     }
     const isHome = selectedItem.type === 'home';
+    const isPersisted = !!selectedItem.id;
     const type = selectedItem.type || 'page';
+    const iconOptions = [''].concat(menuIcons).map(function(name) {
+      const label = name || '（无图标）';
+      return '<button type="button" class="menu-icon-option' + ((selectedItem.icon || '') === name ? ' selected' : '') + '" data-icon="' + name + '" data-search="' + escapeAttr(label.toLowerCase()) + '">' + menuIconSvg(name) + '<span>' + escapeAttr(label) + '</span></button>';
+    }).join('');
     inspector.innerHTML =
-      '<div class="menu-inspector-section">' +
-        '<label class="form-label small text-muted mb-1">菜单名称</label>' +
-        '<input class="form-control form-control-sm menu-inspector-label" value="' + escapeAttr(selectedItem.label) + '"' + (isHome ? ' readonly' : '') + '>' +
+      '<div class="menu-inspector-primary-row">' +
+        '<div class="menu-inspector-section">' +
+          '<label class="form-label small text-muted mb-1">菜单名称</label>' +
+          '<input class="form-control form-control-sm menu-inspector-label" value="' + escapeAttr(selectedItem.label) + '"' + (isHome ? ' readonly' : '') + '>' +
+        '</div>' +
+        '<div class="menu-inspector-section">' +
+          '<label class="form-label small text-muted mb-1">菜单类型</label>' +
+          '<select class="form-select form-select-sm menu-inspector-type-select"' + ((isHome || isPersisted) ? ' disabled' : '') + '>' +
+            Object.keys(typeLabels).filter(function(t){ return isHome || t !== 'home'; }).map(function(t){ return '<option value="' + t + '"' + (type === t ? ' selected' : '') + '>' + typeLabels[t] + '</option>'; }).join('') +
+          '</select>' +
+          (isPersisted ? '<div class="menu-type-locked-note">菜单保存后类型不可修改</div>' : '') +
+        '</div>' +
       '</div>' +
-      '<div class="menu-inspector-section">' +
-        '<label class="form-label small text-muted mb-1">菜单类型</label>' +
-        '<select class="form-select form-select-sm menu-inspector-type-select"' + (isHome ? ' disabled' : '') + '>' +
-          Object.keys(typeLabels).filter(function(t){ return isHome || t !== 'home'; }).map(function(t){ return '<option value="' + t + '"' + (type === t ? ' selected' : '') + '>' + typeLabels[t] + '</option>'; }).join('') +
-        '</select>' +
-      '</div>' +
-      '<div class="menu-inspector-section menu-target-section">' +
-        '<label class="form-label small text-muted mb-1">页面路径</label>' +
-        '<input class="form-control form-control-sm menu-inspector-target" placeholder="如: products" value="' + escapeAttr(selectedItem.target) + '">' +
+      '<div class="menu-inspector-secondary-row' + ((type !== 'home' && type !== 'link') ? ' has-target' : '') + '">' +
+        '<div class="menu-inspector-section">' +
+          '<label class="form-label small text-muted mb-1">菜单图标</label>' +
+          '<div class="menu-icon-picker">' +
+            '<button type="button" class="menu-icon-picker-toggle"><span class="menu-icon-current">' + menuIconSvg(selectedItem.icon) + '</span><span>' + escapeAttr(selectedItem.icon || '（无图标）') + '</span></button>' +
+            '<div class="menu-icon-popover" hidden>' +
+              '<input type="search" class="form-control form-control-sm menu-icon-search" placeholder="搜索图标">' +
+              '<div class="menu-icon-options">' + iconOptions + '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="menu-inspector-section menu-target-section">' +
+          '<label class="form-label small text-muted mb-1">页面路径</label>' +
+          '<input class="form-control form-control-sm menu-inspector-target" placeholder="如: products" value="' + escapeAttr(selectedItem.target) + '">' +
+        '</div>' +
       '</div>' +
       '<div class="menu-inspector-section menu-url-section">' +
         '<label class="form-label small text-muted mb-1">链接地址</label>' +
@@ -466,6 +623,11 @@
       selectedItem.target = e.target.value.trim();
     } else if (e.target.classList.contains('menu-inspector-url')) {
       selectedItem.url = e.target.value.trim();
+    } else if (e.target.classList.contains('menu-icon-search')) {
+      const query = e.target.value.trim().toLowerCase();
+      inspector.querySelectorAll('.menu-icon-option').forEach(function(option) {
+        option.hidden = !!query && option.dataset.search.indexOf(query) === -1;
+      });
     }
   });
 
@@ -487,6 +649,23 @@
 
   inspector.addEventListener('click', function(e) {
     if (!selectedItem) return;
+    const pickerToggle = e.target.closest('.menu-icon-picker-toggle');
+    if (pickerToggle) {
+      const popover = inspector.querySelector('.menu-icon-popover');
+      if (popover) {
+        popover.hidden = !popover.hidden;
+        if (!popover.hidden) popover.querySelector('.menu-icon-search')?.focus();
+      }
+      return;
+    }
+    const iconOption = e.target.closest('.menu-icon-option');
+    if (iconOption) {
+      const icon = iconOption.dataset.icon || '';
+      if (icon) selectedItem.icon = icon;
+      else delete selectedItem.icon;
+      rerenderAll();
+      return;
+    }
     if (!e.target.closest('.menu-inspector-add-child')) return;
     if (!Array.isArray(selectedItem.children)) selectedItem.children = [];
     const child = newItem();
