@@ -84,7 +84,7 @@ input[type="reset"],
 
 /* 侧栏收缩时按钮跟随移动 */
 #leftNav.left-nav-collapsed ~ .sidebar-toggle-btn {
-  left: 51px;
+  left: 0;
 }
 
 /* 头部按钮 - 通用 ghost 风格，适合白色背景 */
@@ -499,9 +499,16 @@ body.account-workspace-open { overflow: hidden; }
 
 /* ===== 侧栏收缩态 ===== */
 #leftNav.left-nav-collapsed {
-  width: 60px !important;
-  min-width: 60px;
-  overflow-x: visible; /* 让 hover 弹出标签能溢出侧栏边界 */
+  width: 0 !important;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* 完全收起时不保留拖拽分隔条，只留下贴边的展开按钮 */
+#leftNav.left-nav-collapsed + #leftNavResizer {
+  width: 0;
+  background: transparent;
+  pointer-events: none;
 }
 
 /* 站点信息区 — 收缩时显式小图标 */
@@ -788,6 +795,15 @@ body.account-workspace-open { overflow: hidden; }
 
 .left-nav-page-group-body .left-nav-item {
   padding-left: 32px !important;
+}
+
+/* 页面 > 列表页 > 分类 > 条目：第四级在父分类基础上继续缩进 */
+.left-nav-page-group-body .left-nav-submenu > .left-nav-item {
+  padding-left: 52px !important;
+}
+
+.left-nav-page-group-body .left-nav-submenu::before {
+  left: 47px;
 }
 
 #leftNav.left-nav-collapsed .left-nav-page-group-toggle {
@@ -2836,7 +2852,13 @@ body:not(.dataset-wide-mode) #rightPanel.panel-collapsed {
   box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), .1);
 }
 .right-panel-body .form-control-sm.placeholder-light::placeholder {
-  color: rgba(255, 255, 255, 0.8);
+  color: #b7c0cc;
+  opacity: 1;
+}
+
+.right-panel-body .form-control::placeholder,
+.right-panel-body textarea::placeholder {
+  color: #b7c0cc;
   opacity: 1;
 }
 .right-panel-body .form-select-sm {
@@ -4798,6 +4820,39 @@ body:not(.dataset-wide-mode) #rightPanel.panel-collapsed {
   color: #0f172a;
 }
 
+.seg-radio--align {
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+.seg-radio--align .seg-radio-option {
+  justify-content: center;
+  width: 30px;
+  min-height: 28px;
+  padding: 0;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #64748b;
+}
+
+.seg-radio--align .seg-radio-option:hover {
+  border-color: var(--bs-primary);
+  color: var(--bs-primary);
+}
+
+.seg-radio--align .seg-radio-option.active,
+.seg-radio--align .seg-radio-option:has(input:checked) {
+  border-color: var(--bs-primary);
+  background: color-mix(in srgb, var(--bs-primary) 10%, #fff);
+  color: var(--bs-primary);
+}
+
+.seg-radio-align-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
 .dataset-detail-button-field {
   display: grid;
   gap: 4px;
@@ -4968,7 +5023,7 @@ body:not(.dataset-wide-mode) #rightPanel.panel-collapsed {
 /* placeholder */
 .rte-editor[data-placeholder]:empty:before {
   content: attr(data-placeholder);
-  color: #adb5bd;
+  color: #b7c0cc;
   pointer-events: none;
 }
 /* 与 form-control 衔接：工具栏下方无圆角 */
@@ -5233,7 +5288,7 @@ body:not(.dataset-wide-mode) #rightPanel.panel-collapsed {
   opacity: 0;
   transform: translate(-50%, -50%) scale(.94);
   transition: opacity .15s, transform .15s;
-  pointer-events: none;
+  pointer-events: auto;
   border: 0;
   padding: 0;
   cursor: zoom-in;

@@ -333,8 +333,8 @@
             <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required minlength="3" maxlength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" title="只能用小写字母、数字、连字符，3-30 字符，不能以连字符开头或结尾">
           </div>
           <div>
-            <label class="form-label">标题</label>
-            <input type="text" class="form-control form-control-sm" name="title" value="{{ edit_item.title or edit_item.name or '' }}">
+            <label class="form-label">标题 <span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm" name="title" value="{{ edit_item.title or edit_item.name or '' }}" required>
           </div>
           <div>
             <label class="form-label">分类</label>
@@ -346,8 +346,8 @@
           <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val }}" placeholder="多个标签用逗号分隔，例如：LED, 灯条, 工程案例">
         </div>
         <div class="ds-basic-full">
-          <label class="form-label">简介</label>
-          <textarea class="form-control form-control-sm" name="summary" rows="2">{{ edit_item.summary or edit_item.description or edit_item.excerpt or '' }}</textarea>
+          <label class="form-label">简介 <span class="text-danger">*</span></label>
+          <textarea class="form-control form-control-sm" name="summary" rows="2" required>{{ edit_item.summary or edit_item.description or edit_item.excerpt or '' }}</textarea>
         </div>
       </div>
     </div>
@@ -369,7 +369,7 @@
         </div>
         <div class="ds-media-fields-col">
     <div class="dataset-media-field" data-media-kind="image" style="{% if item_media_type != 'image' %}display:none{% endif %}">
-      <label class="form-label">封面图</label>
+      <label class="form-label">封面图 <span class="text-danger">*</span></label>
       {% set cover_val = edit_item.cover or edit_item.image or edit_item.photo or edit_item.logo or '' %}
       <div class="module-media-tools mt-1">
         <label class="module-media-picker{% if cover_val %} has-media{% endif %}" title="点击上传">
@@ -384,7 +384,7 @@
         </label>
       </div>
       <div class="module-media-url-row">
-        <input type="text" class="form-control form-control-sm" name="cover" value="{{ cover_val }}" placeholder="图片 URL 或上传" oninput="updateImagePreview(this)">
+        <input type="text" class="form-control form-control-sm" name="cover" value="{{ cover_val }}" placeholder="图片 URL 或上传" oninput="updateImagePreview(this)" required>
         <button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
         <input type="hidden" name="cover_convert_webp" value="false">
         <label class="module-convert-check"><input type="checkbox" name="cover_convert_webp" value="true" checked><span></span>WebP</label>

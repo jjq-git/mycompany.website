@@ -122,6 +122,7 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
             {'key': 'text_align', 'label': '文字排版', 'type': 'select', 'group': '样式', 'default': 'left', 'options': [
                 {'value': 'left', 'label': '居左'},
                 {'value': 'center', 'label': '居中'},
+                {'value': 'right', 'label': '居右'},
             ]},
             {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
             {'key': 'text_color', 'label': '正文颜色', 'type': 'color', 'group': '样式', 'default': ''},
@@ -277,6 +278,7 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
             {'key': 'text_align', 'label': '文字排版', 'type': 'select', 'group': '样式', 'default': 'left', 'options': [
                 {'value': 'left', 'label': '居左'},
                 {'value': 'center', 'label': '居中'},
+                {'value': 'right', 'label': '居右'},
             ]},
             {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
         ],

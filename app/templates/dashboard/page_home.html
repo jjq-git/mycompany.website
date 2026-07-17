@@ -1,5 +1,19 @@
 {# 首页模块编辑器 — 右侧面板内容（含三设备独立配置） #}
 {% from 'dashboard/_block_icons.html' import block_icon %}
+{% macro alignment_control(name, current='left') -%}
+<div class="seg-radio seg-radio--align" role="radiogroup">
+  {% for value, label, paths in [
+    ('left', '居左', ['M2 4h12', 'M2 8h8', 'M2 12h10']),
+    ('center', '居中', ['M2 4h12', 'M4 8h8', 'M3 12h10']),
+    ('right', '居右', ['M2 4h12', 'M6 8h8', 'M4 12h10'])
+  ] %}
+  <label class="seg-radio-option{% if current == value %} active{% endif %}" role="radio" aria-checked="{{ 'true' if current == value else 'false' }}" title="{{ label }}">
+    <input type="radio" name="{{ name }}" value="{{ value }}"{% if current == value %} checked{% endif %} onchange="var input=this;var g=input.closest('.seg-radio');g.querySelectorAll('.seg-radio-option').forEach(function(b){b.classList.toggle('active',b.contains(input));b.setAttribute('aria-checked',b.contains(input)?'true':'false');});">
+    <span class="seg-radio-label"><svg class="seg-radio-align-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">{% for path in paths %}<path d="{{ path }}" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>{% endfor %}</svg><span class="visually-hidden">{{ label }}</span></span>
+  </label>
+  {% endfor %}
+</div>
+{%- endmacro %}
 {% if is_modules_format %}
 
 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -82,7 +96,7 @@
               <textarea class="form-control form-control-sm d-none" name="module_{{ i }}_data_body">{{ mdata.get('body', '') }}</textarea>
             </div>
             <div class="row g-2">
-              <div class="col-6"><label class="form-label small mb-1 text-muted">文字排版</label><select class="form-select form-select-sm" name="module_{{ i }}_data_text_align"><option value="left" {% if mdata.get('text_align', 'left') == 'left' %}selected{% endif %}>居左</option><option value="center" {% if mdata.get('text_align') == 'center' %}selected{% endif %}>居中</option><option value="right" {% if mdata.get('text_align') == 'right' %}selected{% endif %}>居右</option></select></div>
+              <div class="col-6 label-radio-row"><label class="form-label small mb-1 text-muted">文字排版</label>{{ alignment_control('module_' ~ i ~ '_data_text_align', mdata.get('text_align', 'left')) }}</div>
               <div class="col-6"><label class="form-label small mb-1 text-muted">分栏</label><select class="form-select form-select-sm" name="module_{{ i }}_data_columns"><option value="1" {% if mdata.get('columns', 1)|int == 1 %}selected{% endif %}>单栏</option><option value="2" {% if mdata.get('columns')|int == 2 %}selected{% endif %}>双栏</option></select></div>
             </div>
             <hr class="my-2">
@@ -231,6 +245,22 @@
 </div>
 
 <script>
+function alignmentControlHtml(name, current) {
+  var labels = {left: '居左', center: '居中', right: '居右'};
+  var positions = {left: [2, 2, 2], center: [2, 4, 3], right: [2, 6, 4]};
+  var widths = [12, 8, 10];
+  return '<div class="seg-radio seg-radio--align" role="radiogroup">' + ['left', 'center', 'right'].map(function(value) {
+    var active = value === current;
+    var id = (name + '_' + value).replace(/[^a-zA-Z0-9_-]/g, '_');
+    var icon = '<svg class="seg-radio-align-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">' + widths.map(function(width, i) {
+      return '<path d="M' + positions[value][i] + ' ' + (4 + i * 4) + 'h' + width + '" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>';
+    }).join('') + '</svg>';
+    return '<label class="seg-radio-option' + (active ? ' active' : '') + '" role="radio" aria-checked="' + (active ? 'true' : 'false') + '" title="' + labels[value] + '" for="' + id + '">' +
+      '<input type="radio" id="' + id + '" name="' + name + '" value="' + value + '"' + (active ? ' checked' : '') + ' onchange="var input=this;var g=input.closest(\'.seg-radio\');g.querySelectorAll(\'.seg-radio-option\').forEach(function(b){b.classList.toggle(\'active\',b.contains(input));b.setAttribute(\'aria-checked\',b.contains(input)?\'true\':\'false\');});">' +
+      '<span class="seg-radio-label">' + icon + '<span class="visually-hidden">' + labels[value] + '</span></span></label>';
+  }).join('') + '</div>';
+}
+
 window.blockLibrary = {{ blocks | tojson }};
 
 // 模块选择回调
@@ -445,7 +475,7 @@ function addModule(type, variant, dataPreset) {
     ? '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
       '<div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label>' + richEditorHtml('module_' + idx + '_data_body', '') + '</div>' +
       '<div class="row g-2">' +
-        '<div class="col-6"><label class="form-label small mb-1 text-muted">文字排版</label><select class="form-select form-select-sm" name="module_' + idx + '_data_text_align"><option value="left">居左</option><option value="center">居中</option><option value="right">居右</option></select></div>' +
+        '<div class="col-6 label-radio-row"><label class="form-label small mb-1 text-muted">文字排版</label>' + alignmentControlHtml('module_' + idx + '_data_text_align', 'left') + '</div>' +
         '<div class="col-6"><label class="form-label small mb-1 text-muted">分栏</label><select class="form-select form-select-sm" name="module_' + idx + '_data_columns"><option value="1">单栏</option><option value="2">双栏</option></select></div>' +
       '</div>' +
       '<hr class="my-2">' +

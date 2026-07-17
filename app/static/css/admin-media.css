@@ -11,21 +11,42 @@
   font-size: 12px;
 }
 
-.media-tabs {
+.media-toolbar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
+.media-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 .media-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 6px;
   border: 1px solid var(--media-border);
   background: #fff;
   color: #334155;
   border-radius: 6px;
-  padding: 5px 10px;
-  font-size: 14px;
-  line-height: 1.2;
+  cursor: pointer;
+}
+
+.media-tab svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .media-tab.active {
@@ -115,6 +136,7 @@
 .media-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
   gap: 10px;
 }
 
@@ -155,7 +177,10 @@
   align-items: center;
   justify-content: center;
   width: 100%;
+  min-height: 0;
+  flex-shrink: 0;
   aspect-ratio: 4 / 3;
+  overflow: hidden;
   border: 0;
   border-bottom: 1px solid var(--media-border);
   background:
@@ -182,6 +207,9 @@
 }
 
 .media-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   padding: 8px;
   min-width: 0;
 }
@@ -199,11 +227,71 @@
 
 .media-meta {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 4px;
+  align-items: center;
+  gap: 5px;
+  margin-top: auto;
+  padding-top: 4px;
   color: var(--media-muted);
   font-size: 12px;
+}
+
+.media-meta-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.media-meta-size {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.media-sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--media-muted);
+  flex-shrink: 0;
+}
+
+.media-sort-bar select {
+  width: auto;
+  font-size: 13px;
+}
+
+.media-sort-bar .btn {
+  font-size: 13px;
+  padding: 2px 6px;
+}
+
+.media-sort-dir-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 4px !important;
+}
+
+.media-sort-dir-icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .2s;
+}
+
+.media-sort-dir-btn.is-desc .media-sort-dir-icon {
+  transform: rotate(180deg);
 }
 
 .media-actions {

@@ -8,7 +8,7 @@
   <link rel="icon" href="http://192.168.1.88:3000/attachments/74eb0913-3298-4a00-82f8-fe1c02db27ec">
   <title>{% block title %}{{ site.slug if site else '' }}{% endblock %} — {{ platform_domain }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260717-link-disabled">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260717-nav-guide-indent">
   <style>
     :root {
       --bs-primary: {{ admin_primary }};
@@ -457,7 +457,7 @@
         {% elif item.type in ('list','page') and item.target %}
         <a class="left-nav-item" href="{{ url_for('core.page_panel', page_key=item.target) }}"
           data-panel="{{ item.type }}_{{ item.target }}" data-preview-page="{{ item.url }}"
-          style="padding-left: {{ 16 + level * 16 }}px;" title="{{ item.label }}">
+          style="padding-left: {{ 16 + level * 20 }}px;" title="{{ item.label }}">
           {{ left_page_icon(item) }}
           {{ item.label }}
           {% if item.type == 'list' %}
@@ -467,7 +467,7 @@
           {% endif %}
         </a>
         {% else %}
-        <div class="left-nav-item left-nav-link-display" style="padding-left: {{ 16 + level * 16 }}px;"
+        <div class="left-nav-item left-nav-link-display" style="padding-left: {{ 16 + level * 20 }}px;"
           title="{{ item.label }}（链接类型，仅展示）" aria-disabled="true">
           {{ left_page_icon(item) }}
           {{ item.label }}
@@ -991,13 +991,13 @@
       function move(e) {
         if (!dragging) return;
         var newWidth = startWidth + (e.clientX - startX);
-        var w = Math.max(60, Math.min(480, newWidth));
+        var w = Math.max(0, Math.min(480, newWidth));
         // 用 setProperty + important 才能覆盖 CSS 中 #leftNav 的 !important
         leftNav.style.setProperty('width', w + 'px', 'important');
         leftNav.style.setProperty('min-width', w + 'px', 'important');
         leftNav.style.transition = 'none';
         if (toggleBtn) {
-          toggleBtn.style.left = (w - 12) + 'px';
+          toggleBtn.style.left = Math.max(0, w - 12) + 'px';
           toggleBtn.style.transition = 'none';
         }
         // 跨越阈值时切换收缩/展开外观
@@ -1022,7 +1022,7 @@
 
         var finalWidth = leftNav.offsetWidth;
         if (finalWidth < THRESHOLD) {
-          // 吸附到收缩态：清除 inline 样式让 CSS class 接管 60px
+          // 吸附到完全收缩态：清除 inline 样式，让 CSS class 接管 0px
           leftNav.style.removeProperty('width');
           leftNav.style.removeProperty('min-width');
           if (toggleBtn) toggleBtn.style.removeProperty('left');

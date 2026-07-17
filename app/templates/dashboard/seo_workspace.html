@@ -208,26 +208,33 @@
               data-generate-url="{{ row.generate_url }}"
               data-save-url="{{ row.save_url }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <div class="seo-detail-head">
-            <div class="seo-page-path">
-              {% if row.kind == 'detail' %}{{ row.dataset_key }} / {{ row.key }}{% else %}/{{ row.key }}/{% endif %}
-              · {{ row.status_detail }}
+          {# 区块 1：当前页面检查 + 头部 #}
+          <div class="seo-card">
+            <div class="seo-detail-head">
+              <div class="seo-page-path">
+                {% if row.kind == 'detail' %}{{ row.dataset_key }} / {{ row.key }}{% else %}/{{ row.key }}/{% endif %}
+                · {{ row.status_detail }}
+              </div>
+              <div class="seo-detail-status">
+                <span class="seo-status-text">{{ row.status_label }}</span>
+                <span class="seo-detail-status-icon">{{ status_icon(row.status, row.status_label) }}</span>
+              </div>
             </div>
-            <div class="seo-detail-status">
-              <span class="seo-status-text">{{ row.status_label }}</span>
-              <span class="seo-detail-status-icon">{{ status_icon(row.status, row.status_label) }}</span>
-            </div>
+
+            <section class="seo-page-inspection">
+              <h3>当前页面检查</h3>
+              <div class="seo-inspection-grid">
+                <div class="check-ok"><strong>URL</strong><span>{{ row.inspection.path }}</span><small>路径应简短、稳定且可读。</small></div>
+                <div class="{{ 'check-waiting' if not row.inspection.built else ('check-warn' if row.inspection.h1_count != 1 or row.inspection.heading_issue else 'check-ok') }}"><strong>H1 / 标题层级</strong><span>{% if row.inspection.built %}H1：{{ row.inspection.h1_count }} 个{% if row.inspection.heading_issue %}，存在跳级{% endif %}{% else %}待构建后检查{% endif %}</span><small>每页应有且仅有一个 H1，后续标题逐级排列。</small></div>
+                <div class="{{ 'check-waiting' if not row.inspection.built else ('check-warn' if row.inspection.images_missing_alt else 'check-ok') }}"><strong>图片 alt</strong><span>{% if row.inspection.built %}{{ row.inspection.images_total }} 张；缺少属性 {{ row.inspection.images_missing_alt }}；空 alt {{ row.inspection.images_empty_alt }}{% else %}待构建后检查{% endif %}</span><small>空 alt 可用于装饰图片；内容图片需要替代文本。</small></div>
+                <div class="{{ 'check-waiting' if not row.inspection.built else ('check-warn' if not row.inspection.has_open_graph or not row.inspection.has_twitter_card else 'check-ok') }}"><strong>结构化与社交数据</strong><span>{% if row.inspection.built %}JSON-LD {{ '有' if row.inspection.has_jsonld else '无' }} / OG {{ '有' if row.inspection.has_open_graph else '无' }} / Twitter {{ '有' if row.inspection.has_twitter_card else '无' }}{% else %}待构建后检查{% endif %}</span><small>结果来自最终生成的 HTML。</small></div>
+              </div>
+            </section>
           </div>
 
-          <section class="seo-page-inspection">
-            <h3>当前页面检查</h3>
-            <div class="seo-inspection-grid">
-              <div class="check-ok"><strong>URL</strong><span>{{ row.inspection.path }}</span><small>路径应简短、稳定且可读。</small></div>
-              <div class="{{ 'check-waiting' if not row.inspection.built else ('check-warn' if row.inspection.h1_count != 1 or row.inspection.heading_issue else 'check-ok') }}"><strong>H1 / 标题层级</strong><span>{% if row.inspection.built %}H1：{{ row.inspection.h1_count }} 个{% if row.inspection.heading_issue %}，存在跳级{% endif %}{% else %}待构建后检查{% endif %}</span><small>每页应有且仅有一个 H1，后续标题逐级排列。</small></div>
-              <div class="{{ 'check-waiting' if not row.inspection.built else ('check-warn' if row.inspection.images_missing_alt else 'check-ok') }}"><strong>图片 alt</strong><span>{% if row.inspection.built %}{{ row.inspection.images_total }} 张；缺少属性 {{ row.inspection.images_missing_alt }}；空 alt {{ row.inspection.images_empty_alt }}{% else %}待构建后检查{% endif %}</span><small>空 alt 可用于装饰图片；内容图片需要替代文本。</small></div>
-              <div class="{{ 'check-waiting' if not row.inspection.built else ('check-warn' if not row.inspection.has_open_graph or not row.inspection.has_twitter_card else 'check-ok') }}"><strong>结构化与社交数据</strong><span>{% if row.inspection.built %}JSON-LD {{ '有' if row.inspection.has_jsonld else '无' }} / OG {{ '有' if row.inspection.has_open_graph else '无' }} / Twitter {{ '有' if row.inspection.has_twitter_card else '无' }}{% else %}待构建后检查{% endif %}</span><small>结果来自最终生成的 HTML。</small></div>
-            </div>
-            {% if row.inspection.built and row.inspection.images %}
+          {% if row.inspection.built and row.inspection.images %}
+          {# 区块 2：查看图片明细 #}
+          <div class="seo-card">
             <details class="seo-image-details">
               <summary>查看图片明细（{{ row.inspection.images|length }}{% if row.inspection.images_total > row.inspection.images|length %} / {{ row.inspection.images_total }}{% endif %}）</summary>
               <div class="seo-image-list">
@@ -240,10 +247,12 @@
                 {% endfor %}
               </div>
             </details>
-            {% endif %}
-          </section>
+          </div>
+          {% endif %}
 
-          <div class="seo-editor-grid">
+          {# 区块 3：页面标题 + 页面简介 + 预览 #}
+          <div class="seo-card">
+            <div class="seo-editor-grid">
             <div>
               <div class="mb-3">
                 <label class="form-label small text-muted mb-1" for="seo-title-{{ loop.index }}">页面标题</label>
@@ -277,6 +286,7 @@
               </div>
             </aside>
           </div>
+          </div>{# /seo-card 区块 3 #}
 
           <div class="seo-actions">
             <div class="seo-row-msg" role="status" aria-live="polite"></div>

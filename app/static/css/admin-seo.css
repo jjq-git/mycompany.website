@@ -176,8 +176,8 @@ body {
 .seo-ai-btn { display:inline-flex; width:42px; flex:0 0 42px; align-items:center; justify-content:center; border:1px solid var(--seo-primary-border); border-radius:7px; background:var(--seo-primary-soft); color:var(--theme-primary); }
 .seo-ai-btn svg { width:20px; height:20px; }
 .seo-ai-btn:disabled { opacity:.55; cursor:wait; }
-.seo-page-inspection { padding-top:16px; }
-.seo-page-inspection h3 { margin:0 0 10px; font-size:14px; }
+.seo-page-inspection { padding: 10px 0 0; }
+.seo-page-inspection h3 { margin:0 0 10px; font-size:14px; color: var(--bs-secondary-color) !important;}
 .seo-inspection-grid {
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
@@ -231,7 +231,7 @@ body {
 .seo-inspection-grid > .check-warn strong { color:#b91c1c; }
 .seo-inspection-grid > .check-waiting { border-top-color:#94a3b8; background:#f8fafc; }
 .seo-inspection-grid > .check-waiting strong { color:#64748b; }
-.seo-image-details { margin-top:10px; border:1px solid var(--seo-border); border-radius:7px; background:#fff; }
+.seo-image-details { margin-top:0; border:0; border-radius:0; background:transparent; }
 .seo-image-details summary { padding:9px 10px; color:var(--theme-primary); font-size:14px; font-weight:600; cursor:pointer; }
 .seo-image-list { display:flex; flex-direction:column; max-height:260px; overflow:auto; border-top:1px solid var(--seo-border); }
 .seo-image-row { display:grid; grid-template-columns:64px minmax(0,1.3fr) minmax(0,1fr); gap:8px; align-items:center; padding:7px 10px; border-bottom:1px solid #eef1f4; font-size:14px; }
@@ -370,7 +370,17 @@ body {
 
 .seo-detail {
   display: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+/* SEO 详情卡片 — 白底区块，上下间距 */
+.seo-card {
+  background: #fff;
+  border: 1px solid var(--seo-border);
   padding: 18px;
+  margin-bottom: 14px;
 }
 
 .seo-detail.active {
@@ -404,7 +414,6 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 350px;
   gap: 16px;
-  margin-top: 16px;
 }
 
 .seo-description {

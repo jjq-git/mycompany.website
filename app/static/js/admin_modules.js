@@ -402,13 +402,8 @@
 
   function segmentedControl(name, options, value, escapeFn) {
     var escFn = escapeFn || esc;
-    var isPagerAlign = /(?:^|_)pager_align$/.test(String(name || ''));
-    function pagerAlignIcon(alignment) {
-      var widths = alignment === 'left'
-        ? [12, 8, 10]
-        : alignment === 'right'
-          ? [12, 8, 10]
-          : [12, 8, 10];
+    function alignmentIcon(alignment) {
+      var widths = [12, 8, 10];
       var positions = alignment === 'left'
         ? [2, 2, 2]
         : alignment === 'right'
@@ -426,16 +421,34 @@
         label: String(typeof opt === 'object' ? (opt.label || opt.text || opt.value) : opt)
       };
     });
+    var alignValues = ['left', 'center', 'right'];
+    var blankMeansCenter = opts.some(function(opt) {
+      return opt.value === '' && /居中|center/i.test(opt.label);
+    });
+    var isAlignment = ['left', 'right'].every(function(alignment) {
+      return opts.some(function(opt) { return opt.value === alignment; });
+    }) && opts.some(function(opt) { return opt.value === 'center' || opt.value === ''; }) && opts.every(function(opt) {
+      return opt.value === '' || alignValues.indexOf(opt.value) !== -1;
+    });
+    if (isAlignment) {
+      opts = alignValues.map(function(alignment) {
+        return {
+          value: alignment,
+          label: { left: '居左', center: '居中', right: '居右' }[alignment]
+        };
+      });
+    }
     if (opts.length < 2 || opts.length > 3) return '';
     var current = String(value == null ? '' : value);
-    return '<div class="seg-radio" role="radiogroup">' +
+    if (isAlignment && blankMeansCenter && current === '') current = 'center';
+    return '<div class="seg-radio' + (isAlignment ? ' seg-radio--align' : '') + '" role="radiogroup">' +
       opts.map(function(opt) {
         var active = current === opt.value;
         var id = (name + '_' + opt.value).replace(/[^a-zA-Z0-9_-]/g, '_');
-        return '<label class="seg-radio-option' + (active ? ' active' : '') + '" role="radio" aria-checked="' + (active ? 'true' : 'false') + '" for="' + escFn(id) + '">' +
+        return '<label class="seg-radio-option' + (active ? ' active' : '') + '" role="radio" aria-checked="' + (active ? 'true' : 'false') + '" for="' + escFn(id) + '"' + (isAlignment ? ' title="' + escFn(opt.label) + '"' : '') + '>' +
           '<input type="radio" id="' + escFn(id) + '" name="' + escFn(name) + '" value="' + escFn(opt.value) + '"' + (active ? ' checked' : '') + ' onchange="var input=this;var g=input.closest(\'.seg-radio\');g.querySelectorAll(\'.seg-radio-option\').forEach(function(b){b.classList.toggle(\'active\', b.contains(input));b.setAttribute(\'aria-checked\', b.contains(input)?\'true\':\'false\');});">' +
-          '<span class="seg-radio-dot" aria-hidden="true"></span><span class="seg-radio-label"' + (isPagerAlign ? ' title="' + escFn(opt.label) + '"' : '') + '>' +
-            (isPagerAlign ? pagerAlignIcon(opt.value) + '<span class="visually-hidden">' + escFn(opt.label) + '</span>' : escFn(opt.label)) +
+          (isAlignment ? '' : '<span class="seg-radio-dot" aria-hidden="true"></span>') + '<span class="seg-radio-label">' +
+            (isAlignment ? alignmentIcon(opt.value) + '<span class="visually-hidden">' + escFn(opt.label) + '</span>' : escFn(opt.label)) +
           '</span>' +
           '</label>';
       }).join('') +
@@ -470,12 +483,12 @@
         '<input type="text" class="form-control form-control-sm module-media-alt-input" name="' + safeName + '_alt" value="' + safeAlt + '" placeholder="图片 Alt：自动使用标题/产品名，可覆盖">' +
       '</div>';
     return '<div class="module-media-layout"><div class="module-media-tools">' +
-        '<label class="module-media-picker' + (value ? ' has-media' : '') + '" title="' + (isEmbed ? '上传网页包' : '点击上传') + '">' +
+        '<div class="module-media-picker' + (value ? ' has-media' : '') + '" role="button" tabindex="0" title="' + (isEmbed ? '上传网页包' : '点击上传') + '" onclick="openModuleMediaPicker(event,this)" onkeydown="openModuleMediaPicker(event,this)">' +
           preview +
           (value ? moduleMediaPreviewButton() : '') +
           '<input type="file" name="' + safeName + '_file" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
           (value ? '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' : '') +
-        '</label>' +
+        '</div>' +
       '</div>' +
       '<div class="module-media-content"><div class="module-media-url-row">' +
         '<input type="text" class="form-control form-control-sm" name="' + safeName + '" value="' + safeValue + '" placeholder="' + esc(placeholder || '') + '" oninput="updateImagePreview(this)">' +
@@ -1557,6 +1570,15 @@
   function moduleMediaPreviewButton() {
     return '<button type="button" class="module-media-preview-icon" onclick="event.preventDefault();event.stopPropagation();var media=this.closest(&quot;.module-media-picker&quot;).querySelector(&quot;img,video&quot;);if(media)enlargeImage(media)" title="预览" aria-label="预览"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>';
   }
+
+  window.openModuleMediaPicker = function(event, picker) {
+    if (!event || !picker) return;
+    if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
+    if (event.target.closest('button,a,input')) return;
+    event.preventDefault();
+    var fileInput = picker.querySelector('input[type="file"]');
+    if (fileInput) fileInput.click();
+  };
 
   function renderModuleMediaPicker(picker, src, fileName, accept) {
     if (!picker) return;
@@ -2862,11 +2884,12 @@
       '</div>' +
       '<div class="mb-2">' +
         '<label class="form-label small mb-1 text-muted">分页对齐</label>' +
-        '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align">' +
-          '<option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option>' +
-          '<option value="center"' + (d.pager_align === 'center' || !d.pager_align ? ' selected' : '') + '>居中</option>' +
-          '<option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option>' +
-        '</select></div>';
+        segmentedControl('module_' + idx + '_data_pager_align', [
+          { value: 'left', label: '居左' },
+          { value: 'center', label: '居中' },
+          { value: 'right', label: '居右' }
+        ], d.pager_align || 'center', esc) +
+      '</div>';
     return { specialEditor: specialEditor };
   }
 
@@ -2919,11 +2942,12 @@
         '</select></div>' +
       '<div class="mb-2">' +
         '<label class="form-label small mb-1 text-muted">分页对齐</label>' +
-        '<select class="form-select form-select-sm" name="module_' + idx + '_data_pager_align">' +
-          '<option value="left"' + (d.pager_align === 'left' ? ' selected' : '') + '>居左</option>' +
-          '<option value="center"' + (d.pager_align === 'center' || !d.pager_align ? ' selected' : '') + '>居中</option>' +
-          '<option value="right"' + (d.pager_align === 'right' ? ' selected' : '') + '>居右</option>' +
-        '</select></div>' +
+        segmentedControl('module_' + idx + '_data_pager_align', [
+          { value: 'left', label: '居左' },
+          { value: 'center', label: '居中' },
+          { value: 'right', label: '居右' }
+        ], d.pager_align || 'center', esc) +
+      '</div>' +
       sw('show_view_all', '显示查看全部', false) +
       sw('show_detail_btn', '显示"了解详情"按钮', true);
     return { specialEditor: specialEditor };

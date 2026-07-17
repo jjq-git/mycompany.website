@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-media.css') }}?v=3">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-media.css') }}?v=4">
 
 <div class="media-panel" id="mediaPanel">
   <div class="d-flex align-items-center justify-content-between mb-3">
@@ -6,24 +6,42 @@
     <span class="media-count">{{ files|length }} 个资源</span>
   </div>
 
-  <div class="media-tabs" role="tablist" aria-label="媒体分类">
-    <button class="media-tab active" type="button" data-media-filter="all">全部</button>
-    <button class="media-tab" type="button" data-media-filter="unreferenced">未引用</button>
-    <button class="media-tab" type="button" data-media-filter="image">图片</button>
-    <button class="media-tab" type="button" data-media-filter="video">视频</button>
-    <button class="media-tab" type="button" data-media-filter="package">网页包</button>
-    <button class="media-tab" type="button" data-media-filter="document">文档</button>
-    <button class="media-tab" type="button" data-media-filter="other">其他</button>
-  </div>
-  <div class="media-sort-bar" style="display:flex;align-items:center;gap:6px;margin-bottom:12px;font-size:14px">
-    <span class="text-muted">排序：</span>
-    <select class="form-select form-select-sm" id="mediaSortBy" style="width:auto;font-size:14px">
-      <option value="name">文件名</option>
-      <option value="category">类型</option>
-      <option value="size">文件大小</option>
-      <option value="refs">引用数</option>
-    </select>
-    <button type="button" class="btn btn-sm btn-light" id="mediaSortDir" title="切换升降序" style="font-size:14px;padding:2px 6px">升序</button>
+  <div class="media-toolbar">
+    <div class="media-tabs" role="tablist" aria-label="媒体分类">
+      <button class="media-tab active" type="button" data-media-filter="all" title="全部">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </button>
+      <button class="media-tab" type="button" data-media-filter="unreferenced" title="未引用">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      </button>
+      <button class="media-tab" type="button" data-media-filter="image" title="图片">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      </button>
+      <button class="media-tab" type="button" data-media-filter="video" title="视频">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      </button>
+      <button class="media-tab" type="button" data-media-filter="package" title="网页包">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      </button>
+      <button class="media-tab" type="button" data-media-filter="document" title="文档">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h6"/></svg>
+      </button>
+      <button class="media-tab" type="button" data-media-filter="other" title="其他">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><circle cx="5" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <div class="media-sort-bar">
+      <span>排序：</span>
+      <select class="form-select form-select-sm" id="mediaSortBy">
+        <option value="name">文件名</option>
+        <option value="category">类型</option>
+        <option value="size">文件大小</option>
+        <option value="refs">引用数</option>
+      </select>
+      <button type="button" class="btn btn-sm btn-light media-sort-dir-btn" id="mediaSortDir" title="切换升降序">
+        <svg class="media-sort-dir-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M18 11l-6-6-6 6"/></svg>
+      </button>
+    </div>
   </div>
 
   <div class="media-manager-layout">
@@ -47,8 +65,21 @@
             <div class="media-card-body">
               <div class="media-name" title="{{ file.display_name }}">{{ file.display_name }}</div>
               <div class="media-meta">
-                <span>{{ file.category_label }}</span>
-                <span>{{ file.size_display }}</span>
+                {# 类型图标 #}
+                {% if file.category == 'image' %}
+                <svg class="media-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                {% elif file.category == 'video' %}
+                <svg class="media-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                {% elif file.category == 'package' %}
+                <svg class="media-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                {% elif file.category == 'document' %}
+                <svg class="media-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h6"/></svg>
+                {% else %}
+                <svg class="media-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                {% endif %}
+                <span class="media-meta-size">
+                  {% if file.width and file.height %}{{ file.width }}×{{ file.height }} · {% endif %}{{ file.size_display }}
+                </span>
               </div>
             </div>
             <div class="media-actions">
@@ -555,7 +586,7 @@
   if (sortDirBtn) {
     sortDirBtn.addEventListener('click', function() {
       currentSort.asc = !currentSort.asc;
-      this.textContent = currentSort.asc ? '升序' : '降序';
+      this.classList.toggle('is-desc', !currentSort.asc);
       sortMediaCards();
     });
   }

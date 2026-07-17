@@ -271,6 +271,15 @@ def list_media_files(site_id):
             ext = path.suffix.lower().lstrip('.')
             stat = path.stat()
             category = _media_category_for_extension(ext)
+            # 读取图片宽高，用于媒体管理卡片显示分辨率
+            img_width = img_height = None
+            if category == 'image':
+                try:
+                    from PIL import Image
+                    with Image.open(path) as img:
+                        img_width, img_height = img.size
+                except Exception:
+                    pass  # 非标准图片文件或损坏，跳过尺寸读取
             items.append({
                 'name': path.name,
                 'display_name': path.name,
@@ -283,6 +292,8 @@ def list_media_files(site_id):
                 'url': f'/assets/uploads/{path.name}',
                 'api_name': path.name,
                 'is_package': False,
+                'width': img_width,
+                'height': img_height,
             })
 
     if packages_dir.exists():

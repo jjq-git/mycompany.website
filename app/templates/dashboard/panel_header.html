@@ -117,19 +117,19 @@
     </div>
 
     {# 语言版本 + 样式（切换按钮开启时显示） #}
-    <div id="langSwitcherPanel" class="rounded p-3" style="background:#f8fafb;border:1px solid #e5e7eb;{% if not sw_enabled %}display:none;{% endif %}">
-      <div class="small fw-semibold mb-2">网站语言版本</div>
+    <div id="langSwitcherPanel" style="{% if not sw_enabled %}display:none;{% endif %}">
+      <div style="font-size:14px;font-weight:600;margin-bottom:0.5rem">网站语言版本</div>
       <div class="d-flex gap-3 mb-3" id="langVersionCheckboxes">
         {% for lang_opt in template_languages %}
         <label class="d-flex align-items-center gap-2 lang-version-option" style="cursor:pointer;">
           <input class="form-check-input mt-0" type="checkbox" name="enabled_lang" value="{{ lang_opt.code }}"
                  {% if lang_opt.code in enabled_languages %}checked{% endif %}>
-          <span class="small">{{ lang_opt.name }}</span>
+          <span style="font-size:14px">{{ lang_opt.name }}</span>
         </label>
         {% endfor %}
       </div>
 
-      <div class="small fw-semibold mb-2">按钮样式</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:0.5rem">按钮样式</div>
       {% set current_style = current_header.get('language_switcher', {}).get('style', 'vertical_dropdown') %}
       <div class="lang-style-options" role="radiogroup" aria-label="语言切换按钮样式">
         {% for s in lang_switcher_styles %}
