@@ -217,7 +217,7 @@
   </div>
 </form>
 
-<script src="/static/js/admin_modules.js?v=114"></script>
+<script src="/static/js/admin_modules.js?v=129"></script>
 <script type="application/json" id="blockLibraryTplJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="allListDatasetsTplJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryTplJson">{{ style_registry | default({}) | tojson }}</script>
@@ -279,6 +279,10 @@
     var emptyHint = document.getElementById('emptyTemplateHint');
     if (emptyHint) emptyHint.style.display = items.length ? 'none' : '';
   };
+
+  function isFixedDetailContentComponent(type) {
+    return type === 'detail_content' || /^detail_content_(text|image|video|media_text|gallery|table|heading|note|embed)$/.test(String(type || ''));
+  }
 
   (function initTemplateModuleSorting() {
     var container = document.getElementById('selectedModulesTpl');
@@ -411,7 +415,11 @@
     var countEl = document.getElementById('moduleCountTpl');
     if (!container || !countEl || typeof window._buildModuleHTML !== 'function') return false;
     var idx = parseInt(countEl.value || '0', 10);
-    var result = window._buildModuleHTML(type, idx, savedData || {}, variant || 'default');
+    savedData = Object.assign({}, savedData || {});
+    if (isFixedDetailContentComponent(type) && !savedData.slot_id) {
+      savedData.slot_id = 'content-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+    }
+    var result = window._buildModuleHTML(type, idx, savedData, variant || 'default');
     var div = document.createElement('div');
     div.className = 'card mb-2 module-item expanded';
     div.dataset.moduleIndex = idx;
@@ -420,6 +428,9 @@
     div.innerHTML = result.html;
     container.appendChild(div);
     if (typeof initColorPickers === 'function') initColorPickers(div);
+    if (typeof window._updateModuleConditionalFields === 'function') {
+      window._updateModuleConditionalFields(div);
+    }
     var header = div.querySelector('.module-header');
     if (header) {
       header.addEventListener('click', function() {
@@ -433,7 +444,7 @@
 
   window.onBlockPaletteConfirm = function(type, variant, dataPreset) {
     if (type === 'detail_content_blocks' && document.querySelector('#selectedModulesTpl .module-item[data-module-type="detail_content_blocks"]')) {
-      alert('正文内容块是详情正文容器，一个模板里保留一个即可；需要更多内容请在数据详情编辑页的“正文”里继续添加文本、图片、视频、表格等内容块。');
+      alert('自由正文是可重复内容容器，一个模板保留一个即可；结构固定的内容请分别添加文本、图片、视频、图文等独立组件。');
       return;
     }
     window.addTemplateModule(type, variant || 'default', dataPreset || {});

@@ -88,7 +88,6 @@
     icons.detail_specs = icons.data_grid;
     icons.detail_table = icons.data_grid;
     icons.detail_link = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"/></svg>';
-    icons.detail_intro = icons.section_title;
     icons.detail_features = icons.feature_grid;
     icons.detail_files = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>';
     icons.detail_faq = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.9 1.4-2.5 2.3-.3.4-.4.8-.4 1.2"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>';
@@ -276,10 +275,6 @@
         button: function(){ return '<div class="mini-link-preview"><div class="mini-link-button"></div></div>'; },
         text_link: function(){ return '<div class="mini-link-preview"><div class="mini-link-text"></div></div>'; }
       },
-      detail_intro: {
-        default: function(){ return '<div class="mini-intro-preview"><div class="mini-chip"></div><div class="mini-heading"></div><div class="mini-sub"></div><div class="mini-tags"><span></span><span></span><span></span></div></div>'; },
-        centered: function(){ return '<div class="mini-intro-preview centered"><div class="mini-chip"></div><div class="mini-heading"></div><div class="mini-sub"></div><div class="mini-tags"><span></span><span></span><span></span></div></div>'; }
-      },
       detail_features: {
         cards: function(){ return miniFeatureCards(3); }
       },
@@ -317,7 +312,6 @@
       detail_specs: { list: '参数列表' },
       detail_table: { table: '手填表格' },
       detail_link: { button: '按钮链接', text_link: '文字链接' },
-      detail_intro: { default: '标题摘要', centered: '居中标题摘要' },
       detail_features: { cards: '卖点卡片' },
       detail_files: { list: '资料列表' },
       detail_faq: { list: '问答列表' },
@@ -363,7 +357,7 @@
     var descriptions = {
       detail_media: {
         gallery_top: '主图和缩略图集中展示，适合以图片为核心的产品详情。',
-        gallery_left: '图片区域与标题摘要并列，适合首屏同时看图和看基础信息。'
+        gallery_left: '图片区域与基础信息并列，适合首屏同时看图和看基础信息。'
       },
       detail_text: {
         plain: '读取正文、简介或摘要字段，按普通段落输出。',
@@ -381,10 +375,6 @@
       detail_link: {
         button: '适合下载、询价、跳转详情等强操作入口。',
         text_link: '适合正文之间的轻量跳转。'
-      },
-      detail_intro: {
-        default: '显示标题、摘要、分类、标签等基础信息。',
-        centered: '居中展示基础信息，适合独立标题区。'
       },
       detail_features: {
         cards: '逐条填写卖点，支持图标、标题、说明。'
@@ -526,7 +516,7 @@
   function buildPaletteData() {
     return getBlockLibrary().filter(function(b) {
       // item_data 仅在数据集编辑器中自动追加，不出现在模块选择弹框中
-      return b.name !== 'item_data';
+      return b.name !== 'item_data' && !b.palette_hidden;
     }).map(function(b) {
       return {
         type: b.name,

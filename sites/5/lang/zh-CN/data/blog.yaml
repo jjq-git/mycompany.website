@@ -4,11 +4,6 @@
   date: '2026-06-11'
   cover: /assets/uploads/blog-cover-20260611104910-02a4c10b111.webp
   style_bg-color: ''
-  modules:
-  - type: item_data
-    order: 1
-    variant: default
-    data: {}
   seo_title: 模块地址
   seo_description: RIMU 模块地址页面提供精准的模块定位信息，帮助您快速找到所需产品位置。
 - id: 2
@@ -17,11 +12,6 @@
   date: '2026-06-11'
   cover: /assets/uploads/blog-cover-20260611105034-bf360b40.webp
   style_bg-color: ''
-  modules:
-  - type: item_data
-    order: 1
-    variant: default
-    data: {}
   seo_title: PWM SW 5 模块控制电机
   seo_description: RIMU PWM SW 5模块控制电机，提供精准调速与稳定控制，适用于多种工业自动化场景。
   category: PWM
@@ -31,163 +21,32 @@
   title: PWM SW 5 模块控制 LED 灯带
   slug: pwm-sw-5-module-control-led
   style_bg-color: ''
-  modules:
-  - type: item_data
-    order: 1
-    variant: default
-    data: {}
   description: 多通道 LED 灯带分为共阳极和共阴极两种类型。共阳极灯带通常只有一个 + 焊盘和多个 – 焊盘。
   cover: /assets/uploads/blog-cover-20260611105634-5f87d487.webp
   date: '2026-06-11'
-  body: "<img src=\"/assets/uploads/richtext-20260612015012-ae686daa.webp\"><br><p>多通道\
-    \ LED 灯带分为共阳极和共阴极两种类型。共阳极灯带通常只有一个 + 焊盘和多个 - 焊盘。\r\n<br>\r\n<br>要使用 PWM_SW_5 模块控制多色\
-    \ LED 灯带，灯带必须是共阳极的，或者是多个单色共阳极灯带的组合。\r\n<br>\r\n<br>如图所示，这些焊盘都连接到共阳极 LED 灯带。<br><img\
-    \ src=\"/assets/uploads/richtext-20260612015037-10f628b6.webp\"><br><br></p>"
+  body: ''
   seo_title: PWM SW 5 模块控制 LED 灯带
   seo_description: RIMU PWM SW 5 模块专为共阳极多通道LED灯带设计，实现精准多色控制，简化照明系统集成。
   category: PWM
   tags: []
+  detail_content_blocks:
+  - type: image
+    image: /assets/uploads/richtext-20260612015012-ae686daa.webp
+    alt: ''
+  - type: text
+    text: 多通道 LED 灯带分为共阳极和共阴极两种类型。共阳极灯带通常只有一个 + 焊盘和多个 - 焊盘。 要使用 PWM_SW_5 模块控制多色 LED 灯带，灯带必须是共阳极的，或者是多个单色共阳极灯带的组合。 如图所示，这些焊盘都连接到共阳极 LED 灯带。
+  - type: image
+    image: /assets/uploads/richtext-20260612015037-10f628b6.webp
+    alt: ''
 - id: 4
   title: RIMU 模块的一般信息
   slug: information-of-rimu-modules
   description: 概述 RIMU 主机与模块之间的通信主要通过 I2C 总线实现，
-  body: "<h4><b>帖子：rimu 模块的通用信息<br></b><b>概述</b></h4><p><img src=\"/assets/uploads/richtext-20260612020024-9cb728d2.webp\"\
-    ><br>RIMU 主机与模块之间的通信主要通过 I2C 总线实现，\r\n<br>同时也支持其他特殊模块。具体模块的选择主要取决于所需功能、成本、防护等级以及不同的应用场景。\r\
-    \n<br>\r\n<br>本文档提供了可定制 I2C 协议模块的详细信息，例如 DIMMER5 模块和 8 通道 IO 扩展模块。\r\n<br>目前，所有模块均使用\
-    \ Atmega328p 作为主处理器。该芯片旨在自行处理尽可能多的事件，并通过 I2C 协议与主机通信，例如控制 IO 端口和读取传感器信息。这种设计有效减少了主机\
-    \ IO 端口的使用。如果 Atmega328p 无法满足特定要求，将使用主机的 IO 端口进行处理，同时支持 IO 端口切换，允许主机连接多个设备。<br></p><p><b>模块引脚<br></b></p><p>不同模块可能使用不同的引脚。在设计阶段，应尽可能利用模块自身的引脚，以尽量减少主机\
-    \ IO 端口的使用。\r\n<br>R01\tR02\tR03\tR04\tR05\tR06\tR07\tR08\tR09\tR10\tR11\r\n<br>C1\t\
-    3.3v¹\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\tIO02\tIO01\t5V²\tGND\r\n<br>C2\tGND\t\
-    IO20\tIO19\tIO12⁴\tIO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V³&nbsp;<br></p><p><img\
-    \ src=\"/assets/uploads/richtext-20260612020127-f3536ea0.svg\"></p><p><b>注释<br></b></p><p></p><ol><li>最大输出电流：2A，由主机提供。</li><li>模块电源：为主机电池充电。</li><li>最大输出电流：200mA，由主机提供。</li><li>IO12\
-    \ 引脚：此引脚主要用于向主机发送中断信号。<br></li></ol><p></p><p><b>固件更新<br></b></p><p><img src=\"\
-    /assets/uploads/richtext-20260612020151-454aecd2.svg\"></p><p><b>使用主机升级模块固件<br></b></p><p></p><ol><li>使用螺丝刀打开模块，参考上图\
-    \ C 中的 UPGRADE 位置，将三个拨码开关全部拨到 ON 位置。</li><li>重新安装模块顶盖（盖好盖子后，模块即可与主机正常通信）。</li><li>点击屏幕上的“升级”开始固件升级。</li><li>升级成功后，取下模块顶盖，将拨码开关拨到\
-    \ OFF 位置。</li><li>重新安装模块顶盖，模块即可再次与主机正常通信。<br></li></ol><p></p><p><b>其他升级固件的方法<br></b></p><p>具有一定编程和硬件技能的用户也可以通过其他方法升级固件，例如：<br></p><p></p><ol><li>使用\
-    \ Arduino 对模块编程时，可通过 USB 转串口模块（需要 DTR 引脚）进行升级，如图 B 所示。</li><li>可通过 SPI 接口升级固件，如图\
-    \ A 所示。<br></li></ol><p></p><p><b>通信<br></b></p><p>主机与模块之间的通信通过 I2C 总线进行。I2C 从机地址必须唯一，模块可以使用拨码开关设置其\
-    \ I2C 地址。使用 16 位旋转拨码开关，模块可以分配 16 个不同的地址，允许主机同时连接最多 <strong>16</strong> 个模块。主机与模块之间的通信类型如下：<br></p><p></p><ol><li>人机交互：主机向模块读取或发送数据。</li><li>定时读取：某些模块需要主机定期读取其数据，例如模块状态或传感器读数。</li><li>中断触发：当模块有新信息时，通过拉高中断引脚通知主机读取模块信息。</li></ol><p></p><p><b>I2C\
-    \ 协议<br></b></p><p></p><ol><li>地址范围：0x60 – 0x6F，对应拨码开关位置 0 – F。\r\n</li><li>通信速度：400KHz。\r\
-    \n</li><li>电平：3.3V。</li></ol><p></p><p><b>人机交互</b></p><p>当主机控制模块时，根据其需要向模块读取或发送数据。</p><p><b>定时读取\r\
-    \n</b><br>某些输入型模块需要主机定期读取其数据，例如模块状态或传感器读数。\r\n<br><b>人机交互\r\n</b><br>当模块有新信息时，可以触发中断。主机首先确认哪个模块触发了中断，然后读取相应模块的寄存器信息。\r\
-    \n<br><b>引脚定义\r\n</b><br>每种协议使用自己的引脚定义，因此在模块的硬件设计过程中，需要尽可能避免使用这些引脚，以防止引脚冲突。\r\n\
-    <br><b>I2C 引脚\r\n</b><br>所有模块的 I2C 引脚相同。不同模块需要使用拨码开关选择不同的地址，如下图所示：<br></p><p>R1\t\
-    R2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3v\tIO41\tIO42\tIO09\tIO40\t\
-    IO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\t\
-    IO13\tIO14\tIO45\tIO04\t5V\r\n<br> \t \t \t \t \t \t \t \t \t \t \t \r\n<br>I2C\t\
-    –\tSCL\tSDA\t–\t–\t–\t–\t–\t–\t–\t–\r\n<br>I2C\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t\
-    –&nbsp;<br></p><p><b>UART 引脚\r\n</b><br>某些模块需要使用串行通信，例如 RS485、CAN、DMX512 等。此外，更新模块固件时需要用到\
-    \ UART 接口和 RESET 引脚。由于更新模块固件的操作不常见，因此通信和固件更新所用的 TX 和 RX 引脚是共用的。RESET (RST) 引脚仅在固件更新时使用。引脚位置如下图所示：\r\
-    \n<br>R1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3v\tIO41\tIO42\t\
-    IO09\tIO40\tIO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\t\
-    IO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V\r\n<br>UART\t–\t–\t–\t–\t–\t–\tRST\tRX\t\
-    TX\t–\t–\r\n<br>UART\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p>用于升级固件的拨码开关在模块出厂时设置为\
-    \ OFF。如果需要固件升级，请将拨码开关拨到 ON。正常使用时，拨码开关应设置为 OFF。\r\n<br>\r\n<br>Peng<br></p><p><b>USB\r\
-    \n</b><br>主机配备 TYPE-C 接口，正插和反插功能不同：</p><p><img src=\"/assets/uploads/richtext-20260612020450-b8ba23d2.svg\"\
-    ></p><p></p><ol><li>正插（与 RIMU 标志和屏幕同侧）：主机可模拟键盘、鼠标、U 盘和游戏控制器等设备。\r\n</li><li>反插（与\
-    \ RIMU 标志和屏幕相反侧）：用于升级程序和调试，连接方式为计算机 -&gt; CH9102X -&gt; ESP32S3。</li></ol><p></p><p><b>正插\
-    \ - USB 设备\r\n</b><br>使用 USB 接口时，主机可模拟键盘、鼠标、U 盘和游戏控制器等设备。此时，IO19 和 IO20 引脚将被占用。\r\
-    \n<br>R1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\t\
-    IO09\tIO40\tIO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\t\
-    IO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V\r\n<br>USB-HID\t–\t–\t–\t–\t–\t–\t–\t–\t\
-    –\t–\t–\r\n<br>USB-HID\t–\tD+\tD-\t–\t–\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p><b>反插\
-    \ - USB 串口\r\n</b><br>使用 TYPE-C 串口时，IO43 和 IO44 引脚将被占用。主机可用作串口进行调试或升级程序。\r\n<br>R1\t\
-    R2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\t\
-    IO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\t\
-    IO13\tIO14\tIO45\tIO04\t5V\r\n<br>USB-UART\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\r\n\
-    <br>USB-UART\t–\t–\t–\t–\tRX\tTX\t–\t–\t–\t–\t–&nbsp;<br></p><p><b>SPI 引脚\r\n\
-    </b><br>某些模块需要更高速的数据传输，将使用 SPI 协议。片选引脚由 Atmega328p 控制，允许多个模块连接到一个 SPI 总线。SPI 引脚定义如下：\r\
-    \n<br>R1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\t\
-    IO09\tIO40\tIO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\t\
-    IO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V\r\n<br>SPI\t–\t–\t–\tSCK\tMOSI\tMISO\t\
-    –\t–\t–\t–\t–\r\n<br>SPI\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p><b>中断引脚\r\
-    \n</b><br>具有中断功能的模块可以通过中断引脚通知主机有新信息。由于此中断引脚与主机的内部外设共用同一引脚，主机必须首先确认哪个模块触发了中断，然后读取相应模块的寄存器信息。引脚位置如下：\r\
-    \n<br>R1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\t\
-    IO09\tIO40\tIO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\t\
-    IO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V\r\n<br>INTERRUPT\t–\t–\t–\t–\t–\t–\t–\t\
-    –\t–\t–\t–\r\n<br>INTERRUPT\t–\t–\t–\tINT\t–\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p></p><div></div><p></p><p><b>非协议引脚\r\
-    \n</b><br>这些非协议引脚不被任何协议占用。在模块硬件设计过程中，应优先使用这些引脚。此外，IO05 引脚仅在固件升级时使用。\r\n<br>R1\t\
-    R2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\t\
-    IO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\t\
-    IO13\tIO14\tIO45\tIO04\t5V\r\n<br>非协议引脚\t–\t–\t–\t–\t–\t–\tY\t–\t–\t–\t–\r\n<br>非协议引脚\t\
-    –\t–\t–\t–\t–\t–\tY\tY\tY\tY\t–</p><p><b>寄存器\r\n</b><br>寄存器总数最大为 0xFF，包括通用部分和私有部分。\r\
-    \n<br><b>通用寄存器\r\n</b><br></p><ul><li>0x00 – 0x41，共 0x42 位，所有模块通用。\r\n</li><li>0x05\
-    \ (REG_NEW_DATA_FLAG)：读/写\r\n</li><li>0x41 (REG_INTERRUPT_FLAG)：读/写\r\n</li><li>其他位：只读\r\
-    \n</li></ul><b>私有寄存器\r\n</b><br><ul><li>0x42 – 0xFF，由每个模块定义，私有寄存器最多为 0xFF – 0x42\
-    \ = 0xBD 位。\r\n</li><li>每个模块的寄存器都有相应的功能。\r\n</li><li>读/写权限由模块自身定义。</li></ul><p></p><p><b>地址列表\r\
-    \n</b><br>地址\t功能\t读/写\t注释\r\n<br>0x00/02\t模块编号\tR\t\r\n<br>0x01/03\t模块编号\tR\t\r\
-    \n<br>0x04\t寄存器总数\tR\t\r\n<br>0x05\t硬件版本\tR\t\r\n<br>0x06\t软件版本\tR\t\r\n<br>0x07\t\
-    使用的功能\tR\t\r\n<br>0x08\t校验和\tR\t\r\n<br>0x09/0A/0B/0C/0D/0E\t保留\tR\t\r\n<br>0x0E\t\
-    新数据标志\tR/W\t\r\n<br>0x10-&gt;0x2F\t模块名称\tR\t\r\n<br>0x30\tPIN-01 状态\tR\t\r\n<br>0x31\t\
-    PIN-02 状态\tR\t\r\n<br>0x32\tPIN-04 状态\tR\t\r\n<br>0x33\tPIN-05 状态\tR\t\r\n<br>0x34\t\
-    PIN-06 状态\tR\t\r\n<br>0x35\tPIN-09 状态\tR\t\r\n<br>0x36\tPIN-12 状态\tR\t\r\n<br>0x37\t\
-    PIN-13 状态\tR\t\r\n<br>0x38\tPIN-14 状态\tR\t\r\n<br>0x39\tPIN-19 状态\tR\t\r\n<br>0x3A\t\
-    PIN-20 状态\tR\t\r\n<br>0x3B\tPIN-40 状态\tR\t\r\n<br>0x3C\tPIN-41 状态\tR\t\r\n<br>0x3D\t\
-    PIN-42 状态\tR\t\r\n<br>0x3E\tPIN-43 状态\tR\t\r\n<br>0x3F\tPIN-44 状态\tR\t\r\n<br>0x40\t\
-    PIN-45 状态\tR\t\r\n<br>0x41\t中断标志\tR/W&nbsp;</p><p><b>模块编号\r\n</b><br>每个模块都有一个不同且唯一的编号，范围从\
-    \ 0x0001 到 0xFFFF。同一模块的不同版本使用相同的编号。硬件版本用于区分硬件。为确保正确识别模块，系统将编号存储两次，以防止 I2C 连接到其他设备。\r\
-    \n<br>\r\n<br>0x00/0x02\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>高 8 位\t0\t0\t0\t\
-    0\t0\t0\t0\t0\r\n<br>0x01/0x03\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>低 8 位\t\
-    0\t0\t0\t0\t0\t0\t0\t0&nbsp;<br></p><p><b>总位数\r\n</b><br>寄存器总数范围从 0x00 到 0xFF，等于通用寄存器数量加上私有寄存器数量。此总数存储在地址\
-    \ 0x04。\r\n<br>\r\n<br>0x04\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>值\t0\t0\t0\t\
-    0\t0\t0\t0\t0</p><p><b>硬件版本\r\n</b><br>模块的硬件版本在功能相同的模块中递增，范围从 1 到 255，第一个版本为 1。此版本信息存储在地址\
-    \ 0x05。\r\n<br>\r\n<br>0x05\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>值\t0\t0\t0\t\
-    0\t0\t0\t0\t0&nbsp;<br></p><p><b>软件版本\r\n</b><br>模块的软件版本可通过主机升级，范围从 1 到 255，第一个版本为\
-    \ 1。此版本信息存储在地址 0x06。\r\n<br>\r\n<br>固件更新不会修改 EEPROM 中的数据，但在模块初始化期间，可能会使用旧数据，这可能导致数据错误。软件版本还用于确定是否应从\
-    \ EEPROM 读取数据以初始化模块。\r\n<br>\r\n<br>0x06\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>值\t\
-    0\t0\t0\t0\t0\t0\t0\t0&nbsp;<br></p><p><b>通信协议\r\n</b><br>不同模块具有不同的功能，因此所需的通信协议也不同。此模块使用的协议存储在寄存器\
-    \ 0x07 中，供主机识别。\r\n<br>\r\n<br>每个位代表模块使用的通信协议，0 表示未使用，1 表示当前正在使用。所有模块都支持 I2C 协议。\r\
-    \n<br>\r\n<br>0x07\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>协议\t–\t–\tUPGRADE\t\
-    USB-HID\tUSB-UART\tINTERRUPT\tUART\tSPI\r\n<br></p><ol><li>UPGRADE：模块可通过主机升级。\r\
-    \n</li><li>INTERRUPT：模块具有中断触发功能，当模块状态改变时通知主机。\r\n</li><li>UART：模块使用串行引脚进行通信。\r\
-    \n</li><li>SPI：模块使用 SPI 协议进行数据传输。\r\n</li><li>USB-HID：模块使用 IO19 和 IO20 引脚，这将禁用主机模拟\
-    \ HID 设备的功能。\r\n</li><li>USB-UART：模块使用 IO43 和 IO44 引脚，这将禁用主机的 TYPE-C 接口作为串口的功能。</li></ol><div></div><p></p><p><b>校验和\r\
-    \n</b><br>校验和值是 0x00 到 0x07 之和的低八位。此校验和存储在地址 0x08。\r\n<br>\r\n<br>0x08\tB7\tB6\t\
-    B5\tB4\tB3\tB2\tB1\tB0\r\n<br>值\t0\t0\t0\t0\t0\t0\t0\t0\r\n<br><b>保留位\r\n</b><br>地址范围\
-    \ 0x09 – 0x0E 为保留位，未使用，值为 0。\r\n<br>\r\n<br><b>新数据标志\r\n</b><br>如果模块有新数据，此值需要递增。当主机轮询时，首先读取此寄存器。如果值不为\
-    \ 0，则继续读取其他寄存器，然后将其清零。此值存储在地址 0x0F。如果此寄存器的值很大，主机需要缩短轮询间隔。\r\n<br>\r\n<br>0x0F\t\
-    B7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>值\t0\t0\t0\t0\t0\t0\t0\t0&nbsp;<br></p><p><b>模块名称\r\
-    \n</b><br>模块名称必须唯一，并以“WF1-”开头，后面最多跟 32 个字符，仅由字母、数字或连字符 (-) 组成。模块名称存储在寄存器范围 0x10\
-    \ – 0x2F 中。</p><p><b>引脚状态\r\n</b><br>确认模块使用的协议后，引脚状态将在模块上电时初始化。引脚状态不会保存到 EEPROM，而是由程序在寄存器中初始化。引脚有四种定义，代表不同的状态。总共使用\
-    \ 2 位来表示不同的状态，即 BIT0 和 BIT1，其他位保留。具体如下：\r\n<br>\r\n<br>0x30\tB7\tB6\tB5\tB4\t\
-    B3\tB2\tB1\tB0\r\n<br>值\t–\t–\t–\t–\t–\t–\tIO\txx\r\n<br>设置引脚状态的步骤如下：\r\n<br>\r\
-    \n<br></p><ol><li>模块根据协议初始化引脚状态。\r\n</li><li>模块在初始化期间设置非协议引脚的状态。\r\n</li><li>如果模块的引脚可以由主机设置，则通过主机进行设置。\r\
-    \n</li><li>模块将引脚状态保存到 EEPROM，以便下次启动时自动初始化这些引脚。\r\n</li><li>主机可以检测这些引脚的状态，并在发现冲突时发出警告。</li></ol><div></div><p></p><p><b>0\
-    \ - 隔离引脚 (0b00)\r\n</b><br>此引脚未连接到模块的任何线路，可以认为对此模块是无用的引脚。这些引脚不能被主机修改。具体情况包括：\r\
-    \n<br>\r\n<br></p><ol><li>未使用的非协议引脚。\r\n</li><li>此模块未使用的协议的专用引脚。</li></ol><div></div><p></p><p><b>1\
-    \ - 引脚已连接，但未使用 (0b01)\r\n</b><br>引脚已连接到模块的线路，但未被当前模块使用，可供其他模块使用。具体情况包括：<br></p><ol><li>升级期间使用的三个引脚：IO01\
-    \ TX、IO02 RX 和 IO05 RST。这三个引脚仅在升级期间使用，其他时间可供其他模块使用。\r\n</li><li>非协议引脚的默认状态可由主机设置为\
-    \ – 2 (0b10)。\r\n</li></ol><b>2 - 引脚正在使用，且可由主机修改 (0b10)\r\n</b><br>此状态由主机修改，模块需要将这些引脚的状态保存到\
-    \ EEPROM。<br><ol><li>升级引脚可由主机设置为使用状态。\r\n</li><li>由主机设置为使用状态的非协议引脚，如果其他模块需要，可由主机修改。\r\
-    \n</li><li>未使用的协议引脚，例如 SPI 和 USB，如果此模块未使用它们，可由主机修改。\r\n</li></ol><b>3 - 引脚正在使用，且不可由主机修改\
-    \ (0b11)\r\n</b><br>模块上使用的引脚不能被主机修改。具体情况包括：<br><ol><li>I2C 协议使用的 SCL 和 SDA 引脚不能被主机修改。\r\
-    \n</li><li>用于中断的中断引脚 IO12，与主机的中断共用同一引脚，除非特殊情况，否则不可修改。\r\n</li><li>其他模块使用的协议占用的引脚不能被主机修改。\r\
-    \n</li></ol>如果模块使用某些固定引脚，其状态必须设置为 0b11，并且不能被主机修改。<p></p><p><b>寄存器地址与引脚功能表\r\n\
-    </b><br>地址\t引脚号\t协议\t名称\t优先级\r\n<br>0x30\tIO01\tUART/UPGRADE\tTX\t1\r\n<br>0x31\t\
-    IO02\tUART/UPGRADE\tRX\t1\r\n<br>0x32\tIO04\t非协议引脚\t–\t0\r\n<br>0x33\tIO05\tUPGRADE\t\
-    RST\t1\r\n<br>0x34\tIO06\tSPI\tMISO\t2\r\n<br>0x35\tIO09\tSPI\tSCK\t2\r\n<br>0x36\t\
-    IO12\tINTERRUPT\t高电平触发\t3\r\n<br>0x37\tIO13\t非协议引脚\t–\t0\r\n<br>0x38\tIO14\t非协议引脚\t\
-    –\t0\r\n<br>0x39\tIO19\tUSD-D\tD+\t2\r\n<br>0x3A\tIO20\tUSD-D\tD-\t2\r\n<br>0x3B\t\
-    IO40\tSPI\tMOSI\t2\r\n<br>0x3C\tIO41\tI2C\tSCL\t3\r\n<br>0x3D\tIO42\tI2C\tSDA\t\
-    3\r\n<br>0x3E\tIO43\tUSB-UART\tTX\t2\r\n<br>0x3F\tIO44\tUSB-UART\tRX\t2\r\n<br>0x40\t\
-    IO45\t非协议引脚\t–\t0</p><p><b>优先级\r\n</b><br></p><ul><li>0 – 最高使用优先级\r\n</li><li>1\
-    \ – 第二使用优先级\r\n</li><li>2 – 最后使用优先级\r\n</li><li>3 – 除非特殊情况，否则不使用</li></ul><div></div><p></p><p><b>中断触发位\r\
-    \n</b><br>如果模块有需要主机立即处理的信息，可以通过拉高中断引脚来通知主机。由于多个设备共享中断，主机需要读取不同模块的寄存器值，以快速确定哪个模块触发了中断。主机处理完此中断后，将此位设置为\
-    \ 0，模块将立即拉低中断引脚。寄存器地址为 0x41。</p><p>私有信息寄存器\r\n<br>所有模块的私有信息寄存器从地址 0x42 开始。</p><p></p><ul><li><font\
-    \ color=\"#018073\"><a href=\"https://github.com/RIMU-DENGTEC/wf1_module_library\"\
-    \ target=\"_blank\" rel=\"noopener\">wf1 模块库</a>\r\n</font></li><li><font color=\"\
-    #018073\"><a href=\"https://rimu.me/wp-content/uploads/2025/01/wf1_module_general_info_en_v0.pdf\"\
-    \ target=\"_blank\" rel=\"noopener\">wf1_module_general_info_en_v0.pdf&nbsp;</a><br><br></font></li></ul><p></p><div></div>"
+  body: ''
   cover: /assets/uploads/blog-cover-20260611110528-abccb981.webp
   style_bg-color: ''
-  modules:
-  - type: item_data
-    order: 1
-    variant: default
-    data: {}
   seo_title: RIMU 模块的一般信息
-  seo_description: RIMU 模块通过 I2C 总线与主机通信，支持 DIMMER5 和 8 通道 IO 扩展等可定制模块，采用 Atmega328p
-    处理器自主处理事件，减少主机 IO 占用，并提供拨码开关设置地址与固件升级功能。
+  seo_description: RIMU 模块通过 I2C 总线与主机通信，支持 DIMMER5 和 8 通道 IO 扩展等可定制模块，采用 Atmega328p 处理器自主处理事件，减少主机 IO 占用，并提供拨码开关设置地址与固件升级功能。
   category: RIMU
   tags: ''
   media_type: image
@@ -203,93 +62,173 @@
   detail_gallery:
     visible: true
     images: []
+  detail_content_blocks:
+  - type: heading
+    title: 帖子：rimu 模块的通用信息 概述
+  - type: text
+    text: RIMU 主机与模块之间的通信主要通过 I2C 总线实现， 同时也支持其他特殊模块。具体模块的选择主要取决于所需功能、成本、防护等级以及不同的应用场景。 本文档提供了可定制 I2C 协议模块的详细信息，例如 DIMMER5 模块和 8 通道 IO 扩展模块。 目前，所有模块均使用 Atmega328p 作为主处理器。该芯片旨在自行处理尽可能多的事件，并通过 I2C 协议与主机通信，例如控制 IO 端口和读取传感器信息。这种设计有效减少了主机 IO 端口的使用。如果 Atmega328p 无法满足特定要求，将使用主机的 IO 端口进行处理，同时支持 IO 端口切换，允许主机连接多个设备。
+  - type: image
+    image: /assets/uploads/richtext-20260612020024-9cb728d2.webp
+    alt: ''
+  - type: text
+    text: 模块引脚 不同模块可能使用不同的引脚。在设计阶段，应尽可能利用模块自身的引脚，以尽量减少主机 IO 端口的使用。 R01 R02 R03 R04 R05 R06 R07 R08 R09 R10 R11 C1 3.3v¹ IO41 IO42 IO09 IO40 IO06 IO05 IO02 IO01 5V² GND C2 GND IO20 IO19 IO12⁴ IO44 IO43 IO13 IO14 IO45 IO04 5V³
+  - type: image
+    image: /assets/uploads/richtext-20260612020127-f3536ea0.svg
+    alt: ''
+  - type: text
+    text: 注释 • 最大输出电流：2A，由主机提供。 • 模块电源：为主机电池充电。 • 最大输出电流：200mA，由主机提供。 • IO12 引脚：此引脚主要用于向主机发送中断信号。 固件更新
+  - type: image
+    image: /assets/uploads/richtext-20260612020151-454aecd2.svg
+    alt: ''
+  - type: text
+    text: 使用主机升级模块固件 • 使用螺丝刀打开模块，参考上图 C 中的 UPGRADE 位置，将三个拨码开关全部拨到 ON 位置。 • 重新安装模块顶盖（盖好盖子后，模块即可与主机正常通信）。 • 点击屏幕上的“升级”开始固件升级。 • 升级成功后，取下模块顶盖，将拨码开关拨到 OFF 位置。 • 重新安装模块顶盖，模块即可再次与主机正常通信。 其他升级固件的方法 具有一定编程和硬件技能的用户也可以通过其他方法升级固件，例如： • 使用 Arduino 对模块编程时，可通过 USB 转串口模块（需要 DTR 引脚）进行升级，如图 B 所示。 • 可通过 SPI 接口升级固件，如图 A 所示。 通信 主机与模块之间的通信通过 I2C 总线进行。I2C 从机地址必须唯一，模块可以使用拨码开关设置其 I2C 地址。使用 16 位旋转拨码开关，模块可以分配 16 个不同的地址，允许主机同时连接最多 16 个模块。主机与模块之间的通信类型如下： • 人机交互：主机向模块读取或发送数据。 • 定时读取：某些模块需要主机定期读取其数据，例如模块状态或传感器读数。 • 中断触发：当模块有新信息时，通过拉高中断引脚通知主机读取模块信息。 I2C 协议 • 地址范围：0x60 – 0x6F，对应拨码开关位置 0 – F。 • 通信速度：400KHz。 • 电平：3.3V。 人机交互 当主机控制模块时，根据其需要向模块读取或发送数据。 定时读取 某些输入型模块需要主机定期读取其数据，例如模块状态或传感器读数。 人机交互 当模块有新信息时，可以触发中断。主机首先确认哪个模块触发了中断，然后读取相应模块的寄存器信息。 引脚定义 每种协议使用自己的引脚定义，因此在模块的硬件设计过程中，需要尽可能避免使用这些引脚，以防止引脚冲突。 I2C 引脚 所有模块的 I2C 引脚相同。不同模块需要使用拨码开关选择不同的地址，如下图所示： R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 C1 3.3v IO41 IO42 IO09 IO40 IO06 IO05 IO02 IO01 5V GND C2 GND IO20 IO19 IO12 IO44 IO43 IO13 IO14 IO45 IO04 5V I2C – SCL SDA – – – – – – – – I2C – –
+      – – – – – – – – – UART 引脚 某些模块需要使用串行通信，例如 RS485、CAN、DMX512 等。此外，更新模块固件时需要用到 UART 接口和 RESET 引脚。由于更新模块固件的操作不常见，因此通信和固件更新所用的 TX 和 RX 引脚是共用的。RESET (RST) 引脚仅在固件更新时使用。引脚位置如下图所示： R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 C1 3.3v IO41 IO42 IO09 IO40 IO06 IO05 IO02 IO01 5V GND C2 GND IO20 IO19 IO12 IO44 IO43 IO13 IO14 IO45 IO04 5V UART – – – – – – RST RX TX – – UART – – – – – – – – – – – 用于升级固件的拨码开关在模块出厂时设置为 OFF。如果需要固件升级，请将拨码开关拨到 ON。正常使用时，拨码开关应设置为 OFF。 Peng USB 主机配备 TYPE-C 接口，正插和反插功能不同：
+  - type: image
+    image: /assets/uploads/richtext-20260612020450-b8ba23d2.svg
+    alt: ''
+  - type: text
+    text: • 正插（与 RIMU 标志和屏幕同侧）：主机可模拟键盘、鼠标、U 盘和游戏控制器等设备。 • 反插（与 RIMU 标志和屏幕相反侧）：用于升级程序和调试，连接方式为计算机 -> CH9102X -> ESP32S3。 正插 - USB 设备 使用 USB 接口时，主机可模拟键盘、鼠标、U 盘和游戏控制器等设备。此时，IO19 和 IO20 引脚将被占用。 R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 C1 3.3V IO41 IO42 IO09 IO40 IO06 IO05 IO02 IO01 5V GND C2 GND IO20 IO19 IO12 IO44 IO43 IO13 IO14 IO45 IO04 5V USB-HID – – – – – – – – – – – USB-HID – D+ D- – – – – – – – – 反插 - USB 串口 使用 TYPE-C 串口时，IO43 和 IO44 引脚将被占用。主机可用作串口进行调试或升级程序。 R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 C1 3.3V IO41 IO42 IO09 IO40 IO06 IO05 IO02 IO01 5V GND C2 GND IO20 IO19 IO12 IO44 IO43 IO13 IO14 IO45 IO04 5V USB-UART – – – – – – – – – – – USB-UART – – – – RX TX – – – – – SPI 引脚 某些模块需要更高速的数据传输，将使用 SPI 协议。片选引脚由 Atmega328p 控制，允许多个模块连接到一个 SPI 总线。SPI 引脚定义如下： R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 C1 3.3V IO41 IO42 IO09 IO40 IO06 IO05 IO02 IO01 5V GND C2 GND IO20 IO19 IO12 IO44 IO43 IO13 IO14 IO45 IO04 5V SPI – – – SCK MOSI MISO – – – – – SPI – – – – – – – – – – – 中断引脚 具有中断功能的模块可以通过中断引脚通知主机有新信息。由于此中断引脚与主机的内部外设共用同一引脚，主机必须首先确认哪个模块触发了中断，然后读取相应模块的寄存器信息。引脚位置如下：
+      R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 C1 3.3V IO41 IO42 IO09 IO40 IO06 IO05 IO02 IO01 5V GND C2 GND IO20 IO19 IO12 IO44 IO43 IO13 IO14 IO45 IO04 5V INTERRUPT – – – – – – – – – – – INTERRUPT – – – INT – – – – – – – 非协议引脚 这些非协议引脚不被任何协议占用。在模块硬件设计过程中，应优先使用这些引脚。此外，IO05 引脚仅在固件升级时使用。 R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 C1 3.3V IO41 IO42 IO09 IO40 IO06 IO05 IO02 IO01 5V GND C2 GND IO20 IO19 IO12 IO44 IO43 IO13 IO14 IO45 IO04 5V 非协议引脚 – – – – – – Y – – – – 非协议引脚 – – – – – – Y Y Y Y – 寄存器 寄存器总数最大为 0xFF，包括通用部分和私有部分。 通用寄存器 • 0x00 – 0x41，共 0x42 位，所有模块通用。 • 0x05 (REG_NEW_DATA_FLAG)：读/写 • 0x41 (REG_INTERRUPT_FLAG)：读/写 • 其他位：只读 私有寄存器 • 0x42 – 0xFF，由每个模块定义，私有寄存器最多为 0xFF – 0x42 = 0xBD 位。 • 每个模块的寄存器都有相应的功能。 • 读/写权限由模块自身定义。 地址列表 地址 功能 读/写 注释 0x00/02 模块编号 R 0x01/03 模块编号 R 0x04 寄存器总数 R 0x05 硬件版本 R 0x06 软件版本 R 0x07 使用的功能 R 0x08 校验和 R 0x09/0A/0B/0C/0D/0E 保留 R 0x0E 新数据标志 R/W 0x10->0x2F 模块名称 R 0x30 PIN-01 状态 R 0x31 PIN-02 状态 R 0x32 PIN-04 状态 R 0x33 PIN-05 状态 R 0x34 PIN-06 状态 R 0x35 PIN-09 状态 R 0x36 PIN-12 状态 R
+      0x37 PIN-13 状态 R 0x38 PIN-14 状态 R 0x39 PIN-19 状态 R 0x3A PIN-20 状态 R 0x3B PIN-40 状态 R 0x3C PIN-41 状态 R 0x3D PIN-42 状态 R 0x3E PIN-43 状态 R 0x3F PIN-44 状态 R 0x40 PIN-45 状态 R 0x41 中断标志 R/W 模块编号 每个模块都有一个不同且唯一的编号，范围从 0x0001 到 0xFFFF。同一模块的不同版本使用相同的编号。硬件版本用于区分硬件。为确保正确识别模块，系统将编号存储两次，以防止 I2C 连接到其他设备。 0x00/0x02 B7 B6 B5 B4 B3 B2 B1 B0 高 8 位 0 0 0 0 0 0 0 0 0x01/0x03 B7 B6 B5 B4 B3 B2 B1 B0 低 8 位 0 0 0 0 0 0 0 0 总位数 寄存器总数范围从 0x00 到 0xFF，等于通用寄存器数量加上私有寄存器数量。此总数存储在地址 0x04。 0x04 B7 B6 B5 B4 B3 B2 B1 B0 值 0 0 0 0 0 0 0 0 硬件版本 模块的硬件版本在功能相同的模块中递增，范围从 1 到 255，第一个版本为 1。此版本信息存储在地址 0x05。 0x05 B7 B6 B5 B4 B3 B2 B1 B0 值 0 0 0 0 0 0 0 0 软件版本 模块的软件版本可通过主机升级，范围从 1 到 255，第一个版本为 1。此版本信息存储在地址 0x06。 固件更新不会修改 EEPROM 中的数据，但在模块初始化期间，可能会使用旧数据，这可能导致数据错误。软件版本还用于确定是否应从 EEPROM 读取数据以初始化模块。 0x06 B7 B6 B5 B4 B3 B2 B1 B0 值 0 0 0 0 0 0 0 0 通信协议 不同模块具有不同的功能，因此所需的通信协议也不同。此模块使用的协议存储在寄存器 0x07 中，供主机识别。 每个位代表模块使用的通信协议，0 表示未使用，1 表示当前正在使用。所有模块都支持 I2C 协议。 0x07 B7 B6 B5 B4 B3 B2 B1 B0 协议 – – UPGRADE USB-HID USB-UART INTERRUPT UART SPI •
+      UPGRADE：模块可通过主机升级。 • INTERRUPT：模块具有中断触发功能，当模块状态改变时通知主机。 • UART：模块使用串行引脚进行通信。 • SPI：模块使用 SPI 协议进行数据传输。 • USB-HID：模块使用 IO19 和 IO20 引脚，这将禁用主机模拟 HID 设备的功能。 • USB-UART：模块使用 IO43 和 IO44 引脚，这将禁用主机的 TYPE-C 接口作为串口的功能。 校验和 校验和值是 0x00 到 0x07 之和的低八位。此校验和存储在地址 0x08。 0x08 B7 B6 B5 B4 B3 B2 B1 B0 值 0 0 0 0 0 0 0 0 保留位 地址范围 0x09 – 0x0E 为保留位，未使用，值为 0。 新数据标志 如果模块有新数据，此值需要递增。当主机轮询时，首先读取此寄存器。如果值不为 0，则继续读取其他寄存器，然后将其清零。此值存储在地址 0x0F。如果此寄存器的值很大，主机需要缩短轮询间隔。 0x0F B7 B6 B5 B4 B3 B2 B1 B0 值 0 0 0 0 0 0 0 0 模块名称 模块名称必须唯一，并以“WF1-”开头，后面最多跟 32 个字符，仅由字母、数字或连字符 (-) 组成。模块名称存储在寄存器范围 0x10 – 0x2F 中。 引脚状态 确认模块使用的协议后，引脚状态将在模块上电时初始化。引脚状态不会保存到 EEPROM，而是由程序在寄存器中初始化。引脚有四种定义，代表不同的状态。总共使用 2 位来表示不同的状态，即 BIT0 和 BIT1，其他位保留。具体如下： 0x30 B7 B6 B5 B4 B3 B2 B1 B0 值 – – – – – – IO xx 设置引脚状态的步骤如下： • 模块根据协议初始化引脚状态。 • 模块在初始化期间设置非协议引脚的状态。 • 如果模块的引脚可以由主机设置，则通过主机进行设置。 • 模块将引脚状态保存到 EEPROM，以便下次启动时自动初始化这些引脚。 • 主机可以检测这些引脚的状态，并在发现冲突时发出警告。 0 - 隔离引脚 (0b00) 此引脚未连接到模块的任何线路，可以认为对此模块是无用的引脚。这些引脚不能被主机修改。具体情况包括： • 未使用的非协议引脚。 • 此模块未使用的协议的专用引脚。 1 - 引脚已连接，但未使用
+      (0b01) 引脚已连接到模块的线路，但未被当前模块使用，可供其他模块使用。具体情况包括： • 升级期间使用的三个引脚：IO01 TX、IO02 RX 和 IO05 RST。这三个引脚仅在升级期间使用，其他时间可供其他模块使用。 • 非协议引脚的默认状态可由主机设置为 – 2 (0b10)。 2 - 引脚正在使用，且可由主机修改 (0b10) 此状态由主机修改，模块需要将这些引脚的状态保存到 EEPROM。 • 升级引脚可由主机设置为使用状态。 • 由主机设置为使用状态的非协议引脚，如果其他模块需要，可由主机修改。 • 未使用的协议引脚，例如 SPI 和 USB，如果此模块未使用它们，可由主机修改。 3 - 引脚正在使用，且不可由主机修改 (0b11) 模块上使用的引脚不能被主机修改。具体情况包括： • I2C 协议使用的 SCL 和 SDA 引脚不能被主机修改。 • 用于中断的中断引脚 IO12，与主机的中断共用同一引脚，除非特殊情况，否则不可修改。 • 其他模块使用的协议占用的引脚不能被主机修改。 如果模块使用某些固定引脚，其状态必须设置为 0b11，并且不能被主机修改。 寄存器地址与引脚功能表 地址 引脚号 协议 名称 优先级 0x30 IO01 UART/UPGRADE TX 1 0x31 IO02 UART/UPGRADE RX 1 0x32 IO04 非协议引脚 – 0 0x33 IO05 UPGRADE RST 1 0x34 IO06 SPI MISO 2 0x35 IO09 SPI SCK 2 0x36 IO12 INTERRUPT 高电平触发 3 0x37 IO13 非协议引脚 – 0 0x38 IO14 非协议引脚 – 0 0x39 IO19 USD-D D+ 2 0x3A IO20 USD-D D- 2 0x3B IO40 SPI MOSI 2 0x3C IO41 I2C SCL 3 0x3D IO42 I2C SDA 3 0x3E IO43 USB-UART TX 2 0x3F IO44 USB-UART RX 2 0x40 IO45 非协议引脚 – 0 优先级 • 0 – 最高使用优先级 • 1 – 第二使用优先级 • 2 – 最后使用优先级 • 3 – 除非特殊情况，否则不使用 中断触发位 如果模块有需要主机立即处理的信息，可以通过拉高中断引脚来通知主机。由于多个设备共享中断，主机需要读取不同模块的寄存器值，以快速确定哪个模块触发了中断。主机处理完此中断后，将此位设置为
+      0，模块将立即拉低中断引脚。寄存器地址为 0x41。 私有信息寄存器 所有模块的私有信息寄存器从地址 0x42 开始。
+  detail_files:
+  - title: wf1_module_general_info_en_v0.pdf
+    url: https://rimu.me/wp-content/uploads/2025/01/wf1_module_general_info_en_v0.pdf
+    desc: wf1_module_general_info_en_v0.pdf
+    type: PDF
+  detail_links:
+  - text: wf1 模块库
+    url: https://github.com/RIMU-DENGTEC/wf1_module_library
 - id: 5
   title: Rimu 的键盘功能
   slug: keyboard-function-of-rimu
   description: 键盘在我们的日常生活中至关重要。大多数用户将左手放在键盘上，右手使用鼠标。
   cover: /assets/uploads/blog-cover-20260611111327-bb0656bc.webp
   style_bg-color: ''
-  modules:
-  - type: item_data
-    order: 1
-    variant: default
-    data: {}
-  body: "<div><h4><img src=\"/assets/uploads/richtext-20260612033207-e81df55d.webp\"\
-    ></h4></div><div><p>键盘在我们的日常生活中至关重要。大多数用户将左手放在键盘上，右手使用鼠标。\r\n<br>\r\n<br>但像 Photoshop\
-    \ 和 KiCad 这样的复杂软件通常需要跨越整个键盘的复杂快捷键。这使得单手操作变得困难，往往需要双手配合，从而打乱工作流程并降低效率。\r\n<br>\r\
-    \n<br>针对上述问题，市场上已有一些专业且成熟的解决方案，例如 3Dconnexion 的产品。这些产品符合人体工程学设计，但价格较高。例如，SpaceMouse\
-    \ 在其官网上的售价为 399 美元。相比之下，Rimu 的 HID 键盘功能作为主机的配件，计划售价为 110 美元。其紧凑的设计完美贴合在键盘左侧上方，让快速屏幕交互变得轻松自如。如果你不是键盘设备的重度用户，Rimu\
-    \ 完全可以满足你的需求。</p><p><img src=\"/assets/uploads/richtext-20260612032402-441b3ba9.webp\"\
-    ></p><p>Rimu 采用 ESP32-S3 作为主控制器，实现了 HID 键盘功能。我们将通常需要双手操作的快捷键整合到一个 4.3 英寸的触摸屏上，实现单手操作。用户可以根据需要自定义特定快捷键。目前，Rimu\
-    \ 预装了六个应用程序，分别针对 KiCad、Photoshop、批量输入、CNC、YouTube 和 VLC。</p><p></p><h4><b>Rimu\
-    \ HID 键盘功能\r\n</b></h4>以下视频展示了我们在 YouTube 平台上的 HID 键盘功能。<br><br><p></p><h4><b>应用</b></h4></div><div><p><b>01.\
-    \ KiCad\r\n</b><br>我们的硬件工程师在 KiCad 中设计 PCB 时，经常左手放在键盘上，右手放在鼠标上。然而，当快捷键需要的按键次数超出左手能力时，他们不得不松开鼠标来完成操作。例如：</p><p>PCB\
-    \ 环境中的快捷键：\r\n<br>\r\n<br></p><ul><li>重新计算路径：Ctrl + X\r\n</li><li>结束画线：Esc 或 End\r\
-    \n</li><li>组件锁定/解锁：L（锁定/解锁）\r\n</li><li>删除：Delete 或 Backspace\r\n</li></ul>原理图环境中的快捷键：<br>\r\
-    \n<br><ul><li>添加电源符号：P（然后选择电源类型）\r\n</li><li>添加网络标签：L\r\n</li><li>重复上一项：Ins\r\n\
-    </li><li>删除：Delete 或 Backspace\r\n</li></ul>我们的工程师发现 Rimu 增强的 KiCad 快捷键功能非常实用，显著提高了他们的工作流程效率，带来了更流畅的用户体验。<p></p><p><img\
-    \ src=\"/assets/uploads/richtext-20260612032646-381d6163.webp\"></p><p></p><h4><b>02.\
-    \ Photoshop\r\n</b></h4>Photoshop 是一款功能强大的图像编辑工具，提供了丰富的快捷键功能。大多数用户在使用 PS 时左手放在键盘上，右手放在鼠标上。然而，在与经常使用\
-    \ PS 的朋友讨论后，我们发现一些快捷键操作不太方便，往往需要双手完成。例如：\r\n<br>\r\n<br><ol><li>将所选图层移到顶部：Ctrl\
-    \ + Shift + ]\r\n</li><li>将所选图层移到底部：Ctrl + Shift + [\r\n</li><li>通过选区创建新图层：Ctrl\
-    \ + Shift + N\r\n</li><li>反选：Shift + Ctrl + I\r\n</li><li>上移图层：Ctrl + ]\r\n</li><li>下移图层：Ctrl\
-    \ + [\r\n</li><li>创建新图层：Ctrl + J\r\n</li><li>填充颜色：Alt + Delete</li></ol><div></div><p></p><p>在朋友测试了\
-    \ Rimu 优化的 PS 快捷键后，他给予了非常积极的反馈，强调效率和用户体验显著提升。</p><p><img src=\"/assets/uploads/richtext-20260612032735-98b75b74.webp\"\
-    ></p><p></p><h4><b>03. 批量输入\r\n</b></h4>厌倦了重复输入文本或复制粘贴？Rimu 的自定义批量输入功能允许你一键插入长段落或固定短语，在消息、文档或评论等场景中提高效率。<p></p><p><img\
-    \ src=\"/assets/uploads/richtext-20260612032802-d6c732b0.webp\"></p><p>虽然 Rimu\
-    \ 能够执行所有 Bad USB 功能，但我们的主要重点是帮助用户提高日常生活中的效率。产品发布后，我们将开源代码并提供全面的教程，让对 Bad USB 功能感兴趣的爱好者和极客能够快速上手。</p><p><img\
-    \ src=\"/assets/uploads/richtext-20260612032826-de0d7922.webp\"></p><p><b>04.\
-    \ 小众设备\r\n</b><br>在大规模生产环境中，许多机器依赖鼠标或键盘控制的软件。然而，键盘的紧凑性增加了意外按键的风险，可能导致安全隐患。为了降低这种风险，我们在\
-    \ CNC 机器的控制键上实施了醒目的标签。\r\n<br>\r\n<br>基于这一需求，Rimu 通过三个直观的按钮——开始、暂停和停止——简化了 CNC\
-    \ 操作。这种设计防止了意外按压，并确保即使是不识字的工人也能轻松操作。</p><p><img src=\"/assets/uploads/richtext-20260612033411-3b546ae6.webp\"\
-    ></p><p>未来，我们计划利用 Rimu 的 IO 扩展模块，使物理按钮能够触发命令，让 Rimu 适应更多使用场景。</p><p><img src=\"\
-    /assets/uploads/richtext-20260612033501-7a3ea269.webp\"></p><p><b>05. 其他应用\r\n\
-    </b><br>在 YouTube 或 VLC 上观看视频应该是一种放松，而不是麻烦。特别是当你想躺在床上或靠在椅子上看视频，却因为不想起身找鼠标或键盘而感到不便时，这可能会非常不舒服。摸索鼠标或键盘来暂停、调节音量或切换全屏会破坏体验。\r\
-    \n<br>\r\n<br>有了 Rimu，所有基本控制尽在指尖。告别中断，享受前所未有的无缝、轻松观看体验。</p><p><img src=\"/assets/uploads/richtext-20260612033432-59f5720f.webp\"\
-    ></p><p><b>结论\r\n</b><br>这是我们系列的第二篇文章，继第一篇介绍了 RIMU 的整体设计和结构之后。作为我们的首篇博客文章，我们也在\
-    \ Medium 和 Instructables 上以多种语言分享，我们还更新了另一篇关于 RIMU 键盘功能的文章。\r\n<br>\r\n<br>如果您有任何问题，请随时给我们留言或加入我们的社区进行讨论。</p><p><br></p></div>"
+  body: ''
   seo_title: Rimu 的键盘功能
   seo_description: RIMU 是一款紧凑型 HID 键盘配件，通过4.3英寸触摸屏将复杂快捷键整合为单手操作，支持KiCad、Photoshop等软件，提升工作效率。
   category: RIMU
   tags: []
+  detail_content_blocks:
+  - type: image
+    image: /assets/uploads/richtext-20260612033207-e81df55d.webp
+    alt: ''
+  - type: text
+    text: 键盘在我们的日常生活中至关重要。大多数用户将左手放在键盘上，右手使用鼠标。 但像 Photoshop 和 KiCad 这样的复杂软件通常需要跨越整个键盘的复杂快捷键。这使得单手操作变得困难，往往需要双手配合，从而打乱工作流程并降低效率。 针对上述问题，市场上已有一些专业且成熟的解决方案，例如 3Dconnexion 的产品。这些产品符合人体工程学设计，但价格较高。例如，SpaceMouse 在其官网上的售价为 399 美元。相比之下，Rimu 的 HID 键盘功能作为主机的配件，计划售价为 110 美元。其紧凑的设计完美贴合在键盘左侧上方，让快速屏幕交互变得轻松自如。如果你不是键盘设备的重度用户，Rimu 完全可以满足你的需求。
+  - type: image
+    image: /assets/uploads/richtext-20260612032402-441b3ba9.webp
+    alt: ''
+  - type: text
+    text: Rimu 采用 ESP32-S3 作为主控制器，实现了 HID 键盘功能。我们将通常需要双手操作的快捷键整合到一个 4.3 英寸的触摸屏上，实现单手操作。用户可以根据需要自定义特定快捷键。目前，Rimu 预装了六个应用程序，分别针对 KiCad、Photoshop、批量输入、CNC、YouTube 和 VLC。
+  - type: heading
+    title: Rimu HID 键盘功能
+  - type: text
+    text: 以下视频展示了我们在 YouTube 平台上的 HID 键盘功能。
+  - type: heading
+    title: 应用
+  - type: text
+    text: 01. KiCad 我们的硬件工程师在 KiCad 中设计 PCB 时，经常左手放在键盘上，右手放在鼠标上。然而，当快捷键需要的按键次数超出左手能力时，他们不得不松开鼠标来完成操作。例如： PCB 环境中的快捷键： • 重新计算路径：Ctrl + X • 结束画线：Esc 或 End • 组件锁定/解锁：L（锁定/解锁） • 删除：Delete 或 Backspace 原理图环境中的快捷键： • 添加电源符号：P（然后选择电源类型） • 添加网络标签：L • 重复上一项：Ins • 删除：Delete 或 Backspace 我们的工程师发现 Rimu 增强的 KiCad 快捷键功能非常实用，显著提高了他们的工作流程效率，带来了更流畅的用户体验。
+  - type: image
+    image: /assets/uploads/richtext-20260612032646-381d6163.webp
+    alt: ''
+  - type: heading
+    title: 02. Photoshop
+  - type: text
+    text: Photoshop 是一款功能强大的图像编辑工具，提供了丰富的快捷键功能。大多数用户在使用 PS 时左手放在键盘上，右手放在鼠标上。然而，在与经常使用 PS 的朋友讨论后，我们发现一些快捷键操作不太方便，往往需要双手完成。例如： • 将所选图层移到顶部：Ctrl + Shift + ] • 将所选图层移到底部：Ctrl + Shift + [ • 通过选区创建新图层：Ctrl + Shift + N • 反选：Shift + Ctrl + I • 上移图层：Ctrl + ] • 下移图层：Ctrl + [ • 创建新图层：Ctrl + J • 填充颜色：Alt + Delete 在朋友测试了 Rimu 优化的 PS 快捷键后，他给予了非常积极的反馈，强调效率和用户体验显著提升。
+  - type: image
+    image: /assets/uploads/richtext-20260612032735-98b75b74.webp
+    alt: ''
+  - type: heading
+    title: 03. 批量输入
+  - type: text
+    text: 厌倦了重复输入文本或复制粘贴？Rimu 的自定义批量输入功能允许你一键插入长段落或固定短语，在消息、文档或评论等场景中提高效率。
+  - type: image
+    image: /assets/uploads/richtext-20260612032802-d6c732b0.webp
+    alt: ''
+  - type: text
+    text: 虽然 Rimu 能够执行所有 Bad USB 功能，但我们的主要重点是帮助用户提高日常生活中的效率。产品发布后，我们将开源代码并提供全面的教程，让对 Bad USB 功能感兴趣的爱好者和极客能够快速上手。
+  - type: image
+    image: /assets/uploads/richtext-20260612032826-de0d7922.webp
+    alt: ''
+  - type: text
+    text: 04. 小众设备 在大规模生产环境中，许多机器依赖鼠标或键盘控制的软件。然而，键盘的紧凑性增加了意外按键的风险，可能导致安全隐患。为了降低这种风险，我们在 CNC 机器的控制键上实施了醒目的标签。 基于这一需求，Rimu 通过三个直观的按钮——开始、暂停和停止——简化了 CNC 操作。这种设计防止了意外按压，并确保即使是不识字的工人也能轻松操作。
+  - type: image
+    image: /assets/uploads/richtext-20260612033411-3b546ae6.webp
+    alt: ''
+  - type: text
+    text: 未来，我们计划利用 Rimu 的 IO 扩展模块，使物理按钮能够触发命令，让 Rimu 适应更多使用场景。
+  - type: image
+    image: /assets/uploads/richtext-20260612033501-7a3ea269.webp
+    alt: ''
+  - type: text
+    text: 05. 其他应用 在 YouTube 或 VLC 上观看视频应该是一种放松，而不是麻烦。特别是当你想躺在床上或靠在椅子上看视频，却因为不想起身找鼠标或键盘而感到不便时，这可能会非常不舒服。摸索鼠标或键盘来暂停、调节音量或切换全屏会破坏体验。 有了 Rimu，所有基本控制尽在指尖。告别中断，享受前所未有的无缝、轻松观看体验。
+  - type: image
+    image: /assets/uploads/richtext-20260612033432-59f5720f.webp
+    alt: ''
+  - type: text
+    text: 结论 这是我们系列的第二篇文章，继第一篇介绍了 RIMU 的整体设计和结构之后。作为我们的首篇博客文章，我们也在 Medium 和 Instructables 上以多种语言分享，我们还更新了另一篇关于 RIMU 键盘功能的文章。 如果您有任何问题，请随时给我们留言或加入我们的社区进行讨论。
 - id: 6
   title: RIMU：弥合人与技术之间的鸿沟
   slug: between-humans-and-technology
   description: 设计理念 在这个日益互联的世界里，我们经常遇到现成解决方案无法满足需求的情况。
   cover: /assets/uploads/blog-cover-20260611111450-6a2fa2f0.webp
   style_bg-color: ''
-  modules:
-  - type: item_data
-    order: 1
-    variant: default
-    data: {}
-  body: "<div><p><img src=\"/assets/uploads/richtext-20260612034038-559c86ce.webp\"\
-    ><b></b></p><p><b>设计理念\r\n</b><br>在这个日益互联的世界里，我们经常遇到现成解决方案无法满足需求的情况。\r\n<br>\r\
-    \n<br>无论是自动化你的家、优化你的工作空间，还是创造独特的互动体验，设计和构建定制设备的需求随之而来。想象一下，制作一个能轻松控制家中照明、精确符合你偏好的设备。这个过程需要深入电路板设计的复杂性，掌握复杂的编程语言，并精心制作保护外壳。</p><p><img\
-    \ src=\"/assets/uploads/richtext-20260612033627-b41023e3.webp\"></p><p>这个过程不仅耗时，还需要高度的专业知识和技能，对大多数非专业人士来说是一个巨大的挑战。即使是经验丰富的开发者，也可能因重复性任务而感到沮丧和不堪重负。此外，技术要求和解决方案往往存在大量重叠，导致许多人投入时间和资源解决类似问题，造成重复劳动。\r\
-    \n<br>\r\n<br>基于以上原因，我们构思了RIMU，以帮助开发者和制造商高效实现他们的创意愿景。RIMU提供集成、用户友好的解决方案，节省用户在硬件设计、软件开发和制造上的时间和精力。我们的使命是通过提供一个支持性的集成平台来赋能创新者，使他们能够专注于自己的优势。</p><p><img\
-    \ src=\"/assets/uploads/richtext-20260612033647-64c06cba.webp\"></p><p><b>硬件\r\
-    \n</b><br>Rimu是一款多功能设备，搭载强大的ESP32芯片，拥有384 KB ROM、512 KB SRAM、16 KB RTCSRAM和16\
-    \ MB PSRAM，以及8 GB存储空间。其4.3英寸TFT触摸屏显示器提供生动的480 x 800像素分辨率，支持262K颜色，并由ILI9806或HX8369显示控制器驱动。</p><p><img\
-    \ src=\"/assets/uploads/richtext-20260612033706-026ade89.webp\"></p><p><b>结构\r\
-    \n</b><br><b>01. 尺寸信息\r\n</b><br>RIMU紧凑（118 x 73 x 15.9毫米），配备时尚的4.3英寸屏幕，提供令人印象深刻的880\
-    \ x 480像素分辨率。凭借Wi-Fi、蓝牙和GPIO引脚，它拥有无与伦比的可扩展性，可无缝集成各种传感器、执行器和外设。</p><p><img src=\"\
-    /assets/uploads/richtext-20260612033731-e3de2de7.webp\"></p><p><b>02. 磁吸结构\r\n\
-    </b><br>忘记传统螺丝吧——RIMU采用创新的磁吸连接方法，让你瞬间将主机和模块扣在一起。镀金弹簧针确保耐用性和顺畅操作，使任何人都能轻松使用，无需麻烦。\r\
-    \n<br>\r\n<br><b>03. 外部天线结构\r\n</b><br>我们的设备为各种环境提供无与伦比的灵活性。无论你需要将其封装在金属外壳中，还是放置在远离无线接入点的地方，我们都能满足你的需求。专用的外部天线接口确保即使在挑战性条件下也能获得最佳信号接收。凭借改进的信号质量和扩展的覆盖范围，你可以享受更可靠的连接。不需要时，该接口还可作为挂绳连接点，方便携带。</p><p><img\
-    \ src=\"/assets/uploads/richtext-20260612033801-659986d9.webp\"></p><p><b>04.\
-    \ 三脚架结构\r\n</b><br>凭借特殊设计的螺丝孔，RIMU可以轻松安装到标准三脚架上，赋予其在工业自动化、科学研究和教育中处理复杂任务的稳定性和多功能性。三脚架提高了工作精度，使RIMU比以往更具适应性。</p><div><img\
-    \ src=\"/assets/uploads/richtext-20260612033821-46a99fce.webp\"></div></div><div><p><b>05.\
-    \ DIN35结构\r\n</b><br>无论是用于电气控制还是自动化系统，RIMU支持DIN35导轨，可轻松连接传感器、配电盘等——非常适合工业和电气环境。</p><p><img\
-    \ src=\"/assets/uploads/richtext-20260612033847-845bb56b.webp\"></p><p><b>功能\r\
-    \n</b><br>我们将无需额外模块即可实现的许多有趣功能称为功能。借助Rimu的4.3英寸触摸屏，你可以享受个性化体验，功能包括计算器、世界时钟、闹钟、尺子、单位转换器、蓝牙等。我们不断探索新功能，以提升你的日常生活。</p><p><img\
-    \ src=\"/assets/uploads/richtext-20260612033911-cba331d0.webp\"></p><p><b>模块\r\
-    \n</b><br>RIMU的模块化设计降低了硬件成本并促进了可持续性。你只需为所需部分付费，没有不必要的额外费用。这种设计还使升级、维护和扩展产品变得容易，同时延长其生命周期并减少浪费。\r\
-    \n<br>\r\n<br>我们已经开发了强大的模块，包括RFID、DMX512、步进电机、GPIO、继电器和光矩阵，并且我们正在不断扩展我们的库，以增强RIMU的智能性和适应性。 </p><p><img\
-    \ src=\"/assets/uploads/richtext-20260612033939-ef123d6c.webp\"></p><p><b>总结\r\
-    \n</b><br>鉴于RIMU是一个相对较新的产品，我们创建了这个初学者指南，以帮助用户更好地理解其设计理念。作为我们的首篇博客文章，我们也在Medium和Instructables上以多种语言分享它。我们还会更新另一篇关于RIMU键盘功能的文章。\r\
-    \n<br>\r\n<br>如果你有任何问题，请随时给我们留言或加入我们的社区进行讨论。</p></div>"
+  body: ''
   seo_title: RIMU：弥合人与技术之间的鸿沟
   seo_description: RIMU 是一款集成 ESP32 芯片与 4.3 英寸触摸屏的模块化智能设备，通过磁吸连接、三脚架与 DIN35 导轨等灵活结构，帮助开发者和制造商快速实现硬件原型与自动化项目，降低重复劳动与开发门槛。
   category: RIMU
   tags: []
+  detail_content_blocks:
+  - type: image
+    image: /assets/uploads/richtext-20260612034038-559c86ce.webp
+    alt: ''
+  - type: text
+    text: 设计理念 在这个日益互联的世界里，我们经常遇到现成解决方案无法满足需求的情况。 无论是自动化你的家、优化你的工作空间，还是创造独特的互动体验，设计和构建定制设备的需求随之而来。想象一下，制作一个能轻松控制家中照明、精确符合你偏好的设备。这个过程需要深入电路板设计的复杂性，掌握复杂的编程语言，并精心制作保护外壳。
+  - type: image
+    image: /assets/uploads/richtext-20260612033627-b41023e3.webp
+    alt: ''
+  - type: text
+    text: 这个过程不仅耗时，还需要高度的专业知识和技能，对大多数非专业人士来说是一个巨大的挑战。即使是经验丰富的开发者，也可能因重复性任务而感到沮丧和不堪重负。此外，技术要求和解决方案往往存在大量重叠，导致许多人投入时间和资源解决类似问题，造成重复劳动。 基于以上原因，我们构思了RIMU，以帮助开发者和制造商高效实现他们的创意愿景。RIMU提供集成、用户友好的解决方案，节省用户在硬件设计、软件开发和制造上的时间和精力。我们的使命是通过提供一个支持性的集成平台来赋能创新者，使他们能够专注于自己的优势。
+  - type: image
+    image: /assets/uploads/richtext-20260612033647-64c06cba.webp
+    alt: ''
+  - type: text
+    text: 硬件 Rimu是一款多功能设备，搭载强大的ESP32芯片，拥有384 KB ROM、512 KB SRAM、16 KB RTCSRAM和16 MB PSRAM，以及8 GB存储空间。其4.3英寸TFT触摸屏显示器提供生动的480 x 800像素分辨率，支持262K颜色，并由ILI9806或HX8369显示控制器驱动。
+  - type: image
+    image: /assets/uploads/richtext-20260612033706-026ade89.webp
+    alt: ''
+  - type: text
+    text: 结构 01. 尺寸信息 RIMU紧凑（118 x 73 x 15.9毫米），配备时尚的4.3英寸屏幕，提供令人印象深刻的880 x 480像素分辨率。凭借Wi-Fi、蓝牙和GPIO引脚，它拥有无与伦比的可扩展性，可无缝集成各种传感器、执行器和外设。
+  - type: image
+    image: /assets/uploads/richtext-20260612033731-e3de2de7.webp
+    alt: ''
+  - type: text
+    text: 02. 磁吸结构 忘记传统螺丝吧——RIMU采用创新的磁吸连接方法，让你瞬间将主机和模块扣在一起。镀金弹簧针确保耐用性和顺畅操作，使任何人都能轻松使用，无需麻烦。 03. 外部天线结构 我们的设备为各种环境提供无与伦比的灵活性。无论你需要将其封装在金属外壳中，还是放置在远离无线接入点的地方，我们都能满足你的需求。专用的外部天线接口确保即使在挑战性条件下也能获得最佳信号接收。凭借改进的信号质量和扩展的覆盖范围，你可以享受更可靠的连接。不需要时，该接口还可作为挂绳连接点，方便携带。
+  - type: image
+    image: /assets/uploads/richtext-20260612033801-659986d9.webp
+    alt: ''
+  - type: text
+    text: 04. 三脚架结构 凭借特殊设计的螺丝孔，RIMU可以轻松安装到标准三脚架上，赋予其在工业自动化、科学研究和教育中处理复杂任务的稳定性和多功能性。三脚架提高了工作精度，使RIMU比以往更具适应性。
+  - type: image
+    image: /assets/uploads/richtext-20260612033821-46a99fce.webp
+    alt: ''
+  - type: text
+    text: 05. DIN35结构 无论是用于电气控制还是自动化系统，RIMU支持DIN35导轨，可轻松连接传感器、配电盘等——非常适合工业和电气环境。
+  - type: image
+    image: /assets/uploads/richtext-20260612033847-845bb56b.webp
+    alt: ''
+  - type: text
+    text: 功能 我们将无需额外模块即可实现的许多有趣功能称为功能。借助Rimu的4.3英寸触摸屏，你可以享受个性化体验，功能包括计算器、世界时钟、闹钟、尺子、单位转换器、蓝牙等。我们不断探索新功能，以提升你的日常生活。
+  - type: image
+    image: /assets/uploads/richtext-20260612033911-cba331d0.webp
+    alt: ''
+  - type: text
+    text: 模块 RIMU的模块化设计降低了硬件成本并促进了可持续性。你只需为所需部分付费，没有不必要的额外费用。这种设计还使升级、维护和扩展产品变得容易，同时延长其生命周期并减少浪费。 我们已经开发了强大的模块，包括RFID、DMX512、步进电机、GPIO、继电器和光矩阵，并且我们正在不断扩展我们的库，以增强RIMU的智能性和适应性。
+  - type: image
+    image: /assets/uploads/richtext-20260612033939-ef123d6c.webp
+    alt: ''
+  - type: text
+    text: 总结 鉴于RIMU是一个相对较新的产品，我们创建了这个初学者指南，以帮助用户更好地理解其设计理念。作为我们的首篇博客文章，我们也在Medium和Instructables上以多种语言分享它。我们还会更新另一篇关于RIMU键盘功能的文章。 如果你有任何问题，请随时给我们留言或加入我们的社区进行讨论。

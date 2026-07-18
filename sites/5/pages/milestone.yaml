@@ -78,3 +78,42 @@ title: Milestone
 description: RIMU’s milestone page shares the story behind its long-term product development,
   highlighting dedication, continuous refinement, and community-driven improvements
   through user feed
+detail_templates:
+- id: default
+  name: 默认milestone详情
+  is_default: true
+  modules:
+  - type: detail_media
+    variant: gallery_top
+    data:
+      source: cover_and_gallery
+      layout: gallery_top
+      max_images: 6
+      empty_behavior: hide_module
+      image_ratio: 4/3
+      image_radius: 8px
+  - type: detail_content_blocks
+    variant: blocks
+    data:
+      title: ''
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
+  required_fields:
+  - title
+  - slug
+  optional_fields:
+  - cover
+  - summary
+  - body
+  - detail_images
+  - category
+  - tags
+  - detail_content_blocks
+  - detail_specs
+  - detail_files
+  - detail_links
+  seo:
+    title: '{title} - {site_name}'
+    description: '{summary}'
+    image: cover

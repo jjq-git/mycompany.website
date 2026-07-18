@@ -57,12 +57,14 @@ def add(site_id, dataset, defaults=None, lang=None):
     return new_id
 
 
-def update(site_id, dataset, item_id, fields, lang=None):
-    """合并字段到指定 id 的记录."""
+def update(site_id, dataset, item_id, fields, lang=None, remove_fields=None):
+    """合并字段到指定 id 的记录，并可明确删除不再覆盖的字段."""
     items = load(site_id, dataset, lang=lang)
     for it in items:
         if it.get('id') == item_id:
             it.update(fields)
+            for key in remove_fields or ():
+                it.pop(key, None)
             save(site_id, dataset, items, lang=lang)
             return it
     return None

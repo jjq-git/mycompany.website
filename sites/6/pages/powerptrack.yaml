@@ -5,14 +5,21 @@ detail_templates:
   is_default: true
   modules:
   - type: detail_media
-    variant: gallery_top
+    variant: gallery_left
     data:
       source: cover_and_gallery
-      layout: gallery_top
+      layout: gallery_left
       max_images: 6
       empty_behavior: hide_module
       image_ratio: 4/3
       image_radius: 8px
+  - type: detail_content_blocks
+    variant: blocks
+    data:
+      title: ''
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
   - type: detail_specs
     variant: table
     data:
@@ -29,6 +36,23 @@ detail_templates:
       url_field: link_url
       style: button
       hide_when_empty: 'true'
+  - type: detail_specs
+    variant: list
+    data:
+      title: ''
+      source_field: specs
+      max_rows: 50
+      columns: 3
+      hide_empty_rows: 'true'
+      border_color: '#e5e7eb'
+      section_bg: ''
+  - type: detail_files
+    variant: list
+    data:
+      title: 资料下载
+      empty_behavior: hide_module
+      link_color: ''
+      section_bg: ''
   required_fields:
   - title
   - slug
@@ -40,6 +64,10 @@ detail_templates:
   - category
   - tags
   - link_url
+  - body
+  - detail_content_blocks
+  - detail_specs
+  - detail_files
   seo:
     title: '{title} - {site_name}'
     description: '{summary}'

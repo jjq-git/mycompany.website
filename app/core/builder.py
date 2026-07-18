@@ -17,9 +17,11 @@ import yaml
 from flask import current_app
 from jinja2 import Environment, FileSystemLoader, select_autoescape, pass_context
 from markupsafe import Markup, escape
+from .tagging import with_generated_tags
 
 from . import block_parser, block_renderer
 from .icon_registry import get_icon_svg
+from .html_sanitizer import sanitize_richtext
 from . import menu as menu_lib
 from .models import Site
 
@@ -203,18 +205,33 @@ def _load_block_for_render(tpl_root, template_name, block_type, variant):
     return result
 
 
+DETAIL_CONTENT_MODULE_TO_TYPE = {
+    'detail_content_text': 'text',
+    'detail_content_image': 'image',
+    'detail_content_video': 'video',
+    'detail_content_media_text': 'media_text',
+    'detail_content_gallery': 'gallery',
+    'detail_content_table': 'table',
+    'detail_content_heading': 'heading',
+    'detail_content_note': 'note',
+    'detail_content_embed': 'embed',
+}
+
+
 DETAIL_COMPONENT_TYPES = {
     'detail_media',
     'detail_text',
+    'detail_content',
     'detail_content_blocks',
     'detail_specs',
     'detail_table',
+    'detail_actions',
     'detail_link',
-    'detail_intro',
     'detail_features',
     'detail_files',
     'detail_faq',
     'detail_related',
+    *DETAIL_CONTENT_MODULE_TO_TYPE.keys(),
 }
 
 
@@ -309,13 +326,57 @@ def _normalize_detail_images(item, data):
     return unique[:max_images] if max_images else unique
 
 
+def _has_detail_gallery_images(item, data):
+    """Return whether the item has real detail images, excluding its cover."""
+    gallery_field = data.get('gallery_field') or 'detail_images,detail_gallery,images'
+    gallery = _detail_field_value(item, gallery_field)
+    if not gallery and isinstance(item.get('detail_gallery'), dict):
+        gallery = item.get('detail_gallery')
+    if isinstance(gallery, dict):
+        if gallery.get('visible') is False or str(gallery.get('visible')).strip().lower() == 'false':
+            return False
+        gallery = gallery.get('images') or gallery.get('items') or []
+    if isinstance(gallery, list):
+        return any(
+            (entry.get('url') or entry.get('image') or entry.get('src')) if isinstance(entry, dict) else entry
+            for entry in gallery
+        )
+    return bool(isinstance(gallery, str) and gallery.strip())
+
+
 def _render_detail_media(item, data):
     images = _normalize_detail_images(item, data)
     title = item.get('title') or item.get('name') or ''
     summary = _first_text(item.get('summary'), item.get('description'), item.get('excerpt'))
-    if not images and data.get('empty_behavior') != 'show_placeholder':
+    publication_date = _first_text(item.get('date'), item.get('publish_date'), item.get('published_at'))
+    category = item.get('category')
+    price = item.get('price')
+    tags = item.get('tags')
+    if isinstance(tags, list):
+        tags_html = ''.join(f'<span class="badge badge-primary item-data-tag">{escape(tag)}</span>' for tag in tags[:8] if tag)
+    elif isinstance(tags, str) and tags.strip():
+        tags_html = ''.join(f'<span class="badge badge-primary item-data-tag">{escape(tag.strip())}</span>' for tag in re.split(r'[,，]+', tags) if tag.strip())
+    else:
+        tags_html = ''
+    embedded_actions = data.get('_detail_actions') if isinstance(data.get('_detail_actions'), dict) else {}
+    actions_html = _detail_actions_html(item, embedded_actions) if embedded_actions else ''
+    info_html = (
+        '<div class="item-data-info detail-media-copy">'
+        f'{f"<div class=\"item-data-category\">{escape(category)}</div>" if category else ""}'
+        f'{f"<h1 class=\"item-data-title\">{escape(title)}</h1>" if title else ""}'
+        f'{f"<time class=\"item-data-date\" datetime=\"{escape(publication_date)}\">{escape(publication_date)}</time>" if publication_date else ""}'
+        f'{f"<p class=\"item-data-desc\">{escape(summary)}</p>" if summary else ""}'
+        f'{f"<div class=\"item-data-tags\">{tags_html}</div>" if tags_html else ""}'
+        f'{f"<div class=\"item-data-price\">{escape(price)}</div>" if price else ""}'
+        f'{actions_html}'
+        '</div>'
+    )
+    has_info = bool(title or summary or publication_date or category or price or tags_html)
+    if not images and not has_info and data.get('empty_behavior') != 'show_placeholder':
         return Markup('')
     layout = data.get('layout') or 'gallery_top'
+    source = data.get('source') or 'cover_and_gallery'
+    show_gallery = bool(images) and (source == 'cover_only' or _has_detail_gallery_images(item, data))
     radius = escape(data.get('image_radius') or '8px')
     ratio = data.get('image_ratio') or '4/3'
     ratio_style = '' if ratio == 'auto' else f'aspect-ratio:{escape(ratio)};'
@@ -327,7 +388,8 @@ def _render_detail_media(item, data):
             for img in images
         )
     else:
-        imgs_html = '<div class="detail-media-placeholder" style="border:1px dashed #cbd5e1;border-radius:8px;padding:28px;text-align:center;color:#64748b">暂无图片</div>'
+        empty_image_label = (data.get('_detail_i18n') or {}).get('no_image') or '暂无图片'
+        imgs_html = f'<div class="detail-media-placeholder" style="border:1px dashed #cbd5e1;border-radius:8px;padding:28px;text-align:center;color:#64748b">{escape(empty_image_label)}</div>'
 
     gallery_html = (
         '<div class="detail-gallery item-data-gallery">'
@@ -342,28 +404,76 @@ def _render_detail_media(item, data):
         '</div>'
     )
 
-    if layout == 'gallery_left':
-        category = item.get('category')
-        tags = item.get('tags')
-        if isinstance(tags, list):
-            tags_html = ''.join(f'<span class="badge badge-primary item-data-tag">{escape(tag)}</span>' for tag in tags[:8] if tag)
-        elif isinstance(tags, str) and tags.strip():
-            tags_html = ''.join(f'<span class="badge badge-primary item-data-tag">{escape(tag.strip())}</span>' for tag in re.split(r'[,，]+', tags) if tag.strip())
-        else:
-            tags_html = ''
-        info_html = (
-            '<div class="item-data-info detail-media-copy">'
-            f'{f"<div class=\"item-data-category\">{escape(category)}</div>" if category else ""}'
-            f'{f"<h1 class=\"item-data-title\">{escape(title)}</h1>" if title else ""}'
-            f'{f"<p class=\"item-data-desc\">{escape(summary)}</p>" if summary else ""}'
-            f'{f"<div class=\"item-data-tags\">{tags_html}</div>" if tags_html else ""}'
-            '</div>'
-        )
+    if show_gallery and layout == 'gallery_left':
         body = f'<article class="item-data-article item-detail-carousel"><div class="item-data-layout">{gallery_html}{info_html}</div></article>'
+        layout_class = 'detail-media--split'
+    elif show_gallery:
+        stacked_info = info_html.replace(
+            'class="item-data-info detail-media-copy"',
+            'class="item-data-info detail-media-copy detail-media-copy--stack" style="position:static;margin-top:28px"',
+            1,
+        )
+        body = f'<article class="item-data-article item-detail-carousel">{gallery_html}{stacked_info}</article>'
+        layout_class = 'detail-media--stack'
     else:
-        body = f'<article class="item-data-article item-detail-carousel">{gallery_html}</article>'
-    layout_class = 'detail-media--split' if layout == 'gallery_left' else 'detail-media--stack'
+        solo_info = info_html.replace(
+            'class="item-data-info detail-media-copy"',
+            'class="item-data-info detail-media-copy detail-media-copy--solo" style="position:static;max-width:860px"',
+            1,
+        )
+        body = f'<article class="item-data-article item-detail-header-only">{solo_info}</article>'
+        layout_class = 'detail-media--info-only'
     return Markup(f'<section class="section detail-component detail-media {layout_class} item-data-section"{section_style}><div class="container">{body}</div></section>')
+
+
+def _detail_actions_html(item, data):
+    action_mode = str(data.get('action_buttons') or 'primary_secondary')
+    action_count = 2 if action_mode == 'primary_secondary' else 1
+    start_index = _detail_int(data.get('_detail_link_index'), 0)
+    saved_links = item.get('detail_links') if isinstance(item.get('detail_links'), list) else []
+    show_placeholder = data.get('empty_behavior') == 'show_placeholder'
+    action_html = []
+    for offset in range(action_count):
+        link_index = start_index + offset
+        entry = saved_links[link_index] if link_index < len(saved_links) and isinstance(saved_links[link_index], dict) else {}
+        fallback_label = data.get('primary_label') if offset == 0 else data.get('secondary_label')
+        label = entry.get('text') or entry.get('label') or fallback_label or ''
+        url = entry.get('url') or entry.get('link_url') or ''
+        if not url and link_index == 0:
+            url = item.get('link_url') or item.get('button_url') or ''
+            label = entry.get('text') or item.get('link_text') or item.get('button_text') or fallback_label or ''
+        if not url and not show_placeholder:
+            continue
+        variant = 'primary' if offset == 0 else 'secondary'
+        if url:
+            action_html.append(
+                f'<a class="detail-media-action detail-media-action--{variant}" href="{escape(url)}">{escape(label or url)}</a>'
+            )
+        else:
+            action_html.append(
+                f'<span class="detail-media-action detail-media-action--{variant} is-disabled" aria-disabled="true">{escape(label)}</span>'
+            )
+    if not action_html:
+        return ''
+    align = str(data.get('align') or 'left')
+    justify = {'left': 'flex-start', 'center': 'center', 'right': 'flex-end'}.get(align, 'flex-start')
+    return f'<div class="detail-media-actions" style="justify-content:{justify}">{"".join(action_html)}</div>'
+
+
+def _render_detail_actions(item, data):
+    """Render actions standalone when no media component is available."""
+    if data.get('_embedded_in_media'):
+        return Markup('')
+    actions_html = _detail_actions_html(item, data)
+    if not actions_html:
+        return Markup('')
+    align = str(data.get('align') or 'left')
+    section_style = _detail_component_style(data)
+    return Markup(
+        f'<section class="section detail-component detail-actions detail-actions--{escape(align)}"{section_style}>'
+        f'<div class="container">{actions_html}</div>'
+        f'</section>'
+    )
 
 
 def _render_detail_text(item, data):
@@ -517,7 +627,7 @@ def _render_detail_link(item, data):
     label = link_item.get('text') or link_item.get('label')
     if not label and link_index in (None, 0):
         label = item.get('link_text') or item.get('button_text')
-    label = label or data.get('label') or '了解更多'
+    label = label or data.get('label') or (data.get('_detail_i18n') or {}).get('learn_more') or '了解更多'
     link_color = data.get('link_color')
     color_style = f' style="color:{escape(link_color)}"' if link_color and data.get('style') == 'text_link' else ''
     section_style = _detail_component_style(data)
@@ -535,37 +645,6 @@ def _render_detail_link(item, data):
     )
 
 
-def _render_detail_intro(item, data):
-    title = _detail_field_value(item, data.get('title_field') or 'title,name')
-    summary = _detail_field_value(item, data.get('summary_field') or 'summary,description,excerpt')
-    category = item.get('category')
-    price = item.get('price')
-    tags = item.get('tags')
-    align = data.get('text_align') or 'left'
-    section_style = _detail_component_style(data)
-    tag_items = []
-    if _truthy_detail(data.get('show_tags'), True):
-        if isinstance(tags, list):
-            tag_items = [str(tag) for tag in tags if tag]
-        elif isinstance(tags, str):
-            tag_items = [part.strip() for part in re.split(r'[,，\s]+', tags) if part.strip()]
-    tags_html = ''.join(f'<span class="detail-intro-tag">{escape(tag)}</span>' for tag in tag_items[:12])
-    category_html = f'<div class="detail-intro-category">{escape(category)}</div>' if category and _truthy_detail(data.get('show_category'), True) else ''
-    price_html = f'<div class="detail-intro-price">{escape(price)}</div>' if price and _truthy_detail(data.get('show_price'), False) else ''
-    if not (title or summary or category_html or price_html or tags_html):
-        return Markup('')
-    return Markup(
-        f'<section class="section detail-component detail-intro detail-intro--{escape(align)}"{section_style}>'
-        f'<div class="container" style="text-align:{escape(align)}">'
-        f'{category_html}'
-        f'{f"<h1 class=\"detail-intro-title\">{escape(title)}</h1>" if title else ""}'
-        f'{f"<p class=\"detail-intro-summary\">{escape(summary)}</p>" if summary else ""}'
-        f'{price_html}'
-        f'{f"<div class=\"detail-intro-tags\">{tags_html}</div>" if tags_html else ""}'
-        f'</div></section>'
-    )
-
-
 def _item_list(value):
     return value if isinstance(value, list) else []
 
@@ -575,11 +654,36 @@ def _render_detail_content_blocks(item, data):
         return Markup('')
     blocks = item.get('detail_content_blocks') or item.get('content_blocks') or []
     blocks = [entry for entry in _item_list(blocks) if isinstance(entry, dict)]
+    if data.get('_detail_free_only'):
+        reserved = dict(data.get('_detail_reserved_content_type_counts') or {})
+        free_blocks = []
+        for entry in blocks:
+            if entry.get('slot_id'):
+                continue
+            entry_type = str(entry.get('type') or 'text')
+            if int(reserved.get(entry_type) or 0) > 0:
+                reserved[entry_type] = int(reserved.get(entry_type) or 0) - 1
+                continue
+            free_blocks.append(entry)
+        blocks = free_blocks
     if not blocks:
         if data.get('empty_behavior') != 'show_placeholder':
             return Markup('')
         blocks = [{'type': 'text', 'text': '暂无内容'}]
     title = data.get('title') or ''
+    text_align = str(data.get('text_align') or 'left')
+    image_ratio = str(data.get('image_ratio') or 'auto')
+    image_radius = str(data.get('image_radius') or '0')
+    image_style = (
+        f' style="aspect-ratio:{escape(image_ratio)};object-fit:cover;border-radius:{escape(image_radius)}"'
+        if image_ratio != 'auto' or image_radius not in ('', '0', '0px') else ''
+    )
+    video_ratio = str(data.get('video_ratio') or 'auto')
+    video_style = (
+        f' style="aspect-ratio:{escape(video_ratio)};object-fit:contain"' if video_ratio != 'auto' else ''
+    )
+    gallery_columns = max(1, min(6, _detail_int(data.get('gallery_columns'), 3) or 3))
+    max_gallery_images = max(1, min(24, _detail_int(data.get('max_images'), 12) or 12))
     rows = []
     for entry in blocks:
         block_type = entry.get('type') or 'text'
@@ -589,13 +693,16 @@ def _render_detail_content_blocks(item, data):
         video = entry.get('video') or entry.get('video_url') or ''
         alt = entry.get('alt') or heading or item.get('title') or item.get('name') or ''
         caption = entry.get('caption') or ''
-        layout = entry.get('layout') or 'image_left'
+        layout = data.get('layout') or entry.get('layout') or 'image_left'
         if block_type == 'heading':
             if not (heading or text):
                 continue
+            heading_level = str(data.get('heading_level') or 'h2').lower()
+            if heading_level not in ('h2', 'h3', 'h4'):
+                heading_level = 'h2'
             rows.append(
                 '<article class="detail-content-block detail-content-heading">'
-                f'{f"<h2>{escape(heading)}</h2>" if heading else ""}'
+                f'{f"<{heading_level} style=\"text-align:{escape(text_align)}\">{escape(heading)}</{heading_level}>" if heading else ""}'
                 f'{f"<p>{escape(text)}</p>" if text else ""}'
                 '</article>'
             )
@@ -604,7 +711,7 @@ def _render_detail_content_blocks(item, data):
                 continue
             rows.append(
                 '<article class="detail-content-block detail-content-image">'
-                f'<figure><img src="{escape(image)}" alt="{escape(alt)}" loading="lazy">'
+                f'<figure><img src="{escape(image)}" alt="{escape(alt)}" loading="lazy"{image_style}>'
                 f'{f"<figcaption>{escape(caption)}</figcaption>" if caption else ""}'
                 '</figure></article>'
             )
@@ -614,8 +721,9 @@ def _render_detail_content_blocks(item, data):
             rows.append(
                 '<article class="detail-content-block detail-content-video">'
                 f'{f"<h3>{escape(heading)}</h3>" if heading else ""}'
-                f'<video src="{escape(video)}" controls preload="metadata"></video>'
-                f'{f"<p>{escape(text)}</p>" if text else ""}'
+                f'<figure><video src="{escape(video)}" controls preload="metadata"{video_style}></video>'
+                f'{f"<figcaption>{escape(caption or text)}</figcaption>" if (caption or text) else ""}'
+                '</figure>'
                 '</article>'
             )
         elif block_type == 'gallery':
@@ -623,13 +731,13 @@ def _render_detail_content_blocks(item, data):
             if not images:
                 continue
             gallery_html = ''.join(
-                '<figure>'
-                f'<img src="{escape(img.get("image") or img.get("url") or "")}" alt="{escape(img.get("alt") or alt)}" loading="lazy">'
-                f'{("<figcaption>" + escape(img.get("caption") or "") + "</figcaption>") if img.get("caption") else ""}'
-                '</figure>'
-                for img in images[:12]
+                '<figure class="detail-content-gallery-item">'
+                + f'<img src="{escape(img.get("image") or img.get("url") or "")}" alt="{escape(img.get("alt") or alt)}" loading="lazy">'
+                + (f'<figcaption class="detail-content-gallery-caption">{escape(img.get("caption") or "")}</figcaption>' if img.get('caption') else '')
+                + '</figure>'
+                for img in images[:max_gallery_images]
             )
-            rows.append(f'<article class="detail-content-block detail-content-gallery">{f"<h3>{escape(heading)}</h3>" if heading else ""}<div class="detail-content-gallery-grid">{gallery_html}</div></article>')
+            rows.append(f'<article class="detail-content-block detail-content-gallery">{f"<h3>{escape(heading)}</h3>" if heading else ""}<div class="detail-content-gallery-grid" style="--detail-gallery-columns:{gallery_columns}">{gallery_html}</div></article>')
         elif block_type == 'table':
             table_rows = []
             if isinstance(entry.get('table'), list):
@@ -646,16 +754,37 @@ def _render_detail_content_blocks(item, data):
                         table_rows.append(cells)
             if not table_rows:
                 continue
-            table_html = ''.join('<tr>' + ''.join(f'<td>{escape(cell)}</td>' for cell in row) + '</tr>' for row in table_rows)
-            rows.append(f'<article class="detail-content-block detail-content-inline-table">{f"<h3>{escape(heading)}</h3>" if heading else ""}<div class="detail-content-table-wrap"><table><tbody>{table_html}</tbody></table></div></article>')
+            table_style = str(data.get('table_style') or 'bordered')
+            cell_style = {
+                'minimal': 'padding:10px 12px;border-bottom:1px solid #e5e7eb',
+                'striped': 'padding:10px 12px;border:0',
+            }.get(table_style, 'padding:10px 12px;border:1px solid #e5e7eb')
+            table_html = ''.join(
+                f'<tr{(" style=\"background:#f8fafc\"" if table_style == "striped" and row_index % 2 else "")}>'
+                + ''.join(f'<td style="{cell_style}">{escape(cell)}</td>' for cell in row) + '</tr>'
+                for row_index, row in enumerate(table_rows)
+            )
+            rows.append(f'<article class="detail-content-block detail-content-inline-table detail-content-inline-table--{escape(table_style)}">{f"<h3>{escape(heading)}</h3>" if heading else ""}<div class="detail-content-table-wrap"><table><tbody>{table_html}</tbody></table></div></article>')
         elif block_type == 'note':
             if not (heading or text):
                 continue
-            note_style = entry.get('style') or 'info'
+            note_style = data.get('note_style') or entry.get('style') or 'info'
+            note_colors = {
+                'success': ('#f0fdf4', '#22c55e', '#166534'),
+                'warning': ('#fffbeb', '#f59e0b', '#92400e'),
+                'danger': ('#fef2f2', '#ef4444', '#991b1b'),
+                'info': (
+                    'color-mix(in srgb, var(--color-primary), white 92%)',
+                    'var(--color-primary)',
+                    'var(--color-primary)',
+                ),
+            }
+            note_bg, note_border, note_text = note_colors.get(str(note_style), note_colors['info'])
+            note_html = Markup(sanitize_richtext(text, 'notice')) if text else Markup('')
             rows.append(
-                f'<article class="detail-content-block detail-content-note detail-content-note--{escape(note_style)}">'
+                f'<article class="detail-content-block detail-content-note detail-content-note--{escape(note_style)}" style="padding:16px 18px;background:{note_bg};border:0;border-left:4px solid {note_border};color:{note_text}">'
                 f'{f"<h3>{escape(heading)}</h3>" if heading else ""}'
-                f'{f"<p>{escape(text)}</p>" if text else ""}'
+                f'{f"<div class=\"detail-content-richtext detail-content-richtext--notice\">{note_html}</div>" if text else ""}'
                 '</article>'
             )
         elif block_type == 'embed':
@@ -665,7 +794,7 @@ def _render_detail_content_blocks(item, data):
             rows.append(
                 '<article class="detail-content-block detail-content-embed">'
                 f'{f"<h3>{escape(heading)}</h3>" if heading else ""}'
-                f'<iframe src="{escape(embed_url)}" loading="lazy" allowfullscreen></iframe>'
+                f'<iframe src="{escape(embed_url)}" loading="lazy" allowfullscreen style="height:{escape(data.get("iframe_height") or "520px")}"></iframe>'
                 f'{f"<p>{escape(text)}</p>" if text else ""}'
                 '</article>'
             )
@@ -676,25 +805,27 @@ def _render_detail_content_blocks(item, data):
             media_html = ''
             if image:
                 media_html = (
-                    f'<figure><img src="{escape(image)}" alt="{escape(alt)}" loading="lazy">'
+                    f'<figure><img src="{escape(image)}" alt="{escape(alt)}" loading="lazy"{image_style}>'
                     f'{f"<figcaption>{escape(caption)}</figcaption>" if caption else ""}'
                     '</figure>'
                 )
+            text_html = Markup(sanitize_richtext(text, 'content')) if text else Markup('')
             rows.append(
                 f'<article class="detail-content-block detail-content-media-text{reverse_class}">'
                 f'{media_html}'
                 '<div class="detail-content-copy">'
                 f'{f"<h3>{escape(heading)}</h3>" if heading else ""}'
-                f'{f"<p>{escape(text)}</p>" if text else ""}'
+                f'{f"<div class=\"detail-content-richtext\">{text_html}</div>" if text else ""}'
                 '</div></article>'
             )
         else:
             if not (heading or text):
                 continue
+            text_html = Markup(sanitize_richtext(text, 'content')) if text else Markup('')
             rows.append(
-                '<article class="detail-content-block detail-content-text">'
+                f'<article class="detail-content-block detail-content-text" style="text-align:{escape(text_align)}">'
                 f'{f"<h3>{escape(heading)}</h3>" if heading else ""}'
-                f'{f"<p>{escape(text)}</p>" if text else ""}'
+                f'{f"<div class=\"detail-content-richtext\">{text_html}</div>" if text else ""}'
                 '</article>'
             )
     if not rows:
@@ -706,6 +837,31 @@ def _render_detail_content_blocks(item, data):
         f'<div class="detail-content-block-list">{"".join(rows)}</div>'
         f'</div></section>'
     )
+
+
+def _render_detail_content(item, data, fixed_content_type=None):
+    """Render one stable template-controlled content slot."""
+    blocks = item.get('detail_content_blocks') or item.get('content_blocks') or []
+    blocks = [entry for entry in _item_list(blocks) if isinstance(entry, dict)]
+    slot_id = str(data.get('slot_id') or '')
+    content_type = str(fixed_content_type or data.get('content_type') or 'text')
+    selected = next(
+        (entry for entry in blocks if slot_id and str(entry.get('slot_id') or '') == slot_id),
+        None,
+    )
+    if selected is None:
+        type_index = _detail_int(data.get('_detail_content_type_index'), 0)
+        matching = [
+            entry for entry in blocks
+            if not entry.get('slot_id') and str(entry.get('type') or 'text') == content_type
+        ]
+        if 0 <= type_index < len(matching):
+            selected = matching[type_index]
+    slot_item = dict(item)
+    slot_item['detail_content_blocks'] = [selected] if isinstance(selected, dict) else []
+    slot_data = dict(data)
+    slot_data['_detail_content_blocks_index'] = 0
+    return _render_detail_content_blocks(slot_item, slot_data)
 
 
 def _render_detail_features(item, data):
@@ -765,18 +921,22 @@ def _render_detail_files(item, data):
         label = entry.get('title') or entry.get('name') or url or '资料'
         desc = entry.get('desc') or entry.get('description') or ''
         meta = entry.get('type') or entry.get('size') or ''
+        if str(desc).strip().casefold() == str(label).strip().casefold():
+            desc = ''
         if not (label or url or desc):
             continue
         href = escape(url or '#')
         items.append(
             f'<a class="detail-file-item" href="{href}"{color_style}>'
-            f'<span class="detail-file-icon" aria-hidden="true">↓</span>'
+            f'<span class="detail-file-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h4"/></svg></span>'
             f'<span class="detail-file-main">'
             f'<span class="detail-file-name">{escape(label)}</span>'
             f'{f"<span class=\"detail-file-desc\">{escape(desc)}</span>" if desc else ""}'
             f'</span>'
+            f'<span class="detail-file-actions">'
             f'{f"<span class=\"detail-file-meta\">{escape(meta)}</span>" if meta else ""}'
-            f'<span class="detail-file-action" aria-hidden="true">下载</span>'
+            f'<span class="detail-file-action">{escape((data.get("_detail_i18n") or {}).get("download") or "下载")}<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg></span>'
+            f'</span>'
             f'</a>'
         )
     if not items:
@@ -890,7 +1050,7 @@ def _render_detail_related(item, data, jinja_ctx):
             f'<div class="fp-card-body detail-related-body">'
             f'{f"<h3 class=\"fp-card-title\">{escape(name)}</h3>" if name else ""}'
             f'{f"<p class=\"fp-card-desc\">{escape(summary)}</p>" if summary else ""}'
-            f'<span class="fp-card-link-text"><span>查看更多</span><span aria-hidden="true">→</span></span>'
+            f'<span class="fp-card-link-text"><span>{escape((data.get("_detail_i18n") or {}).get("view_more") or "查看更多")}</span><span aria-hidden="true">→</span></span>'
             f'</div>'
             f'</a>'
         )
@@ -976,26 +1136,59 @@ def _render_detail_related(item, data, jinja_ctx):
     )
 
 
+_DETAIL_TITLE_I18N_KEYS = {
+    '固定参数': 'fixed_specs',
+    '固定的参数': 'fixed_specs',
+    '可定制参数': 'custom_specs',
+    '可定制的参数': 'custom_specs',
+    '资料下载': 'downloads',
+    '相關下載': 'downloads',
+    '相关推荐': 'related',
+    '相關推薦': 'related',
+    'FAQ 问答': 'faq',
+    'FAQ 問答': 'faq',
+}
+
+
+def _localized_detail_component_data(jinja_ctx, raw_data):
+    data = dict(raw_data or {})
+    translations = jinja_ctx.get('t') if isinstance(jinja_ctx.get('t'), dict) else {}
+    detail_i18n = translations.get('detail') if isinstance(translations.get('detail'), dict) else {}
+    data['_detail_i18n'] = detail_i18n
+    title = str(data.get('title') or '').strip()
+    title_key = _DETAIL_TITLE_I18N_KEYS.get(title)
+    if title_key and detail_i18n.get(title_key):
+        data['title'] = detail_i18n[title_key]
+    if data.get('label') == '了解更多' and detail_i18n.get('learn_more'):
+        data['label'] = detail_i18n['learn_more']
+    return data
+
+
 def _render_detail_component(jinja_ctx, module):
     item = _current_detail_item(jinja_ctx)
     if not item:
         return Markup('')
-    data = module.get('data') if isinstance(module.get('data'), dict) else {}
+    raw_data = module.get('data') if isinstance(module.get('data'), dict) else {}
+    data = _localized_detail_component_data(jinja_ctx, raw_data)
     block_type = module.get('type')
     if block_type == 'detail_media':
         return _render_detail_media(item, data)
     if block_type == 'detail_text':
         return _render_detail_text(item, data)
+    if block_type == 'detail_content':
+        return _render_detail_content(item, data)
+    if block_type in DETAIL_CONTENT_MODULE_TO_TYPE:
+        return _render_detail_content(item, data, DETAIL_CONTENT_MODULE_TO_TYPE[block_type])
     if block_type == 'detail_content_blocks':
         return _render_detail_content_blocks(item, data)
     if block_type == 'detail_specs':
         return _render_detail_specs(item, data)
     if block_type == 'detail_table':
         return _render_detail_table(item, data)
+    if block_type == 'detail_actions':
+        return _render_detail_actions(item, data)
     if block_type == 'detail_link':
         return _render_detail_link(item, data)
-    if block_type == 'detail_intro':
-        return _render_detail_intro(item, data)
     if block_type == 'detail_features':
         return _render_detail_features(item, data)
     if block_type == 'detail_files':
@@ -1907,11 +2100,16 @@ def _is_legacy_default_detail_template(tpl):
 
 
 def _normalize_detail_template(tpl):
-    if not _is_legacy_default_detail_template(tpl):
-        return tpl
     normalized = copy.deepcopy(tpl)
-    normalized['modules'] = _default_detail_modules()
-    normalized['optional_fields'] = ['cover', 'summary', 'detail_images', 'specs', 'category', 'tags', 'link_url']
+    if _is_legacy_default_detail_template(tpl):
+        normalized['modules'] = _default_detail_modules()
+        normalized['optional_fields'] = ['cover', 'summary', 'detail_images', 'specs', 'category', 'tags', 'link_url']
+    modules = normalized.get('modules')
+    if isinstance(modules, list):
+        normalized['modules'] = [
+            module for module in modules
+            if not (isinstance(module, dict) and module.get('type') == 'detail_intro')
+        ]
     return normalized
 
 
@@ -2016,15 +2214,30 @@ def _annotate_detail_modules(modules):
     table_index = 0
     specs_index = 0
     content_blocks_index = 0
+    content_type_counts = {}
+    free_content_modules = []
+    media_modules = [
+        module for module in (modules or [])
+        if isinstance(module, dict) and module.get('type') == 'detail_media'
+    ]
     for module in modules or []:
         if not isinstance(module, dict):
             continue
-        if module.get('type') in ('detail_link', 'detail_table', 'detail_content_blocks'):
+        if module.get('type') in ('detail_actions', 'detail_link', 'detail_table', 'detail_content_blocks', 'detail_content') or module.get('type') in DETAIL_CONTENT_MODULE_TO_TYPE:
             data = module.get('data') if isinstance(module.get('data'), dict) else {}
             module['data'] = data
         if module.get('type') == 'detail_link':
             data['_detail_link_index'] = link_index
             link_index += 1
+        if module.get('type') == 'detail_actions':
+            data['_detail_link_index'] = link_index
+            action_mode = str(data.get('action_buttons') or 'primary_secondary')
+            link_index += 2 if action_mode == 'primary_secondary' else (1 if action_mode == 'primary' else 0)
+            if media_modules:
+                media_data = media_modules[0].get('data') if isinstance(media_modules[0].get('data'), dict) else {}
+                media_modules[0]['data'] = media_data
+                media_data['_detail_actions'] = dict(data)
+                data['_embedded_in_media'] = True
         if module.get('type') == 'detail_table':
             data['_detail_table_index'] = table_index
             table_index += 1
@@ -2036,43 +2249,27 @@ def _annotate_detail_modules(modules):
         if module.get('type') == 'detail_content_blocks':
             data['_detail_content_blocks_index'] = content_blocks_index
             content_blocks_index += 1
+            free_content_modules.append(data)
+        if module.get('type') == 'detail_content' or module.get('type') in DETAIL_CONTENT_MODULE_TO_TYPE:
+            content_type = DETAIL_CONTENT_MODULE_TO_TYPE.get(
+                module.get('type'),
+                str(data.get('content_type') or module.get('variant') or 'text'),
+            )
+            data['content_type'] = content_type
+            data['_detail_content_type_index'] = content_type_counts.get(content_type, 0)
+            content_type_counts[content_type] = content_type_counts.get(content_type, 0) + 1
+    for data in free_content_modules:
+        data['_detail_free_only'] = True
+        data['_detail_reserved_content_type_counts'] = dict(content_type_counts)
     return modules
 
 
-def _intro_module():
-    return {
-        'type': 'detail_intro',
-        'variant': 'default',
-        'data': {
-            'title_field': 'title',
-            'summary_field': 'summary',
-            'show_category': 'true',
-            'show_tags': 'true',
-            'show_price': 'false',
-            'text_align': 'left',
-        },
-    }
-
-
-def _ensure_detail_intro_module(modules):
-    """Keep title/category/tags independent from the image/gallery component."""
-    modules = list(modules or [])
-    if any(isinstance(module, dict) and module.get('type') == 'detail_intro' for module in modules):
-        return modules
-    has_split_media_intro = any(
-        isinstance(module, dict)
-        and module.get('type') == 'detail_media'
-        and isinstance(module.get('data'), dict)
-        and module.get('data', {}).get('layout') == 'gallery_left'
-        for module in modules
-    )
-    if has_split_media_intro:
-        return modules
-    intro = _intro_module()
-    for index, module in enumerate(modules):
-        if isinstance(module, dict) and module.get('type') == 'detail_media':
-            return modules[:index + 1] + [intro] + modules[index + 1:]
-    return [intro] + modules
+def _without_detail_intro_modules(modules):
+    """Ignore retired title/summary modules in old templates and item overrides."""
+    return [
+        module for module in (modules or [])
+        if not (isinstance(module, dict) and module.get('type') == 'detail_intro')
+    ]
 
 
 def _resolve_detail_item_modules(item, page, dataset_key):
@@ -2087,18 +2284,16 @@ def _resolve_detail_item_modules(item, page, dataset_key):
     item_copy = dict(item or {})
     existing_modules = item_copy.get('modules')
     if isinstance(existing_modules, list) and existing_modules and not _is_legacy_item_detail_override(existing_modules):
-        item_copy['modules'] = _annotate_detail_modules(_ensure_detail_intro_module(copy.deepcopy(existing_modules)))
+        item_copy['modules'] = _annotate_detail_modules(_without_detail_intro_modules(copy.deepcopy(existing_modules)))
         return item_copy
 
     tpl = _find_detail_template(page or {}, dataset_key, item_copy.get('template_id'))
     modules = tpl.get('modules') if isinstance(tpl, dict) else None
     if isinstance(modules, list):
-        modules = _ensure_detail_intro_module(copy.deepcopy(modules))
-        # Detail identity is a baseline of every dataset detail page, even when
-        # the visual/media component is omitted from the template.
+        modules = _without_detail_intro_modules(copy.deepcopy(modules))
         item_copy['modules'] = _annotate_detail_modules(modules) if modules else [{'type': '_empty_detail_template', 'variant': 'default', 'data': {}}]
     else:
-        modules = _ensure_detail_intro_module([{'type': 'item_data', 'variant': 'default', 'data': {}}])
+        modules = [{'type': 'item_data', 'variant': 'default', 'data': {}}]
         item_copy['modules'] = _annotate_detail_modules(modules)
     item_copy['_detail_template_id'] = tpl.get('id', 'default') if isinstance(tpl, dict) else 'default'
     return item_copy
@@ -2311,7 +2506,7 @@ def render_site_page(site_id, filepath='index.html', base_url='', lang_code=None
             lang_settings['contact'] = _merge_language_settings_section(settings.get('contact'), contact_override)
 
         render_pages = lang_pages
-        render_data = lang_data
+        render_data = with_generated_tags(lang_data)
         render_settings = lang_settings
         render_lang = lang_code
         t = translations.get(lang_code, {})
@@ -2319,7 +2514,7 @@ def render_site_page(site_id, filepath='index.html', base_url='', lang_code=None
         if isinstance(draft_page, dict) and draft_page_key:
             pages[draft_page_key] = _merge_page_content(pages.get(draft_page_key, {}), draft_page)
         render_pages = pages
-        render_data = data
+        render_data = with_generated_tags(data)
         render_settings = settings
         render_lang = site.default_language or ''
         t = {}
@@ -2464,6 +2659,7 @@ def build_site(site_id, base_url='', report=None, output_root=None):
             lang_pages, lang_data = _load_lang_overrides(
                 site_id, lang_code, default_lang, default_pages_for_lang, default_data_for_lang
             )
+            lang_data = with_generated_tags(lang_data)
 
             # 语言特定菜单：menu_labels（新格式）优先于 menu_<lang>（旧格式）
             # 当两者同时存在时用新格式，否则旧格式向后兼容。
@@ -2526,6 +2722,7 @@ def build_site(site_id, base_url='', report=None, output_root=None):
         # 单语言模式 (兼容旧模板)
         # 修复：原先引用了未定义的 products_categories/products_items 导致单语言站点构建崩溃。
         # 从 data 提取（与多语言分支的 lang_data 提取逻辑对齐），并补 all_datasets。
+        data = with_generated_tags(data)
         products_categories = _extract_products_categories(data)
         products_items = _extract_products_items(data)
         common = {

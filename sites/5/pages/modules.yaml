@@ -444,15 +444,13 @@ detail_templates:
       empty_behavior: hide_module
       image_ratio: 4/3
       image_radius: 8px
-  - type: detail_intro
-    variant: default
+  - type: detail_content_blocks
+    variant: blocks
     data:
-      title_field: title
-      summary_field: summary
-      show_category: 'true'
-      show_tags: 'true'
-      show_price: 'false'
-      text_align: left
+      title: ''
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
   - type: detail_specs
     variant: list
     data:
@@ -471,6 +469,43 @@ detail_templates:
       url_field: link_url
       style: button
       hide_when_empty: 'true'
+  - type: detail_files
+    variant: list
+    data:
+      title: 资料下载
+      empty_behavior: hide_module
+      link_color: ''
+      section_bg: ''
+  - type: detail_link
+    variant: text_link
+    data:
+      title: ''
+      label: 了解更多
+      url_field: link_url
+      style: text_link
+      hide_when_empty: 'true'
+      link_color: ''
+      section_bg: ''
+  - type: detail_link
+    variant: text_link
+    data:
+      title: ''
+      label: 了解更多
+      url_field: link_url
+      style: text_link
+      hide_when_empty: 'true'
+      link_color: ''
+      section_bg: ''
+  - type: detail_link
+    variant: text_link
+    data:
+      title: ''
+      label: 了解更多
+      url_field: link_url
+      style: text_link
+      hide_when_empty: 'true'
+      link_color: ''
+      section_bg: ''
   required_fields:
   - title
   - slug
@@ -482,6 +517,11 @@ detail_templates:
   - category
   - tags
   - link_url
+  - body
+  - detail_content_blocks
+  - detail_specs
+  - detail_files
+  - detail_links
   seo:
     title: '{title} - {site_name}'
     description: '{summary}'

@@ -379,7 +379,7 @@ function toggleLangDropdown(e) {
   // 剥离预览前缀、语言前缀和尾部斜杠
   var cleaned = path
     .replace(/\/templates\/[^/]+\/preview/, '')
-    .replace(/\/(?:preview|live_preview)\/\d+/, '')
+    .replace(/\/(?:preview|live_preview)\/[^/]+/, '')
     .replace(/^\/(zh-CN|zh-TW|en)/, '')
     .replace(/\/$/, '') || '/';
 
@@ -399,14 +399,14 @@ function toggleLangDropdown(e) {
     if (href.indexOf('http') === 0 || href === '#') return;
     var normalized = href
       .replace(/\/templates\/[^/]+\/preview/, '')
-      .replace(/\/(?:preview|live_preview)\/\d+/, '')
+      .replace(/\/(?:preview|live_preview)\/[^/]+/, '')
       .replace(/^\/(zh-CN|zh-TW|en)/, '')
       .replace(/\/$/, '') || '/';
     if (normalized === cleaned || (normalized !== '/' && cleaned.indexOf(normalized + '/') === 0)) {
       link.classList.add('active');
       var dropdown = link.closest('.nav-dropdown');
       if (dropdown) {
-        var parentLink = dropdown.querySelector(':scope > .nav-dropdown-parent > .nav-dropdown-link');
+        var parentLink = dropdown.querySelector(':scope > .nav-dropdown-parent > .nav-dropdown-link, :scope > .nav-dropdown-parent > .nav-dropdown-label');
         if (parentLink) parentLink.classList.add('active');
         var arrow = dropdown.querySelector(':scope > .nav-dropdown-parent > .nav-dropdown-arrow');
         if (arrow) arrow.classList.add('active');

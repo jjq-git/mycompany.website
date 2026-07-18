@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>{{ page_label }} · 编辑 #{{ edit_item_id }}</title>
+  <title>{{ page_label }} · {{ '创建副本' if is_duplicate_content else ('新建内容' if is_new_content else ('编辑 #' ~ edit_item_id)) }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260715-content-editor">
   <style>
@@ -323,6 +323,10 @@
     }
     .content-edit-panel [data-field-section="media"] .dataset-media-field>.form-label{padding-top:2px}
     .content-edit-panel [data-field-section="media"] .module-media-picker{width:120px;height:100px;min-height:100px}
+    .content-edit-panel [data-field-section="media"] .dataset-media-field[data-media-kind="embed"]>.module-media-layout{
+      grid-template-columns:120px minmax(0,1fr);
+      column-gap:16px;
+    }
     /* 姝ｆ枃闈㈡澘涓庡唴閮ㄥ唴瀹瑰潡鍒嗗眰锛氬唴瀹瑰潡涓嶅啀璐村妗嗐€?*/
     .content-edit-panel .dataset-edit-form>[data-field-section="detail_content_blocks"]{
       padding:0!important;
@@ -338,6 +342,30 @@
       padding:25px!important;
       gap:16px!important;
       background:#f3f6f8;
+    }
+    .content-edit-panel .detail-content-slot-section{
+      padding:0!important;
+      background:#fff!important;
+      border:0!important;
+      box-shadow:0 5px 18px rgba(15,23,42,.065)!important;
+    }
+    .content-edit-panel .detail-content-slot-section>.editor-component__body{
+      padding:25px!important;
+    }
+    .content-edit-panel .detail-content-slot-section .detail-content-template-slot{
+      display:block!important;
+      margin:0!important;
+      padding:0!important;
+      background:#fff!important;
+      border:0!important;
+      box-shadow:none!important;
+    }
+    .content-edit-panel .detail-content-slot-section .detail-content-template-slot>.detail-content-block-side{
+      display:none!important;
+    }
+    .content-edit-panel .detail-content-slot-section .detail-content-template-slot>.detail-content-block-main{
+      width:100%;
+      max-width:none!important;
     }
     .content-edit-panel #detailContentBlocksList>.detail-content-block-item{
       /* border:0!important; */
@@ -514,6 +542,50 @@
       grid-column:1!important;
       grid-row:auto!important;
     }
+    /* 提示信息：标题与模板说明紧邻排列，正文独占下一行。 */
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main{
+      grid-template-columns:minmax(280px,520px) max-content minmax(0,1fr)!important;
+      gap:10px 14px!important;
+    }
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-title-field{
+      grid-column:1!important;
+      grid-row:1!important;
+      width:100%!important;
+    }
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-note-fields{
+      grid-column:2!important;
+      grid-row:1!important;
+      align-self:center!important;
+      white-space:nowrap;
+    }
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-textarea-field{
+      grid-column:1/-1!important;
+      grid-row:2!important;
+    }
+    /* 表格内容：标题和行列工具同一行，表格网格放在下一行。 */
+    .content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-block-main{
+      display:grid!important;
+      grid-template-columns:minmax(280px,520px) max-content minmax(0,1fr)!important;
+      gap:8px 12px!important;
+      align-items:center;
+    }
+    .content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-title-field{
+      grid-column:1!important;
+      grid-row:1!important;
+      width:100%!important;
+    }
+    .content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-table-fields{display:contents!important}
+    .content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-table-tools{
+      grid-column:2!important;
+      grid-row:1!important;
+      margin:0!important;
+      flex-wrap:nowrap;
+    }
+    .content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-table-grid{
+      grid-column:1/-1!important;
+      grid-row:2!important;
+      width:100%;
+    }
     @media(max-width:1100px){
       .content-edit-panel #detailContentBlocksList{grid-template-columns:minmax(0,1fr)!important}
     }
@@ -527,8 +599,9 @@
     @media(max-width:1100px){.content-edit-panel .dataset-edit-form>.ds-template-card>.ds-template-card__body{grid-template-columns:96px minmax(0,1fr)!important}.content-edit-panel .ds-template-card__body>.ds-help{grid-column:2;text-align:left}}
     /* Slug銆佹爣棰樸€佸垎绫诲悓琛岋紱鏍囩鍜岀畝浠嬪悇鑷嫭鍗犱竴琛屻€?*/
     .content-edit-panel .editor-component__body>.ds-basic-grid{grid-template-columns:minmax(0,1fr)!important;gap:12px}
-    .content-edit-panel .ds-basic-meta-grid{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(360px,1.6fr) minmax(180px,.7fr);gap:12px}
-    @media(max-width:900px){.content-edit-panel .ds-basic-meta-grid{grid-template-columns:minmax(0,1fr)}}
+    .content-edit-panel .ds-basic-meta-grid,.content-edit-panel .ds-basic-taxonomy-grid{display:grid;grid-template-columns:minmax(190px,.75fr) minmax(320px,1.55fr) minmax(150px,.6fr);gap:12px}
+    .content-edit-panel .ds-basic-taxonomy-grid>div:last-child{grid-column:2/-1}
+    @media(max-width:900px){.content-edit-panel .ds-basic-meta-grid,.content-edit-panel .ds-basic-taxonomy-grid{grid-template-columns:minmax(0,1fr)}.content-edit-panel .ds-basic-taxonomy-grid>div:last-child{grid-column:auto}}
     /* 鍗曟潯楂樼骇缂栬緫锛氫粎闄愬綋鍓嶅唴瀹瑰伐浣滃尯锛屼笉瑕嗙洊鍏变韩妯″潡鏍峰紡銆?*/
     .content-edit-panel #datasetAdvancedModules{
       margin:18px 0 0;
@@ -613,14 +686,14 @@
     }
     @media(max-width:760px){.content-edit-panel #datasetAdvancedModules{padding:12px}.content-edit-panel #datasetAdvancedModules .dataset-advanced-toolbar{align-items:flex-start;flex-wrap:wrap}.content-edit-panel #datasetAdvancedModules .dataset-advanced-toolbar-copy{order:-1;flex:1 0 100%}}
     @media(max-width:1200px){.content-edit-layout{grid-template-columns:180px minmax(0,1fr)}.content-edit-panel #detailGalleryList{grid-template-columns:repeat(2,minmax(0,1fr))}.content-edit-panel #detailFeaturesList,.content-edit-panel #detailFaqsList,.content-edit-panel #detailLinksList{grid-template-columns:1fr!important}}
-    @media(max-width:900px){.content-edit-workspace{padding:14px}.content-edit-panel{padding:12px}.content-edit-hero{padding-right:44px}.content-edit-layout{display:block}.content-edit-outline{display:none}.content-edit-panel #detailGalleryList{grid-template-columns:1fr}.content-edit-panel .dataset-edit-form .detail-content-block-side{display:grid;grid-template-columns:1fr}.content-edit-panel .dataset-edit-form .detail-content-block-side .detail-content-type-select,.content-edit-panel .dataset-edit-form .detail-content-block-side .detail-content-layout-wrap{width:100%;flex-basis:auto}.content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main,.content-edit-panel .detail-content-block-item[data-block-type="media_text"] .detail-content-block-main{grid-template-columns:1fr}.content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main>*,.content-edit-panel .detail-content-block-item[data-block-type="media_text"] .detail-content-block-main>*{grid-column:1!important;grid-row:auto!important}}
+    @media(max-width:900px){.content-edit-workspace{padding:14px}.content-edit-panel{padding:12px}.content-edit-hero{padding-right:44px}.content-edit-layout{display:block}.content-edit-outline{display:none}.content-edit-panel #detailGalleryList{grid-template-columns:1fr}.content-edit-panel .dataset-edit-form .detail-content-block-side{display:grid;grid-template-columns:1fr}.content-edit-panel .dataset-edit-form .detail-content-block-side .detail-content-type-select,.content-edit-panel .dataset-edit-form .detail-content-block-side .detail-content-layout-wrap{width:100%;flex-basis:auto}.content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main,.content-edit-panel .detail-content-block-item[data-block-type="media_text"] .detail-content-block-main,.content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-block-main{grid-template-columns:1fr!important}.content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main>*,.content-edit-panel .detail-content-block-item[data-block-type="media_text"] .detail-content-block-main>*,.content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-title-field,.content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-table-tools,.content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-table-grid{grid-column:1!important;grid-row:auto!important}.content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-table-tools{flex-wrap:wrap}}
   </style>
 </head>
 <body>
   <main class="content-edit-workspace"><div class="content-edit-shell">
     <header class="content-edit-hero">
-      <h1>{{ page_label }} · 编辑 #{{ edit_item_id }}</h1>
-      <p>编辑内容字段、媒体和详情组件，保存后会更新对应详情页。</p>
+      <h1>{{ page_label }} · {{ '创建副本' if is_duplicate_content else ('新建内容' if is_new_content else ('编辑 #' ~ edit_item_id)) }}</h1>
+      <p>{% if is_duplicate_content %}当前为临时副本，检查并修改内容后，填写必填项并保存才会正式创建。{% elif is_new_content %}当前为临时编辑状态，填写必填项并保存后才会正式创建内容。{% else %}编辑内容字段、媒体和详情组件，保存后会更新对应详情页。{% endif %}</p>
     </header>
     <section class="content-edit-panel">
       <div class="content-edit-layout">
@@ -668,7 +741,10 @@
     });
     form.querySelectorAll(collectionSelector).forEach(function(collection){collectionObserver.observe(collection,{childList:true});});
     var sectionSelector='.ds-card,.detail-field-section,.detail-multi-section,.ds-settings-card,.detail-content-block-item,.detail-spec-group-item,.detail-table-item,.detail-link-item';
-    var sections=Array.from(form.querySelectorAll(sectionSelector)).filter(function(node){return node.offsetParent!==null;});
+    var sections=Array.from(form.querySelectorAll(sectionSelector)).filter(function(node){
+      if(node.offsetParent===null)return false;
+      return !(node.classList.contains('detail-content-template-slot')&&node.closest('.detail-content-slot-section'));
+    });
     var navEntries=[];
     sections.forEach(function(section,index){
       var label=section.querySelector(':scope>.ds-card-head .ds-card-title,:scope>.ds-card-head,:scope>.small.fw-semibold,:scope>.d-flex:first-child .small.fw-semibold,:scope>.detail-content-block-side>.d-flex:first-child .small.fw-semibold');

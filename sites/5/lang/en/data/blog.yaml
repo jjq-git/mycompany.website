@@ -4,328 +4,48 @@
   date: '2026-06-11'
   cover: /assets/uploads/blog-cover-20260611104910-02a4c10b111.webp
   style_bg-color: ''
-  modules:
-  - type: item_data
-    order: 1
-    variant: default
-    data: {}
   seo_title: Module address
-  seo_description: RIMU provides clear module address solutions for efficient building
-    navigation and system integration, supporting smart facility management.
+  seo_description: RIMU provides clear module address solutions for efficient building navigation and system integration, supporting smart facility management.
 - id: 2
   title: PWM SW 5 Module Control Motor
   slug: pwm-sw-5-module-control-motor
   date: '2026-06-11'
   cover: /assets/uploads/blog-cover-20260611105034-bf360b40.webp
   style_bg-color: ''
-  modules:
-  - type: item_data
-    order: 1
-    variant: default
-    data: {}
   seo_title: PWM SW 5 Module Control Motor
-  seo_description: RIMU's PWM SW 5 Module offers precise motor control with pulse
-    width modulation technology, ideal for automation and industrial applications
-    requiring reliable speed regulation.
+  seo_description: RIMU's PWM SW 5 Module offers precise motor control with pulse width modulation technology, ideal for automation and industrial applications requiring reliable speed regulation.
   category: PWM
   tags: []
 - id: 3
   title: PWM SW 5 Module Control LED Stripes
   slug: pwm-sw-5-module-control-led
   style_bg-color: ''
-  modules:
-  - type: item_data
-    order: 1
-    variant: default
-    data: {}
-  description: 'Multi-channel LED strips are divided into two types: common anode
-    and common cathode. Common anode strips typically have only one + pad and multiple
-    –'
+  description: 'Multi-channel LED strips are divided into two types: common anode and common cathode. Common anode strips typically have only one + pad and multiple –'
   cover: /assets/uploads/blog-cover-20260611105634-5f87d487.webp
   date: '2026-06-11'
-  body: "<img src=\"/assets/uploads/richtext-20260612015012-ae686daa.webp\"><br><p>Multi-channel\
-    \ LED strips are divided into two types: common anode and common cathode. Common\
-    \ anode strips typically have only one + pad and multiple - pads.\r\n<br>\r\n\
-    <br>To control multi-color LED strips with the PWM_SW_5 module, the strips must\
-    \ be common anode or a combination of multiple single-color common anode strips.\r\
-    \n<br>\r\n<br>As shown in the figure, these pads are all connected to common anode\
-    \ LED strips.<br><img src=\"/assets/uploads/richtext-20260612015037-10f628b6.webp\"\
-    ><br><br></p>"
+  body: ''
   seo_title: PWM SW 5 Module Control LED Stripes
-  seo_description: RIMU PWM SW 5 Module controls multi-channel LED strips, supporting
-    common anode types for multi-color lighting applications.
+  seo_description: RIMU PWM SW 5 Module controls multi-channel LED strips, supporting common anode types for multi-color lighting applications.
   category: PWM
   tags: []
+  detail_content_blocks:
+  - type: image
+    image: /assets/uploads/richtext-20260612015012-ae686daa.webp
+    alt: ''
+  - type: text
+    text: 'Multi-channel LED strips are divided into two types: common anode and common cathode. Common anode strips typically have only one + pad and multiple - pads. To control multi-color LED strips with the PWM_SW_5 module, the strips must be common anode or a combination of multiple single-color common anode strips. As shown in the figure, these pads are all connected to common anode LED strips.'
+  - type: image
+    image: /assets/uploads/richtext-20260612015037-10f628b6.webp
+    alt: ''
 - id: 4
   title: The general information of rimu modules
   slug: information-of-rimu-modules
-  description: Overview Communication between the RIMU host and modules is primarily
-    achieved through the I2C bus,
-  body: "<h4><b>Post: The general information of rimu modules<br></b><b>Overview</b></h4><p><img\
-    \ src=\"/assets/uploads/richtext-20260612020024-9cb728d2.webp\"><br>Communication\
-    \ between the RIMU host and modules is primarily achieved through the I2C bus,\
-    \ \r\n<br>while also supporting other special modules. The specific choice of\
-    \ modules mainly depends on the required functionalities, costs, protection levels,\
-    \ and different application scenarios.\r\n<br>\r\n<br>This document provides detailed\
-    \ information on customizable I2C protocol modules, such as the DIMMER5 module\
-    \ and the 8-channel IO expansion module.\r\n<br>Currently, all modules use the\
-    \ Atmega328p as the main processor. This chip is designed to handle as many events\
-    \ as possible on its own and communicates with the host via the I2C protocol,\
-    \ such as controlling IO ports and reading sensor information. This design effectively\
-    \ reduces the usage of the host’s IO ports. If the Atmega328p cannot meet specific\
-    \ requirements, the host’s IO ports will be used for processing, while supporting\
-    \ IO port switching, allowing the host to connect multiple devices.<br></p><p><b>Module\
-    \ Pins<br></b></p><p>Different modules may use different pins. During the design\
-    \ phase, the module’s own pins should be utilized as much as possible to minimize\
-    \ the usage of the host’s IO ports.\r\n<br>R01\tR02\tR03\tR04\tR05\tR06\tR07\t\
-    R08\tR09\tR10\tR11\r\n<br>C1\t3.3v¹\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\tIO02\t\
-    IO01\t5V²\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12⁴\tIO44\tIO43\tIO13\tIO14\tIO45\t\
-    IO04\t5V³&nbsp;<br></p><p><img src=\"/assets/uploads/richtext-20260612020127-f3536ea0.svg\"\
-    ></p><p><b>Notes<br></b></p><p></p><ol><li>Maximum output current: 2A, supplied\
-    \ by the host.</li><li>Module power: charges the host’s battery.</li><li>Maximum\
-    \ output current: 200mA, supplied by the host.</li><li>IO12 pin: This pin is primarily\
-    \ used for interrupt signals to the host.<br></li></ol><p></p><p><b>Firmware Update<br></b></p><p><img\
-    \ src=\"/assets/uploads/richtext-20260612020151-454aecd2.svg\"></p><p><b>Upgrading\
-    \ Module Firmware Using the Host<br></b></p><p></p><ol><li>Use a screwdriver to\
-    \ open the module, referring to the UPGRADE position in the above diagram C, and\
-    \ set all three dip switches to the ON position.</li><li>Reattach the module’s\
-    \ top cover (once the cover is secured, the module can communicate smoothly with\
-    \ the host).</li><li>Click \"Upgrade\" on the screen to start the firmware upgrade.</li><li>After\
-    \ a successful upgrade, remove the module’s top cover and switch the dip switches\
-    \ to the OFF position.</li><li>Reattach the module’s top cover, and the module\
-    \ can communicate smoothly with the host again.<br></li></ol><p></p><p><b>Other\
-    \ Methods for Upgrading Firmware<br></b></p><p>Users with certain programming\
-    \ and hardware skills can also upgrade the firmware through other methods, such\
-    \ as:<br></p><p></p><ol><li>When programming the module using Arduino, it can\
-    \ be upgraded via a USB-to-serial module (requiring the DTR pin), as shown in\
-    \ diagram B.</li><li>Firmware can be upgraded via the SPI interface, as shown\
-    \ in diagram A.<br></li></ol><p></p><p><b>Communication<br></b></p><p>Communication\
-    \ between the host and modules occurs via the I2C bus. The I2C slave address must\
-    \ be unique, and the module can set its I2C address using dip switches. Using\
-    \ a 16-position rotary dip switch, the module can be assigned 16 different addresses,\
-    \ allowing the host to connect up to <strong>16</strong> modules simultaneously.\
-    \ The types of communication between the host and modules are as follows:<br></p><p></p><ol><li>Human-machine\
-    \ interaction: The host reads or sends data to the module.</li><li>Timed reading:\
-    \ Some modules require the host to periodically read their data, such as module\
-    \ status or sensor readings.</li><li>Interrupt triggering: When the module has\
-    \ new information, it notifies the host to read the module information by pulling\
-    \ the interrupt pin high.</li></ol><p></p><p><b>I2C Protocol<br></b></p><p></p><ol><li>Address\
-    \ Range：0x60 – 0x6F, corresponding to the dip switch positions 0 – F.\r\n</li><li>Communication\
-    \ Speed：400KHz。\r\n</li><li>Level: 3.3V。</li></ol><p></p><p><b>Human-Machine Interaction</b></p><p>When\
-    \ the host controls the module, it reads or sends data to the module based on\
-    \ its needs.</p><p><b>Timed Reading\r\n</b><br>Certain input-type modules require\
-    \ the host to periodically read their data, such as module status or sensor readings.\r\
-    \n<br><b>Human-Machine Interaction\r\n</b><br>When the module has new information,\
-    \ it can trigger an interrupt. The host first confirms which module triggered\
-    \ the interrupt and then reads the corresponding module’s register information.\r\
-    \n<br><b>Pin Definitions\r\n</b><br>Each protocol uses its own pin definitions,\
-    \ so during the hardware design of the module, it is necessary to avoid these\
-    \ pins as much as possible to prevent pin conflicts.\r\n<br><b>I2C Pins\r\n</b><br>All\
-    \ modules have the same I2C pins. Different modules need to select different addresses\
-    \ using dip switches, as shown in the diagram below:<br></p><p>R1\tR2\tR3\tR4\t\
-    R5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3v\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\t\
-    IO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\tIO14\t\
-    IO45\tIO04\t5V\r\n<br> \t \t \t \t \t \t \t \t \t \t \t \r\n<br>I2C\t–\tSCL\t\
-    SDA\t–\t–\t–\t–\t–\t–\t–\t–\r\n<br>I2C\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p><b>UART\
-    \ Pins\r\n</b><br>Some modules require the use of serial communication, such as\
-    \ RS485, CAN, DMX512, etc. Additionally, the UART interface and RESET pin are\
-    \ needed when updating the module firmware. Since the operation of updating the\
-    \ module firmware is not common, the TX and RX pins for communication and firmware\
-    \ updates are shared. The RESET (RST) pin is only used during firmware updates.\
-    \ The pin positions are shown in the diagram below:\r\n<br>R1\tR2\tR3\tR4\tR5\t\
-    R6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3v\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\t\
-    IO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\tIO14\t\
-    IO45\tIO04\t5V\r\n<br>UART\t–\t–\t–\t–\t–\t–\tRST\tRX\tTX\t–\t–\r\n<br>UART\t\
-    –\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p>The dip switch for upgrading firmware\
-    \ is set to OFF when the module leaves the factory. If firmware upgrade is needed,\
-    \ please switch the dip switch to ON. For normal use, the dip switch should be\
-    \ set to OFF.\r\n<br>\r\n<br>Peng<br></p><p><b>USB\r\n</b><br>The host is equipped\
-    \ with a TYPE-C interface, with different functions for normal insertion and reverse\
-    \ insertion:</p><p><img src=\"/assets/uploads/richtext-20260612020450-b8ba23d2.svg\"\
-    ></p><p></p><ol><li>Normal Insertion (same side as RIMU logo and screen): The\
-    \ host can simulate devices such as keyboards, mice, USB drives, and game controllers.\r\
-    \n</li><li>Reverse Insertion (opposite side of RIMU logo and screen): Used for\
-    \ upgrading programs and debugging, with the connection method being computer\
-    \ -&gt; CH9102X -&gt; ESP32S3.</li></ol><p></p><p><b>Normal Insertion - USB Device\r\
-    \n</b><br>When using the USB interface, the host can simulate devices such as\
-    \ keyboards, mice, USB drives, and game controllers. At this time, the IO19 and\
-    \ IO20 pins will be occupied.\r\n<br>R1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\t\
-    R11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\tIO02\tIO01\t5V\tGND\r\
-    \n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V\r\n<br>USB-HID\t\
-    –\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\r\n<br>USB-HID\t–\tD+\tD-\t–\t–\t–\t–\t–\t–\t\
-    –\t–&nbsp;<br></p><p><b>Reverse Insertion - USB Serial Port\r\n</b><br>When using\
-    \ the TYPE-C serial port, the IO43 and IO44 pins will be occupied. The host can\
-    \ act as a serial port for debugging or upgrading programs.\r\n<br>R1\tR2\tR3\t\
-    R4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\tIO06\t\
-    IO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\t\
-    IO14\tIO45\tIO04\t5V\r\n<br>USB-UART\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\r\n<br>USB-UART\t\
-    –\t–\t–\t–\tRX\tTX\t–\t–\t–\t–\t–&nbsp;<br></p><p><b>SPI Pins\r\n</b><br>Some\
-    \ modules require higher-speed data transmission and will use the SPI protocol.\
-    \ The chip select pin is controlled by the Atmega328p, allowing multiple modules\
-    \ to connect to one SPI bus. The SPI pin definitions are as follows:\r\n<br>R1\t\
-    R2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\t\
-    IO06\tIO05\tIO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\t\
-    IO13\tIO14\tIO45\tIO04\t5V\r\n<br>SPI\t–\t–\t–\tSCK\tMOSI\tMISO\t–\t–\t–\t–\t\
-    –\r\n<br>SPI\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p><b>Interrupt Pins\r\
-    \n</b><br>Modules with interrupt functionality can notify the host of new information\
-    \ via the interrupt pin. Since this interrupt pin shares the same pin with the\
-    \ host’s internal peripherals, the host must first confirm which module triggered\
-    \ the interrupt before reading the corresponding module’s register information.\
-    \ The pin positions are as follows:\r\n<br>R1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\t\
-    R10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\tIO02\tIO01\t5V\t\
-    GND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\tIO14\tIO45\tIO04\t5V\r\
-    \n<br>INTERRUPT\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\t–\r\n<br>INTERRUPT\t–\t–\t–\tINT\t\
-    –\t–\t–\t–\t–\t–\t–&nbsp;<br></p><p></p><div></div><p></p><p><b>Non-protocol Pins\r\
-    \n</b><br>These non-protocol pins are not occupied by any protocol. During the\
-    \ design of the module hardware, these pins should be prioritized. Additionally,\
-    \ the IO05 pin is only used during firmware upgrades.\r\n<br>R1\tR2\tR3\tR4\t\
-    R5\tR6\tR7\tR8\tR9\tR10\tR11\r\n<br>C1\t3.3V\tIO41\tIO42\tIO09\tIO40\tIO06\tIO05\t\
-    IO02\tIO01\t5V\tGND\r\n<br>C2\tGND\tIO20\tIO19\tIO12\tIO44\tIO43\tIO13\tIO14\t\
-    IO45\tIO04\t5V\r\n<br>Non-protocol Pin\t–\t–\t–\t–\t–\t–\tY\t–\t–\t–\t–\r\n<br>Non-protocol\
-    \ Pin\t–\t–\t–\t–\t–\t–\tY\tY\tY\tY\t–</p><p><b>Registers\r\n</b><br>The total\
-    \ number of registers is a maximum of 0xFF, consisting of general and private\
-    \ parts.\r\n<br><b>General Registers\r\n</b><br></p><ul><li>0x00 – 0x41, a total\
-    \ of 0x42 bits, common to all modules.\r\n</li><li>0x05 (REG_NEW_DATA_FLAG): Read/Write\r\
-    \n</li><li>0x41 (REG_INTERRUPT_FLAG): Read/Write\r\n</li><li>Other bits: Read-only\r\
-    \n</li></ul><b>Private Registers\r\n</b><br><ul><li>0x42 – 0xFF, defined by each\
-    \ module, with a maximum of 0xFF – 0x42 = 0xBD bits for private registers.\r\n\
-    </li><li>Each module’s registers have corresponding functionalities.\r\n</li><li>Read/Write\
-    \ permissions are defined by the module itself.</li></ul><p></p><p><b>Address\
-    \ List\r\n</b><br>Address\tFunction\tR/W\tComments\r\n<br>0x00/02\tModule Number\t\
-    R\t\r\n<br>0x01/03\tModule Number\tR\t\r\n<br>0x04\tTotal Number of Registers\t\
-    R\t\r\n<br>0x05\tHardware Version\tR\t\r\n<br>0x06\tSoftware Version\tR\t\r\n\
-    <br>0x07\tFunctions Used\tR\t\r\n<br>0x08\tChecksum\tR\t\r\n<br>0x09/0A/0B/0C/0D/0E\t\
-    Reversed\tR\t\r\n<br>0x0E\tNew data flag\tR/W\t\r\n<br>0x10-&gt;0x2F\tModule Name\t\
-    R\t\r\n<br>0x30\tPIN-01 Status\tR\t\r\n<br>0x31\tPIN-02 Status\tR\t\r\n<br>0x32\t\
-    PIN-04 Status\tR\t\r\n<br>0x33\tPIN-05 Status\tR\t\r\n<br>0x34\tPIN-06 Status\t\
-    R\t\r\n<br>0x35\tPIN-09 Status\tR\t\r\n<br>0x36\tPIN-12 Status\tR\t\r\n<br>0x37\t\
-    PIN-13 Status\tR\t\r\n<br>0x38\tPIN-14 Status\tR\t\r\n<br>0x39\tPIN-19 Status\t\
-    R\t\r\n<br>0x3A\tPIN-20 Status\tR\t\r\n<br>0x3B\tPIN-40 Status\tR\t\r\n<br>0x3C\t\
-    PIN-41 Status\tR\t\r\n<br>0x3D\tPIN-42 Status\tR\t\r\n<br>0x3E\tPIN-43 Status\t\
-    R\t\r\n<br>0x3F\tPIN-44 Status\tR\t\r\n<br>0x40\tPIN-45 Status\tR\t\r\n<br>0x41\t\
-    Interrupt Flag\tR/W&nbsp;</p><p><b>Module Number\r\n</b><br>Each module has a\
-    \ different and unique number, ranging from 0x0001 to 0xFFFF. Different versions\
-    \ of the same module use the same number. The hardware version is used to distinguish\
-    \ between hardware. To ensure the correct identification of the module, the system\
-    \ stores the number twice to prevent the I2C from connecting to other devices.\r\
-    \n<br>\r\n<br>0x00/0x02\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>High 8 Bits\t0\t\
-    0\t0\t0\t0\t0\t0\t0\r\n<br>0x01/0x03\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>Low\
-    \ 8 Bits\t0\t0\t0\t0\t0\t0\t0\t0&nbsp;<br></p><p><b>Total Bits\r\n</b><br>The\
-    \ total number of registers ranges from 0x00 to 0xFF, equal to the number of general\
-    \ registers plus the number of private registers. This total number is stored\
-    \ at address 0x04.\r\n<br>\r\n<br>0x04\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>Val\t\
-    0\t0\t0\t0\t0\t0\t0\t0</p><p><b>Hardware Version\r\n</b><br>The hardware version\
-    \ of the module increments among modules with the same functionality, ranging\
-    \ from 1 to 255, with the first version being 1. This version information is stored\
-    \ at address 0x05.\r\n<br>\r\n<br>0x05\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>Val\t\
-    0\t0\t0\t0\t0\t0\t0\t0&nbsp;<br></p><p><b>Software Version\r\n</b><br>The software\
-    \ version of the module can be upgraded via the host, ranging from 1 to 255, with\
-    \ the first version being 1. This version information is stored at address 0x06.\r\
-    \n<br>\r\n<br>Firmware updates do not modify the data in the EEPROM, but during\
-    \ module initialization, the old data may be used, which could lead to data errors.\
-    \ The software version also serves to determine whether data should be read from\
-    \ the EEPROM to initialize the module.\r\n<br>\r\n<br>0x06\tB7\tB6\tB5\tB4\tB3\t\
-    B2\tB1\tB0\r\n<br>Val\t0\t0\t0\t0\t0\t0\t0\t0&nbsp;<br></p><p><b>Communication\
-    \ Protocol\r\n</b><br>Different modules have different functionalities, so the\
-    \ required communication protocols also vary. The protocol used by this module\
-    \ is stored at register 0x07 for the host to identify.\r\n<br>\r\n<br>Each bit\
-    \ represents the communication protocol used by the module, with 0 indicating\
-    \ not in use and 1 indicating currently in use. All modules support the I2C protocol.\r\
-    \n<br>\r\n<br>0x07\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>Protocal\t–\t–\tUPGRADE\t\
-    USB-HID\tUSB-UART\tINTERRUPT\tUART\tSPI\r\n<br></p><ol><li>UPGRADE: The module\
-    \ can be upgraded via the host.\r\n</li><li>INTERRUPT: The module has interrupt\
-    \ trigger functionality, notifying the host when the module’s status changes.\r\
-    \n</li><li>UART: The module uses serial pins for communication.\r\n</li><li>SPI:\
-    \ The module uses the SPI protocol for data transmission.\r\n</li><li>USB-HID:The\
-    \ module uses IO19 and IO20 pins, which will disable the host’s ability to simulate\
-    \ HID device functionality.\r\n</li><li>USB-UART:The module uses IO43 and IO44\
-    \ pins, which will disable the host’s TYPE-C interface from functioning as a serial\
-    \ port.</li></ol><div></div><p></p><p><b>Checksum\r\n</b><br>The checksum value\
-    \ is the low eight bits of the sum from 0x00 to 0x07. This checksum is stored\
-    \ at address 0x08.\r\n<br>\r\n<br>0x08\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>Val\t\
-    0\t0\t0\t0\t0\t0\t0\t0\r\n<br><b>Reserved Bits\r\n</b><br>The address range 0x09\
-    \ – 0x0E is reserved, unused, and has a value of 0.\r\n<br>\r\n<br><b>New Data\
-    \ Flag\r\n</b><br>If the module has new data, this value needs to be incremented.\
-    \ When the host polls, it first reads this register. If the value is not 0, it\
-    \ continues to read other registers and then clears it. This value is stored at\
-    \ address 0x0F. If the value of this register is large, the host needs to shorten\
-    \ the polling interval.\r\n<br>\r\n<br>0x0F\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n\
-    <br>Val\t0\t0\t0\t0\t0\t0\t0\t0&nbsp;<br></p><p><b>Module Name\r\n</b><br>The\
-    \ module name must be unique and start with \"WF1-\", with a maximum of 32 characters\
-    \ following it, consisting only of letters, numbers, or hyphens (-). The module\
-    \ name is stored in the register range 0x10 – 0x2F.</p><p><b>Pin Status\r\n</b><br>After\
-    \ confirming the protocol used by the module, the pin status will be initialized\
-    \ when the module is powered on. The pin status is not saved to EEPROM but is\
-    \ initialized by the program in the registers. There are four definitions for\
-    \ the pins, representing different statuses. A total of 2 bits are used to represent\
-    \ different statuses, BIT0 and BIT1, with other bits reserved. The specifics are\
-    \ as follows:\r\n<br>\r\n<br>0x30\tB7\tB6\tB5\tB4\tB3\tB2\tB1\tB0\r\n<br>Val\t\
-    –\t–\t–\t–\t–\t–\tIO\txx\r\n<br>The steps to set the pin status are as follows:\r\
-    \n<br>\r\n<br></p><ol><li>The module initializes the pin status according to the\
-    \ protocol.\r\n</li><li>The module sets the status of non-protocol pins during\
-    \ initialization.\r\n</li><li>If the module’s pins can be set by the host, they\
-    \ are set through the host.\r\n</li><li>The module saves the pin status to EEPROM\
-    \ for automatic initialization of these pins during the next startup.\r\n</li><li>The\
-    \ host can detect the status of these pins and issue warnings if conflicts are\
-    \ found.</li></ol><div></div><p></p><p><b>0 - Isolated Pin (0b00)\r\n</b><br>This\
-    \ pin is not connected to any lines of the module and can be considered a useless\
-    \ pin for this module. These pins cannot be modified by the host. Specific cases\
-    \ include:\r\n<br>\r\n<br></p><ol><li>Unused non-protocol pins.\r\n</li><li>Dedicated\
-    \ pins for protocols not used by this module.</li></ol><div></div><p></p><p><b>1\
-    \ - Pin was connected, but not used (0b01)\r\n</b><br>The pin is connected to\
-    \ the module’s lines but is not used by the current module and can be used by\
-    \ other modules. Specific cases include:<br></p><ol><li>The three pins used during\
-    \ upgrades: IO01 TX, IO02 RX, and IO05 RST. These three pins are only used during\
-    \ upgrades and can be used by other modules at other times.\r\n</li><li>The default\
-    \ state of non-protocol pins can be set to – 2 (0b10) by the host.\r\n</li></ol><b>2\
-    \ - Pin is used, and can be modified by the host (0b10)\r\n</b><br>This status\
-    \ is modified by the host, and the module needs to save the status of these pins\
-    \ to EEPROM.<br><ol><li>The upgrade pins can be set to a used state by the host.\r\
-    \n</li><li>Non-protocol pins set to a used state by the host can be modified by\
-    \ the host if other modules need them.\r\n</li><li>Unused protocol pins, such\
-    \ as SPI and USB, can be modified by the host if this module does not use them.\r\
-    \n</li></ol><b>3 - Pin is used, and cannot be modified by the host (0b11)\r\n\
-    </b><br>The pins used on the module cannot be modified by the host. Specific cases\
-    \ include:<br><ol><li>The SCL and SDA pins used by the I2C protocol cannot be\
-    \ modified by the host.\r\n</li><li>The interrupt pin IO12, used for interrupts,\
-    \ shares the same pin with the host’s interrupt and cannot be modified unless\
-    \ in special circumstances.\r\n</li><li>Pins occupied by protocols used by other\
-    \ modules cannot be modified by the host.\r\n</li></ol>If the module uses certain\
-    \ fixed pins, their status must be set to 0b11 and cannot be modified by the host.<p></p><p><b>Register\
-    \ Address and Pin Function Table\r\n</b><br>address\tPin #\tProtocol\tName\tPriority\r\
-    \n<br>0x30\tIO01\tUART/UPGRADE\tTX\t1\r\n<br>0x31\tIO02\tUART/UPGRADE\tRX\t1\r\
-    \n<br>0x32\tIO04\tNon-protocol Pin\t–\t0\r\n<br>0x33\tIO05\tUPGRADE\tRST\t1\r\n\
-    <br>0x34\tIO06\tSPI\tMISO\t2\r\n<br>0x35\tIO09\tSPI\tSCK\t2\r\n<br>0x36\tIO12\t\
-    INTERRUPT\tHigh-Level Triggered\t3\r\n<br>0x37\tIO13\tNon-protocol Pin\t–\t0\r\
-    \n<br>0x38\tIO14\tNon-protocol Pin\t–\t0\r\n<br>0x39\tIO19\tUSD-D\tD+\t2\r\n<br>0x3A\t\
-    IO20\tUSD-D\tD-\t2\r\n<br>0x3B\tIO40\tSPI\tMOSI\t2\r\n<br>0x3C\tIO41\tI2C\tSCL\t\
-    3\r\n<br>0x3D\tIO42\tI2C\tSDA\t3\r\n<br>0x3E\tIO43\tUSB-UART\tTX\t2\r\n<br>0x3F\t\
-    IO44\tUSB-UART\tRX\t2\r\n<br>0x40\tIO45\tNon-protocol Pin\t–\t0</p><p><b>Priority\r\
-    \n</b><br></p><ul><li>0 – Highest priority for use\r\n</li><li>1 – Second priority\
-    \ for use\r\n</li><li>2 – Last priority for use\r\n</li><li>3 – Not to be used\
-    \ unless in special circumstances</li></ul><div></div><p></p><p><b>Interrupt Trigger\
-    \ Bit\r\n</b><br>If the module has information that requires immediate processing\
-    \ by the host, it can notify the host by pulling the interrupt pin high. Since\
-    \ multiple devices share the interrupt, the host needs to read the register values\
-    \ of different modules to quickly determine which module triggered the interrupt.\
-    \ After the host processes this interrupt, it sets this bit to 0, and the module\
-    \ will immediately pull the interrupt pin low. The register address is 0x41.</p><p>Private\
-    \ Information Registers\r\n<br>All modules’ private information registers start\
-    \ from address 0x42.</p><p></p><ul><li><font color=\"#018073\"><a href=\"https://github.com/RIMU-DENGTEC/wf1_module_library\"\
-    \ target=\"_blank\" rel=\"noopener\">wf1 modules library</a>\r\n</font></li><li><font\
-    \ color=\"#018073\"><a href=\"https://rimu.me/wp-content/uploads/2025/01/wf1_module_general_info_en_v0.pdf\"\
-    \ target=\"_blank\" rel=\"noopener\">wf1_module_general_info_en_v0.pdf&nbsp;</a><br><br></font></li></ul><p></p><div></div>"
+  description: Overview Communication between the RIMU host and modules is primarily achieved through the I2C bus,
+  body: ''
   cover: /assets/uploads/blog-cover-20260611110528-abccb981.webp
   style_bg-color: ''
-  modules:
-  - type: item_data
-    order: 1
-    variant: default
-    data: {}
   seo_title: The general information of rimu modules
-  seo_description: RIMU provides customizable I2C protocol modules for host communication,
-    including DIMMER5 and 8-channel IO expansion, using Atmega328p to reduce host
-    IO usage and support firmware
+  seo_description: RIMU provides customizable I2C protocol modules for host communication, including DIMMER5 and 8-channel IO expansion, using Atmega328p to reduce host IO usage and support firmware
   category: RIMU
   tags: ''
   media_type: image
@@ -341,191 +61,182 @@
   detail_gallery:
     visible: true
     images: []
+  detail_content_blocks:
+  - type: heading
+    title: 'Post: The general information of rimu modules Overview'
+  - type: text
+    text: Communication between the RIMU host and modules is primarily achieved through the I2C bus, while also supporting other special modules. The specific choice of modules mainly depends on the required functionalities, costs, protection levels, and different application scenarios. This document provides detailed information on customizable I2C protocol modules, such as the DIMMER5 module and the 8-channel IO expansion module. Currently, all modules use the Atmega328p as the main processor. This chip is designed to handle as many events as possible on its own and communicates with the host via the I2C protocol, such as controlling IO ports and reading sensor information. This design effectively reduces the usage of the host’s IO ports. If the Atmega328p cannot meet specific requirements, the host’s IO ports will be used for processing, while supporting IO port switching, allowing the host to connect multiple devices.
+  - type: image
+    image: /assets/uploads/richtext-20260612020024-9cb728d2.webp
+    alt: ''
+  - type: text
+    text: Module Pins Different modules may use different pins. During the design phase, the module’s own pins should be utilized as much as possible to minimize the usage of the host’s IO ports. R01 R02 R03 R04 R05 R06 R07 R08 R09 R10 R11 C1 3.3v¹ IO41 IO42 IO09 IO40 IO06 IO05 IO02 IO01 5V² GND C2 GND IO20 IO19 IO12⁴ IO44 IO43 IO13 IO14 IO45 IO04 5V³
+  - type: image
+    image: /assets/uploads/richtext-20260612020127-f3536ea0.svg
+    alt: ''
+  - type: text
+    text: 'Notes • Maximum output current: 2A, supplied by the host. • Module power: charges the host’s battery. • Maximum output current: 200mA, supplied by the host. • IO12 pin: This pin is primarily used for interrupt signals to the host. Firmware Update'
+  - type: image
+    image: /assets/uploads/richtext-20260612020151-454aecd2.svg
+    alt: ''
+  - type: text
+    text: 'Upgrading Module Firmware Using the Host • Use a screwdriver to open the module, referring to the UPGRADE position in the above diagram C, and set all three dip switches to the ON position. • Reattach the module’s top cover (once the cover is secured, the module can communicate smoothly with the host). • Click "Upgrade" on the screen to start the firmware upgrade. • After a successful upgrade, remove the module’s top cover and switch the dip switches to the OFF position. • Reattach the module’s top cover, and the module can communicate smoothly with the host again. Other Methods for Upgrading Firmware Users with certain programming and hardware skills can also upgrade the firmware through other methods, such as: • When programming the module using Arduino, it can be upgraded via a USB-to-serial module (requiring the DTR pin), as shown in diagram B. • Firmware can be upgraded via the SPI interface, as shown in diagram A. Communication Communication between the host and modules
+      occurs via the I2C bus. The I2C slave address must be unique, and the module can set its I2C address using dip switches. Using a 16-position rotary dip switch, the module can be assigned 16 different addresses, allowing the host to connect up to 16 modules simultaneously. The types of communication between the host and modules are as follows: • Human-machine interaction: The host reads or sends data to the module. • Timed reading: Some modules require the host to periodically read their data, such as module status or sensor readings. • Interrupt triggering: When the module has new information, it notifies the host to read the module information by pulling the interrupt pin high. I2C Protocol • Address Range：0x60 – 0x6F, corresponding to the dip switch positions 0 – F. • Communication Speed：400KHz。 • Level: 3.3V。 Human-Machine Interaction When the host controls the module, it reads or sends data to the module based on its needs. Timed Reading Certain input-type modules require the host
+      to periodically read their data, such as module status or sensor readings. Human-Machine Interaction When the module has new information, it can trigger an interrupt. The host first confirms which module triggered the interrupt and then reads the corresponding module’s register information. Pin Definitions Each protocol uses its own pin definitions, so during the hardware design of the module, it is necessary to avoid these pins as much as possible to prevent pin conflicts. I2C Pins All modules have the same I2C pins. Different modules need to select different addresses using dip switches, as shown in the diagram below: R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 C1 3.3v IO41 IO42 IO09 IO40 IO06 IO05 IO02 IO01 5V GND C2 GND IO20 IO19 IO12 IO44 IO43 IO13 IO14 IO45 IO04 5V I2C – SCL SDA – – – – – – – – I2C – – – – – – – – – – – UART Pins Some modules require the use of serial communication, such as RS485, CAN, DMX512, etc. Additionally, the UART interface and RESET pin are needed when updating
+      the module firmware. Since the operation of updating the module firmware is not common, the TX and RX pins for communication and firmware updates are shared. The RESET (RST) pin is only used during firmware updates. The pin positions are shown in the diagram below: R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 C1 3.3v IO41 IO42 IO09 IO40 IO06 IO05 IO02 IO01 5V GND C2 GND IO20 IO19 IO12 IO44 IO43 IO13 IO14 IO45 IO04 5V UART – – – – – – RST RX TX – – UART – – – – – – – – – – – The dip switch for upgrading firmware is set to OFF when the module leaves the factory. If firmware upgrade is needed, please switch the dip switch to ON. For normal use, the dip switch should be set to OFF. Peng USB The host is equipped with a TYPE-C interface, with different functions for normal insertion and reverse insertion:'
+  - type: image
+    image: /assets/uploads/richtext-20260612020450-b8ba23d2.svg
+    alt: ''
+  - type: text
+    text: '• Normal Insertion (same side as RIMU logo and screen): The host can simulate devices such as keyboards, mice, USB drives, and game controllers. • Reverse Insertion (opposite side of RIMU logo and screen): Used for upgrading programs and debugging, with the connection method being computer -> CH9102X -> ESP32S3. Normal Insertion - USB Device When using the USB interface, the host can simulate devices such as keyboards, mice, USB drives, and game controllers. At this time, the IO19 and IO20 pins will be occupied. R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 C1 3.3V IO41 IO42 IO09 IO40 IO06 IO05 IO02 IO01 5V GND C2 GND IO20 IO19 IO12 IO44 IO43 IO13 IO14 IO45 IO04 5V USB-HID – – – – – – – – – – – USB-HID – D+ D- – – – – – – – – Reverse Insertion - USB Serial Port When using the TYPE-C serial port, the IO43 and IO44 pins will be occupied. The host can act as a serial port for debugging or upgrading programs. R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 C1 3.3V IO41 IO42 IO09 IO40 IO06 IO05 IO02 IO01
+      5V GND C2 GND IO20 IO19 IO12 IO44 IO43 IO13 IO14 IO45 IO04 5V USB-UART – – – – – – – – – – – USB-UART – – – – RX TX – – – – – SPI Pins Some modules require higher-speed data transmission and will use the SPI protocol. The chip select pin is controlled by the Atmega328p, allowing multiple modules to connect to one SPI bus. The SPI pin definitions are as follows: R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 C1 3.3V IO41 IO42 IO09 IO40 IO06 IO05 IO02 IO01 5V GND C2 GND IO20 IO19 IO12 IO44 IO43 IO13 IO14 IO45 IO04 5V SPI – – – SCK MOSI MISO – – – – – SPI – – – – – – – – – – – Interrupt Pins Modules with interrupt functionality can notify the host of new information via the interrupt pin. Since this interrupt pin shares the same pin with the host’s internal peripherals, the host must first confirm which module triggered the interrupt before reading the corresponding module’s register information. The pin positions are as follows: R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 C1 3.3V IO41 IO42 IO09 IO40 IO06
+      IO05 IO02 IO01 5V GND C2 GND IO20 IO19 IO12 IO44 IO43 IO13 IO14 IO45 IO04 5V INTERRUPT – – – – – – – – – – – INTERRUPT – – – INT – – – – – – – Non-protocol Pins These non-protocol pins are not occupied by any protocol. During the design of the module hardware, these pins should be prioritized. Additionally, the IO05 pin is only used during firmware upgrades. R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 C1 3.3V IO41 IO42 IO09 IO40 IO06 IO05 IO02 IO01 5V GND C2 GND IO20 IO19 IO12 IO44 IO43 IO13 IO14 IO45 IO04 5V Non-protocol Pin – – – – – – Y – – – – Non-protocol Pin – – – – – – Y Y Y Y – Registers The total number of registers is a maximum of 0xFF, consisting of general and private parts. General Registers • 0x00 – 0x41, a total of 0x42 bits, common to all modules. • 0x05 (REG_NEW_DATA_FLAG): Read/Write • 0x41 (REG_INTERRUPT_FLAG): Read/Write • Other bits: Read-only Private Registers • 0x42 – 0xFF, defined by each module, with a maximum of 0xFF – 0x42 = 0xBD bits for private registers. • Each
+      module’s registers have corresponding functionalities. • Read/Write permissions are defined by the module itself. Address List Address Function R/W Comments 0x00/02 Module Number R 0x01/03 Module Number R 0x04 Total Number of Registers R 0x05 Hardware Version R 0x06 Software Version R 0x07 Functions Used R 0x08 Checksum R 0x09/0A/0B/0C/0D/0E Reversed R 0x0E New data flag R/W 0x10->0x2F Module Name R 0x30 PIN-01 Status R 0x31 PIN-02 Status R 0x32 PIN-04 Status R 0x33 PIN-05 Status R 0x34 PIN-06 Status R 0x35 PIN-09 Status R 0x36 PIN-12 Status R 0x37 PIN-13 Status R 0x38 PIN-14 Status R 0x39 PIN-19 Status R 0x3A PIN-20 Status R 0x3B PIN-40 Status R 0x3C PIN-41 Status R 0x3D PIN-42 Status R 0x3E PIN-43 Status R 0x3F PIN-44 Status R 0x40 PIN-45 Status R 0x41 Interrupt Flag R/W Module Number Each module has a different and unique number, ranging from 0x0001 to 0xFFFF. Different versions of the same module use the same number. The hardware version is used to distinguish between hardware.
+      To ensure the correct identification of the module, the system stores the number twice to prevent the I2C from connecting to other devices. 0x00/0x02 B7 B6 B5 B4 B3 B2 B1 B0 High 8 Bits 0 0 0 0 0 0 0 0 0x01/0x03 B7 B6 B5 B4 B3 B2 B1 B0 Low 8 Bits 0 0 0 0 0 0 0 0 Total Bits The total number of registers ranges from 0x00 to 0xFF, equal to the number of general registers plus the number of private registers. This total number is stored at address 0x04. 0x04 B7 B6 B5 B4 B3 B2 B1 B0 Val 0 0 0 0 0 0 0 0 Hardware Version The hardware version of the module increments among modules with the same functionality, ranging from 1 to 255, with the first version being 1. This version information is stored at address 0x05. 0x05 B7 B6 B5 B4 B3 B2 B1 B0 Val 0 0 0 0 0 0 0 0 Software Version The software version of the module can be upgraded via the host, ranging from 1 to 255, with the first version being 1. This version information is stored at address 0x06. Firmware updates do not modify the data in
+      the EEPROM, but during module initialization, the old data may be used, which could lead to data errors. The software version also serves to determine whether data should be read from the EEPROM to initialize the module. 0x06 B7 B6 B5 B4 B3 B2 B1 B0 Val 0 0 0 0 0 0 0 0 Communication Protocol Different modules have different functionalities, so the required communication protocols also vary. The protocol used by this module is stored at register 0x07 for the host to identify. Each bit represents the communication protocol used by the module, with 0 indicating not in use and 1 indicating currently in use. All modules support the I2C protocol. 0x07 B7 B6 B5 B4 B3 B2 B1 B0 Protocal – – UPGRADE USB-HID USB-UART INTERRUPT UART SPI • UPGRADE: The module can be upgraded via the host. • INTERRUPT: The module has interrupt trigger functionality, notifying the host when the module’s status changes. • UART: The module uses serial pins for communication. • SPI: The module uses the SPI protocol
+      for data transmission. • USB-HID:The module uses IO19 and IO20 pins, which will disable the host’s ability to simulate HID device functionality. • USB-UART:The module uses IO43 and IO44 pins, which will disable the host’s TYPE-C interface from functioning as a serial port. Checksum The checksum value is the low eight bits of the sum from 0x00 to 0x07. This checksum is stored at address 0x08. 0x08 B7 B6 B5 B4 B3 B2 B1 B0 Val 0 0 0 0 0 0 0 0 Reserved Bits The address range 0x09 – 0x0E is reserved, unused, and has a value of 0. New Data Flag If the module has new data, this value needs to be incremented. When the host polls, it first reads this register. If the value is not 0, it continues to read other registers and then clears it. This value is stored at address 0x0F. If the value of this register is large, the host needs to shorten the polling interval. 0x0F B7 B6 B5 B4 B3 B2 B1 B0 Val 0 0 0 0 0 0 0 0 Module Name The module name must be unique and start with "WF1-", with a maximum
+      of 32 characters following it, consisting only of letters, numbers, or hyphens (-). The module name is stored in the register range 0x10 – 0x2F. Pin Status After confirming the protocol used by the module, the pin status will be initialized when the module is powered on. The pin status is not saved to EEPROM but is initialized by the program in the registers. There are four definitions for the pins, representing different statuses. A total of 2 bits are used to represent different statuses, BIT0 and BIT1, with other bits reserved. The specifics are as follows: 0x30 B7 B6 B5 B4 B3 B2 B1 B0 Val – – – – – – IO xx The steps to set the pin status are as follows: • The module initializes the pin status according to the protocol. • The module sets the status of non-protocol pins during initialization. • If the module’s pins can be set by the host, they are set through the host. • The module saves the pin status to EEPROM for automatic initialization of these pins during the next startup.
+      • The host can detect the status of these pins and issue warnings if conflicts are found. 0 - Isolated Pin (0b00) This pin is not connected to any lines of the module and can be considered a useless pin for this module. These pins cannot be modified by the host. Specific cases include: • Unused non-protocol pins. • Dedicated pins for protocols not used by this module. 1 - Pin was connected, but not used (0b01) The pin is connected to the module’s lines but is not used by the current module and can be used by other modules. Specific cases include: • The three pins used during upgrades: IO01 TX, IO02 RX, and IO05 RST. These three pins are only used during upgrades and can be used by other modules at other times. • The default state of non-protocol pins can be set to – 2 (0b10) by the host. 2 - Pin is used, and can be modified by the host (0b10) This status is modified by the host, and the module needs to save the status of these pins to EEPROM. • The upgrade pins can be set to a used
+      state by the host. • Non-protocol pins set to a used state by the host can be modified by the host if other modules need them. • Unused protocol pins, such as SPI and USB, can be modified by the host if this module does not use them. 3 - Pin is used, and cannot be modified by the host (0b11) The pins used on the module cannot be modified by the host. Specific cases include: • The SCL and SDA pins used by the I2C protocol cannot be modified by the host. • The interrupt pin IO12, used for interrupts, shares the same pin with the host’s interrupt and cannot be modified unless in special circumstances. • Pins occupied by protocols used by other modules cannot be modified by the host. If the module uses certain fixed pins, their status must be set to 0b11 and cannot be modified by the host. Register Address and Pin Function Table address Pin # Protocol Name Priority 0x30 IO01 UART/UPGRADE TX 1 0x31 IO02 UART/UPGRADE RX 1 0x32 IO04 Non-protocol Pin – 0 0x33 IO05 UPGRADE RST 1 0x34 IO06 SPI
+      MISO 2 0x35 IO09 SPI SCK 2 0x36 IO12 INTERRUPT High-Level Triggered 3 0x37 IO13 Non-protocol Pin – 0 0x38 IO14 Non-protocol Pin – 0 0x39 IO19 USD-D D+ 2 0x3A IO20 USD-D D- 2 0x3B IO40 SPI MOSI 2 0x3C IO41 I2C SCL 3 0x3D IO42 I2C SDA 3 0x3E IO43 USB-UART TX 2 0x3F IO44 USB-UART RX 2 0x40 IO45 Non-protocol Pin – 0 Priority • 0 – Highest priority for use • 1 – Second priority for use • 2 – Last priority for use • 3 – Not to be used unless in special circumstances Interrupt Trigger Bit If the module has information that requires immediate processing by the host, it can notify the host by pulling the interrupt pin high. Since multiple devices share the interrupt, the host needs to read the register values of different modules to quickly determine which module triggered the interrupt. After the host processes this interrupt, it sets this bit to 0, and the module will immediately pull the interrupt pin low. The register address is 0x41. Private Information Registers All modules’ private information
+      registers start from address 0x42.'
+  detail_files:
+  - title: wf1_module_general_info_en_v0.pdf
+    url: https://rimu.me/wp-content/uploads/2025/01/wf1_module_general_info_en_v0.pdf
+    desc: wf1_module_general_info_en_v0.pdf
+    type: PDF
+  detail_links:
+  - text: wf1 modules library
+    url: https://github.com/RIMU-DENGTEC/wf1_module_library
 - id: 5
   title: The Keyboard Function of Rimu
   slug: keyboard-function-of-rimu
-  description: Keyboards are essential in our daily lives. Most users position their
-    left hand on the keyboard while using their right hand for the mouse.
+  description: Keyboards are essential in our daily lives. Most users position their left hand on the keyboard while using their right hand for the mouse.
   cover: /assets/uploads/blog-cover-20260611111327-bb0656bc.webp
   style_bg-color: ''
-  modules:
-  - type: item_data
-    order: 1
-    variant: default
-    data: {}
-  body: "<div><h4><img src=\"/assets/uploads/richtext-20260612033207-e81df55d.webp\"\
-    ></h4></div><div><p>Keyboards are essential in our daily lives. Most users position\
-    \ their left hand on the keyboard while using their right hand for the mouse.\
-    \ \r\n<br>\r\n<br>But complex software like Photoshop and KiCad often demand intricate\
-    \ shortcuts that span the entire keyboard. This makes one-handed operation difficult\
-    \ and often requires both hands, disrupting workflow and efficiency.\r\n<br>\r\
-    \n<br>For the issues mentioned above, there are already some professional and\
-    \ mature solutions on the market, such as products from 3Dconnexion. Their products\
-    \ are ergonomically designed but come at a higher price. For example, the SpaceMouse\
-    \ is listed on its official website for $399. In contrast, the HID keyboard function\
-    \ of Rimu comes as an accessory to the host and planned selling price is priced\
-    \ $110.Its compact design fits perfectly above the left side of your keyboard,\
-    \ making quick screen interactions effortless.If you are not a heavy user of keyboard\
-    \ devices, Rimu can fully meet your needs.</p><p><img src=\"/assets/uploads/richtext-20260612032402-441b3ba9.webp\"\
-    ></p><p>Rimu utilizes the ESP32-S3 as its main controller, enabling HID keyboard\
-    \ functionality. We have consolidated shortcuts that typically require both hands\
-    \ onto a 4.3-inch touchscreen, allowing for single-handed operation. Users can\
-    \ customize specific shortcuts according to their needs. Currently, Rimu comes\
-    \ preloaded with six apps tailored for KiCad, Photoshop, Bulk Entry, CNC, YouTube,\
-    \ and VLC.</p><p></p><h4><b>Rimu HID Keyboard Function\r\n</b></h4>Here is a video\
-    \ showcasing our HID Keyboard function on the YouTube platform.<br><br><p></p><h4><b>Applications</b></h4></div><div><p><b>01.\
-    \ Kicad\r\n</b><br>Our hardware engineers often find themselves with their left\
-    \ hand on the keyboard and their right hand on the mouse while designing PCBs\
-    \ in KiCad. However, when a shortcut requires more key presses than their left\
-    \ hand can handle, they have to let go of the mouse to complete the operation.\
-    \ For example:</p><p>Shortcuts in the PCB environment:\r\n<br>\r\n<br></p><ul><li>Recalculate\
-    \ path: Ctrl + X\r\n</li><li>End wire drawing: Esc or End\r\n</li><li>Component\
-    \ lock/unlock: L (to lock/unlock)\r\n</li><li>Delete: Delete or Backspace\r\n\
-    </li></ul>Shortcuts in the schematic environment:<br>\r\n<br><ul><li>Add power\
-    \ symbol: P (then select the power type)\r\n</li><li>Add net label: L\r\n</li><li>Repeat\
-    \ last item: Ins\r\n</li><li>Delete: Delete or Backspace\r\n</li></ul>Our engineers\
-    \ have found the enhanced KiCad shortcut functionality of Rimu incredibly practical,\
-    \ significantly improving their workflow efficiency and delivering a smoother\
-    \ user experience.<p></p><p><img src=\"/assets/uploads/richtext-20260612032646-381d6163.webp\"\
-    ></p><p></p><h4><b>02. Photoshop\r\n</b></h4>Photoshop is a powerful image editing\
-    \ tool that offers a wide range of shortcut features. Most users operate PS with\
-    \ their left hand on the keyboard and their right hand on the mouse. However,\
-    \ after discussing with our friends who frequently use PS, we discovered that\
-    \ some shortcut operations are not very convenient and often require both hands\
-    \ to complete. For example:\r\n<br>\r\n<br><ol><li>Move the selected layer to\
-    \ the top: Ctrl + Shift + ]\r\n</li><li>Move the selected layer to the bottom:\
-    \ Ctrl + Shift + [\r\n</li><li>Create a new layer via selection: Ctrl + Shift\
-    \ + N\r\n</li><li>Invert selection: Shift + Ctrl + I\r\n</li><li>Move layer up:\
-    \ Ctrl + ]\r\n</li><li>Move layer down: Ctrl + [\r\n</li><li>Create a new layer:\
-    \ Ctrl + J\r\n</li><li>Fill color: Alt + Delete</li></ol><div></div><p></p><p>After\
-    \ testing Rimu’s optimized PS shortcuts with our friend, he shared overwhelmingly\
-    \ positive feedback, highlighting significant boosts in efficiency and user experience.</p><p><img\
-    \ src=\"/assets/uploads/richtext-20260612032735-98b75b74.webp\"></p><p></p><h4><b>03.\
-    \ Bulk input\r\n</b></h4>Tired of typing repetitive text or copy-pasting? Rimu’s\
-    \ custom bulk entry function allows you to insert long passages or fixed phrases\
-    \ with a single tap, boosting your efficiency in scenarios like messaging, documentation,\
-    \ or comments.<p></p><p><img src=\"/assets/uploads/richtext-20260612032802-d6c732b0.webp\"\
-    ></p><p>While Rimu is capable of performing all Bad USB functions, our primary\
-    \ focus is on helping users improve efficiency in daily life. After the product\
-    \ is released, we will open-source the code and provide comprehensive tutorials,\
-    \ enabling enthusiasts and geeks interested in Bad USB functionalities to get\
-    \ started quickly.</p><p><img src=\"/assets/uploads/richtext-20260612032826-de0d7922.webp\"\
-    ></p><p><b>04. Niche devices\r\n</b><br>In mass production environments, many\
-    \ machines rely on software controlled by mouse or keyboard. However, the compact\
-    \ nature of keyboards increases the risk of accidental key presses, potentially\
-    \ leading to safety hazards. To mitigate this risk, we implemented prominent labels\
-    \ on the control keys of our CNC machines.\r\n<br>\r\n<br>Based on this need,\
-    \ Rimu streamlines CNC operations with just three intuitive buttons — Start, Pause,\
-    \ and Stop. This design prevents accidental presses and ensures easy operation,\
-    \ even for illiterate workers.</p><p><img src=\"/assets/uploads/richtext-20260612033411-3b546ae6.webp\"\
-    ></p><p>In the future, we plan to use Rimu’s IO expansion module to enable physical\
-    \ buttons to trigger commands, allowing Rimu to adapt to more use cases.</p><p><img\
-    \ src=\"/assets/uploads/richtext-20260612033501-7a3ea269.webp\"></p><p><b>05.\
-    \ Other Application\r\n</b><br>Watching videos on YouTube or VLC should be relaxing,\
-    \ not a hassle. Particularly you want to relax in bed or recline in a chair to\
-    \ watch videos but feel inconvenienced because you d on’t want to get up to find\
-    \ a mouse or keyboard, it can be quite uncomfortable.Fumbling for a mouse or keyboard\
-    \ to pause, adjust volume, or switch to fullscreen can ruin the experience.\r\n\
-    <br>\r\n<br>With Rimu, all the essential control at your fingertips. Say goodbye\
-    \ to interruptions and enjoy seamless, effortless viewing comfort like never before.</p><p><img\
-    \ src=\"/assets/uploads/richtext-20260612033432-59f5720f.webp\"></p><p><b>In conclusion\r\
-    \n</b><br>This is the second article in our series, following the first which\
-    \ introduced the overall design and structure of RIMU. As our inaugural blog post,\
-    \ we’re also sharing it on Medium and Instructables in multiple languages, We\
-    \ also update another article for the keyboard function of RIMU. \r\n<br>\r\n\
-    <br>If you have any questions, please feel free to leave us a message or join\
-    \ our community for discussion.</p><p><br></p></div>"
+  body: ''
   seo_title: The Keyboard Function of Rimu
-  seo_description: RIMU's HID keyboard function turns complex shortcuts into one-handed
-    touchscreen commands, offering a compact, affordable accessory for KiCad, Photoshop,
-    and more.
+  seo_description: RIMU's HID keyboard function turns complex shortcuts into one-handed touchscreen commands, offering a compact, affordable accessory for KiCad, Photoshop, and more.
   category: RIMU
   tags: []
+  detail_content_blocks:
+  - type: image
+    image: /assets/uploads/richtext-20260612033207-e81df55d.webp
+    alt: ''
+  - type: text
+    text: Keyboards are essential in our daily lives. Most users position their left hand on the keyboard while using their right hand for the mouse. But complex software like Photoshop and KiCad often demand intricate shortcuts that span the entire keyboard. This makes one-handed operation difficult and often requires both hands, disrupting workflow and efficiency. For the issues mentioned above, there are already some professional and mature solutions on the market, such as products from 3Dconnexion. Their products are ergonomically designed but come at a higher price. For example, the SpaceMouse is listed on its official website for $399. In contrast, the HID keyboard function of Rimu comes as an accessory to the host and planned selling price is priced $110.Its compact design fits perfectly above the left side of your keyboard, making quick screen interactions effortless.If you are not a heavy user of keyboard devices, Rimu can fully meet your needs.
+  - type: image
+    image: /assets/uploads/richtext-20260612032402-441b3ba9.webp
+    alt: ''
+  - type: text
+    text: Rimu utilizes the ESP32-S3 as its main controller, enabling HID keyboard functionality. We have consolidated shortcuts that typically require both hands onto a 4.3-inch touchscreen, allowing for single-handed operation. Users can customize specific shortcuts according to their needs. Currently, Rimu comes preloaded with six apps tailored for KiCad, Photoshop, Bulk Entry, CNC, YouTube, and VLC.
+  - type: heading
+    title: Rimu HID Keyboard Function
+  - type: text
+    text: Here is a video showcasing our HID Keyboard function on the YouTube platform.
+  - type: heading
+    title: Applications
+  - type: text
+    text: '01. Kicad Our hardware engineers often find themselves with their left hand on the keyboard and their right hand on the mouse while designing PCBs in KiCad. However, when a shortcut requires more key presses than their left hand can handle, they have to let go of the mouse to complete the operation. For example: Shortcuts in the PCB environment: • Recalculate path: Ctrl + X • End wire drawing: Esc or End • Component lock/unlock: L (to lock/unlock) • Delete: Delete or Backspace Shortcuts in the schematic environment: • Add power symbol: P (then select the power type) • Add net label: L • Repeat last item: Ins • Delete: Delete or Backspace Our engineers have found the enhanced KiCad shortcut functionality of Rimu incredibly practical, significantly improving their workflow efficiency and delivering a smoother user experience.'
+  - type: image
+    image: /assets/uploads/richtext-20260612032646-381d6163.webp
+    alt: ''
+  - type: heading
+    title: 02. Photoshop
+  - type: text
+    text: 'Photoshop is a powerful image editing tool that offers a wide range of shortcut features. Most users operate PS with their left hand on the keyboard and their right hand on the mouse. However, after discussing with our friends who frequently use PS, we discovered that some shortcut operations are not very convenient and often require both hands to complete. For example: • Move the selected layer to the top: Ctrl + Shift + ] • Move the selected layer to the bottom: Ctrl + Shift + [ • Create a new layer via selection: Ctrl + Shift + N • Invert selection: Shift + Ctrl + I • Move layer up: Ctrl + ] • Move layer down: Ctrl + [ • Create a new layer: Ctrl + J • Fill color: Alt + Delete After testing Rimu’s optimized PS shortcuts with our friend, he shared overwhelmingly positive feedback, highlighting significant boosts in efficiency and user experience.'
+  - type: image
+    image: /assets/uploads/richtext-20260612032735-98b75b74.webp
+    alt: ''
+  - type: heading
+    title: 03. Bulk input
+  - type: text
+    text: Tired of typing repetitive text or copy-pasting? Rimu’s custom bulk entry function allows you to insert long passages or fixed phrases with a single tap, boosting your efficiency in scenarios like messaging, documentation, or comments.
+  - type: image
+    image: /assets/uploads/richtext-20260612032802-d6c732b0.webp
+    alt: ''
+  - type: text
+    text: While Rimu is capable of performing all Bad USB functions, our primary focus is on helping users improve efficiency in daily life. After the product is released, we will open-source the code and provide comprehensive tutorials, enabling enthusiasts and geeks interested in Bad USB functionalities to get started quickly.
+  - type: image
+    image: /assets/uploads/richtext-20260612032826-de0d7922.webp
+    alt: ''
+  - type: text
+    text: 04. Niche devices In mass production environments, many machines rely on software controlled by mouse or keyboard. However, the compact nature of keyboards increases the risk of accidental key presses, potentially leading to safety hazards. To mitigate this risk, we implemented prominent labels on the control keys of our CNC machines. Based on this need, Rimu streamlines CNC operations with just three intuitive buttons — Start, Pause, and Stop. This design prevents accidental presses and ensures easy operation, even for illiterate workers.
+  - type: image
+    image: /assets/uploads/richtext-20260612033411-3b546ae6.webp
+    alt: ''
+  - type: text
+    text: In the future, we plan to use Rimu’s IO expansion module to enable physical buttons to trigger commands, allowing Rimu to adapt to more use cases.
+  - type: image
+    image: /assets/uploads/richtext-20260612033501-7a3ea269.webp
+    alt: ''
+  - type: text
+    text: 05. Other Application Watching videos on YouTube or VLC should be relaxing, not a hassle. Particularly you want to relax in bed or recline in a chair to watch videos but feel inconvenienced because you d on’t want to get up to find a mouse or keyboard, it can be quite uncomfortable.Fumbling for a mouse or keyboard to pause, adjust volume, or switch to fullscreen can ruin the experience. With Rimu, all the essential control at your fingertips. Say goodbye to interruptions and enjoy seamless, effortless viewing comfort like never before.
+  - type: image
+    image: /assets/uploads/richtext-20260612033432-59f5720f.webp
+    alt: ''
+  - type: text
+    text: In conclusion This is the second article in our series, following the first which introduced the overall design and structure of RIMU. As our inaugural blog post, we’re also sharing it on Medium and Instructables in multiple languages, We also update another article for the keyboard function of RIMU. If you have any questions, please feel free to leave us a message or join our community for discussion.
 - id: 6
   title: 'RIMU: Bridging the gap between humans and technology'
   slug: between-humans-and-technology
-  description: Design Philosophy In our increasingly connected world, we often encounter
-    situations where off-the-shelf solutions don’t meet our needs.
+  description: Design Philosophy In our increasingly connected world, we often encounter situations where off-the-shelf solutions don’t meet our needs.
   cover: /assets/uploads/blog-cover-20260611111450-6a2fa2f0.webp
   style_bg-color: ''
-  modules:
-  - type: item_data
-    order: 1
-    variant: default
-    data: {}
-  body: "<div><p><img src=\"/assets/uploads/richtext-20260612034038-559c86ce.webp\"\
-    ><b></b></p><p><b>Design Philosophy\r\n</b><br>In our increasingly connected world,\
-    \ we often encounter situations where off-the-shelf solutions don’t meet our needs.\
-    \ \r\n<br>\r\n<br>Whether it’s automating your home, optimizing your workspace,\
-    \ or creating unique interactive experiences, the need to design and build custom\
-    \ devices arises. Imagine making a device that can easily control the lighting\
-    \ in your home, customized precisely to your preferences. This process requires\
-    \ delving into the intricacies of circuit board design, mastering complex programming\
-    \ languages, and carefully crafting a protective enclosure.</p><p><img src=\"\
-    /assets/uploads/richtext-20260612033627-b41023e3.webp\"></p><p>This process is\
-    \ not only time-consuming, but also requires high expertise and technical skills,\
-    \ which is a huge challenge for most non-professionals. Even experienced developers\
-    \ can become frustrated and overwhelmed by repetitive tasks. In addition, there\
-    \ is often a large overlap in technical requirements and solutions, resulting\
-    \ in many people investing time and resources to solve similar problems, resulting\
-    \ in duplication of work.\r\n<br>\r\n<br>For the reasons above, we conceived RIMU\
-    \ to help developers and manufacturers realize their creative visions efficiently.\
-    \ RIMU provides integrated, user-friendly solutions that save users time and effort\
-    \ in hardware design, software development, and manufacturing. Our mission is\
-    \ to empower innovators by providing a supportive, integrated platform so that\
-    \ they can focus on their strengths.</p><p><img src=\"/assets/uploads/richtext-20260612033647-64c06cba.webp\"\
-    ></p><p><b>Hardware\r\n</b><br>Rimu is a versatile device equipped with a powerful\
-    \ ESP32 chip with 384 KB ROM, 512 KB SRAM, 16 KB RTCSRAM and 16 MB PSRAM, 8 GB\
-    \ storage space. Its 4.3-inch TFT touchscreen display offers a vivid 480 x 800\
-    \ pixel resolution, supports 262K colors, and is driven by an ILI9806 or HX8369\
-    \ display controller.</p><p><img src=\"/assets/uploads/richtext-20260612033706-026ade89.webp\"\
-    ></p><p><b>Structure\r\n</b><br><b>01. Dimensions Information\r\n</b><br>RIMU\
-    \ is compact (118 x 73 x 15.9 mm) and features a sleek 4.3-inch screen that provides\
-    \ an impressive resolution of 880 x 480 pixels. With Wi-Fi, Bluetooth, and GPIO\
-    \ pins, it boasts unparalleled expandability to integrate seamlessly with various\
-    \ sensors, actuators, and peripherals.</p><p><img src=\"/assets/uploads/richtext-20260612033731-e3de2de7.webp\"\
-    ></p><p><b>02. Magnetic Suction Structure\r\n</b><br>Forget traditional screws\
-    \ — RIMU uses an innovative magnetic connection method, allowing you to snap the\
-    \ host and modules together in an instant. The gold-plated pogo pins ensure durability\
-    \ and smooth operation, making it easy for anyone to use without hassle.\r\n<br>\r\
-    \n<br><b>03. External Antenna Structure\r\n</b><br>Our devices offer unmatched\
-    \ flexibility for a variety of environments. Whether you need to enclose it in\
-    \ a metal enclosure or place it away from a wireless access point, we have you\
-    \ covered. A dedicated external antenna interface ensures optimal signal reception,\
-    \ even in challenging conditions . With improved signal quality and extended coverage,\
-    \ you can enjoy a more reliable connection. When not needed, the interface doubles\
-    \ as a lanyard attachment point for easy carrying.</p><p><img src=\"/assets/uploads/richtext-20260612033801-659986d9.webp\"\
-    ></p><p><b>04. Tripod Structure\r\n</b><br>With specially designed screw holes,\
-    \ RIMU can easily be mounted on a standard tripod, giving it the stability and\
-    \ versatility to tackle complex tasks in industrial automation, scientific research,\
-    \ and education. The tripod offers improved working accuracy and makes RIMU more\
-    \ adaptable than ever.</p><div><img src=\"/assets/uploads/richtext-20260612033821-46a99fce.webp\"\
-    ></div></div><div><p><b>05. DIN35 Structure\r\n</b><br>Whether it’s for electrical\
-    \ control or automation systems, RIMU supports DIN35 rails, enabling easy connection\
-    \ with sensors, switchboards, and more — perfect for industrial and electrical\
-    \ environments.</p><p><img src=\"/assets/uploads/richtext-20260612033847-845bb56b.webp\"\
-    ></p><p><b>Function\r\n</b><br>We call the many interesting functions that can\
-    \ be achieved without additional modules as Function. With Rimu’s 4.3-inch touch\
-    \ screen, you can enjoy a personalized experience with features such as calculator,\
-    \ world clock, alarm clock, ruler, unit converter, Bluetooth, etc . We are constantly\
-    \ exploring new features to enhance your daily life.</p><p><img src=\"/assets/uploads/richtext-20260612033911-cba331d0.webp\"\
-    ></p><p><b>Moudles\r\n</b><br>RIMU’s modular design reduces hardware costs and\
-    \ promotes sustainability. You only pay for what you need, with no unnecessary\
-    \ extras. This design also makes upgrading, maintaining, and extending the product\
-    \ easy, all while extending its lifecycle and minimizing waste.\r\n<br>\r\n<br>We’ve\
-    \ already developed powerful modules, including RFID, DMX512, stepper motors,\
-    \ GPIO, relay, and light matrices, and we’re continuously expanding our library\
-    \ to enhance RIMU’s intelligence and adaptability. </p><p><img src=\"/assets/uploads/richtext-20260612033939-ef123d6c.webp\"\
-    ></p><p><b>In conclusion\r\n</b><br>Given that RIMU is a relatively new product,\
-    \ we’ve created this beginner’s guide to help our users better understand its\
-    \ design philosophy. As our inaugural blog post, we’re also sharing it on Medium\
-    \ and Instructables in multiple languages, We also update another article for\
-    \ the keyboard function of RIMU. \r\n<br>\r\n<br>If you have any questions, please\
-    \ feel free to leave us a message or join our community for discussion.</p></div>"
+  body: ''
   tags: []
   seo_title: 'RIMU: Bridging the gap between humans and technology'
-  seo_description: RIMU provides integrated hardware and software solutions for custom
-    device creation, helping developers and manufacturers bridge the gap between humans
-    and technology with user-fri
+  seo_description: RIMU provides integrated hardware and software solutions for custom device creation, helping developers and manufacturers bridge the gap between humans and technology with user-fri
   date: '2026-06-16'
   category: RIMU
+  detail_content_blocks:
+  - type: image
+    image: /assets/uploads/richtext-20260612034038-559c86ce.webp
+    alt: ''
+  - type: text
+    text: Design Philosophy In our increasingly connected world, we often encounter situations where off-the-shelf solutions don’t meet our needs. Whether it’s automating your home, optimizing your workspace, or creating unique interactive experiences, the need to design and build custom devices arises. Imagine making a device that can easily control the lighting in your home, customized precisely to your preferences. This process requires delving into the intricacies of circuit board design, mastering complex programming languages, and carefully crafting a protective enclosure.
+  - type: image
+    image: /assets/uploads/richtext-20260612033627-b41023e3.webp
+    alt: ''
+  - type: text
+    text: This process is not only time-consuming, but also requires high expertise and technical skills, which is a huge challenge for most non-professionals. Even experienced developers can become frustrated and overwhelmed by repetitive tasks. In addition, there is often a large overlap in technical requirements and solutions, resulting in many people investing time and resources to solve similar problems, resulting in duplication of work. For the reasons above, we conceived RIMU to help developers and manufacturers realize their creative visions efficiently. RIMU provides integrated, user-friendly solutions that save users time and effort in hardware design, software development, and manufacturing. Our mission is to empower innovators by providing a supportive, integrated platform so that they can focus on their strengths.
+  - type: image
+    image: /assets/uploads/richtext-20260612033647-64c06cba.webp
+    alt: ''
+  - type: text
+    text: Hardware Rimu is a versatile device equipped with a powerful ESP32 chip with 384 KB ROM, 512 KB SRAM, 16 KB RTCSRAM and 16 MB PSRAM, 8 GB storage space. Its 4.3-inch TFT touchscreen display offers a vivid 480 x 800 pixel resolution, supports 262K colors, and is driven by an ILI9806 or HX8369 display controller.
+  - type: image
+    image: /assets/uploads/richtext-20260612033706-026ade89.webp
+    alt: ''
+  - type: text
+    text: Structure 01. Dimensions Information RIMU is compact (118 x 73 x 15.9 mm) and features a sleek 4.3-inch screen that provides an impressive resolution of 880 x 480 pixels. With Wi-Fi, Bluetooth, and GPIO pins, it boasts unparalleled expandability to integrate seamlessly with various sensors, actuators, and peripherals.
+  - type: image
+    image: /assets/uploads/richtext-20260612033731-e3de2de7.webp
+    alt: ''
+  - type: text
+    text: 02. Magnetic Suction Structure Forget traditional screws — RIMU uses an innovative magnetic connection method, allowing you to snap the host and modules together in an instant. The gold-plated pogo pins ensure durability and smooth operation, making it easy for anyone to use without hassle. 03. External Antenna Structure Our devices offer unmatched flexibility for a variety of environments. Whether you need to enclose it in a metal enclosure or place it away from a wireless access point, we have you covered. A dedicated external antenna interface ensures optimal signal reception, even in challenging conditions . With improved signal quality and extended coverage, you can enjoy a more reliable connection. When not needed, the interface doubles as a lanyard attachment point for easy carrying.
+  - type: image
+    image: /assets/uploads/richtext-20260612033801-659986d9.webp
+    alt: ''
+  - type: text
+    text: 04. Tripod Structure With specially designed screw holes, RIMU can easily be mounted on a standard tripod, giving it the stability and versatility to tackle complex tasks in industrial automation, scientific research, and education. The tripod offers improved working accuracy and makes RIMU more adaptable than ever.
+  - type: image
+    image: /assets/uploads/richtext-20260612033821-46a99fce.webp
+    alt: ''
+  - type: text
+    text: 05. DIN35 Structure Whether it’s for electrical control or automation systems, RIMU supports DIN35 rails, enabling easy connection with sensors, switchboards, and more — perfect for industrial and electrical environments.
+  - type: image
+    image: /assets/uploads/richtext-20260612033847-845bb56b.webp
+    alt: ''
+  - type: text
+    text: Function We call the many interesting functions that can be achieved without additional modules as Function. With Rimu’s 4.3-inch touch screen, you can enjoy a personalized experience with features such as calculator, world clock, alarm clock, ruler, unit converter, Bluetooth, etc . We are constantly exploring new features to enhance your daily life.
+  - type: image
+    image: /assets/uploads/richtext-20260612033911-cba331d0.webp
+    alt: ''
+  - type: text
+    text: Moudles RIMU’s modular design reduces hardware costs and promotes sustainability. You only pay for what you need, with no unnecessary extras. This design also makes upgrading, maintaining, and extending the product easy, all while extending its lifecycle and minimizing waste. We’ve already developed powerful modules, including RFID, DMX512, stepper motors, GPIO, relay, and light matrices, and we’re continuously expanding our library to enhance RIMU’s intelligence and adaptability.
+  - type: image
+    image: /assets/uploads/richtext-20260612033939-ef123d6c.webp
+    alt: ''
+  - type: text
+    text: In conclusion Given that RIMU is a relatively new product, we’ve created this beginner’s guide to help our users better understand its design philosophy. As our inaugural blog post, we’re also sharing it on Medium and Instructables in multiple languages, We also update another article for the keyboard function of RIMU. If you have any questions, please feel free to leave us a message or join our community for discussion.

@@ -361,7 +361,7 @@ function toggleLangDropdown(e) {
   var path = window.location.pathname;
   var cleaned = path
     .replace(/\/templates\/[^/]+\/preview/, '')
-    .replace(/\/(?:preview|live_preview)\/\d+/, '')
+    .replace(/\/(?:preview|live_preview)\/[^/]+/, '')
     .replace(/^\/(zh-CN|zh-TW|en)/, '')
     .replace(/\/$/, '') || '/';
 
@@ -379,15 +379,17 @@ function toggleLangDropdown(e) {
     if (href.indexOf('http') === 0 || href === '#') return;
     var normalized = href
       .replace(/\/templates\/[^/]+\/preview/, '')
-      .replace(/\/(?:preview|live_preview)\/\d+/, '')
+      .replace(/\/(?:preview|live_preview)\/[^/]+/, '')
       .replace(/^\/(zh-CN|zh-TW|en)/, '')
       .replace(/\/$/, '') || '/';
     if (normalized === cleaned || (normalized !== '/' && cleaned.indexOf(normalized + '/') === 0)) {
       link.classList.add('active');
       var dropdown = link.closest('.nav-dropdown');
       if (dropdown) {
-        var parentLink = dropdown.querySelector(':scope > .nav-dropdown-trigger > .nav-dropdown-link');
+        var parentLink = dropdown.querySelector(':scope > .nav-dropdown-trigger > .nav-dropdown-link, :scope > .nav-dropdown-trigger > .nav-dropdown-label');
         if (parentLink) parentLink.classList.add('active');
+        var arrow = dropdown.querySelector(':scope > .nav-dropdown-trigger > .nav-dropdown-arrow');
+        if (arrow) arrow.classList.add('active');
       }
     }
   });
@@ -1081,13 +1083,13 @@ function initDetailCarousels() {
       thumbsPrev.type = 'button';
       thumbsPrev.className = 'detail-thumbs-nav detail-thumbs-prev';
       thumbsPrev.setAttribute('aria-label', 'Previous thumbnails');
-      thumbsPrev.innerHTML = '&#8249;';
+      thumbsPrev.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 6l-6 6 6 6"/></svg>';
 
       thumbsNext = document.createElement('button');
       thumbsNext.type = 'button';
       thumbsNext.className = 'detail-thumbs-nav detail-thumbs-next';
       thumbsNext.setAttribute('aria-label', 'Next thumbnails');
-      thumbsNext.innerHTML = '&#8250;';
+      thumbsNext.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 6l6 6-6 6"/></svg>';
 
       thumbs.parentNode.insertBefore(wrap, thumbs);
       wrap.appendChild(thumbsPrev);

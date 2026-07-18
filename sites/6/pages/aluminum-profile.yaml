@@ -5,30 +5,85 @@ detail_templates:
   is_default: true
   modules:
   - type: detail_media
-    variant: gallery_top
+    order: 1
+    variant: gallery_left
     data:
+      _hidden: 'false'
       source: cover_and_gallery
-      layout: gallery_top
+      layout: gallery_left
       max_images: 6
       empty_behavior: hide_module
       image_ratio: 4/3
       image_radius: 8px
+      section_bg: ''
+  - type: detail_content_blocks
+    order: 2
+    variant: blocks
+    data:
+      _hidden: 'false'
+      title: ''
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
   - type: detail_specs
+    order: 3
     variant: table
     data:
+      _hidden: 'false'
       title: ''
       source_field: specs
       max_rows: 10
+      columns: 3
       hide_empty_rows: 'true'
-      mobile_layout: stacked
       border_color: '#e5e7eb'
+      section_bg: ''
   - type: detail_link
+    order: 4
     variant: button
     data:
+      _hidden: 'false'
+      title: ''
       label: 了解更多
       url_field: link_url
       style: button
       hide_when_empty: 'true'
+      link_color: ''
+      section_bg: ''
+  - type: detail_specs
+    order: 5
+    variant: list
+    data:
+      _hidden: 'false'
+      title: ''
+      source_field: specs
+      max_rows: 50
+      columns: 3
+      hide_empty_rows: 'true'
+      border_color: '#e5e7eb'
+      section_bg: ''
+  - type: detail_files
+    order: 6
+    variant: list
+    data:
+      _hidden: 'false'
+      title: 资料下载
+      empty_behavior: hide_module
+      link_color: ''
+      section_bg: ''
+  - type: detail_related
+    order: 7
+    variant: grid
+    data:
+      _hidden: 'false'
+      title: 相关推荐
+      match_by: category
+      max_items: 8
+      columns: 4
+      auto_scroll: 'true'
+      scroll_interval: 4
+      click_scroll: 'true'
+      show_dots: 'true'
+      section_bg: ''
   required_fields:
   - title
   - slug
@@ -40,6 +95,10 @@ detail_templates:
   - category
   - tags
   - link_url
+  - body
+  - detail_content_blocks
+  - detail_specs
+  - detail_files
   seo:
     title: '{title} - {site_name}'
     description: '{summary}'

@@ -133,16 +133,19 @@
   };
 
   function richEditorHtml(name, value, compact) {
+    var richProfile = typeof compact === 'string' ? compact : '';
     var currentType = (window._moduleCtx && window._moduleCtx.currentModuleType) || '';
     var moduleMatch = String(name || '').match(/^module_(\d+)_/);
     if (moduleMatch && typeof document !== 'undefined') {
       var moduleTypeInput = document.querySelector('[name="module_' + moduleMatch[1] + '_type"]');
       if (moduleTypeInput && moduleTypeInput.value) currentType = moduleTypeInput.value;
     }
-    compact = !!(compact || (
+    compact = !!((compact === true) || (
       (currentType === 'section_title' || currentType === 'highlight_card') &&
       /(^|_)desc(ription)?$/i.test(String(name || ''))
     ));
+    if (!richProfile) richProfile = compact ? 'compact' : 'full';
+    compact = richProfile === 'compact';
     var icons = {
       bold: '<svg viewBox="0 0 24 24"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>',
       italic: '<svg viewBox="0 0 24 24"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>',
@@ -188,7 +191,11 @@
     tb += btn('underline', '下划线 (Ctrl+U)', icons.underline);
     tb += btn('strikeThrough', '删除线', icons.strike);
     tb += '<span class="rte-sep"></span>';
-    if (!compact) {
+    if (richProfile === 'content') {
+      tb += '<select class="rte-font-size-select" title="所选文字字号" aria-label="所选文字字号" style="width:76px;height:30px;font-size:13px">' +
+        '<option value="">字号</option><option value="12">12px</option><option value="14">14px</option><option value="16">16px</option><option value="18">18px</option><option value="20">20px</option><option value="24">24px</option><option value="28">28px</option><option value="32">32px</option>' +
+        '</select><span class="rte-sep"></span>';
+    } else if (!compact) {
       // G2 标题（完整正文编辑器使用）
       tb += btnArg('formatBlock', 'h2', '二级标题', 'H2', 'rte-heading-btn');
       tb += btnArg('formatBlock', 'h3', '三级标题', 'H3', 'rte-heading-btn');
@@ -220,7 +227,7 @@
       tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-media-library-btn" title="从媒体库选择" aria-label="从媒体库选择">' + icons.mediaLibrary + '</button>';
       tb += '<span class="rte-sep"></span>';
       // G6 结构元素
-      tb += btnArg('formatBlock', '<blockquote>', '引用块', icons.blockquote);
+      tb += btnArg('formatBlock', '<blockquote>', '引用块', icons.blockquote, 'rte-structure-btn');
       tb += btn('insertHorizontalRule', '分割线', icons.hr);
       tb += '<span class="rte-sep"></span>';
       // G7 文字样式
@@ -239,7 +246,24 @@
       tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-source-btn" title="查看/编辑 HTML 源码" aria-label="查看源码">' + icons.code + '</button>';
     }
     tb += '</div>';
-    return '<div class="rte-wrapper">' +
+    if (richProfile === 'content' || richProfile === 'notice') {
+      var removeSpecial = richProfile === 'content'
+        ? ['rte-table-btn', 'rte-table-settings-btn', 'rte-image-btn', 'rte-upload-image-btn', 'rte-video-url-btn', 'rte-upload-video-btn', 'rte-media-library-btn', 'rte-source-btn']
+        : ['rte-heading-btn', 'rte-structure-btn', 'rte-table-btn', 'rte-table-settings-btn', 'rte-image-btn', 'rte-upload-image-btn', 'rte-video-url-btn', 'rte-upload-video-btn', 'rte-media-library-btn', 'rte-source-btn'];
+      removeSpecial.forEach(function(className) {
+        tb = tb.replace(new RegExp('<button[^>]*\\b' + className + '\\b[^>]*>[\\s\\S]*?<\\/button>', 'g'), '');
+      });
+      if (richProfile === 'notice') {
+        ['justifyLeft', 'justifyCenter', 'justifyRight', 'indent', 'outdent', 'insertHorizontalRule', 'subscript', 'superscript'].forEach(function(command) {
+          tb = tb.replace(new RegExp('<button[^>]*data-cmd="' + command + '"[^>]*>[\\s\\S]*?<\\/button>', 'g'), '');
+        });
+        tb = tb.replace(/<input[^>]*class="rte-color-picker"[^>]*>/g, '');
+        tb = tb.replace(/<span class="rte-sep(?: [^"]*)?"><\/span>/g, '');
+      } else {
+        tb = tb.replace(/(?:<span class="rte-sep(?: [^"]*)?"><\/span>\s*){2,}/g, '<span class="rte-sep"></span>');
+      }
+    }
+    return '<div class="rte-wrapper rte-profile-' + richProfile + '">' +
       tb +
       '<div contenteditable="true" class="rich-editor-body form-control form-control-sm rte-editor" style="min-height:150px;max-height:400px;overflow-y:auto;line-height:1.7;font-size:14px;outline:none" data-placeholder="">' + (value || '') + '</div>' +
       '<textarea class="form-control form-control-sm d-none rte-source-ta" style="min-height:150px;max-height:400px;font-family:Consolas,Monaco,monospace;font-size:14px;line-height:1.5" spellcheck="false"></textarea>' +
@@ -869,6 +893,9 @@
 
   function renderField(prefix, field, value, placeholder) {
     var key = field.key, type = (field.type || 'text').toLowerCase(), html = '';
+    if (type === 'hidden') {
+      return '<input type="hidden" name="' + prefix + key + '" value="' + esc(value || field.default || '') + '">';
+    }
     var isBindingField = /(^|_)(field|source)(_|$)/i.test(key) || /_ratio$/i.test(key) || /_radius$/i.test(key);
     var isImage = type === 'image' || (
       /(^|_)(image|cover|background_image|photo|logo)(_|$)/i.test(key) &&
@@ -1544,7 +1571,9 @@
       var expected = (fieldEl.getAttribute('data-show-if-value') || '').split(',').map(function(v) { return v.trim(); });
       // 搜值用 input（text/url/textarea/select/number/color），
       // 不能用裸 [name] —— 会匹配到 file input，其 name 后缀 _file 不匹配 fieldKey
-      var ownInput = fieldEl.querySelector('input[type="text"][name], input[type="url"][name], textarea[name], select[name], input[type="number"][name], input[type="color"][name]');
+      // 分段选择器会把 select 渲染成同名 radio；条件字段自身也可能是
+      // hidden/radio，因此只排除 file，确保仍能从 name 推导当前组件前缀。
+      var ownInput = fieldEl.querySelector('input[name]:not([type="file"]), textarea[name], select[name]');
       var prefix = '';
       if (ownInput && fieldKey && ownInput.name.slice(-fieldKey.length) === fieldKey) {
         prefix = ownInput.name.slice(0, -fieldKey.length);
@@ -1553,7 +1582,15 @@
       var depInput = fieldKey ? findNamedInput(scope, prefix + depKey) : null;
       var actual = depInput ? String(depInput.value || '') : '';
       if (!actual && depKey === 'media_type') actual = 'image';
-      fieldEl.style.display = expected.indexOf(actual) >= 0 ? '' : 'none';
+      var shouldShow = expected.indexOf(actual) >= 0;
+      // 详情模板网格使用 display:grid !important，单靠内联 display:none
+      // 会被覆盖；同步切换专用 class，由 CSS 以同等级规则真正隐藏。
+      fieldEl.classList.toggle('module-field-condition-hidden', !shouldShow);
+      if (shouldShow) {
+        fieldEl.style.removeProperty('display');
+      } else {
+        fieldEl.style.setProperty('display', 'none', 'important');
+      }
     });
   }
 
@@ -1594,7 +1631,6 @@
     // embed 类型无需预览，始终显示图标
     if (isEmbed && src) {
       picker.innerHTML = moduleMediaPlaceholderIcon(accept) +
-        moduleMediaPreviewButton() +
         '<input type="file" name="' + fileName + '" accept="' + accept + '" onchange="handleModuleImageUpload(this)" style="display:none">' +
         '<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
     } else {
@@ -1652,7 +1688,7 @@
 
   window.handleModuleImageUpload = function(fileInput) {
     var file = fileInput.files[0];
-    var container = fileInput.closest('.module-media-field') || fileInput.closest('.hero-slide-body') || fileInput.closest('.mb-2');
+    var container = fileInput.closest('.module-media-field, .dataset-media-field') || fileInput.closest('.hero-slide-body') || fileInput.closest('.mb-2');
     var picker = container ? container.querySelector('.module-media-picker') : null;
     if (!file || !picker) return;
     fillModuleMediaAlt(container, file);
@@ -1680,7 +1716,7 @@
 
   // 图片预览：删除按閽竻除图鐗?
   window.clearModuleImage = function(btn) {
-    var container = btn.closest('.module-media-field') || btn.closest('.hero-slide-body') || btn.closest('.mb-2');
+    var container = btn.closest('.module-media-field, .dataset-media-field') || btn.closest('.hero-slide-body') || btn.closest('.mb-2');
     if (!container) return;
     var urlInput = container.querySelector('input[type="text"][name]') || container.querySelector('input[type="hidden"][name]:not([name$="_convert_webp"])');
     var fileInput = container.querySelector('input[type="file"]');
@@ -1692,7 +1728,7 @@
 
   // 图片预览锛歎RL 输入框变化时更新预览
   window.updateImagePreview = function(urlInput) {
-    var container = urlInput.closest('.module-media-field') || urlInput.closest('.hero-slide-body') || urlInput.closest('.mb-2');
+    var container = urlInput.closest('.module-media-field, .dataset-media-field') || urlInput.closest('.hero-slide-body') || urlInput.closest('.mb-2');
     var picker = container ? container.querySelector('.module-media-picker') : null;
     if (!picker) return;
     var fileInput = picker.querySelector('input[type=file]');
@@ -1700,7 +1736,7 @@
   };
 
   window.openModuleMediaLibrary = function(btn) {
-    var container = btn.closest('.module-media-field') || btn.closest('.module-media-url-row') || btn.closest('.hero-slide-body') || btn.closest('.mb-2');
+    var container = btn.closest('.module-media-field, .dataset-media-field') || btn.closest('.module-media-url-row') || btn.closest('.hero-slide-body') || btn.closest('.mb-2');
     var row = btn.closest('.module-media-url-row');
     var urlInput = row ? row.querySelector('input[type="hidden"][name], input[type="text"][name]') : null;
     if (!urlInput && container) {
@@ -1728,22 +1764,29 @@
     var grid = overlay.querySelector('.module-media-library-grid');
     grid.innerHTML = '<div class="text-muted small p-3">加载中..</div>';
     var site = (typeof currentSiteParam === 'function' && currentSiteParam()) || new URLSearchParams(window.location.search).get('site') || '';
+    var packageTarget = !!(
+      (container && container.querySelector('input[type="file"][accept*=".zip"]')) ||
+      (urlInput && urlInput.name === 'embed_url')
+    );
     fetch('/media?_fragment=1' + (site ? '&site=' + encodeURIComponent(site) : ''))
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var doc = new DOMParser().parseFromString(html, 'text/html');
         var cards = Array.prototype.slice.call(doc.querySelectorAll('.media-card[data-url]'));
         var items = cards.filter(function(card) {
-          return ['image', 'video'].indexOf(card.dataset.category) >= 0;
+          return packageTarget
+            ? card.dataset.category === 'package'
+            : ['image', 'video'].indexOf(card.dataset.category) >= 0;
         }).map(function(card) {
           var url = card.dataset.url || '';
           var name = card.dataset.displayName || url;
           var isImage = card.dataset.category === 'image';
+          var isPackage = card.dataset.category === 'package';
           return '<button type="button" class="module-media-library-item" data-url="' + attrEsc(url) + '" title="' + attrEsc(name) + '">' +
-            (isImage ? '<img src="' + attrEsc(url) + '" alt="" loading="lazy">' : '<span class="module-media-library-video">▶</span>') +
+            (isImage ? '<img src="' + attrEsc(url) + '" alt="" loading="lazy">' : '<span class="module-media-library-video">' + (isPackage ? 'ZIP' : '▶') + '</span>') +
             '<span>' + schemaEsc(name) + '</span></button>';
         }).join('');
-        grid.innerHTML = items || '<div class="text-muted small p-3">媒体库暂无可选图片或视频</div>';
+        grid.innerHTML = items || '<div class="text-muted small p-3">' + (packageTarget ? '媒体库暂无网页包' : '媒体库暂无可选图片或视频') + '</div>';
       })
       .catch(function() {
         grid.innerHTML = '<div class="text-danger small p-3">媒体库加载失败/div>';
@@ -2845,6 +2888,13 @@
         '<label class="form-check-label small" for="module_' + idx + '_card_show_border">显示卡片边框</label>' +
         '<input type="hidden" name="module_' + idx + '_data_card_show_border" value="' + (d.card_show_border === 'false' ? 'false' : 'true') + '">' +
       '</div>' +
+      '<div class="form-check form-switch mb-2">' +
+        '<input class="form-check-input" type="checkbox" role="switch" id="module_' + idx + '_show_detail_btn"' +
+        (d.show_detail_btn === true || d.show_detail_btn === 'true' ? ' checked' : '') +
+        ' onchange="this.nextElementSibling.nextElementSibling.value=this.checked?\'true\':\'false\'">' +
+        '<label class="form-check-label small" for="module_' + idx + '_show_detail_btn">显示卡片按钮</label>' +
+        '<input type="hidden" name="module_' + idx + '_data_show_detail_btn" value="' + (d.show_detail_btn === true || d.show_detail_btn === 'true' ? 'true' : 'false') + '">' +
+      '</div>' +
       '<hr class="my-2">' +
       '<div class="small fw-semibold mb-1 text-muted">筛选</div>' +
       '<div class="form-check form-switch mb-2">' +
@@ -2965,9 +3015,10 @@
   window._updateModuleConditionalFields = updateConditionalFields;
 
   document.addEventListener('change', function(e) {
-    if (!e.target || !e.target.name || e.target.name.slice(-10) !== 'media_type') return;
-    enhanceCompactSelects(e.target.closest('.device-config') || document);
-    updateConditionalFields(e.target.closest('.device-config') || document);
+    if (!e.target || !e.target.name || e.target.name.indexOf('module_') !== 0) return;
+    var scope = e.target.closest('.device-config') || e.target.closest('.module-item') || document;
+    if (e.target.name.slice(-10) === 'media_type') enhanceCompactSelects(scope);
+    updateConditionalFields(scope);
   });
 
   document.addEventListener('DOMContentLoaded', function() {
@@ -3064,6 +3115,18 @@
       return;
     }
     document.execCommand(cmd, false, arg);
+  }
+
+  function applyRteFontSize(rte, size) {
+    if (!rte || !/^(12|14|16|18|20|24|28|32)$/.test(String(size || ''))) return;
+    restoreRteSelection(rte, savedRangeInRte(rte));
+    document.execCommand('fontSize', false, '7');
+    rte.querySelectorAll('font[size="7"]').forEach(function(font) {
+      font.removeAttribute('size');
+      font.style.fontSize = size + 'px';
+    });
+    saveRteSelection(rte);
+    syncRteBody(rte);
   }
 
   function setRteLinkAttrs(link, url) {
@@ -3915,6 +3978,15 @@
     rte.focus();
     document.execCommand('foreColor', false, e.target.value);
     syncRteBody(rte);
+  });
+
+  document.addEventListener('change', function(e) {
+    if (!e.target.classList.contains('rte-font-size-select')) return;
+    var rte = e.target.closest('.rte-wrapper').querySelector('.rte-editor');
+    if (!rte) rte = _lastRteEditor;
+    if (!rte || !e.target.value) return;
+    applyRteFontSize(rte, e.target.value);
+    e.target.value = '';
   });
 
   // 编辑器内容变更 -> 同步到隐藏 textarea

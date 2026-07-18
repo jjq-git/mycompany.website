@@ -28,11 +28,117 @@ import yaml as _yaml
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
+from .html_sanitizer import sanitize_richtext
+from .tagging import generated_technical_tags
+
 _LIVE_PREVIEW_CACHE = {}
 _LIVE_PREVIEW_VERSION_CACHE = {}
 _LIVE_PREVIEW_CACHE_TTL = 5
 _LIVE_PREVIEW_VERSION_TTL = 1
 _LIVE_PREVIEW_CACHE_MAX = 128
+
+
+DETAIL_CONTENT_TYPE_TO_MODULE = {
+    'text': 'detail_content_text',
+    'image': 'detail_content_image',
+    'video': 'detail_content_video',
+    'media_text': 'detail_content_media_text',
+    'gallery': 'detail_content_gallery',
+    'table': 'detail_content_table',
+    'heading': 'detail_content_heading',
+    'note': 'detail_content_note',
+    'embed': 'detail_content_embed',
+}
+DETAIL_CONTENT_MODULE_TO_TYPE = {module_type: content_type for content_type, module_type in DETAIL_CONTENT_TYPE_TO_MODULE.items()}
+
+
+def _detail_content_component_blocks():
+    """Return genuinely independent fixed-content components for detail templates."""
+    common_content = [
+        {'key': 'slot_id', 'label': '', 'type': 'hidden', 'group': '内容', 'default': ''},
+        {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
+    ]
+    common_rules = [
+        {'key': 'empty_behavior', 'label': '内容为空时', 'type': 'select', 'group': '显示规则', 'default': 'hide_module', 'options': [
+            {'value': 'hide_module', 'label': '隐藏组件'},
+            {'value': 'show_placeholder', 'label': '显示空状态'},
+        ]},
+        {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
+        {'key': 'text_color', 'label': '文字颜色', 'type': 'color', 'group': '样式', 'default': ''},
+    ]
+    specifics = {
+        'text': [
+            {'key': 'text_align', 'label': '文字对齐', 'type': 'select', 'group': '显示规则', 'default': 'left', 'options': [
+                {'value': 'left', 'label': '居左'}, {'value': 'center', 'label': '居中'}, {'value': 'right', 'label': '居右'},
+            ]},
+        ],
+        'image': [
+            {'key': 'image_ratio', 'label': '图片比例', 'type': 'select', 'group': '显示规则', 'default': 'auto', 'options': [
+                {'value': 'auto', 'label': '原始比例'}, {'value': '1/1', 'label': '1:1'}, {'value': '4/3', 'label': '4:3'}, {'value': '16/9', 'label': '16:9'},
+            ]},
+            {'key': 'image_radius', 'label': '图片圆角', 'type': 'text', 'group': '样式', 'default': '0'},
+        ],
+        'video': [
+            {'key': 'video_ratio', 'label': '视频比例', 'type': 'select', 'group': '显示规则', 'default': '16/9', 'options': [
+                {'value': '16/9', 'label': '16:9'}, {'value': '4/3', 'label': '4:3'}, {'value': 'auto', 'label': '原始比例'},
+            ]},
+        ],
+        'media_text': [
+            {'key': 'layout', 'label': '图文布局', 'type': 'select', 'group': '显示规则', 'default': 'image_left', 'options': [
+                {'value': 'image_left', 'label': '左图右文'}, {'value': 'image_right', 'label': '右图左文'},
+            ]},
+            {'key': 'image_ratio', 'label': '图片比例', 'type': 'select', 'group': '显示规则', 'default': 'auto', 'options': [
+                {'value': 'auto', 'label': '原始比例'}, {'value': '1/1', 'label': '1:1'}, {'value': '4/3', 'label': '4:3'}, {'value': '16/9', 'label': '16:9'},
+            ]},
+            {'key': 'image_radius', 'label': '图片圆角', 'type': 'text', 'group': '样式', 'default': '0'},
+        ],
+        'gallery': [
+            {'key': 'gallery_columns', 'label': '每行图片数', 'type': 'select', 'group': '显示规则', 'default': '3', 'options': [
+                {'value': '2', 'label': '2 张'}, {'value': '3', 'label': '3 张'}, {'value': '4', 'label': '4 张'},
+            ]},
+            {'key': 'max_images', 'label': '最多显示', 'type': 'number', 'group': '显示规则', 'default': 6},
+        ],
+        'table': [
+            {'key': 'table_style', 'label': '表格样式', 'type': 'select', 'group': '显示规则', 'default': 'bordered', 'options': [
+                {'value': 'bordered', 'label': '边框表格'}, {'value': 'striped', 'label': '斑马纹'}, {'value': 'minimal', 'label': '简洁分隔线'},
+            ]},
+        ],
+        'heading': [
+            {'key': 'heading_level', 'label': '标题级别', 'type': 'select', 'group': '显示规则', 'default': 'h2', 'options': [
+                {'value': 'h2', 'label': 'H2'}, {'value': 'h3', 'label': 'H3'}, {'value': 'h4', 'label': 'H4'},
+            ]},
+            {'key': 'text_align', 'label': '文字对齐', 'type': 'select', 'group': '显示规则', 'default': 'left', 'options': [
+                {'value': 'left', 'label': '居左'}, {'value': 'center', 'label': '居中'}, {'value': 'right', 'label': '居右'},
+            ]},
+        ],
+        'note': [
+            {'key': 'note_style', 'label': '提示样式', 'type': 'select', 'group': '显示规则', 'default': 'info', 'options': [
+                {'value': 'info', 'label': '信息'}, {'value': 'success', 'label': '成功'}, {'value': 'warning', 'label': '警告'}, {'value': 'danger', 'label': '危险'},
+            ]},
+        ],
+        'embed': [
+            {'key': 'iframe_height', 'label': '嵌入高度', 'type': 'text', 'group': '显示规则', 'default': '520px'},
+        ],
+    }
+    display_names = {
+        'text': '文本内容', 'image': '图片内容', 'video': '视频内容', 'media_text': '图文内容',
+        'gallery': '多图内容', 'table': '表格内容', 'heading': '章节标题',
+        'note': '提示信息', 'embed': '嵌入页面',
+    }
+    blocks = []
+    for content_type, module_type in DETAIL_CONTENT_TYPE_TO_MODULE.items():
+        blocks.append({
+            'name': module_type,
+            'display_name': display_names[content_type],
+            'category': 'detail',
+            'icon': '',
+            'description': f'详情页中的独立{display_names[content_type]}位置。',
+            'fields': copy.deepcopy(common_content + specifics[content_type] + common_rules),
+            'variants': [{'key': content_type, 'label': display_names[content_type], 'data_preset': {}}],
+            'is_data_attr': False,
+            'schema': None,
+        })
+    return blocks
 
 from . import datasets, style_registry
 from . import menu as menu_lib
@@ -70,6 +176,7 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         'category': 'detail',
         'icon': '',
         'description': '显示当前数据项的封面图、细节图或两者组合。',
+        'palette_hidden': True,
         'fields': [
             {'key': 'source', 'label': '图片来源', 'type': 'select', 'group': '内容', 'default': 'cover_and_gallery', 'options': [
                 {'value': 'cover_and_gallery', 'label': '封面图 + 细节图'},
@@ -102,11 +209,43 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         'schema': None,
     },
     {
+        'name': 'detail_actions',
+        'display_name': '详情操作按钮',
+        'category': 'detail',
+        'icon': '',
+        'description': '显示当前详情页的主按钮和副按钮；不依赖图片/图集组件。按钮文字和链接在单条内容的基础内容中填写。',
+        'fields': [
+            {'key': 'action_buttons', 'label': '显示按钮', 'type': 'select', 'group': '内容', 'default': 'primary_secondary', 'options': [
+                {'value': 'primary', 'label': '仅主按钮'},
+                {'value': 'primary_secondary', 'label': '主按钮 + 副按钮'},
+            ]},
+            {'key': 'primary_label', 'label': '主按钮默认文字', 'type': 'text', 'group': '内容', 'default': '立即咨询'},
+            {'key': 'secondary_label', 'label': '副按钮默认文字', 'type': 'text', 'group': '内容', 'default': '查看资料', 'show_if': {'field': 'action_buttons', 'value': 'primary_secondary'}},
+            {'key': 'align', 'label': '按钮对齐', 'type': 'select', 'group': '样式', 'default': 'left', 'options': [
+                {'value': 'left', 'label': '居左'},
+                {'value': 'center', 'label': '居中'},
+                {'value': 'right', 'label': '居右'},
+            ]},
+            {'key': 'empty_behavior', 'label': '链接为空时', 'type': 'select', 'group': '显示规则', 'default': 'hide_module', 'options': [
+                {'value': 'hide_module', 'label': '隐藏组件'},
+                {'value': 'show_placeholder', 'label': '显示禁用按钮'},
+            ]},
+            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
+        ],
+        'variants': [
+            {'key': 'primary_secondary', 'label': '主按钮 + 副按钮', 'data_preset': {'action_buttons': 'primary_secondary'}},
+            {'key': 'primary', 'label': '仅主按钮', 'data_preset': {'action_buttons': 'primary'}},
+        ],
+        'is_data_attr': False,
+        'schema': None,
+    },
+    {
         'name': 'detail_text',
         'display_name': '字段文本',
         'category': 'detail',
         'icon': '',
         'description': '读取当前数据项的正文、简介或指定字段，渲染一个文本区块。',
+        'palette_hidden': True,
         'fields': [
             {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
             {'key': 'content_field', 'label': '读取内容', 'type': 'select', 'group': '内容', 'default': 'body', 'options': [
@@ -136,10 +275,10 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
     },
     {
         'name': 'detail_content_blocks',
-        'display_name': '正文内容块',
+        'display_name': '自由正文',
         'category': 'detail',
         'icon': '',
-        'description': '在单条详情里按顺序添加文本、图片、视频、图文、多图、表格、提示和嵌入内容。',
+        'description': '用于结构不固定的文章或案例；内容编辑时可以自由增删和排列多种内容块。',
         'fields': [
             {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
             {'key': 'empty_behavior', 'label': '内容为空时', 'type': 'select', 'group': '显示规则', 'default': 'hide_module', 'options': [
@@ -151,6 +290,93 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         ],
         'variants': [
             {'key': 'blocks', 'label': '内容块', 'data_preset': {}},
+        ],
+        'is_data_attr': False,
+        'schema': None,
+    },
+    *_detail_content_component_blocks(),
+    {
+        'name': 'detail_content',
+        'display_name': '正文独立组件',
+        'category': 'detail',
+        'icon': '',
+        'description': '每添加一次就是一个独立正文位置；选择文本、图片、视频、图文、多图、表格、标题、提示或嵌入。',
+        'palette_hidden': True,
+        'fields': [
+            {'key': 'slot_id', 'label': '', 'type': 'hidden', 'group': '内容', 'default': ''},
+            {'key': 'content_type', 'label': '内容类型', 'type': 'select', 'group': '内容', 'default': 'text', 'options': [
+                {'value': 'text', 'label': '文本'},
+                {'value': 'image', 'label': '图片'},
+                {'value': 'video', 'label': '视频'},
+                {'value': 'media_text', 'label': '图文'},
+                {'value': 'gallery', 'label': '多图'},
+                {'value': 'table', 'label': '表格'},
+                {'value': 'heading', 'label': '标题'},
+                {'value': 'note', 'label': '提示'},
+                {'value': 'embed', 'label': '嵌入'},
+            ]},
+            {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
+            {'key': 'text_align', 'label': '文字对齐', 'type': 'select', 'group': '显示规则', 'default': 'left', 'show_if': {'field': 'content_type', 'value': 'text,heading'}, 'options': [
+                {'value': 'left', 'label': '居左'},
+                {'value': 'center', 'label': '居中'},
+                {'value': 'right', 'label': '居右'},
+            ]},
+            {'key': 'heading_level', 'label': '标题级别', 'type': 'select', 'group': '显示规则', 'default': 'h2', 'show_if': {'field': 'content_type', 'value': 'heading'}, 'options': [
+                {'value': 'h2', 'label': 'H2'},
+                {'value': 'h3', 'label': 'H3'},
+                {'value': 'h4', 'label': 'H4'},
+            ]},
+            {'key': 'layout', 'label': '图文布局', 'type': 'select', 'group': '显示规则', 'default': 'image_left', 'show_if': {'field': 'content_type', 'value': 'media_text'}, 'options': [
+                {'value': 'image_left', 'label': '左图右文'},
+                {'value': 'image_right', 'label': '右图左文'},
+            ]},
+            {'key': 'image_ratio', 'label': '图片比例', 'type': 'select', 'group': '显示规则', 'default': 'auto', 'show_if': {'field': 'content_type', 'value': 'image,media_text'}, 'options': [
+                {'value': 'auto', 'label': '原始比例'},
+                {'value': '1/1', 'label': '1:1'},
+                {'value': '4/3', 'label': '4:3'},
+                {'value': '16/9', 'label': '16:9'},
+            ]},
+            {'key': 'image_radius', 'label': '图片圆角', 'type': 'text', 'group': '样式', 'default': '0', 'show_if': {'field': 'content_type', 'value': 'image,media_text'}},
+            {'key': 'video_ratio', 'label': '视频比例', 'type': 'select', 'group': '显示规则', 'default': '16/9', 'show_if': {'field': 'content_type', 'value': 'video'}, 'options': [
+                {'value': '16/9', 'label': '16:9'},
+                {'value': '4/3', 'label': '4:3'},
+                {'value': 'auto', 'label': '原始比例'},
+            ]},
+            {'key': 'gallery_columns', 'label': '每行图片数', 'type': 'select', 'group': '显示规则', 'default': '3', 'show_if': {'field': 'content_type', 'value': 'gallery'}, 'options': [
+                {'value': '2', 'label': '2 张'},
+                {'value': '3', 'label': '3 张'},
+                {'value': '4', 'label': '4 张'},
+            ]},
+            {'key': 'max_images', 'label': '最多显示', 'type': 'number', 'group': '显示规则', 'default': 6, 'show_if': {'field': 'content_type', 'value': 'gallery'}},
+            {'key': 'table_style', 'label': '表格样式', 'type': 'select', 'group': '显示规则', 'default': 'bordered', 'show_if': {'field': 'content_type', 'value': 'table'}, 'options': [
+                {'value': 'bordered', 'label': '边框表格'},
+                {'value': 'striped', 'label': '斑马纹'},
+                {'value': 'minimal', 'label': '简洁分隔线'},
+            ]},
+            {'key': 'note_style', 'label': '提示样式', 'type': 'select', 'group': '显示规则', 'default': 'info', 'show_if': {'field': 'content_type', 'value': 'note'}, 'options': [
+                {'value': 'info', 'label': '信息'},
+                {'value': 'success', 'label': '成功'},
+                {'value': 'warning', 'label': '警告'},
+                {'value': 'danger', 'label': '危险'},
+            ]},
+            {'key': 'iframe_height', 'label': '嵌入高度', 'type': 'text', 'group': '显示规则', 'default': '520px', 'show_if': {'field': 'content_type', 'value': 'embed'}},
+            {'key': 'empty_behavior', 'label': '内容为空时', 'type': 'select', 'group': '显示规则', 'default': 'hide_module', 'options': [
+                {'value': 'hide_module', 'label': '隐藏组件'},
+                {'value': 'show_placeholder', 'label': '显示空状态'},
+            ]},
+            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
+            {'key': 'text_color', 'label': '正文颜色', 'type': 'color', 'group': '样式', 'default': ''},
+        ],
+        'variants': [
+            {'key': 'text', 'label': '文本', 'data_preset': {'content_type': 'text'}},
+            {'key': 'image', 'label': '图片', 'data_preset': {'content_type': 'image'}},
+            {'key': 'video', 'label': '视频', 'data_preset': {'content_type': 'video'}},
+            {'key': 'media_text', 'label': '图文', 'data_preset': {'content_type': 'media_text', 'layout': 'image_left'}},
+            {'key': 'gallery', 'label': '多图', 'data_preset': {'content_type': 'gallery'}},
+            {'key': 'table', 'label': '表格', 'data_preset': {'content_type': 'table'}},
+            {'key': 'heading', 'label': '标题', 'data_preset': {'content_type': 'heading'}},
+            {'key': 'note', 'label': '提示', 'data_preset': {'content_type': 'note'}},
+            {'key': 'embed', 'label': '嵌入', 'data_preset': {'content_type': 'embed'}},
         ],
         'is_data_attr': False,
         'schema': None,
@@ -193,6 +419,7 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         'category': 'detail',
         'icon': '',
         'description': '按模板配置行列，逐格填写文字，可选择单元格文字链接。',
+        'palette_hidden': True,
         'fields': [
             {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
             {'key': 'table_rows', 'label': '行数', 'type': 'number', 'group': '表格', 'default': 3},
@@ -243,48 +470,6 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         'variants': [
             {'key': 'button', 'label': '按钮', 'data_preset': {'style': 'button'}},
             {'key': 'text_link', 'label': '文字链接', 'data_preset': {'style': 'text_link'}},
-        ],
-        'is_data_attr': False,
-        'schema': None,
-    },
-    {
-        'name': 'detail_intro',
-        'display_name': '标题摘要',
-        'category': 'detail',
-        'icon': '',
-        'description': '显示当前数据项的标题、摘要、分类、标签和价格等基础信息。',
-        'fields': [
-            {'key': 'title_field', 'label': '标题字段', 'type': 'select', 'group': '内容', 'default': 'title', 'options': [
-                {'value': 'title', 'label': '标题'},
-                {'value': 'name', 'label': '名称'},
-            ]},
-            {'key': 'summary_field', 'label': '摘要字段', 'type': 'select', 'group': '内容', 'default': 'summary', 'options': [
-                {'value': 'summary', 'label': '摘要'},
-                {'value': 'description', 'label': '描述'},
-                {'value': 'excerpt', 'label': '摘录'},
-            ]},
-            {'key': 'show_category', 'label': '显示分类', 'type': 'select', 'group': '显示规则', 'default': 'true', 'options': [
-                {'value': 'true', 'label': '显示'},
-                {'value': 'false', 'label': '隐藏'},
-            ]},
-            {'key': 'show_tags', 'label': '显示标签', 'type': 'select', 'group': '显示规则', 'default': 'true', 'options': [
-                {'value': 'true', 'label': '显示'},
-                {'value': 'false', 'label': '隐藏'},
-            ]},
-            {'key': 'show_price', 'label': '显示价格', 'type': 'select', 'group': '显示规则', 'default': 'false', 'options': [
-                {'value': 'true', 'label': '显示'},
-                {'value': 'false', 'label': '隐藏'},
-            ]},
-            {'key': 'text_align', 'label': '文字排版', 'type': 'select', 'group': '样式', 'default': 'left', 'options': [
-                {'value': 'left', 'label': '居左'},
-                {'value': 'center', 'label': '居中'},
-                {'value': 'right', 'label': '居右'},
-            ]},
-            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
-        ],
-        'variants': [
-            {'key': 'default', 'label': '标题摘要', 'data_preset': {}},
-            {'key': 'centered', 'label': '居中标题', 'data_preset': {'text_align': 'center'}},
         ],
         'is_data_attr': False,
         'schema': None,
@@ -421,18 +606,6 @@ def _default_detail_modules():
             },
         },
         {
-            'type': 'detail_intro',
-            'variant': 'default',
-            'data': {
-                'title_field': 'title',
-                'summary_field': 'summary',
-                'show_category': 'true',
-                'show_tags': 'true',
-                'show_price': 'false',
-                'text_align': 'left',
-            },
-        },
-        {
             'type': 'detail_specs',
             'variant': 'list',
             'data': {
@@ -503,6 +676,83 @@ def _is_legacy_default_detail_template(tpl):
     return isinstance(modules, list) and len(modules) == 1 and isinstance(modules[0], dict) and modules[0].get('type') == 'item_data'
 
 
+def _detail_content_type_from_module(module):
+    if not isinstance(module, dict):
+        return None
+    module_type = str(module.get('type') or '')
+    if module_type in DETAIL_CONTENT_MODULE_TO_TYPE:
+        return DETAIL_CONTENT_MODULE_TO_TYPE[module_type]
+    if module_type == 'detail_content':
+        data = module.get('data') if isinstance(module.get('data'), dict) else {}
+        content_type = str(data.get('content_type') or module.get('variant') or 'text')
+        return content_type if content_type in DETAIL_CONTENT_TYPE_TO_MODULE else 'text'
+    return None
+
+
+def _upgrade_legacy_detail_content_modules(templates):
+    """Convert old polymorphic modules and remove settings owned by other types."""
+    type_fields = {
+        'text': {'text_align'},
+        'image': {'image_ratio', 'image_radius'},
+        'video': {'video_ratio'},
+        'media_text': {'layout', 'image_ratio', 'image_radius'},
+        'gallery': {'gallery_columns', 'max_images'},
+        'table': {'table_style'},
+        'heading': {'heading_level', 'text_align'},
+        'note': {'note_style'},
+        'embed': {'iframe_height'},
+    }
+    specialized_fields = set().union(*type_fields.values())
+    changed = False
+    for template in templates or []:
+        modules = template.get('modules') if isinstance(template, dict) else None
+        if not isinstance(modules, list):
+            continue
+        slot_number = 0
+        for module in modules:
+            content_type = _detail_content_type_from_module(module)
+            if content_type is None:
+                continue
+            target_type = DETAIL_CONTENT_TYPE_TO_MODULE[content_type]
+            if module.get('type') != target_type:
+                module['type'] = target_type
+                changed = True
+            if module.get('variant') != content_type:
+                module['variant'] = content_type
+                changed = True
+            data = module.get('data') if isinstance(module.get('data'), dict) else {}
+            module['data'] = data
+            if not str(data.get('slot_id') or '').strip():
+                data['slot_id'] = f'legacy-content-slot-{slot_number}'
+                changed = True
+            if 'content_type' in data:
+                data.pop('content_type', None)
+                changed = True
+            for key in specialized_fields - type_fields[content_type]:
+                if key in data:
+                    data.pop(key, None)
+                    changed = True
+            slot_number += 1
+    return changed
+
+
+def _remove_redundant_detail_intro_modules(templates):
+    """Remove the retired title/summary module from persisted detail templates."""
+    changed = False
+    for template in templates or []:
+        modules = template.get('modules') if isinstance(template, dict) else None
+        if not isinstance(modules, list):
+            continue
+        filtered = [
+            module for module in modules
+            if not (isinstance(module, dict) and module.get('type') == 'detail_intro')
+        ]
+        if len(filtered) != len(modules):
+            template['modules'] = filtered
+            changed = True
+    return changed
+
+
 def _ensure_page_detail_templates(site_id, dataset_key, label=None, lang=None):
     """Ensure list page config has a default detail template without touching existing data."""
     page = read_yaml(site_id, f'pages/{dataset_key}.yaml', default={}, lang=lang) or {}
@@ -527,6 +777,10 @@ def _ensure_page_detail_templates(site_id, dataset_key, label=None, lang=None):
                 tpl['modules'] = _default_detail_modules()
                 tpl['optional_fields'] = ['cover', 'summary', 'detail_images', 'specs', 'category', 'tags', 'link_url']
                 changed = True
+        if _upgrade_legacy_detail_content_modules(templates):
+            changed = True
+    if _remove_redundant_detail_intro_modules(page.get('detail_templates')):
+        changed = True
     if changed:
         write_yaml(site_id, f'pages/{dataset_key}.yaml', page, lang=lang)
     return page
@@ -536,6 +790,8 @@ def _detail_templates_for_page(page, dataset_key, label=None):
     templates = (page or {}).get('detail_templates')
     if not isinstance(templates, list) or not templates:
         return [_default_detail_template(dataset_key, label)]
+    _upgrade_legacy_detail_content_modules(templates)
+    _remove_redundant_detail_intro_modules(templates)
     return [tpl for tpl in templates if isinstance(tpl, dict)] or [_default_detail_template(dataset_key, label)]
 
 
@@ -584,6 +840,7 @@ def _detail_template_field_requirements(template, item=None):
         'detail_faqs': False,
         'detail_related': False,
         'detail_content_blocks': False,
+        'detail_content_slots': [],
         'seo': False,
     }
     modules = template.get('modules') if isinstance(template, dict) else []
@@ -596,6 +853,8 @@ def _detail_template_field_requirements(template, item=None):
         data = module.get('data') if isinstance(module.get('data'), dict) else {}
         if m_type in ('item_detail', 'image_carousel', 'detail_media'):
             req['detail_images'] = True
+        if m_type == 'detail_actions':
+            req['link'] = True
         if m_type in ('item_detail', 'detail_specs'):
             req['specs'] = True
         if m_type == 'detail_table':
@@ -606,6 +865,15 @@ def _detail_template_field_requirements(template, item=None):
             req['detail_related'] = True
         if m_type == 'detail_content_blocks':
             req['detail_content_blocks'] = True
+        content_type = _detail_content_type_from_module(module)
+        if content_type is not None:
+            req['detail_content_blocks'] = True
+            req['detail_content_slots'].append({
+                'slot_id': str(data.get('slot_id') or f'legacy-content-slot-{len(req["detail_content_slots"])}'),
+                'type': content_type,
+                'label': str(data.get('title') or ''),
+                'layout': str(data.get('layout') or 'image_left'),
+            })
         if m_type == 'detail_features':
             req['detail_features'] = True
         if m_type == 'detail_files':
@@ -669,6 +937,66 @@ def _detail_template_requirements_map(templates, item=None):
         if tpl_id:
             result[str(tpl_id)] = _detail_template_field_requirements(tpl, item)
     return result
+
+
+_DETAIL_CONTENT_TYPE_LABELS = {
+    'text': '文本内容', 'image': '图片内容', 'video': '视频内容', 'media_text': '图文内容',
+    'gallery': '多图内容', 'table': '表格内容', 'heading': '章节标题',
+    'note': '提示信息', 'embed': '嵌入页面',
+}
+
+
+def _detail_content_editor_state(template, item):
+    """Align stored content blocks with stable template slots without duplicating free content."""
+    modules = template.get('modules') if isinstance(template, dict) else []
+    modules = modules if isinstance(modules, list) else []
+    raw_blocks = item.get('detail_content_blocks') or item.get('content_blocks') or []
+    blocks = [copy.deepcopy(block) for block in raw_blocks if isinstance(block, dict)]
+    used = set()
+    editor_blocks = []
+    free_enabled = any(
+        isinstance(module, dict) and module.get('type') == 'detail_content_blocks'
+        for module in modules
+    )
+    slot_number = 0
+    for module in modules:
+        content_type = _detail_content_type_from_module(module)
+        if content_type is None:
+            continue
+        data = module.get('data') if isinstance(module.get('data'), dict) else {}
+        slot_id = str(data.get('slot_id') or f'legacy-content-slot-{slot_number}')
+        match_index = next(
+            (idx for idx, block in enumerate(blocks)
+             if idx not in used and str(block.get('slot_id') or '') == slot_id),
+            None,
+        )
+        if match_index is None:
+            match_index = next(
+                (idx for idx, block in enumerate(blocks)
+                 if idx not in used and not block.get('slot_id')
+                 and str(block.get('type') or 'text') == content_type),
+                None,
+            )
+        block = copy.deepcopy(blocks[match_index]) if match_index is not None else {}
+        if match_index is not None:
+            used.add(match_index)
+        block['type'] = content_type
+        block['slot_id'] = slot_id
+        block['_template_slot'] = True
+        block['_slot_label'] = str(data.get('title') or _DETAIL_CONTENT_TYPE_LABELS.get(content_type, content_type))
+        if content_type == 'media_text' and not block.get('layout'):
+            block['layout'] = data.get('layout') or 'image_left'
+        if content_type == 'note':
+            block['style'] = data.get('note_style') or block.get('style') or 'info'
+        editor_blocks.append(block)
+        slot_number += 1
+    for idx, block in enumerate(blocks):
+        if idx in used:
+            continue
+        block['_template_slot'] = False
+        block['_orphaned_content'] = not free_enabled
+        editor_blocks.append(block)
+    return editor_blocks, free_enabled
 
 
 def _detail_template_rule_value(template, key, default=None):
@@ -739,10 +1067,15 @@ def _apply_detail_template_autofill(fields, template, page_label=None):
     if auto_category == 'inherit' and 'category' not in fields and page_label:
         fields['category'] = page_label
     auto_tags = _detail_template_rule_value(template, 'auto_tags', 'suggest')
-    if auto_tags == 'suggest' and 'tags' not in fields:
-        suggested = _suggest_tags_from_fields(fields)
-        if suggested:
-            fields['tags'] = suggested
+    if auto_tags == 'suggest':
+        generated = generated_technical_tags(fields)
+        if generated:
+            # 新版标签由结构化参数确定；保存时同步刷新，不继续依赖旧手填值。
+            fields['tags'] = generated
+        elif 'tags' not in fields:
+            suggested = _suggest_tags_from_fields(fields)
+            if suggested:
+                fields['tags'] = suggested
     return fields
 
 
@@ -1399,6 +1732,12 @@ def _uploaded_image_or_form(site_id, form_field, file_field=None, prefix='image'
 def _field_looks_like_image(field):
     """匹配媒体字段（图片+视频+音频+嵌入），供 _parse_modules_form 处理上传文件。"""
     name = (field or '').lower()
+    if name.startswith(('show_', 'hide_', 'max_', 'min_')):
+        return False
+    if name.endswith(('_alt', '_type', '_ratio', '_radius', '_position', '_size', '_width', '_height',
+                      '_columns', '_count', '_color', '_opacity', '_align', '_layout', '_fit',
+                      '_convert_webp')):
+        return False
     return any(part in name for part in ('image', 'cover', 'background', 'media', 'photo', 'logo', 'video', 'audio', 'embed'))
 
 
@@ -2268,7 +2607,7 @@ def content_workspace():
 
 @bp.route('/content/create', methods=['POST'])
 def content_create():
-    """由内容中心创建条目，并把现有数据集编辑器地址返回给中间工作区。"""
+    """验证新建向导选择并进入临时编辑态；此时不写入数据集。"""
     _, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
     dataset_key = request.form.get('dataset_key', '').strip()
@@ -2280,59 +2619,46 @@ def content_create():
     valid_template_ids = {str(tpl.get('id') or '') for tpl in entry.get('templates') or []}
     if template_id not in valid_template_ids:
         return jsonify({'ok': False, 'error': '请选择有效的详情模板'}), 400
-    storage_lang = _storage_lang(site, lang, default_lang)
-    existing = datasets.load(site.id, dataset_key, lang=storage_lang)
-    next_number = max((int(item.get('id') or 0) for item in existing), default=0) + 1
-    slug = f'item-{next_number}'
-    used_slugs = {str(item.get('slug') or '') for item in existing}
-    while slug in used_slugs:
-        next_number += 1
-        slug = f'item-{next_number}'
-    item_id = datasets.add(site.id, dataset_key, {
-        'title': f'新条目 {next_number}',
-        'slug': slug,
-        'template_id': template_id,
-    }, lang=storage_lang)
     return jsonify({
         'ok': True,
-        'item_id': item_id,
+        'item_id': 0,
         'dataset_key': dataset_key,
-        'editor_url': url_for('core.content_item_workspace', dataset_key=dataset_key, item_id=item_id,
-                              site=site.id, lang=lang),
+        'editor_url': url_for('core.content_item_workspace', dataset_key=dataset_key, item_id=0,
+                              template_id=template_id, site=site.id, lang=lang),
         'preview_path': entry.get('path') or dataset_key,
-        'slug': slug,
+        'slug': '',
     })
 
 
 @bp.route('/content/<path:dataset_key>/<int:item_id>/duplicate', methods=['POST'])
 def content_duplicate(dataset_key, item_id):
-    """在同一数据集中创建独立副本，并生成不冲突的 slug。"""
+    """进入临时副本编辑态；用户保存前不写入数据集。"""
     _validate_key(dataset_key)
     _, site = _current_context()
     lang, _, default_lang = _get_panel_lang(site)
     catalog = _content_catalog(site, lang, default_lang)
-    if not any(entry.get('key') == dataset_key for entry in catalog):
+    entry = next((entry for entry in catalog if entry.get('key') == dataset_key), None)
+    if not entry:
         return jsonify({'ok': False, 'error': '内容分类不存在'}), 404
     storage_lang = _storage_lang(site, lang, default_lang)
     items = datasets.load(site.id, dataset_key, lang=storage_lang)
     source = next((item for item in items if item.get('id') == item_id), None)
     if not source:
         return jsonify({'ok': False, 'error': '内容不存在'}), 404
-    new_item = copy.deepcopy(source)
-    base_slug = str(source.get('slug') or f'item-{item_id}').strip()
-    used_slugs = {str(item.get('slug') or '') for item in items}
-    candidate = f'{base_slug}-copy'
-    suffix = 2
-    while candidate in used_slugs:
-        candidate = f'{base_slug}-copy-{suffix}'
-        suffix += 1
-    title_key = 'title' if source.get('title') is not None else ('name' if source.get('name') is not None else 'title')
-    source_title = str(source.get(title_key) or '未命名内容').strip()
-    new_item.pop('id', None)
-    new_item['slug'] = candidate
-    new_item[title_key] = f'{source_title} 副本'
-    new_id = datasets.add(site.id, dataset_key, new_item, lang=storage_lang)
-    return jsonify({'ok': True, 'item_id': new_id, 'slug': candidate})
+    template_id = str(source.get('template_id') or entry.get('default_template_id') or '')
+    valid_template_ids = {str(tpl.get('id') or '') for tpl in entry.get('templates') or []}
+    if template_id not in valid_template_ids:
+        template_id = str(entry.get('default_template_id') or '')
+    if template_id not in valid_template_ids:
+        return jsonify({'ok': False, 'error': '该内容没有可用的详情模板'}), 400
+    return jsonify({
+        'ok': True,
+        'item_id': 0,
+        'editor_url': url_for(
+            'core.content_item_workspace', dataset_key=dataset_key, item_id=0,
+            template_id=template_id, copy_from=item_id, site=site.id, lang=lang,
+        ),
+    })
 
 
 @bp.route('/content/<path:dataset_key>/<int:item_id>/delete', methods=['POST'])
@@ -5680,8 +6006,13 @@ def _parse_detail_content_blocks_form(form, files=None, site_id=None, dataset_ke
     blocks = []
     for idx in range(count):
         block_type = form.get(f'detail_content_blocks_{idx}_type', 'text').strip() or 'text'
+        slot_id = form.get(f'detail_content_blocks_{idx}_slot_id', '').strip()
         title = form.get(f'detail_content_blocks_{idx}_title', '').strip()
         text = form.get(f'detail_content_blocks_{idx}_text', '').strip()
+        if block_type in {'text', 'media_text'}:
+            text = sanitize_richtext(text, 'content')
+        elif block_type == 'note':
+            text = sanitize_richtext(text, 'notice')
         image = form.get(f'detail_content_blocks_{idx}_image', '').strip()
         video = form.get(f'detail_content_blocks_{idx}_video', '').strip()
         embed_url = form.get(f'detail_content_blocks_{idx}_embed_url', '').strip()
@@ -5697,6 +6028,9 @@ def _parse_detail_content_blocks_form(form, files=None, site_id=None, dataset_ke
             table_cols_count = 0
         alt = form.get(f'detail_content_blocks_{idx}_alt', '').strip()
         caption = form.get(f'detail_content_blocks_{idx}_caption', '').strip()
+        if block_type == 'video':
+            caption = caption or text
+            text = ''
         layout = form.get(f'detail_content_blocks_{idx}_layout', 'image_left').strip() or 'image_left'
         image_upload = files.get(f'detail_content_blocks_{idx}_image_file') if files else None
         video_upload = files.get(f'detail_content_blocks_{idx}_video_file') if files else None
@@ -5743,6 +6077,8 @@ def _parse_detail_content_blocks_form(form, files=None, site_id=None, dataset_ke
                 if row_has_value:
                     table_cells.append(row)
         block = {'type': block_type}
+        if slot_id:
+            block['slot_id'] = slot_id
         if title:
             block['title'] = title
         if text:
@@ -6562,13 +6898,70 @@ def dataset_edit(dataset_key, item_id):
     storage_lang = _storage_lang(site, lang, default_lang)
     source_storage_lang = _storage_lang(site, default_lang, default_lang)
 
-    item = datasets.find(site.id, dataset_key, item_id, lang=storage_lang)
-    source_item = datasets.find(site.id, dataset_key, item_id, lang=source_storage_lang)
-    if not item and storage_lang and source_item:
-        item = source_item
-    if not item:
-        abort(404, f'数据不存在: {dataset_key}#{item_id}')
-    source_item = source_item or item
+    is_new_content = workspace_mode and item_id == 0
+    copy_from_raw = (
+        request.form.get('_copy_from', '').strip()
+        if request.method == 'POST'
+        else request.args.get('copy_from', '').strip()
+    ) if is_new_content else ''
+    if copy_from_raw and not copy_from_raw.isdigit():
+        abort(400, '副本来源无效')
+    copy_from_id = int(copy_from_raw) if copy_from_raw else 0
+    is_duplicate_content = bool(copy_from_id)
+    if is_new_content:
+        template_id = (
+            request.form.get('template_id', '').strip()
+            if request.method == 'POST'
+            else request.args.get('template_id', '').strip()
+        )
+        catalog_entry = next(
+            (entry for entry in _content_catalog(site, lang, default_lang) if entry.get('key') == dataset_key),
+            None,
+        )
+        valid_template_ids = {
+            str(tpl.get('id') or '') for tpl in (catalog_entry or {}).get('templates', [])
+        }
+        if not catalog_entry or template_id not in valid_template_ids:
+            abort(400, '新建内容的分类或详情模板无效')
+        if is_duplicate_content:
+            duplicate_source = datasets.find(site.id, dataset_key, copy_from_id, lang=storage_lang)
+            if not duplicate_source:
+                abort(404, '副本来源内容不存在')
+            item = copy.deepcopy(duplicate_source)
+            item['id'] = 0
+            item['template_id'] = template_id
+            base_slug = str(duplicate_source.get('slug') or f'item-{copy_from_id}').strip()
+            used_slugs = {
+                str(existing.get('slug') or '')
+                for existing in datasets.load(site.id, dataset_key, lang=storage_lang)
+            }
+            candidate = f'{base_slug}-copy'
+            suffix = 2
+            while candidate in used_slugs:
+                candidate = f'{base_slug}-copy-{suffix}'
+                suffix += 1
+            title_key = (
+                'title' if duplicate_source.get('title') is not None
+                else ('name' if duplicate_source.get('name') is not None else 'title')
+            )
+            source_title = str(duplicate_source.get(title_key) or '未命名内容').strip()
+            item['slug'] = candidate
+            item[title_key] = f'{source_title} 副本'
+        else:
+            item = {
+                'id': 0,
+                'template_id': template_id,
+                'date': datetime.now().date().isoformat(),
+            }
+        source_item = item
+    else:
+        item = datasets.find(site.id, dataset_key, item_id, lang=storage_lang)
+        source_item = datasets.find(site.id, dataset_key, item_id, lang=source_storage_lang)
+        if not item and storage_lang and source_item:
+            item = source_item
+        if not item:
+            abort(404, f'数据不存在: {dataset_key}#{item_id}')
+        source_item = source_item or item
 
     def render_edit(current_item, current_source_item=None):
         blocks = _get_available_blocks(site.template_name)
@@ -6591,10 +6984,37 @@ def dataset_edit(dataset_key, item_id):
         page_cfg = _ensure_page_detail_templates(site.id, dataset_key, page_label)
         detail_templates = _detail_templates_for_page(page_cfg, dataset_key, page_label)
         default_template_id = _default_detail_template_id(page_cfg, dataset_key, page_label)
+        # Primary media capabilities belong to the list module, not the
+        # detail template. data_list_showcase can preview image/video/embed
+        # directly in each row, while ordinary grids use a cover image only.
+        list_page_configs = []
+        checked_langs = set()
+        for candidate_lang in [storage_lang, lang, default_lang] + [entry.get('code') for entry in languages]:
+            if candidate_lang in checked_langs:
+                continue
+            checked_langs.add(candidate_lang)
+            candidate_page = read_yaml(site.id, f'pages/{dataset_key}.yaml', default={}, lang=candidate_lang) or {}
+            if isinstance(candidate_page, dict):
+                list_page_configs.append(candidate_page)
+        supports_rich_list_preview = any(
+            isinstance(module, dict) and module.get('type') == 'data_list_showcase'
+            for candidate_page in list_page_configs
+            for module in (candidate_page.get('modules') or [])
+        )
         # Field visibility in the dataset editor must follow the selected
         # detail template's components. Existing item data is preserved on
         # save, but it should not make every template show every legacy field.
-        detail_requirements = _detail_template_requirements_map(detail_templates)
+        detail_requirements = _detail_template_requirements_map(detail_templates, current_item)
+        selected_template_id = str(current_item.get('template_id') or default_template_id or '')
+        selected_detail_template = next(
+            (tpl for tpl in detail_templates if str(tpl.get('id') or '') == selected_template_id),
+            detail_templates[0] if detail_templates else {},
+        )
+        auto_tags_mode = _detail_template_rule_value(selected_detail_template, 'auto_tags', 'suggest')
+        auto_tags_preview = generated_technical_tags(current_item)
+        detail_content_editor_blocks, detail_free_content_enabled = _detail_content_editor_state(
+            selected_detail_template, current_item
+        )
         all_list_datasets = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu))
         from .style_registry import STYLE_REGISTRY
         from .icon_registry import icon_names
@@ -6616,13 +7036,60 @@ def dataset_edit(dataset_key, item_id):
                         detail_templates=detail_templates,
                         default_template_id=default_template_id,
                         detail_requirements=detail_requirements,
+                        detail_content_editor_blocks=detail_content_editor_blocks,
+                        detail_free_content_enabled=detail_free_content_enabled,
+                        auto_tags_mode=auto_tags_mode,
+                        auto_tags_preview=auto_tags_preview,
+                        supports_rich_list_preview=supports_rich_list_preview,
                         style_registry=STYLE_REGISTRY,
                         icon_list=icon_names(),
                         workspace_mode=workspace_mode,
+                        is_new_content=is_new_content,
+                        is_duplicate_content=is_duplicate_content,
+                        copy_from_id=copy_from_id,
                         dataset_edit_endpoint=dataset_edit_endpoint,
                         page_label=page_label)
 
     if request.method == 'POST':
+        if is_new_content:
+            slug_value = request.form.get('slug', '').strip()
+            title_value = request.form.get('title', '').strip()
+            summary_value = request.form.get('summary', '').strip()
+            media_type_value = request.form.get('media_type', 'image').strip() or 'image'
+            media_fields = {
+                'image': ('cover', 'cover_file', '封面图'),
+                'video': ('video', 'video_file', '视频'),
+                'embed': ('embed_url', 'embed_url_file', '嵌入页面'),
+            }
+            media_name, media_file_name, media_label = media_fields.get(
+                media_type_value, media_fields['image']
+            )
+            media_upload = request.files.get(media_file_name)
+            has_media = bool(
+                request.form.get(media_name, '').strip()
+                or (media_upload and media_upload.filename)
+            )
+            errors = []
+            if not slug_value:
+                errors.append('Slug')
+            elif not re.fullmatch(r'[a-z0-9][a-z0-9-]{1,28}[a-z0-9]', slug_value):
+                errors.append('Slug 格式')
+            elif any(str(existing.get('slug') or '') == slug_value
+                     for existing in datasets.load(site.id, dataset_key, lang=storage_lang)):
+                errors.append('Slug 已存在')
+            if not title_value:
+                errors.append('标题')
+            if not summary_value:
+                errors.append('简介')
+            if not has_media:
+                errors.append(media_label)
+            if errors:
+                draft_item = dict(item)
+                draft_item.update({key: value for key, value in request.form.items()
+                                   if not key.startswith('_') and key != 'csrf_token'})
+                flash('保存失败，请检查：' + '、'.join(errors), 'error')
+                return render_edit(draft_item, draft_item), 400
+
         if storage_lang and not datasets.find(site.id, dataset_key, item_id, lang=storage_lang):
             source_items = datasets.load(site.id, dataset_key, lang=source_storage_lang)
             if source_items:
@@ -6844,8 +7311,16 @@ def dataset_edit(dataset_key, item_id):
             fields['modules'] = []
         # 否则 module_count 不在表单中 → 保留旧 modules 不动
 
-        datasets.update(site.id, dataset_key, item_id, fields, lang=storage_lang)
-        flash('已保存')
+        if is_new_content:
+            item_id = datasets.add(site.id, dataset_key, fields, lang=storage_lang)
+            flash('内容已创建并保存')
+        else:
+            remove_fields = {'show_detail_btn'} if detail_btn_mode == 'inherit' else None
+            datasets.update(
+                site.id, dataset_key, item_id, fields,
+                lang=storage_lang, remove_fields=remove_fields,
+            )
+            flash('已保存')
         # 保存后留在当前内容编辑器；统一列表入口已经迁移到“内容列表”。
         redirect_args = {'dataset_key': dataset_key, 'item_id': item_id, 'site': site.id, 'lang': lang}
         if not workspace_mode:

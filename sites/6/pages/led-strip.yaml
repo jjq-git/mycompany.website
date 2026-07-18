@@ -16,17 +16,30 @@ detail_templates:
       image_ratio: 4/3
       image_radius: 2px
       section_bg: ''
-  - type: detail_content_blocks
+  - type: detail_actions
     order: 2
-    variant: blocks
+    variant: primary_secondary
     data:
       _hidden: 'false'
+      action_buttons: primary_secondary
+      primary_label: 立即咨询
+      secondary_label: 查看资料
+      align: left
+      empty_behavior: hide_module
+      section_bg: ''
+  - type: detail_content_note
+    order: 3
+    variant: note
+    data:
+      _hidden: 'false'
+      slot_id: content-mrpylsdv-85994a
       title: ''
+      note_style: info
       empty_behavior: hide_module
       section_bg: ''
       text_color: ''
   - type: detail_specs
-    order: 3
+    order: 4
     variant: list
     data:
       _hidden: 'false'
@@ -38,7 +51,7 @@ detail_templates:
       border_color: '#e5e7eb'
       section_bg: ''
   - type: detail_specs
-    order: 4
+    order: 5
     variant: list
     data:
       _hidden: 'false'
@@ -50,16 +63,16 @@ detail_templates:
       border_color: '#e5e7eb'
       section_bg: ''
   - type: detail_files
-    order: 5
+    order: 6
     variant: list
     data:
       _hidden: 'false'
       title: 资料下载
       empty_behavior: hide_module
       link_color: ''
-      section_bg: ''
+      section_bg: '#f8fafc'
   - type: detail_related
-    order: 6
+    order: 7
     variant: grid
     data:
       _hidden: 'false'
@@ -72,16 +85,6 @@ detail_templates:
       click_scroll: 'true'
       show_dots: 'true'
       section_bg: ''
-  - type: detail_features
-    order: 7
-    variant: cards
-    data:
-      _hidden: 'false'
-      title: ''
-      columns: 3
-      empty_behavior: hide_module
-      card_bg: ''
-      section_bg: ''
   required_fields:
   - title
   - slug
@@ -93,6 +96,11 @@ detail_templates:
   - category
   - tags
   - link_url
+  - body
+  - detail_content_blocks
+  - detail_specs
+  - detail_files
+  - detail_faqs
   seo:
     title: '{title} - {site_name}'
     description: '{summary}'
@@ -127,10 +135,48 @@ detail_templates:
         empty_behavior: hide_module
         image_ratio: 4/3
         image_radius: 8px
+  - type: detail_content_blocks
+    variant: blocks
+    data:
+      title: ''
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
+  - type: detail_specs
+    variant: list
+    data:
+      title: ''
+      source_field: specs
+      max_rows: 50
+      columns: 3
+      hide_empty_rows: 'true'
+      border_color: '#e5e7eb'
+      section_bg: ''
+  - type: detail_specs
+    variant: list
+    data:
+      title: ''
+      source_field: specs
+      max_rows: 50
+      columns: 3
+      hide_empty_rows: 'true'
+      border_color: '#e5e7eb'
+      section_bg: ''
+  - type: detail_files
+    variant: list
+    data:
+      title: 资料下载
+      empty_behavior: hide_module
+      link_color: ''
+      section_bg: ''
   required_fields:
   - title
   - slug
-  optional_fields: []
+  optional_fields:
+  - body
+  - detail_content_blocks
+  - detail_specs
+  - detail_files
   seo:
     title: '{title} - {site_name}'
     description: '{summary}'

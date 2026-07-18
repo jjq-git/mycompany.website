@@ -5,14 +5,21 @@ detail_templates:
   is_default: true
   modules:
   - type: detail_media
-    variant: gallery_top
+    variant: gallery_left
     data:
       source: cover_and_gallery
-      layout: gallery_top
+      layout: gallery_left
       max_images: 6
       empty_behavior: hide_module
       image_ratio: 4/3
       image_radius: 8px
+  - type: detail_content_blocks
+    variant: blocks
+    data:
+      title: ''
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
   - type: detail_specs
     variant: table
     data:
@@ -40,6 +47,10 @@ detail_templates:
   - category
   - tags
   - link_url
+  - body
+  - detail_content_blocks
+  - detail_specs
+  - detail_files
   seo:
     title: '{title} - {site_name}'
     description: '{summary}'
@@ -48,66 +59,42 @@ detail_templates:
   name: 项目详情01
   is_default: false
   modules:
-  - type: item_data
-    order: 1
-    variant: default
+  - type: detail_media
+    variant: gallery_left
     data:
-      show_detail_images: 'true'
-      detail_images_max: 6
-      show_arrows: 'true'
-      show_dots: 'true'
-      auto_scroll: 'false'
-      scroll_interval: 3
-      show_specs: 'true'
-      specs_max_rows: 8
-      specs_columns: 2
-      hide_empty_rows: 'true'
-      show_link: 'true'
-      link_text: 了解更多
-      auto_category: inherit
-      auto_tags: suggest
-      text_color: '#333333'
-      link_color: '#0f66d0'
-      title_color: ''
+      source: cover_and_gallery
+      layout: gallery_left
+      max_images: 6
+      empty_behavior: hide_module
+      image_ratio: 4/3
+      image_radius: 8px
       section_bg: ''
-      image_radius: ''
-      block_gap: ''
-      content_width: ''
-      text_align: left
-  - type: text_content
-    order: 2
-    variant: text-align_left
+  - type: detail_content_blocks
+    variant: blocks
     data:
       title: ''
-      body: ''
-      text_align: left
-      columns: 1
-      section_bg: '#ffffff'
-      outer_width: ''
-      inner_width: ''
-      margin_top: ''
-      padding_top: ''
-      title_color: '#1e293b'
-      body_color: '#475569'
-      title_size: ''
-      body_size: ''
-    responsive:
-      tablet:
-        text_align: left
-        padding_top: 1rem
-        padding_bottom: 1rem
-        title_size: 1.75rem
-        title_color: '#1e293b'
-        body_size: 1rem
-        body_color: '#475569'
-      mobile:
-        text_align: left
-        padding_top: 1rem
-        padding_bottom: 1rem
-        title_size: 1.75rem
-        title_color: '#1e293b'
-        body_size: 1rem
-        body_color: '#475569'
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
+  - type: detail_specs
+    variant: list
+    data:
+      title: ''
+      source_field: specs
+      max_rows: 8
+      columns: '2'
+      hide_empty_rows: 'true'
+      border_color: '#e5e7eb'
+      section_bg: ''
+  - type: detail_link
+    variant: button
+    data:
+      label: 了解更多
+      url_field: link_url
+      style: button
+      hide_when_empty: 'true'
+      link_color: '#0f66d0'
+      section_bg: ''
   required_fields:
   - title
   - slug
@@ -119,6 +106,9 @@ detail_templates:
   - specs
   - category
   - tags
+  - detail_content_blocks
+  - detail_specs
+  - detail_files
   seo:
     title: '{title} - {site_name}'
     description: '{summary}'

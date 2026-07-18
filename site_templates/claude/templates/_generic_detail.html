@@ -25,7 +25,7 @@
 <nav class="detail-breadcrumb" aria-label="Breadcrumb">
   <div class="container">
     <div class="detail-breadcrumb-list">
-      <a href="{{ base_url }}/{{ lang }}/" class="detail-breadcrumb-item">首页</a>
+      <a href="{{ base_url }}/{{ lang }}/" class="detail-breadcrumb-item">{{ t.detail.home | default(t.pages.home | default('首页')) }}</a>
       <span class="detail-breadcrumb-separator">/</span>
       <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="detail-breadcrumb-item">{{ crumb.list_title }}</a>
       {% if _item_title %}
@@ -51,7 +51,7 @@
 
 <div class="detail-back-section">
   <div class="container">
-    <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="btn btn-text-link detail-back-button">← 返回</a>
+    <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="btn btn-text-link detail-back-button">← {{ t.detail.back | default('返回') }}</a>
   </div>
 </div>
 
