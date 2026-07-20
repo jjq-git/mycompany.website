@@ -1192,9 +1192,11 @@ body.account-workspace-open { overflow: hidden; }
   box-shadow: 0 8px 24px rgba(15, 23, 42, .10) !important;
 }
 
+/* 平板/手机只固定「设备宽度」（768/375 是 iPad/iPhone 竖屏标准值），高度和桌面一样铺满预览区，
+   避免 iframe 被压成固定 600/667px 导致下方留大片空白、内容被挤进小框内滚动。 */
 .preview-frame.desktop { width: 100%; min-height: 100%; }
-.preview-frame.tablet { width: 768px; min-height: 600px; }
-.preview-frame.mobile { width: 375px; min-height: 667px; }
+.preview-frame.tablet { width: 768px; min-height: 100%; }
+.preview-frame.mobile { width: 375px; min-height: 100%; }
 
 .preview-loading-overlay {
   position: absolute;

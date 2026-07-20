@@ -16,7 +16,9 @@
   .overview-site-mark{display:grid;place-items:center;width:52px;height:52px;flex:0 0 52px;background:#e5f5f4;color:var(--theme-primary);font-size:22px;font-weight:700}
   .overview-title-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .overview-title-line h1{margin:0;font-size:25px;line-height:1.2}
-  .overview-status,.overview-role{display:inline-flex;align-items:center;height:24px;padding:0 8px;background:#eef2f6;color:#526174;font-size:12px}
+  .overview-role{display:inline-flex;align-items:center;height:24px;padding:0 8px;background:#eef2f6;color:#526174;font-size:12px}
+  .overview-status{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#f1f5f9;color:#64748b}
+  .overview-status svg{width:15px;height:15px}
   .overview-status.published{background:#dcfce7;color:#15803d}.overview-status.suspended{background:#fee2e2;color:#b91c1c}
   .overview-role{background:#e5f5f4;color:#087f76}
   .overview-site-url{display:flex;align-items:center;gap:7px;margin-top:8px;color:#718096;font-size:13px}
@@ -57,7 +59,7 @@
       <div>
         <div class="overview-title-line">
           <h1>{{ site.name }}</h1>
-          <span class="overview-status {{ site.status }}">{{ {'draft':'草稿','published':'已发布','suspended':'已暂停'}.get(site.status,site.status) }}</span>
+          <span class="overview-status {{ site.status }}" title="{{ {'draft':'草稿','published':'已发布','suspended':'已暂停'}.get(site.status,site.status) }}" aria-label="{{ {'draft':'草稿','published':'已发布','suspended':'已暂停'}.get(site.status,site.status) }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{% if site.status == 'published' %}<path d="m5 12 4 4L19 6"/>{% elif site.status == 'suspended' %}<circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>{% else %}<path d="M12 20h9"/><path d="m16.5 3.5 4 4L8 20H4v-4z"/>{% endif %}</svg></span>
           {% if role_label %}<span class="overview-role">{{ role_label }}</span>{% endif %}
         </div>
         <div class="overview-site-url"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg><a href="{{ url_for('core.preview_site', site_id=site.id) }}" target="_blank">{{ site.slug }}.{{ platform_domain }}</a></div>

@@ -10,6 +10,15 @@
   .template-pick-thumb{display:grid;place-items:center;height:76px;background:#eef2f5;color:#0d9488}
   .template-pick-name{font-size:17px;font-weight:700}.template-pick-meta,.template-pick-desc{margin-top:5px;color:#718096;font-size:13px}
   .site-create-actions{display:flex;gap:10px;padding:18px 24px}
+  /* 本页面向不懂技术的小老板，是创建站点的关键引导步骤，默认 Bootstrap 的 small 字号偏小，
+     这里针对性调大：区块标题、字段标签、说明文字、输入框，只作用于本页不影响全局 */
+  .site-create-card .panel-section-title{font-size:17px}
+  .site-create-card .form-label{font-size:14.5px;font-weight:600;color:#2d3748}
+  .site-create-card .form-label.small{font-size:14.5px}   /* 覆盖 Bootstrap .small 的 0.875em */
+  .site-create-card .form-text{font-size:13.5px;color:#64748b}
+  .site-create-card .form-control,.site-create-card .form-select,
+  .site-create-card .input-group-text{font-size:15px}
+  .site-create-card .form-control-sm,.site-create-card .form-select-sm{min-height:40px;padding:8px 12px}
   @media(max-width:600px){.template-pick-card{grid-template-columns:1fr}.site-create-card .panel-section{padding:18px 16px}}
 </style>
 {% endblock %}
@@ -125,7 +134,7 @@
     langs.forEach(function(lang){
       var label = document.createElement('label');
       label.className = 'd-flex align-items-center gap-2 px-2 py-1 rounded';
-      label.style.cssText = 'border:1px solid #e5e7eb;background:#f8fafc;cursor:pointer;font-size:14px;';
+      label.style.cssText = 'border:1px solid #e5e7eb;background:#f8fafc;cursor:pointer;font-size:14.5px;padding:6px 12px;';
       label.innerHTML = '<input class="form-check-input mt-0" type="checkbox" name="enabled_lang" value="' +
         String(lang.code).replace(/"/g, '&quot;') + '"' + (selected.indexOf(lang.code) !== -1 ? ' checked' : '') +
         '><span>' + (lang.name || lang.code) + '</span>';
