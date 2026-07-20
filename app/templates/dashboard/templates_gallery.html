@@ -1,34 +1,39 @@
-{% extends "base.html" %}
-{% block title %}模板库{% endblock %}
-
+{% extends "dashboard/onboarding_base.html" %}
+{% block title %}选择模板{% endblock %}
+{% block head %}
+<style>
+  .template-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+  .template-card{display:flex;min-width:0;overflow:hidden;flex-direction:column;border:1px solid #dbe3ea;background:#fff;box-shadow:0 10px 24px rgba(15,23,42,.05)}
+  .template-cover{aspect-ratio:16/9;overflow:hidden;background:#e8edf1}
+  .template-cover img{display:block;width:100%;height:100%;object-fit:cover;object-position:top center}
+  .template-cover-empty{display:grid;height:100%;place-items:center;color:#94a3b8}
+  .template-body{display:grid;grid-template-rows:1fr auto;flex:1;gap:18px;padding:18px 20px}
+  .template-body h2{margin:0 0 7px;font-size:18px}.template-body p{margin:0;color:#718096;line-height:1.55}
+  .template-actions{display:flex;justify-content:flex-end;gap:8px}.template-actions a{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border:1px solid #cbd5df;color:#475569;text-decoration:none}
+  .template-actions svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .template-actions .choose{border-color:#0d9488;background:#0d9488;color:#fff}
+  .template-actions a:hover{border-color:#0d9488;color:#0d9488;background:#eefaf8}.template-actions .choose:hover{background:#0b7f76;color:#fff}
+  @media(max-width:800px){.template-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}
 {% block content %}
-{# 与 panel_templates.html 保持一致的卡片样式 #}
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <span class="fw-semibold">模板库</span>
-  {% if can_create_sites %}<a class="btn btn-sm btn-primary" href="{{ url_for('core.site_new') }}" style="font-size:14px">+ 新建站点</a>{% endif %}
-</div>
-<div class="d-flex flex-column gap-3">
+<div class="onboard-step">步骤 1 / 2</div>
+<h1 class="onboard-title">{{ '创建新站点' if has_sites else '创建你的第一个站点' }}</h1>
+<p class="onboard-subtitle">先选择一个模板作为起点。下一步可以设置站点名称、访问地址和语言版本。</p>
+{% if can_create_sites %}
+<section class="template-grid">
   {% for tpl in templates %}
-  <div class="card" style="overflow: hidden;">
-    <div style="aspect-ratio: 16/10; background: #1a1a2e; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px;">
-      {% if tpl.cover_image %}
-      <img src="{{ tpl.cover_image }}" alt="{{ tpl.display_name }}" style="width: 100%; height: 100%; object-fit: cover;">
-      {% else %}
-      <span class="text-white-50">{{ tpl.industry }}</span>
-      {% endif %}
-    </div>
-    <div class="card-body p-2">
-      <div class="d-flex align-items-baseline justify-content-between mb-1">
-        <strong class="small">{{ tpl.display_name }}</strong>
-        <span class="badge bg-secondary" style="font-size:14px">{{ tpl.industry }}</span>
-      </div>
-      <p class="text-muted mb-2" style="font-size:12px; line-height: 1.4;">{{ tpl.description }}</p>
-      <div class="d-flex gap-1">
-        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('core.template_preview', template_name=tpl.name) }}" target="_blank" style="font-size:14px">预览</a>
-        {% if can_create_sites %}<a class="btn btn-sm btn-primary" href="{{ url_for('core.site_new', template=tpl.name) }}" style="font-size:14px">用这个</a>{% endif %}
+  <article class="template-card">
+    <div class="template-cover">{% if tpl.cover_image %}<img src="{{ tpl.cover_image }}" alt="{{ tpl.display_name }}">{% else %}<div class="template-cover-empty">{{ tpl.industry or '网站模板' }}</div>{% endif %}</div>
+    <div class="template-body">
+      <div><h2>{{ tpl.display_name }}</h2><p>{{ tpl.description }}</p></div>
+      <div class="template-actions">
+        <a href="{{ url_for('core.template_preview', template_name=tpl.name) }}" target="_blank" title="预览模板" aria-label="预览模板"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg></a>
+        <a class="choose" href="{{ url_for('core.site_new', template=tpl.name) }}" title="选择模板" aria-label="选择模板"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>
       </div>
     </div>
-  </div>
-  {% endfor %}
-</div>
+  </article>
+  {% else %}<div class="alert alert-warning">暂无可用模板。</div>{% endfor %}
+</section>
+{% else %}<div class="alert alert-warning">当前账号没有创建个人站点的权限。</div>{% endif %}
 {% endblock %}

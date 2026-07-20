@@ -156,7 +156,7 @@ from .models import (AccountEntitlement, AccountIdentity, AiCreditAccount, AiCre
                      AuditLog, BillingOrder, BillingPlan,
                      ExternalIdentity, LoginToken, Organization,
                      OrganizationInvitation, OrganizationMember, OrganizationSite, PasswordCredential,
-                     Site, Subscription, Template, TotpCredential, User,
+                     Site, SiteSlugAlias, Subscription, Template, TotpCredential, User,
                      UserSession, VerificationCode)
 from .site_storage import (copy_seed_data, init_site_folder, lang_root,
                             list_media_files, list_yaml_files, read_yaml,
@@ -204,37 +204,6 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         'variants': [
             {'key': 'gallery_top', 'label': '上图下文', 'data_preset': {'layout': 'gallery_top'}},
             {'key': 'gallery_left', 'label': '左图右文', 'data_preset': {'layout': 'gallery_left'}},
-        ],
-        'is_data_attr': False,
-        'schema': None,
-    },
-    {
-        'name': 'detail_actions',
-        'display_name': '详情操作按钮',
-        'category': 'detail',
-        'icon': '',
-        'description': '显示当前详情页的主按钮和副按钮；不依赖图片/图集组件。按钮文字和链接在单条内容的基础内容中填写。',
-        'fields': [
-            {'key': 'action_buttons', 'label': '显示按钮', 'type': 'select', 'group': '内容', 'default': 'primary_secondary', 'options': [
-                {'value': 'primary', 'label': '仅主按钮'},
-                {'value': 'primary_secondary', 'label': '主按钮 + 副按钮'},
-            ]},
-            {'key': 'primary_label', 'label': '主按钮默认文字', 'type': 'text', 'group': '内容', 'default': '立即咨询'},
-            {'key': 'secondary_label', 'label': '副按钮默认文字', 'type': 'text', 'group': '内容', 'default': '查看资料', 'show_if': {'field': 'action_buttons', 'value': 'primary_secondary'}},
-            {'key': 'align', 'label': '按钮对齐', 'type': 'select', 'group': '样式', 'default': 'left', 'options': [
-                {'value': 'left', 'label': '居左'},
-                {'value': 'center', 'label': '居中'},
-                {'value': 'right', 'label': '居右'},
-            ]},
-            {'key': 'empty_behavior', 'label': '链接为空时', 'type': 'select', 'group': '显示规则', 'default': 'hide_module', 'options': [
-                {'value': 'hide_module', 'label': '隐藏组件'},
-                {'value': 'show_placeholder', 'label': '显示禁用按钮'},
-            ]},
-            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
-        ],
-        'variants': [
-            {'key': 'primary_secondary', 'label': '主按钮 + 副按钮', 'data_preset': {'action_buttons': 'primary_secondary'}},
-            {'key': 'primary', 'label': '仅主按钮', 'data_preset': {'action_buttons': 'primary'}},
         ],
         'is_data_attr': False,
         'schema': None,
@@ -853,8 +822,6 @@ def _detail_template_field_requirements(template, item=None):
         data = module.get('data') if isinstance(module.get('data'), dict) else {}
         if m_type in ('item_detail', 'image_carousel', 'detail_media'):
             req['detail_images'] = True
-        if m_type == 'detail_actions':
-            req['link'] = True
         if m_type in ('item_detail', 'detail_specs'):
             req['specs'] = True
         if m_type == 'detail_table':
@@ -1821,6 +1788,9 @@ def _site_from_ref(site_ref, include_deleted=False):
     if not include_deleted:
         query = query.filter(Site.soft_deleted_at.is_(None))
     site = query.filter_by(slug=raw).first()
+    if site is None:
+        alias = SiteSlugAlias.query.filter_by(slug=raw).first()
+        site = alias.site if alias and (include_deleted or alias.site.soft_deleted_at is None) else None
     if site is None and raw.isdigit():
         site = query.filter_by(id=int(raw)).first()
     return site
@@ -1861,19 +1831,30 @@ def inject_context():
     """给所有模板注入站点上下文."""
     user = _current_user()
     site_ref = request.args.get('site', '').strip()
-    if not site_ref:
-        if user and user.role == 'admin':
-            site = Site.query.filter(Site.soft_deleted_at.is_(None)).order_by(Site.id.desc()).first()
-        elif user:
-            site = Site.query.filter_by(owner_id=user.id).filter(Site.soft_deleted_at.is_(None)).order_by(Site.id.desc()).first()
-        else:
-            site = None
-        site_id = site.id if site else None
-    else:
+    site = None
+    if site_ref:
         site = _site_from_ref(site_ref)
         if site and user and not _user_can_access_site(user, site):
             site = None
-        site_id = site.id if site else None
+    elif user:
+        # 与 _current_context 使用相同的解析顺序。共享站点成员首次登录时
+        # 也必须在模板上下文中拿到站点，否则左侧菜单只会剩 ensure_home 补出的首页。
+        cached_site_id = session.get('current_site_id')
+        if cached_site_id is not None:
+            site = Site.query.filter_by(id=int(cached_site_id)).filter(
+                Site.soft_deleted_at.is_(None)
+            ).first()
+            if site and not _user_can_access_site(user, site):
+                site = None
+        if not site:
+            query = Site.query.filter(Site.soft_deleted_at.is_(None))
+            if user.role != 'admin':
+                shared_ids = db.session.query(OrganizationSite.site_id).join(
+                    OrganizationMember, OrganizationMember.organization_id == OrganizationSite.organization_id
+                ).filter(OrganizationMember.user_id == user.id, OrganizationMember.status == 'active')
+                query = query.filter(or_(Site.owner_id == user.id, Site.id.in_(shared_ids)))
+            site = query.order_by(Site.id.desc()).first()
+    site_id = site.id if site else None
 
     ctx = {
         'counts': {},
@@ -2482,17 +2463,63 @@ def not_found(error):
 
 @bp.route('/')
 def index():
+    return _render_site_overview()
+
+
+def _render_site_overview():
     user, site = _current_context()
-    return render_template('base.html', user=user, site=site, active='',
-                           initial_panel_collapsed=True)
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) or {} if meta_path.exists() else {}
+    menu = menu_lib.ensure_home(menu_lib.normalize_for_render(
+        menu_lib.upgrade_old_format(settings.get('menu') or [], meta.get('datasets', []))
+    ))
+
+    def count_pages(items):
+        return sum(
+            (1 if item.get('type') in {'home', 'page', 'list'} else 0)
+            + count_pages(item.get('children') or [])
+            for item in (items or []) if isinstance(item, dict)
+        )
+
+    dataset_keys = {item.get('target') for item in menu_lib.collect_list_targets(menu) if item.get('target')}
+    overview_storage_lang = _storage_lang(site, site.default_language, site.default_language)
+    content_count = sum(
+        len(datasets.load(site.id, key, lang=overview_storage_lang) or [])
+        for key in dataset_keys
+    )
+    page_count = count_pages(menu)
+    enabled_language_count = len(site.enabled_languages or [site.default_language])
+    setup_checks = {
+        'site': bool(site.name and site.slug),
+        'pages': page_count > 1,
+        'content': content_count > 0,
+        'published': site.status == 'published',
+    }
+    setup_completed = sum(setup_checks.values())
+    setup_percent = round(setup_completed * 100 / len(setup_checks))
+    recent_logs = AuditLog.query.filter_by(site_id=site.id).order_by(
+        AuditLog.created_at.desc(), AuditLog.id.desc()
+    ).limit(5).all()
+    return render_template('dashboard/overview.html', user=user, site=site, active='overview',
+                           page_count=page_count, content_count=content_count,
+                           enabled_language_count=enabled_language_count,
+                           setup_checks=setup_checks, setup_completed=setup_completed,
+                           setup_percent=setup_percent,
+                           recent_logs=recent_logs,
+                           initial_panel_collapsed=False)
 
 
 @bp.route('/overview')
 def overview():
-    # 保留站点和语言等查询参数。账户中心、团队邀请和共享站点入口都会
-    # 通过 /overview?site=N 返回工作台；丢掉 site 会让成员落到无权访问
-    # 的缓存站点，或看起来始终困在账户中心。
-    return redirect(url_for('core.index', **request.args.to_dict(flat=True)))
+    return _render_site_overview()
+
+
+@bp.route('/workbench')
+def workbench():
+    user, site = _current_context()
+    return render_template('base.html', user=user, site=site, active='',
+                           initial_panel_collapsed=True)
 
 
 def _content_catalog(site, lang, default_lang):
@@ -4194,12 +4221,23 @@ def account():
         section = 'profile'
     if section == 'platform' and user.role != 'admin':
         abort(403)
+    # 旧链接兼容：建站流程已经从账号中心拆为独立引导页。
+    legacy_create_step = request.args.get('create', '').strip().lower() if section == 'sites' else ''
+    if legacy_create_step == 'templates':
+        return redirect(url_for('core.templates_gallery'))
+    if legacy_create_step == 'form':
+        return redirect(url_for('core.site_new', template=request.args.get('template', '').strip()))
 
     site_query = Site.query
     if user.role != 'admin':
         site_query = site_query.filter_by(owner_id=user.id)
     active_sites = site_query.filter(Site.soft_deleted_at.is_(None)).order_by(Site.updated_at.desc()).all()
     deleted_sites = site_query.filter(Site.soft_deleted_at.isnot(None)).order_by(Site.soft_deleted_at.desc()).all()
+    editing_site = None
+    if section == 'sites' and request.args.get('edit', type=int):
+        editing_site = _account_site_or_404(user, request.args.get('edit', type=int))
+        if editing_site.soft_deleted_at is not None:
+            abort(404)
     account_identity = _identity_for_user(user)
     account_identities = AccountIdentity.query.filter_by(user_id=user.id).order_by(
         AccountIdentity.is_primary.desc(), AccountIdentity.id
@@ -4348,7 +4386,7 @@ def account():
             selected_template_languages = meta.get('languages') or [{'code': 'zh-CN', 'name': '简体中文'}]
     return render_template('dashboard/account_workspace.html',
                            user=user, section=section, active_sites=active_sites,
-                           deleted_sites=deleted_sites,
+                           deleted_sites=deleted_sites, editing_site=editing_site,
                            account_identity=account_identity,
                            account_identities=account_identities,
                            account_identifier=_public_identifier(user), user_sessions=user_sessions,
@@ -4429,6 +4467,64 @@ def account_avatar(user_id):
     response.cache_control.public = False
     response.cache_control.max_age = 3600
     return response
+
+
+@bp.route('/account/sites/<int:site_id>/identity', methods=['POST'])
+def account_site_identity_update(site_id):
+    """修改后台站点名称和 Slug；访客可见品牌信息仍由网站设置管理。"""
+    from .models import SLUG_RESERVED
+
+    user = _current_user()
+    if not user:
+        abort(401)
+    site = _account_site_or_404(user, site_id)
+    if site.soft_deleted_at is not None:
+        abort(404)
+
+    name = request.form.get('name', '').strip()
+    slug = request.form.get('slug', '').strip().lower()
+    old_name, old_slug = site.name, site.slug
+    redirect_edit = lambda: redirect(url_for('core.account', section='sites', edit=site.id))
+
+    if not name or len(name) > 200:
+        flash('站点名称不能为空且不能超过 200 个字符', 'danger')
+        return redirect_edit()
+    if not SLUG_PATTERN.match(slug):
+        flash('Slug 需为 3–30 位小写字母、数字或连字符，且不能以连字符开头或结尾', 'danger')
+        return redirect_edit()
+    if slug in SLUG_RESERVED:
+        flash('该 Slug 为系统保留字，请更换', 'danger')
+        return redirect_edit()
+
+    slug_changed = slug != old_slug
+    occupied_site = Site.query.filter(Site.slug == slug, Site.id != site.id).first()
+    occupied_alias = SiteSlugAlias.query.filter_by(slug=slug).first()
+    if occupied_site or (occupied_alias and occupied_alias.site_id != site.id):
+        flash('该 Slug 已被其他站点或历史地址使用', 'danger')
+        return redirect_edit()
+    if slug_changed and site.status == 'published' and request.form.get('slug_change_confirmed') != '1':
+        flash('已发布站点修改 Slug 需要再次确认', 'warning')
+        return redirect_edit()
+
+    site.name = name
+    if slug_changed:
+        if occupied_alias and occupied_alias.site_id == site.id:
+            db.session.delete(occupied_alias)
+        if not SiteSlugAlias.query.filter_by(slug=old_slug).first():
+            db.session.add(SiteSlugAlias(site_id=site.id, slug=old_slug))
+        site.slug = slug
+    _write_audit(
+        user, 'site.identity.update', f'更新站点“{old_name}”的名称或 Slug', site_id=site.id,
+        details={'old_name': old_name, 'new_name': name, 'old_slug': old_slug, 'new_slug': slug},
+    )
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        flash('Slug 刚被其他站点占用，请换一个', 'danger')
+        return redirect_edit()
+    flash('站点信息已保存' + ('；旧 Slug 会继续转到当前站点' if slug_changed else ''), 'success')
+    return redirect(url_for('core.account', section='sites', workspace_changed='1'))
 
 
 @bp.route('/account/sites/<int:site_id>/trash', methods=['POST'])
@@ -5476,8 +5572,9 @@ def templates_gallery():
         return render_template('dashboard/panel_templates.html',
                                user=user, site=site, templates=templates,
                                can_create_sites=_user_can_create_sites(user))
-    # 完整的新建流程属于账号级资源管理；工作台仅保留 _fragment 模板预览面板。
-    return redirect(url_for('core.account', section='sites', create='templates'))
+    return render_template('dashboard/templates_gallery.html', user=user, site=site,
+                           templates=templates, can_create_sites=_user_can_create_sites(user),
+                           has_sites=bool(site))
 
 
 @bp.route('/templates/<template_name>/preview/')
@@ -5508,7 +5605,7 @@ def site_slug_available():
                         'message': '请输入 3–30 位小写字母、数字或连字符'})
     if slug in SLUG_RESERVED:
         return jsonify({'valid': True, 'available': False, 'message': '该 Slug 为系统保留字'})
-    available = not Site.query.filter_by(slug=slug).first()
+    available = not Site.query.filter_by(slug=slug).first() and not SiteSlugAlias.query.filter_by(slug=slug).first()
     return jsonify({'valid': True, 'available': available,
                     'message': '该 Slug 可以使用' if available else '该 Slug 已被占用'})
 
@@ -5577,7 +5674,7 @@ def site_new():
             error = 'Slug 不合法（要求 3–30 字符，[a-z 0-9 -]，不以 - 开头/结尾）'
         elif form['slug'] in SLUG_RESERVED:
             error = f'Slug "{form["slug"]}" 是保留字'
-        elif Site.query.filter_by(slug=form['slug']).first():
+        elif Site.query.filter_by(slug=form['slug']).first() or SiteSlugAlias.query.filter_by(slug=form['slug']).first():
             error = f'Slug "{form["slug"]}" 已被占用'
         else:
             if not selected_enabled_langs:
@@ -6110,6 +6207,17 @@ def _parse_detail_content_blocks_form(form, files=None, site_id=None, dataset_ke
     return blocks
 
 
+def _parse_detail_actions_form(form):
+    """Parse the fixed detail-page primary/secondary action fields."""
+    actions = {}
+    for variant in ('primary', 'secondary'):
+        text = form.get(f'detail_action_{variant}_text', '').strip()
+        url = form.get(f'detail_action_{variant}_url', '').strip()
+        if text or url:
+            actions[variant] = {'text': text, 'url': url}
+    return actions
+
+
 def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, source_storage_lang):
     """Parse a dataset edit form into one draft item without writing YAML."""
     item = datasets.find(site.id, dataset_key, item_id, lang=storage_lang)
@@ -6141,6 +6249,8 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
             continue
         if key.startswith('attributes_') or key in ('attributes_count',):
             continue
+        if key.startswith('detail_action_'):
+            continue
         if key.startswith('detail_links_') or key in ('detail_links_count',):
             continue
         if key.startswith('detail_tables_') or key in ('detail_tables_count',):
@@ -6162,6 +6272,9 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
         fields.pop('show_detail_btn', None)
     elif detail_btn_mode in ('true', 'false'):
         fields['show_detail_btn'] = detail_btn_mode == 'true'
+
+    if any(key.startswith('detail_action_') for key in form):
+        fields['detail_actions'] = _parse_detail_actions_form(form)
 
     if 'tags' in fields:
         fields['tags'] = _parse_tags_input(fields.get('tags'))
@@ -7116,6 +7229,8 @@ def dataset_edit(dataset_key, item_id):
                 continue
             if key.startswith('attributes_') or key in ('attributes_count',):
                 continue
+            if key.startswith('detail_action_'):
+                continue
             if key.startswith('detail_links_') or key in ('detail_links_count',):
                 continue
             if key.startswith('detail_tables_') or key in ('detail_tables_count',):
@@ -7195,6 +7310,8 @@ def dataset_edit(dataset_key, item_id):
                 fields[source_prefix] = _parse_key_value_items_form(request.form, source_prefix)
         if 'detail_specs_count' in request.form:
             fields['detail_specs'] = _parse_detail_specs_form(request.form)
+        if any(key.startswith('detail_action_') for key in request.form):
+            fields['detail_actions'] = _parse_detail_actions_form(request.form)
         if 'detail_links_count' in request.form:
             links_count = 0
             try:

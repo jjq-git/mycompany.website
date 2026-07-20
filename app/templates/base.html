@@ -8,7 +8,7 @@
   <link rel="icon" href="http://192.168.1.88:3000/attachments/74eb0913-3298-4a00-82f8-fe1c02db27ec">
   <title>{% block title %}{{ site.slug if site else '' }}{% endblock %} — {{ platform_domain }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260718-detail-conditionals">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260720-account-exit-placement">
   <style>
     :root {
       --bs-primary: {{ admin_primary }};
@@ -131,7 +131,6 @@
             {{ site.name or site.slug }}
           </button>
           <ul class="dropdown-menu">
-            <li><h6 class="dropdown-header">切换站点</h6></li>
             {% for opt in available_sites|default([]) %}
             <li>
               <a class="dropdown-item{% if opt.id == site.id %} active{% endif %}"
@@ -148,7 +147,7 @@
             {% endfor %}
             {% if can_create_sites|default(false) %}
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="{{ url_for('core.account', section='sites', create='templates') }}" onclick="event.preventDefault();openAccountWorkspaceUrl(this.href)">＋ 新建站点</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('core.templates_gallery') }}">＋ 新建站点</a></li>
             {% endif %}
           </ul>
         </div>
@@ -244,7 +243,7 @@
       </div>
       {% endif %}
 
-      <form method="post" action="{{ url_for('core.logout') }}" style="display:inline">
+      <form class="header-logout-form" method="post" action="{{ url_for('core.logout') }}" style="display:inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button class="header-btn" type="submit" title="退出" aria-label="退出">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -270,6 +269,10 @@
 
       <div class="flex-grow-1 overflow-auto left-nav-menu">
         {% if site %}
+        <a class="left-nav-item {% if active == 'overview' %}active{% endif %}" href="{{ url_for('core.overview', site=site.slug) }}" data-full-page="true" title="概览">
+          <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg>
+          <span class="left-nav-item-text">概览</span>
+        </a>
         {# 侧栏页面图标：优先按页面用途匹配，未知页面回退为通用文件图标。 #}
         {% macro left_page_icon(item) %}
           {% set target = item.target | default('') | lower %}
@@ -422,7 +425,7 @@
         {# ---- 菜单渲染 ---- #}
         {% macro render_left_menu(items, level=0) %}
         {% for item in items %}
-        {% if item.type != 'home' %}
+        {% if item.type not in ('home', 'link') %}
         {% set has_children = item.children | default([]) | length > 0 %}
         {% if has_children %}
         <div class="left-nav-group" data-level="{{ level }}">
@@ -481,30 +484,30 @@
         {% for item in left_menu_items %}
           {% if item.type in ('list', 'group') %}
             {% set page_groups.list_pages = page_groups.list_pages + [item] %}
-          {% elif item.type in ('page', 'link') %}
+          {% elif item.type == 'page' %}
             {% set page_groups.independent_pages = page_groups.independent_pages + [item] %}
           {% endif %}
         {% endfor %}
         {% if page_groups.list_pages %}
         <div class="left-nav-page-type-group">
-          <button class="left-nav-page-group-toggle" type="button" onclick="togglePageGroup(this)" aria-expanded="true">
+          <button class="left-nav-page-group-toggle" type="button" onclick="togglePageGroup(this)" aria-expanded="false">
             <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 9h9"/><path d="M8 15h9"/><path d="M5.5 9h.01"/><path d="M5.5 15h.01"/></svg>
             <span class="left-nav-item-text">列表页</span>
             <svg class="left-nav-page-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
           </button>
-          <div class="left-nav-page-group-body">
+          <div class="left-nav-page-group-body" hidden>
             {{ render_left_menu(page_groups.list_pages, 1) }}
           </div>
         </div>
         {% endif %}
         {% if page_groups.independent_pages %}
         <div class="left-nav-page-type-group">
-          <button class="left-nav-page-group-toggle" type="button" onclick="togglePageGroup(this)" aria-expanded="true">
+          <button class="left-nav-page-group-toggle" type="button" onclick="togglePageGroup(this)" aria-expanded="false">
             <svg class="left-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/><path d="M9 13h8"/><path d="M9 17h6"/></svg>
             <span class="left-nav-item-text">独立页面</span>
             <svg class="left-nav-page-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
           </button>
-          <div class="left-nav-page-group-body">
+          <div class="left-nav-page-group-body" hidden>
             {{ render_left_menu(page_groups.independent_pages, 1) }}
           </div>
         </div>
@@ -515,7 +518,7 @@
       </div>
       {% if user %}
       <div class="left-nav-account" id="accountWorkspaceTrigger" title="{{ account_identifier or user.email }}" onclick="openAccountWorkspace()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAccountWorkspace()}" role="button" tabindex="0" aria-label="打开账户中心">
-        <span class="left-nav-account-avatar">{% if account_avatar_url %}<img src="{{ account_avatar_url }}" alt="">{% else %}{{ (user.display_name or account_identifier or user.email)[:1] }}{% endif %}</span>
+        <span class="left-nav-account-avatar"><span class="avatar-fallback" {% if account_avatar_url %}hidden{% endif %}>{{ (user.display_name or account_identifier or user.email)[:1] }}</span>{% if account_avatar_url %}<img src="{{ account_avatar_url }}" alt="" onerror="this.hidden=true;this.previousElementSibling.hidden=false">{% endif %}</span>
         <span class="left-nav-account-info">
           <strong>{{ user.display_name or (account_identifier or user.email).split('@')[0] }}</strong>
           <small>{{ account_identifier or user.email }}</small>
@@ -2126,6 +2129,7 @@
       var link = e.target.closest('a.left-nav-item');
       if (!link) return;
       var href = link.getAttribute('href');
+      if (link.dataset.fullPage === 'true') return;
       // 外部链接（link 类型菜单项、新标签页、或 href 以 http(s):// 开头）：让浏览器正常处理，不拦截
       if (link.classList.contains('external-link') || link.getAttribute('target') === '_blank' || (href && /^https?:\/\//.test(href))) return;
       e.preventDefault();
@@ -2343,6 +2347,16 @@
       var initialUrl = previewUrlForPage('/');
       if (frame) frame.dataset.previewUrl = initialUrl;
       openPreviewTab('home', '首页', initialUrl);
+    })();
+
+    (function openRequestedWorkbenchPanel() {
+      var key = new URLSearchParams(window.location.search).get('open');
+      if (!key) return;
+      var selector = key === 'home'
+        ? '.left-nav-item[data-panel="pages_home"]'
+        : '.left-nav-item[data-panel="' + CSS.escape(key) + '"]';
+      var link = document.querySelector(selector);
+      if (link) setTimeout(function () { link.click(); }, 0);
     })();
 
     function currentPreviewLanguage() {
@@ -2620,16 +2634,6 @@
       body.hidden = expanded;
     }
 
-    var LEFT_NAV_SECTION_STORAGE_KEY = 'adminLeftNavSections:{{ site.id if site else "none" }}';
-
-    function readLeftSectionState() {
-      try {
-        return JSON.parse(localStorage.getItem(LEFT_NAV_SECTION_STORAGE_KEY) || '{}');
-      } catch (e) {
-        return {};
-      }
-    }
-
     function setLeftSectionExpanded(button, expanded) {
       var bodyId = button.getAttribute('aria-controls');
       var body = bodyId ? document.getElementById(bodyId) : null;
@@ -2642,18 +2646,13 @@
     function toggleLeftSection(button) {
       var expanded = button.getAttribute('aria-expanded') === 'true';
       setLeftSectionExpanded(button, !expanded);
-      var state = readLeftSectionState();
-      state[button.dataset.section] = !expanded;
-      try {
-        localStorage.setItem(LEFT_NAV_SECTION_STORAGE_KEY, JSON.stringify(state));
-      } catch (e) {}
     }
 
     (function initLeftNavSections() {
-      var state = readLeftSectionState();
+      var defaults = { content: false, settings: false, pages: true };
       document.querySelectorAll('.left-nav-section-title[data-section]').forEach(function (button) {
-        var expanded = state[button.dataset.section] !== false;
-        setLeftSectionExpanded(button, expanded);
+        var section = button.dataset.section;
+        setLeftSectionExpanded(button, defaults[section] !== false);
       });
     })();
 
@@ -2746,12 +2745,12 @@
 
     // ---- 侧栏收缩/展开 + hover 弹出标签 ----
     (function () {
-      var STORAGE_KEY = 'admin_sidebar_collapsed';
       var nav = document.getElementById('leftNav');
       var btn = document.getElementById('sidebarToggleBtn');
       if (!nav || !btn) return;
 
-      var collapsed = localStorage.getItem(STORAGE_KEY) === '1';
+      // 每次加载都恢复截图中的默认状态：整栏展开。
+      var collapsed = false;
 
       // 创建浮动 tooltip，挂到 body 上避免被 overflow 裁剪
       var tooltip = document.createElement('div');
@@ -2819,14 +2818,12 @@
 
       btn.addEventListener('click', function () {
         collapsed = !collapsed;
-        localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0');
         applyState();
       });
 
       // 暴露给拖拽模块同步内部 collapsed 状态
       window._sidebarSetCollapsed = function (val) {
         collapsed = val;
-        localStorage.setItem(STORAGE_KEY, val ? '1' : '0');
       };
       window._sidebarIsCollapsed = function () { return collapsed; };
 
@@ -2834,7 +2831,6 @@
       window._sidebarExpand = function () {
         if (collapsed) {
           collapsed = false;
-          localStorage.setItem(STORAGE_KEY, '0');
           applyState();
         }
       };

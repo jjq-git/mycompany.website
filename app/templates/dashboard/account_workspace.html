@@ -32,9 +32,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>账户中心</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-account.css') }}?v=20260716-15">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-account.css') }}?v=20260720-site-identity">
 </head>
 <body>
+  <script>if(parent&&parent!==window){document.documentElement.classList.add('account-workspace-embedded');}</script>
   {% if request.args.get('workspace_changed') %}
   <script>if(parent&&parent!==window){parent.accountWorkspaceNeedsReload=true;}</script>
   {% endif %}
@@ -47,6 +48,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
           <span>返回工作台</span>
         </a>
+        <form class="account-standalone-logout" method="post" action="{{ url_for('core.logout') }}" target="_top">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" title="退出登录" aria-label="退出登录">{{ action_icon('logout') }}</button>
+        </form>
       </div>
       <nav aria-label="账户中心导航">
         <a class="account-nav-link {{ 'active' if section == 'profile' else '' }}" href="{{ url_for('core.account', section='profile') }}">
@@ -71,7 +76,7 @@
         {% if user.role == 'admin' %}<div class="account-platform-group"><span class="account-platform-label">平台后台</span><a class="account-nav-link {{ 'active' if section == 'platform' else '' }}" href="{{ url_for('core.account', section='platform') }}"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M9 12h6M12 9v6"/></svg>用户管理</a></div>{% endif %}
       </nav>
       <div class="account-user">
-        {% if account_avatar_url %}<img class="account-user-avatar" src="{{ account_avatar_url }}" alt="{{ account_name }}">{% else %}<b>{{ account_name[:1] }}</b>{% endif %}
+        <b class="account-user-avatar-fallback" {% if account_avatar_url %}hidden{% endif %}>{{ account_name[:1] }}</b>{% if account_avatar_url %}<img class="account-user-avatar" src="{{ account_avatar_url }}" alt="" onerror="this.hidden=true;this.previousElementSibling.hidden=false">{% endif %}
         <span><strong>{{ account_name }}</strong><small>{{ visible_identifier }}</small></span>
       </div>
     </aside>
@@ -88,7 +93,7 @@
         <section class="account-card">
           <h2>基本资料</h2>
           <div class="profile-avatar-row">
-            <label class="profile-avatar" for="accountAvatarInput" title="点击上传或更换头像">{% if account_avatar_url %}<img id="accountAvatarPreview" src="{{ account_avatar_url }}" alt="{{ account_name }}">{% else %}<span id="accountAvatarFallback">{{ account_name[:1] }}</span><img id="accountAvatarPreview" alt="{{ account_name }}" hidden>{% endif %}<span class="avatar-edit-overlay">{{ action_icon('upload') }}</span></label>
+            <label class="profile-avatar" for="accountAvatarInput" title="点击上传或更换头像"><span id="accountAvatarFallback" {% if account_avatar_url %}hidden{% endif %}>{{ account_name[:1] }}</span><img id="accountAvatarPreview" {% if account_avatar_url %}src="{{ account_avatar_url }}"{% endif %} alt="" {% if not account_avatar_url %}hidden{% endif %} onerror="this.hidden=true;document.getElementById('accountAvatarFallback').hidden=false"><span class="avatar-edit-overlay">{{ action_icon('upload') }}</span></label>
             <div class="profile-avatar-copy"><strong>{{ account_name }}</strong><p>点击头像可更换；支持 JPG、PNG、WebP、GIF，最大 5MB，上传后自动适配圆形头像。</p></div>
             <input id="accountAvatarInput" class="avatar-file-input" type="file" name="avatar" accept="image/jpeg,image/png,image/webp,image/gif">
           </div>
@@ -103,15 +108,27 @@
       </form>
 
       {% elif section == 'sites' %}
-      {% if site_create_step %}
+      {% if editing_site %}
+      <header class="account-heading heading-row"><div><h1>编辑站点信息</h1><p>修改后台识别名称和站点地址；网站中展示的品牌名称请在网站设置中修改。</p></div><a class="secondary-btn icon-btn" href="{{ url_for('core.account', section='sites') }}" title="返回我的站点" aria-label="返回我的站点">{{ action_icon('left') }}</a></header>
+      <form class="account-card site-identity-form" method="post" action="{{ url_for('core.account_site_identity_update', site_id=editing_site.id) }}" data-original-slug="{{ editing_site.slug }}" data-published="{{ '1' if editing_site.status == 'published' else '0' }}" onsubmit="return confirmSiteIdentityUpdate(this)">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="slug_change_confirmed" value="0">
+        <h2>站点级信息</h2>
+        <div class="form-grid">
+          <label>站点名称<input name="name" value="{{ editing_site.name }}" maxlength="200" required><small>仅用于后台识别站点，不影响网站中展示的公司或品牌名称。</small></label>
+          <label>站点标识（Slug）<input name="slug" value="{{ editing_site.slug }}" minlength="3" maxlength="30" pattern="[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?" required><small>用于后台识别和生成平台默认地址，例如 {{ editing_site.slug }}.{{ platform_domain }}。绑定独立域名后，仍作为内部标识和备用地址。</small></label>
+        </div>
+        {% if editing_site.status == 'published' %}<div class="site-slug-warning"><strong>已发布站点</strong><span>修改 Slug 会改变当前访问地址。保存时需要再次确认，旧 Slug 将作为历史地址继续解析。</span></div>{% endif %}
+        <div class="card-actions"><a class="secondary-btn" href="{{ url_for('core.account', section='sites') }}">取消</a><button class="primary-btn icon-btn" type="submit" title="保存站点信息" aria-label="保存站点信息">{{ action_icon('save') }}</button></div>
+      </form>
+      {% elif site_create_step %}
       {% include "dashboard/account_site_create.html" %}
       {% else %}
-      <header class="account-heading heading-row"><div><h1>我的站点</h1><p>集中查看站点状态；内容编辑和发布仍在工作台完成。</p></div>{% if can_create_sites %}<a class="primary-btn icon-btn" href="{{ url_for('core.account', section='sites', create='templates') }}" title="新建站点" aria-label="新建站点">{{ action_icon('add') }}</a>{% endif %}</header>
+      <header class="account-heading heading-row"><div><h1>我的站点</h1><p>集中查看站点状态；内容编辑和发布仍在工作台完成。</p></div>{% if can_create_sites %}<a class="primary-btn icon-btn" href="{{ url_for('core.templates_gallery') }}" target="_top" title="新建站点" aria-label="新建站点">{{ action_icon('add') }}</a>{% endif %}</header>
       {% if active_sites %}<div class="site-grid">
         {% for item in active_sites %}<article class="account-card site-card">
           <div class="site-card-head"><div><h2>{{ item.name }}</h2><code>/{{ item.slug }}</code></div><span class="status {{ item.status }}">{{ {'draft':'草稿','published':'已发布','suspended':'已停用'}.get(item.status,item.status) }}</span></div>
           <dl><div><dt>模板</dt><dd>{{ item.template_name }}{% if item.template_version %} · {{ item.template_version }}{% endif %}</dd></div><div><dt>语言</dt><dd>{{ (item.enabled_languages or [item.default_language])|join('、') }}</dd></div><div><dt>最近发布</dt><dd>{{ item.last_published_at.strftime('%Y-%m-%d %H:%M') if item.last_published_at else '尚未发布' }}</dd></div></dl>
-          <div class="site-actions"><a class="primary-btn icon-btn" href="{{ url_for('core.index', site=item.id) }}" target="_top" title="进入编辑" aria-label="进入编辑">{{ action_icon('edit') }}</a><a class="secondary-btn icon-btn" href="{{ url_for('core.preview_site', site_id=item.id) }}" target="_blank" title="预览" aria-label="预览">{{ action_icon('view') }}</a><a class="secondary-btn icon-btn" href="{{ url_for('core.export_zip', site=item.id) }}" target="_top" title="导出" aria-label="导出">{{ action_icon('download') }}</a><form class="site-publish-form" method="post" action="{{ url_for('core.publish_site', site=item.id) }}" onsubmit="return confirm('确认发布站点“{{ item.name }}”？')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-btn icon-btn" type="submit" title="发布站点" aria-label="发布站点">{{ action_icon('publish') }}</button></form><form class="site-trash-form" method="post" action="{{ url_for('core.account_site_trash', site_id=item.id) }}" onsubmit="return confirm('将站点“{{ item.name }}”移入回收站？站点文件不会被删除。')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="danger-link icon-btn" type="submit" title="移入回收站" aria-label="移入回收站">{{ action_icon('trash') }}</button></form></div>
+          <div class="site-actions"><a class="primary-btn icon-btn" href="{{ url_for('core.account', section='sites', edit=item.id) }}" title="编辑站点信息" aria-label="编辑站点信息">{{ action_icon('edit') }}</a><a class="secondary-btn icon-btn" href="{{ url_for('core.workbench', site=item.slug, open='home') }}" target="_top" title="进入工作台" aria-label="进入工作台">{{ action_icon('right') }}</a><a class="secondary-btn icon-btn" href="{{ url_for('core.preview_site', site_id=item.id) }}" target="_blank" title="预览" aria-label="预览">{{ action_icon('view') }}</a><a class="secondary-btn icon-btn" href="{{ url_for('core.export_zip', site=item.id) }}" target="_top" title="导出" aria-label="导出">{{ action_icon('download') }}</a><form class="site-publish-form" method="post" action="{{ url_for('core.publish_site', site=item.id) }}" onsubmit="return confirm('确认发布站点“{{ item.name }}”？')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-btn icon-btn" type="submit" title="发布站点" aria-label="发布站点">{{ action_icon('publish') }}</button></form><form class="site-trash-form" method="post" action="{{ url_for('core.account_site_trash', site_id=item.id) }}" onsubmit="return confirm('将站点“{{ item.name }}”移入回收站？站点文件不会被删除。')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="danger-link icon-btn" type="submit" title="移入回收站" aria-label="移入回收站">{{ action_icon('trash') }}</button></form></div>
         </article>{% endfor %}
       </div>{% else %}<section class="account-card empty-state"><h2>还没有个人站点</h2><p>{% if can_create_sites %}可以从模板库创建站点，或到回收站恢复已有站点。{% else %}这是受邀成员账号，请到“组织与成员”查看团队共享站点。{% endif %}</p></section>{% endif %}
       {% endif %}
@@ -166,6 +183,17 @@
     </main>
   </div>
   <script>
+  function confirmSiteIdentityUpdate(form){
+    var slugInput=form.querySelector('input[name="slug"]');
+    var original=(form.dataset.originalSlug||'').trim();
+    var next=(slugInput&&slugInput.value||'').trim().toLowerCase();
+    if(slugInput)slugInput.value=next;
+    if(next!==original&&form.dataset.published==='1'){
+      if(!confirm('该站点已经发布。修改 Slug 后访问地址会变化，确定继续吗？'))return false;
+      form.querySelector('input[name="slug_change_confirmed"]').value='1';
+    }
+    return true;
+  }
   (function(){
     var input=document.getElementById('accountAvatarInput');
     if(!input)return;

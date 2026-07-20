@@ -219,13 +219,13 @@ DETAIL_CONTENT_MODULE_TO_TYPE = {
 
 
 DETAIL_COMPONENT_TYPES = {
+    '_detail_base_header',
     'detail_media',
     'detail_text',
     'detail_content',
     'detail_content_blocks',
     'detail_specs',
     'detail_table',
-    'detail_actions',
     'detail_link',
     'detail_features',
     'detail_files',
@@ -358,8 +358,7 @@ def _render_detail_media(item, data):
         tags_html = ''.join(f'<span class="badge badge-primary item-data-tag">{escape(tag.strip())}</span>' for tag in re.split(r'[,，]+', tags) if tag.strip())
     else:
         tags_html = ''
-    embedded_actions = data.get('_detail_actions') if isinstance(data.get('_detail_actions'), dict) else {}
-    actions_html = _detail_actions_html(item, embedded_actions) if embedded_actions else ''
+    actions_html = _detail_actions_html(item)
     info_html = (
         '<div class="item-data-info detail-media-copy">'
         f'{f"<div class=\"item-data-category\">{escape(category)}</div>" if category else ""}'
@@ -426,52 +425,51 @@ def _render_detail_media(item, data):
     return Markup(f'<section class="section detail-component detail-media {layout_class} item-data-section"{section_style}><div class="container">{body}</div></section>')
 
 
-def _detail_actions_html(item, data):
-    action_mode = str(data.get('action_buttons') or 'primary_secondary')
-    action_count = 2 if action_mode == 'primary_secondary' else 1
-    start_index = _detail_int(data.get('_detail_link_index'), 0)
-    saved_links = item.get('detail_links') if isinstance(item.get('detail_links'), list) else []
-    show_placeholder = data.get('empty_behavior') == 'show_placeholder'
+def _detail_actions_html(item):
+    saved_actions = item.get('detail_actions') if isinstance(item.get('detail_actions'), dict) else {}
     action_html = []
-    for offset in range(action_count):
-        link_index = start_index + offset
-        entry = saved_links[link_index] if link_index < len(saved_links) and isinstance(saved_links[link_index], dict) else {}
-        fallback_label = data.get('primary_label') if offset == 0 else data.get('secondary_label')
-        label = entry.get('text') or entry.get('label') or fallback_label or ''
+    for variant in ('primary', 'secondary'):
+        entry = saved_actions.get(variant) if isinstance(saved_actions.get(variant), dict) else {}
+        label = str(entry.get('text') or entry.get('label') or '').strip()
         url = entry.get('url') or entry.get('link_url') or ''
-        if not url and link_index == 0:
-            url = item.get('link_url') or item.get('button_url') or ''
-            label = entry.get('text') or item.get('link_text') or item.get('button_text') or fallback_label or ''
-        if not url and not show_placeholder:
+        url = str(url or '').strip()
+        if url and not re.match(r'^(?:https?://|mailto:|tel:|#|/|\./|\.\./)', url, flags=re.IGNORECASE):
+            url = ''
+        if not label or not url:
             continue
-        variant = 'primary' if offset == 0 else 'secondary'
-        if url:
-            action_html.append(
-                f'<a class="detail-media-action detail-media-action--{variant}" href="{escape(url)}">{escape(label or url)}</a>'
-            )
-        else:
-            action_html.append(
-                f'<span class="detail-media-action detail-media-action--{variant} is-disabled" aria-disabled="true">{escape(label)}</span>'
-            )
+        action_html.append(
+            f'<a class="detail-media-action detail-media-action--{variant}" href="{escape(url)}">{escape(label)}</a>'
+        )
     if not action_html:
         return ''
-    align = str(data.get('align') or 'left')
-    justify = {'left': 'flex-start', 'center': 'center', 'right': 'flex-end'}.get(align, 'flex-start')
-    return f'<div class="detail-media-actions" style="justify-content:{justify}">{"".join(action_html)}</div>'
+    return f'<div class="detail-media-actions">{"".join(action_html)}</div>'
 
 
-def _render_detail_actions(item, data):
-    """Render actions standalone when no media component is available."""
-    if data.get('_embedded_in_media'):
-        return Markup('')
-    actions_html = _detail_actions_html(item, data)
-    if not actions_html:
-        return Markup('')
-    align = str(data.get('align') or 'left')
-    section_style = _detail_component_style(data)
+def _render_detail_base_header(item, data):
+    """Render core detail information when the template has no media component."""
+    title = item.get('title') or item.get('name') or ''
+    summary = _first_text(item.get('summary'), item.get('description'), item.get('excerpt'))
+    publication_date = _first_text(item.get('date'), item.get('publish_date'), item.get('published_at'))
+    category = item.get('category')
+    tags = item.get('tags')
+    if isinstance(tags, list):
+        tags_html = ''.join(f'<span class="badge badge-primary item-data-tag">{escape(tag)}</span>' for tag in tags[:8] if tag)
+    elif isinstance(tags, str) and tags.strip():
+        tags_html = ''.join(f'<span class="badge badge-primary item-data-tag">{escape(tag.strip())}</span>' for tag in re.split(r'[,，]+', tags) if tag.strip())
+    else:
+        tags_html = ''
+    actions_html = _detail_actions_html(item)
     return Markup(
-        f'<section class="section detail-component detail-actions detail-actions--{escape(align)}"{section_style}>'
-        f'<div class="container">{actions_html}</div>'
+        '<section class="section detail-component detail-base-header item-data-section"><div class="container">'
+        '<article class="item-data-article item-detail-header-only">'
+        '<div class="item-data-info detail-media-copy detail-media-copy--solo" style="position:static;max-width:860px">'
+        f'{f"<div class=\"item-data-category\">{escape(category)}</div>" if category else ""}'
+        f'{f"<h1 class=\"item-data-title\">{escape(title)}</h1>" if title else ""}'
+        f'{f"<time class=\"item-data-date\" datetime=\"{escape(publication_date)}\">{escape(publication_date)}</time>" if publication_date else ""}'
+        f'{f"<p class=\"item-data-desc\">{escape(summary)}</p>" if summary else ""}'
+        f'{f"<div class=\"item-data-tags\">{tags_html}</div>" if tags_html else ""}'
+        f'{actions_html}'
+        '</div></article></div>'
         f'</section>'
     )
 
@@ -1171,6 +1169,8 @@ def _render_detail_component(jinja_ctx, module):
     raw_data = module.get('data') if isinstance(module.get('data'), dict) else {}
     data = _localized_detail_component_data(jinja_ctx, raw_data)
     block_type = module.get('type')
+    if block_type == '_detail_base_header':
+        return _render_detail_base_header(item, data)
     if block_type == 'detail_media':
         return _render_detail_media(item, data)
     if block_type == 'detail_text':
@@ -1185,8 +1185,6 @@ def _render_detail_component(jinja_ctx, module):
         return _render_detail_specs(item, data)
     if block_type == 'detail_table':
         return _render_detail_table(item, data)
-    if block_type == 'detail_actions':
-        return _render_detail_actions(item, data)
     if block_type == 'detail_link':
         return _render_detail_link(item, data)
     if block_type == 'detail_features':
@@ -2210,6 +2208,10 @@ def _is_legacy_item_detail_override(modules):
 
 
 def _annotate_detail_modules(modules):
+    modules[:] = [
+        module for module in (modules or [])
+        if not (isinstance(module, dict) and module.get('type') == 'detail_actions')
+    ]
     link_index = 0
     table_index = 0
     specs_index = 0
@@ -2220,24 +2222,17 @@ def _annotate_detail_modules(modules):
         module for module in (modules or [])
         if isinstance(module, dict) and module.get('type') == 'detail_media'
     ]
+    if not media_modules:
+        modules.insert(0, {'type': '_detail_base_header', 'variant': 'default', 'data': {}})
     for module in modules or []:
         if not isinstance(module, dict):
             continue
-        if module.get('type') in ('detail_actions', 'detail_link', 'detail_table', 'detail_content_blocks', 'detail_content') or module.get('type') in DETAIL_CONTENT_MODULE_TO_TYPE:
+        if module.get('type') in ('detail_link', 'detail_table', 'detail_content_blocks', 'detail_content') or module.get('type') in DETAIL_CONTENT_MODULE_TO_TYPE:
             data = module.get('data') if isinstance(module.get('data'), dict) else {}
             module['data'] = data
         if module.get('type') == 'detail_link':
             data['_detail_link_index'] = link_index
             link_index += 1
-        if module.get('type') == 'detail_actions':
-            data['_detail_link_index'] = link_index
-            action_mode = str(data.get('action_buttons') or 'primary_secondary')
-            link_index += 2 if action_mode == 'primary_secondary' else (1 if action_mode == 'primary' else 0)
-            if media_modules:
-                media_data = media_modules[0].get('data') if isinstance(media_modules[0].get('data'), dict) else {}
-                media_modules[0]['data'] = media_data
-                media_data['_detail_actions'] = dict(data)
-                data['_embedded_in_media'] = True
         if module.get('type') == 'detail_table':
             data['_detail_table_index'] = table_index
             table_index += 1

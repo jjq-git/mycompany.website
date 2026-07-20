@@ -1,2 +1,19 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>登录 — {{ platform_domain }}</title><link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}?v=20260716-1"></head>
-<body><main class="auth-wrap"><div class="auth-brand">{{ platform_domain }}</div><section class="auth-card"><h1>登录账号</h1><p class="auth-lead">使用邮箱或手机号登录网站工作台。</p>{% include 'auth/_messages.html' %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>邮箱或手机号<input name="identifier" value="{{ identifier or '' }}" autocomplete="username" autofocus required placeholder="name@example.com / +86 13800000000"></label><label>密码<input name="password" type="password" autocomplete="current-password" required></label><button class="auth-primary" type="submit">登录</button></form><div class="auth-links"><a href="{{ url_for('core.password_setup') }}">设置或找回密码</a><a href="{{ url_for('core.register') }}">注册账号</a></div></section></main></body></html>
+{% from 'auth/_icons.html' import auth_icon, password_toggle %}
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>登录 — {{ platform_domain }}</title><link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}?v=20260720-auth-ui"></head>
+<body><main class="auth-wrap">
+  <div class="auth-brand"><img src="http://192.168.1.88:3000/attachments/74eb0913-3298-4a00-82f8-fe1c02db27ec" alt="{{ platform_domain }}"></div>
+  <section class="auth-card">
+    <div class="auth-heading"><span class="auth-heading-icon">{{ auth_icon('login') }}</span><h1>登录账号</h1></div>
+    <p class="auth-lead">使用邮箱或手机号登录网站工作台。</p>
+    {% include 'auth/_messages.html' %}
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>邮箱或手机号<div class="auth-input-wrap">{{ auth_icon('mail') }}<input name="identifier" value="{{ identifier or '' }}" autocomplete="username" autofocus required placeholder="name@example.com / +86 13800000000"></div></label>
+      <label>密码<div class="auth-input-wrap">{{ auth_icon('lock') }}<input name="password" type="password" autocomplete="current-password" required>{{ password_toggle() }}</div></label>
+      <button class="auth-primary" type="submit">{{ auth_icon('login') }}<span>登录</span></button>
+    </form>
+    <div class="auth-links"><a href="{{ url_for('core.password_setup') }}">{{ auth_icon('key') }}<span>设置或找回密码</span></a><a href="{{ url_for('core.register') }}">{{ auth_icon('user-plus') }}<span>注册账号</span></a></div>
+  </section>
+</main>{% include 'auth/_password_script.html' %}</body></html>

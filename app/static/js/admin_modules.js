@@ -235,7 +235,6 @@
       tb += btn('superscript', '上标', icons.sup);
     }
     tb += '<input type="color" class="rte-color-picker" value="#141413" title="文字颜色">';
-    tb += btn('removeFormat', '清除格式', icons.clear);
     tb += '<span class="rte-sep"></span>';
     // G8 撤销/重做
     tb += btn('undo', '撤销', icons.undo);

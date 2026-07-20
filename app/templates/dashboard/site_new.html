@@ -1,12 +1,25 @@
-{% extends "base.html" %}
+{% extends "dashboard/onboarding_base.html" %}
 {% block title %}新建站点{% endblock %}
+
+{% block head %}
+<style>
+  .site-create-card{border:1px solid #dbe3ea;background:#fff;box-shadow:0 10px 24px rgba(15,23,42,.05)}
+  .site-create-card .panel-section{padding:22px 24px;border-bottom:1px solid #e5e9ed}
+  .site-create-card .panel-section-title{margin-bottom:16px;font-weight:700}
+  .template-pick-card{display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:center;padding:18px 24px;border:1px solid #dbe3ea;background:#fff}
+  .template-pick-thumb{display:grid;place-items:center;height:76px;background:#eef2f5;color:#0d9488}
+  .template-pick-name{font-size:17px;font-weight:700}.template-pick-meta,.template-pick-desc{margin-top:5px;color:#718096;font-size:13px}
+  .site-create-actions{display:flex;gap:10px;padding:18px 24px}
+  @media(max-width:600px){.template-pick-card{grid-template-columns:1fr}.site-create-card .panel-section{padding:18px 16px}}
+</style>
+{% endblock %}
 
 {% block content %}
 <div>
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <span class="fw-semibold">新建站点</span>
-    <a href="{{ url_for('core.templates_gallery') }}" class="btn btn-sm btn-outline-secondary">← 返回模板库</a>
-  </div>
+  <a href="{{ url_for('core.templates_gallery') }}" class="onboard-back">← 返回模板选择</a>
+  <div class="onboard-step">步骤 2 / 2</div>
+  <h1 class="onboard-title">设置站点信息</h1>
+  <p class="onboard-subtitle">填写基本信息并选择语言版本，创建完成后将直接进入站点概览。</p>
 
   {% if error %}
   <div class="alert alert-danger py-2 small">{{ error }}</div>
@@ -26,7 +39,7 @@
   </div>
   {% endif %}
 
-  <form method="post" action="{{ url_for('core.site_new', template=template.name if template else '') }}{% if request.args.get('_fragment') %}{{ '?_fragment=1' }}{% endif %}" id="siteNewForm">
+  <form method="post" action="{{ url_for('core.site_new', template=template.name if template else '') }}{% if request.args.get('_fragment') %}{{ '?_fragment=1' }}{% endif %}" id="siteNewForm" class="site-create-card">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="panel-section">
       <div class="panel-section-title">站点信息</div>
@@ -55,7 +68,7 @@
       </div>
 
       <div class="mb-0">
-        <label class="form-label small mb-1">站点 Slug</label>
+        <label class="form-label small mb-1">站点标识（Slug）</label>
         <div class="input-group input-group-sm slug-input-group">
           <input type="text" class="form-control" name="slug"
                  value="{{ form.slug or '' }}" required
@@ -63,7 +76,7 @@
                  placeholder="my-company">
           <span class="input-group-text text-muted">.{{ platform_domain }}</span>
         </div>
-        <div class="form-text">3-30 字符，小写字母/数字/连字符。发布后可通过此地址访问。</div>
+        <div class="form-text">用于后台识别和生成上方平台默认地址。绑定独立域名后，仍作为内部标识和备用地址；仅支持 3–30 位小写字母、数字或连字符。</div>
         <div class="small mt-1" id="siteSlugStatus" aria-live="polite"></div>
       </div>
     </div>
@@ -75,7 +88,7 @@
       <div class="text-danger small mt-2" id="templateLanguageError" style="display:none;">请选择至少一种语言版本</div>
     </div>
 
-    <div class="d-flex gap-2 mt-3">
+    <div class="site-create-actions">
       <button type="submit" class="btn btn-primary btn-sm">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="me-1"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         创建站点
@@ -87,6 +100,7 @@
 
 <script>
 (function(){
+  var IS_FRAGMENT = {{ (request.args.get('_fragment') is not none) | tojson }};
   var TEMPLATE_LANGUAGES = {{ template_language_map | tojson }};
   var TEMPLATE_DEFAULT_LANGS = {{ template_default_language_map | tojson }};
   var SELECTED_LANGS = {{ (form.enabled_languages | default([])) | tojson }};
@@ -151,13 +165,15 @@
   slugInput?.addEventListener('blur', checkSlugAvailability);
 
   form.addEventListener('submit', function(e){
-    e.preventDefault();
     var checkedLangs = form.querySelectorAll('input[name="enabled_lang"]:checked');
     if (!checkedLangs.length) {
+      e.preventDefault();
       var langError = document.getElementById('templateLanguageError');
       if (langError) langError.style.display = '';
       return;
     }
+    if (!IS_FRAGMENT) return;
+    e.preventDefault();
 
     var btn = form.querySelector('button[type="submit"]');
     var origText = btn.innerHTML;

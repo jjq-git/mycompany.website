@@ -27,15 +27,13 @@
   .ds-template-row{display:grid;grid-template-columns:88px minmax(360px,1fr) minmax(260px,420px);gap:12px;align-items:center}
   .ds-basic-grid{display:grid;grid-template-columns:minmax(260px,360px) minmax(420px,1fr);gap:12px}
   .ds-basic-full{grid-column:1 / -1}
-  .detail-actions-basic{display:none;margin-top:2px;padding-top:12px;border-top:1px solid #edf2f7}
+  .detail-actions-basic{margin-top:2px;padding-top:12px;border-top:1px solid #edf2f7}
   .detail-actions-basic-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
   .detail-actions-basic-title{font-size:12px;font-weight:700;color:#334155}
   .detail-actions-basic-help{font-size:12px;color:#64748b;text-align:right}
-  #detailActionFieldsList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-  .dataset-edit-form .detail-action-item{display:grid!important;grid-template-columns:1fr!important;background:#fbfcfd;border:1px solid #e5e7eb!important;padding:10px!important;margin:0!important;gap:8px;overflow:visible}
-  .dataset-edit-form .detail-action-item>.small.fw-semibold{grid-column:1!important;grid-row:auto!important;padding:0 0 8px!important;margin:0!important;border:0!important;background:transparent!important}
-  .dataset-edit-form .detail-action-item>.mb-2,
-  .dataset-edit-form .detail-action-item>div:not(.small){grid-column:1!important;margin:0!important}
+  .detail-actions-basic-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .detail-action-basic-item{display:grid;grid-template-columns:minmax(130px,0.7fr) minmax(220px,1.3fr);gap:8px;background:#fbfcfd;border:1px solid #e5e7eb;padding:10px}
+  .detail-action-basic-label{grid-column:1 / -1;font-size:12px;font-weight:700;color:#334155}
   .ds-two-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .ds-media-grid{display:grid;grid-template-columns:240px minmax(420px,1fr);gap:18px;align-items:start}
   .ds-media-preview-col{display:grid;gap:8px}
@@ -191,7 +189,7 @@
   @media (max-width:900px){
     .ds-edit-head{padding:10px 10px 0}
     .dataset-edit-form{padding:10px 10px 76px}
-    .ds-template-row,.ds-basic-grid,.ds-two-grid,.ds-media-grid,.ds-side-card,.dataset-edit-form .detail-field-section,#detailGalleryList,#detailActionFieldsList{grid-template-columns:1fr}
+    .ds-template-row,.ds-basic-grid,.ds-two-grid,.ds-media-grid,.ds-side-card,.dataset-edit-form .detail-field-section,#detailGalleryList,.detail-actions-basic-grid,.detail-action-basic-item{grid-template-columns:1fr}
     .detail-content-block-item,.detail-content-media-grid,
     .dataset-edit-form .dataset-media-field,
     .dataset-edit-form .detail-gallery-item,
@@ -344,6 +342,9 @@
   {% set faq_items = edit_item.detail_faqs if edit_item.detail_faqs is iterable and edit_item.detail_faqs is not string else (edit_item.faqs if edit_item.faqs is iterable and edit_item.faqs is not string else []) %}
   {% set content_block_items = detail_content_editor_blocks if detail_content_editor_blocks is defined else (edit_item.detail_content_blocks if edit_item.detail_content_blocks is iterable and edit_item.detail_content_blocks is not string else (edit_item.content_blocks if edit_item.content_blocks is iterable and edit_item.content_blocks is not string else [])) %}
   {% set tags_val = edit_item.tags | join(', ') if edit_item.tags is iterable and edit_item.tags is not string else (edit_item.tags or '') %}
+  {% set detail_actions_value = edit_item.detail_actions if edit_item.detail_actions is mapping else {} %}
+  {% set primary_action = detail_actions_value.primary if detail_actions_value.primary is mapping else {} %}
+  {% set secondary_action = detail_actions_value.secondary if detail_actions_value.secondary is mapping else {} %}
 
   <div class="ds-card ds-side-card editor-component">
     <div class="ds-card-head editor-component__header">
@@ -390,9 +391,20 @@
         <div class="ds-basic-full detail-actions-basic" id="detailActionFields">
           <div class="detail-actions-basic-head">
             <div class="detail-actions-basic-title">详情页操作按钮</div>
-            <div class="detail-actions-basic-help">仅用于详情页；是否显示、按钮数量和样式由所选详情模板控制。</div>
+            <div class="detail-actions-basic-help">仅用于详情页；按钮名称和链接同时填写时才显示。</div>
           </div>
-          <div id="detailActionFieldsList"></div>
+          <div class="detail-actions-basic-grid">
+            <div class="detail-action-basic-item">
+              <div class="detail-action-basic-label">主按钮</div>
+              <input type="text" class="form-control form-control-sm" name="detail_action_primary_text" value="{{ primary_action.text or primary_action.label or '' }}" placeholder="按钮名称，例如：立即咨询">
+              <input type="text" class="form-control form-control-sm" name="detail_action_primary_url" value="{{ primary_action.url or primary_action.link_url or '' }}" placeholder="链接，例如：/contact/">
+            </div>
+            <div class="detail-action-basic-item">
+              <div class="detail-action-basic-label">副按钮</div>
+              <input type="text" class="form-control form-control-sm" name="detail_action_secondary_text" value="{{ secondary_action.text or secondary_action.label or '' }}" placeholder="按钮名称，例如：查看资料">
+              <input type="text" class="form-control form-control-sm" name="detail_action_secondary_url" value="{{ secondary_action.url or secondary_action.link_url or '' }}" placeholder="链接，例如：/downloads/">
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -896,12 +908,7 @@
     {% set link_count = namespace(value=0) %}
     {% for mod in tpl.modules | default(tpl.get('modules', [])) %}
       {% set mod_type_tmp = mod.type | default(mod.get('type')) %}
-      {% set mod_data_tmp = mod.data | default(mod.get('data', {})) %}
-      {% if mod_type_tmp == 'detail_actions' and (mod_data_tmp.action_buttons | default(mod_data_tmp.get('action_buttons', 'primary_secondary'))) == 'primary_secondary' %}
-        {% set link_count.value = link_count.value + 2 %}
-      {% elif mod_type_tmp == 'detail_actions' %}
-        {% set link_count.value = link_count.value + 1 %}
-      {% elif mod_type_tmp == 'detail_link' %}
+      {% if mod_type_tmp == 'detail_link' %}
         {% set link_count.value = link_count.value + 1 %}
       {% endif %}
     {% endfor %}
@@ -1019,7 +1026,7 @@
 </form>
 
 {# JS: 模块选择器交互 #}
-<script src="/static/js/admin_modules.js?v=133"></script>
+<script src="/static/js/admin_modules.js?v=134"></script>
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="iconListDsJson">{{ icon_list | default([]) | tojson }}</script>
@@ -1153,8 +1160,6 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var sections = {};
     var tableItems = Array.prototype.slice.call(document.querySelectorAll('.detail-table-item'));
     var linkItems = Array.prototype.slice.call(document.querySelectorAll('.detail-link-item'));
-    var actionFields = document.getElementById('detailActionFields');
-    var actionFieldsList = document.getElementById('detailActionFieldsList');
     var specSection = document.querySelector('[data-field-section="specs"]');
     document.querySelectorAll('.detail-field-section').forEach(function(section) {
       if (!section.classList.contains('detail-multi-section')) {
@@ -1175,14 +1180,6 @@ window._dsEditItemJson = {{ edit_item | tojson }};
       var data = (mod && mod.data) || {};
       if (type === 'detail_media' || type === 'item_detail' || type === 'image_carousel') {
         order.push('media', 'detail_images');
-      } else if (type === 'detail_actions') {
-        var actionMode = String(data.action_buttons || 'primary_secondary');
-        if (actionMode === 'primary' || actionMode === 'primary_secondary') {
-          detailLinkConfigs.push({title: '主按钮', text: data.primary_label || '立即咨询', isAction: true});
-        }
-        if (actionMode === 'primary_secondary') {
-          detailLinkConfigs.push({title: '副按钮', text: data.secondary_label || '查看资料', isAction: true});
-        }
       } else if (type === 'detail_text' || type === 'text_content') {
         order.push('body');
       } else if (type === 'detail_specs') {
@@ -1257,29 +1254,15 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     });
     var linksCountInput = document.getElementById('detailLinksCount');
     if (linksCountInput) linksCountInput.value = detailLinkConfigs.length;
-    var actionCount = detailLinkConfigs.filter(function(config) { return !!config.isAction; }).length;
-    if (actionFields) actionFields.style.display = actionCount ? '' : 'none';
     document.querySelectorAll('.detail-link-item').forEach(function(item) {
       var idx = parseInt(item.getAttribute('data-link-index') || '0', 10);
       var config = detailLinkConfigs[idx];
       item.style.display = config ? '' : 'none';
-      item.classList.toggle('detail-action-item', !!(config && config.isAction));
-      if (config && config.isAction && actionFieldsList) {
-        actionFieldsList.appendChild(item);
-      }
       if (config) {
         var titleEl = item.querySelector('.small.fw-semibold');
         if (titleEl) titleEl.textContent = componentLabel(config.title, '详情链接', idx, detailLinkConfigs.length);
         var textInput = item.querySelector('input[name$="_text"]');
         if (textInput && !textInput.value && config.text) textInput.value = config.text;
-        var fieldLabels = item.querySelectorAll('.form-label');
-        if (config.isAction && fieldLabels.length >= 2) {
-          fieldLabels[0].textContent = '按钮文字';
-          fieldLabels[1].textContent = '按钮链接';
-        } else if (fieldLabels.length >= 2) {
-          fieldLabels[0].textContent = '链接文字';
-          fieldLabels[1].textContent = '链接地址';
-        }
       }
     });
     updateDetailTableFields(detailTableConfigs);

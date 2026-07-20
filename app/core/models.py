@@ -150,6 +150,18 @@ class Site(db.Model):
     template = db.relationship('Template')
 
 
+class SiteSlugAlias(db.Model):
+    """站点历史 Slug；修改地址后继续解析旧链接。"""
+    __tablename__ = 'site_slug_aliases'
+
+    id = db.Column(db.Integer, primary_key=True)
+    site_id = db.Column(db.Integer, db.ForeignKey('sites.id', ondelete='CASCADE'), nullable=False, index=True)
+    slug = db.Column(db.String(30), unique=True, nullable=False, index=True)
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
+
+    site = db.relationship('Site', backref=db.backref('slug_aliases', cascade='all, delete-orphan'))
+
+
 class Organization(db.Model):
     """团队协作边界；站点所有权仍由 Site.owner_id 兜底。"""
     __tablename__ = 'organizations'
