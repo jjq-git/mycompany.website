@@ -67,8 +67,18 @@ def load_config(override=None):
         'SMTP_PASSWORD': os.environ.get('SMTP_PASSWORD', ''),
         'SMTP_FROM': os.environ.get('SMTP_FROM', '').strip(),
         'SMTP_USE_TLS': os.environ.get('SMTP_USE_TLS', '1').strip() != '0',
+        # SSL 直连（465 端口，阿里云邮件推送/多数企业邮用这种）。设为 1 时用 SMTP_SSL
+        # 建立连接，此时不再走 STARTTLS 升级；587 STARTTLS 场景保持 SMTP_USE_SSL=0。
+        'SMTP_USE_SSL': os.environ.get('SMTP_USE_SSL', '0').strip() == '1',
         'SMS_WEBHOOK_URL': os.environ.get('SMS_WEBHOOK_URL', '').strip(),
         'SMS_WEBHOOK_TOKEN': os.environ.get('SMS_WEBHOOK_TOKEN', '').strip(),
+        # 阿里云短信（Dysmsapi）直连配置。当未配置 SMS_WEBHOOK_URL 时，
+        # 用这组凭据直接调用阿里云 SendSms 发送手机验证码，无需额外 webhook 服务。
+        # AccessKey 属机密，只放 .env，绝不提交进 git。
+        'ALIYUN_SMS_ACCESS_KEY_ID': os.environ.get('ALIYUN_SMS_ACCESS_KEY_ID', '').strip(),
+        'ALIYUN_SMS_ACCESS_KEY_SECRET': os.environ.get('ALIYUN_SMS_ACCESS_KEY_SECRET', '').strip(),
+        'ALIYUN_SMS_SIGN_NAME': os.environ.get('ALIYUN_SMS_SIGN_NAME', '').strip(),
+        'ALIYUN_SMS_TEMPLATE_CODE': os.environ.get('ALIYUN_SMS_TEMPLATE_CODE', '').strip(),
         # 本地开发可设为 display：生成随机验证码并在验证页直接显示，不调用外部服务。
         # 默认 send，避免生产环境因漏配环境变量而意外回显验证码。
         'VERIFICATION_CODE_MODE': os.environ.get('VERIFICATION_CODE_MODE', 'send').strip().lower(),

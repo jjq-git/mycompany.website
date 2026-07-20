@@ -4,6 +4,9 @@
 旧魔法链接路由仅兼容迁移前已经生成的链接。
 """
 import hashlib
+import hmac
+import base64
+import io
 import copy
 import mimetypes
 import secrets
@@ -12,6 +15,7 @@ import zipfile
 import json
 import smtplib
 import urllib.request
+import urllib.parse
 from email.message import EmailMessage
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -148,6 +152,7 @@ from .translator import (generate_seo_description, generate_seo_title,
 from .builder import build_site, build_template_preview, render_site_page
 from .db import db
 from . import media_service
+from . import captcha as captcha_lib
 from .template_loader import scan_templates
 # CSRF 豁免：静态站点公开 API 无法提供 CSRF token, 需要豁免
 # csrf 是 app/__init__.py 模块级变量, 在 create_app() 调用时已初始化
@@ -1101,6 +1106,8 @@ AUTH_EXEMPT_ENDPOINTS = {
     'core.password_setup',
     'core.password_setup_verify',
     'core.magic_login',
+    # 图形验证码在登录/注册前就要显示，必须允许匿名访问
+    'core.captcha_image',
     # template_preview 只渲染模板自带的种子数据, 不涉及任何用户私有内容, 可免登录。
     'core.template_preview',
     # 注意: preview / preview_site / preview_or_build 吐的是店主 output 下的真实
@@ -1284,8 +1291,14 @@ def _start_user_session(user):
 
 
 def _create_verification_code(identity_type, identifier, purpose, payload=None):
-    """生成一次性验证码；开发环境可回显，生产环境必须接入真实发送器。"""
-    display_code = (current_app.testing or current_app.debug
+    """生成一次性验证码；是否回显只由 VERIFICATION_CODE_MODE 显式控制，生产/开发都真发。
+
+    注意：不再因 debug/testing 自动回显。此前 FLASK_DEBUG=1 会让开发服务器永远
+    回显、不真正发信；现在开发服务器也会真发短信/邮件（便于联调真实发送链路）。
+    想省钱不真发时，把 .env 的 VERIFICATION_CODE_MODE=display 打开即可。
+    自动化测试仍回显，避免测试用例意外触发真实发送。
+    """
+    display_code = (current_app.testing
                     or current_app.config.get('VERIFICATION_CODE_MODE') == 'display')
     code = f'{secrets.randbelow(1_000_000):06d}'
     # 同一用途的新验证码会立即作废旧验证码，避免多个有效码并存。
@@ -1329,26 +1342,91 @@ def _deliver_verification_code(identity_type, identifier, purpose, code):
         message['From'] = sender
         message['To'] = identifier
         message.set_content(f'你的验证码是 {code}，10 分钟内有效。用途：{purpose}。如非本人操作请忽略。')
-        with smtplib.SMTP(host, current_app.config.get('SMTP_PORT', 587), timeout=10) as smtp:
-            if current_app.config.get('SMTP_USE_TLS'):
+        port = current_app.config.get('SMTP_PORT', 587)
+        use_ssl = current_app.config.get('SMTP_USE_SSL')
+        # SSL 直连（465）与 STARTTLS 升级（587）是互斥的两种加密方式：
+        # 前者一开始就在 SSL 通道里，不能再调 starttls；后者先明文连接再升级。
+        smtp_cls = smtplib.SMTP_SSL if use_ssl else smtplib.SMTP
+        with smtp_cls(host, port, timeout=10) as smtp:
+            if not use_ssl and current_app.config.get('SMTP_USE_TLS'):
                 smtp.starttls()
             username = current_app.config.get('SMTP_USERNAME')
             if username:
                 smtp.login(username, current_app.config.get('SMTP_PASSWORD', ''))
             smtp.send_message(message)
         return
+    # 手机验证码：优先走自定义 webhook（解耦、可换任意供应商）；未配置 webhook
+    # 时回退到阿里云 Dysmsapi 直连（见 Issue #11 短信调研）。两者都没配才报错。
     webhook = current_app.config.get('SMS_WEBHOOK_URL')
-    if not webhook:
-        raise RuntimeError('短信 Webhook 未配置')
-    body = json.dumps({'phone': identifier, 'code': code, 'purpose': purpose}).encode('utf-8')
-    headers = {'Content-Type': 'application/json'}
-    token = current_app.config.get('SMS_WEBHOOK_TOKEN')
-    if token:
-        headers['Authorization'] = f'Bearer {token}'
-    req = urllib.request.Request(webhook, data=body, headers=headers, method='POST')
-    with urllib.request.urlopen(req, timeout=10) as response:
-        if response.status < 200 or response.status >= 300:
-            raise RuntimeError(f'短信服务返回 {response.status}')
+    if webhook:
+        body = json.dumps({'phone': identifier, 'code': code, 'purpose': purpose}).encode('utf-8')
+        headers = {'Content-Type': 'application/json'}
+        token = current_app.config.get('SMS_WEBHOOK_TOKEN')
+        if token:
+            headers['Authorization'] = f'Bearer {token}'
+        req = urllib.request.Request(webhook, data=body, headers=headers, method='POST')
+        with urllib.request.urlopen(req, timeout=10) as response:
+            if response.status < 200 or response.status >= 300:
+                raise RuntimeError(f'短信服务返回 {response.status}')
+        return
+    if current_app.config.get('ALIYUN_SMS_ACCESS_KEY_ID'):
+        _send_aliyun_sms(identifier, code)
+        return
+    raise RuntimeError('短信通道未配置（SMS_WEBHOOK_URL 或阿里云短信二选一）')
+
+
+def _send_aliyun_sms(phone, code):
+    """直连阿里云 Dysmsapi 发送验证码短信。
+
+    手写 RPC 风格签名（HMAC-SHA1），只依赖标准库，不引入阿里云 SDK，
+    以符合项目"依赖能少则少"的约束。签名算法见官方文档：
+    https://help.aliyun.com/document_detail/315526.html
+    模板内 code 占位符名沿用 Issue #11 的资料，即 {"code": "..."}。
+    """
+    ak = current_app.config['ALIYUN_SMS_ACCESS_KEY_ID']
+    secret = current_app.config['ALIYUN_SMS_ACCESS_KEY_SECRET']
+    sign_name = current_app.config['ALIYUN_SMS_SIGN_NAME']
+    template_code = current_app.config['ALIYUN_SMS_TEMPLATE_CODE']
+    if not (secret and sign_name and template_code):
+        raise RuntimeError('阿里云短信配置不完整（Secret / 签名 / 模板缺一）')
+
+    # 公共参数 + 业务参数。SignatureNonce 用随机串防重放，时间戳用 UTC ISO8601。
+    params = {
+        'AccessKeyId': ak,
+        'Action': 'SendSms',
+        'Format': 'JSON',
+        'PhoneNumbers': phone,
+        'SignName': sign_name,
+        'SignatureMethod': 'HMAC-SHA1',
+        'SignatureNonce': secrets.token_hex(16),
+        'SignatureVersion': '1.0',
+        'TemplateCode': template_code,
+        'TemplateParam': json.dumps({'code': code}),
+        'Timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+        'Version': '2017-05-25',
+    }
+
+    # 阿里云特殊 URL 编码规则：空格→%20、* 保留编码、~ 不编码（RFC 3986）。
+    def _encode(text):
+        return urllib.parse.quote(str(text), safe='~')
+
+    # 1) 参数按 key 字典序排序后拼成规范化查询串
+    canonical = '&'.join(f'{_encode(k)}={_encode(v)}' for k, v in sorted(params.items()))
+    # 2) 构造待签名串：METHOD & 编码后的"/" & 编码后的规范化查询串
+    string_to_sign = 'GET&' + _encode('/') + '&' + _encode(canonical)
+    # 3) 签名密钥为 AccessKeySecret 加一个 &，HMAC-SHA1 后 base64
+    signature = base64.b64encode(
+        hmac.new((secret + '&').encode('utf-8'),
+                 string_to_sign.encode('utf-8'),
+                 hashlib.sha1).digest()
+    ).decode('utf-8')
+
+    url = 'https://dysmsapi.aliyuncs.com/?' + canonical + '&Signature=' + _encode(signature)
+    with urllib.request.urlopen(url, timeout=10) as response:
+        payload = json.loads(response.read().decode('utf-8'))
+    # 阿里云返回 Code=OK 才算成功，其余（如签名/模板/限流错误）一律视为失败。
+    if payload.get('Code') != 'OK':
+        raise RuntimeError(f"阿里云短信发送失败：{payload.get('Code')} {payload.get('Message')}")
 
 
 def _consume_verification_code(identifier, purpose, code):
@@ -1748,7 +1826,7 @@ def _organization_role_for_site(user, site):
         OrganizationMember.status == 'active',
         OrganizationSite.site_id == site.id,
     ).all()
-    order = {'viewer': 1, 'editor': 2, 'admin': 3, 'owner': 4}
+    order = {'viewer': 1, 'editor': 2, 'owner': 3}
     return max((row[0] for row in roles), key=lambda value: order.get(value, 0), default=None)
 
 
@@ -1756,7 +1834,7 @@ def _user_can_access_site(user, site, write=False):
     if user.role == 'admin' or site.owner_id == user.id:
         return True
     role = _organization_role_for_site(user, site)
-    return bool(role) and (not write or role in {'owner', 'admin', 'editor'})
+    return bool(role) and (not write or role in {'owner', 'editor'})
 
 
 def _require_site_access(site):
@@ -1885,7 +1963,7 @@ def inject_context():
                      else 'owner' if user and site.owner_id == user.id
                      else _organization_role_for_site(user, site) if user else None)
         ctx['site_access_role'] = site_role or ''
-        ctx['site_can_edit'] = bool(site_role in {'platform_admin', 'owner', 'admin', 'editor'})
+        ctx['site_can_edit'] = bool(site_role in {'platform_admin', 'owner', 'editor'})
         ctx['counts']['products'] = len(datasets.load(site_id, 'products') or [])
         ctx['counts']['posts'] = len(datasets.load(site_id, 'posts') or [])
         ctx['counts']['features'] = len(datasets.load(site_id, 'features') or [])
@@ -1928,6 +2006,12 @@ def inject_context():
                 menu_lib.upgrade_old_format(raw_menu, datasets_meta)
             )
         )
+        # 菜单是「共享结构 menu + 分语言标签 menu_labels.<lang>」设计：menu 里存基础 label（常为英文），
+        # 各语言译名存在 menu_labels。左栏此前漏了这步覆盖，导致显示英文基础名而非当前语言译名
+        # （与右侧菜单配置页不一致）。这里补上，逻辑与菜单配置页 routes.py:5407 保持一致。
+        menu_label_map = (settings.get('menu_labels') or {}).get(current_lang, {})
+        if menu_label_map:
+            normalized = menu_lib.apply_labels(normalized, menu_label_map)
         ctx['left_menu_items'] = normalized
 
         # 收集所有层级中 type=list 的菜单项（供数据网格模块选择数据源）
@@ -2014,6 +2098,11 @@ _LOGIN_WINDOW_SECONDS = 600   # 10 分钟窗口
 _LOGIN_MAX_PER_WINDOW = 5     # 同一 IP/邮箱 10 分钟内最多 5 次
 
 
+def _client_ip():
+    """取客户端真实 IP：优先 X-Forwarded-For 首段（反代场景），回退 remote_addr。"""
+    return request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
+
+
 def _login_rate_limited(*keys):
     """检查并记录登录尝试; 任一 key 超过窗口上限则返回 True(应拒绝)."""
     now = datetime.now(timezone.utc).timestamp()
@@ -2027,6 +2116,16 @@ def _login_rate_limited(*keys):
         hits.append(now)
         _LOGIN_ATTEMPTS[key] = hits
     return limited
+
+
+@bp.route('/captcha')
+def captcha_image():
+    """输出图形验证码 PNG；答案存 session。禁用缓存，保证每次刷新都是新图。"""
+    png = captcha_lib.generate(session)
+    response = send_file(io.BytesIO(png), mimetype='image/png')
+    # 图形验证码绝不能被浏览器/代理缓存，否则刷新拿到旧图、答案对不上
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+    return response
 
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -2113,7 +2212,9 @@ def register():
             # 旧账户尚无 AccountIdentity，不能再次注册；通过原邮箱验证后设置密码完成迁移。
             flash('该邮箱已有旧账号，请验证邮箱并设置登录密码', 'warning')
             return redirect(url_for('core.password_setup', identifier=identifier))
-        elif _login_rate_limited(f'register:{identifier}'):
+        elif not captcha_lib.verify(session, request.form.get('captcha')):
+            flash('图形验证码错误，请重新输入', 'danger')
+        elif _login_rate_limited(f'register:{identifier}', f'register-ip:{_client_ip()}'):
             flash('验证码请求过于频繁，请稍后再试', 'danger')
         elif not _valid_password(password):
             flash('密码至少 8 位，并同时包含字母和数字', 'danger')
@@ -2208,10 +2309,18 @@ def register_verify():
 @bp.route('/password/setup', methods=['GET', 'POST'])
 def password_setup():
     """旧邮箱账户迁移和忘记密码共用的身份验证入口。"""
+    # 该页被三种场景共用：注册冲突迁移、未登录找回密码、以及已登录用户从
+    # 账号中心点"修改密码"进来。已登录时底部不应是"返回登录"（点了会被
+    # login 路由弹回工作台首页），而应回到账号中心，故传标志给模板区分。
+    logged_in = _current_user() is not None
     identifier_value = request.args.get('identifier', '').strip()
     if request.method == 'POST':
         identifier_value = request.form.get('identifier', '')
         identity_type, identifier = _normalize_identity(identifier_value)
+        # 图形码校验放最前：错了直接拒，与账号是否存在无关，不泄露枚举信息。
+        if not captcha_lib.verify(session, request.form.get('captcha')):
+            flash('图形验证码错误，请重新输入', 'danger')
+            return render_template('auth/password_setup.html', identifier=identifier_value, logged_in=logged_in)
         user = None
         identity = AccountIdentity.query.filter_by(identifier=identifier).first() if identifier else None
         if identity:
@@ -2219,19 +2328,19 @@ def password_setup():
         elif identity_type == 'email':
             user = User.query.filter_by(email=identifier).first()
         # 中性反馈只在用户存在时创建验证码，避免泄露注册状态。
-        if identifier and _login_rate_limited(f'password-setup:{identifier}'):
+        if identifier and _login_rate_limited(f'password-setup:{identifier}', f'password-setup-ip:{_client_ip()}'):
             flash('验证码请求过于频繁，请稍后再试', 'danger')
-            return render_template('auth/password_setup.html', identifier=identifier_value)
+            return render_template('auth/password_setup.html', identifier=identifier_value, logged_in=logged_in)
         try:
             dev_code = _create_verification_code(identity_type, identifier, 'password_setup', {'user_id': user.id}) if user else None
         except RuntimeError as exc:
             flash(str(exc), 'danger')
-            return render_template('auth/password_setup.html', identifier=identifier_value)
+            return render_template('auth/password_setup.html', identifier=identifier_value, logged_in=logged_in)
         # 无论账号是否存在都进入同一页面，避免通过响应差异枚举账号。
         flash('如果该账号存在，验证码已发送', 'info')
         return render_template('auth/verify.html', purpose='password_setup', identifier=identifier or identifier_value,
                                identity_type=identity_type or 'email', dev_code=dev_code, set_password=True)
-    return render_template('auth/password_setup.html', identifier=identifier_value)
+    return render_template('auth/password_setup.html', identifier=identifier_value, logged_in=logged_in)
 
 
 @bp.route('/password/setup/verify', methods=['POST'])
@@ -4191,7 +4300,7 @@ def _account_organization_for_user(user, organization_id=None, manage=False):
         membership = OrganizationMember.query.filter_by(
             organization_id=organization_id, user_id=user.id, status='active'
         ).first_or_404()
-        if manage and membership.role not in {'owner', 'admin'}:
+        if manage and membership.role != 'owner':
             abort(403)
         return membership.organization, membership
     organization = _ensure_personal_organization(user)
@@ -4345,12 +4454,15 @@ def account():
     orders = BillingOrder.query.filter_by(user_id=user.id).order_by(BillingOrder.id.desc()).limit(20).all()
     platform_users = []
     if user.role == 'admin':
-        for platform_user in User.query.order_by(User.id).all():
+        # 删除=彻底移除，列表不再显示已删除用户（数据仍软删保留在库中兜底，只是界面隐藏）。
+        # 停用负责“可逆封号”，两者职责分明，不重叠。
+        for platform_user in User.query.filter(User.status != 'deleted').order_by(User.id).all():
             identity = AccountIdentity.query.filter_by(user_id=platform_user.id, is_primary=True).first()
             platform_users.append({
                 'id': platform_user.id,
                 'identifier': identity.identifier if identity else platform_user.email,
                 'display_name': platform_user.display_name or '未设置昵称',
+                'avatar_url': _account_avatar_url(platform_user),  # 有头像则列表显示真实头像，无则回退首字母
                 'role': platform_user.role,
                 'status': platform_user.status,
                 'site_count': Site.query.filter_by(owner_id=platform_user.id).count(),
@@ -4583,11 +4695,13 @@ def account_identity_request():
     if not user:
         abort(401)
     identity_type, identifier = _normalize_identity(request.form.get('identifier'))
-    if not identifier:
+    if not captcha_lib.verify(session, request.form.get('captcha')):
+        flash('图形验证码错误，请重新输入', 'danger')
+    elif not identifier:
         flash('请输入有效的邮箱或手机号', 'danger')
     elif AccountIdentity.query.filter_by(identifier=identifier).first():
         flash('该邮箱或手机号已被其他账号使用', 'danger')
-    elif _login_rate_limited(f'bind:{user.id}:{identifier}'):
+    elif _login_rate_limited(f'bind:{user.id}:{identifier}', f'bind-ip:{_client_ip()}'):
         flash('验证码请求过于频繁，请稍后再试', 'danger')
     else:
         try:
@@ -4677,7 +4791,7 @@ def account_organization_member_add():
     organization, actor = _account_organization_for_user(user, request.form.get('organization_id', type=int), manage=True)
     identity_type, identifier = _normalize_identity(request.form.get('identifier'))
     role = request.form.get('role', 'viewer')
-    if role not in {'admin', 'editor', 'viewer'}:
+    if role not in {'editor', 'viewer'}:
         abort(400)
     identity = AccountIdentity.query.filter_by(identifier=identifier).first() if identifier else None
     if not identifier:
@@ -4740,7 +4854,7 @@ def account_organization_member_update(member_id):
         flash('成员已移除', 'success')
     else:
         role = request.form.get('role')
-        if role not in {'admin', 'editor', 'viewer'}:
+        if role not in {'editor', 'viewer'}:
             abort(400)
         member.role = role
         _write_audit(user, 'organization.member.role', f'调整成员 {member.user_id} 的角色', organization_id=organization.id,
@@ -5790,6 +5904,10 @@ def build():
 def publish_site():
     """构建并发布当前站点，同时记录可追踪的发布状态与时间。"""
     user, site = _current_context()
+    # 发布=对外生效，属所有权级操作，与改名/删除/恢复对齐：仅站点所有者或平台管理员可发布。
+    # 编辑者(editor)只能改内容、交稿，不能替所有者决定新版本上线。
+    if user.role != 'admin' and site.owner_id != user.id:
+        abort(403, '仅站点所有者可发布站点')
     report = []
     try:
         # 正式产物按域名根目录构建，不能携带 /preview/<id>。使用独立临时目录，
