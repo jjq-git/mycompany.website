@@ -6,7 +6,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{{ page_label }} · {{ '创建副本' if is_duplicate_content else ('新建内容' if is_new_content else ('编辑 #' ~ edit_item_id)) }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260715-content-editor">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260721-minfont">
   <style>
     :root{--bs-primary:{{ admin_primary }};--bs-primary-rgb:{{ admin_primary_rgb }};--theme-primary:{{ admin_primary }};--theme-primary-hover:{{ admin_primary_hover }}}
     *{box-sizing:border-box}

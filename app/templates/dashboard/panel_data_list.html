@@ -52,6 +52,23 @@
   .dataset-edit-form .detail-field-section> :not(.small):not(.d-flex){margin:12px}
   .dataset-edit-form .detail-field-section>.detail-section-note{margin:12px;line-height:1.6}
   .dataset-edit-form .detail-field-section>.ds-card-body{margin:0}
+  /* 图文列编辑：整块作为单个 grid 子元素，内部自控间距 */
+  .dataset-edit-form .detail-columns-editor__meta{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+  .dataset-edit-form .detail-columns-editor__title{flex:0 0 320px;max-width:320px;min-width:200px}
+  .dataset-edit-form .detail-columns-editor__hint{flex:1 1 220px;min-width:200px;line-height:1.5;padding-bottom:7px}
+  /* 列内左右两栏：左=标题+说明，右=图片区块 */
+  .dataset-edit-form .detail-column-cell{display:flex;gap:16px;align-items:flex-start}
+  .dataset-edit-form .detail-column-cell__main{flex:1 1 45%;min-width:0;display:flex;flex-direction:column;gap:8px}
+  /* 图片区块本身用 grid：label 占满上行，下行左=缩略图 右=URL+Alt 输入 */
+  .dataset-edit-form .detail-column-cell__media{flex:1 1 55%;min-width:0;margin:0!important;display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:start}
+  .dataset-edit-form .detail-column-cell__media>label{grid-column:1 / -1}
+  .dataset-edit-form .detail-column-cell__media>.module-media-tools{grid-column:1;grid-row:2;margin:0!important}
+  .dataset-edit-form .detail-column-media__inputs{grid-column:2;grid-row:2;min-width:0;display:flex;flex-direction:column;gap:6px}
+  @media (max-width:900px){
+    .dataset-edit-form .detail-column-cell{flex-direction:column}
+    .dataset-edit-form .detail-column-cell__media{grid-template-columns:1fr}
+    .dataset-edit-form .detail-column-media__inputs{grid-column:1;grid-row:3}
+  }
   .dataset-edit-form .detail-field-section[data-field-section="detail_features"]{overflow:visible!important;position:relative;z-index:5}
   .dataset-edit-form .detail-feature-item{position:relative}
   .dataset-edit-form .detail-feature-item.icon-picker-open{z-index:20}
@@ -340,6 +357,15 @@
   {% set feature_items = edit_item.detail_features if edit_item.detail_features is iterable and edit_item.detail_features is not string else (edit_item.features if edit_item.features is iterable and edit_item.features is not string else []) %}
   {% set file_items = edit_item.detail_files if edit_item.detail_files is iterable and edit_item.detail_files is not string else (edit_item.downloads if edit_item.downloads is iterable and edit_item.downloads is not string else []) %}
   {% set faq_items = edit_item.detail_faqs if edit_item.detail_faqs is iterable and edit_item.detail_faqs is not string else (edit_item.faqs if edit_item.faqs is iterable and edit_item.faqs is not string else []) %}
+  {# 图文列组件：条目侧 detail_columns 是 dict{heading, intro, items:[...]}；旧数据可能是纯 list 做兼容 #}
+  {% set columns_cfg = edit_item.detail_columns if edit_item.detail_columns is mapping else {} %}
+  {% if edit_item.detail_columns is iterable and edit_item.detail_columns is not string and edit_item.detail_columns is not mapping %}
+  {% set columns_items = edit_item.detail_columns %}
+  {% elif columns_cfg.get('items') is iterable and columns_cfg.get('items') is not string %}
+  {% set columns_items = columns_cfg.get('items') %}
+  {% else %}
+  {% set columns_items = [] %}
+  {% endif %}
   {% set content_block_items = detail_content_editor_blocks if detail_content_editor_blocks is defined else (edit_item.detail_content_blocks if edit_item.detail_content_blocks is iterable and edit_item.detail_content_blocks is not string else (edit_item.content_blocks if edit_item.content_blocks is iterable and edit_item.content_blocks is not string else [])) %}
   {% set tags_val = edit_item.tags | join(', ') if edit_item.tags is iterable and edit_item.tags is not string else (edit_item.tags or '') %}
   {% set detail_actions_value = edit_item.detail_actions if edit_item.detail_actions is mapping else {} %}
@@ -374,10 +400,12 @@
           <div>
             {% if auto_tags_mode | default('suggest') == 'suggest' %}
             {% set generated_tags_val = auto_tags_preview | default([]) | join(', ') %}
-            <label class="form-label">自动标签</label>
-            <input type="text" class="form-control form-control-sm" value="{{ generated_tags_val or tags_val }}" readonly aria-describedby="autoTagsHelp">
-            <input type="hidden" name="tags" value="{{ generated_tags_val or tags_val }}">
-            <div class="form-text" id="autoTagsHelp">保存后根据规格参数自动生成，无需手动填写。</div>
+            {# 自动标签可手动修改：手改过（tags_auto=False）则显示已保存的手填值，
+               否则预填本次自动值。改了内容保存后即锁定，不再被自动值覆盖。 #}
+            {% set tags_manual = edit_item.tags_auto is defined and edit_item.tags_auto == false %}
+            <label class="form-label">标签{% if tags_manual %}<span class="text-muted small ms-1">（已手动修改）</span>{% endif %}</label>
+            <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val if tags_manual else (generated_tags_val or tags_val) }}" aria-describedby="autoTagsHelp" placeholder="多个标签用逗号分隔，例如：width-1020, shape-U">
+            <div class="form-text" id="autoTagsHelp">根据规格参数自动生成，可直接修改；改动保存后将以你填写的为准。</div>
             {% else %}
             <label class="form-label">标签</label>
             <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val }}" placeholder="多个标签用逗号分隔，例如：LED, 灯条, 工程案例">
@@ -672,6 +700,66 @@
         <textarea class="form-control form-control-sm" name="detail_faqs_{{ loop.index0 }}_answer" rows="2" placeholder="回答">{{ faq.answer or faq.a if faq is mapping else '' }}</textarea>
       </div>
       {% endfor %}
+    </div>
+  </div>
+
+  {# ── 图文列组件：横线小标题 + 一行 2/3/4 列，每列 标题+说明+图片，图文顺序可切换 ── #}
+  <div class="p-2 rounded mb-2 detail-field-section editor-component" data-field-section="detail_columns" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_columns') %}display:none{% endif %}">
+    <div class="d-flex justify-content-between align-items-center mb-2 editor-component__header">
+      <div class="small fw-semibold">图文列</div>
+      <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailColumn()">+ 添加列</button>
+    </div>
+    {# 右栏内容整体包一层，作为单个 grid 子元素，避免外层 .detail-field-section 的
+       `> :not(.small):not(.d-flex){margin:12px}` 逐个作用到标题/提示/列表导致间距错乱 #}
+    <div class="detail-columns-editor">
+      {# 组件级：左侧横线标题输入框（不满宽），右侧灰色提示说明其余配置在哪 #}
+      <div class="detail-columns-editor__meta">
+        <div class="detail-columns-editor__title">
+          <label class="form-label small mb-1 text-muted">组件标题（横线小标题，留空不显示）</label>
+          <input type="text" class="form-control form-control-sm" name="detail_columns_heading" value="{{ columns_cfg.get('heading', '') }}" placeholder="如 读取SD卡中文件">
+        </div>
+        <p class="detail-columns-editor__hint text-muted small mb-0">列数、图文顺序、对齐在「内容模板」的图文列组件里设置；这里只填标题和每列内容。</p>
+      </div>
+      <input type="hidden" name="detail_columns_count" id="detailColumnsCount" value="{{ columns_items|length }}">
+      <div id="detailColumnsList" class="editor-component__body editor-component__collection">
+      {% for col in columns_items %}
+      {% set col_image = col.image or col.url or '' if col is mapping else '' %}
+      <div class="border rounded p-2 mb-2 detail-column-item editor-component__item" data-column-index="{{ loop.index0 }}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="small fw-semibold">列 {{ loop.index }}</span>
+          <button type="button" class="ds-danger-icon" onclick="this.closest('.detail-column-item').remove();reindexDetailColumns()" title="删除列" aria-label="删除列">{{ ds_icon('trash') }}</button>
+        </div>
+        <div class="detail-column-cell">
+        <div class="detail-column-cell__main">
+        <input type="text" class="form-control form-control-sm mb-2" name="detail_columns_{{ loop.index0 }}_title" value="{{ col.title if col is mapping else '' }}" placeholder="标题，可选（如 F1）">
+        <textarea class="form-control form-control-sm" name="detail_columns_{{ loop.index0 }}_text" rows="2" placeholder="说明文字">{{ col.text or col.description if col is mapping else '' }}</textarea>
+        </div>
+        <div class="module-media-field detail-column-cell__media">
+          <label class="form-label small mb-1 text-muted">图片</label>
+          <div class="module-media-tools mt-1 mb-2">
+            <label class="module-media-picker{% if col_image %} has-media{% endif %}" title="点击上传">
+              {% if col_image %}
+              <img src="{{ col_image }}" alt="{{ col.alt or col.title or '' }}" loading="lazy">
+              <button type="button" class="module-media-preview-icon" onclick="event.preventDefault();event.stopPropagation();enlargeImage(this.closest('.module-media-picker').querySelector('img,video'))" title="预览" aria-label="预览"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+              <button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              {% else %}
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              {% endif %}
+              <input type="file" name="detail_columns_{{ loop.index0 }}_image_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none">
+            </label>
+          </div>
+          <div class="detail-column-media__inputs">
+          <div class="module-media-url-row mb-1">
+            <input type="text" class="form-control form-control-sm" name="detail_columns_{{ loop.index0 }}_image" value="{{ col_image }}" placeholder="图片 URL" oninput="updateImagePreview(this)">
+            <button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+          </div>
+          <input type="text" class="form-control form-control-sm module-media-alt-input" name="detail_columns_{{ loop.index0 }}_alt" value="{{ col.alt if col is mapping else '' }}" placeholder="图片 Alt">
+          </div>
+        </div>
+        </div>
+      </div>
+      {% endfor %}
+      </div>
     </div>
   </div>
 
@@ -1195,6 +1283,8 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         order.push('detail_files');
       } else if (type === 'detail_faq') {
         order.push('detail_faqs');
+      } else if (type === 'detail_columns') {
+        order.push('detail_columns');
       } else if (type === 'detail_content_blocks') {
         hasFreeContentModule = true;
         if (!hasContentBlocksSection) {
@@ -1221,7 +1311,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         order.push({kind: 'link', index: detailLinkConfigs.length - 1});
       }
     });
-    ['media', 'detail_images', 'body', 'specs', 'detail_features', 'detail_files', 'detail_faqs', 'detail_content_blocks', 'detail_related', 'seo'].forEach(function(key) {
+    ['media', 'detail_images', 'body', 'specs', 'detail_features', 'detail_files', 'detail_faqs', 'detail_columns', 'detail_content_blocks', 'detail_related', 'seo'].forEach(function(key) {
       if (order.indexOf(key) === -1) order.push(key);
     });
     if (container) {
@@ -1524,6 +1614,50 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   } else {
     enhanceDetailFeatureIconPickers(document);
   }
+
+  // 图文列组件：新增一列（标题+说明+图片）。图片沿用 module-media 上传/媒体库/URL 三合一控件。
+  window.addDetailColumn = function() {
+    var list = document.getElementById('detailColumnsList');
+    var countEl = document.getElementById('detailColumnsCount');
+    if (!list || !countEl) return;
+    var next = parseInt(countEl.value || '0', 10);
+    var p = 'detail_columns_' + next + '_';
+    var placeholderIcon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+    var libIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>';
+    var html = '<div class="border rounded p-2 mb-2 detail-column-item editor-component__item" data-column-index="' + next + '">' +
+      '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">列 ' + (next + 1) + '</span>' + detailTrashButton('detail-column-item', 'reindexDetailColumns', '删除列') + '</div>' +
+      '<div class="detail-column-cell">' +
+      '<div class="detail-column-cell__main">' +
+      '<input type="text" class="form-control form-control-sm mb-2" name="' + p + 'title" placeholder="标题，可选（如 F1）">' +
+      '<textarea class="form-control form-control-sm" name="' + p + 'text" rows="2" placeholder="说明文字"></textarea>' +
+      '</div>' +
+      '<div class="module-media-field detail-column-cell__media"><label class="form-label small mb-1 text-muted">图片</label>' +
+      '<div class="module-media-tools mt-1 mb-2"><label class="module-media-picker" title="点击上传">' + placeholderIcon +
+      '<input type="file" name="' + p + 'image_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none"></label></div>' +
+      '<div class="detail-column-media__inputs">' +
+      '<div class="module-media-url-row mb-1"><input type="text" class="form-control form-control-sm" name="' + p + 'image" placeholder="图片 URL" oninput="updateImagePreview(this)">' +
+      '<button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择">' + libIcon + '</button></div>' +
+      '<input type="text" class="form-control form-control-sm module-media-alt-input" name="' + p + 'alt" placeholder="图片 Alt"></div>' +
+      '</div>' +
+      '</div>' +
+      '</div>';
+    list.insertAdjacentHTML('beforeend', html);
+    countEl.value = next + 1;
+  };
+
+  window.reindexDetailColumns = function() {
+    var items = document.querySelectorAll('#detailColumnsList .detail-column-item');
+    var countEl = document.getElementById('detailColumnsCount');
+    if (countEl) countEl.value = items.length;
+    items.forEach(function(item, i) {
+      item.dataset.columnIndex = i;
+      var title = item.querySelector('.small.fw-semibold');
+      if (title) title.textContent = '列 ' + (i + 1);
+      item.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el) {
+        el.name = el.name.replace(/detail_columns_\d+_/, 'detail_columns_' + i + '_');
+      });
+    });
+  };
 
   window.addDetailFile = function() {
     var list = document.getElementById('detailFilesList');

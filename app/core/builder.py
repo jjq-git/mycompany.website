@@ -228,6 +228,7 @@ DETAIL_COMPONENT_TYPES = {
     'detail_table',
     'detail_link',
     'detail_features',
+    'detail_columns',
     'detail_files',
     'detail_faq',
     'detail_related',
@@ -904,6 +905,82 @@ def _render_detail_features(item, data):
     )
 
 
+def _render_detail_columns(item, data):
+    """渲染「图文列」组件：顶部可选横线小标题 + 一行 N 列（每列 标题+文字+图片）。
+
+    职责划分：
+    - **条目内容**（横线标题 heading、各列 items）来自条目的 detail_columns 字段，
+      结构为 dict：{heading, items:[{title,text,image,alt}]}。
+    - **样式配置**（对齐 heading_align、列数 columns、图文顺序 media_order、配色）来自内容
+      模板选择该组件时填的 module.data，即形参 data。
+
+    兼容旧数据：早期 detail_columns 曾是纯 list（只有 items），或 dict 里混入过配置，
+    这里都能读出。
+    """
+    raw = item.get('detail_columns')
+    if isinstance(raw, dict):
+        columns_src = raw.get('items')
+        heading = (raw.get('heading') or '').strip()
+        legacy = raw  # 旧结构里可能混入配置，做兜底
+    elif isinstance(raw, list):
+        columns_src = raw
+        heading = ''
+        legacy = {}
+    else:
+        return Markup('')
+    columns = [entry for entry in _item_list(columns_src) if isinstance(entry, dict)]
+    # 过滤掉三字段全空的列
+    columns = [c for c in columns if (c.get('title') or c.get('text') or c.get('image'))]
+    if not columns:
+        return Markup('')
+
+    data = data if isinstance(data, dict) else {}
+    # 样式配置：module.data 优先，回落旧条目 dict，再回落默认
+    align = data.get('heading_align') or legacy.get('heading_align') or 'center'
+    if align not in ('left', 'center', 'right'):
+        align = 'center'
+    order = data.get('media_order') or legacy.get('media_order') or 'image_top'
+    if order not in ('image_top', 'text_top'):
+        order = 'image_top'
+    # 列数：组件配置 columns 优先（'auto'/空 → 按实际数量），夹在 2~4
+    cols_cfg = data.get('columns') or data.get('cols') or legacy.get('cols')
+    cols = _detail_int(cols_cfg, 0) or len(columns)
+    cols = max(2, min(4, cols))
+
+    cells = []
+    for entry in columns:
+        title_text = entry.get('title') or ''
+        body_text = entry.get('text') or entry.get('description') or ''
+        image_url = entry.get('image') or entry.get('url') or ''
+        alt = entry.get('alt') or title_text or ''
+        title_html = f'<h3 class="detail-columns-title">{escape(title_text)}</h3>' if title_text else ''
+        text_html = f'<p class="detail-columns-text">{escape(body_text)}</p>' if body_text else ''
+        img_html = (
+            f'<div class="detail-columns-media"><img src="{escape(image_url)}" alt="{escape(alt)}" loading="lazy"></div>'
+            if image_url else ''
+        )
+        # 文字块（标题+说明）与图片块，按 media_order 决定上下顺序
+        text_block = f'<div class="detail-columns-body">{title_html}{text_html}</div>' if (title_html or text_html) else ''
+        if order == 'text_top':
+            inner = text_block + img_html
+        else:
+            inner = img_html + text_block
+        cells.append(f'<div class="detail-columns-cell">{inner}</div>')
+
+    heading_html = (
+        f'<div class="detail-columns-header detail-columns-header--{align}">'
+        f'<span class="detail-columns-heading">{escape(heading)}</span></div>'
+        if heading else ''
+    )
+    section_style = _detail_component_style(data)
+    return Markup(
+        f'<section class="section detail-component detail-columns"{section_style}><div class="container">'
+        f'{heading_html}'
+        f'<div class="detail-columns-grid" style="--detail-columns:{cols}">{"".join(cells)}</div>'
+        f'</div></section>'
+    )
+
+
 def _render_detail_files(item, data):
     files = [entry for entry in _item_list(item.get('detail_files') or item.get('downloads')) if isinstance(entry, dict)]
     if not files:
@@ -1189,6 +1266,8 @@ def _render_detail_component(jinja_ctx, module):
         return _render_detail_link(item, data)
     if block_type == 'detail_features':
         return _render_detail_features(item, data)
+    if block_type == 'detail_columns':
+        return _render_detail_columns(item, data)
     if block_type == 'detail_files':
         return _render_detail_files(item, data)
     if block_type == 'detail_faq':

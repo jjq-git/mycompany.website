@@ -113,6 +113,18 @@ input[type="reset"],
 .header-btn:active {
   background: #e2e8f0;
 }
+/* 禁用态：发布功能暂时关闭时按钮灰显、不可点、光标示意，hover 不再变色。
+   用 .is-disabled 类而非 :disabled 伪类——被 disabled 的按钮浏览器不触发 title 悬停提示，
+   本方案保留按钮可交互性（仅拦截点击），确保鼠标经过能弹出禁用说明。恢复发布时删掉 is-disabled 类即可。 */
+.header-btn.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.header-btn.is-disabled:hover {
+  background: transparent;
+  color: inherit;
+  border-color: inherit;
+}
 
 .dropdown-item.active,
 .dropdown-item:active {
@@ -145,7 +157,7 @@ input[type="reset"],
 
 .header-flags { display:flex; align-items:center; gap:6px; }
 .header-flag-link { display:inline-flex; min-width:28px; height:24px; padding:3px 4px; align-items:center; justify-content:center; border:1px solid transparent; border-radius: 0; font-size:12px; font-weight:600; letter-spacing:0.02em; color:var(--bs-body-color); text-decoration:none; }
-.left-nav-language-label { font-size:11px; font-weight:600; letter-spacing:0.03em; color:rgba(255,255,255,0.7); }
+.left-nav-language-label { font-size:12px; font-weight:600; letter-spacing:0.03em; color:rgba(255,255,255,0.7); }
 .header-flag-link:hover, .header-flag-link.active { border-color:var(--bs-primary); background:var(--bs-primary-bg-subtle); }
 .header-flag-link:focus-visible { outline:2px solid var(--bs-primary); outline-offset:2px; }
 /* .header-divider.header-brand-divider { height:24px; padding-right:8px !important; border-left:1px solid #e2e8f0; } */
@@ -2259,7 +2271,7 @@ body.dataset-wide-mode #rightPanel .right-panel-body {
 
 .menu-tree-meta {
   margin-top: 1px;
-  font-size: 11px;
+  font-size: 12px;
   color: #94a3b8;
   font-weight: 500;
   letter-spacing: .02em;
@@ -2473,7 +2485,7 @@ body.dataset-wide-mode #rightPanel .right-panel-body {
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--bs-primary);
   background: rgba(var(--bs-primary-rgb), .10);
@@ -3802,7 +3814,7 @@ body:not(.dataset-wide-mode) #rightPanel.panel-collapsed {
   border-radius: 0;
   color: #64748b;
   background: #f1f5f9;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 }
 

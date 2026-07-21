@@ -1819,11 +1819,9 @@ hr {
   color: var(--color-body);
   line-height: var(--leading-body);
   margin-bottom: var(--space-lg);
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  overflow: hidden;
+  /* 不做行数截断：highlight_card 描述常含尺寸/降噪/配置等多行参数，
+     clamp 到 2 行会把后半段吃掉（如静音仓 S1）。改为完整显示，
+     dir_row 图文左右排列变高不影响美观。 */
 }
 .hl-desc ul,
 .hl-desc ol {

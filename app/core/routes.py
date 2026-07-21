@@ -475,6 +475,39 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         'schema': None,
     },
     {
+        'name': 'detail_columns',
+        'display_name': '图文列',
+        'category': 'detail',
+        'icon': '',
+        'description': '一行 2/3/4 列，每列 标题+说明+图片，顶部可加横线小标题，适合步骤/功能键/图文说明。列内容在条目详情里逐列填写。',
+        'fields': [
+            # 组件级样式配置（存 module.data）：对齐/列数/图文顺序/配色。
+            # 横线标题、介绍文字、各列内容属于条目内容，在条目详情编辑里填。
+            {'key': 'heading_align', 'label': '标题对齐', 'type': 'select', 'group': '内容', 'default': 'center', 'options': [
+                {'value': 'left', 'label': '居左'},
+                {'value': 'center', 'label': '居中'},
+                {'value': 'right', 'label': '居右'},
+            ]},
+            {'key': 'columns', 'label': '每行列数', 'type': 'select', 'group': '显示规则', 'default': '', 'options': [
+                {'value': '', 'label': '自动'},
+                {'value': '2', 'label': '2 列'},
+                {'value': '3', 'label': '3 列'},
+                {'value': '4', 'label': '4 列'},
+            ]},
+            {'key': 'media_order', 'label': '图文顺序', 'type': 'select', 'group': '显示规则', 'default': 'image_top', 'options': [
+                {'value': 'image_top', 'label': '图上文下'},
+                {'value': 'text_top', 'label': '文上图下'},
+            ]},
+            {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
+            {'key': 'text_color', 'label': '文字颜色', 'type': 'color', 'group': '样式', 'default': ''},
+        ],
+        'variants': [
+            {'key': 'grid', 'label': '图文网格', 'data_preset': {}},
+        ],
+        'is_data_attr': False,
+        'schema': None,
+    },
+    {
         'name': 'detail_files',
         'display_name': '资料下载',
         'category': 'detail',
@@ -812,6 +845,7 @@ def _detail_template_field_requirements(template, item=None):
         'detail_features': False,
         'detail_files': False,
         'detail_faqs': False,
+        'detail_columns': False,
         'detail_related': False,
         'detail_content_blocks': False,
         'detail_content_slots': [],
@@ -852,6 +886,8 @@ def _detail_template_field_requirements(template, item=None):
             req['detail_files'] = True
         if m_type == 'detail_faq':
             req['detail_faqs'] = True
+        if m_type == 'detail_columns':
+            req['detail_columns'] = True
         if m_type in ('text_content', 'detail_text'):
             req['body'] = True
         for key, value in data.items():
@@ -893,6 +929,9 @@ def _detail_template_field_requirements(template, item=None):
         req['detail_files'] = True
     if item.get('detail_faqs') or item.get('faqs'):
         req['detail_faqs'] = True
+    # 已有图文列数据则保持组件可见，避免旧内容被隐藏
+    if isinstance(item.get('detail_columns'), dict) and item.get('detail_columns', {}).get('items'):
+        req['detail_columns'] = True
     if item.get('detail_content_blocks') or item.get('content_blocks'):
         req['detail_content_blocks'] = True
     if item.get('seo_title') or item.get('seo_description') or item.get('seo_image'):
@@ -1040,14 +1079,26 @@ def _apply_detail_template_autofill(fields, template, page_label=None):
         fields['category'] = page_label
     auto_tags = _detail_template_rule_value(template, 'auto_tags', 'suggest')
     if auto_tags == 'suggest':
-        generated = generated_technical_tags(fields)
-        if generated:
-            # 新版标签由结构化参数确定；保存时同步刷新，不继续依赖旧手填值。
-            fields['tags'] = generated
-        elif 'tags' not in fields:
-            suggested = _suggest_tags_from_fields(fields)
-            if suggested:
-                fields['tags'] = suggested
+        # 手改优先：tags_auto 显式为 False 表示用户已手动接管，保存时不再用自动值覆盖。
+        # 缺失/为 True 视为“仍归自动管理”。
+        tags_auto = fields.get('tags_auto')
+        manual_locked = tags_auto is False or str(tags_auto).lower() == 'false'
+        if not manual_locked:
+            generated = generated_technical_tags(fields)
+            fallback = generated or _suggest_tags_from_fields(fields)
+            submitted = fields.get('tags')
+            # 检测手改：提交的 tags 与本次自动值不一致 → 认定为手动编辑，置 tags_auto=False 永久锁定。
+            # 说明：表单默认回填的就是上次的自动值，用户没动则两者相等，不会误锁。
+            if (isinstance(submitted, list) and fallback
+                    and [str(t) for t in submitted] != [str(t) for t in fallback]):
+                fields['tags_auto'] = False
+            elif generated:
+                # 标签由结构化参数确定；未被手改则保存时同步刷新，并标记为自动管理。
+                fields['tags'] = generated
+                fields['tags_auto'] = True
+            elif fallback and 'tags' not in fields:
+                fields['tags'] = fallback
+                fields['tags_auto'] = True
     return fields
 
 
@@ -4486,6 +4537,10 @@ def account():
         # 停用负责“可逆封号”，两者职责分明，不重叠。
         for platform_user in User.query.filter(User.status != 'deleted').order_by(User.id).all():
             identity = AccountIdentity.query.filter_by(user_id=platform_user.id, is_primary=True).first()
+            # 名下未删除站点：管理员需要看到每个用户具体拥有哪些站点，而不只是数量
+            owned_sites = Site.query.filter_by(owner_id=platform_user.id).filter(
+                Site.soft_deleted_at.is_(None)
+            ).order_by(Site.updated_at.desc()).all()
             platform_users.append({
                 'id': platform_user.id,
                 'identifier': identity.identifier if identity else platform_user.email,
@@ -4493,7 +4548,8 @@ def account():
                 'avatar_url': _account_avatar_url(platform_user),  # 有头像则列表显示真实头像，无则回退首字母
                 'role': platform_user.role,
                 'status': platform_user.status,
-                'site_count': Site.query.filter_by(owner_id=platform_user.id).count(),
+                'site_count': len(owned_sites),
+                'sites': [{'name': s.name, 'slug': s.slug} for s in owned_sites],
                 'created_at': platform_user.created_at,
                 'last_login_at': platform_user.last_login_at,
                 'is_current': platform_user.id == user.id,
@@ -6243,6 +6299,52 @@ def _parse_detail_features_form(form):
     return features
 
 
+def _parse_detail_columns_form(form, files=None, site_id=None, dataset_key=None, fields=None, item=None):
+    """解析「图文列」组件表单，返回 {heading, items:[{title,text,image,alt}]}。
+
+    职责边界：
+    - 横线标题 heading、各列内容 items 属于**条目内容**，在此解析。
+    - 对齐/列数/图文顺序属于组件级样式配置，在内容模板选组件时填（存 module.data），不在此。
+    命名规则沿用其他 detail_* 组件：detail_columns_N_字段。
+    图片支持 URL 直填或 detail_columns_N_image_file 上传。
+    """
+    try:
+        count = int(form.get('detail_columns_count', '0'))
+    except (ValueError, TypeError):
+        count = 0
+    columns = []
+    for idx in range(count):
+        title = form.get(f'detail_columns_{idx}_title', '').strip()
+        text = form.get(f'detail_columns_{idx}_text', '').strip()
+        image = form.get(f'detail_columns_{idx}_image', '').strip()
+        alt = form.get(f'detail_columns_{idx}_alt', '').strip()
+        # 处理图片上传：有文件则覆盖 URL
+        if files is not None and site_id is not None:
+            upload = files.get(f'detail_columns_{idx}_image_file')
+            if upload and upload.filename:
+                try:
+                    image = _save_uploaded_image(site_id, upload, prefix=f'{dataset_key}-detail-columns-{idx + 1}')
+                    alt = alt or _context_alt(fields or {}, item or {}, fallback=_filename_alt(upload))
+                except Exception as exc:
+                    current_app.logger.warning('图文列图片上传失败: %s', exc)
+        # 三者全空的列直接丢弃，避免存下空占位
+        if title or text or image:
+            col = {}
+            if title:
+                col['title'] = title
+            if text:
+                col['text'] = text
+            if image:
+                col['image'] = image
+            if alt:
+                col['alt'] = alt
+            columns.append(col)
+    return {
+        'heading': form.get('detail_columns_heading', '').strip(),
+        'items': columns,
+    }
+
+
 def _parse_detail_files_form(form):
     try:
         count = int(form.get('detail_files_count', '0'))
@@ -6519,6 +6621,8 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
         fields['detail_files'] = _parse_detail_files_form(form)
     if 'detail_faqs_count' in form:
         fields['detail_faqs'] = _parse_detail_faqs_form(form)
+    if 'detail_columns_count' in form:
+        fields['detail_columns'] = _parse_detail_columns_form(form)
     if 'detail_content_blocks_count' in form:
         fields['detail_content_blocks'] = _parse_detail_content_blocks_form(form, fields=fields, item=item)
 
@@ -7432,6 +7536,10 @@ def dataset_edit(dataset_key, item_id):
                 continue
             if key.startswith('detail_faqs_') or key in ('detail_faqs_count',):
                 continue
+            # 图文列：整组字段由 _parse_detail_columns_form 结构化解析，
+            # 这里跳过防止散字段（含横线标题/对齐/列数/顺序等组件配置）污染条目
+            if key.startswith('detail_columns_') or key in ('detail_columns_count',):
+                continue
             if key.startswith('detail_content_blocks_') or key in ('detail_content_blocks_count',):
                 continue
             # 跳过模块配置字段和 CSRF 令牌（不参与数据存储）
@@ -7528,6 +7636,10 @@ def dataset_edit(dataset_key, item_id):
             fields['detail_files'] = _parse_detail_files_form(request.form)
         if 'detail_faqs_count' in request.form:
             fields['detail_faqs'] = _parse_detail_faqs_form(request.form)
+        if 'detail_columns_count' in request.form:
+            fields['detail_columns'] = _parse_detail_columns_form(
+                request.form, request.files, site.id, dataset_key, fields, item
+            )
         if 'detail_content_blocks_count' in request.form:
             fields['detail_content_blocks'] = _parse_detail_content_blocks_form(
                 request.form, request.files, site.id, dataset_key, fields, item
