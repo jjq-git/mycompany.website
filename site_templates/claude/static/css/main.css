@@ -2742,6 +2742,60 @@ a.ci-value:hover { color: var(--color-primary); }
   font-size: var(--text-body-sm);
   line-height: 1.62;
 }
+/* ── 图文列组件 detail_columns：横线小标题 + N 列图文 ── */
+.detail-columns-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 28px;
+}
+/* 两侧横线：用伪元素画横线，flex:1 自动占满两侧 */
+.detail-columns-header::before,
+.detail-columns-header::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: color-mix(in srgb, var(--color-primary), transparent 55%);
+}
+.detail-columns-header--left::before { display: none; }
+.detail-columns-header--right::after { display: none; }
+.detail-columns-heading {
+  flex: 0 0 auto;
+  font-size: var(--text-body-sm);
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+.detail-columns-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--detail-columns, 3), minmax(0, 1fr));
+  gap: 28px 24px;
+  align-items: start;
+}
+.detail-columns-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.detail-columns-media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+.detail-columns-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--color-heading, var(--color-body));
+}
+.detail-columns-text {
+  margin: 0;
+  color: var(--color-body);
+  font-size: var(--text-body-sm);
+  line-height: 1.7;
+}
 .detail-text-body {
   max-width: 860px;
   color: var(--color-body);
@@ -3193,6 +3247,10 @@ a.ci-value:hover { color: var(--color-primary); }
   }
   .detail-feature-grid,
   .detail-related-grid {
+    grid-template-columns: 1fr;
+  }
+  /* 手机端图文列自动单列 */
+  .detail-columns-grid {
     grid-template-columns: 1fr;
   }
   .detail-content-block-list {
@@ -3890,7 +3948,11 @@ a.ci-value:hover { color: var(--color-primary); }
   display: grid;
   grid-template-columns: 92px 1fr;
   gap: var(--space-sm); align-items: start;
-  position: relative;           /* 为折叠按钮提供定位锚点 */
+}
+/* 有折叠按钮时：新增第 3 列专门放按钮。按钮和标签是并排的独立 grid 格子，
+   标签只在 1fr 列内换行，物理上不可能与按钮重叠（旧的绝对定位方案会压标签，已废弃） */
+.dg-filter-group--overflow {
+  grid-template-columns: 92px 1fr auto;
 }
 .dg-filter-label {
   color: var(--color-muted);
@@ -3909,23 +3971,26 @@ a.ci-value:hover { color: var(--color-primary); }
 .dg-filter-options[data-collapsed="false"] {
   max-height: none;
 }
-/* 折叠切换按钮：绝对定位在 filter-group 右下角 */
+/* 折叠切换按钮：作为 group 的第 3 个 grid 子元素，落在第 3 列（auto 宽），
+   与标签列并排隔离、与首行标签齐平。不再用绝对定位，杜绝遮挡标签 */
 .dg-filter-toggle {
   display: none;
-  position: absolute;
-  right: 0; bottom: 3px;
-  width: 1.65rem; height: 1.65rem;
+  width: 2rem; height: 2rem;
+  flex: none;
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-xs);
   background: var(--color-canvas);
   color: var(--color-muted);
   cursor: pointer;
   align-items: center; justify-content: center;
-  transition: transform 0.3s ease;
-  z-index: 1;
+  transition: transform 0.3s ease, border-color 0.2s ease, color 0.2s ease;
 }
 .dg-filter-group--overflow .dg-filter-toggle {
   display: inline-flex;
+}
+.dg-filter-toggle:hover {
+  border-color: var(--color-accent, #067a7a);
+  color: var(--color-accent, #067a7a);
 }
 .dg-filter-toggle.expanded {
   transform: rotate(180deg);
