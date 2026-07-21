@@ -16,48 +16,40 @@ detail_templates:
       image_ratio: 4/3
       image_radius: 8px
       section_bg: ''
-  - type: detail_content_blocks
+  - type: detail_columns
     order: 2
-    variant: blocks
+    variant: grid
     data:
       _hidden: 'false'
-      title: ''
-      empty_behavior: hide_module
+      heading_align: center
+      media_order: image_top
       section_bg: ''
       text_color: ''
-  - type: detail_specs
+  - type: detail_columns
     order: 3
-    variant: table
+    variant: grid
     data:
       _hidden: 'false'
-      title: ''
-      source_field: specs
-      max_rows: 10
-      columns: 1
-      hide_empty_rows: 'true'
-      border_color: '#e5e7eb'
+      heading_align: center
+      media_order: image_top
       section_bg: ''
-  - type: detail_link
+      text_color: ''
+  - type: detail_columns
     order: 4
-    variant: button
+    variant: grid
     data:
       _hidden: 'false'
-      title: ''
-      label: 了解更多
-      url_field: link_url
-      style: button
-      hide_when_empty: 'true'
-      link_color: ''
+      heading_align: center
+      media_order: image_top
       section_bg: ''
-  - type: detail_content_note
+      text_color: ''
+  - type: detail_columns
     order: 5
-    variant: note
+    variant: grid
     data:
       _hidden: 'false'
-      slot_id: content-mru7k64s-jp0n8c
-      title: ''
-      note_style: info
-      empty_behavior: hide_module
+      heading_align: center
+      media_order: image_top
       section_bg: ''
       text_color: ''
   - type: detail_columns
@@ -67,6 +59,26 @@ detail_templates:
       _hidden: 'false'
       heading_align: center
       media_order: image_top
+      section_bg: ''
+      text_color: ''
+  - type: detail_content_blocks
+    order: 7
+    variant: blocks
+    data:
+      _hidden: 'false'
+      title: ''
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
+  - type: detail_content_note
+    order: 8
+    variant: note
+    data:
+      _hidden: 'false'
+      slot_id: content-mru7k64s-jp0n8c
+      title: ''
+      note_style: info
+      empty_behavior: hide_module
       section_bg: ''
       text_color: ''
   required_fields:
