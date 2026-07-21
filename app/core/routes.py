@@ -930,9 +930,8 @@ def _detail_template_field_requirements(template, item=None):
         req['detail_files'] = True
     if item.get('detail_faqs') or item.get('faqs'):
         req['detail_faqs'] = True
-    # 已有图文列数据则保持组件可见，避免旧内容被隐藏
-    if isinstance(item.get('detail_columns'), dict) and item.get('detail_columns', {}).get('items'):
-        req['detail_columns'] = True
+    # 图文列录入区严格跟随详情模板：模板删除 detail_columns 组件后即使数据里残留
+    # 图文列历史值也不再强制显示（数据仍保留在 data/<dataset>.yaml 里，不删除）。
     if item.get('detail_content_blocks') or item.get('content_blocks'):
         req['detail_content_blocks'] = True
     if item.get('seo_title') or item.get('seo_description') or item.get('seo_image'):
@@ -6301,49 +6300,59 @@ def _parse_detail_features_form(form):
 
 
 def _parse_detail_columns_form(form, files=None, site_id=None, dataset_key=None, fields=None, item=None):
-    """解析「图文列」组件表单，返回 {heading, items:[{title,text,image,alt}]}。
+    """解析「图文列」组件表单，返回多组 list：[{heading, items:[{title,text,image,alt}]}, ...]。
+
+    详情模板里可以放多个图文列组件，故这里按组解析（与 detail_specs / detail_tables 一致）。
+    命名规则：detail_columns_count=组数，detail_columns_{g}_heading=组标题，
+    detail_columns_{g}_count=该组列数，detail_columns_{g}_{i}_字段=某列内容。
+    图片支持 URL 直填或 detail_columns_{g}_{i}_image_file 上传。
 
     职责边界：
     - 横线标题 heading、各列内容 items 属于**条目内容**，在此解析。
     - 对齐/列数/图文顺序属于组件级样式配置，在内容模板选组件时填（存 module.data），不在此。
-    命名规则沿用其他 detail_* 组件：detail_columns_N_字段。
-    图片支持 URL 直填或 detail_columns_N_image_file 上传。
     """
     try:
-        count = int(form.get('detail_columns_count', '0'))
+        group_count = int(form.get('detail_columns_count', '0'))
     except (ValueError, TypeError):
-        count = 0
-    columns = []
-    for idx in range(count):
-        title = form.get(f'detail_columns_{idx}_title', '').strip()
-        text = form.get(f'detail_columns_{idx}_text', '').strip()
-        image = form.get(f'detail_columns_{idx}_image', '').strip()
-        alt = form.get(f'detail_columns_{idx}_alt', '').strip()
-        # 处理图片上传：有文件则覆盖 URL
-        if files is not None and site_id is not None:
-            upload = files.get(f'detail_columns_{idx}_image_file')
-            if upload and upload.filename:
-                try:
-                    image = _save_uploaded_image(site_id, upload, prefix=f'{dataset_key}-detail-columns-{idx + 1}')
-                    alt = alt or _context_alt(fields or {}, item or {}, fallback=_filename_alt(upload))
-                except Exception as exc:
-                    current_app.logger.warning('图文列图片上传失败: %s', exc)
-        # 三者全空的列直接丢弃，避免存下空占位
-        if title or text or image:
-            col = {}
-            if title:
-                col['title'] = title
-            if text:
-                col['text'] = text
-            if image:
-                col['image'] = image
-            if alt:
-                col['alt'] = alt
-            columns.append(col)
-    return {
-        'heading': form.get('detail_columns_heading', '').strip(),
-        'items': columns,
-    }
+        group_count = 0
+    groups = []
+    for g in range(group_count):
+        try:
+            col_count = int(form.get(f'detail_columns_{g}_count', '0'))
+        except (ValueError, TypeError):
+            col_count = 0
+        columns = []
+        for idx in range(col_count):
+            title = form.get(f'detail_columns_{g}_{idx}_title', '').strip()
+            text = form.get(f'detail_columns_{g}_{idx}_text', '').strip()
+            image = form.get(f'detail_columns_{g}_{idx}_image', '').strip()
+            alt = form.get(f'detail_columns_{g}_{idx}_alt', '').strip()
+            # 处理图片上传：有文件则覆盖 URL
+            if files is not None and site_id is not None:
+                upload = files.get(f'detail_columns_{g}_{idx}_image_file')
+                if upload and upload.filename:
+                    try:
+                        image = _save_uploaded_image(site_id, upload, prefix=f'{dataset_key}-detail-columns-{g + 1}-{idx + 1}')
+                        alt = alt or _context_alt(fields or {}, item or {}, fallback=_filename_alt(upload))
+                    except Exception as exc:
+                        current_app.logger.warning('图文列图片上传失败: %s', exc)
+            # 三者全空的列直接丢弃，避免存下空占位
+            if title or text or image:
+                col = {}
+                if title:
+                    col['title'] = title
+                if text:
+                    col['text'] = text
+                if image:
+                    col['image'] = image
+                if alt:
+                    col['alt'] = alt
+                columns.append(col)
+        heading = form.get(f'detail_columns_{g}_heading', '').strip()
+        # 整组无标题且无列时丢弃，避免存下空组
+        if heading or columns:
+            groups.append({'heading': heading, 'items': columns})
+    return groups
 
 
 def _parse_detail_files_form(form):
@@ -6623,7 +6632,10 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
     if 'detail_faqs_count' in form:
         fields['detail_faqs'] = _parse_detail_faqs_form(form)
     if 'detail_columns_count' in form:
-        fields['detail_columns'] = _parse_detail_columns_form(form)
+        _groups = _parse_detail_columns_form(form)
+        fields['detail_columns_groups'] = _groups
+        # 兼容仍读单字段的旧消费方（如导出/预览回落），写入第一组
+        fields['detail_columns'] = _groups[0] if _groups else {'heading': '', 'items': []}
     if 'detail_content_blocks_count' in form:
         fields['detail_content_blocks'] = _parse_detail_content_blocks_form(form, fields=fields, item=item)
 
@@ -7638,9 +7650,12 @@ def dataset_edit(dataset_key, item_id):
         if 'detail_faqs_count' in request.form:
             fields['detail_faqs'] = _parse_detail_faqs_form(request.form)
         if 'detail_columns_count' in request.form:
-            fields['detail_columns'] = _parse_detail_columns_form(
+            _groups = _parse_detail_columns_form(
                 request.form, request.files, site.id, dataset_key, fields, item
             )
+            fields['detail_columns_groups'] = _groups
+            # 兼容仍读单字段的旧消费方（如导出/预览回落），写入第一组
+            fields['detail_columns'] = _groups[0] if _groups else {'heading': '', 'items': []}
         if 'detail_content_blocks_count' in request.form:
             fields['detail_content_blocks'] = _parse_detail_content_blocks_form(
                 request.form, request.files, site.id, dataset_key, fields, item

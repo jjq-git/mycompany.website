@@ -703,36 +703,57 @@
     </div>
   </div>
 
-  {# ── 图文列组件：横线小标题 + 一行 2/3/4 列，每列 标题+说明+图片，图文顺序可切换 ── #}
-  <div class="p-2 rounded mb-2 detail-field-section editor-component" data-field-section="detail_columns" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_columns') %}display:none{% endif %}">
+  {# ── 图文列组件：模板里可放多个，每个是一组（横线小标题 + 一行 2/3/4 列）。
+        与规格参数一致：max_columns_count 跨模板取最大做预渲染，current_columns_count 决定当前模板显示几组。 #}
+  {% set current_columns_count = namespace(value=0) %}
+  {% set max_columns_count = namespace(value=0) %}
+  {% for tpl in detail_templates | default([]) %}
+    {% set tpl_id_tmp = tpl.id | default(tpl.get('id')) %}
+    {% set col_group_count = namespace(value=0) %}
+    {% for mod in tpl.modules | default(tpl.get('modules', [])) %}
+      {% if mod.type | default(mod.get('type')) == 'detail_columns' %}{% set col_group_count.value = col_group_count.value + 1 %}{% endif %}
+    {% endfor %}
+    {% if tpl_id_tmp == current_template_id %}{% set current_columns_count.value = col_group_count.value %}{% endif %}
+    {% if col_group_count.value > max_columns_count.value %}{% set max_columns_count.value = col_group_count.value %}{% endif %}
+  {% endfor %}
+  {# 条目侧多组数据：优先 detail_columns_groups(list)，回落旧单 dict 放到第 0 组做兼容 #}
+  {% set saved_columns_groups = edit_item.detail_columns_groups if edit_item.detail_columns_groups is iterable and edit_item.detail_columns_groups is not string and edit_item.detail_columns_groups is not mapping else ([columns_cfg] if columns_cfg else []) %}
+  <div class="detail-field-section detail-multi-section editor-component-stack" data-field-section="detail_columns" style="{% if current_columns_count.value < 1 %}display:none{% endif %}">
+    <input type="hidden" name="detail_columns_count" id="detailColumnsCount" value="{{ current_columns_count.value }}">
+    <div id="detailColumnsList" class="editor-component-stack__body">
+    {% for col_group_i in range(max_columns_count.value or 1) %}
+      {% set group_obj = saved_columns_groups[col_group_i] if saved_columns_groups|length > col_group_i and saved_columns_groups[col_group_i] is mapping else {} %}
+      {% set group_heading = group_obj.get('heading', '') if group_obj is mapping else '' %}
+      {% set group_items_raw = group_obj.get('items', []) if group_obj is mapping else [] %}
+      {% set group_columns_items = group_items_raw if group_items_raw is iterable and group_items_raw is not string else [] %}
+  <div class="p-2 rounded mb-2 detail-columns-group-item editor-component" data-columns-group-index="{{ col_group_i }}" style="background:#fff;border:1px solid #e9ecef;{% if col_group_i >= current_columns_count.value %}display:none{% endif %}">
     <div class="d-flex justify-content-between align-items-center mb-2 editor-component__header">
-      <div class="small fw-semibold">图文列</div>
-      <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailColumn()">+ 添加列</button>
+      <div class="small fw-semibold">图文列 {{ col_group_i + 1 }}</div>
+      <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailColumn({{ col_group_i }})">+ 添加列</button>
     </div>
-    {# 右栏内容整体包一层，作为单个 grid 子元素，避免外层 .detail-field-section 的
-       `> :not(.small):not(.d-flex){margin:12px}` 逐个作用到标题/提示/列表导致间距错乱 #}
+    {# 右栏内容整体包一层，作为单个 grid 子元素，避免外层间距规则逐个作用导致错乱 #}
     <div class="detail-columns-editor">
-      {# 组件级：左侧横线标题输入框（不满宽），右侧灰色提示说明其余配置在哪 #}
+      {# 组级：左侧横线标题输入框，右侧灰色提示说明其余配置在哪 #}
       <div class="detail-columns-editor__meta">
         <div class="detail-columns-editor__title">
           <label class="form-label small mb-1 text-muted">组件标题（横线小标题，留空不显示）</label>
-          <input type="text" class="form-control form-control-sm" name="detail_columns_heading" value="{{ columns_cfg.get('heading', '') }}" placeholder="如 读取SD卡中文件">
+          <input type="text" class="form-control form-control-sm" name="detail_columns_{{ col_group_i }}_heading" value="{{ group_heading }}" placeholder="如 读取SD卡中文件">
         </div>
         <p class="detail-columns-editor__hint text-muted small mb-0">列数、图文顺序、对齐在「内容模板」的图文列组件里设置；这里只填标题和每列内容。</p>
       </div>
-      <input type="hidden" name="detail_columns_count" id="detailColumnsCount" value="{{ columns_items|length }}">
-      <div id="detailColumnsList" class="editor-component__body editor-component__collection">
-      {% for col in columns_items %}
+      <input type="hidden" name="detail_columns_{{ col_group_i }}_count" class="detail-columns-col-count" value="{{ group_columns_items|length }}">
+      <div class="detail-columns-group-list editor-component__body editor-component__collection">
+      {% for col in group_columns_items %}
       {% set col_image = col.image or col.url or '' if col is mapping else '' %}
       <div class="border rounded p-2 mb-2 detail-column-item editor-component__item" data-column-index="{{ loop.index0 }}">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span class="small fw-semibold">列 {{ loop.index }}</span>
-          <button type="button" class="ds-danger-icon" onclick="this.closest('.detail-column-item').remove();reindexDetailColumns()" title="删除列" aria-label="删除列">{{ ds_icon('trash') }}</button>
+          <button type="button" class="ds-danger-icon" onclick="this.closest('.detail-column-item').remove();reindexDetailColumns({{ col_group_i }})" title="删除列" aria-label="删除列">{{ ds_icon('trash') }}</button>
         </div>
         <div class="detail-column-cell">
         <div class="detail-column-cell__main">
-        <input type="text" class="form-control form-control-sm mb-2" name="detail_columns_{{ loop.index0 }}_title" value="{{ col.title if col is mapping else '' }}" placeholder="标题，可选（如 F1）">
-        <textarea class="form-control form-control-sm" name="detail_columns_{{ loop.index0 }}_text" rows="2" placeholder="说明文字">{{ col.text or col.description if col is mapping else '' }}</textarea>
+        <input type="text" class="form-control form-control-sm mb-2" name="detail_columns_{{ col_group_i }}_{{ loop.index0 }}_title" value="{{ col.title if col is mapping else '' }}" placeholder="标题，可选（如 F1）">
+        <textarea class="form-control form-control-sm" name="detail_columns_{{ col_group_i }}_{{ loop.index0 }}_text" rows="2" placeholder="说明文字">{{ col.text or col.description if col is mapping else '' }}</textarea>
         </div>
         <div class="module-media-field detail-column-cell__media">
           <label class="form-label small mb-1 text-muted">图片</label>
@@ -745,21 +766,24 @@
               {% else %}
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
               {% endif %}
-              <input type="file" name="detail_columns_{{ loop.index0 }}_image_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none">
+              <input type="file" name="detail_columns_{{ col_group_i }}_{{ loop.index0 }}_image_file" accept="image/*,.svg,.svgz" onchange="handleModuleImageUpload(this)" style="display:none">
             </label>
           </div>
           <div class="detail-column-media__inputs">
           <div class="module-media-url-row mb-1">
-            <input type="text" class="form-control form-control-sm" name="detail_columns_{{ loop.index0 }}_image" value="{{ col_image }}" placeholder="图片 URL" oninput="updateImagePreview(this)">
+            <input type="text" class="form-control form-control-sm" name="detail_columns_{{ col_group_i }}_{{ loop.index0 }}_image" value="{{ col_image }}" placeholder="图片 URL" oninput="updateImagePreview(this)">
             <button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
           </div>
-          <input type="text" class="form-control form-control-sm module-media-alt-input" name="detail_columns_{{ loop.index0 }}_alt" value="{{ col.alt if col is mapping else '' }}" placeholder="图片 Alt">
+          <input type="text" class="form-control form-control-sm module-media-alt-input" name="detail_columns_{{ col_group_i }}_{{ loop.index0 }}_alt" value="{{ col.alt if col is mapping else '' }}" placeholder="图片 Alt">
           </div>
         </div>
         </div>
       </div>
       {% endfor %}
       </div>
+    </div>
+  </div>
+    {% endfor %}
     </div>
   </div>
 
@@ -1260,6 +1284,8 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var detailLinkConfigs = [];
     var detailTableConfigs = [];
     var detailSpecConfigs = [];
+    var detailColumnsConfigs = [];
+    var columnsSection = document.querySelector('[data-field-section="detail_columns"]');
     var hasContentBlocksSection = false;
     var hasFreeContentModule = false;
     var order = [];
@@ -1284,7 +1310,8 @@ window._dsEditItemJson = {{ edit_item | tojson }};
       } else if (type === 'detail_faq') {
         order.push('detail_faqs');
       } else if (type === 'detail_columns') {
-        order.push('detail_columns');
+        detailColumnsConfigs.push({ title: data.title || '' });
+        order.push({kind: 'columns', index: detailColumnsConfigs.length - 1});
       } else if (type === 'detail_content_blocks') {
         hasFreeContentModule = true;
         if (!hasContentBlocksSection) {
@@ -1311,7 +1338,8 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         order.push({kind: 'link', index: detailLinkConfigs.length - 1});
       }
     });
-    ['media', 'detail_images', 'body', 'specs', 'detail_features', 'detail_files', 'detail_faqs', 'detail_columns', 'detail_content_blocks', 'detail_related', 'seo'].forEach(function(key) {
+    {# detail_columns 已改为多组 multi-section，由 updateDetailColumnsFields 接管，不再进布尔兜底 #}
+    ['media', 'detail_images', 'body', 'specs', 'detail_features', 'detail_files', 'detail_faqs', 'detail_content_blocks', 'detail_related', 'seo'].forEach(function(key) {
       if (order.indexOf(key) === -1) order.push(key);
     });
     if (container) {
@@ -1324,6 +1352,8 @@ window._dsEditItemJson = {{ edit_item | tojson }};
           container.appendChild(linkItems[entry.index]);
         } else if (entry && entry.kind === 'specs' && specSection) {
           container.appendChild(specSection);
+        } else if (entry && entry.kind === 'columns' && columnsSection) {
+          container.appendChild(columnsSection);
         }
       });
     }
@@ -1357,6 +1387,24 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     });
     updateDetailTableFields(detailTableConfigs);
     updateDetailSpecFields(detailSpecConfigs);
+    updateDetailColumnsFields(detailColumnsConfigs);
+  }
+
+  // 图文列多组显隐：整块 section 由组数决定显隐，每组按 configs[idx] 显隐并更新标题
+  function updateDetailColumnsFields(configs) {
+    configs = configs || [];
+    var section = document.querySelector('[data-field-section="detail_columns"]');
+    if (section) section.style.display = configs.length ? '' : 'none';
+    var countInput = document.getElementById('detailColumnsCount');
+    if (countInput) countInput.value = configs.length;
+    document.querySelectorAll('.detail-columns-group-item').forEach(function(item) {
+      var idx = parseInt(item.getAttribute('data-columns-group-index') || '0', 10);
+      var config = configs[idx];
+      item.style.display = config ? '' : 'none';
+      if (!config) return;
+      var titleEl = item.querySelector(':scope > .d-flex .small.fw-semibold');
+      if (titleEl) titleEl.textContent = componentLabel(config.title, '图文列', idx, configs.length);
+    });
   }
 
   function updateDetailSpecFields(configs) {
@@ -1616,16 +1664,20 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   }
 
   // 图文列组件：新增一列（标题+说明+图片）。图片沿用 module-media 上传/媒体库/URL 三合一控件。
-  window.addDetailColumn = function() {
-    var list = document.getElementById('detailColumnsList');
-    var countEl = document.getElementById('detailColumnsCount');
+  // 图文列改为多组：groupIndex 指定操作哪一组，name 前缀带组索引 detail_columns_{g}_{i}_
+  window.addDetailColumn = function(groupIndex) {
+    groupIndex = parseInt(groupIndex || 0, 10);
+    var group = document.querySelector('.detail-columns-group-item[data-columns-group-index="' + groupIndex + '"]');
+    if (!group) return;
+    var list = group.querySelector('.detail-columns-group-list');
+    var countEl = group.querySelector('.detail-columns-col-count');
     if (!list || !countEl) return;
     var next = parseInt(countEl.value || '0', 10);
-    var p = 'detail_columns_' + next + '_';
+    var p = 'detail_columns_' + groupIndex + '_' + next + '_';
     var placeholderIcon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
     var libIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>';
     var html = '<div class="border rounded p-2 mb-2 detail-column-item editor-component__item" data-column-index="' + next + '">' +
-      '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">列 ' + (next + 1) + '</span>' + detailTrashButton('detail-column-item', 'reindexDetailColumns', '删除列') + '</div>' +
+      '<div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-semibold">列 ' + (next + 1) + '</span>' + '<button type="button" class="ds-danger-icon" onclick="this.closest(&quot;.detail-column-item&quot;).remove();reindexDetailColumns(' + groupIndex + ')" title="删除列" aria-label="删除列"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg></button>' + '</div>' +
       '<div class="detail-column-cell">' +
       '<div class="detail-column-cell__main">' +
       '<input type="text" class="form-control form-control-sm mb-2" name="' + p + 'title" placeholder="标题，可选（如 F1）">' +
@@ -1645,16 +1697,21 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     countEl.value = next + 1;
   };
 
-  window.reindexDetailColumns = function() {
-    var items = document.querySelectorAll('#detailColumnsList .detail-column-item');
-    var countEl = document.getElementById('detailColumnsCount');
+  // 只重排指定组内的列，name 保持 detail_columns_{groupIndex}_{列序}_ 结构
+  window.reindexDetailColumns = function(groupIndex) {
+    groupIndex = parseInt(groupIndex || 0, 10);
+    var group = document.querySelector('.detail-columns-group-item[data-columns-group-index="' + groupIndex + '"]');
+    if (!group) return;
+    var items = group.querySelectorAll('.detail-columns-group-list .detail-column-item');
+    var countEl = group.querySelector('.detail-columns-col-count');
     if (countEl) countEl.value = items.length;
     items.forEach(function(item, i) {
       item.dataset.columnIndex = i;
       var title = item.querySelector('.small.fw-semibold');
       if (title) title.textContent = '列 ' + (i + 1);
       item.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el) {
-        el.name = el.name.replace(/detail_columns_\d+_/, 'detail_columns_' + i + '_');
+        // 只替换列序（第二段数字），组序保持不变
+        el.name = el.name.replace(/detail_columns_(\d+)_\d+_/, 'detail_columns_$1_' + i + '_');
       });
     });
   };

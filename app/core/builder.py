@@ -917,7 +917,15 @@ def _render_detail_columns(item, data):
     兼容旧数据：早期 detail_columns 曾是纯 list（只有 items），或 dict 里混入过配置，
     这里都能读出。
     """
-    raw = item.get('detail_columns')
+    # 优先按模块索引从多组 detail_columns_groups 取对应组（模板放了 N 个图文列组件时），
+    # 回落到旧的单个 item.detail_columns（历史数据兼容，dict 或纯 list 两种老结构都支持）
+    columns_index = data.get('_detail_columns_index') if isinstance(data, dict) else None
+    groups = item.get('detail_columns_groups')
+    if isinstance(columns_index, int) and isinstance(groups, list) \
+            and 0 <= columns_index < len(groups) and isinstance(groups[columns_index], dict):
+        raw = groups[columns_index]
+    else:
+        raw = item.get('detail_columns')
     if isinstance(raw, dict):
         columns_src = raw.get('items')
         heading = (raw.get('heading') or '').strip()
@@ -2295,6 +2303,7 @@ def _annotate_detail_modules(modules):
     link_index = 0
     table_index = 0
     specs_index = 0
+    columns_index = 0  # 图文列支持模板里放多个，按出现顺序给每个模块编号，对应条目 detail_columns_groups[i]
     content_blocks_index = 0
     content_type_counts = {}
     free_content_modules = []
@@ -2321,6 +2330,13 @@ def _annotate_detail_modules(modules):
             module['data'] = data
             data['_detail_specs_index'] = specs_index
             specs_index += 1
+        if module.get('type') == 'detail_columns':
+            # 与 specs 同理：模板里 N 个图文列组件按顺序取条目 detail_columns_groups[0..N-1]，
+            # 避免多个组件渲染同一份数据
+            data = module.get('data') if isinstance(module.get('data'), dict) else {}
+            module['data'] = data
+            data['_detail_columns_index'] = columns_index
+            columns_index += 1
         if module.get('type') == 'detail_content_blocks':
             data['_detail_content_blocks_index'] = content_blocks_index
             content_blocks_index += 1
