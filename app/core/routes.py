@@ -919,8 +919,9 @@ def _detail_template_field_requirements(template, item=None):
     item = item if isinstance(item, dict) else {}
     if item.get('detail_images') or (isinstance(item.get('detail_gallery'), dict) and item.get('detail_gallery', {}).get('images')):
         req['detail_images'] = True
-    if item.get('specs'):
-        req['specs'] = True
+    # 规格参数录入区严格跟随详情模板：模板删除 detail_specs 组件后即使数据里残留
+    # specs 历史值也不再强制显示（数据仍保留在 data/<dataset>.yaml 里，不删除）。
+    # 若要恢复“有历史数据就显示”，把下面两行放回来即可。
     if item.get('link_url') or item.get('link_text') or item.get('button_url') or item.get('download_url'):
         req['link'] = True
     if item.get('detail_features') or item.get('features'):
