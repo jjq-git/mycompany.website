@@ -52,6 +52,26 @@ def create_app(config_override=None):
             int(_env_max) if _env_max.isdigit() else 64 * 1024 * 1024
         )
 
+    # 表单“分段数”上限：multipart 请求里每个表单字段算一个 part。Werkzeug 3.x 默认仅 1000，
+    # 超过就抛 413 RequestEntityTooLarge——与请求体大小无关，纯计数。富文本详情编辑页
+    # (specs/features/gallery 多组重复字段 + 多语言隐藏字段)字段数很容易破千，导致店主
+    # “只加一段文字”也保存失败。放宽到 5000（仍受 MAX_CONTENT_LENGTH 总量约束，不影响
+    # 文件上传防护）。支持 env 覆盖。
+    # 注意：Flask 默认已把这两个键初始化为 1000 / 500KB（非 None），故不能用 "is None" 守卫，
+    # 否则我方默认值永远被跳过——必须无条件覆盖。
+    _env_parts = os.environ.get('MAX_FORM_PARTS', '').strip()
+    app.config['MAX_FORM_PARTS'] = (
+        int(_env_parts) if _env_parts.isdigit() else 5000
+    )
+
+    # 表单“文本字段总内存”上限：Werkzeug 3.x 默认仅 500KB，是限制非文件字段累计大小的
+    # 独立阈值。富文本正文将来变长同样会撞它，顺手放宽到 16MB（远低于 64MB 总上限，
+    # 不放行大文件）。支持 env 覆盖。
+    _env_mem = os.environ.get('MAX_FORM_MEMORY_SIZE', '').strip()
+    app.config['MAX_FORM_MEMORY_SIZE'] = (
+        int(_env_mem) if _env_mem.isdigit() else 16 * 1024 * 1024
+    )
+
     # #8: Session Cookie 加固。HTTPONLY 默认 True(JS 读不到), 这里再补 SAMESITE(浏览器层
     # 防 CSRF 纵深) 和会话有效期; SECURE 在生产强制(只走 HTTPS 传 cookie, 防明文窃取)。
     # 判定逻辑：只有显式设 FLASK_ENV=production 才开 Secure；未设置或设 dev 均关 Secure。
