@@ -9,7 +9,7 @@ mycompany.website 的设计文档。面向创始人 / 协作者，不面向编�
 | 新加入的开发者 | [CLAUDE.md](../CLAUDE.md) → [architecture.md](architecture.md) → 本页名词表                |
 | 后端           | [architecture.md](architecture.md) → [dashboard/](dashboard/README.md) → [site/](site/README.md) |
 | 前端 / 设计师  | [themes/](themes/README.md) → [dashboard/frontend.md](dashboard/frontend.md)              |
-| 运维           | [cloud/](cloud/README.md)                                                                  |
+| 运维           | [deployment.md](deployment.md)（部署新机器/云服务器、建管理员）→ [cloud/](cloud/README.md) |
 
 ## 先读
 
@@ -35,6 +35,7 @@ mycompany.website 的设计文档。面向创始人 / 协作者，不面向编�
 | 文档                                         | 说明                               |
 | -------------------------------------------- | ---------------------------------- |
 | [site-creation-manual.md](site-creation-manual.md) | 建站操作手册：CLI 命令、后台操作、完整流程 |
+| [deployment.md](deployment.md) | 部署与初始化：新机器/云服务器跑起来、建可登录的管理员 |
 
 ## 待办
 
