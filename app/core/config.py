@@ -93,9 +93,10 @@ def load_config(override=None):
         'TRANSLATION_API_BASE': os.environ.get('TRANSLATION_API_BASE', 'https://api.deepseek.com/v1'),
         'TRANSLATION_MODEL': os.environ.get('TRANSLATION_MODEL', 'deepseek-chat'),
 
-        # 预览页登录控制（测试阶段默认免登录，方便分享预览链接给同事看；
-        # 开发完成后在 .env 设 PREVIEW_REQUIRE_LOGIN=1 恢复登录要求）
-        'PREVIEW_REQUIRE_LOGIN': os.environ.get('PREVIEW_REQUIRE_LOGIN', '').strip() == '1',
+        # 预览页登录控制（安全默认 secure-by-default）：默认要求登录+归属校验，
+        # 防止匿名枚举 site id 读他人未发布站点。本地测试若要免登录分享预览，
+        # 在 .env 显式设 PREVIEW_REQUIRE_LOGIN=0 关闭。忘配置时是安全的，不是裸奔。
+        'PREVIEW_REQUIRE_LOGIN': os.environ.get('PREVIEW_REQUIRE_LOGIN', '1').strip() != '0',
     }
 
     if override:

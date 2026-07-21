@@ -26,6 +26,16 @@ def create_app(config_override=None):
     # 改为自定义路由接管，优先从模板目录 serve，兜底 app/static/
     app = Flask(__name__, static_folder=None)
     app.config.update(load_config(config_override))
+
+    # 安全（M1）：只信任 TRUSTED_PROXY_COUNT 层反向代理传来的 X-Forwarded-For。
+    # 默认 0 = 不信任任何代理头，request.remote_addr 用真实 TCP 源 IP，杜绝客户端伪造
+    # X-Forwarded-For 绕过按 IP 的登录限流。生产部署在 Nginx/CDN 后时，按实际反代层数
+    # 在 .env 设 TRUSTED_PROXY_COUNT（如单层 Nginx 设 1），ProxyFix 才据此还原真实客户端 IP。
+    _proxy_count = os.environ.get('TRUSTED_PROXY_COUNT', '0').strip()
+    _proxy_count = int(_proxy_count) if _proxy_count.isdigit() else 0
+    if _proxy_count > 0:
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=_proxy_count, x_proto=_proxy_count)
     # 调试模式下确保模板改动即时生效，无需重启服务器
     # Flask 默认不设置 TEMPLATES_AUTO_RELOAD, 只在 app.run(debug=True) 时才启用
     # 这里根据环境变量提前启用, 避免开发时每次改模板都要重启

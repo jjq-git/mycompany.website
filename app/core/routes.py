@@ -1130,7 +1130,17 @@ def _safe_send_from_directory(base_dir, relative_path):
         full_real.relative_to(base_real)
     except ValueError:
         abort(403, '非法路径')
-    return send_from_directory(base_real, relative_path)
+    response = send_from_directory(base_real, relative_path)
+    # 安全：SVG 作为"图片"上传却能内嵌 <script>/onload，若被同源直接导航或 iframe 内联加载
+    # 即存储型 XSS（店主/协作者传恶意 SVG，管理员在后台同源打开就执行脚本、盗会话）。
+    # 用 CSP 禁止该响应内的脚本执行 + 禁 MIME 嗅探：作为 <img> 显示不受影响（img 加载 SVG
+    # 本就不执行脚本），但直接打开/内联加载时脚本被 CSP 拦死。比强制 attachment 更精细，
+    # 不破坏页面里正常用 SVG 当 logo/图标的显示。
+    suffix = full_real.suffix.lower().lstrip('.')
+    if suffix in {'svg', 'svgz'}:
+        response.headers['Content-Security-Policy'] = "script-src 'none'; object-src 'none'"
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+    return response
 
 
 def _hash_token(raw_token):
@@ -1286,6 +1296,10 @@ def _start_user_session(user):
     db.session.add(login_session)
     db.session.commit()
     session.clear()
+    # L4：设为持久化会话，cookie 生命周期对齐 PERMANENT_SESSION_LIFETIME(30天)与
+    # UserSession.expires_at；否则非 permanent 的 Flask cookie 关浏览器即失效，低频用户
+    # 每次都要重登，与"30 天会话"产品意图不符。
+    session.permanent = True
     session['user_id'] = user.id  # 兼容尚未迁移的内部代码。
     session['auth_session_token'] = raw_token
 
@@ -2099,23 +2113,56 @@ _LOGIN_MAX_PER_WINDOW = 5     # 同一 IP/邮箱 10 分钟内最多 5 次
 
 
 def _client_ip():
-    """取客户端真实 IP：优先 X-Forwarded-For 首段（反代场景），回退 remote_addr。"""
-    return request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
+    """取客户端真实 IP。用 remote_addr（M1：配合 ProxyFix 归一，不再直接取可伪造的
+    X-Forwarded-For 首段，杜绝伪造该头绕过限流）。"""
+    return request.remote_addr or ''
 
 
-def _login_rate_limited(*keys):
-    """检查并记录登录尝试; 任一 key 超过窗口上限则返回 True(应拒绝)."""
+def _rate_limited(keys, window=_LOGIN_WINDOW_SECONDS, limit=_LOGIN_MAX_PER_WINDOW):
+    """滑动窗口限流：任一 key 在 window 秒内超过 limit 次则返回 True(应拒绝)。
+
+    L1：过滤过期时间戳后若列表为空则删除该 key，避免 _LOGIN_ATTEMPTS 字典随海量
+    伪造标识（邮箱/IP）单调膨胀导致的慢速内存耗尽。
+    """
     now = datetime.now(timezone.utc).timestamp()
     limited = False
     for key in keys:
         if not key:
             continue
-        hits = [t for t in _LOGIN_ATTEMPTS.get(key, []) if now - t < _LOGIN_WINDOW_SECONDS]
-        if len(hits) >= _LOGIN_MAX_PER_WINDOW:
+        hits = [t for t in _LOGIN_ATTEMPTS.get(key, []) if now - t < window]
+        if len(hits) >= limit:
             limited = True
         hits.append(now)
-        _LOGIN_ATTEMPTS[key] = hits
+        _LOGIN_ATTEMPTS[key] = hits  # 本次必然新增一条，一定非空，直接写回
     return limited
+
+
+def _rate_limit_peek(key, window=_LOGIN_WINDOW_SECONDS):
+    """只读探查某 key 的当前有效计数，不记录、不占用新配额；顺带删除已空的 key（L1 清理）。"""
+    now = datetime.now(timezone.utc).timestamp()
+    hits = [t for t in _LOGIN_ATTEMPTS.get(key, []) if now - t < window]
+    if hits:
+        _LOGIN_ATTEMPTS[key] = hits
+    else:
+        _LOGIN_ATTEMPTS.pop(key, None)
+    return len(hits)
+
+
+def _login_rate_limited(*keys):
+    """登录/发码限流（保持原签名兼容所有调用方）。"""
+    return _rate_limited(keys)
+
+
+# M2：AI 生成/翻译按用户限流。这些接口每次真调用会向 DeepSeek/OpenAI 等付费接口发请求，
+# 无限流则登录用户可脚本刷爆、直接烧掉阿里云/AI 账户余额。窗口内超额返回 429。
+_AI_WINDOW_SECONDS = 600      # 10 分钟窗口
+_AI_MAX_PER_WINDOW = 30       # 每用户 10 分钟最多 30 次 AI 调用
+
+
+def _ai_rate_limited(user):
+    """AI 接口 per-user 限流；超额返回 True。user 为 None（理论不该发生）时按 IP 兜底。"""
+    key = f'ai:{user.id}' if user else f'ai-ip:{_client_ip()}'
+    return _rate_limited([key], window=_AI_WINDOW_SECONDS, limit=_AI_MAX_PER_WINDOW)
 
 
 @bp.route('/captcha')
@@ -2134,13 +2181,17 @@ def login():
     if _current_user() and request.method == 'GET':
         return redirect(_safe_next_url(request.args.get('next')) or url_for('core.overview'))
     identifier_value = ''
+    # M1：登录失败达阈值后才要求图形验证码——正常用户无感，脚本爆破/密码喷洒被挡。
+    needs_captcha = bool(session.get('login_needs_captcha'))
     if request.method == 'POST':
         identifier_value = request.form.get('identifier', '')
         identity_type, identifier = _normalize_identity(identifier_value)
         password = request.form.get('password', '')
-        client_ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
+        client_ip = request.remote_addr or ''  # M1：不再取可伪造的 X-Forwarded-For（由 ProxyFix 归一）
         if not identifier:
             flash('请输入有效的邮箱或手机号', 'danger')
+        elif needs_captcha and not captcha_lib.verify(session, request.form.get('captcha')):
+            flash('图形验证码错误', 'danger')
         elif _login_rate_limited(client_ip, identifier):
             flash('请求过于频繁，请稍后再试。', 'danger')
         else:
@@ -2149,12 +2200,15 @@ def login():
             user = identity.user if identity else None
             credential = PasswordCredential.query.filter_by(user_id=user.id).first() if user else None
             if user and user.status == 'active' and credential and check_password_hash(credential.password_hash, password):
+                session.pop('login_needs_captcha', None)  # 成功后清除验证码要求
                 _start_user_session(user)
                 flash('已登录', 'success')
                 return redirect(_safe_next_url(request.args.get('next')) or url_for('core.overview'))
             else:
+                session['login_needs_captcha'] = True  # 失败后下次登录要求图形验证码
+                needs_captcha = True
                 flash('账号或密码不正确', 'danger')
-    return render_template('auth/login.html', identifier=identifier_value)
+    return render_template('auth/login.html', identifier=identifier_value, needs_captcha=needs_captcha)
 
 
 @bp.route('/invite/<token>')
@@ -2357,6 +2411,12 @@ def password_setup_verify():
     user = User.query.get((record.payload or {}).get('user_id'))
     if not user:
         abort(400)
+    # L3：状态门禁，与 login/magic_login 对齐——被停用/删除的账号不能重置密码并建立会话。
+    # 虽然 _current_user 会因 status!=active 使新会话不可用，但在此处显式拦截避免防御不一致
+    # （白建会话、发成功提示），也防止未来某处直接信任 _start_user_session 的结果被利用。
+    if user.status != 'active':
+        flash('该账号当前不可用，请联系管理员', 'danger')
+        return redirect(url_for('core.login'))
     identity = AccountIdentity.query.filter_by(identifier=identifier).first()
     if not identity:
         identity = AccountIdentity(user_id=user.id, identity_type=identity_type, identifier=identifier,
@@ -2434,59 +2494,36 @@ def site_asset(filename):
     和 CSS 中 url(/assets/...) 直接访问而不被拦到登录页。
     静态导出时由 output/assets 直接承载。
     """
+    # 安全（H1）：只信任 session 里当前授权的站点来定位资源，绝不用 Referer 里的 site id 定位。
+    # 旧实现用 Referer 中的 /preview/<id> 直接取站点 assets，攻击者伪造 Referer + 遍历 id
+    # 即可越权读任意站点的私密上传素材；"取最新站点"兜底同样会泄露他人素材，一并删除。
+    # 预览路由（preview_site / preview_or_build / preview）在渲染时已把 site.id 写入 session，
+    # 后续 /assets 请求靠 session 即可正确定位，无需 Referer。
     assets_root = None
-    referer = request.headers.get('Referer', '')
-    m = re.search(r'/preview(?:/(?:site|or_build))?/(\d+)', referer)
-    if m:
-        site = Site.query.get(int(m.group(1)))
-        if site:
-            site_assets = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
-            if (site_assets / filename).exists():
-                return _safe_send_from_directory(site_assets, filename)
 
-    site_id = session.get('current_site_id')
-    if site_id is not None:
-        site = Site.query.get(int(site_id))
-        if site:
-            site_assets = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
-            if (site_assets / filename).exists():
-                return _safe_send_from_directory(site_assets, filename)
-
-    # 1. 模板预览 session（最优先：CSS 背景图 Referer 是 main.css，不包含 /preview/）
+    # 1. 模板预览 session（模板资源是公共模板素材，非用户私密数据；靠 session 中的模板名定位）
     tpl_name = session.get('current_template_preview')
     if tpl_name:
         tpl_assets = Path(current_app.config['OUTPUT_DIR']) / '_preview' / tpl_name / 'assets'
         if tpl_assets.exists():
             assets_root = tpl_assets
 
-    # 2. 站点预览 / 管理后台 session
+    # 2. 站点预览 / 管理后台：用 session 中当前站点定位（session 的 site_id 由预览/后台路由授权写入）
     if assets_root is None:
         site_id = session.get('current_site_id')
         if site_id is not None:
-            site = Site.query.get(int(site_id))
+            site = Site.query.filter_by(id=int(site_id)).filter(Site.soft_deleted_at.is_(None)).first()
             if site:
                 assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
 
-    # 3. Referer 兜底（清除 session 后首次请求等极端情况）
-    referer = request.headers.get('Referer', '')
+    # 3. 模板预览 CSS 背景图兜底：Referer 是 /templates/<name>/preview/（仅公共模板资源，无跨用户风险）
     if assets_root is None:
+        referer = request.headers.get('Referer', '')
         m = re.search(r'/templates/([a-zA-Z0-9_-]+)/preview/', referer)
         if m:
             tpl_assets = Path(current_app.config['OUTPUT_DIR']) / '_preview' / m.group(1) / 'assets'
             if tpl_assets.exists():
                 assets_root = tpl_assets
-    if assets_root is None:
-        m = re.search(r'/preview(?:/(?:site|or_build))?/(\d+)', referer)
-        if m:
-            site = Site.query.get(int(m.group(1)))
-            if site:
-                assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
-
-    # 4. 最终兜底
-    if assets_root is None:
-        site = Site.query.order_by(Site.id.desc()).first()
-        if site:
-            assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
 
     if assets_root is None:
         abort(404, '资源不存在')
@@ -2494,30 +2531,17 @@ def site_asset(filename):
 
 
 def _media_package_assets_root():
-    """Resolve the current site's media package root for admin and preview requests."""
-    assets_root = None
+    """Resolve the current site's media package root for admin and preview requests.
+
+    安全（H1）：只用 session 中当前授权站点定位，不用 Referer 里的 site id、也不取最新站点兜底
+    ——否则伪造 Referer + 遍历 id 可越权读他人网页包（媒体包同属站点私密上传）。
+    """
     site_id = session.get('current_site_id')
     if site_id is not None:
-        site = Site.query.get(int(site_id))
+        site = Site.query.filter_by(id=int(site_id)).filter(Site.soft_deleted_at.is_(None)).first()
         if site:
-            assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
-
-    referer = request.headers.get('Referer', '')
-    if assets_root is None:
-        m = re.search(r'/preview(?:/(?:site|or_build))?/(\d+)', referer)
-        if m:
-            site = Site.query.get(int(m.group(1)))
-            if site:
-                assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
-
-    if assets_root is None:
-        site = Site.query.order_by(Site.id.desc()).first()
-        if site:
-            assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
-
-    if assets_root is None:
-        abort(404, '网页包不存在')
-    return assets_root / 'media-packages'
+            return Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets' / 'media-packages'
+    abort(404, '网页包不存在')
 
 
 @bp.route('/media-packages/<package_name>/')
@@ -3766,6 +3790,8 @@ def seo_page_generate(page_key):
     """从页面现有模块生成简介，返回给弹框填入 textarea。"""
     _validate_key(page_key)
     user, site = _current_context()
+    if _ai_rate_limited(user):
+        return jsonify({'ok': False, 'error': 'AI 请求过于频繁，请稍后再试'}), 429
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = _storage_lang(site, lang, default_lang)
     page = read_yaml(site.id, f'pages/{page_key}.yaml', default={}, lang=storage_lang) or {}
@@ -3849,6 +3875,8 @@ def seo_detail_generate(dataset_key, item_key):
     _validate_key(dataset_key)
     _validate_key(item_key)
     user, site = _current_context()
+    if _ai_rate_limited(user):
+        return jsonify({'ok': False, 'error': 'AI 请求过于频繁，请稍后再试'}), 429
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = _storage_lang(site, lang, default_lang)
     raw = _load_dataset_for_seo(site.id, dataset_key, storage_lang)
@@ -6858,6 +6886,10 @@ def _render(template_name, **kwargs):
 @csrf.exempt  # 只读翻译端点，无数据修改，免除 CSRF 保护（fetch+JSON 调用不含表单 token）
 def api_translate():
     """AI 翻译端点 — 接受 JSON 文本字典，返回翻译后的字典."""
+    # M2：per-user 限流。此端点 @csrf.exempt 且每次真调用付费翻译接口，无限流可被脚本
+    # 刷爆烧余额。require_login(before_request) 已保证登录，这里再按用户限流。
+    if _ai_rate_limited(_current_user()):
+        return {'error': 'AI 请求过于频繁，请稍后再试'}, 429
     data = request.get_json(silent=True) or {}
     texts = data.get('texts', {})
     source_lang = data.get('source_lang', 'zh-CN')

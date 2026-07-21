@@ -11,6 +11,7 @@
 """
 import io
 import random
+import secrets
 import string
 
 from PIL import Image, ImageDraw, ImageFont
@@ -28,7 +29,8 @@ _WIDTH, _HEIGHT = 130, 44
 
 def generate(session):
     """生成一张验证码图片，把答案写入 session，返回 PNG 字节。"""
-    answer = ''.join(random.choice(_ALPHABET) for _ in range(_LENGTH))
+    # 答案用 secrets（密码学安全），不用可预测的 random；random 仅用于下方图像噪声/颜色。
+    answer = ''.join(secrets.choice(_ALPHABET) for _ in range(_LENGTH))
     session[_SESSION_KEY] = answer.upper()
     # 用 time.time 会破坏 workflow 可复现，但这是运行期 Web 请求，正常使用
     import time

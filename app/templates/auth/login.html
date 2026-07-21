@@ -12,6 +12,7 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label>邮箱或手机号<div class="auth-input-wrap">{{ auth_icon('mail') }}<input name="identifier" value="{{ identifier or '' }}" autocomplete="username" autofocus required placeholder="name@example.com / +86 13800000000"></div></label>
       <label>密码<div class="auth-input-wrap">{{ auth_icon('lock') }}<input name="password" type="password" autocomplete="current-password" required>{{ password_toggle() }}</div></label>
+      {% if needs_captcha %}<label>图形验证码<div class="auth-captcha-row"><div class="auth-input-wrap">{{ auth_icon('shield') }}<input name="captcha" maxlength="4" autocomplete="off" required placeholder="图中字符"></div><img class="auth-captcha-img" src="{{ url_for('core.captcha_image') }}" alt="图形验证码" title="点击刷新" onclick="this.src='{{ url_for('core.captcha_image') }}?r='+Date.now()"></div></label>{% endif %}
       <button class="auth-primary" type="submit">{{ auth_icon('login') }}<span>登录</span></button>
     </form>
     <div class="auth-links"><a href="{{ url_for('core.password_setup') }}">{{ auth_icon('key') }}<span>设置或找回密码</span></a><a href="{{ url_for('core.register') }}">{{ auth_icon('user-plus') }}<span>注册账号</span></a></div>
