@@ -3,13 +3,16 @@
 用法: flask --app run <command>
 """
 import re
+from datetime import datetime, timezone
 
 import click
 from flask.cli import with_appcontext
+from werkzeug.security import generate_password_hash
 
 from .core.builder import build_site
 from .core.db import db
-from .core.models import AccountIdentity, SLUG_RESERVED, Site, Template, User
+from .core.models import (AccountEntitlement, AccountIdentity, PasswordCredential,
+                          SLUG_RESERVED, Site, Template, User)
 from .core.site_storage import copy_seed_data, init_site_folder, site_root
 from .core.template_loader import scan_templates
 
@@ -25,6 +28,7 @@ def init_app(app):
     app.cli.add_command(list_users_cmd)
     app.cli.add_command(promote_admin_cmd)
     app.cli.add_command(demote_admin_cmd)
+    app.cli.add_command(ensure_admin_cmd)
     app.cli.add_command(build_site_cmd)
 
 
@@ -180,6 +184,65 @@ def demote_admin_cmd(identifier):
     user.role = 'user'
     db.session.commit()
     click.echo(f'已将 {identifier} 降为 user')
+
+
+@click.command('ensure-admin')
+@click.argument('email')
+@click.argument('password')
+@with_appcontext
+def ensure_admin_cmd(email, password):
+    """创建或重置一个可密码登录的平台管理员（新部署初始化用）。
+
+    登录改为账号密码后，能登录的账号需要三件套：User + AccountIdentity + PasswordCredential，
+    而 create-user 只建 User。本命令一次建全并设 active/admin；账号已存在则重置密码，幂等可重跑。
+    云服务器/新机器首次部署后跑一次即可登录，无需手改数据库。
+
+    用法: flask --app run ensure-admin <邮箱> <密码>
+    """
+    email = email.strip().lower()
+    now = datetime.now(timezone.utc)
+
+    # User：按邮箱或已有身份定位，没有则新建；确保 active + admin
+    identity = AccountIdentity.query.filter_by(identifier=email).first()
+    user = identity.user if identity else User.query.filter_by(email=email).first()
+    if not user:
+        user = User(email=email, status='active', role='admin', email_verified_at=now)
+        db.session.add(user)
+        db.session.flush()
+        click.echo(f'新建 User id={user.id}')
+    else:
+        # 冲突保护：邮箱身份若挂在别的账号上，不擅自改动，交人工核对
+        if identity and identity.user_id != user.id:
+            raise click.ClickException(f'邮箱 {email} 身份属于 user_id={identity.user_id}，请人工核对')
+        user.status, user.role = 'active', 'admin'
+        click.echo(f'复用 User id={user.id}（已置为 active/admin）')
+
+    # AccountIdentity：邮箱身份，已验证、设为主
+    if not identity or identity.user_id != user.id:
+        db.session.add(AccountIdentity(user_id=user.id, identity_type='email', identifier=email,
+                                       verified_at=now, is_primary=True))
+        click.echo('新建 AccountIdentity（email，已验证，主）')
+    else:
+        identity.verified_at = identity.verified_at or now
+        identity.is_primary = True
+
+    # PasswordCredential：设置或重置密码
+    cred = PasswordCredential.query.filter_by(user_id=user.id).first()
+    if not cred:
+        db.session.add(PasswordCredential(user_id=user.id, password_hash=generate_password_hash(password),
+                                          password_changed_at=now))
+        click.echo('新建密码凭据')
+    else:
+        cred.password_hash = generate_password_hash(password)
+        cred.password_changed_at = now
+        click.echo('已重置密码')
+
+    # AccountEntitlement：补齐建站资格记录（admin 本就短路放行，这里保持数据完整）
+    if not AccountEntitlement.query.filter_by(user_id=user.id).first():
+        db.session.add(AccountEntitlement(user_id=user.id, can_create_sites=True))
+
+    db.session.commit()
+    click.echo(f'完成：{email} 现为 active 平台管理员，可用密码登录。')
 
 
 @click.command('build-site')
