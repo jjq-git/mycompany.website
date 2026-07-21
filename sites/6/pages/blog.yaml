@@ -5,37 +5,61 @@ detail_templates:
   is_default: true
   modules:
   - type: detail_media
+    order: 1
     variant: gallery_top
     data:
+      _hidden: 'false'
       source: cover_and_gallery
       layout: gallery_top
       max_images: 6
       empty_behavior: hide_module
       image_ratio: 4/3
       image_radius: 8px
+      section_bg: ''
   - type: detail_content_blocks
+    order: 2
     variant: blocks
     data:
+      _hidden: 'false'
       title: ''
       empty_behavior: hide_module
       section_bg: ''
       text_color: ''
   - type: detail_specs
+    order: 3
     variant: table
     data:
+      _hidden: 'false'
       title: ''
       source_field: specs
       max_rows: 10
+      columns: 1
       hide_empty_rows: 'true'
-      mobile_layout: stacked
       border_color: '#e5e7eb'
+      section_bg: ''
   - type: detail_link
+    order: 4
     variant: button
     data:
+      _hidden: 'false'
+      title: ''
       label: 了解更多
       url_field: link_url
       style: button
       hide_when_empty: 'true'
+      link_color: ''
+      section_bg: ''
+  - type: detail_content_note
+    order: 5
+    variant: note
+    data:
+      _hidden: 'false'
+      slot_id: content-mru7k64s-jp0n8c
+      title: ''
+      note_style: info
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
   required_fields:
   - title
   - slug
