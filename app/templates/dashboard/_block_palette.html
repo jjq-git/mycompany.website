@@ -92,6 +92,16 @@
     icons.detail_files = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>';
     icons.detail_faq = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.9 1.4-2.5 2.3-.3.4-.4.8-.4 1.2"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>';
     icons.detail_related = icons.featured_picks;
+    // 详情页「独立正文组件」系列：9 种内容类型各配独立图标，避免全部落到默认方块图标看起来一样
+    icons.detail_content_text = icons.text_content;
+    icons.detail_content_image = icons.hero_banner;
+    icons.detail_content_video = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg>';
+    icons.detail_content_media_text = icons.highlight_card;
+    icons.detail_content_gallery = icons.image_carousel;
+    icons.detail_content_table = icons.data_grid;
+    icons.detail_content_heading = icons.section_title;
+    icons.detail_content_note = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M11 12h1v4h1"/></svg>';
+    icons.detail_content_embed = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8h18"/><path d="m8 13-2 2 2 2"/><path d="m16 13 2 2-2 2"/></svg>';
     return icons[type] || '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>';
   }
 
@@ -286,6 +296,35 @@
       },
       detail_related: {
         grid: function(){ return miniCarousel(4); }
+      },
+      // 详情页「独立正文组件」系列：变体 key 即内容类型，各自给出区分度明显的缩略图，
+      // 不再统一落到 mini-section-title 默认回退（否则 9 个组件预览长得一模一样）
+      detail_content_text: {
+        text: function(){ return '<div class="mini-text-block"><div class="mini-w80"></div><div class="mini-w90"></div><div class="mini-w70"></div><div class="mini-w60"></div></div>'; }
+      },
+      detail_content_image: {
+        image: function(){ return '<div class="mini-single-media"><div class="mini-media-frame"></div></div>'; }
+      },
+      detail_content_video: {
+        video: function(){ return '<div class="mini-single-media"><div class="mini-media-frame mini-media-video"><span class="mini-play"></span></div></div>'; }
+      },
+      detail_content_media_text: {
+        media_text: function(){ return miniMediaText('row'); }
+      },
+      detail_content_gallery: {
+        gallery: function(){ return miniCarousel(4); }
+      },
+      detail_content_table: {
+        table: function(){ return '<div class="mini-custom-table"><div></div><div></div><div></div><div></div><div></div><div></div></div>'; }
+      },
+      detail_content_heading: {
+        heading: function(){ return '<div class="mini-section-title"><div class="mini-tag"></div><div class="mini-title-line"></div><div class="mini-desc"></div></div>'; }
+      },
+      detail_content_note: {
+        note: function(){ return '<div class="mini-note-preview"><span class="mini-note-bar"></span><div class="mini-note-body"><div class="mini-line" style="width:70%;height:5px"></div><div class="mini-line" style="width:88%;height:4px"></div></div></div>'; }
+      },
+      detail_content_embed: {
+        embed: function(){ return '<div class="mini-embed-preview"><div class="mini-embed-bar"><i></i><i></i><i></i></div><div class="mini-embed-body"></div></div>'; }
       }
     };
     var blockBuilders = builders[blockType];
