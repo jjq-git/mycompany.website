@@ -181,6 +181,7 @@ def create_app(config_override=None):
         db.create_all()
         _migrate_login_tokens_table()
         _migrate_platform_roles()
+        _migrate_sites_add_custom_domain()
 
     _register_context_processors(app)
     return app
@@ -261,3 +262,21 @@ def _migrate_platform_roles():
     from sqlalchemy import text
     with db.engine.begin() as conn:
         conn.execute(text("UPDATE users SET role = 'user' WHERE role = 'owner'"))
+
+
+def _migrate_sites_add_custom_domain():
+    """MVP 临时迁移：旧库的 sites 表补 custom_domain 列（db.create_all 不改已存在表的列）。
+
+    自定义域名功能(方案A)新增列。SQLite 的 ADD COLUMN 不支持直接建唯一索引，
+    因此列本身用 ALTER 补，唯一性再单独 CREATE UNIQUE INDEX（IF NOT EXISTS 幂等）。
+    """
+    from sqlalchemy import inspect, text
+    inspector = inspect(db.engine)
+    columns = {c['name'] for c in inspector.get_columns('sites')}
+    with db.engine.begin() as conn:
+        if 'custom_domain' not in columns:
+            conn.execute(text('ALTER TABLE sites ADD COLUMN custom_domain VARCHAR(253)'))
+        # 唯一索引兜底：新库由 create_all 建，旧库由这里补；IF NOT EXISTS 保证重复启动安全
+        conn.execute(text(
+            'CREATE UNIQUE INDEX IF NOT EXISTS ix_sites_custom_domain ON sites (custom_domain)'
+        ))

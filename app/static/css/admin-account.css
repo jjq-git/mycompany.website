@@ -46,3 +46,23 @@
    导致确认按钮被挤到下一行独占。这里让 pending 的 label 回到第 1 列，按钮回到第 2 列同行。 */
 .bind-identity.pending>label:first-of-type{grid-column:auto}
 .bind-identity .captcha-label{font-weight:600}.bind-identity .captcha-row{display:flex;gap:10px;align-items:center;margin-top:7px}.bind-identity .captcha-row input{margin-top:0;flex:1}.bind-identity .captcha-img{height:38px;border:1px solid #cfd8e1;cursor:pointer;flex-shrink:0;display:block}
+/* 绑定新标识的输入、图形验证码、发送按钮改为一行三列：邮箱/手机占弹性宽度，
+   验证码宽度自适应内容（输入框+图片），按钮固定宽度贴右。覆盖上面的通栏规则。 */
+.bind-inline{grid-template-columns:minmax(0,1fr) auto auto}
+.bind-inline>label:first-of-type{grid-column:auto}
+.bind-inline .captcha-label{min-width:200px}
+/* 倒计时中的发送按钮：禁用态显示剩余秒数，用等宽数字避免抖动 */
+.captcha-send.counting{cursor:not-allowed;opacity:.6;font-variant-numeric:tabular-nums;font-weight:600}
+.captcha-send.counting .action-icon{display:none}
+@media(max-width:600px){.bind-inline{grid-template-columns:1fr}.bind-inline .captcha-label{min-width:0}}
+/* 自定义域名(方案A)：域名输入单独占一行；DNS 指引面板沿用 slug 警告的版式，
+   但用中性青色而非警告琥珀色，表示"这是操作指引"而非"风险提示"。 */
+.domain-grid{grid-template-columns:1fr}
+.domain-guide{margin:0 24px 20px;padding:14px 16px;border-left:3px solid #0d9488;background:#f0fbfa;color:#334155}
+.domain-guide>strong{display:block;color:#0f766e;margin-bottom:4px}
+.domain-guide p{margin:6px 0;line-height:1.55}
+.domain-guide-note{color:#64748b;font-size:13px}
+.domain-cname{display:grid;grid-template-columns:1fr;gap:8px;margin:10px 0}
+.domain-cname>div{display:flex;gap:12px;align-items:baseline;padding:8px 10px;background:#fff;border:1px solid #cfe6e3}
+.domain-cname dt{flex:0 0 108px;color:#526174;font-weight:600}
+.domain-cname dd{margin:0;font-family:ui-monospace,Menlo,Consolas,monospace;color:#0f172a;word-break:break-all}

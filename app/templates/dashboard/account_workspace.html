@@ -35,7 +35,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>账户中心</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-account.css') }}?v=20260720-pending-verify-row">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-account.css') }}?v=20260721-custom-domain">
 </head>
 <body>
   <script>if(parent&&parent!==window){document.documentElement.classList.add('account-workspace-embedded');}</script>
@@ -124,6 +124,19 @@
           <label>站点名称<input name="name" value="{{ editing_site.name }}" maxlength="200" required><small>仅用于后台识别站点，不影响网站中展示的公司或品牌名称。</small></label>
           <label>站点标识（Slug）<input name="slug" value="{{ editing_site.slug }}" minlength="3" maxlength="30" pattern="[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?" required><small>用于后台识别和生成平台默认地址，例如 {{ editing_site.slug }}.{{ platform_domain }}。绑定独立域名后，仍作为内部标识和备用地址。</small></label>
         </div>
+        {# 自定义域名(方案A)：只收集 + 展示 CNAME 指引，暂不含自动签发 SSL/上线。留空即解绑。 #}
+        <div class="form-grid domain-grid">
+          <label>自定义域名（可选）<input name="custom_domain" value="{{ editing_site.custom_domain or '' }}" maxlength="253" placeholder="例如 www.company.com" autocomplete="off" spellcheck="false"><small>填入你已购买的域名，绑定后网站将通过它对外访问；留空表示不绑定，仍用上面的平台地址。</small></label>
+        </div>
+        {% if editing_site.custom_domain %}
+        {# 已填域名时给出 DNS 配置指引：把域名 CNAME 到平台子域，作为解析目标。真实上线链路后续接入。 #}
+        <div class="domain-guide">
+          <strong>配置 DNS 让域名生效</strong>
+          <p>请到你的域名服务商（阿里云 / GoDaddy / Cloudflare 等）添加一条 CNAME 记录：</p>
+          <dl class="domain-cname"><div><dt>记录类型</dt><dd>CNAME</dd></div><div><dt>主机记录</dt><dd>{{ editing_site.custom_domain }}</dd></div><div><dt>记录值（解析目标）</dt><dd>{{ editing_site.slug }}.{{ platform_domain }}</dd></div></dl>
+          <p class="domain-guide-note">DNS 生效通常需要几分钟到几小时。生效并完成上线配置后，域名即可正常访问；如需协助请联系平台。</p>
+        </div>
+        {% endif %}
         {% if editing_site.status == 'published' %}<div class="site-slug-warning"><strong>已发布站点</strong><span>修改 Slug 会改变当前访问地址。保存时需要再次确认，旧 Slug 将作为历史地址继续解析。</span></div>{% endif %}
         <div class="card-actions"><a class="secondary-btn" href="{{ url_for('core.account', section='sites') }}">取消</a><button class="primary-btn icon-btn" type="submit" title="保存站点信息" aria-label="保存站点信息">{{ action_icon('save') }}</button></div>
       </form>
@@ -142,7 +155,7 @@
 
       {% elif section == 'security' %}
       <header class="account-heading"><h1>账号与安全</h1><p>查看当前账号标识、验证状态和近期登录活动。</p></header>
-      <section class="account-card security-list"><h2>账号标识</h2>{% if account_identities %}{% for identity in account_identities %}<div class="security-row"><div><strong>{{ '邮箱' if identity.identity_type == 'email' else '手机号' }}</strong><p>{{ identity.identifier }}{% if identity.is_primary %} · 主账号{% endif %}</p></div><div class="inline-actions">{% if not identity.is_primary %}<form method="post" action="{{ url_for('core.account_identity_primary', identity_id=identity.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="text-btn icon-btn" type="submit" title="设为主账号" aria-label="设为主账号">{{ action_icon('star') }}</button></form><form method="post" action="{{ url_for('core.account_identity_delete', identity_id=identity.id) }}" onsubmit="return confirm('确认解绑这个账号标识？')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="danger-link icon-btn" type="submit" title="解绑账号" aria-label="解绑账号">{{ action_icon('unlink') }}</button></form>{% else %}<span class="security-state">已验证</span>{% endif %}</div></div>{% endfor %}{% else %}<div class="security-row"><div><strong>旧邮箱账户</strong><p>{{ visible_identifier }}</p></div><a class="secondary-btn icon-btn" href="{{ url_for('core.password_setup') }}" target="_top" title="验证并设置密码" aria-label="验证并设置密码">{{ action_icon('key') }}</a></div>{% endif %}<form class="bind-identity" method="post" action="{{ url_for('core.account_identity_request') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>绑定新邮箱或手机号<input name="identifier" required placeholder="name@example.com / +86 13800000000"></label><label class="captcha-label">图形验证码<span class="captcha-row"><input name="captcha" maxlength="4" autocomplete="off" required placeholder="图中字符"><img class="captcha-img" src="{{ url_for('core.captcha_image') }}" alt="图形验证码" title="点击刷新" onclick="this.src='{{ url_for('core.captcha_image') }}?r='+Date.now()"></span></label><button class="secondary-btn icon-btn" type="submit" title="获取验证码" aria-label="获取验证码">{{ action_icon('send') }}</button></form>{% if pending_identity %}<form class="bind-identity pending" method="post" action="{{ url_for('core.account_identity_verify') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>验证 {{ pending_identity.identifier }}<input name="code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="6 位验证码"></label><button class="primary-btn icon-btn" type="submit" title="确认绑定" aria-label="确认绑定">{{ action_icon('check') }}</button>{% if pending_identity.dev_code %}<small>开发验证码：{{ pending_identity.dev_code }}</small>{% endif %}</form>{% endif %}<div class="security-row"><div><strong>登录密码</strong><p>密码至少 8 位，并同时包含字母和数字。</p></div><a class="secondary-btn icon-btn" href="{{ url_for('core.password_setup') }}" target="_top" title="修改密码" aria-label="修改密码">{{ action_icon('key') }}</a></div></section>
+      <section class="account-card security-list"><h2>账号标识</h2>{% if account_identities %}{% for identity in account_identities %}<div class="security-row"><div><strong>{{ '邮箱' if identity.identity_type == 'email' else '手机号' }}</strong><p>{{ identity.identifier }}{% if identity.is_primary %} · 主账号{% endif %}</p></div><div class="inline-actions">{% if not identity.is_primary %}<form method="post" action="{{ url_for('core.account_identity_primary', identity_id=identity.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="text-btn icon-btn" type="submit" title="设为主账号" aria-label="设为主账号">{{ action_icon('star') }}</button></form><form method="post" action="{{ url_for('core.account_identity_delete', identity_id=identity.id) }}" onsubmit="return confirm('确认解绑这个账号标识？')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="danger-link icon-btn" type="submit" title="解绑账号" aria-label="解绑账号">{{ action_icon('unlink') }}</button></form>{% else %}<span class="security-state">已验证</span>{% endif %}</div></div>{% endfor %}{% else %}<div class="security-row"><div><strong>旧邮箱账户</strong><p>{{ visible_identifier }}</p></div><a class="secondary-btn icon-btn" href="{{ url_for('core.password_setup') }}" target="_top" title="验证并设置密码" aria-label="验证并设置密码">{{ action_icon('key') }}</a></div>{% endif %}<form class="bind-identity bind-inline" method="post" action="{{ url_for('core.account_identity_request') }}" onsubmit="return startCaptchaCooldown(this)"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>绑定新邮箱或手机号<input name="identifier" required placeholder="name@example.com / +86 13800000000"></label><label class="captcha-label">图形验证码<span class="captcha-row"><input name="captcha" maxlength="4" autocomplete="off" required placeholder="图中字符"><img class="captcha-img" src="{{ url_for('core.captcha_image') }}" alt="图形验证码" title="点击刷新" onclick="this.src='{{ url_for('core.captcha_image') }}?r='+Date.now()"></span></label><button class="secondary-btn icon-btn captcha-send" type="submit" title="获取验证码" aria-label="获取验证码" data-cooldown="60">{{ action_icon('send') }}</button></form>{% if pending_identity %}<form class="bind-identity pending" method="post" action="{{ url_for('core.account_identity_verify') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>验证 {{ pending_identity.identifier }}<input name="code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="6 位验证码"></label><button class="primary-btn icon-btn" type="submit" title="确认绑定" aria-label="确认绑定">{{ action_icon('check') }}</button>{% if pending_identity.dev_code %}<small>开发验证码：{{ pending_identity.dev_code }}</small>{% endif %}</form>{% endif %}<div class="security-row"><div><strong>登录密码</strong><p>密码至少 8 位，并同时包含字母和数字。</p></div><a class="secondary-btn icon-btn" href="{{ url_for('core.password_setup') }}" target="_top" title="修改密码" aria-label="修改密码">{{ action_icon('key') }}</a></div></section>
       <section class="account-card"><h2>登录设备</h2>{% if user_sessions %}<div class="login-list">{% for item in user_sessions %}<div><span><strong>{{ item.user_agent[:60] or '未知设备' }}</strong><small>{{ item.ip_address or '未知 IP' }} · 最近活动 {{ item.last_seen_at.strftime('%Y-%m-%d %H:%M') }}</small></span>{% if item.token_hash == current_session_hash %}<em>当前设备</em>{% else %}<form method="post" action="{{ url_for('core.account_session_revoke', session_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-btn icon-btn" type="submit" title="退出此设备" aria-label="退出此设备">{{ action_icon('logout') }}</button></form>{% endif %}</div>{% endfor %}</div>{% else %}<p class="muted">当前登录来自旧会话，重新登录后即可管理设备。</p>{% endif %}</section>
 
       {% elif section == 'organization' %}
@@ -237,6 +250,37 @@
     window.addEventListener('pagehide',function(){
       try{sessionStorage.setItem(KEY,JSON.stringify({section:section,y:window.scrollY||window.pageYOffset||0}));}catch(e){}
     });
+  })();
+  // 「获取验证码」发送后冷却倒计时：防止重复发码。表单提交走 302 整页重载，
+  // 倒计时用不了内存变量，改为把“截止时间戳”存 sessionStorage，重载后据此续算剩余秒数。
+  (function(){
+    var KEY='captchaCooldownUntil';
+    var btn=document.querySelector('.captcha-send');
+    if(!btn)return;
+    var timer=null;
+    function tick(){
+      var until=parseInt(sessionStorage.getItem(KEY)||'0',10);
+      var left=Math.ceil((until-Date.now())/1000);
+      if(left>0){
+        // 倒计时中：禁用按钮，图标换成剩余秒数（CSS 隐藏 svg）
+        btn.classList.add('counting');btn.disabled=true;btn.textContent=left+'s';
+      }else{
+        // 结束：清状态、恢复原始图标（首次进入时缓存的 SVG）
+        sessionStorage.removeItem(KEY);
+        btn.classList.remove('counting');btn.disabled=false;btn.innerHTML=btn.dataset.iconHtml;
+        if(timer){clearInterval(timer);timer=null;}
+      }
+    }
+    // 缓存原始图标 HTML，倒计时结束后还原
+    btn.dataset.iconHtml=btn.innerHTML;
+    // 每秒刷新一次；页面加载即启动，续算上次未走完的冷却
+    timer=setInterval(tick,1000);tick();
+    // 提交时开启新冷却：只有原生校验通过（浏览器允许提交）才写截止时间
+    window.startCaptchaCooldown=function(form){
+      var secs=parseInt(btn.dataset.cooldown||'60',10);
+      sessionStorage.setItem(KEY,String(Date.now()+secs*1000));
+      return true; // 不拦截提交，让表单正常 POST
+    };
   })();
   // 操作日志筛选/分页走 AJAX 局部刷新：整块替换 .audit-card，避免整页 iframe 重载的闪烁。
   // 替换整卡片（而非只换结果区）是为了让筛选表单值、清除按钮、分页状态一并同步，

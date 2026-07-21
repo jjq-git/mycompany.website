@@ -4595,7 +4595,9 @@ def account_site_identity_update(site_id):
 
     name = request.form.get('name', '').strip()
     slug = request.form.get('slug', '').strip().lower()
-    old_name, old_slug = site.name, site.slug
+    # 自定义域名(方案A)：清洗成裸域名，空串表示解绑
+    custom_domain = _normalize_custom_domain(request.form.get('custom_domain'))
+    old_name, old_slug, old_domain = site.name, site.slug, site.custom_domain
     redirect_edit = lambda: redirect(url_for('core.account', section='sites', edit=site.id))
 
     if not name or len(name) > 200:
@@ -4607,6 +4609,17 @@ def account_site_identity_update(site_id):
     if slug in SLUG_RESERVED:
         flash('该 Slug 为系统保留字，请更换', 'danger')
         return redirect_edit()
+    # 域名非空时校验格式，并确保不被其他站点占用（唯一绑定）
+    if custom_domain:
+        if not DOMAIN_PATTERN.match(custom_domain):
+            flash('自定义域名格式不正确，请填写形如 www.company.com 的完整域名', 'danger')
+            return redirect_edit()
+        occupied_domain = Site.query.filter(
+            Site.custom_domain == custom_domain, Site.id != site.id
+        ).first()
+        if occupied_domain:
+            flash('该域名已被其他站点绑定，请更换', 'danger')
+            return redirect_edit()
 
     slug_changed = slug != old_slug
     occupied_site = Site.query.filter(Site.slug == slug, Site.id != site.id).first()
@@ -4619,6 +4632,8 @@ def account_site_identity_update(site_id):
         return redirect_edit()
 
     site.name = name
+    # 空串归一成 None，与"未绑定"语义一致，也避免唯一索引对多个空串报冲突
+    site.custom_domain = custom_domain or None
     if slug_changed:
         if occupied_alias and occupied_alias.site_id == site.id:
             db.session.delete(occupied_alias)
@@ -4626,14 +4641,16 @@ def account_site_identity_update(site_id):
             db.session.add(SiteSlugAlias(site_id=site.id, slug=old_slug))
         site.slug = slug
     _write_audit(
-        user, 'site.identity.update', f'更新站点“{old_name}”的名称或 Slug', site_id=site.id,
-        details={'old_name': old_name, 'new_name': name, 'old_slug': old_slug, 'new_slug': slug},
+        user, 'site.identity.update', f'更新站点“{old_name}”的名称、Slug 或域名', site_id=site.id,
+        details={'old_name': old_name, 'new_name': name, 'old_slug': old_slug, 'new_slug': slug,
+                 'old_domain': old_domain, 'new_domain': site.custom_domain},
     )
     try:
         db.session.commit()
     except IntegrityError:
+        # Slug 或自定义域名的唯一约束都可能在此并发冲突，给通用提示让用户改一个
         db.session.rollback()
-        flash('Slug 刚被其他站点占用，请换一个', 'danger')
+        flash('该 Slug 或域名刚被其他站点占用，请换一个', 'danger')
         return redirect_edit()
     flash('站点信息已保存' + ('；旧 Slug 会继续转到当前站点' if slug_changed else ''), 'success')
     return redirect(url_for('core.account', section='sites', workspace_changed='1'))
@@ -5650,6 +5667,30 @@ def theme_edit():
 
 
 SLUG_PATTERN = re.compile(r'^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$')
+
+# 自定义域名校验(方案A)：至少两段(有 TLD)，每段 1–63 位、字母数字或连字符且不以连字符首尾。
+# 只做基本格式把关，防止明显错误写入；不校验域名是否真实注册(那由 DNS 生效环节自然反馈)。
+DOMAIN_PATTERN = re.compile(
+    r'^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$'
+)
+
+
+def _normalize_custom_domain(raw):
+    """把用户输入规整成裸域名：去空格、去 http(s):// 前缀、去路径/端口、去末尾点、转小写。
+
+    用户常直接粘贴 "https://www.company.com/" 这种，统一清洗成 "www.company.com"，
+    避免把协议或斜杠误当域名的一部分存进库。
+    """
+    text = (raw or '').strip().lower()
+    if not text:
+        return ''
+    # 去协议头
+    text = re.sub(r'^https?://', '', text)
+    # 只保留主机部分：切掉第一个 / ? # 之后的内容
+    text = re.split(r'[/?#]', text, 1)[0]
+    # 去端口和 DNS 根点
+    text = text.split(':', 1)[0].rstrip('.')
+    return text
 
 # page_key / dataset_key 经 <path:> 转换器接收, 会原样带进 `..` 和 `/`。
 # 这里做路由层白名单, 与 site_storage._safe_path 的存储层兜底形成双保险。

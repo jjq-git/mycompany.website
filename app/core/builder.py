@@ -1375,7 +1375,8 @@ def _site_base_url(site=None, base_url=''):
     if base:
         return base
     if site is not None and getattr(site, 'slug', None):
-        custom_domain = str(getattr(site, 'domain', '') or '').strip().strip('/')
+        # 已绑定自定义域名时，SEO canonical/绝对 URL 优先用它；否则回退平台子域
+        custom_domain = str(getattr(site, 'custom_domain', '') or '').strip().strip('/')
         if custom_domain:
             if custom_domain.startswith(('http://', 'https://')):
                 return custom_domain

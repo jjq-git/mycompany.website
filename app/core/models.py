@@ -140,6 +140,9 @@ class Site(db.Model):
     bucket_path_prefix = db.Column(db.String(100))
     bucket_region = db.Column(db.String(50))
     cdn_provider = db.Column(db.String(20), default='aliyun', nullable=False)
+    # 自定义域名(方案A)：只做"收集 + 展示 CNAME 指引"，不含真实 CDN/SSL 自动签发。
+    # 唯一约束防止两个站点绑同一域名；可空表示尚未绑定，此时对外地址仍用 slug 兜底。
+    custom_domain = db.Column(db.String(253), unique=True, index=True)  # 域名最长 253 字符(RFC 1035)
     status = db.Column(db.String(20), default='draft', nullable=False)  # draft / published / suspended
     last_published_at = db.Column(db.DateTime(timezone=True))
     soft_deleted_at = db.Column(db.DateTime(timezone=True))
