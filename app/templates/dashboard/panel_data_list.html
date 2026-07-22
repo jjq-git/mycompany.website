@@ -123,9 +123,6 @@
   #detailGalleryList .detail-gallery-item{margin-bottom:0!important}
   .detail-multi-section{background:transparent!important;border:0!important;border-radius: 0;overflow:visible!important;margin-bottom:0!important}
   .detail-multi-section>.small.fw-semibold{display:none!important}
-  .detail-multi-section>#detailTablesList,
-  .detail-multi-section>#detailLinksList{display:grid;grid-template-columns:1fr;gap:12px;margin:0 0 12px!important}
-  .detail-multi-section>#detailSpecsList{display:grid;grid-template-columns:1fr;gap:12px;margin:0 0 12px!important}
   .dataset-edit-form .detail-table-item,
   .dataset-edit-form .detail-link-item,
   .dataset-edit-form .detail-spec-group-item{display:grid;grid-template-columns:140px minmax(0,1fr);background:#fff;border:1px solid #e5e7eb!important;border-radius: 0;padding:0!important;overflow:hidden;margin:0 0 12px!important}
@@ -591,14 +588,12 @@
     {% if spec_count.value > max_spec_group_count.value %}{% set max_spec_group_count.value = spec_count.value %}{% endif %}
   {% endfor %}
   {% set saved_detail_specs = edit_item.detail_specs if edit_item.detail_specs is iterable and edit_item.detail_specs is not string else [] %}
-  <div class="detail-specs-section editor-component-stack" data-field-section="specs" style="{% if not current_req.get('specs') %}display:none{% endif %}">
-    <input type="hidden" name="detail_specs_count" id="detailSpecsCount" value="{{ current_spec_group_count.value }}">
-    <div id="detailSpecsList" class="editor-component-stack__body">
+  <input type="hidden" name="detail_specs_count" id="detailSpecsCount" value="{{ current_spec_group_count.value }}">
       {% for spec_group_i in range(max_spec_group_count.value or 1) %}
         {% set group_item = saved_detail_specs[spec_group_i] if saved_detail_specs|length > spec_group_i and saved_detail_specs[spec_group_i] is mapping else {} %}
         {% set group_items_raw = group_item.get('items', []) if group_item is mapping else [] %}
         {% set group_items = group_items_raw if saved_detail_specs|length > spec_group_i and group_items_raw is iterable and group_items_raw is not string else (specs_items if spec_group_i == 0 else []) %}
-        <div class="border rounded p-2 detail-spec-group-item editor-component" data-spec-group-index="{{ spec_group_i }}" style="{% if spec_group_i >= current_spec_group_count.value %}display:none{% endif %}">
+        <div class="border rounded p-2 detail-field-section detail-multi-section detail-spec-group-item editor-component" data-field-section="specs_{{ spec_group_i }}" data-spec-group-index="{{ spec_group_i }}"{% if spec_group_i >= current_spec_group_count.value %} hidden{% endif %} style="{% if spec_group_i >= current_spec_group_count.value %}display:none{% endif %}">
           <div class="d-flex justify-content-between align-items-center mb-2 editor-component__header">
             <span class="small fw-semibold">规格参数 {{ spec_group_i + 1 }}</span>
             <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailSpecRow({{ spec_group_i }})">+ 添加参数</button>
@@ -622,8 +617,6 @@
           </div>
         </div>
       {% endfor %}
-    </div>
-  </div>
 
   <div class="p-2 rounded mb-2 detail-field-section editor-component" data-field-section="detail_features" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_features') %}display:none{% endif %}">
     <div class="d-flex justify-content-between align-items-center mb-2 editor-component__header">
@@ -718,15 +711,13 @@
   {% endfor %}
   {# 条目侧多组数据：优先 detail_columns_groups(list)，回落旧单 dict 放到第 0 组做兼容 #}
   {% set saved_columns_groups = edit_item.detail_columns_groups if edit_item.detail_columns_groups is iterable and edit_item.detail_columns_groups is not string and edit_item.detail_columns_groups is not mapping else ([columns_cfg] if columns_cfg else []) %}
-  <div class="detail-field-section detail-multi-section editor-component-stack" data-field-section="detail_columns" style="{% if current_columns_count.value < 1 %}display:none{% endif %}">
-    <input type="hidden" name="detail_columns_count" id="detailColumnsCount" value="{{ current_columns_count.value }}">
-    <div id="detailColumnsList" class="editor-component-stack__body">
+  <input type="hidden" name="detail_columns_count" id="detailColumnsCount" value="{{ current_columns_count.value }}">
     {% for col_group_i in range(max_columns_count.value or 1) %}
       {% set group_obj = saved_columns_groups[col_group_i] if saved_columns_groups|length > col_group_i and saved_columns_groups[col_group_i] is mapping else {} %}
       {% set group_heading = group_obj.get('heading', '') if group_obj is mapping else '' %}
       {% set group_items_raw = group_obj.get('items', []) if group_obj is mapping else [] %}
       {% set group_columns_items = group_items_raw if group_items_raw is iterable and group_items_raw is not string else [] %}
-  <div class="p-2 rounded mb-2 detail-columns-group-item editor-component" data-columns-group-index="{{ col_group_i }}" style="background:#fff;border:1px solid #e9ecef;{% if col_group_i >= current_columns_count.value %}display:none{% endif %}">
+  <div class="p-2 rounded mb-2 detail-field-section detail-multi-section detail-columns-group-item editor-component" data-field-section="detail_columns_{{ col_group_i }}" data-columns-group-index="{{ col_group_i }}" style="background:#fff;border:1px solid #e9ecef;{% if col_group_i >= current_columns_count.value %}display:none{% endif %}"{% if col_group_i >= current_columns_count.value %} hidden{% endif %}>
     <div class="d-flex justify-content-between align-items-center mb-2 editor-component__header">
       <div class="small fw-semibold">图文列 {{ col_group_i + 1 }}</div>
       <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailColumn({{ col_group_i }})">+ 添加列</button>
@@ -784,8 +775,6 @@
     </div>
   </div>
     {% endfor %}
-    </div>
-  </div>
 
   <div class="p-2 rounded mb-2 detail-field-section editor-component" data-field-section="detail_content_blocks" data-free-content-enabled="{{ 'true' if detail_free_content_enabled | default(false) else 'false' }}" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_content_blocks') %}display:none{% endif %}">
     <div class="d-flex justify-content-between align-items-center mb-2 editor-component__header">
@@ -982,15 +971,12 @@
     {% if table_count.value > max_table_count.value %}{% set max_table_count.value = table_count.value %}{% endif %}
   {% endfor %}
   {% set saved_detail_tables = edit_item.detail_tables if edit_item.detail_tables is iterable and edit_item.detail_tables is not string else [] %}
-  <div class="p-2 rounded mb-2 detail-field-section detail-multi-section editor-component" data-field-section="detail_tables" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('detail_tables') %}display:none{% endif %}">
-    <div class="small fw-semibold mb-2 editor-component__header">详情表格</div>
-    <input type="hidden" name="detail_tables_count" id="detailTablesCount" value="{{ current_table_count.value }}">
-    <div id="detailTablesList" class="editor-component__body editor-component__collection">
+  <input type="hidden" name="detail_tables_count" id="detailTablesCount" value="{{ current_table_count.value }}">
       {% for table_i in range(max_table_count.value or 1) %}
         {% set table_item = saved_detail_tables[table_i] if saved_detail_tables|length > table_i and saved_detail_tables[table_i] is mapping else {} %}
         {% set table_rows_saved = table_item.rows if table_item.rows is iterable and table_item.rows is not string else [] %}
-        <div class="border rounded p-2 detail-table-item editor-component__item" data-table-index="{{ table_i }}" style="{% if table_i >= current_table_count.value %}display:none{% endif %}">
-          <div class="small fw-semibold mb-2">表格 {{ table_i + 1 }}</div>
+        <div class="border rounded p-2 detail-field-section detail-multi-section detail-table-item editor-component" data-field-section="detail_tables_{{ table_i }}" data-table-index="{{ table_i }}" style="{% if table_i >= current_table_count.value %}display:none{% endif %}"{% if table_i >= current_table_count.value %} hidden{% endif %}>
+          <div class="small fw-semibold mb-2 editor-component__header">表格 {{ table_i + 1 }}</div>
           <input type="hidden" name="detail_tables_{{ table_i }}_rows" class="detail-table-row-count" value="{{ max_table_rows.value }}">
           <input type="hidden" name="detail_tables_{{ table_i }}_cols" class="detail-table-col-count" value="{{ max_table_cols.value }}">
           <div class="detail-table-input-grid">
@@ -1010,8 +996,6 @@
           </div>
         </div>
       {% endfor %}
-    </div>
-  </div>
 
   {% set current_link_count = namespace(value=0) %}
   {% set max_link_count = namespace(value=0) %}
@@ -1028,14 +1012,11 @@
     {% if link_count.value > max_link_count.value %}{% set max_link_count.value = link_count.value %}{% endif %}
   {% endfor %}
   {% set saved_detail_links = edit_item.detail_links if edit_item.detail_links is iterable and edit_item.detail_links is not string else [] %}
-  <div class="p-2 rounded mb-2 detail-field-section detail-multi-section editor-component" data-field-section="link" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('link') %}display:none{% endif %}">
-    <div class="small fw-semibold mb-2 editor-component__header">链接</div>
-    <input type="hidden" name="detail_links_count" id="detailLinksCount" value="{{ current_link_count.value }}">
-    <div id="detailLinksList" class="editor-component__body editor-component__collection">
+  <input type="hidden" name="detail_links_count" id="detailLinksCount" value="{{ current_link_count.value }}">
       {% for i in range(max_link_count.value or 1) %}
       {% set link_item = saved_detail_links[i] if saved_detail_links|length > i and saved_detail_links[i] is mapping else {} %}
-      <div class="border rounded p-2 detail-link-item editor-component__item" data-link-index="{{ i }}" style="{% if i >= current_link_count.value %}display:none{% endif %}">
-        <div class="small fw-semibold mb-2">链接 {{ i + 1 }}</div>
+      <div class="border rounded p-2 detail-field-section detail-multi-section detail-link-item editor-component" data-field-section="link_{{ i }}" data-link-index="{{ i }}" style="{% if i >= current_link_count.value %}display:none{% endif %}"{% if i >= current_link_count.value %} hidden{% endif %}>
+        <div class="small fw-semibold mb-2 editor-component__header">链接 {{ i + 1 }}</div>
         <div class="mb-2">
           <label class="form-label small mb-1 text-muted">链接文字</label>
           <input type="text" class="form-control form-control-sm" name="detail_links_{{ i }}_text" value="{{ link_item.text or link_item.label or (edit_item.link_text or edit_item.button_text or '') if i == 0 else '' }}">
@@ -1046,8 +1027,6 @@
         </div>
       </div>
       {% endfor %}
-    </div>
-  </div>
 
   <div class="p-2 rounded mb-2 detail-field-section editor-component" data-field-section="seo" style="background:#fff;border:1px solid #e9ecef;{% if not current_req.get('seo') %}display:none{% endif %}">
     <div class="small fw-semibold mb-2 editor-component__header">SEO 覆盖</div>
@@ -1272,7 +1251,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var sections = {};
     var tableItems = Array.prototype.slice.call(document.querySelectorAll('.detail-table-item'));
     var linkItems = Array.prototype.slice.call(document.querySelectorAll('.detail-link-item'));
-    var specSection = document.querySelector('[data-field-section="specs"]');
+    var specItems = Array.prototype.slice.call(document.querySelectorAll('.detail-spec-group-item'));
     document.querySelectorAll('.detail-field-section').forEach(function(section) {
       if (!section.classList.contains('detail-multi-section')) {
         sections[section.getAttribute('data-field-section')] = section;
@@ -1285,7 +1264,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var detailTableConfigs = [];
     var detailSpecConfigs = [];
     var detailColumnsConfigs = [];
-    var columnsSection = document.querySelector('[data-field-section="detail_columns"]');
+    var columnsItems = Array.prototype.slice.call(document.querySelectorAll('.detail-columns-group-item'));
     var hasContentBlocksSection = false;
     var hasFreeContentModule = false;
     var order = [];
@@ -1350,10 +1329,10 @@ window._dsEditItemJson = {{ edit_item | tojson }};
           container.appendChild(tableItems[entry.index]);
         } else if (entry && entry.kind === 'link' && linkItems[entry.index]) {
           container.appendChild(linkItems[entry.index]);
-        } else if (entry && entry.kind === 'specs' && specSection) {
-          container.appendChild(specSection);
-        } else if (entry && entry.kind === 'columns' && columnsSection) {
-          container.appendChild(columnsSection);
+        } else if (entry && entry.kind === 'specs' && specItems[entry.index]) {
+          container.appendChild(specItems[entry.index]);
+        } else if (entry && entry.kind === 'columns' && columnsItems[entry.index]) {
+          container.appendChild(columnsItems[entry.index]);
         }
       });
     }
@@ -1377,6 +1356,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     document.querySelectorAll('.detail-link-item').forEach(function(item) {
       var idx = parseInt(item.getAttribute('data-link-index') || '0', 10);
       var config = detailLinkConfigs[idx];
+      item.hidden = !config;
       item.style.display = config ? '' : 'none';
       if (config) {
         var titleEl = item.querySelector('.small.fw-semibold');
@@ -1393,13 +1373,12 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   // 图文列多组显隐：整块 section 由组数决定显隐，每组按 configs[idx] 显隐并更新标题
   function updateDetailColumnsFields(configs) {
     configs = configs || [];
-    var section = document.querySelector('[data-field-section="detail_columns"]');
-    if (section) section.style.display = configs.length ? '' : 'none';
     var countInput = document.getElementById('detailColumnsCount');
     if (countInput) countInput.value = configs.length;
     document.querySelectorAll('.detail-columns-group-item').forEach(function(item) {
       var idx = parseInt(item.getAttribute('data-columns-group-index') || '0', 10);
       var config = configs[idx];
+      item.hidden = !config;
       item.style.display = config ? '' : 'none';
       if (!config) return;
       var titleEl = item.querySelector(':scope > .d-flex .small.fw-semibold');
@@ -1409,13 +1388,12 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 
   function updateDetailSpecFields(configs) {
     configs = configs || [];
-    var section = document.querySelector('[data-field-section="specs"]');
-    if (section) section.style.display = configs.length ? '' : 'none';
     var countInput = document.getElementById('detailSpecsCount');
     if (countInput) countInput.value = configs.length;
     document.querySelectorAll('.detail-spec-group-item').forEach(function(item) {
       var idx = parseInt(item.getAttribute('data-spec-group-index') || '0', 10);
       var config = configs[idx];
+      item.hidden = !config;
       item.style.display = config ? '' : 'none';
       if (!config) return;
       var rowsEl = item.querySelector('.detail-spec-rows');
@@ -1435,6 +1413,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     document.querySelectorAll('.detail-table-item').forEach(function(item) {
       var tableIndex = parseInt(item.getAttribute('data-table-index') || '0', 10);
       var config = configs[tableIndex];
+      item.hidden = !config;
       item.style.display = config ? '' : 'none';
       if (!config) return;
       var titleEl = item.querySelector('.small.fw-semibold');

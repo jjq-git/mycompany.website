@@ -181,7 +181,7 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         'category': 'detail',
         'icon': '',
         'description': '显示当前数据项的封面图、细节图或两者组合。',
-        'palette_hidden': True,
+        'allow_multiple': False,
         'fields': [
             {'key': 'source', 'label': '图片来源', 'type': 'select', 'group': '内容', 'default': 'cover_and_gallery', 'options': [
                 {'value': 'cover_and_gallery', 'label': '封面图 + 细节图'},
@@ -219,7 +219,6 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         'category': 'detail',
         'icon': '',
         'description': '读取当前数据项的正文、简介或指定字段，渲染一个文本区块。',
-        'palette_hidden': True,
         'fields': [
             {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
             {'key': 'content_field', 'label': '读取内容', 'type': 'select', 'group': '内容', 'default': 'body', 'options': [
@@ -253,6 +252,7 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         'category': 'detail',
         'icon': '',
         'description': '用于结构不固定的文章或案例；内容编辑时可以自由增删和排列多种内容块。',
+        'allow_multiple': False,
         'fields': [
             {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
             {'key': 'empty_behavior', 'label': '内容为空时', 'type': 'select', 'group': '显示规则', 'default': 'hide_module', 'options': [
@@ -393,7 +393,6 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         'category': 'detail',
         'icon': '',
         'description': '按模板配置行列，逐格填写文字，可选择单元格文字链接。',
-        'palette_hidden': True,
         'fields': [
             {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
             {'key': 'table_rows', 'label': '行数', 'type': 'number', 'group': '表格', 'default': 3},
@@ -454,6 +453,7 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         'category': 'detail',
         'icon': '',
         'description': '逐条填写产品卖点，渲染为图标/标题/说明卡片。',
+        'allow_multiple': False,
         'fields': [
             {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
             {'key': 'columns', 'label': '每行个数', 'type': 'select', 'group': '显示规则', 'default': '3', 'options': [
@@ -513,6 +513,7 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         'category': 'detail',
         'icon': '',
         'description': '填写规格书、说明书、认证文件等下载资料。',
+        'allow_multiple': False,
         'fields': [
             {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': '资料下载'},
             {'key': 'empty_behavior', 'label': '内容为空时', 'type': 'select', 'group': '显示规则', 'default': 'hide_module', 'options': [
@@ -534,6 +535,7 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         'category': 'detail',
         'icon': '',
         'description': '填写产品常见问题，渲染为问答列表。',
+        'allow_multiple': False,
         'fields': [
             {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': '常见问题'},
             {'key': 'empty_behavior', 'label': '内容为空时', 'type': 'select', 'group': '显示规则', 'default': 'hide_module', 'options': [
@@ -555,6 +557,7 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         'category': 'detail',
         'icon': '',
         'description': '按分类或标签自动推荐同数据集中的其他条目。',
+        'allow_multiple': False,
         'fields': [
             {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': '相关推荐'},
             {'key': 'match_by', 'label': '推荐依据', 'type': 'select', 'group': '内容', 'default': 'category', 'options': [
@@ -760,6 +763,46 @@ def _remove_redundant_detail_intro_modules(templates):
     return changed
 
 
+DETAIL_TEMPLATE_SINGLETON_COMPONENTS = {
+    'detail_media', 'detail_content_blocks', 'detail_features',
+    'detail_files', 'detail_faq', 'detail_related',
+}
+
+
+def _sort_detail_modules(modules):
+    """Return detail modules in their explicit display order, stably."""
+    indexed = list(enumerate(modules if isinstance(modules, list) else []))
+
+    def order_key(pair):
+        index, module = pair
+        raw_order = module.get('order') if isinstance(module, dict) else None
+        try:
+            order = int(raw_order)
+        except (TypeError, ValueError):
+            order = index + 1
+        return order, index
+
+    return [module for _, module in sorted(indexed, key=order_key)]
+
+
+def _dedupe_detail_singletons(modules):
+    """Keep one editor/data section for components backed by a single field set."""
+    result = []
+    seen = set()
+    for module in _sort_detail_modules(modules):
+        if not isinstance(module, dict):
+            continue
+        module_type = module.get('type')
+        if module_type in DETAIL_TEMPLATE_SINGLETON_COMPONENTS:
+            if module_type in seen:
+                continue
+            seen.add(module_type)
+        result.append(module)
+    for index, module in enumerate(result):
+        module['order'] = index + 1
+    return result
+
+
 def _ensure_page_detail_templates(site_id, dataset_key, label=None, lang=None):
     """Ensure list page config has a default detail template without touching existing data."""
     page = read_yaml(site_id, f'pages/{dataset_key}.yaml', default={}, lang=lang) or {}
@@ -799,7 +842,11 @@ def _detail_templates_for_page(page, dataset_key, label=None):
         return [_default_detail_template(dataset_key, label)]
     _upgrade_legacy_detail_content_modules(templates)
     _remove_redundant_detail_intro_modules(templates)
-    return [tpl for tpl in templates if isinstance(tpl, dict)] or [_default_detail_template(dataset_key, label)]
+    normalized = [tpl for tpl in templates if isinstance(tpl, dict)]
+    for template in normalized:
+        if isinstance(template.get('modules'), list):
+            template['modules'] = _dedupe_detail_singletons(template['modules'])
+    return normalized or [_default_detail_template(dataset_key, label)]
 
 
 def _default_detail_template_id(page, dataset_key, label=None):
@@ -888,8 +935,12 @@ def _detail_template_field_requirements(template, item=None):
             req['detail_faqs'] = True
         if m_type == 'detail_columns':
             req['detail_columns'] = True
-        if m_type in ('text_content', 'detail_text'):
+        if m_type == 'text_content':
             req['body'] = True
+        elif m_type == 'detail_text':
+            content_field = str(data.get('content_field') or 'body')
+            if content_field in ('body', 'content'):
+                req['body'] = True
         for key, value in data.items():
             key_l = str(key).lower()
             value_enabled = str(value).strip().lower() not in ('false', '0', 'no', 'off', '')
@@ -6349,9 +6400,9 @@ def _parse_detail_columns_form(form, files=None, site_id=None, dataset_key=None,
                     col['alt'] = alt
                 columns.append(col)
         heading = form.get(f'detail_columns_{g}_heading', '').strip()
-        # 整组无标题且无列时丢弃，避免存下空组
-        if heading or columns:
-            groups.append({'heading': heading, 'items': columns})
+        # 图文列组件与列表位置一一对应，空组也必须保留占位。
+        # 否则只填写第 3 组时会被压缩成第 1 组，预览也无法区分组件归属。
+        groups.append({'heading': heading, 'items': columns})
     return groups
 
 
@@ -6517,6 +6568,17 @@ def _parse_detail_actions_form(form):
     return actions
 
 
+def _parse_detail_links_form(form, count):
+    """Parse positional link groups without compacting empty components."""
+    links = []
+    for index in range(max(0, count)):
+        links.append({
+            'text': form.get(f'detail_links_{index}_text', '').strip(),
+            'url': form.get(f'detail_links_{index}_url', '').strip(),
+        })
+    return links
+
+
 def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, source_storage_lang):
     """Parse a dataset edit form into one draft item without writing YAML."""
     item = datasets.find(site.id, dataset_key, item_id, lang=storage_lang)
@@ -6612,12 +6674,7 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
         except (ValueError, TypeError):
             links_count = 0
         if links_count > 0:
-            detail_links = []
-            for li in range(links_count):
-                text = form.get(f'detail_links_{li}_text', '').strip()
-                url = form.get(f'detail_links_{li}_url', '').strip()
-                if text or url:
-                    detail_links.append({'text': text, 'url': url})
+            detail_links = _parse_detail_links_form(form, links_count)
             fields['detail_links'] = detail_links
             if detail_links:
                 fields['link_text'] = detail_links[0].get('text', '')
@@ -7227,7 +7284,7 @@ def detail_templates_panel(dataset_key):
                 if name:
                     source['name'] = name
                 existing_modules = source.get('modules') if isinstance(source.get('modules'), list) else []
-                modules = _parse_modules_form(request.form, existing_modules)
+                modules = _dedupe_detail_singletons(_parse_modules_form(request.form, existing_modules))
                 source['modules'] = modules
                 seo_title = request.form.get('seo_title', '').strip()
                 seo_description = request.form.get('seo_description', '').strip()
@@ -7631,12 +7688,7 @@ def dataset_edit(dataset_key, item_id):
             except (ValueError, TypeError):
                 links_count = 0
             if links_count > 0:
-                detail_links = []
-                for li in range(links_count):
-                    text = request.form.get(f'detail_links_{li}_text', '').strip()
-                    url = request.form.get(f'detail_links_{li}_url', '').strip()
-                    if text or url:
-                        detail_links.append({'text': text, 'url': url})
+                detail_links = _parse_detail_links_form(request.form, links_count)
                 fields['detail_links'] = detail_links
                 if detail_links:
                     fields['link_text'] = detail_links[0].get('text', '')

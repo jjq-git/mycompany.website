@@ -235,6 +235,11 @@ DETAIL_COMPONENT_TYPES = {
     *DETAIL_CONTENT_MODULE_TO_TYPE.keys(),
 }
 
+DETAIL_SINGLETON_COMPONENT_TYPES = {
+    'detail_media', 'detail_content_blocks', 'detail_features',
+    'detail_files', 'detail_faq', 'detail_related',
+}
+
 
 def _current_detail_item(jinja_ctx):
     item_data = jinja_ctx.get('item')
@@ -477,8 +482,8 @@ def _render_detail_base_header(item, data):
 
 def _render_detail_text(item, data):
     content = _detail_field_value(item, data.get('content_field') or 'body', data.get(''))
-    if not content:
-        content = _detail_field_value(item, data.get('fallback_field') or 'description,summary,content')
+    if not content and data.get('fallback_field'):
+        content = _detail_field_value(item, data.get('fallback_field'))
     if not content:
         if data.get('empty_behavior') != 'show_placeholder':
             return Markup('')
@@ -523,8 +528,14 @@ def _render_detail_specs(item, data):
     spec_index = data.get('_detail_specs_index')
     spec_group = {}
     detail_specs = item.get('detail_specs')
-    if isinstance(spec_index, int) and isinstance(detail_specs, list) and 0 <= spec_index < len(detail_specs) and isinstance(detail_specs[spec_index], dict):
-        spec_group = detail_specs[spec_index]
+    if isinstance(spec_index, int) and isinstance(detail_specs, list):
+        if 0 <= spec_index < len(detail_specs) and isinstance(detail_specs[spec_index], dict):
+            spec_group = detail_specs[spec_index]
+        else:
+            return Markup('')
+    elif isinstance(spec_index, int) and spec_index > 0:
+        # Historical specs/parameters/attributes are a single ungrouped source.
+        return Markup('')
     if spec_group.get('visible') is False:
         return Markup('')
     source_field = data.get('source_field') or 'specs'
@@ -613,13 +624,16 @@ def _render_detail_link(item, data):
     link_index = data.get('_detail_link_index')
     link_item = {}
     links = item.get('detail_links')
-    if isinstance(link_index, int) and isinstance(links, list) and 0 <= link_index < len(links) and isinstance(links[link_index], dict):
-        link_item = links[link_index]
+    if isinstance(link_index, int) and isinstance(links, list):
+        if 0 <= link_index < len(links) and isinstance(links[link_index], dict):
+            link_item = links[link_index]
+        else:
+            return Markup('')
 
     url = link_item.get('url') or link_item.get('link_url')
     if not url and (link_index in (None, 0)):
         url = _detail_field_value(item, data.get('url_field') or 'link_url')
-    if not url:
+    if not url and link_index in (None, 0):
         url = _detail_field_value(item, data.get('fallback_field') or 'download_url,button_url,url')
     if not url and _truthy_detail(data.get('hide_when_empty'), True):
         return Markup('')
@@ -921,10 +935,17 @@ def _render_detail_columns(item, data):
     # 回落到旧的单个 item.detail_columns（历史数据兼容，dict 或纯 list 两种老结构都支持）
     columns_index = data.get('_detail_columns_index') if isinstance(data, dict) else None
     groups = item.get('detail_columns_groups')
-    if isinstance(columns_index, int) and isinstance(groups, list) \
-            and 0 <= columns_index < len(groups) and isinstance(groups[columns_index], dict):
-        raw = groups[columns_index]
+    if isinstance(columns_index, int) and isinstance(groups, list):
+        # 多组件数据按位置严格绑定。某一组不存在或为空时，该组件应为空，
+        # 不能回退到旧 detail_columns，否则第 1 组会被后续组件重复渲染。
+        if 0 <= columns_index < len(groups) and isinstance(groups[columns_index], dict):
+            raw = groups[columns_index]
+        else:
+            return Markup('')
+    elif isinstance(columns_index, int) and columns_index > 0:
+        return Markup('')
     else:
+        # 仅对尚未迁移到 detail_columns_groups 的历史单组件数据兼容回退。
         raw = item.get('detail_columns')
     if isinstance(raw, dict):
         columns_src = raw.get('items')
@@ -1252,6 +1273,8 @@ def _render_detail_component(jinja_ctx, module):
     if not item:
         return Markup('')
     raw_data = module.get('data') if isinstance(module.get('data'), dict) else {}
+    if _detail_bool(raw_data.get('_hidden'), False):
+        return Markup('')
     data = _localized_detail_component_data(jinja_ctx, raw_data)
     block_type = module.get('type')
     if block_type == '_detail_base_header':
@@ -2192,11 +2215,27 @@ def _normalize_detail_template(tpl):
         normalized['optional_fields'] = ['cover', 'summary', 'detail_images', 'specs', 'category', 'tags', 'link_url']
     modules = normalized.get('modules')
     if isinstance(modules, list):
-        normalized['modules'] = [
+        filtered = [
             module for module in modules
             if not (isinstance(module, dict) and module.get('type') == 'detail_intro')
         ]
+        normalized['modules'] = _sort_detail_modules(filtered)
     return normalized
+
+
+def _sort_detail_modules(modules):
+    indexed = list(enumerate(modules if isinstance(modules, list) else []))
+
+    def order_key(pair):
+        index, module = pair
+        raw_order = module.get('order') if isinstance(module, dict) else None
+        try:
+            order = int(raw_order)
+        except (TypeError, ValueError):
+            order = index + 1
+        return order, index
+
+    return [module for _, module in sorted(indexed, key=order_key)]
 
 
 def _detail_bool(value, default=True):
@@ -2296,10 +2335,18 @@ def _is_legacy_item_detail_override(modules):
 
 
 def _annotate_detail_modules(modules):
-    modules[:] = [
-        module for module in (modules or [])
-        if not (isinstance(module, dict) and module.get('type') == 'detail_actions')
-    ]
+    filtered_modules = []
+    singleton_seen = set()
+    for module in _sort_detail_modules(modules):
+        if not isinstance(module, dict) or module.get('type') == 'detail_actions':
+            continue
+        module_type = module.get('type')
+        if module_type in DETAIL_SINGLETON_COMPONENT_TYPES:
+            if module_type in singleton_seen:
+                continue
+            singleton_seen.add(module_type)
+        filtered_modules.append(module)
+    modules[:] = filtered_modules
     link_index = 0
     table_index = 0
     specs_index = 0
@@ -2310,6 +2357,7 @@ def _annotate_detail_modules(modules):
     media_modules = [
         module for module in (modules or [])
         if isinstance(module, dict) and module.get('type') == 'detail_media'
+        and not _detail_bool((module.get('data') or {}).get('_hidden'), False)
     ]
     if not media_modules:
         modules.insert(0, {'type': '_detail_base_header', 'variant': 'default', 'data': {}})

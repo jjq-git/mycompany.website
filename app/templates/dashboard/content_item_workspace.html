@@ -101,9 +101,6 @@
     }
     .content-edit-panel .dataset-edit-form .detail-content-block-side>.d-flex:first-child{min-width:130px}
     .content-edit-panel #detailContentBlocksList,
-    .content-edit-panel #detailSpecsList,
-    .content-edit-panel #detailTablesList,
-    .content-edit-panel #detailLinksList,
     .content-edit-panel #detailFeaturesList,
     .content-edit-panel #detailFaqsList{
       display:grid!important;
@@ -112,9 +109,9 @@
       margin:0!important;
     }
     .content-edit-panel #detailContentBlocksList>.detail-content-block-item,
-    .content-edit-panel #detailSpecsList>.detail-spec-group-item,
-    .content-edit-panel #detailTablesList>.detail-table-item,
-    .content-edit-panel #detailLinksList>.detail-link-item,
+    .content-edit-panel .detail-spec-group-item,
+    .content-edit-panel .detail-table-item,
+    .content-edit-panel .detail-link-item,
     .content-edit-panel #detailFeaturesList>.detail-feature-item,
     .content-edit-panel #detailFaqsList>.detail-faq-edit-item{margin:0!important;min-width:0}
     .content-edit-panel .dataset-edit-form .ds-card-body{width:100%;margin:0;padding:14px 16px}
@@ -194,15 +191,13 @@
       align-items:start;
     }
     .content-edit-panel #detailFeaturesList,
-    .content-edit-panel #detailFaqsList,
-    .content-edit-panel #detailLinksList{
+    .content-edit-panel #detailFaqsList{
       display:grid!important;
       grid-template-columns:repeat(2,minmax(0,1fr))!important;
       gap:14px!important;
     }
     .content-edit-panel #detailFeaturesList>.detail-feature-item,
-    .content-edit-panel #detailFaqsList>.detail-faq-edit-item,
-    .content-edit-panel #detailLinksList>.detail-link-item{margin:0!important;min-width:0}
+    .content-edit-panel #detailFaqsList>.detail-faq-edit-item{margin:0!important;min-width:0}
     .content-edit-panel .detail-feature-item>.row{
       display:grid;
       grid-template-columns:minmax(120px,160px) minmax(150px,200px) minmax(0,1fr);
@@ -493,7 +488,7 @@
     }
     .content-edit-panel .editor-component-stack{margin:0 0 18px!important}
     .content-edit-panel .editor-component-stack__body{margin:0!important}
-    .content-edit-panel #detailSpecsList>.detail-spec-group-item.editor-component{
+    .content-edit-panel .detail-spec-group-item.editor-component{
       display:block!important;
       margin:0!important;
       padding:0!important;
@@ -502,7 +497,7 @@
       border-radius:0!important;
       box-shadow:0 5px 18px rgba(15,23,42,.065)!important;
     }
-    .content-edit-panel #detailSpecsList>.detail-spec-group-item.editor-component>.editor-component__header{
+    .content-edit-panel .detail-spec-group-item.editor-component>.editor-component__header{
       display:flex!important;
       align-items:center!important;
       justify-content:space-between!important;
@@ -513,7 +508,7 @@
       border-bottom:1px solid #e7ecef!important;
       background:#fff!important;
     }
-    .content-edit-panel #detailSpecsList>.detail-spec-group-item.editor-component>.editor-component__body{
+    .content-edit-panel .detail-spec-group-item.editor-component>.editor-component__body{
       display:grid!important;
       width:100%;
       gap:8px!important;
@@ -685,8 +680,11 @@
       .content-edit-panel #datasetAdvancedModules .detail-gallery-item-body .module-media-picker{width:84px!important;height:84px!important;min-height:84px!important}
     }
     @media(max-width:760px){.content-edit-panel #datasetAdvancedModules{padding:12px}.content-edit-panel #datasetAdvancedModules .dataset-advanced-toolbar{align-items:flex-start;flex-wrap:wrap}.content-edit-panel #datasetAdvancedModules .dataset-advanced-toolbar-copy{order:-1;flex:1 0 100%}}
-    @media(max-width:1200px){.content-edit-layout{grid-template-columns:180px minmax(0,1fr)}.content-edit-panel #detailGalleryList{grid-template-columns:repeat(2,minmax(0,1fr))}.content-edit-panel #detailFeaturesList,.content-edit-panel #detailFaqsList,.content-edit-panel #detailLinksList{grid-template-columns:1fr!important}}
+    @media(max-width:1200px){.content-edit-layout{grid-template-columns:180px minmax(0,1fr)}.content-edit-panel #detailGalleryList{grid-template-columns:repeat(2,minmax(0,1fr))}.content-edit-panel #detailFeaturesList,.content-edit-panel #detailFaqsList{grid-template-columns:1fr!important}}
     @media(max-width:900px){.content-edit-workspace{padding:14px}.content-edit-panel{padding:12px}.content-edit-hero{padding-right:44px}.content-edit-layout{display:block}.content-edit-outline{display:none}.content-edit-panel #detailGalleryList{grid-template-columns:1fr}.content-edit-panel .dataset-edit-form .detail-content-block-side{display:grid;grid-template-columns:1fr}.content-edit-panel .dataset-edit-form .detail-content-block-side .detail-content-type-select,.content-edit-panel .dataset-edit-form .detail-content-block-side .detail-content-layout-wrap{width:100%;flex-basis:auto}.content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main,.content-edit-panel .detail-content-block-item[data-block-type="media_text"] .detail-content-block-main,.content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-block-main{grid-template-columns:1fr!important}.content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main>*,.content-edit-panel .detail-content-block-item[data-block-type="media_text"] .detail-content-block-main>*,.content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-title-field,.content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-table-tools,.content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-table-grid{grid-column:1!important;grid-row:auto!important}.content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-table-tools{flex-wrap:wrap}}
+    /* Workspace layout uses !important display rules for component stacks.
+       Keep template-controlled hidden sections authoritative. */
+    .content-edit-panel .dataset-edit-form [hidden]{display:none!important}
   </style>
 </head>
 <body>
@@ -711,8 +709,8 @@
     var form=document.getElementById('datasetEditForm');
     var outline=document.getElementById('contentEditOutline');
     if(!form||!outline)return;
-    var collectionSelector='#detailGalleryList,#detailFeaturesList,#detailFilesList,#detailFaqsList,#detailContentBlocksList,#detailTablesList,#detailLinksList';
-    var itemSelector='.detail-gallery-item,.detail-feature-item,.detail-file-edit-item,.detail-faq-edit-item,.detail-content-block-item,.detail-table-item,.detail-link-item';
+    var collectionSelector='#detailGalleryList,#detailFeaturesList,#detailFilesList,#detailFaqsList,#detailContentBlocksList';
+    var itemSelector='.detail-gallery-item,.detail-feature-item,.detail-file-edit-item,.detail-faq-edit-item,.detail-content-block-item';
     function markEditorCollection(collection){
       collection.classList.add('editor-component__collection');
       Array.from(collection.children).forEach(function(item){if(item.matches(itemSelector))item.classList.add('editor-component__item');});

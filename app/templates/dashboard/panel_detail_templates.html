@@ -443,8 +443,9 @@
   };
 
   window.onBlockPaletteConfirm = function(type, variant, dataPreset) {
-    if (type === 'detail_content_blocks' && document.querySelector('#selectedModulesTpl .module-item[data-module-type="detail_content_blocks"]')) {
-      alert('自由正文是可重复内容容器，一个模板保留一个即可；结构固定的内容请分别添加文本、图片、视频、图文等独立组件。');
+    var componentMeta = blockLibrary.find(function(block) { return block && block.name === type; }) || {};
+    if (componentMeta.allow_multiple === false && document.querySelector('#selectedModulesTpl .module-item[data-module-type="' + type + '"]')) {
+      alert((componentMeta.display_name || type) + '的数据录入区只有一份，同一详情模板中不能重复添加。');
       return;
     }
     window.addTemplateModule(type, variant || 'default', dataPreset || {});
