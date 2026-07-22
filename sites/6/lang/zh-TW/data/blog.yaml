@@ -1,113 +1,121 @@
 - id: 1
   title: 檢测治具使用說明
   slug: manual-jig
-  date: '2026-06-18'
+  date: '2023-08-19'
   description: 檢测治具的詳細使用說明，包含正常操作、数据讀取、功能鍵設置和傳感器校準等
   tags:
   - 設計相關
   body: ''
   cover: /assets/uploads/blog-cover-20260618033335-2ed06668.webp
   style_bg-color: ''
+  seo_title: 檢测治具使用說明
+  seo_description: 德恩基檢测治具使用說明，涵蓋正常操作、数据讀取、功能鍵設置与傳感器校準，幫助用戶快速掌握Pass/NG判定、SD卡数据導出及標準值設定流程。
+  cover_alt: 檢测治具使用說明
   detail_content_blocks:
   - type: video
+    slot_id: content-mrvjpq8r-bql41p
     video: https://cdn.dengtec.com/videos/Jig_Manual.mp4
-    text: ''
-  - type: heading
-    title: 正常操作
-  - type: table
-    table:
-    - - 開机-上電, 輸入電壓:220V
-      - 放置檢测工件, 需要確保底部放平, 背後靠到定位塊.
-      - 按下綠色按鈕, 進行檢测, 隻有2個結果, Pass 或 NG. 對应的計数值也會更新.
-  - type: image
-    image: /assets/uploads/richtext-20260618034521-2b1a4e04.webp
-    alt: ''
-  - type: image
-    image: /assets/uploads/richtext-20260618034535-ff934b86.webp
-    alt: ''
-  - type: image
-    image: /assets/uploads/richtext-20260618034541-2009542d.webp
-    alt: ''
-  - type: heading
-    title: 讀取SD卡中文件
-  - type: table
-    table:
-    - - 拆開檢具後蓋, 用一字螺絲刀敲出SD卡.
-      - 從SD中讀取数据, 用 EXCEL 打開 csv 文件. 傳感器的位置与列的對应關於請參考Excel中黃色行.
-      - 放回SD卡, 檢查SD卡是否正常工作 診斷 -> 硬件 -> SD卡
-  - type: image
-    image: /assets/uploads/richtext-20260618034807-f3315097.webp
-    alt: ''
-  - type: image
-    image: /assets/uploads/richtext-20260618034815-8fea4478.webp
-    alt: ''
-  - type: image
-    image: /assets/uploads/richtext-20260618034820-698fec40.webp
-    alt: ''
-  - type: heading
-    title: 功能鍵
-  - type: table
-    table:
-    - - F1 顯示测試的数量, PASSED(合格品):xx, NOGOOD(不良品):xx, TOTAL:xx.
-      - F2 顯示當前傳感器的值, 范圍:0-1000, 若沒有放置工件, 数組為1000.
-      - F3 設置的范圍值, +/-0.15 的距离, 建議值為90
-      - F4 阈值最小值, 范圍在500-700
-  - type: image
-    image: /assets/uploads/richtext-20260618035539-152e3c18.webp
-    alt: ''
-  - type: image
-    image: /assets/uploads/richtext-20260618035552-6a84dcc2.webp
-    alt: ''
-  - type: image
-    image: /assets/uploads/richtext-20260618035603-450959fc.webp
-    alt: ''
-  - type: image
-    image: /assets/uploads/richtext-20260618035607-361e827f.webp
-    alt: ''
-  - type: heading
-    title: 設置值
-  - type: table
-    table:
-    - - '1. 進入設置界麵 按上下鍵, 直到出现 時間: Sat. 22 20 和 日期: 2023-08-09'
-      - 2. 按ESC進入 進入設置內容, 非指定的內容, 請勿隨意設置.
-      - 3. 設置傳感器 LOGO! 設置 -> 編程 -> 設置參数
-      - 4.設置值 隻需要設置 SENSOR – A/B/C/D/E/F 的On, ∆, 不要設置其他的值.
-  - type: image
-    image: /assets/uploads/richtext-20260618035807-376a254b.webp
-    alt: ''
-  - type: image
-    image: /assets/uploads/richtext-20260618035817-0b6b2c07.webp
-    alt: ''
-  - type: image
-    image: /assets/uploads/richtext-20260618035824-b1cce4cb.webp
-    alt: ''
-  - type: image
-    image: /assets/uploads/richtext-20260618035830-d3769b2b.webp
-    alt: ''
-  - type: heading
-    title: 定義標準值
-  - type: table
-    table:
-    - - 1. 查找最小值 放置好標準塊, 對其MinValue, 按下F2
-      - 2. 查找最大值 放置好標準塊, 對其MaxValue, 按下F2
-      - 3. 計算 ∆ ∆ = MaxValue – MinValue
-      - 4.設置值 參考上麵的步驟, 設置各個Sensor 的On(MinValue), Delta(∆).
-  - type: image
-    image: /assets/uploads/richtext-20260618051651-72a6c1f1.webp
-    alt: ''
-  - type: image
-    image: /assets/uploads/richtext-20260618051709-734284ac.webp
-    alt: ''
-  - type: image
-    image: /assets/uploads/richtext-20260618051726-3018f8c8.webp
-    alt: ''
-  - type: image
-    image: /assets/uploads/richtext-20260618051743-8af016cd.webp
-    alt: ''
-  - type: heading
+    alt: 檢测治具使用說明
+  - type: note
+    slot_id: content-mru7k64s-jp0n8c
     title: 修改計数值
-  - type: text
-    text: '良品: LOGO! 設置 -> 編程 -> 設置參数 -> PASS_WP_NUM -> Cnt (設置需要的值) 不良品: LOGO! 設置 -> 編程 -> 設置參数 -> NG_WP_NUM -> Cnt (設置需要的值)'
+    text: "<p>良品:<b> LOGO! 設置 -&gt; 編程 -&gt; 設置參数 -&gt; PASS_WP_NUM -&gt; Cnt</b>\
+      \ (設置需要的值)\r\n<br>不良品: <b>LOGO! 設置 -&gt; 編程 -&gt; 設置參数 -&gt; NG_WP_NUM -&gt;\
+      \ Cnt </b>(設置需要的值)</p>"
+    style: info
+    alt: 檢测治具使用說明
+  template_id: default
+  category: ''
+  summary: 檢测治具的詳細使用說明，包含正常操作、数据讀取、功能鍵設置和傳感器校準等
+  media_type: image
+  cover_convert_webp: 'false'
+  seo_image: ''
+  detail_gallery:
+    visible: true
+    images: []
+  detail_specs: []
+  detail_actions: {}
+  detail_links:
+  - text: 了解更多
+    url: ''
+  link_text: 了解更多
+  link_url: ''
+  detail_tables: []
+  detail_features: []
+  detail_files: []
+  detail_faqs: []
+  detail_columns: &id001
+    heading: 正常操作
+    items:
+    - text: 開机-上電, 輸入電壓:220V
+      image: /assets/uploads/richtext-20260618034521-2b1a4e04.webp
+      alt: 檢测治具使用說明
+    - text: 放置檢测工件, 需要確保底部放平, 背後靠到定位塊.
+      image: /assets/uploads/richtext-20260618034535-ff934b86.webp
+      alt: 檢测治具使用說明
+    - text: 按下綠色按鈕, 進行檢测, 隻有2個結果, Pass 或 NG. 對应的計数值也會更新.
+      image: /assets/uploads/richtext-20260618034541-2009542d.webp
+      alt: 檢测治具使用說明
+  tags_auto: false
+  detail_columns_groups:
+  - *id001
+  - heading: 讀取SD卡中文件
+    items:
+    - text: 拆開檢具後蓋, 用一字螺絲刀敲出SD卡.
+      image: /assets/uploads/richtext-20260618034807-f3315097.webp
+      alt: 檢测治具使用說明
+    - text: 從SD中讀取数据, 用 EXCEL 打開 csv 文件. 傳感器的位置与列的對应關於請參考Excel中黃色行.
+      image: /assets/uploads/richtext-20260618034815-8fea4478.webp
+      alt: 檢测治具使用說明
+    - text: 放回SD卡, 檢查SD卡是否正常工作 診斷 -> 硬件 -> SD卡
+      image: /assets/uploads/richtext-20260618034820-698fec40.webp
+      alt: 檢测治具使用說明
+  - heading: 功能鍵
+    items:
+    - title: F1
+      text: 顯示测試的数量, PASSED(合格品):xx, NOGOOD(不良品):xx, TOTAL:xx.
+      image: /assets/uploads/richtext-20260618035539-152e3c18.webp
+      alt: 檢测治具使用說明
+    - title: F2
+      text: 顯示當前傳感器的值, 范圍:0-1000, 若沒有放置工件, 数組為1000.
+      image: /assets/uploads/richtext-20260618035552-6a84dcc2.webp
+      alt: 檢测治具使用說明
+    - title: F3
+      text: 設置的范圍值, +/-0.15 的距离, 建議值為90
+      image: /assets/uploads/richtext-20260618035603-450959fc.webp
+      alt: 檢测治具使用說明
+    - title: F4
+      text: 阈值最小值, 范圍在500-700
+      image: /assets/uploads/richtext-20260618035607-361e827f.webp
+      alt: 檢测治具使用說明
+  - heading: 設置值
+    items:
+    - text: '1. 進入設置界麵 按上下鍵, 直到出现 時間: Sat. 22 20 和 日期: 2023-08-09'
+      image: /assets/uploads/richtext-20260618035807-376a254b.webp
+      alt: 檢测治具使用說明
+    - text: 2. 按ESC進入 進入設置內容, 非指定的內容, 請勿隨意設置.
+      image: /assets/uploads/richtext-20260618035817-0b6b2c07.webp
+      alt: 檢测治具使用說明
+    - text: 3. 設置傳感器 LOGO! 設置 -> 編程 -> 設置參数
+      image: /assets/uploads/richtext-20260618035824-b1cce4cb.webp
+      alt: 檢测治具使用說明
+    - text: 4.設置值 隻需要設置 SENSOR – A/B/C/D/E/F 的On, ∆, 不要設置其他的值.
+      image: /assets/uploads/richtext-20260618035830-d3769b2b.webp
+      alt: 檢测治具使用說明
+  - heading: 定義標準值
+    items:
+    - text: 1. 查找最小值 放置好標準塊, 對其MinValue, 按下F2
+      image: /assets/uploads/richtext-20260618051709-734284ac.webp
+      alt: 檢测治具使用說明
+    - text: 2. 查找最大值 放置好標準塊, 對其MaxValue, 按下F2
+      image: /assets/uploads/richtext-20260618051651-72a6c1f1.webp
+      alt: 檢测治具使用說明
+    - text: 3. 計算 ∆ ∆ = MaxValue – MinValue
+      image: /assets/uploads/richtext-20260618051726-3018f8c8.webp
+      alt: 檢测治具使用說明
+    - text: 4.設置值 參考上麵的步驟, 設置各個Sensor 的On(MinValue), Delta(∆).
+      image: /assets/uploads/richtext-20260618051743-8af016cd.webp
+      alt: 檢测治具使用說明
 - id: 2
   title: 2023 EURO SHOP
   slug: 2023-euro-shop
@@ -129,7 +137,7 @@
 - id: 3
   title: 纱巾橱窗
   slug: video-fan-windows
-  cover: /assets/uploads/blog-cover-20260618052510-eab345de.webp
+  cover: /assets/uploads/blog-cover-20260722055454-bf3e2537.webp
   style_bg-color: ''
   date: '2026-06-18'
   description: 纱巾橱窗項目，結合燈光和展示效果，為品牌店鋪打造独特的橱窗展示。
@@ -138,12 +146,51 @@
   body: ''
   detail_content_blocks:
   - type: video
+    slot_id: content-mrvjpq8r-bql41p
     video: https://cdn.dengtec.com/videos/Scarf_Windows_Display.mp4
-    text: ''
+    alt: 纱巾橱窗
   - type: heading
     title: 纱巾橱窗
+    alt: 纱巾橱窗
   - type: text
     text: 纱巾橱窗項目，結合燈光和展示效果，為品牌店鋪打造独特的橱窗展示。
+    alt: 纱巾橱窗
+  - type: note
+    slot_id: content-mru7k64s-jp0n8c
+    style: info
+    alt: 纱巾橱窗
+  template_id: default
+  category: ''
+  summary: 纱巾橱窗項目，結合燈光和展示效果，為品牌店鋪打造独特的橱窗展示。
+  media_type: image
+  cover_convert_webp: 'false'
+  cover_alt: 纱巾橱窗
+  seo_title: ''
+  seo_description: ''
+  seo_image: ''
+  detail_gallery:
+    visible: true
+    images: []
+  detail_specs: []
+  detail_actions: {}
+  detail_tables: []
+  detail_features: []
+  detail_files: []
+  detail_faqs: []
+  detail_columns_groups:
+  - &id002
+    heading: ''
+    items: []
+  - heading: ''
+    items: []
+  - heading: ''
+    items: []
+  - heading: ''
+    items: []
+  - heading: ''
+    items: []
+  detail_columns: *id002
+  tags_auto: false
 - id: 4
   title: 蘭蔻模型道具的使用說明
   slug: manual-of-lancome-genifique
@@ -179,7 +226,8 @@
     title: 日常操作
   - type: table
     table:
-    - - 正常使用 非觸發状態, 側板的白色燈光有呈 渐亮->渐暗->渐亮 不斷循环. 手放在傳感器下方, 貼近人造石臺麵的位置, 等待1秒钟, 就會有乳液滴到手背上. 滴液體的過程中, 側板的燈光為 白色常亮. 乳液滴出後, 燈光回復呼吸渐變的效果 滴完一滴後, 需要間隔5秒钟, 才可以再次觸發.
+    - - 正常使用 非觸發状態, 側板的白色燈光有呈 渐亮->渐暗->渐亮 不斷循环. 手放在傳感器下方, 貼近人造石臺麵的位置, 等待1秒钟, 就會有乳液滴到手背上.
+        滴液體的過程中, 側板的燈光為 白色常亮. 乳液滴出後, 燈光回復呼吸渐變的效果 滴完一滴後, 需要間隔5秒钟, 才可以再次觸發.
       - ''
   - type: video
     video: https://cdn.dengtec.com/homePage/lancome/drop_liquid.mp4
@@ -189,7 +237,11 @@
   - type: table
     table:
     - - ''
-      - '更换小黑瓶 瓶子中的乳液用完後, 需要更换新的瓶子. 具體步驟如下: A – Logo 蓋和瓶帽向上取下來. B – 將彎管從空瓶內抽出來. C – 擰下白色”定製瓶蓋”, 並將其擰到新的小黑瓶上. D – 將彎管插到小黑瓶內. 需要讓玻璃管插到瓶蓋的边緣上. E – 將小黑瓶返回頂部的位置. F – 將瓶帽套回去. G – 將LOGO蓋放在頂部. 請注意 LOGO 的角度. 有3組磁铁, 可以微調角度. H – 按壓手動開關, 將管中的空氣完全排除. I – 清潔滴管口处. 若遇到需要長時間關机的情形, 請用空瓶並將其裝满水, 重復上麵的步驟, 將軟管內的乳液全部排除. 否則長時間不用, 管內的乳液會凝固. 導致机器無法工作.'
+      - '更换小黑瓶 瓶子中的乳液用完後, 需要更换新的瓶子. 具體步驟如下: A – Logo 蓋和瓶帽向上取下來. B – 將彎管從空瓶內抽出來. C
+        – 擰下白色”定製瓶蓋”, 並將其擰到新的小黑瓶上. D – 將彎管插到小黑瓶內. 需要讓玻璃管插到瓶蓋的边緣上. E – 將小黑瓶返回頂部的位置.
+        F – 將瓶帽套回去. G – 將LOGO蓋放在頂部. 請注意 LOGO 的角度. 有3組磁铁, 可以微調角度. H – 按壓手動開關, 將管中的空氣完全排除.
+        I – 清潔滴管口处. 若遇到需要長時間關机的情形, 請用空瓶並將其裝满水, 重復上麵的步驟, 將軟管內的乳液全部排除. 否則長時間不用, 管內的乳液會凝固.
+        導致机器無法工作.'
   - type: image
     image: /assets/uploads/richtext-20260618053207-1484a9d8.webp
     alt: ''
@@ -197,7 +249,11 @@
     title: 更换電池
   - type: table
     table:
-    - - '更换電池 電池充满電後, 可以正常使用2天左右. 視使用的頻率, 具體的使用時長不定, 若是側板看不見燈光, 感應無反应的情況下, 就錶明電池的電量用完了. 每套道具都配备了3塊電池. 請電池取下後, 請用充電器及時給電池充電. 更换電池的步驟如下: A – 按一下電源開關, 關閉道具的電源. (彈出為關閉) B – 取下 LOGO 蓋 及 瓶帽 C – 拔出插在設备的插頭, 取下電池. 换回充满電的電池. D – 將充電口的插頭放在凹槽內. E – 將LOGO蓋放在頂部. 請注意 LOGO 的角度. 有3組磁铁, 可以微調角度. F – 按下電源開關. G – 無電量電池充電备用. 電池的電壓為12V. 隻能用12.6V的充電器為其充電. 禁止使用其他電壓的充電器為其充電.'
+    - - '更换電池 電池充满電後, 可以正常使用2天左右. 視使用的頻率, 具體的使用時長不定, 若是側板看不見燈光, 感應無反应的情況下, 就錶明電池的電量用完了.
+        每套道具都配备了3塊電池. 請電池取下後, 請用充電器及時給電池充電. 更换電池的步驟如下: A – 按一下電源開關, 關閉道具的電源. (彈出為關閉)
+        B – 取下 LOGO 蓋 及 瓶帽 C – 拔出插在設备的插頭, 取下電池. 换回充满電的電池. D – 將充電口的插頭放在凹槽內. E – 將LOGO蓋放在頂部.
+        請注意 LOGO 的角度. 有3組磁铁, 可以微調角度. F – 按下電源開關. G – 無電量電池充電备用. 電池的電壓為12V. 隻能用12.6V的充電器為其充電.
+        禁止使用其他電壓的充電器為其充電.'
       - ''
   - type: image
     image: /assets/uploads/richtext-20260618053353-669c96ed.webp

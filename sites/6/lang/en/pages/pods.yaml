@@ -1,168 +1,176 @@
-description: Dengtec Smart Silent Booth, integrating IoT technology, offers single, double, and meeting-room models with DingTalk booking, intelligent environment control, and remote management — ideal for open offices, interview rooms, and video conferencing.
+description: Dengtec Smart Silent Booth control system — a single 86 panel unifying
+  touch, on-device voice, and Doubao AI voice, built on a host-slave dual-chip architecture.
+  Its in-house "AI device control" lets you adjust cabin lighting, fans, color temperature,
+  and environment while you talk.
 modules:
 - type: section_title
   order: 1
   variant: text-align_center
   data:
-    tag: Smart Silent Booth
-    title: Smart Silent Booth - IoT Smart Space
-    desc: <p><font color="#ffffff">Degenki Smart Silent Booth integrates IoT technology
-      to provide a quiet and independent smart space solution. Supports DingTalk booking,
-      intelligent environmental control, and remote management.</font></p>
+    _hidden: 'false'
+    tag: Silent Booth Control System
+    title: One 86 Panel — A Space That Listens and Obeys
+    desc: <p><font color="#ffffff">Dengtec's in-house silent booth control software
+      unites touch, on-device voice, and Doubao AI voice in one panel — control cabin
+      lighting, fans, color temperature, and environment while you talk.</font></p>
     btn: Management Console
     btn_url: https://pods.dengtec.com
-    _hidden: 'false'
     style_text-align: center
     style_bg-color: ''
-    style_bg: /assets/uploads/section_title-style-bg-20260623073200-c2620c17.webp
+    style_bg: /assets/uploads/section_title-style-bg-20260722052353-565d9d4e.webp
     style_bg_convert_webp: 'false'
+    style_bg_alt: One 86 Panel — A Space That Listens and Obeys
     style_font-color: '#ffffff'
-  responsive:
-    tablet:
-      _hidden: 'false'
-    mobile:
-      _hidden: 'false'
 - type: feature_grid
   order: 2
   variant: cols_4
   data:
-    heading: Comprehensive Environmental Monitoring
-    subheading: Built-in multiple sensor nodes for real-time monitoring of cabin environmental
-      data
     _hidden: 'false'
+    heading: Three Input Paths, One Panel in Full Control
+    subheading: Touch, on-device voice, and AI voice all feed unified device control
     style_cols: 4
     features:
-    - icon: bar-chart
-      title: Temperature Monitoring
-      desc: °C
-    - icon: bulb
-      title: Humidity Monitoring
-      desc: '%RH'
-    - icon: sensor
-      title: Noise Detection
-      desc: dB
-    - icon: layers
-      title: PM2.5 Concentration
-      desc: μg/m³
-  responsive:
-    tablet:
-      _hidden: 'false'
-    mobile:
-      _hidden: 'false'
+    - icon: touch
+      title: Touch Control
+      desc: Multi-page card UI on the 86 panel — tap to control lighting, fans, color
+        temperature
+    - icon: mic
+      title: On-Device Voice
+      desc: '"Hi Lingshi" offline wake word, 13 commands, works even offline'
+    - icon: chat
+      title: AI Voice
+      desc: Powered by the Doubao model — control devices through natural conversation
+    - icon: wifi
+      title: Three-Way Provisioning
+      desc: AP hotspot / BLE encrypted / manual entry, all off by default on power-up
 - type: highlight_card
   order: 3
   variant: dir_row
   data:
+    _hidden: 'false'
     media_type: image
     _hidden_media_area: ''
-    image: /assets/uploads/highlight_card-image-20260625014004-7552ccbf.webp
+    image: /assets/uploads/highlight_card-image-20260722053936-189641cc.webp
     image_convert_webp: 'false'
+    image_alt: One 86 Panel — A Space That Listens and Obeys
     video: ''
     embed_url: ''
     _hidden_text_area: ''
-    tag: Hot Sale
-    title: Single Silent Booth S1
-    desc: '<p>A private space designed for individual focused work and phone calls</p><p>Dimensions:
-      1200×1200×2200mm <br>Noise reduction: 35dB <br>Configuration: ventilation/lighting/outlets</p>'
+    tag: Core Technology
+    title: '"AI Device Control" — Command While You Talk'
+    desc: <p>During a natural-language conversation with the Doubao model, the system
+      strips device-control markers like @{command} from the streaming reply in real
+      time and executes them on the spot.</p><p>Say "make the light a bit warmer"
+      and the lighting, fan, and color temperature respond together — Dengtec's in-house
+      core capability.</p>
     primaryBtn: ''
     primaryLink: ''
     secondaryBtn: ''
     secondaryLink: ''
-    _hidden: 'false'
     style_dir: row
     style_bg-color: '#fafbfb'
     style_bg: ''
     style_bg_convert_webp: 'false'
+    style_bg_alt: One 86 Panel — A Space That Listens and Obeys
     features: []
+    alt: One 86 Panel — A Space That Listens and Obeys
     _hidden_image_area: ''
   responsive:
     tablet:
       media_type: image
       image_convert_webp: 'false'
-      _hidden: 'false'
+      image_alt: One 86 Panel — A Space That Listens and Obeys
     mobile:
       media_type: image
       image_convert_webp: 'false'
-      _hidden: 'false'
+      image_alt: One 86 Panel — A Space That Listens and Obeys
 - type: highlight_card
   order: 4
   variant: dir_row-reverse
   data:
+    _hidden: 'false'
     media_type: image
     _hidden_media_area: ''
-    image: /assets/uploads/highlight_card-image-20260625014916-7f593fcb.webp
+    image: /assets/uploads/highlight_card-image-20260722053936-6c6fee16.webp
     image_convert_webp: 'false'
+    image_alt: One 86 Panel — A Space That Listens and Obeys
     video: ''
     embed_url: ''
     _hidden_text_area: ''
-    tag: Recommended
-    title: Double Silent Booth S2
-    desc: '<p>Suitable for small meetings, interviews, and one-on-one communication
-      <br> <br>Dimensions: 1800×1200×2200mm <br>Noise reduction: 35dB <br>Configuration:
-      ventilation/lighting/outlets/display stand</p>'
+    tag: Stable Architecture
+    title: Dual-Chip Host & Slave, Each to Its Task
+    desc: <p>The ESP32-S3 host focuses on the UI and AI orchestration, while the CH32V003
+      slave drives the actuators — lighting, fans, radar, and more. <br> <br>The two
+      chips cooperate over a custom I2C register protocol, offloading timing-sensitive
+      execution to the slave for steadier operation.</p>
     primaryBtn: ''
     primaryLink: ''
     secondaryBtn: ''
     secondaryLink: ''
-    _hidden: 'false'
     style_dir: row-reverse
     style_bg-color: '#fafbfb'
     style_bg: ''
     style_bg_convert_webp: 'false'
+    style_bg_alt: One 86 Panel — A Space That Listens and Obeys
     features: []
+    alt: One 86 Panel — A Space That Listens and Obeys
     _hidden_image_area: ''
   responsive:
     tablet:
       media_type: image
       image_convert_webp: 'false'
-      _hidden: 'false'
+      image_alt: One 86 Panel — A Space That Listens and Obeys
     mobile:
       media_type: image
       image_convert_webp: 'false'
-      _hidden: 'false'
+      image_alt: One 86 Panel — A Space That Listens and Obeys
 - type: highlight_card
   order: 5
   variant: dir_row
   data:
+    _hidden: 'false'
     media_type: image
     _hidden_media_area: ''
-    image: /assets/uploads/highlight_card-image-20260625014916-de5d05b6.webp
+    image: /assets/uploads/highlight_card-image-20260722054412-7c916802.webp
     image_convert_webp: 'false'
+    image_alt: One 86 Panel — A Space That Listens and Obeys
     video: ''
     embed_url: ''
     _hidden_text_area: ''
-    tag: New Product
-    title: Meeting Silent Booth S4
-    desc: '<p>A silent meeting room for 4-6 people, meeting team discussion needs
-      <br> <br>Dimensions: 2400×2000×2200mm <br>Noise reduction: 38dB <br>Configuration:
-      ventilation/lighting/outlets/conference table/display</p>'
+    tag: Built for the Space
+    title: Speaker-Free Voice, Shown On Screen
+    desc: <p>The silent booth plays no sound aloud, so speech-recognition results
+      and AI replies appear on screen as text cards, one by one. <br> <br>After local
+      wake-up, an "I'm here, please speak" bar pops up — clear and legible even in
+      a quiet room.</p>
     primaryBtn: ''
     primaryLink: ''
     secondaryBtn: ''
     secondaryLink: ''
-    _hidden: 'false'
     style_dir: row
     style_bg-color: '#fafbfb'
     style_bg: ''
     style_bg_convert_webp: 'false'
+    style_bg_alt: One 86 Panel — A Space That Listens and Obeys
     features: []
+    alt: One 86 Panel — A Space That Listens and Obeys
     _hidden_image_area: ''
   responsive:
     tablet:
       media_type: image
       image_convert_webp: 'false'
-      _hidden: 'false'
+      image_alt: One 86 Panel — A Space That Listens and Obeys
     mobile:
       media_type: image
       image_convert_webp: 'false'
-      _hidden: 'false'
+      image_alt: One 86 Panel — A Space That Listens and Obeys
 - type: feature_grid
   order: 6
   variant: cols_4
   data:
+    _hidden: 'false'
     heading: Suitable for Multiple Scenarios
     subheading: ''
-    _hidden: 'false'
     style_cols: 4
     features:
     - icon: building
@@ -177,29 +185,20 @@ modules:
     - icon: users
       title: Focused Work
       desc: Stay away from distractions for efficient output
-  responsive:
-    tablet:
-      _hidden: 'false'
-    mobile:
-      _hidden: 'false'
 - type: section_title
   order: 7
   variant: text-align_center
   data:
+    _hidden: 'false'
     tag: ''
     title: Contact Us
-    desc: <p>Need a customized prop display solution? Our team is ready to provide
+    desc: <p>Need a customized smart silent booth solution? Our team is ready to provide
       professional consultation.</p>
     btn: Contact Us
     btn_url: /contact
-    _hidden: 'false'
     style_text-align: center
     style_bg-color: ''
     style_bg: ''
     style_bg_convert_webp: 'false'
+    style_bg_alt: One 86 Panel — A Space That Listens and Obeys
     style_font-color: ''
-  responsive:
-    tablet:
-      _hidden: 'false'
-    mobile:
-      _hidden: 'false'
