@@ -1431,7 +1431,30 @@
     function switchPreviewTab(key) {
       var tab = previewTabs.find(function (item) { return item.key === key; });
       if (!tab) return;
-      openPreviewTab(tab.key, tab.title, tab.url);
+      var panelKey = '';
+      if (isLivePreviewUrl(tab.url)) {
+        try {
+          panelKey = pageKeyFromPreviewPath(new URL(tab.url, window.location.origin).pathname);
+        } catch (e) {}
+      }
+      function activateTab() {
+        openPreviewTab(tab.key, tab.title, tab.url);
+        if (!panelKey || panelKey === currentPanelPageKey()) return;
+        var siteParam = currentSiteParam();
+        var langParam = currentLangParam();
+        var qs = siteParam ? '&site=' + encodeURIComponent(siteParam) : '';
+        if (langParam) qs += '&lang=' + encodeURIComponent(langParam);
+        loadPanel('/_panel/' + encodeURIComponent(panelKey) + '?_fragment=1' + qs);
+      }
+      if (panelKey && panelKey !== currentPanelPageKey() && hasUnsavedModuleDraft() && Date.now() >= _unsavedGuardBypassUntil) {
+        confirmUnsavedModuleLeave().then(function(ok) {
+          if (!ok) return;
+          _unsavedGuardBypassUntil = Date.now() + 1000;
+          activateTab();
+        });
+      } else {
+        activateTab();
+      }
     }
 
     function closePreviewTab(key) {
@@ -1449,20 +1472,23 @@
       var path = item.dataset.path || '/';
       var url = previewUrlForPage(path);
       var key = (path === '/' ? 'home' : String(path).replace(/^\/+|\/+$/g, '') || 'home');
+      // 前台预览路径可能带菜单层级（如 /products/spot-light），后台面板只接受
+      // 实际页面 target（spot-light）。与左侧栏及 iframe 选中模块使用同一转换规则。
+      var panelKey = pageKeyFromPreviewPath(path);
       function openSelectedPage() {
         openPreviewTab(key, title, url);
         var siteParam = currentSiteParam();
         var langParam = currentLangParam();
         var qs = siteParam ? '&site=' + encodeURIComponent(siteParam) : '';
         if (langParam) qs += '&lang=' + encodeURIComponent(langParam);
-        loadPanel('/_panel/' + String(key).replace(/^\/+|\/+$/g, '') + '?_fragment=1' + qs);
+        loadPanel('/_panel/' + encodeURIComponent(panelKey) + '?_fragment=1' + qs);
         var modalEl = document.getElementById('pageTreeModal');
         if (modalEl && window.bootstrap) {
           var modal = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
           if (modal) modal.hide();
         }
       }
-      if (key !== currentPanelPageKey() && hasUnsavedModuleDraft() && Date.now() >= _unsavedGuardBypassUntil) {
+      if (panelKey !== currentPanelPageKey() && hasUnsavedModuleDraft() && Date.now() >= _unsavedGuardBypassUntil) {
         confirmUnsavedModuleLeave().then(function(ok) {
           if (!ok) return;
           _unsavedGuardBypassUntil = Date.now() + 1000;
@@ -2398,7 +2424,7 @@
     }
 
     function pageKeyFromPreviewPath(pathname) {
-      var cleaned = pathname.replace(/^\/(?:preview|live_preview)\/\d+/, '').replace(/^\/(zh-CN|zh-TW|en)/, '').replace(/\/index\.html$/, '').replace(/\/$/, '');
+      var cleaned = pathname.replace(/^\/(?:preview|live_preview)\/[^/]+/, '').replace(/^\/(zh-CN|zh-TW|en)/, '').replace(/\/index\.html$/, '').replace(/\/$/, '');
       if (!cleaned || cleaned === '/') return 'home';
       var parts = cleaned.split('/').filter(Boolean);
       var last = parts[parts.length - 1];
