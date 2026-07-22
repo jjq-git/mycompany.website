@@ -32,6 +32,7 @@ _TEXT_TYPES = {'text', 'textarea', 'richtext', 'url'}  # url 也走文本注入�
 _SAFE_HREF = re.compile(r'^(https?:|mailto:|tel:|/|#|\./|\.\./|[^:]*$)', re.I)
 # 颜色值白名单：#hex、rgb()/rgba()、hsl()/hsla()、css 关键字（字母）
 _SAFE_COLOR = re.compile(r'^(#[0-9a-f]{3,8}|rgba?\([\d.,%\s]+\)|hsla?\([\d.,%\s]+\)|[a-z]+)$', re.I)
+_SAFE_DIMENSION = re.compile(r'^(?:0|\d+(?:\.\d+)?(?:px|rem|vh|vw|%))$', re.I)
 _IMG_TAG_RE = re.compile(r'<img\b[^>]*>', re.I)
 _ALT_ATTR_RE = re.compile(r'\s+alt\s*=\s*("([^"]*)"|\'([^\']*)\'|([^\s>]*))', re.I)
 # 检测文本是否包含 HTML 标签（用于判断 textarea 内容是否来自富文本编辑器）
@@ -685,6 +686,8 @@ def _sanitize_style_value(sdef, val):
         return val if val in allowed else None
     if control == 'color':
         return val if _SAFE_COLOR.match(val) else None
+    if control == 'dimension':
+        return val if _SAFE_DIMENSION.match(val) else None
     if control == 'image':
         # 期望形如 url('/path') 或 url(/path)，禁止值里出现 " ' ) ; 防逃逸
         inner = val

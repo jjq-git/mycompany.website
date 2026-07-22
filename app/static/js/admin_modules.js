@@ -287,7 +287,7 @@
     return '<label class="form-label small mb-1 text-muted">' + ph + '</label>' +
       '<div class="input-group input-group-sm">' +
       '<input type="text" class="form-control form-control-sm" name="' + name + '" value="' + esc(dv || '') + '" placeholder="' + esc(ph) + '" style="width:60%">' +
-      '<select class="form-select form-select-sm unit-picker" style="width:40%" onchange="var i=this.parentElement.querySelector(\'[name=&quot;' + name + '&quot;]\');if(i){var v=i.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)i.value=v+u;}">' +
+      '<select class="form-select form-select-sm unit-picker" style="width:40%" onchange="var i=this.parentElement.querySelector(\'[name=&quot;' + name + '&quot;]\');if(i){var v=i.value.replace(/(?:px|rem|%|vh|vw)$/i,\'\').trim();var u=this.value;if(v&&u)i.value=v+u;}">' +
       '<option value="">--</option>' + opts + '</select></div>';
   }
 
@@ -578,6 +578,16 @@
         html += '<div class="input-group input-group-sm">' +
           '<input type="color" class="form-control form-control-color" value="' + schemaEsc(val || '#888888') + '" oninput="this.nextElementSibling.value=this.value">' +
           '<input type="text" class="form-control form-control-sm" name="' + schemaEsc(name) + '" value="' + schemaEsc(val) + '" placeholder="如 #f5f7fa"></div>';
+      } else if (def.control === 'dimension') {
+        var dimensionMatch = String(val || '').trim().match(/^(\d+(?:\.\d+)?)\s*(px|rem|vh|vw|%)?$/i);
+        var dimensionValue = dimensionMatch ? dimensionMatch[1] : '';
+        var dimensionUnit = dimensionMatch && dimensionMatch[2] ? dimensionMatch[2].toLowerCase() : (def.default_unit || 'px');
+        var dimensionUnits = def.units || ['px', 'rem', 'vh', 'vw', '%'];
+        html += '<div class="input-group input-group-sm">' +
+          '<input type="number" min="0" step="any" class="form-control form-control-sm" value="' + schemaEsc(dimensionValue) + '" placeholder="如 500" oninput="var w=this.parentElement;w.querySelector(\'input[type=hidden]\').value=this.value?this.value+w.querySelector(\'select\').value:\'\'">' +
+          '<select class="form-select form-select-sm" style="max-width:90px" onchange="var w=this.parentElement,n=w.querySelector(\'input[type=number]\');w.querySelector(\'input[type=hidden]\').value=n.value?n.value+this.value:\'\'">' +
+          dimensionUnits.map(function(unit) { return '<option value="' + schemaEsc(unit) + '"' + (dimensionUnit === unit ? ' selected' : '') + '>' + schemaEsc(unit) + '</option>'; }).join('') +
+          '</select><input type="hidden" name="' + schemaEsc(name) + '" value="' + schemaEsc(dimensionMatch ? dimensionValue + dimensionUnit : '') + '"></div>';
       } else if (def.control === 'image') {
         html += mediaUploadHtml(name, val || '', 'image', '背景鍥?URL');
       } else {
@@ -2089,6 +2099,7 @@
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg || '#ffffff') + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_outer_width', '外层宽度', ['px','%','rem'], d.outer_width) + '</div>' +
+          '<div class="col-6">' + un('module_' + idx + '_data_style_min-height', '最小高度', ['px','rem','vh'], d['style_min-height']) + '</div>' +
         '</div>' +
         '<div class="small text-muted mt-2 mb-1" style="font-size:12px">外边距</div>' +
         '<div class="input-group input-group-sm">' +

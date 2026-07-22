@@ -7892,7 +7892,9 @@ def page_panel(page_key):
             else:
                 page.pop('description', None)
         write_yaml(site.id, f'pages/{page_key}.yaml', page, lang=storage_lang)
-        flash('已保存')
+        # 页面模块由右侧面板通过 AJAX 局部保存，前端会直接显示“已保存”状态。
+        # 这里若写入 Flask flash，局部响应又不消费消息，连续保存后会在下一次
+        # 完整页面加载时一次性显示多条重复提示。
         return redirect(url_for('core.page_panel', page_key=page_key, _fragment='1', site=site.id, lang=lang))
 
     # 判断 page_key 是否为 list 类型菜单

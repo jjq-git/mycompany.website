@@ -59,6 +59,13 @@ STYLE_REGISTRY = {
             {'value': 'right', 'text': '右对齐'},
         ],
     },
+    'min-height': {
+        'label': '最小高度',
+        'control': 'dimension',
+        'css_var': '--min-height',
+        'units': ['px', 'rem', 'vh', 'vw', '%'],
+        'default_unit': 'px',
+    },
     # ── featured_picks（精选推荐）专用样式令牌（卡片布局已合并到 dir）──
     'card-gap': {
         'label': '卡片间距',
