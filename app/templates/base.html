@@ -474,8 +474,8 @@
           {% endif %}
         </a>
         {% else %}
-        <div class="left-nav-item left-nav-link-display" style="padding-left: {{ 16 + level * 20 }}px;"
-          title="{{ item.label }}（链接类型，仅展示）" aria-disabled="true">
+        <div class="left-nav-item left-nav-static-display" style="padding-left: {{ 16 + level * 20 }}px;"
+          title="{{ item.label }}（{% if item.type == 'group' %}容器类型，暂无子菜单{% else %}页面目标未配置，仅展示{% endif %}）" aria-disabled="true">
           {{ left_page_icon(item) }}
           {{ item.label }}
         </div>
