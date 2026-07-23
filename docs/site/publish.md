@@ -1,6 +1,9 @@
 # 发布、优化、自定义口子
 
 > 输出产物的结构（目录树、页面 URL、列表 / 详情渲染策略）见 [output.md](output.md)。
+>
+> 已配置站点的阿里云 OSS 人工发布步骤见
+> [aliyun-oss-deployment.md](aliyun-oss-deployment.md)。
 
 ## 一、资源的语言策略：全部按语言分
 

@@ -39,9 +39,10 @@ _SEO_DESCRIPTION_PROMPT = """你是展示型企业网站的 SEO 文案助手。�
 要求：
 1. 只返回一句自然语言简介，不要解释，不要 markdown
 2. 语言必须使用 {lang}
-3. 中文控制在 60-90 个汉字；英文控制在 120-160 characters
+3. 中文通常保持在 60-90 个汉字，英文通常保持在 120-160 characters；这是展示建议，不是硬限制
 4. 不堆砌关键词，不夸大，不写"欢迎访问"
 5. 优先概括页面核心价值，让搜索结果和 AI 检索都容易理解
+6. 必须输出完整、自然的句子，不得为了控制长度截断英文单词或句意
 
 站点/页面信息：
 {input_json}
@@ -332,7 +333,9 @@ def generate_seo_description(page_title, page_text, company_name='', lang='zh-CN
     if output == 'title':
         prompt = (
             f'请根据以下 JSON 为网页生成一个准确、自然的 SEO 标题，语言为 {lang}。'
-            '只输出标题，不加引号、解释或 Markdown；避免关键词堆砌，最长 60 个字符。\n'
+            '只输出标题，不加引号、解释或 Markdown；避免关键词堆砌。'
+            '标题应简洁，通常控制在 60 个字符左右，但完整表达优先；'
+            '不得为了控制长度截断英文单词、专有名词或句意。\n'
             f'{input_json}'
         )
     else:

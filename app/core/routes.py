@@ -3232,6 +3232,29 @@ def _plain_text(value):
     return ''
 
 
+def _complete_seo_excerpt(value, soft_limit=180, hard_limit=500):
+    """生成完整可读的 SEO 摘要，不在 180 字符处机械截断。
+
+    180 字符只是常见搜索结果的展示参考线。超过参考线时优先保留完整句子；
+    只有异常长且没有句末的内容，才在更宽的防滥用上限附近按单词边界收尾。
+    """
+    text = re.sub(r'\s+', ' ', _plain_text(value)).strip()
+    if len(text) <= soft_limit:
+        return text
+
+    window = text[:hard_limit]
+    sentence_end = re.search(r'[。！？.!?][”’"\']?', window[soft_limit:])
+    if sentence_end:
+        return window[:soft_limit + sentence_end.end()].strip()
+    if len(text) <= hard_limit:
+        return text
+
+    cut = window.rfind(' ')
+    if cut < soft_limit:
+        cut = hard_limit
+    return window[:cut].rstrip(' ,;:，；：') + '…'
+
+
 def _auto_page_description(page):
     """从页面模块内容生成简介。
 
@@ -3251,8 +3274,7 @@ def _auto_page_description(page):
                 parts.append(text)
         if len(' '.join(parts)) >= 180:
             break
-    text = re.sub(r'\s+', ' ', ' '.join(parts)).strip()
-    return text[:180].rstrip()
+    return _complete_seo_excerpt(' '.join(parts))
 
 
 def _page_text_for_seo(page):
@@ -3356,7 +3378,10 @@ def _seo_row_for_detail(site, lang, dataset_key, item, depth=0, parent_id='', ur
     slug = item.get('slug') or item.get('id') or ''
     title = item.get('seo_title') or item.get('title') or item.get('name') or str(slug) or '未命名详情页'
     description = item.get('seo_description') or ''
-    auto_desc = _plain_text(item.get('summary') or item.get('description') or item.get('excerpt') or item.get('body') or item.get('content'))[:180].rstrip()
+    auto_desc = _complete_seo_excerpt(
+        item.get('summary') or item.get('description') or item.get('excerpt') or
+        item.get('body') or item.get('content')
+    )
     status, status_label, status_detail = _seo_status(description, auto_desc)
     row_id = f'detail:{dataset_key}:{slug}'
     return {
@@ -3990,10 +4015,10 @@ def seo_detail_generate(dataset_key, item_key):
     company = _merge_settings_section(settings.get('company'), settings.get(company_key))
     company_name = company.get('name') or settings.get('title') or site.name
     page_title = item.get('seo_title') or item.get('title') or item.get('name') or str(item_key)
-    fallback = _plain_text(
+    fallback = _complete_seo_excerpt(
         item.get('summary') or item.get('description') or item.get('excerpt') or
         item.get('body') or item.get('content') or page_title
-    )[:180].rstrip()
+    )
     page_text = _detail_item_text_for_seo(item) or fallback
     field = request.form.get('field', 'description')
     if field not in ('title', 'description'):

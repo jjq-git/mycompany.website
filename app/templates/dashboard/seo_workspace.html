@@ -256,8 +256,8 @@
             <div>
               <div class="mb-3">
                 <label class="form-label small text-muted mb-1" for="seo-title-{{ loop.index }}">页面标题</label>
-                <div class="seo-ai-field"><input class="form-control" id="seo-title-{{ loop.index }}" name="title" value="{{ row.title }}" maxlength="60" oninput="seoSyncPreview(this)"><button type="button" class="seo-ai-btn" onclick="seoGenerateField(this,'title')" title="智能优化标题" aria-label="智能优化标题"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.2 3.3L16.5 7.5l-3.3 1.2L12 12l-1.2-3.3-3.3-1.2 3.3-1.2L12 3Z"/><path d="m18 13 .8 2.2L21 16l-2.2.8L18 19l-.8-2.2L15 16l2.2-.8L18 13ZM6 13l.8 2.2L9 16l-2.2.8L6 19l-.8-2.2L3 16l2.2-.8L6 13Z"/></svg></button></div>
-                <div class="seo-help mt-1"><span class="seo-title-count">0</span>/60，建议 10-60 字</div>
+                <div class="seo-ai-field"><input class="form-control" id="seo-title-{{ loop.index }}" name="title" value="{{ row.title }}" maxlength="200" oninput="seoSyncPreview(this)"><button type="button" class="seo-ai-btn" onclick="seoGenerateField(this,'title')" title="智能优化标题" aria-label="智能优化标题"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.2 3.3L16.5 7.5l-3.3 1.2L12 12l-1.2-3.3-3.3-1.2 3.3-1.2L12 3Z"/><path d="m18 13 .8 2.2L21 16l-2.2.8L18 19l-.8-2.2L15 16l2.2-.8L18 13ZM6 13l.8 2.2L9 16l-2.2.8L6 19l-.8-2.2L3 16l2.2-.8L6 13Z"/></svg></button></div>
+                <div class="seo-help mt-1 seo-title-hint"><span class="seo-title-count">0</span> 个字符（含空格和符号）；超过约 60 个字符时搜索结果可能截断，但仍可完整保存</div>
               </div>
               <div>
                 <label class="form-label small text-muted mb-1" for="seo-description-{{ loop.index }}">页面简介</label>
@@ -266,10 +266,10 @@
                           name="description"
                           rows="6"
                           style="height:120px"
-                          maxlength="180"
+                          maxlength="500"
                           placeholder="{{ row.auto_description }}"
                           oninput="seoSyncPreview(this)">{{ row.description }}</textarea><button type="button" class="seo-ai-btn" onclick="seoGenerateField(this,'description')" title="智能优化描述" aria-label="智能优化描述"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.2 3.3L16.5 7.5l-3.3 1.2L12 12l-1.2-3.3-3.3-1.2 3.3-1.2L12 3Z"/><path d="m18 13 .8 2.2L21 16l-2.2.8L18 19l-.8-2.2L15 16l2.2-.8L18 13ZM6 13l.8 2.2L9 16l-2.2.8L6 19l-.8-2.2L3 16l2.2-.8L6 13Z"/></svg></button></div>
-                <div class="seo-help mt-1"><span class="seo-desc-count">0</span>/180，建议 80-160 字</div>
+                <div class="seo-help mt-1 seo-desc-hint"><span class="seo-desc-count">0</span> 个字符（含空格和符号）；搜索结果会按设备宽度截断，但仍可完整保存</div>
               </div>
             </div>
 
@@ -413,7 +413,11 @@
     function seoUpdateCount(textarea) {
       var row = textarea.closest('.seo-detail');
       var counter = row ? row.querySelector('.seo-desc-count') : null;
-      if (counter) counter.textContent = String((textarea.value || '').length);
+      var length = (textarea.value || '').length;
+      if (counter) counter.textContent = String(length);
+      var hint = row ? row.querySelector('.seo-desc-hint') : null;
+      // 长度只作为搜索结果展示建议，不阻止用户保存完整、自然的句子。
+      if (hint) hint.style.color = length > 180 ? '#b45309' : '';
     }
 
     function seoSyncPreview(input) {
@@ -426,7 +430,13 @@
       if (previewTitle && title) previewTitle.textContent = title.value || '未命名页面';
       if (previewDesc && desc) previewDesc.textContent = desc.value || desc.getAttribute('placeholder') || '保存页面简介后，这里会显示搜索结果摘要。';
       var titleCounter = row.querySelector('.seo-title-count');
-      if (titleCounter && title) titleCounter.textContent = String((title.value || '').length);
+      if (titleCounter && title) {
+        var titleLength = (title.value || '').length;
+        titleCounter.textContent = String(titleLength);
+        var titleHint = row.querySelector('.seo-title-hint');
+        // Google 按显示宽度截断标题，60 字符只是经验提示，不是输入硬上限。
+        if (titleHint) titleHint.style.color = titleLength > 60 ? '#b45309' : '';
+      }
       if (desc) seoUpdateCount(desc);
     }
 

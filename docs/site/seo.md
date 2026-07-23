@@ -54,6 +54,8 @@
 
 用户只填业务字段（标题、简介、封面图），SEO 标签由主题组合。
 
+标题和简介长度只能作为搜索结果展示建议，不能作为 SEO 硬限制。Google 会根据设备宽度截取标题和摘要，因此后台应允许保存完整、自然的文本；超过约 60 个标题字符或 180 个简介字符时给出提示即可，不得截断英文单词、专有名词或未结束的句子。输入框可以保留较宽的防误输入上限，但不能把 60/180 当成搜索引擎规则。
+
 ## 三、站点级文件
 
 发布时自动生成：
@@ -204,3 +206,276 @@ Google Core Web Vitals 直接进搜索排名：
 - 图片的 alt 文本（无障碍 + SEO）
 
 主题表单要把这些字段标成"建议填写"，但不强制。
+
+## 八、多语言 SEO 健康检查实施基线
+
+### 8.1 产品目标
+
+SEO 内容按语言独立生成，后台按整个站点统一检查：
+
+- 用户不需要切换语言逐个检查；
+- 一个逻辑页面在 SEO 工作台中只显示一行；
+- 系统自动扫描全部启用语言；
+- 默认只展开存在异常的语言；
+- 技术问题由系统处理，内容问题跳转到对应语言编辑器。
+
+第一版只支持 `claude` 和 `dengtec` 两套正式模板。`airbnb`、`apple`、`notion` 等其他模板不在第一版修改和验收范围内。
+
+第一版不做完整内容指纹、单页增量构建、NLP 语言识别、批量 AI 翻译、批量覆盖现有 SEO 内容，也不修改数据库结构。
+
+### 8.2 实施前只读排查结论
+
+现有有效站点的数据集共有 593 条记录，其中 362 条有稳定 `id`，231 条旧记录没有 `id`。缺少 `id` 的记录主要来自 `products`、`posts` 和 `portfolio`，但均有 slug，且现有多语言版本的 slug 保持一致。
+
+现有 canonical 有两个边界问题：
+
+- 预览构建会把 `/preview/<site>/...` 写进 canonical；
+- 正式构建在既无自定义域名、也无平台域名时会生成相对 canonical。
+
+HTML hreflang 与 sitemap alternate 已经同源，均来自 builder 的 `seo.alternate_urls`。现有产物中带 canonical 的 499 个页面逐项一致。因此不需要分别维护两套 URL 逻辑，真正需要修复的是共同的跨语言页面映射源。
+
+### 8.3 正式地址与部署地址分离
+
+builder 必须区分：
+
+| 地址 | 职责 |
+| --- | --- |
+| `base_url` | 预览资源、站内导航和预览路由前缀 |
+| `public_site_url` | canonical、hreflang、sitemap、OG URL 和 JSON-LD |
+
+`public_site_url` 的取值顺序：
+
+1. 站点自定义域名；
+2. 站点的平台子域名；
+3. 两者均不可用时产生明确的构建诊断，不把相对地址当成正常 canonical。
+
+即使检查的是预览产物，SEO 标签也必须使用正式公开地址，预览路径不能进入 canonical、hreflang 或 sitemap。
+
+后台的 `custom_domain` 只告诉 builder 网站的正式公开地址，不负责上传 OSS、配置 CDN、配置 DNS、部署 HTTPS 证书或刷新缓存。阿里云部署链路与 SEO 地址生成是两个独立职责。
+
+站点 6 的正式地址是 `https://www.dengtec.com`，应保留 `custom_domain = www.dengtec.com`。删除或改错该配置后重新导出，可能导致 canonical、hreflang 和 sitemap 指向平台域名或相对路径。
+
+### 8.4 跨语言页面身份与 URL 映射
+
+builder 在渲染前收集所有语言的页面任务，建立统一映射。普通页面使用 `page_key`，详情页采用兼容身份：
+
+```text
+有稳定 id
+→ dataset_key + id
+
+没有 id，但各语言 slug 完全一致
+→ dataset_key + slug
+
+没有 id，且各语言 slug 不一致
+→ 不猜测对应关系，不生成该详情页 hreflang，并记录构建诊断
+```
+
+第一版不批量回填旧记录的 `id`，避免为了 SEO 检查引入数据迁移。有稳定 `id` 的新内容可以支持各语言使用不同 slug；旧内容继续使用一致 slug 兼容。
+
+页面映射示例：
+
+```text
+product:128
+├── zh-CN → https://example.com/zh-CN/products/静音舱/
+├── zh-TW → https://example.com/zh-TW/products/靜音艙/
+└── en    → https://example.com/en/products/silent-booth/
+```
+
+映射规则：
+
+- canonical 指向当前语言页面自身；
+- canonical 必须是绝对地址；
+- hreflang 只包含真实存在的对应页面；
+- hreflang 必须双向对应；
+- `x-default` 指向真实存在的默认语言页面；
+- HTML hreflang、canonical 与 sitemap alternate 共用同一映射；
+- 页面缺失、身份重复、路径冲突进入构建报告；
+- 构建存在页面失败时，不继续给出正常 SEO 结论。
+
+### 8.5 builder 显式记录语言回退
+
+语言回退由 builder 判断，SEO 检查器不复制 YAML 合并逻辑，也不直接读取源 YAML。
+
+builder 记录以下明确、可证明的回退：
+
+- 当前语言页面不存在，使用默认语言页面；
+- 当前语言数据集不存在，使用默认语言数据；
+- 当前语言最终 SEO 标题或简介来自默认语言；
+- 当前语言公司简介来自默认语言。
+
+以下情况不视为语言错误：
+
+- 共享菜单结构和页面模板；
+- Logo、图片等非文本资源；
+- 公司品牌名保持原文；
+- 没有手写 description，但能从当前语言正文生成。
+
+诊断记录至少包含：
+
+```json
+{
+  "page_id": "page:about",
+  "lang": "en",
+  "field": "page_content",
+  "source_lang": "zh-CN",
+  "reason": "localized_page_missing",
+  "severity": "error"
+}
+```
+
+最近成功构建时间和回退诊断保存在内部状态目录，例如 `instance/build_meta/<site_id>.json`。该文件不进入导出 ZIP、OSS、CDN 或公开站点。
+
+语言回退诊断使用独立通道，不复用当前会阻止发布的构建失败 `report`，避免普通回退警告直接导致发布失败。
+
+### 8.6 模板输出契约
+
+第一版只统一 `claude` 和 `dengtec`。builder 向模板提供：
+
+```text
+seo.title
+seo.description
+seo.canonical_url
+seo.alternate_urls
+seo.image
+seo.site_name
+seo.type
+seo.json_ld
+```
+
+模板只负责输出 title、description、canonical、hreflang、Open Graph、Twitter Card 和 JSON-LD，不自行推算正式 URL 或跨语言关系。
+
+### 8.7 构建产物新鲜度
+
+第一版使用递归 mtime 粗比较，不提前实现完整内容指纹。
+
+比较范围：
+
+- `sites/<site_id>/` 下的站点内容和资源；
+- 当前 `claude` 或 `dengtec` 模板目录；
+- builder 及直接构建依赖；
+- SQLite 文件修改时间；
+- 最近一次成功构建时间。
+
+处理规则：
+
+```text
+产物缺失或任一输入更新
+→ 标记为脏
+→ 全量构建全部启用语言
+→ 构建成功后执行检查
+
+产物未过期
+→ 直接检查现有产物
+
+构建失败
+→ 显示“产物不可检查”
+→ 不使用旧产物给出 SEO 结果
+```
+
+完整构建指纹、精确依赖追踪和页面级增量构建属于后续优化。
+
+### 8.8 多语言只读检查器
+
+检查器只读取最新 HTML、`sitemap.xml`、`robots.txt`、`llms.txt` 和 builder 构建诊断，不修改用户内容。
+
+“需要处理”的问题：
+
+- 页面不存在或构建失败；
+- title 缺失；
+- canonical 缺失、错误、不是绝对地址或没有指向自身；
+- hreflang 指向不存在页面或没有双向对应；
+- sitemap 缺少实际页面，或 sitemap alternate 与 HTML hreflang 不一致；
+- 页面意外包含 `noindex`；
+- `robots.txt` 屏蔽全站；
+- 当前语言明确回退到其他语言内容；
+- 详情数据无法建立稳定语言对应。
+
+“建议优化”的问题：
+
+- description 缺失或长度不理想；
+- title 长度不理想或重复；
+- H1 数量异常；
+- 标题层级跳级；
+- 内容图片缺少 alt；
+- OG / Twitter 信息不完整；
+- JSON-LD 缺失、无法解析或字段不足；
+- `llms.txt` 内容不足。
+
+页面综合状态由最严重问题决定，不用平均分掩盖某个语言的问题。普通优化建议不阻止发布。
+
+### 8.9 后台前端对接
+
+SEO 工作台不再由顶部当前语言过滤。每个逻辑页面显示一行：
+
+| 页面 | 综合状态 | 语言覆盖 |
+| --- | --- | --- |
+| 首页 | 可发布 | 3/3 |
+| 产品中心 | 建议优化 | 3/3 |
+| 联系我们 | 需要处理 | 2/3 |
+
+展开页面后显示各语言明细，默认只展开异常语言。问题项可以直接进入对应语言的页面编辑器、详情编辑器或 SEO 编辑区。
+
+统一检查接口：
+
+```text
+POST /seo/check?site=<site>
+```
+
+接口负责：
+
+1. 判断模板是否受支持；
+2. 判断产物是否新鲜；
+3. 必要时执行全量构建；
+4. 检查所有启用语言；
+5. 返回统一 JSON 报告。
+
+`GET /seo/workspace` 只渲染工作台外壳。现有按语言的 SEO 保存和生成接口继续复用。后端为每个语言结果直接提供 `save_url`、`generate_url`、`edit_url` 和 `preview_url`，前端不自行拼接地址。
+
+后台继续使用 Flask、Jinja2 和 vanilla JS，不引入新的前端框架。
+
+### 8.10 已有站点兼容与阿里云部署
+
+修改本地 builder 或后台代码不会自动改变已经部署到 OSS/CDN 的静态文件。只有重新导出并上传后，线上站点才会采用新逻辑。
+
+站点 6 当前三种语言的 109 个详情内容均能对应，未发现语言间 slug 差异或缺少对应记录，因此新版构建原则上不会改变其页面 URL。
+
+站点 6 再次部署前必须：
+
+1. 在独立临时目录构建新版；
+2. 比较新旧文件路径和 sitemap URL 集合；
+3. 比较 canonical 与 hreflang；
+4. 验证三种语言的首页、列表页和详情页；
+5. 保留旧版完整 ZIP；
+6. 上传阿里云后检查线上 HTML 和 sitemap；
+7. 验证完成后再刷新 CDN 缓存。
+
+没有自定义域名的站点仍可生成和部署静态文件，但必须有可用的平台子域名才能输出正确的绝对 canonical。没有任何正式公开地址时，应显示配置错误，而不是静默生成相对 SEO URL。
+
+### 8.11 实施顺序
+
+1. 分离预览地址与正式 SEO 地址；
+2. 建立多语言页面身份和 URL 映射；
+3. 修复 canonical、hreflang 与 sitemap；
+4. 增加 builder 回退诊断；
+5. 统一 `claude`、`dengtec` 模板输出；
+6. 增加 mtime 新鲜度判断；
+7. 实现多语言只读检查器；
+8. 实现统一检查接口和 SEO 工作台；
+9. 接入发布前严重问题校验；
+10. 后续再实现完整指纹、增量构建和安全自动修复。
+
+构建器、模板、检查器、后台界面和发布校验应分别实施和验证，不混成一次大改。
+
+### 8.12 验收标准
+
+- 同一逻辑页面的全部语言只显示一行汇总；
+- 产物未变化时检查不会重复构建；
+- 源数据变化后检查会先全量构建；
+- 构建失败时不会检查旧产物；
+- canonical 使用正式绝对地址；
+- sitemap 与 HTML hreflang 一致；
+- hreflang 不指向不存在页面；
+- 旧数据没有 `id` 时仍可通过一致 slug 正常工作；
+- 站点 6 原有页面路径和 URL 数量不变；
+- 问题能够跳转到正确语言编辑器；
+- 普通 SEO 建议不阻止发布。
