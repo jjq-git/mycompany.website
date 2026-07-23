@@ -2277,6 +2277,9 @@
           '<div class="col-6">' + cn('module_' + idx + '_data_card_desc_color', '描述颜色', d.card_desc_color || '#64748b') + '</div>' +
           '<div class="col-6">' + un('module_' + idx + '_data_card_desc_line_height', '描述行高', ['rem',''], d.card_desc_line_height || '1.6') + '</div>' +
         '</div>';
+      // 功能网格只开放模板声明的样式令牌（当前为每行列数）。
+      // 上面的旧字段仅用于兼容已有数据，不再作为可编辑样式展示。
+      styleEditor = schemaStyleForm('module_' + idx + '_data_', getMergedSchema(meta), d);
 
     /* ====== highlight_card ====== */
     } else if (type === 'highlight_card') {

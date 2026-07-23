@@ -2053,6 +2053,12 @@ function addModule(type, variant, dataPreset) {
       '<div class="col-6">' + cP('module_' + idx + '_data_card_desc_color', '描述颜色', '#64748b') + '</div>' +
       '<div class="col-6">' + uP('module_' + idx + '_data_card_desc_line_height', '描述行高', ['rem',''], '1.6') + '</div>' +
     '</div>';
+    // 新增功能网格时也只展示模板声明的样式令牌，避免旧的细粒度样式面板泄漏。
+    styleEditor = generateSchemaStyleForm(
+      'module_' + idx + '_data_',
+      _getMergedSchema(meta),
+      dataPreset || {}
+    );
 
 
   } else if (type === 'highlight_card') {
