@@ -97,6 +97,11 @@ def load_config(override=None):
         # 防止匿名枚举 site id 读他人未发布站点。本地测试若要免登录分享预览，
         # 在 .env 显式设 PREVIEW_REQUIRE_LOGIN=0 关闭。忘配置时是安全的，不是裸奔。
         'PREVIEW_REQUIRE_LOGIN': os.environ.get('PREVIEW_REQUIRE_LOGIN', '1').strip() != '0',
+
+        # 导出/发布前的死链检查总开关。默认开（有死链就拦下不让导出，避免店主拿到
+        # 缺页站还不自知）。临时想跳过检查随意导出时，设 EXPORT_SKIP_LINK_CHECK=1，
+        # 死链只记日志不再拦截。仅供本地调试，生产不要开。
+        'EXPORT_SKIP_LINK_CHECK': os.environ.get('EXPORT_SKIP_LINK_CHECK', '0').strip() == '1',
     }
 
     if override:

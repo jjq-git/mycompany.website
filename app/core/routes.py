@@ -6168,6 +6168,14 @@ def export_zip():
     with TemporaryDirectory(prefix=f'export-{site.id}-') as temp_dir:
         output_root = build_site(site.id, base_url='', report=report,
                                  output_root=Path(temp_dir) / site.slug)
+        # EXPORT_SKIP_LINK_CHECK=1 时临时关闭死链拦截，允许带死链随意导出（仅本地调试）。
+        # 关掉后仍在日志里留痕，方便事后知道导出的站有哪些缺页。
+        if report and current_app.config.get('EXPORT_SKIP_LINK_CHECK'):
+            current_app.logger.warning(
+                '站点 %s 导出跳过死链检查（EXPORT_SKIP_LINK_CHECK=1），忽略 %d 个问题',
+                site.id, len(report),
+            )
+            report = []
         if report:
             message = f'导出检查发现 {len(report)} 个页面或链接问题，请修复后重试'
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest' \
