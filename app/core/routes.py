@@ -17,6 +17,7 @@ import smtplib
 import urllib.request
 import urllib.parse
 from email.message import EmailMessage
+from email.utils import formatdate, make_msgid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -1457,6 +1458,9 @@ def _deliver_verification_code(identity_type, identifier, purpose, code):
         message['Subject'] = '网站工作台验证码'
         message['From'] = sender
         message['To'] = identifier
+        # 完整的时间和唯一消息标识有助于收件服务器正确归档、去重和反垃圾判断。
+        message['Date'] = formatdate(localtime=False, usegmt=True)
+        message['Message-ID'] = make_msgid(domain=sender.rsplit('@', 1)[-1])
         message.set_content(f'你的验证码是 {code}，10 分钟内有效。用途：{purpose}。如非本人操作请忽略。')
         port = current_app.config.get('SMTP_PORT', 587)
         use_ssl = current_app.config.get('SMTP_USE_SSL')
