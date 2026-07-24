@@ -191,7 +191,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=135"></script>
+<script src="/static/js/admin_modules.js?v=136"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -1790,7 +1790,9 @@ function addModule(type, variant, dataPreset) {
   var styleEditor = '';
   // data-* 声明式 block：用 schema 自动生成表单，拦截在所有硬编码分支之前。
   // meta.is_data_attr/schema 由后端 scan_blocks 解析、随 blockLibraryJson 下发。
-  if (meta.is_data_attr && meta.schema && type !== 'feature_grid' && type !== 'data_list_showcase') {
+  // feature_grid 已经是 data-* 声明式模块；首次新增必须与保存后重载走同一套
+  // schema 表单，否则旧表单的 feature 单数字段不会被 features 列表解析器识别。
+  if (meta.is_data_attr && meta.schema && type !== 'data_list_showcase') {
     var mergedSchema = _getMergedSchema(meta);
     if (type === 'featured_picks' && typeof window._featuredPicksEditors === 'function') {
       var fpEditors = window._featuredPicksEditors('module_' + idx + '_data_', dataPreset || {});

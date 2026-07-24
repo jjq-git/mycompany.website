@@ -1000,13 +1000,24 @@
         children = nested;
       }
     }
-    return children.map(function(child) {
+    var normalized = children.map(function(child) {
       var copy = Object.assign({}, child);
       copy.key = copy.key || copy.name;
       return copy;
     }).filter(function(child) {
       return !!child.key;
     });
+    /* 叶子图片可以用 data-href 指向同一条目的链接字段。链接不是独立 DOM
+       节点，但仍必须在列表编辑器中提供输入框。 */
+    var childKeys = normalized.map(function(child) { return child.key; });
+    normalized.slice().forEach(function(child) {
+      var hrefKey = child.href_field || '';
+      if (hrefKey && childKeys.indexOf(hrefKey) === -1) {
+        normalized.push({ key: hrefKey, name: hrefKey, type: 'url', label: '链接（可选）' });
+        childKeys.push(hrefKey);
+      }
+    });
+    return normalized;
   }
 
   function schemaFieldToFormField(field) {
@@ -1063,10 +1074,11 @@
     var items = Array.isArray(value) ? value : ((mdata && Array.isArray(mdata[key])) ? mdata[key] : []);
     var children = fieldChildren(field);
     var base = prefix.replace(/data_$/, '');
+    var itemLabel = field.item_label || '条目';
     var html = '<div class="schema-list-editor" data-list-base="' + attrEsc(base) + '" data-list-name="' + attrEsc(key) + '" data-children="' + attrEsc(JSON.stringify(children)) + '">';
     html += '<div class="d-flex justify-content-between align-items-center mb-2">' +
       '<div class="small fw-semibold text-primary">' + esc(labelText(field)) + '</div>' +
-      '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加条目</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加' + esc(itemLabel) + '</button>' +
       '</div>';
     html += '<input type="hidden" class="schema-list-count" name="' + attrEsc(base + key + '_count') + '" value="' + items.length + '">';
     html += '<div class="schema-list-items">';
@@ -1197,6 +1209,14 @@
         var childName = child && (child.name || child.key);
         return mergeField(child, childMetaMap[childName]);
       });
+      var childNames = children.map(function(child) { return child.name || child.key; });
+      ((mf && (mf.children || mf.item_fields)) || []).forEach(function(child) {
+        var childName = child && (child.name || child.key);
+        if (childName && childNames.indexOf(childName) === -1) {
+          children.push(mergeField(child, child));
+          childNames.push(childName);
+        }
+      });
       var merged = Object.assign({}, sf, {
         name: name,
         key: name,
@@ -1207,6 +1227,7 @@
         merged.type = mf.type || merged.type;
         merged.options = mf.options || merged.options;
         merged.label = mf.label || merged.label;
+        merged.item_label = mf.item_label || merged.item_label;
         merged.show_if = mf.show_if || merged.show_if;
         if ((mf.type === 'list' || mf.type === 'grid') && (mf.item_fields || mf.children || []).length && !children.length) {
           merged.children = (mf.item_fields || mf.children || []).map(function(child) { return mergeField(child); });
@@ -1895,6 +1916,28 @@
     var headerBg = '';
     var titleColor = '';
     var schemaManaged = !!(!isDataModule && meta.is_data_attr && meta.schema);
+    var useDatasetSchemaEditor = schemaManaged && isDsMode;
+
+    /* 兼容旧高级编辑器的字段命名；数据详情页的新表单与渲染器统一使用
+       data-* 模板声明的 heading / subheading / style_*。 */
+    if (useDatasetSchemaEditor) {
+      d = Object.assign({}, d);
+      var schemaFieldNames = (meta.schema.fields || []).map(function(field) { return field.name || field.key; });
+      if (schemaFieldNames.indexOf('heading') >= 0 && !d.heading && d.title) d.heading = d.title;
+      if (schemaFieldNames.indexOf('subheading') >= 0 && !d.subheading && d.subtitle) d.subheading = d.subtitle;
+      var schemaStyleTokens = (meta.schema.style_tokens || []).concat(meta.schema.element_style_tokens || []);
+      if (schemaStyleTokens.indexOf('cols') >= 0 && !d.style_cols && d.columns) d.style_cols = d.columns;
+      if (schemaStyleTokens.indexOf('bg-color') >= 0 && !d['style_bg-color'] && d.section_bg) {
+        d['style_bg-color'] = d.section_bg;
+      }
+      if (type === 'logo_cloud' && Array.isArray(d.logos)) {
+        d.logos = d.logos.map(function(item) {
+          item = Object.assign({}, item || {});
+          if (!item.logo && item.image) item.logo = item.image;
+          return item;
+        });
+      }
+    }
 
     if (schemaManaged) {
       var mergedSchema = getMergedSchema(meta);
@@ -1915,7 +1958,10 @@
     }
 
     /* ====== item_data (详情数据) 特殊处理 ====== */
-    if (isDataModule && window._moduleCtx && window._moduleCtx.isDetailTemplateMode) {
+    if (useDatasetSchemaEditor) {
+      /* 数据详情页中的声明式模块完全以模板 schema 为准。
+         保留上面生成的内容表单与样式令牌，不再被旧硬编码编辑器覆盖。 */
+    } else if (isDataModule && window._moduleCtx && window._moduleCtx.isDetailTemplateMode) {
       specialEditor =
         '<div class="small fw-semibold mb-1 text-muted">细节图</div>' +
         '<div class="row g-2">' +
@@ -2034,7 +2080,9 @@
     }
 
     /* ====== hero_banner ====== */
-    if (!schemaManaged && type === 'hero_banner') {
+    if (schemaManaged) {
+      /* 声明式模块保留 schema 生成的内容与样式面板，跳过整条旧模块编辑器分支。 */
+    } else if (type === 'hero_banner') {
       specialEditor =
         '<hr class="my-2">' +
         '<div class="hero-slides-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">轮播媒体项</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addHeroSlide(' + idx + ')">+ 添加媒体椤</button></div><input type="hidden" name="module_' + idx + '_slide_count" class="hero-slide-count" value="' + (d.slide_count || '1') + '"><div class="hero-slide-list">' + (window._heroSlideHtml ? window._heroSlideHtml(idx, 0, d) : '') + '</div></div>';
@@ -2164,7 +2212,7 @@
       specialEditor = dataListShowcaseEditors(idx, d).specialEditor;
 
     /* ====== feature_grid ====== */
-    } else if (type === 'feature_grid') {
+    } else if (type === 'feature_grid' && !schemaManaged) {
       var featCount = d.feature_count || '1';
       specialEditor =
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title) + '" placeholder="濡?产品特点"></div>' +
