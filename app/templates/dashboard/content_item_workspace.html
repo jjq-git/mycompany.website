@@ -488,6 +488,17 @@
     }
     .content-edit-panel .editor-component-stack{margin:0 0 18px!important}
     .content-edit-panel .editor-component-stack__body{margin:0!important}
+    /* 详情模板组件虽然需要放在同一排序容器中，但视觉和锚点上必须各自独立。
+       直属分区统一保留卡片间距，避免相邻的规格参数与详情链接看成一个组件。 */
+    .content-edit-panel #detailFieldSections>.detail-field-section{
+      display:block;
+      margin:0 0 18px!important;
+      background:#fff!important;
+      border:0!important;
+      box-shadow:0 5px 18px rgba(15,23,42,.065);
+      scroll-margin-top:64px;
+    }
+    .content-edit-panel #detailFieldSections>.detail-field-section:last-child{margin-bottom:0!important}
     .content-edit-panel .detail-spec-group-item.editor-component{
       display:block!important;
       margin:0!important;
@@ -497,24 +508,29 @@
       border-radius:0!important;
       box-shadow:0 5px 18px rgba(15,23,42,.065)!important;
     }
-    .content-edit-panel .detail-spec-group-item.editor-component>.editor-component__header{
+    .content-edit-panel .dataset-edit-form #detailFieldSections>.detail-spec-group-item.editor-component>.editor-component__header{
       display:flex!important;
       align-items:center!important;
       justify-content:space-between!important;
       gap:12px!important;
       margin:0!important;
-      padding:13px 16px!important;
+      padding:13px 25px!important;
       border:0!important;
       border-bottom:1px solid #e7ecef!important;
       background:#fff!important;
     }
-    .content-edit-panel .detail-spec-group-item.editor-component>.editor-component__body{
+    .content-edit-panel .dataset-edit-form #detailFieldSections>.detail-spec-group-item.editor-component>.editor-component__body{
       display:grid!important;
       width:100%;
       gap:8px!important;
       margin:0!important;
       padding:25px!important;
       background:#fff!important;
+    }
+    /* 没有参数行时收起空内容区；新增第一行后 :has 条件自动失效并恢复正常内边距。 */
+    .content-edit-panel .dataset-edit-form #detailFieldSections>.detail-spec-group-item.editor-component>.editor-component__body:not(:has(>.dataset-spec-item)){
+      display:none!important;
+      padding:0!important;
     }
     /* 姝ｆ枃鍧楀唴閮ㄨ窡闅忓崱鐗囧搴︼紝涓嶅啀鐢ㄥ浐瀹?max-width 鍒堕€犲彸渚х┖鐧姐€?*/
     .content-edit-panel #detailContentBlocksList .detail-content-block-main,
@@ -738,7 +754,9 @@
       });
     });
     form.querySelectorAll(collectionSelector).forEach(function(collection){collectionObserver.observe(collection,{childList:true});});
-    var sectionSelector='.ds-card,.detail-field-section,.detail-multi-section,.ds-settings-card,.detail-content-block-item,.detail-spec-group-item,.detail-table-item,.detail-link-item';
+    /* 内容导航只绑定顶层组件。子项不参与锚点收集，确保“规格参数”和“详情链接”
+       分别滚动到 specs_N / link_N，而不是命中共同容器或内部字段。 */
+    var sectionSelector=':scope>.ds-card,:scope>.detail-field-section,:scope>.ds-settings-card,:scope>#detailFieldSections>.detail-field-section';
     var sections=Array.from(form.querySelectorAll(sectionSelector)).filter(function(node){
       if(node.offsetParent===null)return false;
       return !(node.classList.contains('detail-content-template-slot')&&node.closest('.detail-content-slot-section'));
@@ -751,8 +769,6 @@
       section.id=section.id||'content-edit-section-'+index;
       var button=document.createElement('button');
       button.type='button';button.className='content-edit-outline-button';button.textContent=text;
-      var parentSection=section.parentElement&&section.parentElement.closest(sectionSelector);
-      if(parentSection)button.classList.add('is-child');
       button.addEventListener('click',function(){section.scrollIntoView({behavior:'smooth',block:'start'});});
       outline.appendChild(button);
       navEntries.push({section:section,button:button});

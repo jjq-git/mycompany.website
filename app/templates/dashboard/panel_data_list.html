@@ -122,7 +122,8 @@
   #detailGalleryList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   #detailGalleryList .detail-gallery-item{margin-bottom:0!important}
   .detail-multi-section{background:transparent!important;border:0!important;border-radius: 0;overflow:visible!important;margin-bottom:0!important}
-  .detail-multi-section>.small.fw-semibold{display:none!important}
+  /* 多组组件已经改为“每个条目就是独立分区”；链接/表格的直属标题正是该分区标题，
+     不能再沿用旧外层容器的隐藏规则，否则按钮/链接会看起来粘在上一块规格参数下面。 */
   .dataset-edit-form .detail-table-item,
   .dataset-edit-form .detail-link-item,
   .dataset-edit-form .detail-spec-group-item{display:grid;grid-template-columns:140px minmax(0,1fr);background:#fff;border:1px solid #e5e7eb!important;border-radius: 0;padding:0!important;overflow:hidden;margin:0 0 12px!important}
