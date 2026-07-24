@@ -5857,7 +5857,8 @@ def _normalize_custom_domain(raw):
 # 字符集放宽到下划线 + 允许单字符, 覆盖现有所有 key(about/contact/home/
 # portfolio/posts/pricing/products/features), 零误伤。
 _KEY_PATTERN = re.compile(r'^[a-z0-9][a-z0-9_-]{0,40}$')
-VISIBLE_TEMPLATE_NAMES = ('claude', 'dengtec')
+# blank 为空白起步模板，按 name 升序会排在最前，作为模板库第一张卡呈现
+VISIBLE_TEMPLATE_NAMES = ('blank', 'claude', 'dengtec')
 
 
 def _visible_templates_query():

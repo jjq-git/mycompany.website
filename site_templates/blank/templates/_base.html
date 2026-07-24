@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="{{ lang | default('en') }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ seo.title | default(settings.company.name or t.company) }}</title>
+  <meta name="description" content="{{ seo.description | default(settings.company.name or t.company) }}">
+  {% if seo.canonical_url %}
+  <link rel="canonical" href="{{ seo.canonical_url }}">
+  {% endif %}
+  {% for alt in seo.alternate_urls | default([]) %}
+  <link rel="alternate" hreflang="{{ alt.lang }}" href="{{ alt.url }}">
+  {% endfor %}
+  <meta property="og:type" content="{{ seo.type | default('website') }}">
+  <meta property="og:title" content="{{ seo.title | default(settings.company.name or t.company) }}">
+  <meta property="og:description" content="{{ seo.description | default(settings.company.name or t.company) }}">
+  {% if seo.image %}
+  <meta property="og:image" content="{{ seo.image }}">
+  {% endif %}
+  {% if seo.canonical_url %}
+  <meta property="og:url" content="{{ seo.canonical_url }}">
+  {% endif %}
+  <meta property="og:site_name" content="{{ seo.site_name | default(settings.company.name or t.company) }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ seo.title | default(settings.company.name or t.company) }}">
+  <meta name="twitter:description" content="{{ seo.description | default(settings.company.name or t.company) }}">
+  {% if seo.image %}
+  <meta name="twitter:image" content="{{ seo.image }}">
+  {% endif %}
+
+  {# Google Fonts: Cormorant Garamond (替代 Copernicus 衬线标题), Inter (替代 StyreneB 正文), JetBrains Mono (代码)
+     中文页面（zh-CN / zh-TW）不加载 —— 这些字体不含中文字符，走 CSS 中文字体栈 #}
+  {% if lang != 'zh-CN' and lang != 'zh-TW' %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  {% endif %}
+
+  <link rel="stylesheet" href="{{ base_url }}/static/css/main.css?v=20260722a">
+  <!-- Favicon: 优先使用店主上传的图片，无则回退到内联 SVG 占位 -->
+  {% if settings.company.favicon %}
+  <link rel="icon" href="{{ settings.company.favicon }}">
+  {% else %}
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23222'/%3E%3C/svg%3E">
+  {% endif %}
+
+  {# 两层主题色注入: 默认令牌（main.css :root）+ 店主覆盖（settings.yaml theme） #}
+  {% set theme_colors = theme | default({}) %}
+  {% if theme_colors %}
+  <style>
+    :root {
+      {% for key, val in theme_colors.items() %}
+      {% if val and val is string and val|length %}--{{ key }}: {{ val | safe }};{% endif %}
+      {% endfor %}
+    }
+  </style>
+  {% endif %}
+</head>
+<body>
+<div class="site-wrapper">
+
+{# ===== MACROS ===== #}
+
+{# menu_href —— 生成菜单链接 URL，处理语言前缀、base_url、尾部斜杠 #}
+{% macro menu_href(item) -%}
+  {%- set href = item['url'] | default('#') -%}
+  {%- if href.startswith('http://') or href.startswith('https://') or href.startswith('#') -%}
+    {{- href -}}
+  {%- elif href == '/' -%}
+    {{- base_url }}/{{ lang }}/
+  {%- else -%}
+    {{- base_url }}/{{ lang }}{{ href }}{%- if '?' not in href and '#' not in href and not href.endswith('/') -%}/{%- endif -%}
+  {%- endif -%}
+{%- endmacro %}
+
+{# render_menu_item —— 递归渲染菜单项，支持下拉子菜单 #}
+{% macro render_menu_item(item, level=0) -%}
+  {%- set children = item['children'] | default([]) -%}
+  {%- set href = menu_href(item) -%}
+  {%- if children -%}
+    <div class="nav-dropdown{% if level > 0 %} nav-dropdown-nested{% endif %}">
+      <div class="nav-dropdown-trigger" onclick="toggleMenuDropdown(event, this)">
+        {%- if item.type == 'group' -%}
+          <span class="{% if level == 0 %}nav-link{% else %}nav-dropdown-item{% endif %} nav-dropdown-label">{{ item['label'] }}</span>
+        {%- else -%}
+          <a href="{{ href }}"
+             class="{% if level == 0 %}nav-link{% else %}nav-dropdown-item{% endif %} nav-dropdown-link"
+             {% if href.startswith('http://') or href.startswith('https://') %}target="_blank" rel="noopener"{% endif %}>
+            {{ item['label'] }}
+          </a>
+        {%- endif -%}
+        <button class="nav-dropdown-arrow" type="button" onclick="toggleMenuDropdown(event, this)" aria-label="Toggle submenu" aria-expanded="false">
+          <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 1l4 4 4-4"/></svg>
+        </button>
+      </div>
+      <div class="nav-dropdown-menu">
+        {%- for child in children -%}
+          {{ render_menu_item(child, level + 1) }}
+        {%- endfor -%}
+      </div>
+    </div>
+  {%- else -%}
+    {%- if item.type == 'group' -%}
+      <span class="{% if level == 0 %}nav-link{% else %}nav-dropdown-item{% endif %} nav-dropdown-label">{{ item['label'] }}</span>
+    {%- else -%}
+    <a href="{{ href }}"
+       class="{% if level == 0 %}nav-link{% else %}nav-dropdown-item{% endif %}"
+       {% if href.startswith('http://') or href.startswith('https://') %}target="_blank" rel="noopener"{% endif %}>
+      {{ item['label'] }}
+    </a>
+    {%- endif -%}
+  {%- endif -%}
+{%- endmacro %}
+
+{# lang_switcher —— 语言切换器，支持三种样式 #}
+{% macro lang_switcher() -%}
+{%- if lang_switcher_enabled and languages and languages | length > 1 -%}
+  {%- if lang_switcher_style == 'inline_row' -%}
+    <div class="lang-switcher lang-switcher--inline" id="langSwitcher">
+      {%- for lang_opt in languages -%}
+        <a href="{{ base_url }}/{{ lang_opt.code }}{{ lang_switch_path | default(current_path) }}"
+           class="{% if lang == lang_opt.code %}active{% endif %}">
+          {{ lang_opt.name }}
+        </a>
+      {%- endfor -%}
+    </div>
+  {%- elif lang_switcher_style == 'flag_icon' -%}
+    <div class="lang-switcher lang-switcher--inline" id="langSwitcher">
+      {%- for lang_opt in languages -%}
+        <a href="{{ base_url }}/{{ lang_opt.code }}{{ lang_switch_path | default(current_path) }}"
+           class="{% if lang == lang_opt.code %}active{% endif %}"
+           title="{{ lang_opt.name }}">
+          {%- if lang_opt.flag_image -%}
+          <img class="lang-flag-img" src="{{ lang_opt.flag_image }}" alt="" aria-hidden="true">
+          {%- elif lang_opt.flag -%}
+          <span class="lang-flag-text">{{ lang_opt.flag }}</span>
+          {%- endif -%}
+          <span>{{ lang_opt.code.split('-')[0] | upper }}</span>
+        </a>
+      {%- endfor -%}
+    </div>
+  {%- else -%}
+    <div class="lang-switcher" id="langSwitcher">
+      <button class="lang-switcher__toggle" onclick="toggleLangDropdown(event)" aria-haspopup="true" aria-expanded="false">
+        <span id="currentLangName">
+          {%- for lang_opt in languages -%}
+          {% if lang == lang_opt.code %}{{ lang_opt.name }}{% endif %}
+          {%- endfor -%}
+        </span>
+        <span class="lang-switcher__arrow">
+          <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 1l4 4 4-4"/></svg>
+        </span>
+      </button>
+      <div class="lang-switcher__dropdown" id="langDropdownMenu" style="display:none;">
+        {%- for lang_opt in languages -%}
+        <a href="{{ base_url }}/{{ lang_opt.code }}{{ lang_switch_path | default(current_path) }}"
+           class="lang-switcher__option{% if lang == lang_opt.code %} active{% endif %}">
+          {{ lang_opt.name }}
+        </a>
+        {%- endfor -%}
+      </div>
+    </div>
+  {%- endif -%}
+{%- endif -%}
+{%- endmacro %}
+
+{# render_social_icon —— SVG 社交图标 #}
+{% macro render_social_icon(platform) -%}
+  {%- if platform == 'github' -%}
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+  {%- elif platform in ['twitter', 'x'] -%}
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+  {%- elif platform == 'linkedin' -%}
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452z"/></svg>
+  {%- elif platform == 'youtube' -%}
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.4 31.4 0 0 0 24 12a31.4 31.4 0 0 0-.5-5.8zM9.6 15.6V8.4L15.8 12l-6.2 3.6z"/></svg>
+  {%- elif platform == 'facebook' -%}
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7h-2.5V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12z"/></svg>
+  {%- elif platform == 'instagram' -%}
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+  {%- elif platform == 'tiktok' -%}
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3v11.2a4.2 4.2 0 1 1-3.2-4.08"/><path d="M15 6c1.1 1.5 2.5 2.25 4 2.3"/></svg>
+  {%- elif platform == 'whatsapp' -%}
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.45L3 20.5l1.45-4.75A8.5 8.5 0 1 1 20.5 11.6z"/><path d="M8.2 7.8c.3 3.6 2.4 5.8 6 6.8l1.5-1.5"/></svg>
+  {%- elif platform == 'telegram' -%}
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M22 3L2.8 10.4l7.1 2.35L12.6 20 22 3z"/><path d="M9.9 12.75L22 3"/></svg>
+  {%- elif platform == 'wechat' -%}
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.8 10.2c0-3-2.65-5.4-5.9-5.4S2 7.2 2 10.2c0 1.7.85 3.2 2.2 4.2l-.7 2.3 2.6-1.3c.6.15 1.2.25 1.8.25"/><path d="M22 14.5c0-2.55-2.3-4.6-5.15-4.6s-5.15 2.05-5.15 4.6 2.3 4.6 5.15 4.6c.55 0 1.05-.08 1.55-.22l2.3 1.15-.6-2.05A4.38 4.38 0 0 0 22 14.5z"/><circle cx="6.1" cy="9.2" r=".65" fill="currentColor" stroke="none"/><circle cx="10" cy="9.2" r=".65" fill="currentColor" stroke="none"/></svg>
+  {%- elif platform == 'weibo' -%}
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M20 13.5c0 3.6-4 6.5-8.8 6.5S3 17.8 3 14.8c0-2.2 1.9-4.2 4.8-5.3C7.3 7.8 8.1 6 9.5 6c1 0 1.6.8 1.4 2.1 4.8-.9 9.1 1.2 9.1 5.4z"/><circle cx="11.2" cy="14.4" r="2.2"/><path d="M16 5.5c2.3.4 3.9 2 4.3 4.2M16.8 2.5c3.7.6 6.1 3 6.7 6.5"/></svg>
+  {%- elif platform == 'xiaohongshu' -%}
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9l4 6M11 9l-4 6M14 9h4M14 12h4M14 15h4"/></svg>
+  {%- elif platform == 'pinterest' -%}
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.2 19l2-8.2M10.2 15.2c.7.6 1.5.9 2.4.9 2.7 0 4.7-2.3 4.7-5.2 0-2.5-2-4.3-4.8-4.3-3.4 0-5.8 2.3-5.8 5.2 0 1.4.5 2.6 1.6 3.1"/></svg>
+  {%- elif platform == 'discord' -%}
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 6.3A14 14 0 0 1 12 5.5a14 14 0 0 1 4.5.8c1.8 2.7 2.7 5.6 2.5 8.8-1.5 1.2-3 2-4.6 2.5l-1.1-1.5M10.7 16.1l-1.1 1.5C8 17.1 6.5 16.3 5 15.1c-.2-3.2.7-6.1 2.5-8.8"/><circle cx="9.5" cy="12.2" r="1"/><circle cx="14.5" cy="12.2" r="1"/></svg>
+  {%- else -%}
+    <span class="social-link-letter">{{ platform[:1] | upper }}</span>
+  {%- endif -%}
+{%- endmacro %}
+
+{# render_social_links —— 渲染社交链接 #}
+{% macro render_social_links() -%}
+  {%- set social_links = settings.social | default({}) -%}
+  {%- if social_links.get('enabled', True) -%}
+    {%- set social_labels = {
+      'github': 'GitHub', 'twitter': 'X / Twitter', 'facebook': 'Facebook',
+      'instagram': 'Instagram', 'linkedin': 'LinkedIn', 'youtube': 'YouTube',
+      'tiktok': 'TikTok', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram',
+      'wechat': '微信 / WeChat', 'weibo': '微博 / Weibo',
+      'xiaohongshu': '小红书', 'pinterest': 'Pinterest', 'discord': 'Discord'
+    } -%}
+    <style>
+      .social-platform-link{position:relative;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;flex:0 0 32px;overflow:visible}
+      .social-platform-link svg{display:block;width:17px!important;height:17px!important}
+      .social-platform-link svg[fill="none"]{stroke-width:2.2}
+      .social-platform-link::after{content:attr(data-social-label);position:absolute;left:50%;bottom:calc(100% + 7px);z-index:20;transform:translate(-50%,4px);padding:4px 7px;border-radius:3px;background:#111827;color:#fff;font-size:12px;line-height:1.2;white-space:nowrap;pointer-events:none;opacity:0;visibility:hidden;transition:opacity .15s ease,transform .15s ease}
+      .social-platform-link:hover::after,.social-platform-link:focus-visible::after{opacity:1;visibility:visible;transform:translate(-50%,0)}
+    </style>
+    <div class="social-links" aria-label="Social links">
+      {%- for platform, url in social_links.items() -%}
+        {%- if platform in ['github', 'twitter', 'facebook', 'instagram', 'linkedin', 'youtube', 'tiktok', 'whatsapp', 'telegram', 'wechat', 'weibo', 'xiaohongshu', 'pinterest', 'discord'] and url -%}
+        {%- set platform_label = social_labels.get(platform, platform | title) -%}
+        <a href="{{ url }}" target="_blank" rel="noopener" class="social-links__icon social-platform-link" aria-label="{{ platform_label }}" data-social-label="{{ platform_label }}">
+          {{ render_social_icon(platform) }}
+        </a>
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+  {%- endif -%}
+{%- endmacro %}
+
+{# ===== HEADER CONFIG ===== #}
+{% set header_config = settings.header | default({}) %}
+{% set header_variant = header_config.get('variant', 'logo_left_menu_right') %}
+{% set lang_switcher_enabled = header_config.get('language_switcher', {}).get('enabled', True) %}
+{% set lang_switcher_style = header_config.get('language_switcher', {}).get('style', 'vertical_dropdown') %}
+
+{# ===== HEADER: Claude 风格（单变体，logo 左 + 导航中 + CTA 右，64px 奶油画布） ===== #}
+<header class="site-header builder-region" id="siteHeader" data-builder-region="header">
+  <div class="header-inner">
+    {# Logo: Anthropic 风格 —— spike-mark SVG + 公司名 #}
+    <a href="{{ base_url }}/{{ lang }}/" class="header-logo">
+      {# 如果有自定义 logo 则显示图片；否则用默认 SVG 星形图标作为品牌标记 #}
+      {% if settings.company.logo %}
+        <img src="{{ settings.company.logo }}" alt="{{ settings.company.name or t.company }}" class="header-logo-img">
+      {% else %}
+        <svg class="header-logo-mark" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="10" cy="10" r="2" fill="currentColor"/>
+          <line x1="10" y1="2" x2="10" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="10" y1="13" x2="10" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="2" y1="10" x2="7" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="13" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      {% endif %}
+      <span class="header-logo-text">{{ settings.company.name or t.company }}</span>
+    </a>
+
+    {# 主导航 #}
+    <nav class="header-nav" id="headerNav">
+      {% for item in settings.menu %}
+        {{ render_menu_item(item) }}
+      {% endfor %}
+    </nav>
+
+    {# 右侧操作区：语言切换 #}
+    <div class="header-actions">
+      {{ lang_switcher() }}
+    </div>
+
+    {# 移动端汉堡菜单 #}
+    <button class="header-menu-toggle" id="menuToggle" aria-label="Menu" onclick="toggleMobileMenu()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+{# 移动端导航面板 #}
+<nav class="mobile-nav-overlay" id="mobileNavOverlay">
+  {% for item in settings.menu %}
+    {%- set children = item['children'] | default([]) -%}
+    {%- if children -%}
+      <button class="mobile-nav-dropdown-trigger" onclick="toggleMobileSubmenu(this)">
+        {{ item['label'] }}
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1l4 4 4-4"/></svg>
+      </button>
+      <div class="mobile-nav-children">
+        {%- for child in children -%}
+          <a href="{{ menu_href(child) }}" class="mobile-nav-child-link">{{ child['label'] }}</a>
+        {%- endfor -%}
+      </div>
+    {%- else -%}
+      <a href="{{ menu_href(item) }}" class="mobile-nav-link">{{ item['label'] }}</a>
+    {%- endif -%}
+  {% endfor %}
+</nav>
+
+{# ===== INLINE JAVASCRIPT ===== #}
+<script>
+// --- Header scroll: hairline 底部边框 ---
+(function() {
+  var header = document.getElementById('siteHeader');
+  if (!header) return;
+  window.addEventListener('scroll', function() {
+    header.classList.toggle('scrolled', window.scrollY > 10);
+  });
+})();
+
+// --- Mobile menu toggle ---
+function toggleMobileMenu() {
+  var nav = document.getElementById('mobileNavOverlay');
+  var toggle = document.getElementById('menuToggle');
+  if (!nav || !toggle) return;
+  nav.classList.toggle('open');
+  toggle.classList.toggle('open');
+  document.body.style.overflow = nav.classList.contains('open') ? 'hidden' : '';
+}
+
+// --- Mobile submenu toggle ---
+function toggleMobileSubmenu(btn) {
+  var children = btn.nextElementSibling;
+  if (!children) return;
+  children.classList.toggle('open');
+  var arrow = btn.querySelector('svg');
+  if (arrow) arrow.style.transform = children.classList.contains('open') ? 'rotate(180deg)' : '';
+}
+
+// --- Desktop dropdown toggle ---
+function toggleMenuDropdown(e, button) {
+  e.preventDefault();
+  e.stopPropagation();
+  var dropdown = button.closest('.nav-dropdown');
+  if (!dropdown) return;
+  var isOpen = dropdown.classList.contains('open');
+  // 关闭同级其他下拉
+  if (!dropdown.classList.contains('nav-dropdown-nested')) {
+    document.querySelectorAll('.header-nav > .nav-dropdown.open').forEach(function(d) {
+      if (d !== dropdown) d.classList.remove('open');
+    });
+  }
+  dropdown.classList.toggle('open', !isOpen);
+  var trigger = dropdown.querySelector(':scope > .nav-dropdown-trigger');
+  var arrow = dropdown.querySelector(':scope > .nav-dropdown-trigger > .nav-dropdown-arrow');
+  if (trigger) trigger.setAttribute('aria-expanded', String(!isOpen));
+  if (arrow) arrow.setAttribute('aria-expanded', String(!isOpen));
+}
+
+// --- Language dropdown ---
+function toggleLangDropdown(e) {
+  e.stopPropagation();
+  var sw = document.getElementById('langSwitcher');
+  var menu = document.getElementById('langDropdownMenu');
+  if (!sw || !menu) return;
+  var isOpen = menu.style.display === 'block';
+  menu.style.display = isOpen ? 'none' : 'block';
+  sw.classList.toggle('open', !isOpen);
+}
+
+// --- Nav active state detection ---
+(function() {
+  var path = window.location.pathname;
+  var cleaned = path
+    .replace(/\/templates\/[^/]+\/preview/, '')
+    .replace(/\/(?:preview|live_preview)\/[^/]+/, '')
+    .replace(/^\/(zh-CN|zh-TW|en)/, '')
+    .replace(/\/$/, '') || '/';
+
+  if (cleaned === '/' || cleaned === '') {
+    document.querySelectorAll('.header-nav .nav-link').forEach(function(l) { l.classList.remove('active'); });
+    var homeLink = document.querySelector('.header-nav .nav-link:first-child');
+    if (homeLink) homeLink.classList.add('active');
+    return;
+  }
+
+  document.querySelectorAll('.header-nav .nav-link').forEach(function(l) { l.classList.remove('active'); });
+
+  document.querySelectorAll('.header-nav a.nav-link, .header-nav a.nav-dropdown-item').forEach(function(link) {
+    var href = link.getAttribute('href') || '';
+    if (href.indexOf('http') === 0 || href === '#') return;
+    var normalized = href
+      .replace(/\/templates\/[^/]+\/preview/, '')
+      .replace(/\/(?:preview|live_preview)\/[^/]+/, '')
+      .replace(/^\/(zh-CN|zh-TW|en)/, '')
+      .replace(/\/$/, '') || '/';
+    if (normalized === cleaned || (normalized !== '/' && cleaned.indexOf(normalized + '/') === 0)) {
+      link.classList.add('active');
+      var dropdown = link.closest('.nav-dropdown');
+      if (dropdown) {
+        var parentLink = dropdown.querySelector(':scope > .nav-dropdown-trigger > .nav-dropdown-link, :scope > .nav-dropdown-trigger > .nav-dropdown-label');
+        if (parentLink) parentLink.classList.add('active');
+        var arrow = dropdown.querySelector(':scope > .nav-dropdown-trigger > .nav-dropdown-arrow');
+        if (arrow) arrow.classList.add('active');
+      }
+    }
+  });
+})();
+
+// --- Close dropdowns on outside click ---
+document.addEventListener('click', function(e) {
+  var langSw = document.getElementById('langSwitcher');
+  var langMenu = document.getElementById('langDropdownMenu');
+  if (langSw && langMenu && !langSw.contains(e.target)) {
+    langMenu.style.display = 'none';
+    langSw.classList.remove('open');
+  }
+  document.querySelectorAll('.header-nav .nav-dropdown.open').forEach(function(dropdown) {
+    if (!dropdown.contains(e.target)) dropdown.classList.remove('open');
+  });
+});
+</script>
+
+{# ===== MAIN CONTENT ===== #}
+<main class="main-content">
+  {% block content %}{% endblock %}
+</main>
+
+{# ===== FOOTER: 深海军蓝 Claude 风格 ===== #}
+{% set footer_cfg = settings.footer | default({}) %}
+{% set footer_variant = footer_cfg.get('variant', 'columns') %}
+{% set footer_columns = footer_cfg.get('columns', []) %}
+<footer class="site-footer builder-region{% if footer_variant == 'minimal' %} footer--minimal{% endif %}" data-builder-region="footer">
+  <div class="container">
+
+    {% if footer_variant == 'minimal' %}
+    {# 极简模式 #}
+    {% elif footer_variant == 'columns' and footer_columns %}
+    <div class="footer-grid" style="grid-template-columns: repeat({{ footer_columns | length }}, 1fr);">
+      {% for col in footer_columns %}
+      <div class="footer-col">
+        {% if col.title %}<h3 class="footer-col__title">{{ col.title }}</h3>{% endif %}
+        {% if col.type == 'menu' and col.links %}
+        <div class="footer-col__links">
+          {% for link in col.links %}
+          <a href="{{ menu_href({'url': link.url}) }}">{{ link.label }}</a>
+          {% endfor %}
+        </div>
+        {% elif col.type == 'text' %}
+        <div class="footer-col__links" style="white-space:pre-line">{{ col.text | default('') }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% elif footer_variant == 'columns_social' %}
+    <div class="footer-grid footer--social">
+      {# 品牌区 #}
+      <div class="footer-brand">
+        <div class="footer-brand__logo">
+          {% if settings.company.logo %}
+            <img src="{{ settings.company.logo }}" alt="{{ settings.company.name or t.company }}" class="footer-brand__img">
+          {% else %}
+            <svg class="footer-brand__mark" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <circle cx="10" cy="10" r="2" fill="currentColor"/>
+              <line x1="10" y1="2" x2="10" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="10" y1="13" x2="10" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="2" y1="10" x2="7" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="13" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          {% endif %}
+          <span class="footer-brand__name">{{ settings.company.name or t.company }}</span>
+        </div>
+        {% if settings.contact %}
+        <div class="footer-col__links">
+          {% if settings.contact.phone %}
+          <a href="tel:{{ settings.contact.phone }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg> {{ settings.contact.phone }}</a>
+          {% endif %}
+          {% if settings.contact.email %}
+          <a href="mailto:{{ settings.contact.email }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> {{ settings.contact.email }}</a>
+          {% endif %}
+        </div>
+        {% endif %}
+        {{ render_social_links() }}
+      </div>
+      {# 链接栏 #}
+      {% for col in footer_columns %}
+      <div class="footer-col">
+        {% if col.title %}<h3 class="footer-col__title">{{ col.title }}</h3>{% endif %}
+        {% if col.type == 'menu' and col.links %}
+        <div class="footer-col__links">
+          {% for link in col.links %}
+          <a href="{{ menu_href({'url': link.url}) }}">{{ link.label }}</a>
+          {% endfor %}
+        </div>
+        {% elif col.type == 'text' %}
+        <div class="footer-col__links" style="white-space:pre-line">{{ col.text | default('') }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="footer-bottom">
+      {% set copyright_text = footer_cfg.get('copyright') or settings.company.name or t.company %}
+      <span class="footer-bottom__copyright">&copy; {{ year }} {{ copyright_text }}. {{ t.get('footer', {}).get('copyright', 'All rights reserved.') if t else 'All rights reserved.' }}</span>
+      {% set icp_text = footer_cfg.get('icp') or (settings.company and settings.company.icp) %}
+      {% if icp_text %}<span class="footer-bottom__copyright">{{ icp_text }}</span>{% endif %}
+    </div>
+  </div>
+</footer>
+
+</div>{# .site-wrapper #}
+
+{# 回到顶部按钮 —— 页面滚动超过 300px 后出现在右下角 #}
+<button class="back-to-top" id="backToTop" aria-label="回到顶部" title="回到顶部">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+
+{# ===== Data Grid 分页 JS ===== #}
+<script>
+function initDataGridPagers() {
+  document.querySelectorAll('.dg-pager').forEach(function(pager) {
+    resetDataGridPager(pager);
+  });
+}
+
+function loadMoreDataGrid(btn) {
+  var pager = btn.closest('.dg-pager');
+  if (!pager) return;
+
+  var perPage = parseInt(btn.getAttribute('data-per-page'), 10) || 6;
+  var currentPage = parseInt(btn.getAttribute('data-page'), 10) || 1;
+
+  var list = pager.parentElement.querySelector('.dg-list, .filterable-grid');
+  if (!list) return;
+
+  var cards = Array.prototype.slice.call(list.querySelectorAll('.dg-card')).filter(function(card) {
+    return !card.classList.contains('dg-card--filter-hidden');
+  });
+  var total = cards.length;
+  var start = currentPage * perPage;
+  var end = Math.min(start + perPage, total);
+
+  for (var i = start; i < end; i++) {
+    if (cards[i]) cards[i].classList.remove('dg-card--page-hidden');
+  }
+
+  var newPage = currentPage + 1;
+  btn.setAttribute('data-page', newPage);
+
+  var remaining = total - (newPage * perPage);
+  var remainingEl = btn.querySelector('.dg-remaining');
+  if (remaining > 0) {
+    if (remainingEl) remainingEl.textContent = '(' + remaining + ' items)';
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+function goToDataGridPage(btn, page) {
+  var pager = btn.closest('.dg-pager');
+  if (!pager) return;
+
+  var list = pager.parentElement.querySelector('.dg-list, .filterable-grid');
+  if (!list) return;
+
+  var configSpan = pager.querySelector('[data-pager-key="items_per_page"]');
+  var perPage = configSpan ? parseInt(configSpan.textContent, 10) || 6 : 6;
+
+  var cards = Array.prototype.slice.call(list.querySelectorAll('.dg-card')).filter(function(card) {
+    return !card.classList.contains('dg-card--filter-hidden');
+  });
+  var total = cards.length;
+  var totalPages = Math.ceil(total / perPage);
+
+  // 确定当前页码：从已激活的页码按钮读取
+  var activeBtn = pager.querySelector('.dg-page-btn.active');
+  var currentPage = activeBtn ? parseInt(activeBtn.getAttribute('data-page'), 10) || 1 : 1;
+
+  // 处理上一页 / 下一页导航
+  var isPrev = btn.getAttribute('data-page') === 'prev';
+  var isNext = btn.getAttribute('data-page') === 'next';
+  if (isPrev) {
+    page = currentPage - 1;
+  } else if (isNext) {
+    page = currentPage + 1;
+  }
+  // 边界保护
+  if (page < 1) page = 1;
+  if (page > totalPages) page = totalPages;
+
+  var start = (page - 1) * perPage;
+  var end = start + perPage;
+
+  cards.forEach(function(card, i) {
+    if (i >= start && i < end) {
+      card.classList.remove('dg-card--page-hidden');
+    } else {
+      card.classList.add('dg-card--page-hidden');
+    }
+  });
+
+  // 更新所有按钮状态：清除旧 active，设置新 active
+  pager.querySelectorAll('.dg-page-btn').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  var targetBtn = pager.querySelector('.dg-page-btn[data-page="' + page + '"]');
+  if (targetBtn) targetBtn.classList.add('active');
+
+  // 更新上一页 / 下一页按钮的禁用状态
+  var prevBtn = pager.querySelector('.dg-page-btn-prev');
+  var nextBtn = pager.querySelector('.dg-page-btn-next');
+  if (prevBtn) prevBtn.disabled = (page <= 1);
+  if (nextBtn) nextBtn.disabled = (page >= totalPages);
+}
+
+function readDataGridPagerConfig(pager) {
+  var config = {};
+  pager.querySelectorAll('[data-pager-key]').forEach(function(el) {
+    config[el.getAttribute('data-pager-key')] = (el.textContent || '').trim();
+  });
+  return {
+    perPage: parseInt(config.items_per_page, 10) || 6,
+    showPagination: config.show_pagination !== 'false',
+    paginationStyle: config.pagination_style || 'load_more',
+    pagerAlign: config.pager_align || 'center'
+  };
+}
+
+function resetDataGridPager(pager) {
+  if (!pager) return;
+  var list = pager.parentElement.querySelector('.dg-list, .filterable-grid');
+  if (!list) return;
+
+  var cfg = readDataGridPagerConfig(pager);
+  var cards = Array.prototype.slice.call(list.querySelectorAll('.dg-card'));
+  var visibleCards = cards.filter(function(card) {
+    return !card.classList.contains('dg-card--filter-hidden');
+  });
+  var total = visibleCards.length;
+  var totalPages = Math.ceil(total / cfg.perPage);
+  var loadMoreBtn = pager.querySelector('.dg-load-more');
+  var pageNumbers = pager.querySelector('.dg-page-numbers');
+
+  cards.forEach(function(card) {
+    card.classList.remove('dg-card--page-hidden');
+    card.classList.remove('dg-card--hidden');
+  });
+  visibleCards.forEach(function(card, i) {
+    if (i >= cfg.perPage) card.classList.add('dg-card--page-hidden');
+  });
+
+  pager.className = 'dg-pager dg-pager--' + cfg.pagerAlign;
+  pager.style.display = 'none';
+  if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+  if (pageNumbers) {
+    pageNumbers.style.display = 'none';
+    pageNumbers.innerHTML = '';
+  }
+
+  if (!cfg.showPagination || total <= cfg.perPage) return;
+
+  pager.style.display = '';
+  if (cfg.paginationStyle === 'page_numbers') {
+    // 根据页面语言选择按钮文字
+    var pageLang = document.documentElement.getAttribute('lang') || 'en';
+    var isZh = pageLang === 'zh-CN' || pageLang === 'zh-TW';
+    var prevLabel = isZh ? '上一页' : 'Prev';
+    var nextLabel = isZh ? '下一页' : 'Next';
+
+    var html = '';
+    html += '<button class="dg-page-btn dg-page-btn-prev" onclick="goToDataGridPage(this, 1)" data-page="prev" disabled>' + prevLabel + '</button>';
+    for (var p = 1; p <= totalPages; p++) {
+      html += '<button class="dg-page-btn' + (p === 1 ? ' active' : '') +
+              '" onclick="goToDataGridPage(this, ' + p + ')" data-page="' + p + '">' + p + '</button>';
+    }
+    html += '<button class="dg-page-btn dg-page-btn-next" onclick="goToDataGridPage(this, 2)" data-page="next"' + (totalPages <= 1 ? ' disabled' : '') + '>' + nextLabel + '</button>';
+    if (pageNumbers) {
+      pageNumbers.innerHTML = html;
+      pageNumbers.style.display = '';
+    }
+  } else if (loadMoreBtn) {
+    loadMoreBtn.style.display = '';
+    var remaining = total - cfg.perPage;
+    var remainingEl = loadMoreBtn.querySelector('.dg-remaining');
+    if (remainingEl) remainingEl.textContent = '(' + remaining + ' items)';
+    loadMoreBtn.setAttribute('data-page', '1');
+    loadMoreBtn.setAttribute('data-per-page', cfg.perPage);
+    loadMoreBtn.setAttribute('data-total', total);
+  }
+}
+
+// 筛选面板：扫描卡片 DOM 中 .filter-source-category 和 .filter-source-tags > .dg-card-tag 生成按钮。
+// ⚠ 这些 CSS class 是 JS 与模板之间的隐式契约，模板改名需同步更新此处。
+
+function initFilterableGrids() {
+  document.querySelectorAll('.filterable-grid[data-filter-id]').forEach(function(grid) {
+    var filterId = grid.getAttribute('data-filter-id');
+    var panel = document.querySelector('.dg-filter-panel[data-filter-for="' + filterId + '"]');
+    var section = grid.closest('.section') || grid.parentElement;
+    var searchPanel = document.querySelector('.dg-search-panel[data-search-for="' + filterId + '"]');
+
+    var showFiltersEl = panel ? panel.querySelector('[data-filter-key="show_filters"]') : null;
+    var showFilters = !showFiltersEl || (showFiltersEl.textContent || '').trim() !== 'false';
+    if (panel && !showFilters) {
+      panel.hidden = true;
+    }
+
+    var cards = Array.prototype.slice.call(grid.querySelectorAll('.dg-card'));
+    var empty = document.querySelector('[data-filter-empty="' + filterId + '"]');
+    if (!cards.length) {
+      if (panel) panel.hidden = true;
+      if (searchPanel) searchPanel.hidden = true;
+      if (empty) empty.hidden = false;
+      return;
+    }
+
+    var showSearchEl = searchPanel ? searchPanel.querySelector('[data-search-key="show_search"]') : null;
+    var showSearch = searchPanel && (!showSearchEl || (showSearchEl.textContent || '').trim() === 'true');
+    var searchInput = searchPanel ? searchPanel.querySelector('.dg-search-input') : null;
+    var searchCount = searchPanel ? searchPanel.querySelector('.dg-search-count') : null;
+    var sortButtons = searchPanel ? searchPanel.querySelectorAll('.dg-sort-btn[data-sort-direction]') : [];
+    if (searchPanel) searchPanel.hidden = !showSearch;
+
+    var state = { category: '', tag: '', query: '' };
+    var filterLabels = {
+      'zh-CN': { all: '全部' },
+      'zh-TW': { all: '全部' },
+      'en': { all: 'All' }
+    };
+    var pageLang = document.documentElement.getAttribute('lang') || 'en';
+    var allLabel = panel ? (panel.getAttribute('data-all-label') || (filterLabels[pageLang] || filterLabels.en).all) : (filterLabels[pageLang] || filterLabels.en).all;
+    cards.forEach(function(card, index) {
+      card._dgOriginalIndex = index;
+      card._dgSearchText = (card.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    });
+
+    function cardDateValue(card) {
+      var raw = textOf(card.querySelector('.dg-card-date'));
+      if (!raw) return null;
+      var normalized = raw.replace(/[./]/g, '-');
+      var timestamp = Date.parse(normalized);
+      return isNaN(timestamp) ? null : timestamp;
+    }
+
+    function sortCards(direction) {
+      cards.sort(function(a, b) {
+        var aDate = cardDateValue(a);
+        var bDate = cardDateValue(b);
+        if (aDate === null && bDate === null) return a._dgOriginalIndex - b._dgOriginalIndex;
+        if (aDate === null) return 1;
+        if (bDate === null) return -1;
+        if (aDate === bDate) return a._dgOriginalIndex - b._dgOriginalIndex;
+        return direction === 'asc' ? aDate - bDate : bDate - aDate;
+      });
+      cards.forEach(function(card) { grid.appendChild(card); });
+      Array.prototype.forEach.call(sortButtons, function(button) {
+        button.classList.toggle('active', button.getAttribute('data-sort-direction') === direction);
+      });
+      apply();
+    }
+
+    function textOf(el) {
+      return el ? (el.textContent || '').trim() : '';
+    }
+
+    function cardData(card) {
+      var tags = Array.prototype.slice.call(card.querySelectorAll('.filter-source-tags .dg-card-tag'))
+        .map(textOf)
+        .filter(Boolean);
+      return {
+        category: textOf(card.querySelector('.filter-source-category')),
+        tags: tags
+      };
+    }
+
+    function unique(values) {
+      var seen = {};
+      return values.filter(function(value) {
+        if (!value || seen[value]) return false;
+        seen[value] = true;
+        return true;
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, function(char) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[char];
+      });
+    }
+
+    function matches(card, override) {
+      var data = cardData(card);
+      var category = override && Object.prototype.hasOwnProperty.call(override, 'category') ? override.category : state.category;
+      var tag = override && Object.prototype.hasOwnProperty.call(override, 'tag') ? override.tag : state.tag;
+      var query = override && Object.prototype.hasOwnProperty.call(override, 'query') ? override.query : state.query;
+      return (!category || data.category === category) &&
+        (!tag || data.tags.indexOf(tag) !== -1) &&
+        (!query || (card._dgSearchText || '').indexOf(query) !== -1);
+    }
+
+    function renderButtons(groupName, values) {
+      if (!panel || !showFilters) return;
+      var target = panel.querySelector('[data-filter-group="' + groupName + '"]');
+      if (!target) return;
+      var group = target.closest('.dg-filter-group');
+      // 除“全部”外只有零个或一个有效选项时，筛选没有实际意义，隐藏整行。
+      if (values.length <= 1) {
+        target.innerHTML = '';
+        if (group) group.hidden = true;
+        state[groupName] = '';
+        return;
+      }
+      if (group) group.hidden = false;
+      var buttons = [{ value: '', label: allLabel }].concat(values.map(function(value) {
+        return { value: value, label: value };
+      }));
+      target.innerHTML = buttons.map(function(button) {
+        return '<button type="button" class="dg-filter-option" data-filter-value="' +
+          escapeHtml(button.value) + '">' + escapeHtml(button.label) + '</button>';
+      }).join('');
+      target.addEventListener('click', function(event) {
+        var button = event.target.closest('.dg-filter-option');
+        if (!button || button.disabled) return;
+        state[groupName] = button.getAttribute('data-filter-value') || '';
+        apply();
+      });
+      // 筛选标签折叠：超过 2 行时收缩 + 右侧展开箭头
+      (function(optionsEl) {
+        optionsEl.setAttribute('data-collapsed', 'true');
+        var overflows = optionsEl.scrollHeight > optionsEl.clientHeight + 2;
+        if (!overflows) {
+          optionsEl.removeAttribute('data-collapsed');
+        } else {
+          var group = optionsEl.closest('.dg-filter-group');
+          if (group && !group.querySelector('.dg-filter-toggle')) {
+            group.classList.add('dg-filter-group--overflow');
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'dg-filter-toggle';
+            btn.title = '展开全部';
+            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+            btn.addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              var collapsed = optionsEl.getAttribute('data-collapsed') === 'true';
+              optionsEl.setAttribute('data-collapsed', collapsed ? 'false' : 'true');
+              btn.classList.toggle('expanded', collapsed);
+              btn.title = collapsed ? '收起' : '展开全部';
+            });
+            group.appendChild(btn);
+          }
+        }
+      })(target);
+    }
+
+    function updateButtons(groupName) {
+      if (!panel || !showFilters) return;
+      var target = panel.querySelector('[data-filter-group="' + groupName + '"]');
+      if (!target) return;
+      target.querySelectorAll('.dg-filter-option').forEach(function(button) {
+        var value = button.getAttribute('data-filter-value') || '';
+        var override = {};
+        override[groupName] = value;
+        var available = !value || cards.some(function(card) { return matches(card, override); });
+        button.classList.toggle('active', state[groupName] === value);
+        button.disabled = !available;
+      });
+    }
+
+    function apply() {
+      var shown = 0;
+      cards.forEach(function(card) {
+        var show = matches(card);
+        card.classList.toggle('dg-card--filter-hidden', !show);
+        if (show) shown += 1;
+      });
+      updateButtons('category');
+      updateButtons('tag');
+      if (empty) empty.hidden = shown !== 0;
+      if (searchCount) searchCount.textContent = shown + ' results';
+      resetDataGridPager((section || grid.parentElement).querySelector('.dg-pager'));
+    }
+
+    var categories = unique(cards.map(function(card) { return cardData(card).category; }));
+    var tags = unique(cards.reduce(function(acc, card) {
+      return acc.concat(cardData(card).tags);
+    }, []));
+
+    renderButtons('category', categories);
+    renderButtons('tag', tags);
+    if (panel) {
+      var hasUsefulFilter = Array.prototype.some.call(panel.querySelectorAll('.dg-filter-group'), function(group) {
+        return !group.hidden;
+      });
+      panel.hidden = !showFilters || !hasUsefulFilter;
+    }
+    if (showSearch && searchInput) {
+      searchInput.addEventListener('input', function() {
+        state.query = (searchInput.value || '').trim().toLowerCase();
+        apply();
+      });
+    }
+    Array.prototype.forEach.call(sortButtons, function(button) {
+      button.addEventListener('click', function() {
+        sortCards(button.getAttribute('data-sort-direction') || 'desc');
+      });
+    });
+    apply();
+  });
+}
+
+	// "查看全部"按钮显隐控制：读取 show_view_all 隐藏 span，按值切换按钮可见性
+
+function initViewAllButtons() {
+  document.querySelectorAll('[data-view-key="show_view_all"]').forEach(function(span) {
+    var show = (span.textContent || '').trim() !== 'false';
+    var section = span.closest('.section');
+    if (!section) return;
+    var viewAll = section.querySelector('.dg-view-all');
+    if (viewAll) viewAll.style.display = show ? '' : 'none';
+  });
+}
+
+function initModuleLists() {
+  document.querySelectorAll('.module-list-region').forEach(function(region) {
+    // 跳过 data_grid / data_list_showcase 等由 initFilterableGrids 管理的区域
+    if (region.querySelector('.filterable-grid')) return;
+    var items = Array.prototype.slice.call(region.querySelectorAll('[data-module-list-item="true"]'));
+    var searchInput = region.querySelector('.module-list-search');
+    var countEl = region.querySelector('.module-list-count');
+    var emptyEl = region.querySelector('.module-list-empty');
+    var pager = region.querySelector('.module-list-pagination');
+    var perPage = parseInt(region.getAttribute('data-module-list-page-size'), 10) || 6;
+    var resultsLabel = region.getAttribute('data-module-list-results-label') || 'results';
+    var emptyText = region.getAttribute('data-module-list-empty-text') || 'No matching items.';
+    var prevLabel = region.getAttribute('data-module-list-prev-label') || 'Previous';
+    var nextLabel = region.getAttribute('data-module-list-next-label') || 'Next';
+    var currentPage = 1;
+
+    if (!items.length) {
+      if (countEl) countEl.textContent = '0 ' + resultsLabel;
+      if (emptyEl) {
+        emptyEl.textContent = emptyText;
+        emptyEl.hidden = false;
+      }
+      if (pager) pager.hidden = true;
+      return;
+    }
+
+    items.forEach(function(item) {
+      item._moduleListSearchText = (item.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    });
+
+    function matchingItems() {
+      var query = searchInput ? (searchInput.value || '').trim().toLowerCase() : '';
+      return items.filter(function(item) {
+        return !query || item._moduleListSearchText.indexOf(query) !== -1;
+      });
+    }
+
+    function renderPager(totalPages) {
+      if (!pager) return;
+      pager.innerHTML = '';
+      pager.hidden = totalPages <= 1;
+      if (totalPages <= 1) return;
+
+      var prev = document.createElement('button');
+      prev.type = 'button';
+      prev.className = 'module-list-page-btn module-list-page-prev';
+      prev.textContent = prevLabel;
+      prev.disabled = currentPage <= 1;
+      prev.addEventListener('click', function() {
+        if (currentPage > 1) {
+          currentPage -= 1;
+          apply();
+        }
+      });
+      pager.appendChild(prev);
+
+      for (var page = 1; page <= totalPages; page++) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'module-list-page-btn' + (page === currentPage ? ' active' : '');
+        btn.textContent = page;
+        btn.setAttribute('data-page', page);
+        btn.addEventListener('click', function(event) {
+          currentPage = parseInt(event.currentTarget.getAttribute('data-page'), 10) || 1;
+          apply();
+        });
+        pager.appendChild(btn);
+      }
+
+      var next = document.createElement('button');
+      next.type = 'button';
+      next.className = 'module-list-page-btn module-list-page-next';
+      next.textContent = nextLabel;
+      next.disabled = currentPage >= totalPages;
+      next.addEventListener('click', function() {
+        if (currentPage < totalPages) {
+          currentPage += 1;
+          apply();
+        }
+      });
+      pager.appendChild(next);
+    }
+
+    function apply() {
+      var matches = matchingItems();
+      var total = matches.length;
+      var totalPages = Math.max(1, Math.ceil(total / perPage));
+      if (currentPage > totalPages) currentPage = totalPages;
+      var start = (currentPage - 1) * perPage;
+      var end = start + perPage;
+
+      items.forEach(function(item) {
+        var matchIndex = matches.indexOf(item);
+        var isMatch = matchIndex !== -1;
+        item.classList.toggle('module-list-filter-hidden', !isMatch);
+        item.classList.toggle('module-list-page-hidden', isMatch && (matchIndex < start || matchIndex >= end));
+      });
+
+      if (countEl) countEl.textContent = total + ' ' + resultsLabel;
+      if (emptyEl) {
+        emptyEl.textContent = emptyText;
+        emptyEl.hidden = total !== 0;
+      }
+      renderPager(total === 0 ? 0 : totalPages);
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', function() {
+        currentPage = 1;
+        apply();
+      });
+    }
+
+    apply();
+  });
+}
+
+function initDetailCarousels() {
+  function makeLightbox() {
+    var overlay = document.querySelector('.detail-lightbox');
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.className = 'detail-lightbox';
+    overlay.innerHTML =
+      '<button type="button" class="detail-lightbox-close" aria-label="Close image">&times;</button>' +
+      '<button type="button" class="detail-lightbox-nav detail-lightbox-prev" aria-label="Previous image">&#8249;</button>' +
+      '<img class="detail-lightbox-img" alt="">' +
+      '<button type="button" class="detail-lightbox-nav detail-lightbox-next" aria-label="Next image">&#8250;</button>';
+    document.body.appendChild(overlay);
+    overlay.querySelector('.detail-lightbox-close').addEventListener('click', function() {
+      overlay.classList.remove('open');
+    });
+    overlay.addEventListener('click', function(event) {
+      if (event.target === overlay) overlay.classList.remove('open');
+    });
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') overlay.classList.remove('open');
+    });
+    return overlay;
+  }
+
+  document.querySelectorAll('.item-detail-carousel').forEach(function(section) {
+    if (section.__detailCarouselReady) return;
+    section.__detailCarouselReady = true;
+
+    var images = Array.prototype.slice.call(section.querySelectorAll('.detail-gallery-img'));
+    if (!images.length) return;
+
+    var index = 0;
+    var prev = section.querySelector('.detail-carousel-prev');
+    var next = section.querySelector('.detail-carousel-next');
+    var zoom = section.querySelector('.detail-zoom-btn');
+    var thumbs = section.querySelector('.detail-thumbs');
+    var thumbsPrev = null;
+    var thumbsNext = null;
+
+    function setupThumbScroller() {
+      if (!thumbs || thumbs.__thumbScrollerReady) return;
+      thumbs.__thumbScrollerReady = true;
+
+      var wrap = document.createElement('div');
+      wrap.className = 'detail-thumbs-wrap';
+
+      thumbsPrev = document.createElement('button');
+      thumbsPrev.type = 'button';
+      thumbsPrev.className = 'detail-thumbs-nav detail-thumbs-prev';
+      thumbsPrev.setAttribute('aria-label', 'Previous thumbnails');
+      thumbsPrev.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 6l-6 6 6 6"/></svg>';
+
+      thumbsNext = document.createElement('button');
+      thumbsNext.type = 'button';
+      thumbsNext.className = 'detail-thumbs-nav detail-thumbs-next';
+      thumbsNext.setAttribute('aria-label', 'Next thumbnails');
+      thumbsNext.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 6l6 6-6 6"/></svg>';
+
+      thumbs.parentNode.insertBefore(wrap, thumbs);
+      wrap.appendChild(thumbsPrev);
+      wrap.appendChild(thumbs);
+      wrap.appendChild(thumbsNext);
+
+      function scrollThumbs(direction) {
+        var firstThumb = thumbs.querySelector('.detail-thumb');
+        var step = firstThumb ? firstThumb.offsetWidth + 12 : 88;
+        thumbs.scrollBy({ left: direction * step * 3, behavior: 'smooth' });
+      }
+
+      function updateThumbNav() {
+        var canScroll = thumbs.scrollWidth > thumbs.clientWidth + 1;
+        wrap.classList.toggle('is-scrollable', canScroll);
+        thumbsPrev.disabled = !canScroll || thumbs.scrollLeft <= 1;
+        thumbsNext.disabled = !canScroll || thumbs.scrollLeft + thumbs.clientWidth >= thumbs.scrollWidth - 1;
+      }
+
+      thumbsPrev.addEventListener('click', function() { scrollThumbs(-1); });
+      thumbsNext.addEventListener('click', function() { scrollThumbs(1); });
+      thumbs.addEventListener('scroll', updateThumbNav, { passive: true });
+      window.addEventListener('resize', updateThumbNav);
+      thumbs.__updateThumbNav = updateThumbNav;
+      window.requestAnimationFrame(updateThumbNav);
+    }
+
+    function show(nextIndex) {
+      index = (nextIndex + images.length) % images.length;
+      images.forEach(function(img, i) {
+        img.classList.toggle('active', i === index);
+      });
+      if (thumbs) {
+        thumbs.querySelectorAll('button').forEach(function(btn, i) {
+          btn.classList.toggle('active', i === index);
+        });
+        var activeThumb = thumbs.querySelector('.detail-thumb.active');
+        if (activeThumb) {
+          activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        }
+        if (thumbs.__updateThumbNav) window.requestAnimationFrame(thumbs.__updateThumbNav);
+      }
+    }
+
+    function openZoom() {
+      var overlay = makeLightbox();
+      var lightboxImg = overlay.querySelector('.detail-lightbox-img');
+      var lbPrev = overlay.querySelector('.detail-lightbox-prev');
+      var lbNext = overlay.querySelector('.detail-lightbox-next');
+
+      function renderLightbox(nextIndex) {
+        index = (nextIndex + images.length) % images.length;
+        lightboxImg.src = images[index].currentSrc || images[index].src;
+        lightboxImg.alt = images[index].alt || '';
+        show(index);
+      }
+
+      lbPrev.onclick = function(event) {
+        event.stopPropagation();
+        renderLightbox(index - 1);
+      };
+      lbNext.onclick = function(event) {
+        event.stopPropagation();
+        renderLightbox(index + 1);
+      };
+      renderLightbox(index);
+      overlay.classList.add('open');
+    }
+
+    if (thumbs) {
+      setupThumbScroller();
+      thumbs.innerHTML = '';
+      images.forEach(function(img, i) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'detail-thumb';
+        btn.setAttribute('aria-label', 'Show image ' + (i + 1));
+        var thumb = document.createElement('img');
+        thumb.src = img.currentSrc || img.src;
+        thumb.alt = img.alt || '';
+        btn.appendChild(thumb);
+        btn.addEventListener('click', function() { show(i); });
+        thumbs.appendChild(btn);
+      });
+    }
+
+    if (prev) prev.addEventListener('click', function() { show(index - 1); });
+    if (next) next.addEventListener('click', function() { show(index + 1); });
+    if (zoom) zoom.addEventListener('click', openZoom);
+    images.forEach(function(img) {
+      img.addEventListener('click', openZoom);
+    });
+
+    if (images.length <= 1) {
+      [prev, next].forEach(function(btn) {
+        if (btn) btn.hidden = true;
+      });
+      if (thumbs) thumbs.hidden = true;
+      if (thumbsPrev) thumbsPrev.hidden = true;
+      if (thumbsNext) thumbsNext.hidden = true;
+    }
+    show(0);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initDataGridPagers();
+  initFilterableGrids();
+  initViewAllButtons();
+  initModuleLists();
+  initDetailCarousels();
+});
+
+// --- 回到顶部按钮：滚动超过 300px 时显示，点击平滑滚回顶部 ---
+(function() {
+  var btn = document.getElementById('backToTop');
+  if (!btn) return;
+  var ticking = false;
+  window.addEventListener('scroll', function() {
+    if (!ticking) {
+      window.requestAnimationFrame(function() {
+        btn.classList.toggle('visible', window.scrollY > 300);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  });
+  btn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+})();
+</script>
+
+{% for node in seo.json_ld | default([]) %}
+<script type="application/ld+json">{{ node | tojson }}</script>
+{% endfor %}
+</body>
+</html>

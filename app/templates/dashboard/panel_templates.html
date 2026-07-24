@@ -5,6 +5,15 @@
 <div class="d-flex flex-column gap-3">
   {% for tpl in templates %}
   <div class="card" style="overflow: hidden;">
+    {% if tpl.name == 'blank' %}
+    {# 空白站点专属占位：浅底 + 虚线加号，表达“从零新建” #}
+    <div style="aspect-ratio: 16/10; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #94a3b8;">
+      <span style="display:grid;place-items:center;width:48px;height:48px;border:2px dashed #cbd5e1;border-radius:10px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </span>
+      <span style="font-size:13px;">从零开始</span>
+    </div>
+    {% else %}
     <div style="aspect-ratio: 16/10; background: #1a1a2e; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px;">
       {% if tpl.cover_image %}
       <img src="{{ tpl.cover_image }}" alt="{{ tpl.display_name }}" style="width: 100%; height: 100%; object-fit: cover;">
@@ -12,6 +21,7 @@
       <span class="text-white-50">{{ tpl.industry }}</span>
       {% endif %}
     </div>
+    {% endif %}
     <div class="card-body p-2">
       <div class="d-flex align-items-baseline justify-content-between mb-1">
         <strong class="small">{{ tpl.display_name }}</strong>

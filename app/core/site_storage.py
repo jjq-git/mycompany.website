@@ -92,8 +92,19 @@ def _safe_path(site_id, relative_path, lang=None):
 
 
 def init_site_folder(site_id):
-    """为新站点创建初始目录结构."""
+    """为新站点创建初始目录结构.
+
+    防脏目录：sites/<id>/ 目录可能残留上一个被删站点的文件（DB 记录删了、
+    磁盘目录没删干净，且 site_id 是自增主键，被删站的目录名会被后续新站复用）。
+    残留的 lang/<code>/pages/*.yaml 尤其危险——建站只复制新模板的 seed_data
+    （copytree dirs_exist_ok=True 只叠加不清空），空白模板没有对应的空语言文件去
+    覆盖旧的语言页面，导致新站默认语言是空白、切到其他语言却冒出上一个站的旧内容。
+    因此这里在初始化前，若目录已存在就先彻底清空，保证新站从干净空目录起步。
+    这只在建站这一刻针对"刚分配给新站的目录"执行，不触及任何在用站点。
+    """
     folder = site_root(site_id)
+    if folder.exists():
+        shutil.rmtree(folder, ignore_errors=True)
     for sub in ('pages', 'data', 'translations', 'assets'):
         (folder / sub).mkdir(parents=True, exist_ok=True)
     return folder

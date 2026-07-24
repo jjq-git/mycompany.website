@@ -1,0 +1,193 @@
+name: 图文模块
+category: content
+icon: highlight_card.svg
+description: 通用图文介绍模块，支持左右布局切换、标签、描述、图片、功能点列表、双按钮
+fields:
+  - key: section_bg
+    label: 外层背景色
+    type: color
+    group: 外层样式
+    default: ""
+    placeholder: 如 #f5f7fa（留空=使用默认）
+  - key: outer_width
+    label: 外层宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空不限制宽度）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: border_radius
+    label: 圆角
+    type: text
+    group: 外层样式
+    default: "12px"
+    placeholder: 如 12px（留空=CSS 默认 12px）
+  - key: margin_top
+    label: 上外边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 0px / 2rem（留空=默认）
+  - key: margin_bottom
+    label: 下外边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 0px / 2rem（留空=默认）
+  - key: padding_top
+    label: 上内边距
+    type: text
+    group: 内层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_bottom
+    label: 下内边距
+    type: text
+    group: 内层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_left
+    label: 左内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: padding_right
+    label: 右内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: image_position
+    label: 图文左右位置
+    type: select
+    group: 图文布局
+    default: "left"
+    options:
+      - value: "left"
+        label: 图左文右
+      - value: "right"
+        label: 文左图右
+  - key: tag
+    label: 标签文字
+    type: text
+    group: 内容
+  - key: title
+    label: 标题
+    type: text
+    group: 内容
+  - key: desc
+    label: 描述
+    type: textarea
+    group: 内容
+  - key: media_type
+    label: 媒体类型
+    type: select
+    group: 内容
+    default: image
+    options:
+      - value: image
+        label: 图片
+      - value: video
+        label: 视频
+      - value: embed
+        label: 嵌入页面
+  - key: image
+    label: 图片
+    type: image
+    group: 内容
+    placeholder: "Use image, video, or embed URL"
+    show_if:
+      field: media_type
+      value: image
+  - key: video
+    label: 视频
+    type: video
+    group: 内容
+    placeholder: "MP4/WebM video URL, or upload a video"
+    show_if:
+      field: media_type
+      value: video
+  - key: embed_url
+    label: 嵌入页面 URL
+    type: embed
+    group: 内容
+    placeholder: "https://example.com/tool/index.html"
+    show_if:
+      field: media_type
+      value: embed
+  - key: features
+    label: 功能点列表
+    type: list
+    group: 特性列表
+    item_label: 特性
+    item_fields:
+      - key: text
+        label: 文本
+        type: text
+  - key: primaryBtn
+    label: 主按钮文字
+    type: text
+    group: 按钮
+  - key: primaryLink
+    label: 主按钮链接
+    type: url
+    group: 按钮
+  - key: primaryLinkTarget
+    label: 主按钮打开方式
+    type: select
+    group: 按钮
+    options:
+      - value: ""
+        label: 当前页
+      - value: _blank
+        label: 新标签页
+  - key: secondaryBtn
+    label: 副按钮文字
+    type: text
+    group: 按钮
+  - key: secondaryLink
+    label: 副按钮链接
+    type: url
+    group: 按钮
+  - key: text_bg
+    label: 文本区背景色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #ffffff（留空=透明）
+  - key: text_color
+    label: 文本区字体颜色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #333333（留空=默认深色）
+  - key: tag_bg
+    label: 标签背景色
+    type: color
+    group: 配色
+    default: "#cc785c"
+    placeholder: 如 #cc785c（留空=CSS 默认主色）
+  - key: tag_color
+    label: 标签字体颜色
+    type: color
+    group: 配色
+    default: "#ffffff"
+    placeholder: 如 #ffffff（留空=CSS 默认白色）
+  - key: btn_bg
+    label: 按钮背景色
+    type: color
+    group: 配色
+    default: "#cc785c"
+    placeholder: 如 #cc785c（留空=CSS 默认主色）
+  - key: btn_color
+    label: 按钮字体颜色
+    type: color
+    group: 配色
+    default: "#ffffff"
+    placeholder: 如 #ffffff（留空=CSS 默认白色）
