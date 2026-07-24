@@ -373,8 +373,40 @@ def collect_render_tasks(menu_items, tpl_html_dir, data, pages=None):
             if t in ('page', 'list', 'group') and target:
                 child_parent = item_path
 
-            if t == 'list' and target:
-                # 所有 list 页面统一使用模块库配置（index.html → _modules.html）
+            # 详情页收集：只要菜单项带 target 且能解析出详情模板，就为数据集每个条目
+            # 生成 /<path>/<slug>/ 详情页。list 与 group 共用此逻辑——老板在后台常把
+            # 产品栏配成"分组(group)"做下拉菜单，此前只有 list 才生成详情页，group 会
+            # 静默跳过，导致导航/列表里指向 /<target>/<slug>/ 的链接全部变死链、导出被拦。
+            def _collect_detail_tasks():
+                # derive_detail_info 内部已覆盖"预定义映射 + 通用推导 + <target>_detail.html"
+                # 三种情况(见该函数)。
+                dt_tmpl, var_name, slug_field = derive_detail_info(target, tpl_html_dir)
+                if not (dt_tmpl and var_name):
+                    return
+                items_data = data.get(target, [])
+                if isinstance(items_data, dict):
+                    items_data = items_data.get('items', [])
+                for entry in items_data:
+                    slug = entry.get(slug_field, entry.get('slug', ''))
+                    if slug:
+                        tasks.append({
+                            'type': 'detail',
+                            'template': dt_tmpl,
+                            'output_path': f'{item_path}/{slug}/index.html',
+                            'current_path': f'/{item_path}/{slug}/',
+                            'page_key': target,
+                            'dataset_key': target,
+                            'var_name': var_name,
+                            'item': entry,
+                        })
+
+            # list 与带 target 的 group 一视同仁：都生成列表页 + 详情页。
+            # 老板在后台常把产品栏配成"分组(group)"做下拉菜单，若 group 不落地，
+            # 导航/详情页里指向 /<target>/ 和 /<target>/<slug>/ 的链接会全部变死链、
+            # 导出被拦。带 target 的 group 实质就是"带下拉导航的列表栏目"，列表页正是
+            # 它该有的落地页；只有纯分组容器（无 target）才不落地（走末尾递归子菜单）。
+            if t in ('list', 'group') and target:
+                # 所有列表页统一使用模块库配置（index.html → _modules.html）
                 tasks.append({
                     'type': 'list',
                     'template': 'index.html',
@@ -383,27 +415,7 @@ def collect_render_tasks(menu_items, tpl_html_dir, data, pages=None):
                     'page_key': target,
                     'dataset_key': target,
                 })
-                # 详情页：derive_detail_info 内部已覆盖"预定义映射 + 通用推导 + <target>_detail.html"
-                # 三种情况(见该函数), #21: 原先此处的二次回退 <target>_detail.html 是不可达死代码,
-                # 死初始化也已删除。
-                dt_tmpl, var_name, slug_field = derive_detail_info(target, tpl_html_dir)
-                if dt_tmpl and var_name:
-                    items_data = data.get(target, [])
-                    if isinstance(items_data, dict):
-                        items_data = items_data.get('items', [])
-                    for entry in items_data:
-                        slug = entry.get(slug_field, entry.get('slug', ''))
-                        if slug:
-                            tasks.append({
-                                'type': 'detail',
-                                'template': dt_tmpl,
-                                'output_path': f'{item_path}/{slug}/index.html',
-                                'current_path': f'/{item_path}/{slug}/',
-                                'page_key': target,
-                                'dataset_key': target,
-                                'var_name': var_name,
-                                'item': entry,
-                            })
+                _collect_detail_tasks()
 
             elif t == 'page' and target:
                 page_tmpl = f'{target}.html'
