@@ -27,7 +27,7 @@
   {% if seo.image %}
   <meta name="twitter:image" content="{{ seo.image }}">
   {% endif %}
-  <link rel="stylesheet" href="{{ base_url }}/static/css/main.css?v=20260724">
+  <link rel="stylesheet" href="{{ base_url }}/static/css/main.css?v=20260724b">
   <!-- Favicon: 优先使用店主上传的图片，无则回退到内联 SVG 占位 -->
   {% if settings.company.favicon %}
   <link rel="icon" href="{{ settings.company.favicon }}">
@@ -1122,11 +1122,176 @@ function initModuleLists() {
   });
 }
 
+// --- 详情图库轮播（对齐 claude）：多图左右切换 + 缩略图条 + 缩放 lightbox ---
+// hook: .item-detail-carousel；只有 0/1 张图时自动降级（不初始化或隐藏箭头缩略图）
+function initDetailCarousels() {
+  function makeLightbox() {
+    var overlay = document.querySelector('.detail-lightbox');
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.className = 'detail-lightbox';
+    overlay.innerHTML =
+      '<button type="button" class="detail-lightbox-close" aria-label="Close image">&times;</button>' +
+      '<button type="button" class="detail-lightbox-nav detail-lightbox-prev" aria-label="Previous image">&#8249;</button>' +
+      '<img class="detail-lightbox-img" alt="">' +
+      '<button type="button" class="detail-lightbox-nav detail-lightbox-next" aria-label="Next image">&#8250;</button>';
+    document.body.appendChild(overlay);
+    overlay.querySelector('.detail-lightbox-close').addEventListener('click', function() {
+      overlay.classList.remove('open');
+    });
+    overlay.addEventListener('click', function(event) {
+      if (event.target === overlay) overlay.classList.remove('open');
+    });
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') overlay.classList.remove('open');
+    });
+    return overlay;
+  }
+
+  document.querySelectorAll('.item-detail-carousel').forEach(function(section) {
+    if (section.__detailCarouselReady) return;
+    section.__detailCarouselReady = true;
+
+    var images = Array.prototype.slice.call(section.querySelectorAll('.detail-gallery-img'));
+    if (!images.length) return;
+
+    var index = 0;
+    var prev = section.querySelector('.detail-carousel-prev');
+    var next = section.querySelector('.detail-carousel-next');
+    var zoom = section.querySelector('.detail-zoom-btn');
+    var thumbs = section.querySelector('.detail-thumbs');
+    var thumbsPrev = null;
+    var thumbsNext = null;
+
+    function setupThumbScroller() {
+      if (!thumbs || thumbs.__thumbScrollerReady) return;
+      thumbs.__thumbScrollerReady = true;
+
+      var wrap = document.createElement('div');
+      wrap.className = 'detail-thumbs-wrap';
+
+      thumbsPrev = document.createElement('button');
+      thumbsPrev.type = 'button';
+      thumbsPrev.className = 'detail-thumbs-nav detail-thumbs-prev';
+      thumbsPrev.setAttribute('aria-label', 'Previous thumbnails');
+      thumbsPrev.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 6l-6 6 6 6"/></svg>';
+
+      thumbsNext = document.createElement('button');
+      thumbsNext.type = 'button';
+      thumbsNext.className = 'detail-thumbs-nav detail-thumbs-next';
+      thumbsNext.setAttribute('aria-label', 'Next thumbnails');
+      thumbsNext.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 6l6 6-6 6"/></svg>';
+
+      thumbs.parentNode.insertBefore(wrap, thumbs);
+      wrap.appendChild(thumbsPrev);
+      wrap.appendChild(thumbs);
+      wrap.appendChild(thumbsNext);
+
+      function scrollThumbs(direction) {
+        var firstThumb = thumbs.querySelector('.detail-thumb');
+        var step = firstThumb ? firstThumb.offsetWidth + 12 : 88;
+        thumbs.scrollBy({ left: direction * step * 3, behavior: 'smooth' });
+      }
+
+      function updateThumbNav() {
+        var canScroll = thumbs.scrollWidth > thumbs.clientWidth + 1;
+        wrap.classList.toggle('is-scrollable', canScroll);
+        thumbsPrev.disabled = !canScroll || thumbs.scrollLeft <= 1;
+        thumbsNext.disabled = !canScroll || thumbs.scrollLeft + thumbs.clientWidth >= thumbs.scrollWidth - 1;
+      }
+
+      thumbsPrev.addEventListener('click', function() { scrollThumbs(-1); });
+      thumbsNext.addEventListener('click', function() { scrollThumbs(1); });
+      thumbs.addEventListener('scroll', updateThumbNav, { passive: true });
+      window.addEventListener('resize', updateThumbNav);
+      thumbs.__updateThumbNav = updateThumbNav;
+      window.requestAnimationFrame(updateThumbNav);
+    }
+
+    function show(nextIndex) {
+      index = (nextIndex + images.length) % images.length;
+      images.forEach(function(img, i) {
+        img.classList.toggle('active', i === index);
+      });
+      if (thumbs) {
+        thumbs.querySelectorAll('button').forEach(function(btn, i) {
+          btn.classList.toggle('active', i === index);
+        });
+        var activeThumb = thumbs.querySelector('.detail-thumb.active');
+        if (activeThumb) {
+          activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        }
+        if (thumbs.__updateThumbNav) window.requestAnimationFrame(thumbs.__updateThumbNav);
+      }
+    }
+
+    function openZoom() {
+      var overlay = makeLightbox();
+      var lightboxImg = overlay.querySelector('.detail-lightbox-img');
+      var lbPrev = overlay.querySelector('.detail-lightbox-prev');
+      var lbNext = overlay.querySelector('.detail-lightbox-next');
+
+      function renderLightbox(nextIndex) {
+        index = (nextIndex + images.length) % images.length;
+        lightboxImg.src = images[index].currentSrc || images[index].src;
+        lightboxImg.alt = images[index].alt || '';
+        show(index);
+      }
+
+      lbPrev.onclick = function(event) {
+        event.stopPropagation();
+        renderLightbox(index - 1);
+      };
+      lbNext.onclick = function(event) {
+        event.stopPropagation();
+        renderLightbox(index + 1);
+      };
+      renderLightbox(index);
+      overlay.classList.add('open');
+    }
+
+    if (thumbs) {
+      setupThumbScroller();
+      thumbs.innerHTML = '';
+      images.forEach(function(img, i) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'detail-thumb';
+        btn.setAttribute('aria-label', 'Show image ' + (i + 1));
+        var thumb = document.createElement('img');
+        thumb.src = img.currentSrc || img.src;
+        thumb.alt = img.alt || '';
+        btn.appendChild(thumb);
+        btn.addEventListener('click', function() { show(i); });
+        thumbs.appendChild(btn);
+      });
+    }
+
+    if (prev) prev.addEventListener('click', function() { show(index - 1); });
+    if (next) next.addEventListener('click', function() { show(index + 1); });
+    if (zoom) zoom.addEventListener('click', openZoom);
+    images.forEach(function(img) {
+      img.addEventListener('click', openZoom);
+    });
+
+    if (images.length <= 1) {
+      [prev, next].forEach(function(btn) {
+        if (btn) btn.hidden = true;
+      });
+      if (thumbs) thumbs.hidden = true;
+      if (thumbsPrev) thumbsPrev.hidden = true;
+      if (thumbsNext) thumbsNext.hidden = true;
+    }
+    show(0);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   initDataGridPagers();
   initFilterableGrids();
   initViewAllButtons();
   initModuleLists();
+  initDetailCarousels();
 });
 
 // --- 回到顶部按钮：滚动超过 300px 时显示，点击平滑滚回顶部 ---

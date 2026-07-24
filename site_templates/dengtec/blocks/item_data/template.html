@@ -1,20 +1,43 @@
+<!-- 详情数据模块 - 双栏布局（图左文右 + 多图轮播/缩放 lightbox）
+     结构对齐 claude 模板：左侧图库（主图/视频/iframe + 多图轮播 + 缩略图），右侧信息区。
+     轮播/缩略图/lightbox 交互由 _base.html 的 initDetailCarousels 驱动（hook: .item-detail-carousel）。
+     只有一张图时自动降级为单图（JS 隐藏箭头与缩略图）。 -->
 <section data-name="item_data" data-type="group" data-hideable data-style="bg-color" class="section item-data-section">
-    <div class="container">
-        <article class="item-data-article">
-            <div data-name="media_area" data-type="group" data-hideable class="item-data-media">
-                <img data-name="cover" data-fallback="image,photo,logo" data-type="image" data-show-when="media_type:image" src="" alt="" loading="lazy">
-                <video data-name="video" data-type="video" data-show-when="media_type:video" src="" controls playsinline preload="metadata"></video>
-                <iframe data-name="embed_url" data-type="embed" data-show-when="media_type:embed" src="" title="Embedded content" loading="lazy" allowfullscreen></iframe>
+  <div class="container">
+    <article class="item-data-article item-detail-carousel">
+      <div class="item-data-layout">
+        <div class="detail-gallery item-data-gallery">
+          <div data-name="media_area" data-type="group" data-hideable class="item-data-media">
+            <img data-name="cover" data-fallback="image,photo,logo,thumbnail" data-type="image" data-show-when="media_type:image" src="" alt="" loading="lazy">
+            <video data-name="video" data-type="video" data-show-when="media_type:video" src="" controls playsinline preload="metadata"></video>
+            <iframe data-name="embed_url" data-type="embed" data-show-when="media_type:embed" src="" title="Embedded content" loading="lazy" allowfullscreen></iframe>
+          </div>
+          <div class="detail-carousel-stage">
+            <div data-name="detail_images" data-type="list" data-hideable class="detail-images">
+              <img data-name="url" data-type="image" src="" alt="" loading="lazy" class="detail-gallery-img">
             </div>
-            <h1 data-name="title" data-type="text" data-fallback="name" class="item-data-title">详情标题</h1>
-            <div data-name="date" data-type="text" class="item-data-date">发布日期</div>
-            <div data-name="tags" data-type="list" class="item-data-tags">
-                <span data-name="tag" data-type="text" class="badge badge-primary item-data-tag">标签</span>
-            </div>
-            <p data-name="description" data-type="textarea" data-fallback="summary,excerpt" class="item-data-desc">详情简述</p>
-            <div data-name="body" data-type="richtext" data-fallback="content" class="item-data-body">
-                <p>详情正文</p>
-            </div>
-        </article>
-    </div>
+            <button type="button" class="detail-carousel-btn detail-carousel-prev" aria-label="Previous image"><span aria-hidden="true">&#8249;</span></button>
+            <button type="button" class="detail-carousel-btn detail-carousel-next" aria-label="Next image"><span aria-hidden="true">&#8250;</span></button>
+            <button type="button" class="detail-zoom-btn" aria-label="Zoom image"><span aria-hidden="true">+</span></button>
+          </div>
+          <div class="detail-thumbs" aria-label="Image thumbnails"></div>
+        </div>
+
+        <div class="item-data-info">
+          <div data-name="category" data-type="text" class="item-data-category">分类</div>
+          <h1 data-name="title" data-type="text" data-fallback="name" class="item-data-title">详情标题</h1>
+          <div data-name="date" data-type="text" class="item-data-date">发布日期</div>
+          <p data-name="description" data-type="textarea" data-fallback="summary,excerpt" class="item-data-desc">详情简述</p>
+          <div data-name="tags" data-type="list" data-hideable class="item-data-tags">
+            <span data-name="tag" data-type="text" class="badge badge-primary item-data-tag">标签</span>
+          </div>
+          <div data-name="price" data-type="text" class="item-data-price">价格</div>
+        </div>
+      </div>
+
+      <div data-name="body" data-type="richtext" data-fallback="content" class="item-data-body">
+        <p>详情正文</p>
+      </div>
+    </article>
+  </div>
 </section>
