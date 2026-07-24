@@ -236,104 +236,20 @@
 </div></div></section>
 
 {% else %}
-{# 默认产品详情：完全数据驱动，无硬编码内容 #}
-<section class="section">
-  <div class="container">
-    <a href="{{ base_url }}/{{ lang }}/products/" class="btn btn-ghost" style="margin-bottom: var(--spacing-lg);">← {{ t.products.backToList }}</a>
-    <div class="grid grid-2" style="align-items: start;">
-      <div>
-        {% set product_media_type = product.media_type | default('embed' if product.embed_url else ('video' if product.video else 'image')) %}
-        {% if product_media_type == 'video' and product.video %}
-          <video src="{{ product.video }}" controls playsinline preload="metadata" style="width:100%;border-radius:var(--radius-md);"></video>
-        {% elif product_media_type == 'embed' and product.embed_url %}
-          <iframe src="{{ product.embed_url }}" title="{{ product_name }}" loading="lazy" allowfullscreen style="width:100%;min-height:420px;border:0;border-radius:var(--radius-md);"></iframe>
-        {% elif product.image or product.cover or product.photo or product.logo %}
-          <img src="{{ product.image or product.cover or product.photo or product.logo }}" alt="{{ product_name }}" style="width:100%;border-radius:var(--radius-md);">
-        {% else %}
-          <div class="project-image">Product</div>
-        {% endif %}
-      </div>
-      <div>
-        <h1 style="font-size:var(--font-size-3xl);margin-bottom:var(--spacing-md);">{{ product_name }}</h1>
-        {% if product.price %}<div class="product-detail-price product-detail-price--dark">{{ product.price }}</div>{% endif %}
-        <p class="text-secondary" style="font-size:var(--font-size-md);margin-bottom:var(--spacing-xl);">{{ product_summary }}</p>
-        {% if product.tags %}
-        <div class="dg-card-tags product-detail-tags">
-          {% for tag in product.tags %}<span class="dg-card-tag">{{ tag }}</span>{% endfor %}
-        </div>
-        {% endif %}
-        {% if product.specs %}
-        <table class="product-spec-table">
-          <tbody>
-          {% for key, val in product.specs.items() %}
-            <tr>
-              <th>{{ key|replace('_',' ')|title }}</th>
-              <td>{% if val is iterable and val is not string %}{{ val|join(' / ') }}{% else %}{{ val }}{% endif %}</td>
-            </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-        {% endif %}
-        {% if product.body %}<div style="margin-top:var(--spacing-xl);line-height:1.8;">{{ product.body }}</div>{% endif %}
-      </div>
-    </div>
-  </div>
-</section>
-{% endif %}
-
-{% set rel = namespace(count=0) %}
-<section class="section product-related-section">
-  <div class="container">
-    <div class="section-header">
-      <h2 class="section-title">Related products</h2>
-    </div>
-    <div class="dg-list product-related-grid">
-      {% for item in products %}
-        {% if item.slug != product.slug and item.category == product.category and rel.count < 3 %}
-          {% set rel.count = rel.count + 1 %}
-          <a href="{{ base_url }}/{{ lang }}/products/{{ item.slug }}/" class="dg-card product-related-card">
-            <div class="dg-card-image">
-              {% if item.cover or item.image %}<img src="{{ item.cover or item.image }}" alt="{{ item.name }}" loading="lazy">{% endif %}
-              {% if item.category %}<span class="dg-card-category">{{ item.category }}</span>{% endif %}
-            </div>
-            <div class="dg-card-body">
-              <h3 class="dg-card-title">{{ item.name }}</h3>
-              {% if item.price %}<div class="dg-card-price">{{ item.price }}</div>{% endif %}
-              <p class="dg-card-desc">{{ item.summary }}</p>
-            </div>
-          </a>
-        {% endif %}
-      {% endfor %}
-      {% if rel.count == 0 %}
-        {% for item in products %}
-          {% if item.slug != product.slug and rel.count < 3 %}
-            {% set rel.count = rel.count + 1 %}
-            <a href="{{ base_url }}/{{ lang }}/products/{{ item.slug }}/" class="dg-card product-related-card">
-              <div class="dg-card-image">
-                {% if item.cover or item.image %}<img src="{{ item.cover or item.image }}" alt="{{ item.name }}" loading="lazy">{% endif %}
-                {% if item.category %}<span class="dg-card-category">{{ item.category }}</span>{% endif %}
-              </div>
-              <div class="dg-card-body">
-                <h3 class="dg-card-title">{{ item.name }}</h3>
-                {% if item.price %}<div class="dg-card-price">{{ item.price }}</div>{% endif %}
-                <p class="dg-card-desc">{{ item.summary }}</p>
-              </div>
-            </a>
-          {% endif %}
-        {% endfor %}
-      {% endif %}
-    </div>
-  </div>
-</section>
-
-{# ── 店主自定义模块（数据集编辑中为该产品配置的模块） ── #}
+{# 默认产品详情：完全数据驱动，对齐 claude 模板——只渲染店主在数据集编辑里配置的模块，
+   店主没配任何模块时回退渲染一个默认 item_data。绝不硬编码正文，
+   否则会和下面的 modules 各渲染一次，造成标题/摘要重复（曾出现的 bug）。 #}
 {% set modules = product.modules | default([]) %}
-{% if modules %}
-  {% for module in modules %}
-    <div class="builder-module" data-builder-module-index="{{ loop.index0 }}" data-builder-module-type="{{ module.type }}" data-builder-page-key="{{ page_key }}">
-      {{- render_block(module) }}
-    </div>
-  {% endfor %}
+{% for module in modules %}
+  <div class="builder-module" data-builder-module-index="{{ loop.index0 }}" data-builder-module-type="{{ module.type }}" data-builder-page-key="{{ page_key }}">
+    {{- render_block(module) }}
+  </div>
+{% endfor %}
+{% if not modules %}
+  <div class="builder-module" data-builder-module-index="0" data-builder-module-type="item_data" data-builder-page-key="{{ page_key }}">
+    {{- render_block({'type': 'item_data', 'variant': 'default', 'data': {}}) }}
+  </div>
+{% endif %}
 {% endif %}
 
 <div class="detail-back-section">
