@@ -2313,7 +2313,9 @@ h6 { font-size: var(--font-size-md); }
   min-width: 0;
 }
 
-.footer-col h4 {
+/* 模板实际输出 <h3> 作为栏目标题；若不显式指定会落到全局 h3 的 2xl 大字号，
+   与子链接字号差距过大。这里对齐子链接为 sm，并保留大写+字间距的小标题风格 */
+.footer-col h3 {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-inverse);
