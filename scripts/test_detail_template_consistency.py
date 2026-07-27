@@ -86,6 +86,20 @@ annotated_hidden_media = builder._annotate_detail_modules([
 ])
 check('hidden media still gets a visible base heading', annotated_hidden_media[0]['type'] == '_detail_base_header')
 
+# Video share pages use iframe embeds; direct media files keep the native player.
+haokan_url = 'https://haokan.baidu.com/v?vid=1969238850215732344&pd=pcshare'
+haokan_html = str(builder._render_detail_content_blocks({
+    'detail_content_blocks': [{'type': 'video', 'video': haokan_url}],
+}, {'video_ratio': '16/9'}))
+check('Haokan share page renders as an iframe',
+      '<iframe ' in haokan_html and '<video ' not in haokan_html and 'detail-content-video--embed' in haokan_html)
+check('Haokan query string is HTML-escaped in the iframe URL', '&amp;pd=pcshare' in haokan_html)
+direct_video_html = str(builder._render_detail_content_blocks({
+    'detail_content_blocks': [{'type': 'video', 'video': '/assets/uploads/demo.mp4'}],
+}, {'video_ratio': '16/9'}))
+check('direct video file keeps the native video player',
+      '<video ' in direct_video_html and '<iframe ' not in direct_video_html)
+
 # Empty positional groups must not fall back to group 1 / legacy fields.
 spec_modules = builder._annotate_detail_modules([
     {'type': 'detail_specs', 'order': 1, 'data': {}},

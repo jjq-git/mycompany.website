@@ -662,6 +662,26 @@ def _item_list(value):
     return value if isinstance(value, list) else []
 
 
+def _video_page_embed_url(value):
+    """Return an iframe URL for supported video-page share links.
+
+    A share page is HTML rather than a media resource, so assigning it to a
+    ``<video src>`` leaves the native player at 0:00. Keep uploaded/direct
+    media URLs on the native player and only iframe hosts whose share pages
+    are known to support embedding.
+    """
+    url = str(value or '').strip()
+    if not url:
+        return ''
+    parsed = urlparse(url)
+    if parsed.scheme not in {'http', 'https'}:
+        return ''
+    host = (parsed.hostname or '').lower().rstrip('.')
+    if host == 'haokan.baidu.com' and parsed.path.rstrip('/') == '/v':
+        return url
+    return ''
+
+
 def _render_detail_content_blocks(item, data):
     if _detail_int(data.get('_detail_content_blocks_index'), 0) > 0:
         return Markup('')
@@ -731,10 +751,21 @@ def _render_detail_content_blocks(item, data):
         elif block_type == 'video':
             if not video:
                 continue
+            video_page_url = _video_page_embed_url(video)
+            if video_page_url:
+                embed_ratio = video_ratio if video_ratio != 'auto' else '16/9'
+                media_html = (
+                    f'<iframe src="{escape(video_page_url)}" loading="lazy" '
+                    'allow="autoplay; fullscreen; picture-in-picture" allowfullscreen '
+                    f'style="width:100%;aspect-ratio:{escape(embed_ratio)};border:0;display:block"></iframe>'
+                )
+            else:
+                media_html = f'<video src="{escape(video)}" controls preload="metadata"{video_style}></video>'
             rows.append(
-                '<article class="detail-content-block detail-content-video">'
+                '<article class="detail-content-block detail-content-video'
+                + (' detail-content-video--embed' if video_page_url else '') + '">'
                 f'{f"<h3>{escape(heading)}</h3>" if heading else ""}'
-                f'<figure><video src="{escape(video)}" controls preload="metadata"{video_style}></video>'
+                f'<figure>{media_html}'
                 f'{f"<figcaption>{escape(caption or text)}</figcaption>" if (caption or text) else ""}'
                 '</figure>'
                 '</article>'
