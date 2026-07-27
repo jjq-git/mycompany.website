@@ -191,7 +191,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=136"></script>
+<script src="/static/js/admin_modules.js?v=138"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -726,7 +726,9 @@ function _schemaFieldHtml(prefix, field, mdata) {
     html += '</div>';
   } else if (field.type === 'number') {
     // number → 数字输入框
-    html += '<input type="number" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '" min="1">';
+    html += '<input type="number" step="any" class="form-control form-control-sm" name="' + _schemaEsc(name) + '" value="' + _schemaEsc(val) + '"' +
+      (field.min != null ? ' min="' + _schemaEsc(field.min) + '"' : '') +
+      (field.max != null ? ' max="' + _schemaEsc(field.max) + '"' : '') + '>';
   } else if (field.name === 'show_dots') {
     // 显示圆点 → 眼睛图标按钮；未设置时默认开启（true）
     var visible = val === '' ? true : (String(val) === 'true' || val === true);
@@ -1163,7 +1165,7 @@ function renderDynamicField(prefix, field, value, placeholder) {
       });
       html += '</select>';
   } else if (type === 'number') {
-    html += '<input type="number" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '">';
+    html += '<input type="number" step="any" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '">';
   } else if (isColor) {
     html += '<div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="' + escapeHtml(value || '#888888') + '" oninput="this.parentElement.querySelector(\'input[type=text]\').value=this.value"><input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '" oninput="this.parentElement.querySelector(\'input[type=color]\').value=this.value"></div>';
   } else if (needsUnit) {
@@ -1344,7 +1346,7 @@ function statItemHtml(moduleIndex, statIndex) {
     '<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();this.closest(\'.list-item\').remove();reindexStatItems(' + moduleIndex + ')" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>' +
     '</div><div class="list-item-body">' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">图标</label>' + (window._iconPickerHtml ? window._iconPickerHtml(p + 'icon', '') : '<select class="form-select form-select-sm" name="' + p + 'icon">' + iconOptions + '</select>') + '</div>' +
-    '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">数字</label><input type="number" class="form-control form-control-sm" name="' + p + 'number" placeholder="如 500"></div>' +
+    '<div class="row g-2"><div class="col-6"><label class="form-label small mb-1 text-muted">数字</label><input type="number" step="any" class="form-control form-control-sm" name="' + p + 'number" placeholder="如 500"></div>' +
     '<div class="col-6"><label class="form-label small mb-1 text-muted">后缀</label><input type="text" class="form-control form-control-sm" name="' + p + 'suffix" placeholder="如 +"></div></div>' +
     '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签</label><input type="text" class="form-control form-control-sm" name="' + p + 'label" placeholder="如 服务客户"></div>' +
     '</div></div>';

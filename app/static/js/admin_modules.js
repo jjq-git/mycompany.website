@@ -806,7 +806,7 @@
       '<div class="list-item-body">' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">图标</label>' + iconPickerHtml(p + 'icon', item.icon || '') + '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">数字</label><input type="number" class="form-control form-control-sm" name="' + p + 'number" value="' + esc(item.number || '') + '" placeholder="濡?500"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">数字</label><input type="number" step="any" class="form-control form-control-sm" name="' + p + 'number" value="' + esc(item.number || '') + '" placeholder="濡?500"></div>' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">后缀</label><input type="text" class="form-control form-control-sm" name="' + p + 'suffix" value="' + esc(item.suffix || '') + '" placeholder="濡?+"></div>' +
         '</div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签</label><input type="text" class="form-control form-control-sm" name="' + p + 'label" value="' + esc(item.label || '') + '" placeholder="濡?服务客户"></div>' +
@@ -966,7 +966,9 @@
         '<input type="text" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(colorVal || '') + '" placeholder="选择颜色" oninput="var wrap=this.closest(\'.module-color-control\');var sw=wrap&&wrap.querySelector(\'.module-color-swatch\');var c=wrap&&wrap.querySelector(\'input[type=color]\');var valid=/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(this.value);if(sw){sw.classList.toggle(\'color-empty\', !this.value);if(valid)sw.style.background=this.value;}if(c&&valid)c.value=this.value;">' +
         '</div>';
     } else if (type === 'number') {
-      html += '<input type="number" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '">';
+      html += '<input type="number" step="any" class="form-control form-control-sm" name="' + prefix + key + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '"' +
+        (field.min != null ? ' min="' + esc(field.min) + '"' : '') +
+        (field.max != null ? ' max="' + esc(field.max) + '"' : '') + '>';
     } else if (type === 'radio') {
       (field.options || []).forEach(function(opt, oi) {
         var ov = typeof opt === 'object' ? opt.value : opt;
