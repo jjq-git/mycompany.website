@@ -86,19 +86,40 @@ annotated_hidden_media = builder._annotate_detail_modules([
 ])
 check('hidden media still gets a visible base heading', annotated_hidden_media[0]['type'] == '_detail_base_header')
 
-# Video share pages use iframe embeds; direct media files keep the native player.
-haokan_url = 'https://haokan.baidu.com/v?vid=1969238850215732344&pd=pcshare'
-haokan_html = str(builder._render_detail_content_blocks({
-    'detail_content_blocks': [{'type': 'video', 'video': haokan_url}],
-}, {'video_ratio': '16/9'}))
-check('Haokan share page renders as an iframe',
-      '<iframe ' in haokan_html and '<video ' not in haokan_html and 'detail-content-video--embed' in haokan_html)
-check('Haokan query string is HTML-escaped in the iframe URL', '&amp;pd=pcshare' in haokan_html)
 direct_video_html = str(builder._render_detail_content_blocks({
     'detail_content_blocks': [{'type': 'video', 'video': '/assets/uploads/demo.mp4'}],
 }, {'video_ratio': '16/9'}))
-check('direct video file keeps the native video player',
+check('detail video uses only the native video player',
       '<video ' in direct_video_html and '<iframe ' not in direct_video_html)
+share_page_html = str(builder._render_detail_content_blocks({
+    'detail_content_blocks': [{
+        'type': 'video',
+        'video': 'https://haokan.baidu.com/v?vid=1969238850215732344',
+    }],
+}, {'video_ratio': '16/9'}))
+check('renderer ignores stored video webpage URLs', share_page_html == '')
+check('video URL validation accepts direct media files and query strings',
+      routes._is_direct_video_url('https://cdn.example.com/video.mp4?token=abc')
+      and routes._is_direct_video_url('/assets/uploads/demo.webm'))
+check('video URL validation rejects share pages and unsafe schemes',
+      not routes._is_direct_video_url(
+          'https://haokan.baidu.com/v?vid=1969238850215732344&pd=pcshare'
+      )
+      and not routes._is_direct_video_url('javascript:alert(1)'))
+
+invalid_video_form = MultiDict([
+    ('detail_content_blocks_count', '1'),
+    ('detail_content_blocks_0_type', 'video'),
+    ('detail_content_blocks_0_video', 'https://haokan.baidu.com/v?vid=1969238850215732344'),
+])
+check('draft preview drops video webpage URLs',
+      routes._parse_detail_content_blocks_form(invalid_video_form) == [])
+save_rejected = False
+try:
+    routes._parse_detail_content_blocks_form(invalid_video_form, site_id=1)
+except ValueError:
+    save_rejected = True
+check('saving rejects video webpage URLs', save_rejected)
 
 # Empty positional groups must not fall back to group 1 / legacy fields.
 spec_modules = builder._annotate_detail_modules([
@@ -172,5 +193,9 @@ check('table editor groups are independent sections',
       'data-field-section="detail_tables_{{ table_i }}"' in panel_source and 'id="detailTablesList"' not in panel_source)
 check('link editor groups are independent sections',
       'data-field-section="link_{{ i }}"' in panel_source and 'id="detailLinksList"' not in panel_source)
+check('video URL fields explain and validate the direct-file requirement',
+      'validateDirectVideoUrl' in panel_source
+      and '不支持视频网页或分享链接' in panel_source
+      and '好看视频分享地址' not in panel_source)
 
 print('All detail-template consistency checks passed.')

@@ -662,24 +662,15 @@ def _item_list(value):
     return value if isinstance(value, list) else []
 
 
-def _video_page_embed_url(value):
-    """Return an iframe URL for supported video-page share links.
-
-    A share page is HTML rather than a media resource, so assigning it to a
-    ``<video src>`` leaves the native player at 0:00. Keep uploaded/direct
-    media URLs on the native player and only iframe hosts whose share pages
-    are known to support embedding.
-    """
+def _is_direct_video_url(value):
+    """Return whether a stored value points to a browser-playable video file."""
     url = str(value or '').strip()
     if not url:
-        return ''
+        return False
     parsed = urlparse(url)
-    if parsed.scheme not in {'http', 'https'}:
-        return ''
-    host = (parsed.hostname or '').lower().rstrip('.')
-    if host == 'haokan.baidu.com' and parsed.path.rstrip('/') == '/v':
-        return url
-    return ''
+    if parsed.scheme and parsed.scheme not in {'http', 'https'}:
+        return False
+    return Path(parsed.path or '').suffix.lower() in {'.mp4', '.webm', '.ogg', '.mov'}
 
 
 def _render_detail_content_blocks(item, data):
@@ -749,23 +740,12 @@ def _render_detail_content_blocks(item, data):
                 '</figure></article>'
             )
         elif block_type == 'video':
-            if not video:
+            if not _is_direct_video_url(video):
                 continue
-            video_page_url = _video_page_embed_url(video)
-            if video_page_url:
-                embed_ratio = video_ratio if video_ratio != 'auto' else '16/9'
-                media_html = (
-                    f'<iframe src="{escape(video_page_url)}" loading="lazy" '
-                    'allow="autoplay; fullscreen; picture-in-picture" allowfullscreen '
-                    f'style="width:100%;aspect-ratio:{escape(embed_ratio)};border:0;display:block"></iframe>'
-                )
-            else:
-                media_html = f'<video src="{escape(video)}" controls preload="metadata"{video_style}></video>'
             rows.append(
-                '<article class="detail-content-block detail-content-video'
-                + (' detail-content-video--embed' if video_page_url else '') + '">'
+                '<article class="detail-content-block detail-content-video">'
                 f'{f"<h3>{escape(heading)}</h3>" if heading else ""}'
-                f'<figure>{media_html}'
+                f'<figure><video src="{escape(video)}" controls preload="metadata"{video_style}></video>'
                 f'{f"<figcaption>{escape(caption or text)}</figcaption>" if (caption or text) else ""}'
                 '</figure>'
                 '</article>'

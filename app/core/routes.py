@@ -1738,6 +1738,24 @@ def _save_uploaded_media(site_id, file_storage, prefix='media'):
     return f'/assets/uploads/{filename}'
 
 
+def _is_direct_video_url(value):
+    """Accept uploaded/relative paths and HTTP(S) URLs ending in a video file."""
+    url = str(value or '').strip()
+    if not url:
+        return True
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme and parsed.scheme not in {'http', 'https'}:
+        return False
+    suffix = Path(parsed.path or '').suffix.lower().lstrip('.')
+    return suffix in ALLOWED_VIDEO_EXTENSIONS
+
+
+DIRECT_VIDEO_URL_ERROR = (
+    '视频链接必须是视频文件直链，例如 https://example.com/video.mp4；'
+    '不能填写视频网页或分享页面地址'
+)
+
+
 def _save_any_file(site_id, file_storage, prefix='file'):
     """保存普通文件到 assets/uploads，图片/视频之外的文档等走这里。"""
     if not file_storage or not file_storage.filename:
@@ -6530,6 +6548,11 @@ def _parse_detail_content_blocks_form(form, files=None, site_id=None, dataset_ke
                 video = _save_uploaded_media(site_id, video_upload, prefix=f'{dataset_key}-content-video-{idx + 1}')
             except Exception as exc:
                 current_app.logger.warning('详情内容视频上传失败: %s', exc)
+        if video and not _is_direct_video_url(video):
+            if site_id:
+                raise ValueError(DIRECT_VIDEO_URL_ERROR)
+            # Draft/live preview should not render a webpage URL as a broken video.
+            video = ''
         gallery = []
         for gi in range(6):
             gallery_image = form.get(f'detail_content_blocks_{idx}_gallery_{gi}_image', '').strip()
@@ -7747,9 +7770,15 @@ def dataset_edit(dataset_key, item_id):
             # 兼容仍读单字段的旧消费方（如导出/预览回落），写入第一组
             fields['detail_columns'] = _groups[0] if _groups else {'heading': '', 'items': []}
         if 'detail_content_blocks_count' in request.form:
-            fields['detail_content_blocks'] = _parse_detail_content_blocks_form(
-                request.form, request.files, site.id, dataset_key, fields, item
-            )
+            try:
+                fields['detail_content_blocks'] = _parse_detail_content_blocks_form(
+                    request.form, request.files, site.id, dataset_key, fields, item
+                )
+            except ValueError as exc:
+                flash(str(exc), 'error')
+                invalid_item = dict(item)
+                invalid_item.update(fields)
+                return render_edit(invalid_item, source_item), 400
         settings_for_templates = read_yaml(site.id, 'settings.yaml') or {}
         raw_menu_for_templates = settings_for_templates.get('menu') or []
         list_targets_for_templates = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu_for_templates))
@@ -7792,6 +7821,11 @@ def dataset_edit(dataset_key, item_id):
                 fields['video'] = _save_uploaded_media(site.id, video_upload, prefix=f'{dataset_key}-video')
             except Exception as exc:
                 current_app.logger.warning('数据集视频上传失败: %s', exc)
+        if fields.get('video') and not _is_direct_video_url(fields.get('video')):
+            flash(DIRECT_VIDEO_URL_ERROR, 'error')
+            invalid_item = dict(item)
+            invalid_item.update(fields)
+            return render_edit(invalid_item, source_item), 400
         embed_upload = request.files.get('embed_url_file')
         if embed_upload and embed_upload.filename:
             try:
