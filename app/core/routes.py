@@ -8075,10 +8075,7 @@ def _get_available_blocks(template_name):
     """获取模板的可用模块列表."""
     from .template_loader import scan_blocks
     try:
-        blocks = scan_blocks(template_name)
-        if template_name not in ('dengtec', 'claude'):
-            blocks = [block for block in blocks if block.get('name') != 'contact_form']
-        return blocks
+        return scan_blocks(template_name)
     except Exception:
         return []
 
