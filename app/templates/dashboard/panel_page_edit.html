@@ -691,7 +691,7 @@ function _schemaFieldHtml(prefix, field, mdata) {
   } else if (field.type === 'richtext') {
     html += richEditorHtml(name, val || '');
   } else if (field.type === 'textarea' && isDescriptionKey(field.name)) {
-    html += richEditorHtml(name, val || '');
+    html += richEditorHtml(name, val || '', true);
   } else if (field.type === 'textarea') {
     html += '<textarea class="form-control form-control-sm" name="' + _schemaEsc(name) + '" rows="4" placeholder="' + _schemaEsc(label) + '">' + _schemaEsc(val) + '</textarea>';
   } else if (field.type === 'image' || field.type === 'video') {
@@ -1151,7 +1151,7 @@ function renderDynamicField(prefix, field, value, placeholder) {
   } else if (type === 'embed' || type === 'package') {
     html += mediaUploadHtml(prefix + key, value || '', 'embed', placeholder || '上传网页包 ZIP');
   } else if (type === 'textarea' && isDescriptionKey(key)) {
-    html += richEditorHtml(prefix + key, value || '');
+    html += richEditorHtml(prefix + key, value || '', true);
   } else if (type === 'textarea') {
     html += '<textarea class="form-control form-control-sm" rows="4" name="' + prefix + key + '" placeholder="' + escapeHtml(placeholder || '') + '">' + escapeHtml(value || '') + '</textarea>';
   } else if (isDynamicSegmented) {

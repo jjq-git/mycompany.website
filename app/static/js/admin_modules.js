@@ -941,7 +941,7 @@
     } else if (type === 'richtext') {
       html += richEditorHtml(prefix + key, value || '');
     } else if (type === 'textarea' && isDescriptionKey(key)) {
-      html += richEditorHtml(prefix + key, value || '');
+      html += richEditorHtml(prefix + key, value || '', true);
     } else if (type === 'textarea') {
       html += '<textarea class="form-control form-control-sm" rows="4" name="' + prefix + key + '" placeholder="' + esc(placeholder || '') + '">' + esc(value || '') + '</textarea>';
     } else if (isSegmented) {
