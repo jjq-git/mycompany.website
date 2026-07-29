@@ -2930,7 +2930,7 @@
     var datasetNames = (window._moduleCtx && window._moduleCtx.datasetNames) || [];
     var dsOptionsHtml = '';
     datasetNames.forEach(function(ds) {
-      dsOptionsHtml += '<option value="' + esc(ds.target) + '"' + (d.dataset === ds.target ? ' selected' : '') + '>' + esc(ds.label) + ' (' + esc(ds.target) + ')</option>';
+      dsOptionsHtml += '<option value="' + esc(ds.target) + '"' + (String(d.dataset) === String(ds.target) ? ' selected' : '') + '>' + esc(ds.label) + ' (' + esc(ds.target) + ')</option>';
     });
     var specialEditor =
       // 区块标题/副标题——放在最上面，店主优先看到
@@ -3011,7 +3011,7 @@
     var datasetNames = (window._moduleCtx && window._moduleCtx.datasetNames) || [];
     var dsOptionsHtml = '';
     datasetNames.forEach(function(ds) {
-      dsOptionsHtml += '<option value="' + esc(ds.target) + '"' + (d.dataset === ds.target ? ' selected' : '') + '>' + esc(ds.label) + ' (' + esc(ds.target) + ')</option>';
+      dsOptionsHtml += '<option value="' + esc(ds.target) + '"' + (String(d.dataset) === String(ds.target) ? ' selected' : '') + '>' + esc(ds.label) + ' (' + esc(ds.target) + ')</option>';
     });
     if (!d.dataset && datasetNames.length) {
       dsOptionsHtml = dsOptionsHtml.replace('<option value="' + esc(datasetNames[0].target) + '"', '<option value="' + esc(datasetNames[0].target) + '" selected');

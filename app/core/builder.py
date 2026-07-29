@@ -1349,6 +1349,12 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
         if enable_data_attr and schema is not None:
             data_dict = module.get('data') if isinstance(module.get('data'), dict) else {}
             dataset_name = data_dict.get('dataset', '')
+            if dataset_name not in (None, ''):
+                # 纯数字数据集 target 经 YAML 读取后可能是 int，但数据集路径和
+                # all_datasets 均按文件名字符串建立索引。
+                dataset_name = str(dataset_name)
+            else:
+                dataset_name = ''
             dataset_path = ((jinja_ctx.get('dataset_paths') or {}).get(dataset_name) or '')
             base_prefix = (jinja_ctx.get('base_url', '') or '').rstrip('/')
             if base_prefix and dataset_path.startswith('/') and not dataset_path.startswith(base_prefix + '/'):

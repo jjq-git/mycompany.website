@@ -128,17 +128,12 @@ fields:
     group: 轮播媒体项
     item_label: 媒体项
     item_fields:
-      - key: type
-        label: 媒体类型
-        type: select
-        options:
-          - value: image
-            label: 图片
-          - value: video
-            label: 视频
-      - key: media
-        label: 媒体地址
-        type: url
+      - key: image
+        label: 图片
+        type: image
+      - key: video
+        label: 视频
+        type: video
       - key: title
         label: 主标题
         type: text
@@ -148,12 +143,12 @@ fields:
       - key: primaryBtn
         label: 主按钮文字
         type: text
-      - key: primaryBtnLink
+      - key: primaryLink
         label: 主按钮链接
         type: url
       - key: secondaryBtn
         label: 副按钮文字
         type: text
-      - key: secondaryBtnLink
+      - key: secondaryLink
         label: 副按钮链接
         type: url

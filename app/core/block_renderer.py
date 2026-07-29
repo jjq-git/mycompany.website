@@ -382,8 +382,11 @@ def _resolve_list_items(field_def, data_dict, context):
 
     all_datasets = (context or {}).get('all_datasets', {})
     dataset_name = source if source else data_dict.get('dataset')
-    if not dataset_name:
+    if dataset_name in (None, ''):
         return []
+    # 自定义数据集 target 可能是纯数字（如 "333"）。YAML 读取后会变成 int，
+    # 而 all_datasets 的文件名键始终是字符串；统一成字符串后再查找。
+    dataset_name = str(dataset_name)
     raw = all_datasets.get(dataset_name)
     # products 这类数据集是 {categories, items}，取 items；纯 list 直接用
     if isinstance(raw, dict):

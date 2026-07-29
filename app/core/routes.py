@@ -8251,7 +8251,11 @@ def _parse_modules_form(form, existing_modules=None):
                     base_field = field.split('_')[0] if '_' in field else field
                     form_fields_for_module.add(base_field)
                     form_fields_for_module.add(field)
-                    data[field] = _parse_value(form.get(key, ''))
+                    raw_value = form.get(key, '')
+                    # 数据集 target 是标识符而非数值。纯数字 target（如 "333"）
+                    # 必须保留为字符串，否则重新加载编辑器时会与 select 的字符串
+                    # option value 类型不一致。
+                    data[field] = (raw_value or '').strip() if field == 'dataset' else _parse_value(raw_value)
 
 
         # ===== 通用 data-* list/grid 条目解析 =====
