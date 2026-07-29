@@ -29,6 +29,9 @@ BRANCH=${BRANCH:-jan}                 # 监控的分支
 FLASK_HOST=${FLASK_HOST:-0.0.0.0}
 FLASK_PORT=${FLASK_PORT:-5000}
 FLASK_DEBUG=${FLASK_DEBUG:-0}
+# 192.168.1.38 是局域网调试部署，默认允许带缺页导出。
+# .env 中显式配置 0 时仍会恢复导出死链拦截。
+EXPORT_SKIP_LINK_CHECK=${EXPORT_SKIP_LINK_CHECK:-1}
 LOG_FILE=${LOG_FILE:-flask_runtime.log}
 VENV_DIR=${VENV_DIR:-.venv}
 PID_FILE=${PID_FILE:-auto-reload.pid}
@@ -82,6 +85,9 @@ FLASK_PORT=$FLASK_PORT
 FLASK_DEBUG=$FLASK_DEBUG
 ENV
     fi
+    if ! grep -q '^EXPORT_SKIP_LINK_CHECK=' .env; then
+        printf '\nEXPORT_SKIP_LINK_CHECK=%s\n' "$EXPORT_SKIP_LINK_CHECK" >> .env
+    fi
 }
 
 # ── 函数：同步模板元信息到数据库 ───────────────────────────────────
@@ -91,7 +97,7 @@ scan_templates() {
     set -a
     . ./.env
     set +a
-    export FLASK_HOST FLASK_PORT FLASK_DEBUG
+    export FLASK_HOST FLASK_PORT FLASK_DEBUG EXPORT_SKIP_LINK_CHECK
     "$VENV_DIR/bin/python" -m flask --app run scan-templates || {
         warn "模板同步失败"
         return 1
@@ -124,7 +130,7 @@ start_flask() {
     set -a
     . ./.env
     set +a
-    export FLASK_HOST FLASK_PORT FLASK_DEBUG
+    export FLASK_HOST FLASK_PORT FLASK_DEBUG EXPORT_SKIP_LINK_CHECK
     nohup "$VENV_DIR/bin/python" run.py > "$LOG_FILE" 2>&1 &
     local new_pid=$!
     sleep 3

@@ -13,6 +13,10 @@
 
 set -e
 
+# 192.168.1.38 是局域网调试部署：默认允许带缺页导出。
+# 如需恢复导出死链拦截，可用 EXPORT_SKIP_LINK_CHECK=0 ./deploy-to-remote.sh。
+EXPORT_SKIP_LINK_CHECK=${EXPORT_SKIP_LINK_CHECK:-1}
+
 # ── 配色 ─────────────────────────────────────────────────────────────
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -121,6 +125,15 @@ if [ ! -f .env ]; then
     python3 -c "import secrets; print(f'SECRET_KEY={secrets.token_urlsafe(48)}\nFLASK_HOST=0.0.0.0\nFLASK_PORT=5000\nFLASK_DEBUG=0')" > .env
     info ".env 已生成"
 fi
+
+# .env 不随 Git 同步，因此每次局域网部署都显式同步导出检查开关。
+# 只替换这一项，不覆盖远程机器上的密钥和其他私有配置。
+if grep -q '^EXPORT_SKIP_LINK_CHECK=' .env; then
+    sed -i "s/^EXPORT_SKIP_LINK_CHECK=.*/EXPORT_SKIP_LINK_CHECK=$EXPORT_SKIP_LINK_CHECK/" .env
+else
+    printf '\nEXPORT_SKIP_LINK_CHECK=%s\n' "$EXPORT_SKIP_LINK_CHECK" >> .env
+fi
+info "导出死链检查跳过开关: EXPORT_SKIP_LINK_CHECK=$EXPORT_SKIP_LINK_CHECK"
 
 # 后台启动
 nohup python3 run.py > /tmp/mycompany-flask.log 2>&1 &
