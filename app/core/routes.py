@@ -10,6 +10,7 @@ import io
 import copy
 import mimetypes
 import secrets
+import threading
 import time
 import zipfile
 import json
@@ -21,7 +22,7 @@ from email.utils import formatdate, make_msgid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from flask import (Blueprint, abort, current_app, flash, jsonify, redirect,
+from flask import (Blueprint, abort, current_app, flash, g, jsonify, redirect,
                    render_template, request, send_file, send_from_directory,
                    session, url_for)
 from werkzeug.utils import secure_filename
@@ -166,6 +167,8 @@ from .models import (AccountEntitlement, AccountIdentity, AiCreditAccount, AiCre
                      UserSession, VerificationCode)
 from .site_storage import (copy_seed_data, init_site_folder, lang_root,
                             list_media_files, list_yaml_files, read_yaml,
+                            mark_site_content_changed,
+                            remove_site_folder,
                             rename_media_file, delete_media_file,
                             find_media_references, is_media_package_token,
                             media_package_name_from_token, media_package_token,
@@ -174,6 +177,41 @@ from .site_storage import (copy_seed_data, init_site_folder, lang_root,
 bp = Blueprint('core', __name__)
 
 mimetypes.add_type('application/wasm', '.wasm')
+
+
+@bp.after_request
+def _sync_site_content_change(response):
+    """Keep relational state and audit history aligned with successful file edits."""
+    changes = getattr(g, 'site_content_changes', {})
+    if not changes or response.status_code >= 400:
+        return response
+    try:
+        user_id = session.get('user_id')
+        user = db.session.get(User, int(user_id)) if user_id else None
+        now = datetime.now(timezone.utc)
+        for site_id, paths in changes.items():
+            site = db.session.get(Site, int(site_id))
+            if not site or site.soft_deleted_at is not None:
+                continue
+            was_published = site.status == 'published'
+            if was_published:
+                site.status = 'draft'
+            site.updated_at = now
+            _write_audit(
+                user,
+                'site.content.update',
+                f'更新站点“{site.name or site.slug}”内容',
+                site_id=site.id,
+                details={
+                    'paths': sorted(paths),
+                    'status_reset_to_draft': was_published,
+                },
+            )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('同步站点内容状态与审计日志失败')
+    return response
 
 DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
     {
@@ -769,6 +807,122 @@ DETAIL_TEMPLATE_SINGLETON_COMPONENTS = {
     'detail_files', 'detail_faq', 'detail_related',
 }
 
+DETAIL_TEMPLATE_FIELD_OPTIONS = [
+    ('slug', 'Slug'), ('title', '标题'), ('summary', '简介'), ('media', '主媒体'),
+    ('category', '分类'), ('tags', '标签'), ('body', '正文'),
+    ('detail_images', '细节图'), ('specs', '规格参数'), ('detail_tables', '详情表格'),
+    ('link', '详情链接'), ('detail_features', '卖点'), ('detail_files', '资料文件'),
+    ('detail_faqs', 'FAQ'), ('detail_columns', '图文列'),
+    ('detail_related', '相关推荐'), ('detail_content_blocks', '自由正文'), ('seo', '单条 SEO'),
+]
+DETAIL_TEMPLATE_FIELD_KEYS = {key for key, _label in DETAIL_TEMPLATE_FIELD_OPTIONS}
+DETAIL_TEMPLATE_FIELD_LABELS = dict(DETAIL_TEMPLATE_FIELD_OPTIONS)
+
+
+def _normalize_detail_template_fields(template):
+    """Keep one canonical, safe field contract for editor and backend validation."""
+    template = template if isinstance(template, dict) else {}
+    required = [
+        str(key) for key in (template.get('required_fields') or [])
+        if str(key) in DETAIL_TEMPLATE_FIELD_KEYS
+    ]
+    # URL and title are structural requirements for every generated detail page.
+    required = list(dict.fromkeys(['slug', 'title', *required]))
+    optional = [
+        str(key) for key in (template.get('optional_fields') or [])
+        if str(key) in DETAIL_TEMPLATE_FIELD_KEYS and str(key) not in required
+    ]
+    template['required_fields'] = required
+    template['optional_fields'] = list(dict.fromkeys(optional))
+    return template
+
+
+def _detail_template_allowed_components():
+    return {str(block.get('name') or ''): block for block in DETAIL_TEMPLATE_COMPONENT_BLOCKS}
+
+
+def _validate_detail_template_modules_form(form):
+    allowed = _detail_template_allowed_components()
+    try:
+        count = int(form.get('module_count', '0'))
+    except (TypeError, ValueError):
+        return '组件数量无效'
+    if count < 0 or count > 100:
+        return '组件数量必须在 0–100 之间'
+    seen_singletons = set()
+    for index in range(count):
+        module_type = form.get(f'module_{index}_type', '').strip()
+        component = allowed.get(module_type)
+        if not component:
+            return f'不允许的详情组件类型：{module_type or "空类型"}'
+        variant = form.get(f'module_{index}_variant', '').strip() or 'default'
+        allowed_variants = {'default'} | {
+            str(entry.get('key') or '') for entry in (component.get('variants') or [])
+        }
+        if variant not in allowed_variants:
+            return f'组件 {module_type} 的样式无效：{variant}'
+        if component.get('allow_multiple') is False:
+            if module_type in seen_singletons:
+                return f'组件 {module_type} 不能重复添加'
+            seen_singletons.add(module_type)
+    return ''
+
+
+def _content_field_present(fields, field_name):
+    fields = fields if isinstance(fields, dict) else {}
+    if field_name == 'title':
+        return bool(str(fields.get('title') or fields.get('name') or '').strip())
+    if field_name == 'media':
+        media_type = str(fields.get('media_type') or '').strip()
+        if not media_type:
+            media_type = 'embed' if fields.get('embed_url') else ('video' if fields.get('video') else 'image')
+        key = {'image': 'cover', 'video': 'video', 'embed': 'embed_url'}.get(media_type, 'cover')
+        aliases = ('cover', 'image', 'photo', 'logo') if key == 'cover' else (key,)
+        return any(bool(str(fields.get(alias) or '').strip()) for alias in aliases)
+    aliases = {
+        'detail_images': ('detail_images', 'detail_gallery'),
+        'specs': ('detail_specs', 'specs', 'parameters', 'attributes'),
+        'detail_tables': ('detail_tables',),
+        'link': ('detail_links', 'link_url', 'button_url', 'download_url'),
+        'detail_features': ('detail_features', 'features'),
+        'detail_files': ('detail_files', 'downloads'),
+        'detail_faqs': ('detail_faqs', 'faqs'),
+        'detail_columns': ('detail_columns_groups', 'detail_columns'),
+        'detail_related': ('related_ids', 'related'),
+        'detail_content_blocks': ('detail_content_blocks', 'content_blocks'),
+        'seo': ('seo_title', 'seo_description'),
+    }.get(field_name, (field_name,))
+    for alias in aliases:
+        value = fields.get(alias)
+        if alias == 'detail_gallery' and isinstance(value, dict):
+            value = value.get('images')
+        if isinstance(value, str):
+            if value.strip():
+                return True
+        elif value not in (None, '', [], {}):
+            return True
+    return False
+
+
+def _validate_content_fields(fields, template, existing_items, item_id):
+    """Validate new and existing items against the same template contract."""
+    errors = []
+    slug = str(fields.get('slug') or '').strip()
+    if not slug:
+        errors.append('Slug')
+    elif not SLUG_PATTERN.fullmatch(slug):
+        errors.append('Slug 格式')
+    elif any(str(item.get('slug') or '') == slug and int(item.get('id') or 0) != int(item_id or 0)
+             for item in (existing_items or [])):
+        errors.append('Slug 已存在')
+    normalized = _normalize_detail_template_fields(copy.deepcopy(template or {}))
+    for field_name in normalized.get('required_fields') or []:
+        if field_name == 'slug':
+            continue
+        if not _content_field_present(fields, field_name):
+            errors.append(DETAIL_TEMPLATE_FIELD_LABELS.get(field_name, field_name))
+    return list(dict.fromkeys(errors))
+
 
 def _sort_detail_modules(modules):
     """Return detail modules in their explicit display order, stably."""
@@ -804,8 +958,8 @@ def _dedupe_detail_singletons(modules):
     return result
 
 
-def _ensure_page_detail_templates(site_id, dataset_key, label=None, lang=None):
-    """Ensure list page config has a default detail template without touching existing data."""
+def _ensure_page_detail_templates(site_id, dataset_key, label=None, lang=None, persist=False):
+    """Return normalized detail-template config; persist only for explicit writes."""
     page = read_yaml(site_id, f'pages/{dataset_key}.yaml', default={}, lang=lang) or {}
     changed = False
     if 'modules' not in page:
@@ -832,7 +986,7 @@ def _ensure_page_detail_templates(site_id, dataset_key, label=None, lang=None):
             changed = True
     if _remove_redundant_detail_intro_modules(page.get('detail_templates')):
         changed = True
-    if changed:
+    if changed and persist:
         write_yaml(site_id, f'pages/{dataset_key}.yaml', page, lang=lang)
     return page
 
@@ -845,6 +999,7 @@ def _detail_templates_for_page(page, dataset_key, label=None):
     _remove_redundant_detail_intro_modules(templates)
     normalized = [tpl for tpl in templates if isinstance(tpl, dict)]
     for template in normalized:
+        _normalize_detail_template_fields(template)
         if isinstance(template.get('modules'), list):
             template['modules'] = _dedupe_detail_singletons(template['modules'])
     return normalized or [_default_detail_template(dataset_key, label)]
@@ -898,7 +1053,12 @@ def _detail_template_field_requirements(template, item=None):
         'detail_content_blocks': False,
         'detail_content_slots': [],
         'seo': False,
+        '_required_fields': [],
+        '_optional_fields': [],
     }
+    normalized_template = _normalize_detail_template_fields(copy.deepcopy(template or {}))
+    req['_required_fields'] = normalized_template.get('required_fields') or []
+    req['_optional_fields'] = normalized_template.get('optional_fields') or []
     modules = template.get('modules') if isinstance(template, dict) else []
     if not isinstance(modules, list):
         modules = []
@@ -1158,7 +1318,7 @@ def _ensure_detail_templates_for_menu(site_id, menu_items):
     for entry in menu_lib.collect_list_targets(menu_items):
         target = entry.get('target')
         if target:
-            _ensure_page_detail_templates(site_id, target, entry.get('label'))
+            _ensure_page_detail_templates(site_id, target, entry.get('label'), persist=True)
 
 
 def _hex_to_rgb(hex_color):
@@ -2625,14 +2785,19 @@ def site_asset(filename):
     # 后续 /assets 请求靠 session 即可正确定位，无需 Referer。
     assets_root = None
 
-    # 1. 模板预览 session（模板资源是公共模板素材，非用户私密数据；靠 session 中的模板名定位）
-    tpl_name = session.get('current_template_preview')
-    if tpl_name:
-        tpl_assets = Path(current_app.config['OUTPUT_DIR']) / '_preview' / tpl_name / 'assets'
+    # 1. 模板预览 Referer（只用于公共模板；避免共享 session 中的模板状态劫持后台站点资源）
+    referer = request.headers.get('Referer', '')
+    m = re.search(r'/templates/([a-zA-Z0-9_-]+)/preview/', referer)
+    if m:
+        referer_template = m.group(1)
+        session_version = (session.get('current_template_preview_version')
+                           if session.get('current_template_preview') == referer_template else None)
+        version = session_version or _template_preview_version(referer_template)
+        tpl_assets = _template_preview_output(referer_template, version) / 'assets'
         if tpl_assets.exists():
             assets_root = tpl_assets
 
-    # 2. 站点预览 / 管理后台：用 session 中当前站点定位（session 的 site_id 由预览/后台路由授权写入）
+    # 2. 站点预览 / 管理后台：用 session 中当前站点定位（session 的 site_id 由授权路由写入）
     if assets_root is None:
         site_id = session.get('current_site_id')
         if site_id is not None:
@@ -2640,14 +2805,14 @@ def site_asset(filename):
             if site:
                 assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
 
-    # 3. 模板预览 CSS 背景图兜底：Referer 是 /templates/<name>/preview/（仅公共模板资源，无跨用户风险）
-    if assets_root is None:
-        referer = request.headers.get('Referer', '')
-        m = re.search(r'/templates/([a-zA-Z0-9_-]+)/preview/', referer)
-        if m:
-            tpl_assets = Path(current_app.config['OUTPUT_DIR']) / '_preview' / m.group(1) / 'assets'
-            if tpl_assets.exists():
-                assets_root = tpl_assets
+    # 3. 无站点上下文时，允许当前公共模板预览 session 处理直接资源请求。
+    tpl_name = session.get('current_template_preview')
+    if assets_root is None and tpl_name:
+        tpl_version = session.get('current_template_preview_version')
+        tpl_assets = (_template_preview_output(tpl_name, tpl_version) / 'assets'
+                      if tpl_version else Path(current_app.config['OUTPUT_DIR']) / '_preview' / tpl_name / 'assets')
+        if tpl_assets.exists():
+            assets_root = tpl_assets
 
     if assets_root is None:
         abort(404, '资源不存在')
@@ -2955,9 +3120,8 @@ def content_delete(dataset_key, item_id):
     if not any(entry.get('key') == dataset_key for entry in catalog):
         return jsonify({'ok': False, 'error': '内容分类不存在'}), 404
     storage_lang = _storage_lang(site, lang, default_lang)
-    if not datasets.find(site.id, dataset_key, item_id, lang=storage_lang):
+    if not datasets.remove(site.id, dataset_key, item_id, lang=storage_lang):
         return jsonify({'ok': False, 'error': '内容不存在'}), 404
-    datasets.remove(site.id, dataset_key, item_id, lang=storage_lang)
     return jsonify({'ok': True})
 
 
@@ -3161,6 +3325,7 @@ def api_media_upload():
             # 根目录有 index.html → 网页包；否则降级为普通文件。
             if media_service.uploaded_zip_has_index(upload):
                 result = _save_media_package(site.id, upload)
+                mark_site_content_changed(site.id, f"assets/{result.get('name') or 'media-package'}")
                 return jsonify({'ok': True, **result})
             # 不是网页包 → 继续往下走普通文件上传流程
 
@@ -3173,6 +3338,7 @@ def api_media_upload():
         filename = url.rsplit('/', 1)[-1]
         files = [item for item in list_media_files(site.id) if item.get('api_name') == filename]
         payload = files[0] if files else {'name': filename, 'api_name': filename, 'url': url}
+        mark_site_content_changed(site.id, f'assets/uploads/{filename}')
         return jsonify({'ok': True, **payload})
     except Exception as exc:
         current_app.logger.warning('media upload failed: %s', exc)
@@ -3193,6 +3359,7 @@ def api_media_rename():
     except Exception as exc:
         current_app.logger.warning('media rename failed: %s', exc)
         return jsonify({'error': str(exc)}), 400
+    mark_site_content_changed(site.id, f'assets/rename:{old_name}->{new_api_name}')
     if is_media_package_token(new_api_name):
         package_name = media_package_name_from_token(new_api_name)
         return jsonify({
@@ -3230,6 +3397,7 @@ def api_media_delete():
     except Exception as exc:
         current_app.logger.warning('media delete failed: %s', exc)
         return jsonify({'error': str(exc)}), 400
+    mark_site_content_changed(site.id, f'assets/delete:{name}')
     return jsonify({'ok': True})
 
 
@@ -5293,6 +5461,15 @@ def footer_variant_edit():
     ])
 
     if request.method == 'POST':
+        # 旧格式只在用户明确保存时落盘迁移；GET 始终保持只读。
+        old_links = settings.pop('footer_links', None)
+        if old_links:
+            legacy_footer = settings.setdefault('footer', {})
+            if not legacy_footer.get('columns'):
+                legacy_footer['variant'] = 'columns'
+                legacy_footer['columns'] = [{
+                    'type': 'menu', 'title': '快速链接', 'links': old_links,
+                }]
         footer = settings.setdefault(footer_key, {})
         footer['variant'] = request.form.get('footer_variant', 'columns')
         if request.form.get('_use_company_meta'):
@@ -5352,6 +5529,13 @@ def footer_variant_edit():
 
     current_footer = settings.get(footer_key) or settings.get('footer') or {}
     source_footer = settings.get('footer') or {}
+    old_links = settings.get('footer_links') or []
+    if old_links and not current_footer.get('columns'):
+        current_footer = dict(current_footer)
+        current_footer['variant'] = 'columns'
+        current_footer['columns'] = [{
+            'type': 'menu', 'title': '快速链接', 'links': old_links,
+        }]
     footer_variant_keys = [v['key'] for v in footer_variants]
     if current_footer.get('variant') not in footer_variant_keys:
         current_footer = dict(current_footer)
@@ -5699,9 +5883,7 @@ def menu_edit():
     meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
     meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
     raw_menu = settings.get('menu') or meta.get('default_menu', [])
-    if _ensure_menu_item_ids(raw_menu):
-        settings['menu'] = raw_menu
-        write_yaml(site.id, 'settings.yaml', settings)
+    _ensure_menu_item_ids(raw_menu)
     items = menu_lib.ensure_home(
         menu_lib.upgrade_old_format(raw_menu, meta.get('datasets', []))
     )
@@ -5738,25 +5920,8 @@ def menu_edit():
 
 @bp.route('/settings/footer', methods=['GET', 'POST'])
 def footer_edit():
-    """旧页脚链接页面 —— 已迁移至 footer_variant_edit，自动转换旧数据格式"""
-    user, site = _current_context()
-    settings = read_yaml(site.id, 'settings.yaml') or {}
-
-    # 迁移旧的 footer_links 数据到新 footer.columns 格式
-    old_links = settings.pop('footer_links', None)
-    if old_links:
-        footer = settings.setdefault('footer', {})
-        existing_cols = footer.get('columns', [])
-        if not existing_cols:
-            footer['variant'] = 'columns'
-            footer['columns'] = [{
-                'type': 'menu',
-                'title': '快速链接',
-                'links': old_links
-            }]
-            write_yaml(site.id, 'settings.yaml', settings)
-            flash('页脚链接数据已自动迁移到新版格式')
-
+    """旧页脚链接入口；读取时不迁移，保存新版表单时再落盘。"""
+    _, site = _current_context()
     return redirect(url_for('core.footer_variant_edit', site=site.id))
 
 
@@ -5881,6 +6046,44 @@ def _normalize_custom_domain(raw):
 _KEY_PATTERN = re.compile(r'^[a-z0-9][a-z0-9_-]{0,40}$')
 # blank 为空白起步模板，按 name 升序会排在最前，作为模板库第一张卡呈现
 VISIBLE_TEMPLATE_NAMES = ('blank', 'claude', 'dengtec')
+_TEMPLATE_PREVIEW_LOCKS = {}
+_TEMPLATE_PREVIEW_LOCKS_GUARD = threading.Lock()
+
+
+def _template_preview_version(template_name):
+    """Return a stable version key for the current template source tree."""
+    root = Path(current_app.config['TEMPLATES_DIR']) / template_name
+    digest = hashlib.sha256()
+    for path in sorted((p for p in root.rglob('*') if p.is_file()), key=lambda p: p.as_posix()):
+        stat = path.stat()
+        digest.update(path.relative_to(root).as_posix().encode('utf-8'))
+        digest.update(f':{stat.st_mtime_ns}:{stat.st_size}\n'.encode('ascii'))
+    return digest.hexdigest()[:16]
+
+
+def _template_preview_output(template_name, version):
+    return Path(current_app.config['OUTPUT_DIR']) / '_preview_versions' / template_name / version
+
+
+def _template_preview_lock(template_name, version):
+    key = f'{template_name}:{version}'
+    with _TEMPLATE_PREVIEW_LOCKS_GUARD:
+        return _TEMPLATE_PREVIEW_LOCKS.setdefault(key, threading.Lock())
+
+
+def _ensure_template_preview(template_name, version):
+    """Build one immutable preview version once, serializing concurrent requests."""
+    out = _template_preview_output(template_name, version)
+    if (out / 'index.html').exists():
+        return out
+    with _template_preview_lock(template_name, version):
+        if not (out / 'index.html').exists():
+            build_template_preview(
+                template_name,
+                base_url=f'/templates/{template_name}/preview',
+                output_root=out,
+            )
+    return out
 
 
 def _visible_templates_query():
@@ -5919,13 +6122,13 @@ def templates_gallery():
 @bp.route('/templates/<template_name>/preview/<path:filepath>')
 def template_preview(template_name, filepath='index.html'):
     """模板预览 —— 用模板 seed_data 渲染."""
-    session['current_template_preview'] = template_name  # 后续 /assets/ 请求需要定位资源目录
     if template_name not in VISIBLE_TEMPLATE_NAMES or not Template.query.filter_by(name=template_name).first():
         abort(404)
-    out = build_template_preview(
-        template_name,
-        base_url=f'/templates/{template_name}/preview',
-    )
+    version = _template_preview_version(template_name)
+    out = _ensure_template_preview(template_name, version)
+    # 构建完成后再让后续资源请求切换到不可变目录，避免读取半成品。
+    session['current_template_preview'] = template_name
+    session['current_template_preview_version'] = version
     full = out / filepath
     if full.is_dir():
         full = full / 'index.html'
@@ -5995,17 +6198,15 @@ def site_new():
         form['template_name'] = request.form.get('template_name', '').strip()
         form['enabled_languages'] = request.form.getlist('enabled_lang')
 
-        # 解析模板：未选时使用第一个可用模板
+        # POST 中只接受用户实际提交且当前可见的模板，不能静默回退到其他模板。
         selected_template = _visible_templates_query().filter_by(name=form['template_name']).first()
-        if not selected_template:
-            selected_template = _visible_templates_query().first()
         selected_languages, selected_default_lang = (
             template_language_options(selected_template.name) if selected_template else ([], 'zh-CN')
         )
         selected_codes = [l.get('code') for l in selected_languages if l.get('code')]
         selected_enabled_langs = [c for c in form.get('enabled_languages', []) if c in selected_codes]
         if not selected_template:
-            error = '暂无可用模板，请联系管理员'
+            error = '所选模板无效或已下架，请返回模板库重新选择'
         elif not form['name']:
             error = '请填写站点名'
         elif not SLUG_PATTERN.match(form['slug']):
@@ -6039,22 +6240,41 @@ def site_new():
                 )
                 from sqlalchemy.exc import IntegrityError
                 db.session.add(site)
+                allocated_site_id = None
                 # #12+#29: flush(触发 INSERT, slug 唯一约束在此生效) 和文件初始化都纳入保护。
                 # 上面虽已查过 slug 唯一性, 但 查→insert 之间存在 TOCTOU(并发建同名 slug),
                 # 唯一约束会抛 IntegrityError; 文件操作也可能失败。两种都回滚 DB + 友好提示, 不 500。
                 try:
                     db.session.flush()  # 拿到 site.id, 但先不 commit
+                    allocated_site_id = site.id
                     site.folder_path = f'sites/{site.id}'
                     init_site_folder(site.id)
-                    copy_seed_data(site.id, selected_template.name)
+                    if not copy_seed_data(site.id, selected_template.name):
+                        raise FileNotFoundError(f'模板缺少 seed_data: {selected_template.name}')
                     settings = read_yaml(site.id, 'settings.yaml') or {}
                     header = settings.setdefault('header', {})
                     header['enabled_languages'] = selected_enabled_langs
                     header.setdefault('language_switcher', {})['enabled'] = len(selected_enabled_langs) > 1
                     write_yaml(site.id, 'settings.yaml', settings)
+                    _write_audit(
+                        user, 'site.create', f'创建站点“{site.name or site.slug}”',
+                        site_id=site.id,
+                        details={
+                            'slug': site.slug,
+                            'template_name': selected_template.name,
+                            'enabled_languages': selected_enabled_langs,
+                        },
+                    )
                     db.session.commit()
+                    # 创建动作已有专用审计，不再追加一次泛化的“内容更新”。
+                    getattr(g, 'site_content_changes', {}).pop(site.id, None)
                 except IntegrityError:
                     db.session.rollback()
+                    if allocated_site_id is not None:
+                        try:
+                            remove_site_folder(allocated_site_id)
+                        except Exception:
+                            current_app.logger.exception('清理建站失败残留目录失败 (site_id=%s)', allocated_site_id)
                     error = f'Slug "{form["slug"]}" 刚被占用，请换一个'
                     if is_fragment:
                         return jsonify({'ok': False, 'error': error})
@@ -6067,6 +6287,11 @@ def site_new():
                                            active='templates')
                 except Exception:
                     db.session.rollback()
+                    if allocated_site_id is not None:
+                        try:
+                            remove_site_folder(allocated_site_id)
+                        except Exception:
+                            current_app.logger.exception('清理建站失败残留目录失败 (site_id=%s)', allocated_site_id)
                     current_app.logger.exception('建站文件初始化失败, 已回滚 DB (slug=%s)', form['slug'])
                     error = '建站失败：文件初始化出错，请重试或联系管理员'
                     if is_fragment:
@@ -6105,69 +6330,34 @@ def site_new():
                            active='templates')
 
 
-@bp.route('/build', methods=['GET', 'POST'])
+@bp.route('/build', methods=['POST'])
 def build():
-    """触发构建当前站点, 跳到预览首页."""
+    """触发构建当前站点并返回预览地址。"""
     _, site = _current_context()
     report = []
     try:
         build_site(site.id, base_url=f'/preview/{site.slug}', report=report)
     except Exception as exc:
         current_app.logger.exception('站点 %s 构建失败', site.id)
-        if request.method == 'POST' or request.args.get('_fragment'):
-            return jsonify({'ok': False, 'error': str(exc), 'report': report}), 500
-        abort(500, f'构建失败: {exc}')
+        return jsonify({'ok': False, 'error': str(exc), 'report': report}), 500
 
-    if request.method == 'POST' or request.args.get('_fragment'):
-        return jsonify({'ok': True, 'preview_url': f'/preview_site/{site.slug}', 'report': report})
-
-    return redirect(url_for('core.preview_site', site_id=site.slug))
+    return jsonify({'ok': True, 'preview_url': f'/preview_site/{site.slug}', 'report': report})
 
 
 @bp.route('/publish', methods=['POST'])
 def publish_site():
-    """构建并发布当前站点，同时记录可追踪的发布状态与时间。"""
+    """正式发布后端接入前保持关闭，避免把临时构建误记为已上线。"""
     user, site = _current_context()
     # 发布=对外生效，属所有权级操作，与改名/删除/恢复对齐：仅站点所有者或平台管理员可发布。
     # 编辑者(editor)只能改内容、交稿，不能替所有者决定新版本上线。
     if user.role != 'admin' and site.owner_id != user.id:
         abort(403, '仅站点所有者可发布站点')
-    report = []
-    try:
-        # 正式产物按域名根目录构建，不能携带 /preview/<id>。使用独立临时目录，
-        # 避免覆盖编辑器正在使用的预览产物；后续 OSS/CDN 上传直接消费此目录。
-        from tempfile import TemporaryDirectory
-        with TemporaryDirectory(prefix=f'publish-{site.id}-') as temp_dir:
-            build_site(site.id, base_url='', report=report,
-                       output_root=Path(temp_dir) / site.slug)
-            if report:
-                message = f'发布检查发现 {len(report)} 个页面或链接问题，请修复后重试'
-                payload = {'ok': False, 'error': message, 'report': report}
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest' \
-                        or request.accept_mimetypes.best == 'application/json':
-                    return jsonify(payload), 422
-                flash(message, 'danger')
-                return redirect(url_for('core.account', section='sites'))
-        site.status = 'published'
-        site.last_published_at = datetime.now(timezone.utc)
-        _write_audit(user, 'site.publish', f'发布站点“{site.name or site.slug}”',
-                     site_id=site.id, details={'report_count': len(report)})
-        db.session.commit()
-    except Exception as exc:
-        db.session.rollback()
-        current_app.logger.exception('站点 %s 发布失败', site.id)
-        return jsonify({'ok': False, 'error': str(exc), 'report': report}), 500
-    payload = {
-        'ok': True,
-        'status': site.status,
-        'published_at': site.last_published_at.isoformat(),
-        'preview_url': f'/preview_site/{site.slug}',
-        'report': report,
-    }
+    message = '正式发布链路尚未接入，当前不会修改站点发布状态；请先使用预览或导出 ZIP'
+    payload = {'ok': False, 'error': message, 'code': 'PUBLISH_BACKEND_UNAVAILABLE'}
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' \
             or request.accept_mimetypes.best == 'application/json':
-        return jsonify(payload)
-    flash(f'站点“{site.name or site.slug}”发布完成', 'success')
+        return jsonify(payload), 503
+    flash(message, 'warning')
     return redirect(url_for('core.account', section='sites'))
 
 
@@ -6286,7 +6476,7 @@ def preview_site(site_id):
 
 @bp.route('/preview_or_build/<site_id>')
 def preview_or_build(site_id):
-    """确保已构建，返回根 index.html（多语言站走 JS 浏览器语言检测）或默认语言首页."""
+    """确保已构建，再跳到与产物 base_url 一致的规范预览地址。"""
     site = _site_from_ref(site_id)
     if not site:
         abort(404)
@@ -6296,21 +6486,11 @@ def preview_or_build(site_id):
     session['current_site_id'] = site.id
     out = Path(current_app.config['OUTPUT_DIR']) / str(site.id)
 
-    # 优先返回根 index.html（多语言站含 JS 浏览器语言检测），
-    # 不存在则回退到默认语言首页（单语言站点无根选择页）
-    root_index = out / 'index.html'
     if _preview_needs_rebuild(site.id, out):
         build_site(site.id, base_url=f'/preview/{site.slug}')
-
-    if (out / 'index.html').exists():
-        return _safe_send_from_directory(out, 'index.html')
-
-    # 回退：单语言站点直接返回首页
-    lang_code = _default_lang_code(site)
-    lang_index = out / lang_code / 'index.html'
-    if lang_index.exists():
-        return _safe_send_from_directory(out / lang_code, 'index.html')
-    return _safe_send_from_directory(out, 'index.html')
+    # 产物里的相对语言链接与静态资源都以 /preview/<slug>/ 为基准；直接在
+    # /preview_or_build/<slug> 下 send_file 会让 zh-CN/ 错解析成另一条路由。
+    return redirect(url_for('core.preview', site_id=site.slug))
 
 
 def _parse_detail_tables_form(form):
@@ -6764,7 +6944,9 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
         (entry.get('label') for entry in list_targets_for_templates if entry.get('target') == dataset_key),
         dataset_key,
     )
-    page_cfg_for_templates = _ensure_page_detail_templates(site.id, dataset_key, page_label_for_templates)
+    page_cfg_for_templates = _ensure_page_detail_templates(
+        site.id, dataset_key, page_label_for_templates, persist=True
+    )
     templates_for_autofill = _detail_templates_for_page(page_cfg_for_templates, dataset_key, page_label_for_templates)
     template_for_autofill = next(
         (tpl for tpl in templates_for_autofill if str(tpl.get('id') or '') == str(fields.get('template_id') or '')),
@@ -7283,7 +7465,7 @@ def detail_templates_panel(dataset_key):
     page = _ensure_page_detail_templates(site.id, dataset_key, page_label)
 
     if request.method == 'POST':
-        page = _ensure_page_detail_templates(site.id, dataset_key, page_label)
+        page = _ensure_page_detail_templates(site.id, dataset_key, page_label, persist=True)
         templates = _detail_templates_for_page(page, dataset_key, page_label)
         action = request.form.get('_template_action', request.form.get('action', '')).strip()
         template_id = request.form.get('template_id', '').strip()
@@ -7329,9 +7511,22 @@ def detail_templates_panel(dataset_key):
             elif len(templates) <= 1:
                 flash('至少需要保留一个详情模板', 'error')
             else:
+                fallback_template_id = _default_detail_template_id(page, dataset_key, page_label)
                 page['detail_templates'] = [tpl for tpl in templates if str(tpl.get('id') or '') != template_id]
                 write_yaml(site.id, f'pages/{dataset_key}.yaml', page)
-                flash('已删除详情模板')
+                migrated = datasets.replace_template_references(
+                    site.id, dataset_key, template_id, fallback_template_id, lang=None
+                )
+                for language in site.enabled_languages or []:
+                    language = str(language or '').strip()
+                    if not language or language == site.default_language:
+                        continue
+                    language_file = lang_root(site.id, language) / 'data' / f'{dataset_key}.yaml'
+                    if language_file.exists():
+                        migrated += datasets.replace_template_references(
+                            site.id, dataset_key, template_id, fallback_template_id, lang=language
+                        )
+                flash(f'已删除详情模板；{migrated} 条内容已切换到默认模板')
                 redirect_args = {'dataset_key': dataset_key, 'site': site.id, 'lang': lang}
                 if not workspace_mode:
                     redirect_args['_fragment'] = '1'
@@ -7341,12 +7536,18 @@ def detail_templates_panel(dataset_key):
             if not source:
                 flash('要编辑的模板不存在', 'error')
             else:
+                module_error = _validate_detail_template_modules_form(request.form)
+                if module_error:
+                    abort(400, module_error)
                 name = request.form.get('name', '').strip()
                 if name:
                     source['name'] = name
                 existing_modules = source.get('modules') if isinstance(source.get('modules'), list) else []
                 modules = _dedupe_detail_singletons(_parse_modules_form(request.form, existing_modules))
                 source['modules'] = modules
+                source['required_fields'] = request.form.getlist('required_fields')
+                source['optional_fields'] = request.form.getlist('optional_fields')
+                _normalize_detail_template_fields(source)
                 seo_title = request.form.get('seo_title', '').strip()
                 seo_description = request.form.get('seo_description', '').strip()
                 seo_image = request.form.get('seo_image', '').strip()
@@ -7402,6 +7603,7 @@ def detail_templates_panel(dataset_key):
                    template_usage=template_usage,
                    style_registry=STYLE_REGISTRY,
                    icon_list=icon_names(),
+                   detail_template_field_options=DETAIL_TEMPLATE_FIELD_OPTIONS,
                    current_lang=lang,
                    languages=languages,
                    default_lang=default_lang,
@@ -7410,20 +7612,90 @@ def detail_templates_panel(dataset_key):
                    active=dataset_key)
 
 
-@bp.route('/_dataset/<path:dataset_key>/new', methods=['POST'])
-def dataset_new(dataset_key):
-    """通用数据集新建条目 — 支持 ?lang= 参数保存到对应语言."""
+@bp.route('/content/templates/<path:dataset_key>/preview')
+def detail_template_preview(dataset_key):
+    """Render a saved detail template against one item without mutating content."""
     _validate_key(dataset_key)
     _, site = _current_context()
-    lang, languages, default_lang = _get_panel_lang(site)
+    lang, _languages, default_lang = _get_panel_lang(site)
     storage_lang = _storage_lang(site, lang, default_lang)
-    page_cfg = _ensure_page_detail_templates(site.id, dataset_key)
-    default_template_id = _default_detail_template_id(page_cfg, dataset_key)
-    n = len(datasets.load(site.id, dataset_key, lang=storage_lang)) + 1
-    new_id = datasets.add(site.id, dataset_key, {
-        'title': f'新条目 {n}', 'slug': f'item-{n}', 'template_id': default_template_id,
-    }, lang=storage_lang)
-    return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
+    settings = read_yaml(site.id, 'settings.yaml') or {}
+    meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
+    meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
+    raw_menu = menu_lib.upgrade_old_format(settings.get('menu') or [], meta.get('datasets', []))
+    page_label = next(
+        (entry.get('label') for entry in menu_lib.collect_list_targets(raw_menu)
+         if entry.get('target') == dataset_key),
+        dataset_key,
+    )
+    page = _ensure_page_detail_templates(site.id, dataset_key, page_label)
+    templates = _detail_templates_for_page(page, dataset_key, page_label)
+    template_id = request.args.get('template_id', '').strip()
+    if not any(str(template.get('id') or '') == template_id for template in templates):
+        abort(404, '详情模板不存在')
+
+    items = datasets.load(site.id, dataset_key, lang=storage_lang)
+    item_id_raw = request.args.get('item_id', '').strip()
+    if item_id_raw and not item_id_raw.isdigit():
+        abort(400, '预览数据 ID 无效')
+    preview_item = next(
+        (item for item in items if int(item.get('id') or 0) == int(item_id_raw)),
+        None,
+    ) if item_id_raw else next((item for item in items if isinstance(item, dict)), None)
+    if preview_item is None and item_id_raw:
+        abort(404, '预览数据不存在')
+    preview_item = copy.deepcopy(preview_item or {
+        'id': 0,
+        'slug': 'template-preview',
+        'title': f'{page_label}模板预览',
+        'summary': '用于检查字段缺失、空值隐藏和组件降级的安全示例数据。',
+        'date': datetime.now().date().isoformat(),
+    })
+    preview_item['template_id'] = template_id
+    preview_item['modules'] = []
+    slug = str(preview_item.get('slug') or f'template-preview-{preview_item.get("id") or 0}').strip()
+    if not SLUG_PATTERN.fullmatch(slug):
+        slug = f'template-preview-{int(preview_item.get("id") or 0)}'
+        preview_item['slug'] = slug
+    draft_items = []
+    replaced = False
+    for item in items:
+        if int(item.get('id') or 0) == int(preview_item.get('id') or 0):
+            draft_items.append(preview_item)
+            replaced = True
+        else:
+            draft_items.append(item)
+    if not replaced:
+        draft_items.append(preview_item)
+    preview_path = menu_lib.find_menu_path(raw_menu, dataset_key)
+    filepath = f'{lang}/{preview_path}/{slug}/index.html'
+    try:
+        html = render_site_page(
+            site.id,
+            filepath=filepath,
+            base_url=f'/live_preview/{site.slug}',
+            draft_data={dataset_key: draft_items},
+        )
+    except FileNotFoundError:
+        abort(404, '当前模板没有可预览的详情页面')
+    except Exception as exc:
+        current_app.logger.exception('详情模板预览失败: %s', exc)
+        abort(500, f'详情模板预览失败: {exc}')
+    return current_app.response_class(html, mimetype='text/html; charset=utf-8')
+
+
+@bp.route('/_dataset/<path:dataset_key>/new', methods=['POST'])
+def dataset_new(dataset_key):
+    """Retired legacy creator: direct callers must use the unified wizard."""
+    _validate_key(dataset_key)
+    _, site = _current_context()
+    lang, _languages, _default_lang = _get_panel_lang(site)
+    return jsonify({
+        'ok': False,
+        'error': '旧新建入口已停用，请从内容中心选择分类和详情模板',
+        'create_url': url_for('core.content_workspace', mode='new', dataset=dataset_key,
+                              site=site.slug, lang=lang),
+    }), 410
 
 @bp.route('/content/edit/<path:dataset_key>/<int:item_id>', methods=['GET', 'POST'], endpoint='content_item_workspace')
 @bp.route('/_dataset/<path:dataset_key>/<int:item_id>/edit', methods=['GET', 'POST'])
@@ -7501,6 +7773,7 @@ def dataset_edit(dataset_key, item_id):
         if not item:
             abort(404, f'数据不存在: {dataset_key}#{item_id}')
         source_item = source_item or item
+    content_version = '' if is_new_content else datasets.item_version(item)
 
     def render_edit(current_item, current_source_item=None):
         blocks = _get_available_blocks(site.template_name)
@@ -7574,6 +7847,7 @@ def dataset_edit(dataset_key, item_id):
                         preview_path=preview_path,
                         detail_templates=detail_templates,
                         default_template_id=default_template_id,
+                        selected_template_id=selected_template_id,
                         detail_requirements=detail_requirements,
                         detail_content_editor_blocks=detail_content_editor_blocks,
                         detail_free_content_enabled=detail_free_content_enabled,
@@ -7587,52 +7861,42 @@ def dataset_edit(dataset_key, item_id):
                         is_duplicate_content=is_duplicate_content,
                         copy_from_id=copy_from_id,
                         dataset_edit_endpoint=dataset_edit_endpoint,
+                        content_version=content_version,
                         page_label=page_label)
 
     if request.method == 'POST':
-        if is_new_content:
-            slug_value = request.form.get('slug', '').strip()
-            title_value = request.form.get('title', '').strip()
-            summary_value = request.form.get('summary', '').strip()
-            media_type_value = request.form.get('media_type', 'image').strip() or 'image'
-            media_fields = {
-                'image': ('cover', 'cover_file', '封面图'),
-                'video': ('video', 'video_file', '视频'),
-                'embed': ('embed_url', 'embed_url_file', '嵌入页面'),
-            }
-            media_name, media_file_name, media_label = media_fields.get(
-                media_type_value, media_fields['image']
-            )
-            media_upload = request.files.get(media_file_name)
-            has_media = bool(
-                request.form.get(media_name, '').strip()
-                or (media_upload and media_upload.filename)
-            )
-            errors = []
-            if not slug_value:
-                errors.append('Slug')
-            elif not re.fullmatch(r'[a-z0-9][a-z0-9-]{1,28}[a-z0-9]', slug_value):
-                errors.append('Slug 格式')
-            elif any(str(existing.get('slug') or '') == slug_value
-                     for existing in datasets.load(site.id, dataset_key, lang=storage_lang)):
-                errors.append('Slug 已存在')
-            if not title_value:
-                errors.append('标题')
-            if not summary_value:
-                errors.append('简介')
-            if not has_media:
-                errors.append(media_label)
-            if errors:
-                draft_item = dict(item)
-                draft_item.update({key: value for key, value in request.form.items()
-                                   if not key.startswith('_') and key != 'csrf_token'})
-                flash('保存失败，请检查：' + '、'.join(errors), 'error')
-                return render_edit(draft_item, draft_item), 400
+        if not is_new_content:
+            submitted_version = request.form.get('_content_version', '').strip()
+            if not submitted_version or submitted_version != datasets.item_version(item):
+                flash('内容已被其他页面修改，请刷新后重新编辑', 'error')
+                return render_edit(item, source_item), 409
 
-        if storage_lang and not datasets.find(site.id, dataset_key, item_id, lang=storage_lang):
-            source_items = datasets.load(site.id, dataset_key, lang=source_storage_lang)
-            if source_items:
-                datasets.save(site.id, dataset_key, source_items, lang=storage_lang)
+        settings_for_validation = read_yaml(site.id, 'settings.yaml') or {}
+        raw_menu_for_validation = settings_for_validation.get('menu') or []
+        targets_for_validation = menu_lib.collect_list_targets(menu_lib.normalize_for_render(raw_menu_for_validation))
+        page_label_for_validation = next(
+            (entry.get('label') for entry in targets_for_validation if entry.get('target') == dataset_key),
+            dataset_key,
+        )
+        page_cfg_for_validation = _ensure_page_detail_templates(
+            site.id, dataset_key, page_label_for_validation, persist=True
+        )
+        templates_for_validation = _detail_templates_for_page(
+            page_cfg_for_validation, dataset_key, page_label_for_validation
+        )
+        default_template_for_validation = _default_detail_template_id(
+            page_cfg_for_validation, dataset_key, page_label_for_validation
+        )
+        submitted_template_id = request.form.get('template_id', '').strip() or str(
+            item.get('template_id') or default_template_for_validation
+        )
+        template_for_validation = next(
+            (template for template in templates_for_validation
+             if str(template.get('id') or '') == submitted_template_id),
+            None,
+        )
+        if template_for_validation is None:
+            abort(400, '所选详情模板不存在或不属于当前内容分类')
         # 用旧数据做底，表单字段覆盖，避免种子字段（name/category/cover 等）被静默删除
         fields = {}
         for key, val in item.items():
@@ -7683,25 +7947,6 @@ def dataset_edit(dataset_key, item_id):
             fields.pop('show_detail_btn', None)
         elif detail_btn_mode in ('true', 'false'):
             fields['show_detail_btn'] = detail_btn_mode == 'true'
-        # slug 唯一性校验
-        new_slug = fields.get('slug', '').strip() or None
-        if new_slug:
-            # 格式校验: slug 会拼进详情页输出路径 {item_path}/{slug}/index.html,
-            # 不校验则 `../../<任意路径>` 可让 builder 把 HTML 写到 output 目录外
-            # (构建期任意文件写入)。复用站点级同一套 SLUG_PATTERN 严格白名单。
-            if not SLUG_PATTERN.match(new_slug):
-                flash(f'Slug "{new_slug}" 格式非法：只能用小写字母、数字、连字符，3-30 字符', 'error')
-                invalid_item = dict(item)
-                invalid_item.update(fields)
-                return render_edit(invalid_item, source_item), 400
-            all_items = datasets.load(site.id, dataset_key, lang=storage_lang)
-            dup = next((it for it in all_items
-                        if it.get('slug') == new_slug and it.get('id') != item_id), None)
-            if dup:
-                flash(f'Slug "{new_slug}" 已被 #{dup["id"]} 使用，请换一个', 'error')
-                invalid_item = dict(item)
-                invalid_item.update(fields)
-                return render_edit(invalid_item, source_item), 400
         # tags: 逗号/空格分隔的字符串 → 列表
         if 'tags' in fields:
             fields['tags'] = _parse_tags_input(fields.get('tags'))
@@ -7786,7 +8031,9 @@ def dataset_edit(dataset_key, item_id):
             (entry.get('label') for entry in list_targets_for_templates if entry.get('target') == dataset_key),
             dataset_key,
         )
-        page_cfg_for_templates = _ensure_page_detail_templates(site.id, dataset_key, page_label_for_templates)
+        page_cfg_for_templates = _ensure_page_detail_templates(
+            site.id, dataset_key, page_label_for_templates, persist=True
+        )
         templates_for_autofill = _detail_templates_for_page(page_cfg_for_templates, dataset_key, page_label_for_templates)
         template_for_autofill = next(
             (tpl for tpl in templates_for_autofill if str(tpl.get('id') or '') == str(fields.get('template_id') or '')),
@@ -7871,15 +8118,35 @@ def dataset_edit(dataset_key, item_id):
             fields['modules'] = []
         # 否则 module_count 不在表单中 → 保留旧 modules 不动
 
+        validation_errors = _validate_content_fields(
+            fields,
+            template_for_validation,
+            datasets.load(site.id, dataset_key, lang=storage_lang),
+            item_id,
+        )
+        if validation_errors:
+            invalid_item = dict(item)
+            invalid_item.update(fields)
+            flash('保存失败，请检查：' + '、'.join(validation_errors), 'error')
+            return render_edit(invalid_item, source_item), 400
+
         if is_new_content:
             item_id = datasets.add(site.id, dataset_key, fields, lang=storage_lang)
             flash('内容已创建并保存')
         else:
             remove_fields = {'show_detail_btn'} if detail_btn_mode == 'inherit' else None
-            datasets.update(
-                site.id, dataset_key, item_id, fields,
-                lang=storage_lang, remove_fields=remove_fields,
-            )
+            try:
+                updated = datasets.update(
+                    site.id, dataset_key, item_id, fields,
+                    lang=storage_lang, remove_fields=remove_fields,
+                    expected_version=request.form.get('_content_version', '').strip(),
+                )
+            except datasets.DatasetConflictError as exc:
+                flash(str(exc), 'error')
+                return render_edit(datasets.find(site.id, dataset_key, item_id, lang=storage_lang) or item,
+                                   source_item), 409
+            if updated is None:
+                abort(404, f'数据不存在: {dataset_key}#{item_id}')
             flash('已保存')
         # 保存后留在当前内容编辑器；统一列表入口已经迁移到“内容列表”。
         redirect_args = {'dataset_key': dataset_key, 'item_id': item_id, 'site': site.id, 'lang': lang}
@@ -7896,7 +8163,8 @@ def dataset_delete(dataset_key, item_id):
     _, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = _storage_lang(site, lang, default_lang)
-    datasets.remove(site.id, dataset_key, item_id, lang=storage_lang)
+    if not datasets.remove(site.id, dataset_key, item_id, lang=storage_lang):
+        abort(404, f'数据不存在: {dataset_key}#{item_id}')
     flash('已删除')
     return redirect(url_for('core.dataset_panel', dataset_key=dataset_key, _fragment='1', site=site.id, lang=lang))
 
@@ -7908,19 +8176,11 @@ def dataset_paste_from(dataset_key, target_id, source_id):
     _, site = _current_context()
     lang, languages, default_lang = _get_panel_lang(site)
     storage_lang = _storage_lang(site, lang, default_lang)
-    items = datasets.load(site.id, dataset_key, lang=storage_lang)
-    source = next((it for it in items if it.get('id') == source_id), None)
-    target = next((it for it in items if it.get('id') == target_id), None)
-    if not source or not target:
+    replacement = datasets.paste_from(
+        site.id, dataset_key, target_id, source_id, lang=storage_lang
+    )
+    if replacement is None:
         return jsonify({'error': '数据不存在'}), 404
-    new_item = copy.deepcopy(source)
-    new_item['id'] = target.get('id')
-    new_item['slug'] = target.get('slug')
-    for i, item in enumerate(items):
-        if item.get('id') == target_id:
-            items[i] = new_item
-            break
-    datasets.save(site.id, dataset_key, items, lang=storage_lang)
     return jsonify({'ok': True})
 
 
@@ -8021,7 +8281,7 @@ def page_panel(page_key):
     if storage_lang and source_page.get('modules') and not (page or {}).get('modules'):
         page = copy.deepcopy(source_page)
 
-    # 迁移：product_grid → data_grid（模块合并后的向后兼容）
+    # 读取时仅在内存中兼容旧模块；用户下次明确保存时再持久化迁移。
     for _pg, _sl in [(page, storage_lang), (source_page, None)]:
         if _pg and _pg.get('modules'):
             _migrated = False
@@ -8029,8 +8289,6 @@ def page_panel(page_key):
                 if mod.get('type') == 'product_grid':
                     mod['type'] = 'data_grid'
                     _migrated = True
-            if _migrated:
-                write_yaml(site.id, f'pages/{page_key}.yaml', _pg, lang=_sl)
 
     if page:
         blocks = _get_available_blocks(site.template_name)
@@ -8051,9 +8309,8 @@ def page_panel(page_key):
                        current_lang=lang, languages=languages, default_lang=default_lang,
                        active=page_key)
 
-    # 没有匹配任何已有内容：自动初始化
+    # 没有匹配任何已有内容：只提供内存默认值，首次保存时再创建文件。
     new_page = {'modules': []}
-    write_yaml(site.id, f'pages/{page_key}.yaml', new_page, lang=storage_lang)
     blocks = _get_available_blocks(site.template_name)
     _merge_block_defaults(new_page.get('modules'), blocks)
     from .style_registry import STYLE_REGISTRY

@@ -2,6 +2,20 @@
 {% block title %}公司信息{% endblock %}
 
 {% block content %}
+<script>
+// 图片可能在页面底部脚本解析前就触发 onerror，因此先注册该处理器。
+function showCompanyImageError(img) {
+  if (!img || !img.parentElement) return;
+  img.style.display = 'none';
+  var container = img.parentElement;
+  if (container.querySelector('.image-error-placeholder')) return;
+  var errorEl = document.createElement('div');
+  errorEl.className = 'image-error-placeholder';
+  errorEl.style.cssText = 'min-width:44px;min-height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px dashed #e5e7eb;border-radius:0;background:#fef2f2;padding:6px 10px;font-size:14px;color:#dc3545;white-space:nowrap';
+  errorEl.textContent = '图片加载失败';
+  container.insertBefore(errorEl, container.firstChild);
+}
+</script>
 <div class="d-flex align-items-center justify-content-between mb-3">
   <span class="fw-semibold">公司信息</span>
 </div>
@@ -141,19 +155,6 @@ function enlargeCompanyLogo(img) {
 }
 
 // 图片加载失败时显示占位提示，而不是隐藏整个预览区（防止容器塌陷、移除按钮飘出）
-function showCompanyImageError(img) {
-  if (!img || !img.parentElement) return;
-  img.style.display = 'none';
-  var container = img.parentElement;
-  // 检查是否已有错误占位符
-  if (container.querySelector('.image-error-placeholder')) return;
-  var errorEl = document.createElement('div');
-  errorEl.className = 'image-error-placeholder';
-  errorEl.style.cssText = 'min-width:44px;min-height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px dashed #e5e7eb;border-radius: 0;background:#fef2f2;padding:6px 10px;font-size:14px;color:#dc3545;white-space:nowrap';
-  errorEl.textContent = '图片加载失败';
-  container.insertBefore(errorEl, container.firstChild);
-}
-
 // 清除错误占位符（上传新文件时调用）
 function clearCompanyImageError(container) {
   var placeholder = container.querySelector('.image-error-placeholder');

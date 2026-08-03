@@ -3,6 +3,32 @@
 > 本文档讲**怎么把应用在一台新机器上跑起来、并建好能登录的管理员**。
 > 站点产物去哪、CDN/SSL 见 [infrastructure.md](infrastructure.md)。
 
+> [!CAUTION]
+> **当前版本尚未通过生产验收，不得按本文现有步骤直接暴露到公网。**
+> 2026-08-03 验收发现的 P0/P1 配置、安全、依赖、Git 数据和测试问题，必须先按
+> [全项目验收报告（2026-08-03）](acceptance-20260803.md) 修复并完成正式复验。
+
+## 零、正式部署门禁
+
+部署操作开始前，负责人必须逐项确认：
+
+- [ ] [验收报告](acceptance-20260803.md) 中所有 P0/P1 已修复并复验通过。
+- [ ] [建站至发布专项验收](acceptance-site-lifecycle-20260803.md) 中所有 LIFE-P0/P1 已修复并复验通过。
+- [x] [内容模板与内容 CRUD 专项验收](acceptance-content-workflow-20260803.md) 中本轮全部 CONTENT-P1 已修复，并通过隔离后端与真实 Chromium 复验。
+- [ ] `/publish` 已完成持久化版本、OSS/CDN 上传、公网回读和原子切换；不得只改数据库状态。
+- [ ] `FLASK_ENV=production`、`FLASK_DEBUG=0`。
+- [ ] `PREVIEW_REQUIRE_LOGIN=1`、`EXPORT_SKIP_LINK_CHECK=0`。
+- [ ] `PLATFORM_DOMAIN`、`DATABASE_URL`、可信代理层数已按生产环境配置。
+- [ ] Session Cookie 带 `Secure`、`HttpOnly`、`SameSite=Lax`。
+- [ ] CSRF 外部 Referer 不会产生外部重定向。
+- [ ] WSGI 服务和数据库驱动已经纳入部署依赖；全新机器从零安装成功。
+- [ ] `sites/` 已解除 Git 跟踪并建立独立备份/恢复流程。
+- [ ] 修复后的自动化测试全部通过。
+- [ ] 真实浏览器、SMTP/短信、OSS/CDN、DNS、SSL、备份恢复已复验。
+- [ ] 发布后编辑能显示“有未发布变更”，发布历史和回滚已完成故障演练。
+
+任一项未通过，都不能进入正式发布步骤。
+
 ## 一、为什么需要这份文档
 
 代码部署 ≠ 能登录。这两件事是分开的：
@@ -42,8 +68,10 @@ flask --app run scan-templates
 # 6. 【关键】创建一个能密码登录的平台管理员
 flask --app run ensure-admin <你的邮箱> <你的密码>
 
-# 7. 正式启动
+# 7. 当前仅用于本机验证启动，不是获准的生产启动方式
 python run.py
+# 正式部署前必须先按“零、正式部署门禁”补齐并验证 WSGI 服务；
+# 生产启动命令在确定 Linux/Windows 部署方案后写入本文，禁止临时沿用 Flask 开发服务器。
 ```
 
 完成后，用第 6 步的邮箱 + 密码即可登录后台。
@@ -82,3 +110,5 @@ flask --app run ensure-admin mw_admin@dengtec.com <密码>
 - **`.env` 单独配**：生产的 SECRET_KEY、短信/邮件密钥都放生产机的 `.env`，绝不提交。
 - **`FLASK_DEBUG` 不要开**：生产环境关闭调试模式。
 - 把第二节的步骤 6（`ensure-admin`）写进你的部署脚本，避免每次手动忘记。
+- **不要用 `python run.py` 承担公网生产流量**：当前命令只用于初始化和本机验证；正式方案必须使用已纳入依赖和服务管理的 WSGI 服务。
+- **不要跳过验收门禁**：每次正式部署都要回到本文第零节和 [2026-08-03 验收报告](acceptance-20260803.md) 逐项复核。

@@ -2936,10 +2936,10 @@ def _extract_products_items(data):
     return []
 
 
-def build_template_preview(template_name, base_url=''):
+def build_template_preview(template_name, base_url='', output_root=None):
     """用模板的 seed_data 构建一个预览站点 (不需要真实 site).
 
-    输出到 output/_preview/<template_name>/.
+    默认输出到 output/_preview/<template_name>/，也可由调用方指定隔离目录。
     支持多语言模板.
     """
     tpl_root, tpl_html_dir, tpl_static_dir = _template_paths(template_name)
@@ -2971,7 +2971,8 @@ def build_template_preview(template_name, base_url=''):
     _enable_da = current_app.config.get('ENABLE_DATA_ATTR_BLOCKS', False)
     env.globals['render_block'] = _make_render_block(env, tpl_root, template_name, _enable_da)
 
-    output_root = Path(current_app.config['OUTPUT_DIR']) / '_preview' / template_name
+    output_root = (Path(output_root) if output_root is not None
+                   else Path(current_app.config['OUTPUT_DIR']) / '_preview' / template_name)
     # Windows 下 rmtree 极易因文件锁定/目录竞态抛异常；
     # 清理失败无所谓，后面 copytree(dirs_exist_ok=True) 会原地覆盖写入。
     if output_root.exists():

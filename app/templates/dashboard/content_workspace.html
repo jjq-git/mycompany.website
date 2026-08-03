@@ -247,7 +247,94 @@
     } else filter();
   })();
   {% elif mode == 'new' %}
-  (()=>{let dataset='';const categoryStep=document.getElementById('categoryStep'),templateStep=document.getElementById('templateStep'),toTemplates=document.getElementById('toTemplates'),create=document.getElementById('createContent'),error=document.getElementById('wizardError');document.querySelectorAll('[data-choice="dataset"]').forEach(card=>card.addEventListener('click',()=>{document.querySelectorAll('[data-choice="dataset"]').forEach(x=>x.classList.remove('selected'));card.classList.add('selected');dataset=card.querySelector('input').value;toTemplates.disabled=false}));toTemplates.addEventListener('click',()=>{categoryStep.style.display='none';templateStep.style.display='block';document.getElementById('stepOne').classList.remove('active');document.getElementById('stepOne').classList.add('done');document.getElementById('stepTwo').classList.add('active');document.querySelectorAll('[data-dataset-template]').forEach(x=>{x.style.display=x.dataset.datasetTemplate===dataset?'':'none';x.classList.remove('selected');x.querySelector('input').checked=false});create.disabled=true});document.getElementById('backToCategories').addEventListener('click',()=>{templateStep.style.display='none';categoryStep.style.display='block';document.getElementById('stepOne').classList.add('active');document.getElementById('stepOne').classList.remove('done');document.getElementById('stepTwo').classList.remove('active')});document.querySelectorAll('[data-dataset-template]').forEach(card=>card.addEventListener('click',()=>{document.querySelectorAll('[data-dataset-template]').forEach(x=>x.classList.remove('selected'));card.classList.add('selected');create.disabled=!siteCanEdit}));create.addEventListener('click',async()=>{if(!siteCanEdit){error.textContent='当前账号为只读权限，无法创建内容';error.style.display='block';create.disabled=true;return}const selected=document.querySelector('input[name="template_id"]:checked');if(!selected)return;create.disabled=true;create.textContent='正在打开编辑器...';error.style.display='none';const body=new FormData();body.append('csrf_token',document.querySelector('meta[name="csrf-token"]').content);body.append('dataset_key',dataset);body.append('template_id',selected.value);try{const response=await fetch('/content/create?site='+siteId+'&lang='+encodeURIComponent(currentLang),{method:'POST',headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'},body});const data=await response.json();if(!response.ok||!data.ok)throw new Error(data.error||'无法打开编辑器');document.getElementById('stepTwo').classList.remove('active');document.getElementById('stepTwo').classList.add('done');document.getElementById('stepThree').classList.add('active');location.href=data.editor_url}catch(e){error.textContent=e.message;error.style.display='block';create.disabled=!siteCanEdit;create.textContent='下一步：编辑内容'}});})();
+  (() => {
+    let dataset = '';
+    const initialDataset = {{ initial_dataset | default('') | tojson }};
+    const categoryStep = document.getElementById('categoryStep');
+    const templateStep = document.getElementById('templateStep');
+    const toTemplates = document.getElementById('toTemplates');
+    const create = document.getElementById('createContent');
+    const error = document.getElementById('wizardError');
+    const categoryCards = [...document.querySelectorAll('[data-choice="dataset"]')];
+    const templateCards = [...document.querySelectorAll('[data-dataset-template]')];
+
+    function selectCategory(card) {
+      categoryCards.forEach(entry => entry.classList.remove('selected'));
+      card.classList.add('selected');
+      const input = card.querySelector('input');
+      input.checked = true;
+      dataset = input.value;
+      toTemplates.disabled = false;
+    }
+
+    categoryCards.forEach(card => card.addEventListener('click', () => selectCategory(card)));
+    if (initialDataset) {
+      const initialCard = categoryCards.find(card => card.querySelector('input').value === initialDataset);
+      if (initialCard) selectCategory(initialCard);
+    }
+
+    toTemplates.addEventListener('click', () => {
+      categoryStep.style.display = 'none';
+      templateStep.style.display = 'block';
+      document.getElementById('stepOne').classList.remove('active');
+      document.getElementById('stepOne').classList.add('done');
+      document.getElementById('stepTwo').classList.add('active');
+      templateCards.forEach(card => {
+        card.style.display = card.dataset.datasetTemplate === dataset ? '' : 'none';
+        card.classList.remove('selected');
+        card.querySelector('input').checked = false;
+      });
+      create.disabled = true;
+    });
+    document.getElementById('backToCategories').addEventListener('click', () => {
+      templateStep.style.display = 'none';
+      categoryStep.style.display = 'block';
+      document.getElementById('stepOne').classList.add('active');
+      document.getElementById('stepOne').classList.remove('done');
+      document.getElementById('stepTwo').classList.remove('active');
+    });
+    templateCards.forEach(card => card.addEventListener('click', () => {
+      templateCards.forEach(entry => entry.classList.remove('selected'));
+      card.classList.add('selected');
+      card.querySelector('input').checked = true;
+      create.disabled = !siteCanEdit;
+    }));
+    create.addEventListener('click', async () => {
+      if (!siteCanEdit) {
+        error.textContent = '当前账号为只读权限，无法创建内容';
+        error.style.display = 'block';
+        create.disabled = true;
+        return;
+      }
+      const selected = document.querySelector('input[name="template_id"]:checked');
+      if (!selected) return;
+      create.disabled = true;
+      create.textContent = '正在打开编辑器...';
+      error.style.display = 'none';
+      const body = new FormData();
+      body.append('csrf_token', document.querySelector('meta[name="csrf-token"]').content);
+      body.append('dataset_key', dataset);
+      body.append('template_id', selected.value);
+      try {
+        const response = await fetch('/content/create?site=' + siteId + '&lang=' + encodeURIComponent(currentLang), {
+          method: 'POST',
+          headers: {'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+          body
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || '无法打开编辑器');
+        document.getElementById('stepTwo').classList.remove('active');
+        document.getElementById('stepTwo').classList.add('done');
+        document.getElementById('stepThree').classList.add('active');
+        location.href = data.editor_url;
+      } catch (exception) {
+        error.textContent = exception.message;
+        error.style.display = 'block';
+        create.disabled = !siteCanEdit;
+        create.textContent = '下一步：编辑内容';
+      }
+    });
+  })();
   {% else %}
   (()=>{const search=document.getElementById('templateSearch'),navs=[...document.querySelectorAll('[data-template-nav]')],groups=[...document.querySelectorAll('[data-template-group]')];if(!search||!navs.length)return;let active=navs.find(x=>x.classList.contains('active'))?.dataset.templateNav||navs[0].dataset.templateNav;function groupFor(key){return groups.find(x=>x.dataset.templateGroup===key)}function select(key){active=key;navs.forEach(nav=>nav.classList.toggle('active',nav.dataset.templateNav===key));groups.forEach(group=>group.hidden=group.dataset.templateGroup!==key);filterCards()}function filterCards(){const q=search.value.trim().toLowerCase(),group=groupFor(active);if(!group)return;const categoryMatches=!q||(group.dataset.templateSearch||'').includes(q);group.querySelectorAll('[data-template-card-search]').forEach(card=>card.hidden=!categoryMatches&&!(card.dataset.templateCardSearch||'').includes(q))}function filter(){const q=search.value.trim().toLowerCase();navs.forEach(nav=>{const group=groupFor(nav.dataset.templateNav),matches=!q||(nav.dataset.templateSearch||'').includes(q)||(group&&group.textContent.toLowerCase().includes(q));nav.hidden=!matches});const activeNav=navs.find(nav=>nav.dataset.templateNav===active);if(!activeNav||activeNav.hidden){const first=navs.find(nav=>!nav.hidden);if(first)select(first.dataset.templateNav);else groups.forEach(group=>group.hidden=true)}else select(active)}navs.forEach(nav=>nav.addEventListener('click',()=>select(nav.dataset.templateNav)));search.addEventListener('input',filter);select(active)})();
   {% endif %}

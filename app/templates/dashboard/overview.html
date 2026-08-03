@@ -21,9 +21,13 @@
   .overview-status svg{width:15px;height:15px}
   .overview-status.published{background:#dcfce7;color:#15803d}.overview-status.suspended{background:#fee2e2;color:#b91c1c}
   .overview-role{background:#e5f5f4;color:#087f76}
-  .overview-site-url{display:flex;align-items:center;gap:7px;margin-top:8px;color:#718096;font-size:13px}
-  .overview-site-url svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2}
-  .overview-site-url a{color:inherit;text-decoration:none}.overview-site-url a:hover{color:var(--theme-primary)}
+  .overview-fact-address{display:block;color:#334155;text-decoration:none;overflow-wrap:anywhere}.overview-fact-address:hover{color:var(--theme-primary)}
+  .overview-domain-state{display:flex;align-items:center;gap:7px!important;flex-wrap:wrap}
+  .overview-domain-status{display:inline-flex;align-items:center;gap:6px;color:#92400e;font-size:12px}.overview-domain-status::before{width:6px;height:6px;background:#d97706;content:""}
+  .overview-domain-status.ready{color:#15803d}.overview-domain-status.ready::before{background:#22c55e}
+  .overview-domain-action{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;background:#e5f5f4;color:#087f76;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap}
+  .overview-domain-action:hover{background:#cdeeea;color:#066c65}
+  .overview-domain-action svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2}
   .overview-hero-actions{display:flex;align-items:center;gap:9px;flex:0 0 auto}
   .overview-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:0 14px;border:1px solid #cbd5df;background:#fff;color:#334155;text-decoration:none;cursor:pointer}
   .overview-btn:hover{border-color:var(--theme-primary);color:var(--theme-primary);background:#f0fdfa}.overview-btn.primary{border-color:var(--theme-primary);background:var(--theme-primary);color:#fff}
@@ -64,7 +68,6 @@
           <span class="overview-status {{ site.status }}" title="{{ {'draft':'草稿','published':'已发布','suspended':'已暂停'}.get(site.status,site.status) }}" aria-label="{{ {'draft':'草稿','published':'已发布','suspended':'已暂停'}.get(site.status,site.status) }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{% if site.status == 'published' %}<path d="m5 12 4 4L19 6"/>{% elif site.status == 'suspended' %}<circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>{% else %}<path d="M12 20h9"/><path d="m16.5 3.5 4 4L8 20H4v-4z"/>{% endif %}</svg></span>
           {% if role_label %}<span class="overview-role">{{ role_label }}</span>{% endif %}
         </div>
-        <div class="overview-site-url"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg><a href="{{ url_for('core.preview_site', site_id=site.id) }}" target="_blank">{{ site.slug }}.{{ platform_domain }}</a></div>
       </div>
     </div>
     <div class="overview-hero-actions">
@@ -114,6 +117,8 @@
           <div><dt>模板版本</dt><dd>{{ site.template_version or '—' }}</dd></div>
           <div><dt>最近更新</dt><dd>{{ site.updated_at.strftime('%Y-%m-%d %H:%M') if site.updated_at else '—' }}</dd></div>
           <div><dt>最近发布</dt><dd>{{ site.last_published_at.strftime('%Y-%m-%d %H:%M') if site.last_published_at else '尚未发布' }}</dd></div>
+          <div class="overview-address-fact"><dt>访问地址</dt><dd>{% if site.custom_domain %}<a class="overview-fact-address" href="https://{{ site.custom_domain }}" target="_blank" rel="noopener">{{ site.custom_domain }}</a>{% else %}<a class="overview-fact-address" href="{{ url_for('core.preview_site', site_id=site.id) }}" target="_blank">{{ site.slug }}.{{ platform_domain }}</a>{% endif %}</dd></div>
+          <div class="overview-domain-fact"><dt>独立域名</dt><dd class="overview-domain-state">{% if site.custom_domain %}<span class="overview-domain-status ready">已绑定</span>{% else %}<span class="overview-domain-status">未绑定</span><a class="overview-domain-action" href="{{ url_for('core.account', section='sites', edit=site.id) }}" onclick="if(typeof openAccountWorkspaceUrl==='function'){openAccountWorkspaceUrl(this.getAttribute('href'));return false;}" title="在当前工作台中绑定独立域名"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1"/></svg>绑定域名</a>{% endif %}</dd></div>
         </dl>
       </article>
       <article class="overview-card">

@@ -37,6 +37,15 @@ mycompany.website 的设计文档。面向创始人 / 协作者，不面向编�
 | [site-creation-manual.md](site-creation-manual.md) | 建站操作手册：CLI 命令、后台操作、完整流程 |
 | [deployment.md](deployment.md) | 部署与初始化：新机器/云服务器跑起来、建可登录的管理员 |
 
+## 验收与审查
+
+| 文档 | 说明 |
+| --- | --- |
+| [acceptance-20260803.md](acceptance-20260803.md) | **当前生产部署门禁**：2026-08-03 全项目验收结论、P0/P1 整改项与正式复验清单 |
+| [acceptance-site-lifecycle-20260803.md](acceptance-site-lifecycle-20260803.md) | **建站至发布专项门禁**：模板选择、创建、编辑、构建、导出、权限、发布状态与回滚验收 |
+| [acceptance-content-workflow-20260803.md](acceptance-content-workflow-20260803.md) | **内容管理专项门禁**：详情模板、新建/修改/复制/删除、多语言、组件、浏览器与构建验收 |
+| [code-audit-20260609.md](code-audit-20260609.md) | 2026-06-09 代码安全与健壮性审查历史记录 |
+
 ## 待办
 
 | 文档                           | 说明                                         |

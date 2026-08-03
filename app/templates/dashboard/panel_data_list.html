@@ -315,6 +315,7 @@
 {# ---- 已选模块列表 ---- #}
 <form method="post" action="{{ url_for(dataset_edit_endpoint, dataset_key=dataset_key, item_id=edit_item_id, site=site.id, lang=current_lang, **({'_fragment':'1'} if not workspace_mode else {})) }}" id="datasetEditForm" class="dataset-edit-form" data-page-key="{{ dataset_key }}" data-no-auto-save="1" enctype="multipart/form-data" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if content_version | default('') %}<input type="hidden" name="_content_version" value="{{ content_version }}">{% endif %}
   {% if copy_from_id | default(0) %}<input type="hidden" name="_copy_from" value="{{ copy_from_id }}">{% endif %}
   <input type="hidden" name="_draft_dataset_key" value="{{ dataset_key }}">
   <input type="hidden" name="_draft_item_id" value="{{ edit_item_id }}">
@@ -325,7 +326,7 @@
   <div class="ds-card ds-template-card">
     <div class="ds-card-body ds-template-row ds-template-card__body">
       <label class="form-label mb-0">详情模板</label>
-      {% set current_template_id = edit_item.template_id | default(default_template_id) %}
+      {% set current_template_id = selected_template_id | default(edit_item.template_id | default(default_template_id)) %}
       <div class="ds-template-options" id="detailTemplateSelect">
         {% for tpl in detail_templates | default([]) %}
         {% set tpl_id = tpl.id | default(tpl.get('id')) %}
@@ -379,7 +380,7 @@
         <div class="ds-basic-full ds-basic-meta-grid">
           <div>
             <label class="form-label">Slug <span class="text-danger">*</span></label>
-            <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required minlength="3" maxlength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" title="只能用小写字母、数字、连字符，3-30 字符，不能以连字符开头或结尾">
+            <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required minlength="3" maxlength="30" pattern="[a-z0-9][a-z0-9\-]{1,28}[a-z0-9]" title="只能用小写字母、数字、连字符，3-30 字符，不能以连字符开头或结尾">
           </div>
           <div>
             <label class="form-label">标题 <span class="text-danger">*</span></label>
@@ -411,8 +412,9 @@
           </div>
         </div>
         <div class="ds-basic-full">
-          <label class="form-label">简介 <span class="text-danger">*</span></label>
-          <textarea class="form-control form-control-sm" name="summary" rows="2" required>{{ edit_item.summary or edit_item.description or edit_item.excerpt or '' }}</textarea>
+          {% set summary_required = 'summary' in (current_req.get('_required_fields') or []) %}
+          <label class="form-label">简介 <span class="text-danger dynamic-required-marker" data-required-marker="summary"{% if not summary_required %} style="display:none"{% endif %}>*</span></label>
+          <textarea class="form-control form-control-sm" name="summary" rows="2"{% if summary_required %} required{% endif %}>{{ edit_item.summary or edit_item.description or edit_item.excerpt or '' }}</textarea>
         </div>
         <div class="ds-basic-full detail-actions-basic" id="detailActionFields">
           <div class="detail-actions-basic-head">
@@ -457,7 +459,7 @@
         {% endif %}
         <div class="ds-media-fields-col"{% if not allow_primary_rich_media %} style="grid-column:1/-1"{% endif %}>
     <div class="dataset-media-field" data-media-kind="image" style="{% if item_media_type != 'image' %}display:none{% endif %}">
-      <label class="form-label">封面图 <span class="text-danger">*</span></label>
+      <label class="form-label">封面图 <span class="text-danger dynamic-required-marker" data-required-marker="media"{% if 'media' not in (current_req.get('_required_fields') or []) %} style="display:none"{% endif %}>*</span></label>
       {% set cover_val = edit_item.cover or edit_item.image or edit_item.photo or edit_item.logo or '' %}
       <div class="module-media-tools mt-1">
         <label class="module-media-picker{% if cover_val %} has-media{% endif %}" title="点击上传">
@@ -481,7 +483,7 @@
     </div>
     {% if allow_primary_rich_media %}
     <div class="dataset-media-field" data-media-kind="video" style="{% if item_media_type != 'video' %}display:none{% endif %}">
-      <label class="form-label">视频 <span class="text-danger">*</span></label>
+      <label class="form-label">视频 <span class="text-danger dynamic-required-marker" data-required-marker="media"{% if 'media' not in (current_req.get('_required_fields') or []) %} style="display:none"{% endif %}>*</span></label>
       <div class="module-media-tools mt-1">
         <label class="module-media-picker{% if edit_item.video %} has-media{% endif %}" title="点击上传">
           {% if edit_item.video %}
@@ -501,7 +503,7 @@
       <div class="form-text">仅支持上传视频或 MP4/WebM/OGG/MOV 文件直链，不支持视频网页或分享链接。</div>
     </div>
     <div class="dataset-media-field" data-media-kind="embed" style="{% if item_media_type != 'embed' %}display:none{% endif %}">
-      <label class="form-label">嵌入页面 <span class="text-danger">*</span></label>
+      <label class="form-label">嵌入页面 <span class="text-danger dynamic-required-marker" data-required-marker="media"{% if 'media' not in (current_req.get('_required_fields') or []) %} style="display:none"{% endif %}>*</span></label>
       <div class="module-media-layout">
         <div class="module-media-tools">
           <label class="module-media-picker{% if edit_item.embed_url %} has-media{% endif %}" title="上传网页包 ZIP">
@@ -1145,9 +1147,35 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     return control ? (control.value || 'image') : 'image';
   }
 
+  function selectedTemplateRequirements() {
+    if (!datasetForm) return {};
+    var selected = datasetForm.querySelector('input[name="template_id"]:checked');
+    var templateId = selected ? selected.value : '';
+    return DETAIL_REQUIREMENTS[templateId] || {};
+  }
+
+  function applyTemplateRequiredState(requirements) {
+    if (!datasetForm) return;
+    requirements = requirements || selectedTemplateRequirements();
+    var requiredFields = requirements._required_fields || ['slug', 'title'];
+    ['slug', 'title', 'summary'].forEach(function(name) {
+      var input = datasetForm.querySelector('[name="' + name + '"]');
+      if (input) input.required = requiredFields.indexOf(name) >= 0;
+      datasetForm.querySelectorAll('[data-required-marker="' + name + '"]').forEach(function(marker) {
+        marker.style.display = requiredFields.indexOf(name) >= 0 ? '' : 'none';
+      });
+    });
+    datasetForm.querySelectorAll('[data-required-marker="media"]').forEach(function(marker) {
+      marker.style.display = requiredFields.indexOf('media') >= 0 ? '' : 'none';
+    });
+    updateDatasetMediaRequiredState();
+  }
+
   function updateDatasetMediaRequiredState() {
     if (!datasetForm) return null;
     var mediaType = selectedDatasetMediaType();
+    var requiredFields = selectedTemplateRequirements()._required_fields || ['slug', 'title'];
+    var mediaRequired = requiredFields.indexOf('media') >= 0;
     var activeField = null;
     datasetForm.querySelectorAll('.dataset-media-field').forEach(function(field) {
       var active = field.getAttribute('data-media-kind') === mediaType;
@@ -1156,9 +1184,9 @@ window._dsEditItemJson = {{ edit_item | tojson }};
       if (!valueInput) return;
       var hasValue = !!valueInput.value.trim();
       var hasFile = !!(fileInput && fileInput.files && fileInput.files.length);
-      var missing = active && !hasValue && !hasFile;
+      var missing = mediaRequired && active && !hasValue && !hasFile;
       valueInput.setCustomValidity(missing ? '请上传或选择' + valueInput.getAttribute('data-media-required-label') : '');
-      valueInput.setAttribute('aria-required', active ? 'true' : 'false');
+      valueInput.setAttribute('aria-required', mediaRequired && active ? 'true' : 'false');
       field.classList.toggle('media-required-invalid', missing);
       if (active) activeField = valueInput;
     });
@@ -1201,6 +1229,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     });
     datasetForm.addEventListener('input', updateDatasetMediaRequiredState);
     datasetForm.addEventListener('change', updateDatasetMediaRequiredState);
+    applyTemplateRequiredState();
   }
   var blockLibrary = JSON.parse(document.getElementById('blockLibraryDsJson').textContent || '[]');
   window.blockLibrary = blockLibrary;
@@ -1371,6 +1400,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     updateDetailTableFields(detailTableConfigs);
     updateDetailSpecFields(detailSpecConfigs);
     updateDetailColumnsFields(detailColumnsConfigs);
+    applyTemplateRequiredState(req);
   }
 
   // 图文列多组显隐：整块 section 由组数决定显隐，每组按 configs[idx] 显隐并更新标题
@@ -2114,9 +2144,8 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   };
   window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getSiteQuery()); };
   window.addDataItem = function() {
-    fetch('/_dataset/' + DATASET_KEY + '/new?' + getSiteQuery().replace(/^&/, ''), {method: 'POST'})
-      .then(function() { loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getSiteQuery()); })
-      .catch(function() { location.reload(); });
+    window.location.href = '/content/workspace?mode=new&dataset=' + encodeURIComponent(DATASET_KEY)
+      + '&site=' + encodeURIComponent(SITE_ID) + '&lang=' + encodeURIComponent('{{ current_lang }}');
   };
   window.deleteDataItem = function(id) {
     if (!confirm('确认删除？')) return;
@@ -2359,6 +2388,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 {# ========== 编辑模式：简单表单（无 blocks） ========== #}
 <form method="post" action="{{ url_for(dataset_edit_endpoint, dataset_key=dataset_key, item_id=edit_item_id, site=site.id, lang=current_lang, **({'_fragment':'1'} if not workspace_mode else {})) }}" id="datasetEditForm" data-page-key="{{ dataset_key }}" data-no-auto-save="1" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if content_version | default('') %}<input type="hidden" name="_content_version" value="{{ content_version }}">{% endif %}
   <input type="hidden" name="_draft_dataset_key" value="{{ dataset_key }}">
   <input type="hidden" name="_draft_item_id" value="{{ edit_item_id }}">
   <input type="hidden" name="_draft_preview_path" value="{{ preview_path }}">
@@ -2366,7 +2396,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   {% set detail_btn_mode = 'inherit' if detail_btn_raw is none else ('true' if detail_btn_raw is sameas true or (detail_btn_raw|string|lower) == 'true' else 'false') %}
   <div class="mb-2">
     <label class="form-label small mb-1 text-muted">slug <span class="text-danger">*</span></label>
-    <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required minlength="3" maxlength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" title="只能用小写字母、数字、连字符，3-30 字符，不能以连字符开头或结尾" placeholder="如 my-post">
+    <input type="text" class="form-control form-control-sm font-monospace" name="slug" value="{{ edit_item.slug or '' }}" required minlength="3" maxlength="30" pattern="[a-z0-9][a-z0-9\-]{1,28}[a-z0-9]" title="只能用小写字母、数字、连字符，3-30 字符，不能以连字符开头或结尾" placeholder="如 my-post">
   </div>
   <div class="mb-2"><label class="form-label small mb-1 text-muted">日期</label><input type="date" class="form-control form-control-sm" name="date" value="{{ edit_item.date or '' }}"></div>
   <div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="title" value="{{ edit_item.title or '' }}"></div>
@@ -2525,9 +2555,8 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   };
   window.openEditItem = function(id) { loadPanel('/_dataset/' + DATASET_KEY + '/' + id + '/edit?_fragment=1' + getQuery()); };
   window.addDataItem = function() {
-    fetch('/_dataset/' + DATASET_KEY + '/new' + getFetchQuery(), {method: 'POST'})
-      .then(function() { loadPanel('/_dataset/' + DATASET_KEY + '?_fragment=1' + getQuery()); })
-      .catch(function() { location.reload(); });
+    window.location.href = '/content/workspace?mode=new&dataset=' + encodeURIComponent(DATASET_KEY)
+      + '&site=' + encodeURIComponent(SITE_ID) + '&lang=' + encodeURIComponent(CURRENT_LANG);
   };
   window.deleteDataItem = function(id) {
     if (!confirm('确认删除？')) return;
@@ -2582,11 +2611,8 @@ window._dsEditItemJson = {{ edit_item | tojson }};
 
   if (typeof window.addDataItem !== 'function') {
     window.addDataItem = function() {
-      var qs = '?site=' + encodeURIComponent(siteId);
-      if (langCode) qs += '&lang=' + encodeURIComponent(langCode);
-      fetch('/_dataset/' + dsKey + '/new' + qs, {method: 'POST'})
-        .then(function() { location.reload(); })
-        .catch(function() { location.reload(); });
+      window.location.href = '/content/workspace?mode=new&dataset=' + encodeURIComponent(dsKey)
+        + '&site=' + encodeURIComponent(siteId) + '&lang=' + encodeURIComponent(langCode);
     };
   }
   if (typeof window.backToPageEditor !== 'function') {

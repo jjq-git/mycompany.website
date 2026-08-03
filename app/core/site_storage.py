@@ -20,7 +20,7 @@ import tempfile
 from pathlib import Path
 
 import yaml
-from flask import abort, current_app
+from flask import abort, current_app, g, has_request_context, request
 from werkzeug.utils import secure_filename
 
 
@@ -110,6 +110,30 @@ def init_site_folder(site_id):
     return folder
 
 
+def remove_site_folder(site_id):
+    """Remove exactly one site's storage directory after a failed creation.
+
+    The resolved-path check keeps cleanup scoped to a direct child of SITES_DIR,
+    even if this helper is ever called with an unexpected identifier.
+    """
+    base = Path(current_app.config['SITES_DIR']).resolve()
+    folder = site_root(site_id).resolve()
+    if folder.parent != base:
+        raise ValueError('Refusing to remove a path outside SITES_DIR')
+    if folder.exists():
+        shutil.rmtree(folder)
+
+
+def mark_site_content_changed(site_id, relative_path):
+    """Record a successful request-scoped content mutation for DB/audit sync."""
+    if not has_request_context() or request.method not in {'POST', 'PUT', 'PATCH', 'DELETE'}:
+        return
+    changes = getattr(g, 'site_content_changes', None)
+    if changes is None:
+        changes = g.site_content_changes = {}
+    changes.setdefault(int(site_id), set()).add(str(relative_path))
+
+
 def write_yaml(site_id, relative_path, data, lang=None):
     """写 YAML 文件到 sites/<id>/<relative_path>.
 
@@ -130,6 +154,7 @@ def write_yaml(site_id, relative_path, data, lang=None):
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp, path)  # 同目录原子替换, 替换前后目标始终是完整文件
+        mark_site_content_changed(site_id, f'lang/{lang}/{relative_path}' if lang else relative_path)
     except Exception:
         # 写失败时清理临时文件, 不留垃圾; 原文件保持原样(未被截断)
         if os.path.exists(tmp):

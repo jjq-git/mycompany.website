@@ -81,7 +81,7 @@
         <div class="input-group input-group-sm slug-input-group">
           <input type="text" class="form-control" name="slug"
                  value="{{ form.slug or '' }}" required
-                 pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]"
+                 pattern="[a-z0-9][a-z0-9\-]{1,28}[a-z0-9]"
                  placeholder="my-company">
           <span class="input-group-text text-muted">.{{ platform_domain }}</span>
         </div>

@@ -167,6 +167,8 @@
 {% set seo_title_value = tpl_seo.title | default(tpl_seo.get('title', '{title} - {site_name}')) %}
 {% set seo_description_value = tpl_seo.description | default(tpl_seo.get('description', '{summary}')) %}
 {% set seo_image_value = tpl_seo.image | default(tpl_seo.get('image', 'cover')) %}
+{% set tpl_required_fields = edit_template.required_fields | default(edit_template.get('required_fields', ['slug', 'title'])) %}
+{% set tpl_optional_fields = edit_template.optional_fields | default(edit_template.get('optional_fields', [])) %}
 {% include 'dashboard/_block_palette.html' %}
 
 <form method="post" action="{{ url_for(detail_templates_endpoint, dataset_key=dataset_key, site=site.id, lang=current_lang, template_id=tpl_id, **({'_fragment':'1'} if not workspace_mode else {})) }}" id="detailTemplateForm" enctype="multipart/form-data">
@@ -174,9 +176,6 @@
   <input type="hidden" name="_template_action" value="save_modules">
   <input type="hidden" name="template_id" value="{{ tpl_id }}">
   <input type="hidden" name="module_count" id="moduleCountTpl" value="0">
-  <input type="hidden" name="seo_title" value="{{ seo_title_value }}">
-  <input type="hidden" name="seo_description" value="{{ seo_description_value }}">
-  <input type="hidden" name="seo_image" value="{{ seo_image_value }}">
 
   <div class="dt-editor-stack">
   <div class="dt-section">
@@ -187,6 +186,63 @@
     <div class="p-2">
       <label class="form-label small mb-1 text-muted">模板名称</label>
       <input type="text" class="form-control form-control-sm" name="name" value="{{ tpl_name_value }}">
+    </div>
+  </div>
+
+  <div class="dt-section">
+    <div class="dt-section-head"><span class="dt-section-title">字段规则</span><span class="small text-muted">新建和修改共用</span></div>
+    <div class="p-2">
+      <div class="small text-muted mb-2">必填字段由服务端强制校验；Slug 和标题是详情页结构字段，始终必填。</div>
+      <div class="row g-2">
+        {% for field_key, field_label in detail_template_field_options %}
+        <div class="col-6 col-lg-4">
+          {% if field_key in ('slug', 'title') %}<input type="hidden" name="required_fields" value="{{ field_key }}">{% endif %}
+          <label class="form-check small">
+            <input class="form-check-input" type="checkbox" name="required_fields" value="{{ field_key }}"{% if field_key in tpl_required_fields %} checked{% endif %}{% if field_key in ('slug', 'title') %} disabled{% endif %}>
+            <span class="form-check-label">{{ field_label }}必填</span>
+          </label>
+        </div>
+        {% endfor %}
+      </div>
+      <details class="mt-2">
+        <summary class="small text-muted">配置可选字段契约</summary>
+        <div class="row g-2 mt-1">
+          {% for field_key, field_label in detail_template_field_options %}
+          <div class="col-6 col-lg-4">
+            <label class="form-check small">
+              <input class="form-check-input" type="checkbox" name="optional_fields" value="{{ field_key }}"{% if field_key in tpl_optional_fields %} checked{% endif %}>
+              <span class="form-check-label">{{ field_label }}</span>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <div class="dt-section">
+    <div class="dt-section-head"><span class="dt-section-title">SEO 规则</span><span class="small text-muted">支持 {title}、{summary}、{site_name}</span></div>
+    <div class="p-2 d-grid gap-2">
+      <div><label class="form-label small mb-1 text-muted">SEO 标题模板</label><input type="text" class="form-control form-control-sm" name="seo_title" value="{{ seo_title_value }}"></div>
+      <div><label class="form-label small mb-1 text-muted">SEO 简介模板</label><input type="text" class="form-control form-control-sm" name="seo_description" value="{{ seo_description_value }}"></div>
+      <div><label class="form-label small mb-1 text-muted">分享图字段</label><input type="text" class="form-control form-control-sm" name="seo_image" value="{{ seo_image_value }}" placeholder="cover"></div>
+    </div>
+  </div>
+
+  <div class="dt-section">
+    <div class="dt-section-head"><span class="dt-section-title">模板预览</span><span class="small text-muted">使用已保存版本</span></div>
+    <div class="p-2 d-flex flex-wrap align-items-center gap-2">
+      <select class="form-select form-select-sm" id="detailTemplatePreviewItem" style="max-width:320px">
+        <option value="">安全示例数据</option>
+        {% for item in dataset_items or [] %}
+        <option value="{{ item.id }}">#{{ item.id }} {{ item.title or item.name or item.slug or '未命名' }}</option>
+        {% endfor %}
+      </select>
+      <a class="btn btn-outline-primary btn-sm" id="detailTemplatePreviewButton"
+         data-preview-base="{{ url_for('core.detail_template_preview', dataset_key=dataset_key, site=site.slug, lang=current_lang, template_id=tpl_id) }}"
+         href="{{ url_for('core.detail_template_preview', dataset_key=dataset_key, site=site.slug, lang=current_lang, template_id=tpl_id) }}"
+         target="_blank" rel="noopener">{{ dt_icon('eye') }}预览模板</a>
+      <span class="small text-muted">请先保存模板，再打开预览。</span>
     </div>
   </div>
 
@@ -238,6 +294,15 @@
     isDetailTemplateMode: true,
     containerId: 'selectedModulesTpl'
   };
+  var previewItemSelect = document.getElementById('detailTemplatePreviewItem');
+  var previewButton = document.getElementById('detailTemplatePreviewButton');
+  if (previewItemSelect && previewButton) {
+    previewItemSelect.addEventListener('change', function() {
+      var url = new URL(previewButton.dataset.previewBase, window.location.origin);
+      if (previewItemSelect.value) url.searchParams.set('item_id', previewItemSelect.value);
+      previewButton.href = url.pathname + url.search;
+    });
+  }
 
   window._switchContentStyleTab = function(btn, tabName) {
     var scope = btn.closest('.device-config') || btn.closest('.module-item');

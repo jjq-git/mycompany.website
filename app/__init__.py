@@ -162,27 +162,45 @@ def create_app(config_override=None):
 
     @app.route('/static/<path:filename>', endpoint='static')
     def _serve_static(filename):
-        # 1. 模板预览 session（最优先）
         tpl_name = session.get('current_template_preview')
-        if tpl_name:
-            d = Path(app.config['OUTPUT_DIR']) / '_preview' / tpl_name / 'static'
-            if (d / filename).exists():
-                return send_from_directory(str(d.resolve()), filename)
-
-        # 2. 站点预览 session
+        tpl_version = session.get('current_template_preview_version')
         site_id = session.get('current_site_id')
+
+        # 1. 模板预览 Referer 优先（公共模板资源，不用于定位任何私有站点）
+        m = re.search(r'/templates/([a-zA-Z0-9_-]+)/preview/', request.headers.get('Referer', ''))
+        if m:
+            referer_template = m.group(1)
+            version = tpl_version if tpl_name == referer_template else None
+            candidates = []
+            if version:
+                candidates.append(Path(app.config['OUTPUT_DIR']) / '_preview_versions' / referer_template / version / 'static')
+            else:
+                version_root = Path(app.config['OUTPUT_DIR']) / '_preview_versions' / referer_template
+                if version_root.exists():
+                    candidates.extend(
+                        path / 'static' for path in sorted(
+                            (item for item in version_root.iterdir() if item.is_dir()),
+                            key=lambda item: item.stat().st_mtime_ns,
+                            reverse=True,
+                        )
+                    )
+            candidates.append(Path(app.config['OUTPUT_DIR']) / '_preview' / referer_template / 'static')
+            for d in candidates:
+                if (d / filename).exists():
+                    return send_from_directory(str(d.resolve()), filename)
+
+        # 2. 站点预览/后台 session；不能被另一个标签页残留的模板 session 覆盖。
         if site_id:
             d = Path(app.config['OUTPUT_DIR']) / str(site_id) / 'static'
             if (d / filename).exists():
                 return send_from_directory(str(d.resolve()), filename)
 
-        # 3. Referer 推断模板
-        if tpl_name is None and site_id is None:
-            m = re.search(r'/templates/([a-zA-Z0-9_-]+)/preview/', request.headers.get('Referer', ''))
-            if m:
-                d = Path(app.config['OUTPUT_DIR']) / '_preview' / m.group(1) / 'static'
-                if (d / filename).exists():
-                    return send_from_directory(str(d.resolve()), filename)
+        # 3. 无站点匹配时再使用模板预览 session，支持直接打开资源。
+        if tpl_name:
+            d = (Path(app.config['OUTPUT_DIR']) / '_preview_versions' / tpl_name / tpl_version / 'static'
+                 if tpl_version else Path(app.config['OUTPUT_DIR']) / '_preview' / tpl_name / 'static')
+            if (d / filename).exists():
+                return send_from_directory(str(d.resolve()), filename)
 
         # 4. 搜索模板源目录
         for tpl_dir in sorted(Path(app.config['TEMPLATES_DIR']).iterdir()):
