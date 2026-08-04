@@ -75,21 +75,18 @@ detail_templates:
       show_dots: 'true'
       section_bg: ''
   required_fields:
-  - title
   - slug
+  - title
   optional_fields:
-  - cover
   - summary
-  - detail_images
-  - specs
+  - media
   - category
   - tags
-  - link_url
-  - body
+  - detail_images
   - detail_content_blocks
-  - detail_specs
+  - specs
   - detail_files
-  - detail_faqs
+  - detail_related
   seo:
     title: '{title} - {site_name}'
     description: '{summary}'
@@ -131,6 +128,7 @@ detail_templates:
       empty_behavior: hide_module
       section_bg: ''
       text_color: ''
+    order: 2
   - type: detail_specs
     variant: list
     data:
@@ -141,6 +139,7 @@ detail_templates:
       hide_empty_rows: 'true'
       border_color: '#e5e7eb'
       section_bg: ''
+    order: 3
   - type: detail_specs
     variant: list
     data:
@@ -151,6 +150,7 @@ detail_templates:
       hide_empty_rows: 'true'
       border_color: '#e5e7eb'
       section_bg: ''
+    order: 4
   - type: detail_files
     variant: list
     data:
@@ -158,26 +158,14 @@ detail_templates:
       empty_behavior: hide_module
       link_color: ''
       section_bg: ''
+    order: 5
   required_fields:
-  - title
   - slug
+  - title
   optional_fields:
   - body
   - detail_content_blocks
-  - detail_specs
   - detail_files
-  seo:
-    title: '{title} - {site_name}'
-    description: '{summary}'
-    image: cover
-- id: led
-  name: Led 灯条详情模板
-  is_default: false
-  modules: []
-  required_fields:
-  - title
-  - slug
-  optional_fields: []
   seo:
     title: '{title} - {site_name}'
     description: '{summary}'

@@ -819,6 +819,31 @@ DETAIL_TEMPLATE_FIELD_KEYS = {key for key, _label in DETAIL_TEMPLATE_FIELD_OPTIO
 DETAIL_TEMPLATE_FIELD_LABELS = dict(DETAIL_TEMPLATE_FIELD_OPTIONS)
 
 
+def _detail_template_component_content_fields(module_type, data=None):
+    """返回组件实际提供的内容字段，供录入表单与模板编辑器共用。"""
+    data = data if isinstance(data, dict) else {}
+    module_type = str(module_type or '')
+    if module_type == 'detail_media':
+        # 只显示封面图时不应额外要求细节图；主媒体属于始终可用的基础字段。
+        return [] if str(data.get('source') or 'cover_and_gallery') == 'cover_only' else ['detail_images']
+    if module_type == 'detail_text':
+        content_field = str(data.get('content_field') or 'body')
+        return ['body'] if content_field in ('body', 'content') else []
+    if _detail_content_type_from_module({'type': module_type, 'data': data}) is not None:
+        return ['detail_content_blocks']
+    return {
+        'detail_content_blocks': ['detail_content_blocks'],
+        'detail_specs': ['specs'],
+        'detail_table': ['detail_tables'],
+        'detail_link': ['link'],
+        'detail_features': ['detail_features'],
+        'detail_columns': ['detail_columns'],
+        'detail_files': ['detail_files'],
+        'detail_faq': ['detail_faqs'],
+        'detail_related': ['detail_related'],
+    }.get(module_type, [])
+
+
 def _normalize_detail_template_fields(template):
     """Keep one canonical, safe field contract for editor and backend validation."""
     template = template if isinstance(template, dict) else {}
@@ -1059,6 +1084,10 @@ def _detail_template_field_requirements(template, item=None):
     normalized_template = _normalize_detail_template_fields(copy.deepcopy(template or {}))
     req['_required_fields'] = normalized_template.get('required_fields') or []
     req['_optional_fields'] = normalized_template.get('optional_fields') or []
+    # optional_fields 表示模板明确启用但不强制填写的字段；旧实现只保存它却没有用于显示。
+    for field_name in req['_required_fields'] + req['_optional_fields']:
+        if field_name in req:
+            req[field_name] = True
     modules = template.get('modules') if isinstance(template, dict) else []
     if not isinstance(modules, list):
         modules = []
@@ -1067,7 +1096,7 @@ def _detail_template_field_requirements(template, item=None):
             continue
         m_type = module.get('type') or ''
         data = module.get('data') if isinstance(module.get('data'), dict) else {}
-        if m_type in ('item_detail', 'image_carousel', 'detail_media'):
+        if m_type in ('item_detail', 'image_carousel'):
             req['detail_images'] = True
         if m_type in ('item_detail', 'detail_specs'):
             req['specs'] = True
@@ -1075,33 +1104,18 @@ def _detail_template_field_requirements(template, item=None):
             req['detail_tables'] = True
         if m_type in ('contact_info', 'contact_form', 'featured_picks', 'detail_link'):
             req['link'] = True
-        if m_type == 'detail_related':
-            req['detail_related'] = True
-        if m_type == 'detail_content_blocks':
-            req['detail_content_blocks'] = True
+        for field_name in _detail_template_component_content_fields(m_type, data):
+            req[field_name] = True
         content_type = _detail_content_type_from_module(module)
         if content_type is not None:
-            req['detail_content_blocks'] = True
             req['detail_content_slots'].append({
                 'slot_id': str(data.get('slot_id') or f'legacy-content-slot-{len(req["detail_content_slots"])}'),
                 'type': content_type,
                 'label': str(data.get('title') or ''),
                 'layout': str(data.get('layout') or 'image_left'),
             })
-        if m_type == 'detail_features':
-            req['detail_features'] = True
-        if m_type == 'detail_files':
-            req['detail_files'] = True
-        if m_type == 'detail_faq':
-            req['detail_faqs'] = True
-        if m_type == 'detail_columns':
-            req['detail_columns'] = True
         if m_type == 'text_content':
             req['body'] = True
-        elif m_type == 'detail_text':
-            content_field = str(data.get('content_field') or 'body')
-            if content_field in ('body', 'content'):
-                req['body'] = True
         for key, value in data.items():
             key_l = str(key).lower()
             value_enabled = str(value).strip().lower() not in ('false', '0', 'no', 'off', '')
@@ -7470,6 +7484,7 @@ def detail_templates_panel(dataset_key):
         action = request.form.get('_template_action', request.form.get('action', '')).strip()
         template_id = request.form.get('template_id', '').strip()
         redirect_template_id = ''
+        preview_after_save = False
 
         if action == 'add':
             name = request.form.get('name', '').strip() or f'{page_label}详情模板'
@@ -7556,12 +7571,24 @@ def detail_templates_panel(dataset_key):
                     'description': seo_description or '{summary}',
                     'image': seo_image or 'cover',
                 }
+                preview_after_save = request.form.get('_after_save') == 'preview'
                 flash('已保存详情模板')
         else:
             flash('未知操作', 'error')
 
         page['detail_templates'] = templates
         write_yaml(site.id, f'pages/{dataset_key}.yaml', page)
+        if preview_after_save:
+            preview_args = {
+                'dataset_key': dataset_key,
+                'site': site.slug,
+                'lang': lang,
+                'template_id': template_id,
+            }
+            preview_item_id = request.form.get('preview_item_id', '').strip()
+            if preview_item_id.isdigit():
+                preview_args['item_id'] = preview_item_id
+            return redirect(url_for('core.detail_template_preview', **preview_args))
         redirect_args = {'dataset_key': dataset_key, 'site': site.id, 'lang': lang}
         if not workspace_mode:
             redirect_args['_fragment'] = '1'
@@ -7601,6 +7628,7 @@ def detail_templates_panel(dataset_key):
                    blocks=blocks,
                    all_list_datasets=all_list_datasets,
                    template_usage=template_usage,
+                   dataset_items=dataset_items,
                    style_registry=STYLE_REGISTRY,
                    icon_list=icon_names(),
                    detail_template_field_options=DETAIL_TEMPLATE_FIELD_OPTIONS,
@@ -8344,7 +8372,14 @@ def _get_detail_template_components(template_name):
     theme blocks may still be used internally as visual fallbacks, but the
     editor only exposes detail-specific concepts to keep the workflow focused.
     """
-    return copy.deepcopy(DETAIL_TEMPLATE_COMPONENT_BLOCKS)
+    blocks = copy.deepcopy(DETAIL_TEMPLATE_COMPONENT_BLOCKS)
+    for block in blocks:
+        fields = _detail_template_component_content_fields(block.get('name'), {})
+        block['content_fields'] = [
+            {'key': key, 'label': DETAIL_TEMPLATE_FIELD_LABELS.get(key, key)}
+            for key in fields
+        ]
+    return blocks
 
 
 def _merge_block_defaults(modules, blocks):

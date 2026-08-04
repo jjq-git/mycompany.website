@@ -62,6 +62,52 @@
   #selectedModulesTpl>.module-item.is-dragging{opacity:.42;box-shadow:inset 3px 0 0 #0f9a8a,0 8px 20px rgba(15,23,42,.12)}
   #selectedModulesTpl.is-sorting>.module-item:not(.is-dragging){transition:transform .12s ease}
   .dt-save-button{height:38px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .dt-system-fields{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0}
+  .dt-system-field{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;background:#fff;border:1px solid #d8e0ea;color:#334155;font-size:12px}
+  .dt-system-field::before{content:"";width:6px;height:6px;border-radius:50%;background:#0f9a8a}
+  .dt-field-rule-list{border:1px solid #e2e8f0;border-bottom:0;margin-top:8px}
+  .dt-field-rule{display:grid;grid-template-columns:minmax(120px,1fr) minmax(90px,auto) minmax(120px,auto);align-items:center;gap:12px;min-height:42px;padding:7px 10px;border-bottom:1px solid #e2e8f0}
+  .dt-field-rule-name{font-size:13px;font-weight:600;color:#1e293b}
+  .dt-field-state{font-size:12px;color:#64748b}
+  .dt-required-toggle{display:inline-flex;align-items:center;gap:6px;margin:0;font-size:12px;color:#334155;white-space:nowrap}
+  .dt-component-contract{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;padding:8px 10px;border:1px solid #bae6df;background:#f0fdfa}
+  .dt-component-contract-fields{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .dt-component-contract-name{font-size:12px;color:#0f766e}
+  .dt-config-stack{padding:0;background:#fff;border-color:#d8e0ea}
+  .dt-config-stack>.dt-section{border:0;box-shadow:none!important}
+  .dt-config-stack>.dt-section+.dt-section{border-top:1px solid #e2e8f0}
+  .dt-config-stack .dt-section-head{background:#fff;padding:11px 13px}
+  .dt-config-stack .dt-section-head>.small{font-weight:400}
+  .dt-seo-body{padding:12px 13px!important}
+  .dt-seo-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+  .dt-rule-input-wrap{position:relative;min-width:0}
+  .dt-rule-input-wrap .form-label{font-weight:600;color:#475569!important}
+  .dt-variable-buttons{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+  .dt-variable-button{border:0;background:#f1f5f9;color:#64748b;padding:3px 7px;font:11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;border-radius:3px}
+  .dt-variable-button:hover{color:#0f766e;background:#e6f6f3}
+  .dt-seo-options{display:grid;grid-template-columns:minmax(240px,.8fr) minmax(360px,1.2fr);gap:14px;margin-top:12px}
+  .dt-option-card{min-height:58px;padding:9px 11px;border:1px solid #e2e8f0;background:#fbfcfd}
+  .dt-option-title{display:block;margin-bottom:7px;color:#475569;font-size:12px;font-weight:600}
+  .dt-choice-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .dt-choice{display:inline-flex;align-items:center;gap:6px;margin:0;color:#334155;font-size:12px;cursor:pointer}
+  .dt-choice input{margin:0;accent-color:#0f9a8a}
+  .dt-switch-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .dt-switches{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .dt-seo-result{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:12px;background:#f8fafc;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0}
+  .dt-seo-result-row{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:8px;align-items:start;padding:8px 10px;font-size:12px}
+  .dt-seo-result-row+.dt-seo-result-row{border-left:1px solid #e2e8f0}
+  .dt-seo-result-label,.dt-seo-count{color:#64748b}
+  .dt-seo-result-value{color:#1e293b;overflow-wrap:anywhere}
+  .dt-preview-bar{display:grid;grid-template-columns:minmax(180px,320px) auto;justify-content:space-between;align-items:center;gap:12px;padding:12px 13px}
+  .dt-preview-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+  .dt-preview-action{min-height:34px;padding:0 12px;display:inline-flex!important;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+  .dt-preview-action svg{width:15px!important;height:15px!important;flex:0 0 15px!important;fill:none!important;stroke:currentColor!important;stroke-width:2!important}
+  .dt-preview-primary{border-color:var(--theme-primary,#0f9a8a)!important;background:var(--theme-primary,#0f9a8a)!important;color:#fff!important}
+  .dt-preview-primary:hover{border-color:var(--theme-primary-hover,#0f766e)!important;background:var(--theme-primary-hover,#0f766e)!important;color:#fff!important}
+  .dt-preview-primary:focus-visible{outline:0;box-shadow:0 0 0 3px rgba(15,154,138,.2)!important}
+  .dt-preview-secondary{border-color:#cbd5e1!important;background:#fff!important;color:#475569!important}
+  .dt-preview-secondary:hover{border-color:var(--theme-primary,#0f9a8a)!important;background:#f0fdfa!important;color:var(--theme-primary-hover,#0f766e)!important}
+  .dt-preview-secondary:focus-visible{outline:0;box-shadow:0 0 0 3px rgba(15,154,138,.14)!important}
   .dt-wide-layout{display:grid;grid-template-columns:minmax(300px,360px) minmax(0,1fr);gap:16px;align-items:start}
   .dt-template-sidebar,.dt-template-editor{min-width:0}
   .dt-template-sidebar{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto;overscroll-behavior:contain}
@@ -71,6 +117,8 @@
   .dt-template-editor .dt-components-area{margin-top:0}
   .dt-empty-editor{display:grid;place-items:center;min-height:280px;border:1px dashed #cbd5e1;background:#f8fafc;color:#64748b;text-align:center;padding:32px}
   @media (max-width:1100px){.dt-wide-layout{grid-template-columns:1fr}.dt-template-sidebar{position:static;max-height:none;overflow:visible}}
+  @media (max-width:900px){.dt-seo-grid,.dt-seo-options{grid-template-columns:1fr}.dt-seo-result{grid-template-columns:1fr}.dt-seo-result-row+.dt-seo-result-row{border-left:0;border-top:1px solid #e2e8f0}.dt-preview-bar{grid-template-columns:1fr}.dt-preview-actions{justify-content:flex-start}}
+  @media (max-width:640px){.dt-field-rule{grid-template-columns:1fr auto}.dt-field-state{display:none}.dt-seo-result-row{grid-template-columns:70px minmax(0,1fr)}.dt-seo-count{grid-column:2}.dt-preview-actions{align-items:stretch}.dt-preview-action{flex:1}}
 </style>
 <div class="dt-panel-head">
   <span class="dt-title">{{ dt_icon('settings') }}{{ page_label }}详情模板</span>
@@ -190,59 +238,29 @@
   </div>
 
   <div class="dt-section">
-    <div class="dt-section-head"><span class="dt-section-title">字段规则</span><span class="small text-muted">新建和修改共用</span></div>
+    <div class="dt-section-head"><span class="dt-section-title">基础字段</span><span class="small text-muted">同时应用于新建和编辑</span></div>
     <div class="p-2">
-      <div class="small text-muted mb-2">必填字段由服务端强制校验；Slug 和标题是详情页结构字段，始终必填。</div>
-      <div class="row g-2">
-        {% for field_key, field_label in detail_template_field_options %}
-        <div class="col-6 col-lg-4">
-          {% if field_key in ('slug', 'title') %}<input type="hidden" name="required_fields" value="{{ field_key }}">{% endif %}
-          <label class="form-check small">
-            <input class="form-check-input" type="checkbox" name="required_fields" value="{{ field_key }}"{% if field_key in tpl_required_fields %} checked{% endif %}{% if field_key in ('slug', 'title') %} disabled{% endif %}>
-            <span class="form-check-label">{{ field_label }}必填</span>
+      <input type="hidden" name="required_fields" value="slug">
+      <input type="hidden" name="required_fields" value="title">
+      <div class="dt-system-fields">
+        <span class="small text-muted">系统必填</span>
+        <span class="dt-system-field">Slug</span>
+        <span class="dt-system-field">标题</span>
+      </div>
+      <div class="dt-field-rule-list">
+        {% for field_key, field_label in detail_template_field_options if field_key in ('summary', 'media', 'category', 'tags') %}
+        <div class="dt-field-rule">
+          <span class="dt-field-rule-name">{{ field_label }}</span>
+          <span class="dt-field-state">始终显示</span>
+          <input type="hidden" name="optional_fields" value="{{ field_key }}">
+          <label class="dt-required-toggle">
+            <input class="form-check-input" type="checkbox" name="required_fields" value="{{ field_key }}"{% if field_key in tpl_required_fields %} checked{% endif %}>
+            保存时必填
           </label>
         </div>
         {% endfor %}
       </div>
-      <details class="mt-2">
-        <summary class="small text-muted">配置可选字段契约</summary>
-        <div class="row g-2 mt-1">
-          {% for field_key, field_label in detail_template_field_options %}
-          <div class="col-6 col-lg-4">
-            <label class="form-check small">
-              <input class="form-check-input" type="checkbox" name="optional_fields" value="{{ field_key }}"{% if field_key in tpl_optional_fields %} checked{% endif %}>
-              <span class="form-check-label">{{ field_label }}</span>
-            </label>
-          </div>
-          {% endfor %}
-        </div>
-      </details>
-    </div>
-  </div>
-
-  <div class="dt-section">
-    <div class="dt-section-head"><span class="dt-section-title">SEO 规则</span><span class="small text-muted">支持 {title}、{summary}、{site_name}</span></div>
-    <div class="p-2 d-grid gap-2">
-      <div><label class="form-label small mb-1 text-muted">SEO 标题模板</label><input type="text" class="form-control form-control-sm" name="seo_title" value="{{ seo_title_value }}"></div>
-      <div><label class="form-label small mb-1 text-muted">SEO 简介模板</label><input type="text" class="form-control form-control-sm" name="seo_description" value="{{ seo_description_value }}"></div>
-      <div><label class="form-label small mb-1 text-muted">分享图字段</label><input type="text" class="form-control form-control-sm" name="seo_image" value="{{ seo_image_value }}" placeholder="cover"></div>
-    </div>
-  </div>
-
-  <div class="dt-section">
-    <div class="dt-section-head"><span class="dt-section-title">模板预览</span><span class="small text-muted">使用已保存版本</span></div>
-    <div class="p-2 d-flex flex-wrap align-items-center gap-2">
-      <select class="form-select form-select-sm" id="detailTemplatePreviewItem" style="max-width:320px">
-        <option value="">安全示例数据</option>
-        {% for item in dataset_items or [] %}
-        <option value="{{ item.id }}">#{{ item.id }} {{ item.title or item.name or item.slug or '未命名' }}</option>
-        {% endfor %}
-      </select>
-      <a class="btn btn-outline-primary btn-sm" id="detailTemplatePreviewButton"
-         data-preview-base="{{ url_for('core.detail_template_preview', dataset_key=dataset_key, site=site.slug, lang=current_lang, template_id=tpl_id) }}"
-         href="{{ url_for('core.detail_template_preview', dataset_key=dataset_key, site=site.slug, lang=current_lang, template_id=tpl_id) }}"
-         target="_blank" rel="noopener">{{ dt_icon('eye') }}预览模板</a>
-      <span class="small text-muted">请先保存模板，再打开预览。</span>
+      <div class="small text-muted mt-2">组件字段的必填规则直接在下方对应组件中设置。</div>
     </div>
   </div>
 
@@ -252,7 +270,7 @@
   <div class="dt-components-head">
     <div>
       <div class="dt-components-title">组件编辑</div>
-      <p class="dt-components-note">按详情页展示顺序添加组件；数据录入页会按这里的组件顺序生成对应字段。</p>
+      <p class="dt-components-note">按详情页展示顺序添加组件；组件需要的内容字段和必填规则在同一张卡片中设置。</p>
     </div>
     <div class="dt-add-component-row">
       <button class="dt-primary panel-add-module-btn" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal">
@@ -268,22 +286,94 @@
   <div id="selectedModulesTpl"></div>
   </div>
 
+  <div class="dt-editor-stack dt-config-stack mt-2">
+  <div class="dt-section">
+    <div class="dt-section-head"><span class="dt-section-title">SEO 与分享</span><span class="small text-muted">统一规则，可按单条内容覆盖</span></div>
+    <div class="dt-seo-body">
+      <div class="dt-seo-grid">
+      <div class="dt-rule-input-wrap">
+        <label class="form-label small mb-1 text-muted">SEO 标题模板</label>
+        <input type="text" class="form-control form-control-sm" id="seoTitleRule" name="seo_title" value="{{ seo_title_value }}">
+        <div class="dt-variable-buttons" data-rule-target="seoTitleRule">
+          <button class="dt-variable-button" type="button" data-variable="{title}">{title}</button>
+          <button class="dt-variable-button" type="button" data-variable="{site_name}">{site_name}</button>
+        </div>
+      </div>
+      <div class="dt-rule-input-wrap">
+        <label class="form-label small mb-1 text-muted">SEO 简介模板</label>
+        <input type="text" class="form-control form-control-sm" id="seoDescriptionRule" name="seo_description" value="{{ seo_description_value }}">
+        <div class="dt-variable-buttons" data-rule-target="seoDescriptionRule">
+          <button class="dt-variable-button" type="button" data-variable="{summary}">{summary}</button>
+          <button class="dt-variable-button" type="button" data-variable="{title}">{title}</button>
+          <button class="dt-variable-button" type="button" data-variable="{site_name}">{site_name}</button>
+        </div>
+      </div>
+      </div>
+      {% set seo_override_enabled = 'seo' in tpl_optional_fields or 'seo' in tpl_required_fields %}
+      <div class="dt-seo-options">
+        <div class="dt-option-card">
+          <span class="dt-option-title">默认分享图</span>
+          <div class="dt-choice-row">
+            <label class="dt-choice"><input type="radio" name="seo_image" value="cover"{% if seo_image_value == 'cover' %} checked{% endif %}>封面图</label>
+            <label class="dt-choice"><input type="radio" name="seo_image" value="detail_images"{% if seo_image_value == 'detail_images' %} checked{% endif %}>第一张细节图</label>
+            {% if seo_image_value not in ('cover', 'detail_images') %}<label class="dt-choice"><input type="radio" name="seo_image" value="{{ seo_image_value }}" checked>现有字段：{{ seo_image_value }}</label>{% endif %}
+          </div>
+        </div>
+        <div class="dt-option-card dt-switch-row">
+          <span class="dt-option-title mb-0">单条 SEO 覆盖</span>
+          <div class="dt-switches">
+            <label class="dt-choice"><input id="seoOverrideEnabled" type="checkbox" name="optional_fields" value="seo"{% if seo_override_enabled %} checked{% endif %}>显示录入字段</label>
+            <label class="dt-choice"><input id="seoOverrideRequired" type="checkbox" name="required_fields" value="seo"{% if 'seo' in tpl_required_fields %} checked{% endif %}{% if not seo_override_enabled %} disabled{% endif %}>保存时必填</label>
+          </div>
+        </div>
+      </div>
+      <div class="dt-seo-result" aria-live="polite">
+        <div class="dt-seo-result-row"><span class="dt-seo-result-label">标题效果</span><span class="dt-seo-result-value" id="seoTitleResult"></span><span class="dt-seo-count" id="seoTitleCount"></span></div>
+        <div class="dt-seo-result-row"><span class="dt-seo-result-label">简介效果</span><span class="dt-seo-result-value" id="seoDescriptionResult"></span><span class="dt-seo-count" id="seoDescriptionCount"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dt-section">
+    <div class="dt-section-head"><span class="dt-section-title">预览</span><span class="small text-muted">可选择真实内容检查空值与布局</span></div>
+    <div class="dt-preview-bar">
+      <select class="form-select form-select-sm" id="detailTemplatePreviewItem" name="preview_item_id">
+        <option value="" data-title="{{ page_label }}模板预览" data-summary="用于检查字段缺失、空值隐藏和组件降级的安全示例数据。">安全示例数据</option>
+        {% for item in dataset_items or [] %}
+        <option value="{{ item.id }}" data-title="{{ item.title or item.name or item.slug or '未命名' }}" data-summary="{{ item.summary or item.description or item.excerpt or '' }}">#{{ item.id }} {{ item.title or item.name or item.slug or '未命名' }}</option>
+        {% endfor %}
+      </select>
+      <div class="dt-preview-actions">
+        <a class="btn btn-sm dt-preview-action dt-preview-secondary" id="detailTemplatePreviewButton"
+           data-preview-base="{{ url_for('core.detail_template_preview', dataset_key=dataset_key, site=site.slug, lang=current_lang, template_id=tpl_id) }}"
+           href="{{ url_for('core.detail_template_preview', dataset_key=dataset_key, site=site.slug, lang=current_lang, template_id=tpl_id) }}"
+           target="_blank" rel="noopener">{{ dt_icon('eye') }}预览已保存版本</a>
+        <button class="btn btn-sm dt-preview-action dt-preview-primary" type="submit" name="_after_save" value="preview" formtarget="_blank">{{ dt_icon('save') }}保存并预览</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
   <div class="panel-save-bar">
     <button type="submit" class="btn btn-primary btn-sm w-100 dt-save-button">{{ dt_icon('save') }}保存详情模板</button>
   </div>
 </form>
 
-<script src="/static/js/admin_modules.js?v=138"></script>
+<script src="/static/js/admin_modules.js?v=140"></script>
 <script type="application/json" id="blockLibraryTplJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="allListDatasetsTplJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryTplJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="templateModulesJson">{{ (edit_template.modules | default([])) | tojson }}</script>
+<script type="application/json" id="templateRequiredFieldsJson">{{ tpl_required_fields | tojson }}</script>
+<script type="application/json" id="detailTemplateSeoContextJson">{{ {'site_name': site.name or site.slug} | tojson }}</script>
 <script>
 (function() {
   var restoringTemplateModules = true;
   var blockLibrary = JSON.parse(document.getElementById('blockLibraryTplJson').textContent || '[]');
   var allListDatasets = JSON.parse(document.getElementById('allListDatasetsTplJson').textContent || '[]');
   var styleRegistry = JSON.parse(document.getElementById('styleRegistryTplJson').textContent || '{}');
+  var templateRequiredFields = new Set(JSON.parse(document.getElementById('templateRequiredFieldsJson').textContent || '[]'));
+  var seoContext = JSON.parse(document.getElementById('detailTemplateSeoContextJson').textContent || '{}');
   window.blockLibrary = blockLibrary;
   window._moduleCtx = {
     blockLibrary: blockLibrary,
@@ -301,7 +391,113 @@
       var url = new URL(previewButton.dataset.previewBase, window.location.origin);
       if (previewItemSelect.value) url.searchParams.set('item_id', previewItemSelect.value);
       previewButton.href = url.pathname + url.search;
+      updateSeoResult();
     });
+  }
+
+  function applySeoRule(rule, values) {
+    return String(rule || '').replace(/\{([^{}]+)\}/g, function(_match, key) {
+      return values[key] == null ? '' : String(values[key]);
+    }).trim();
+  }
+
+  function updateSeoResult() {
+    var titleInput = document.getElementById('seoTitleRule');
+    var descriptionInput = document.getElementById('seoDescriptionRule');
+    if (!titleInput || !descriptionInput) return;
+    var option = previewItemSelect && previewItemSelect.selectedOptions[0];
+    var values = {
+      title: option ? (option.dataset.title || '') : '',
+      summary: option ? (option.dataset.summary || '') : '',
+      site_name: seoContext.site_name || ''
+    };
+    // 与生成端一致：规则结果为空时回退到内容自身的标题和简介。
+    var title = applySeoRule(titleInput.value, values) || values.title;
+    var description = applySeoRule(descriptionInput.value, values) || values.summary;
+    document.getElementById('seoTitleResult').textContent = title || '未生成标题';
+    document.getElementById('seoDescriptionResult').textContent = description || '未生成简介';
+    document.getElementById('seoTitleCount').textContent = title.length + '/60';
+    document.getElementById('seoDescriptionCount').textContent = description.length + '/160';
+  }
+
+  document.querySelectorAll('.dt-variable-buttons').forEach(function(group) {
+    group.addEventListener('click', function(event) {
+      var button = event.target.closest('[data-variable]');
+      var input = document.getElementById(group.dataset.ruleTarget || '');
+      if (!button || !input) return;
+      var start = input.selectionStart == null ? input.value.length : input.selectionStart;
+      var end = input.selectionEnd == null ? input.value.length : input.selectionEnd;
+      input.setRangeText(button.dataset.variable, start, end, 'end');
+      input.dispatchEvent(new Event('input', {bubbles:true}));
+      input.focus();
+    });
+  });
+  ['seoTitleRule', 'seoDescriptionRule'].forEach(function(id) {
+    var input = document.getElementById(id);
+    if (input) input.addEventListener('input', updateSeoResult);
+  });
+  var seoOverrideEnabled = document.getElementById('seoOverrideEnabled');
+  var seoOverrideRequired = document.getElementById('seoOverrideRequired');
+  if (seoOverrideEnabled && seoOverrideRequired) {
+    seoOverrideEnabled.addEventListener('change', function() {
+      seoOverrideRequired.disabled = !seoOverrideEnabled.checked;
+      if (!seoOverrideEnabled.checked) seoOverrideRequired.checked = false;
+    });
+  }
+  updateSeoResult();
+
+  function componentContentFields(item, type) {
+    var meta = blockLibrary.find(function(block) { return block && block.name === type; }) || {};
+    var fields = Array.isArray(meta.content_fields) ? meta.content_fields.slice() : [];
+    if (type === 'detail_media') {
+      var source = item.querySelector('[name$="_data_source"]');
+      if (source && source.value === 'cover_only') fields = [];
+    } else if (type === 'detail_text') {
+      var contentField = item.querySelector('[name$="_data_content_field"]');
+      fields = !contentField || ['body', 'content'].indexOf(contentField.value) >= 0
+        ? [{key:'body', label:'正文'}]
+        : [];
+    }
+    return fields;
+  }
+
+  function renderComponentContract(item, type) {
+    var config = item && item.querySelector('.module-config');
+    if (!config) return;
+    var old = config.querySelector(':scope > .dt-component-contract');
+    if (old) old.remove();
+    var fields = componentContentFields(item, type);
+    if (!fields.length) return;
+    var contract = document.createElement('div');
+    contract.className = 'dt-component-contract';
+    contract.innerHTML = '<span class="dt-component-contract-name">内容字段</span><span class="dt-component-contract-fields"></span>';
+    var fieldWrap = contract.querySelector('.dt-component-contract-fields');
+    fields.forEach(function(field) {
+      var hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'optional_fields';
+      hidden.value = field.key;
+      fieldWrap.appendChild(hidden);
+      var label = document.createElement('label');
+      label.className = 'dt-required-toggle';
+      var checkbox = document.createElement('input');
+      checkbox.className = 'form-check-input dt-component-required';
+      checkbox.type = 'checkbox';
+      checkbox.name = 'required_fields';
+      checkbox.value = field.key;
+      checkbox.checked = templateRequiredFields.has(field.key);
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(field.label + ' · 保存时必填'));
+      fieldWrap.appendChild(label);
+      checkbox.addEventListener('change', function() {
+        if (checkbox.checked) templateRequiredFields.add(field.key);
+        else templateRequiredFields.delete(field.key);
+        document.querySelectorAll('.dt-component-required').forEach(function(peer) {
+          if (peer.value === field.key) peer.checked = checkbox.checked;
+        });
+      });
+    });
+    config.insertBefore(contract, config.firstChild);
   }
 
   window._switchContentStyleTab = function(btn, tabName) {
@@ -411,6 +607,11 @@
         item.draggable = false;
       });
     });
+    container.addEventListener('change', function(event) {
+      if (!event.target.matches('[name$="_data_source"], [name$="_data_content_field"]')) return;
+      var item = event.target.closest('.module-item');
+      if (item) renderComponentContract(item, item.dataset.moduleType || '');
+    });
   })();
 
   window._addIdImage = function(modIdx) {
@@ -492,6 +693,7 @@
     if (result.borderStyle) div.style.cssText = result.borderStyle;
     div.innerHTML = result.html;
     container.appendChild(div);
+    renderComponentContract(div, type);
     if (typeof initColorPickers === 'function') initColorPickers(div);
     if (typeof window._updateModuleConditionalFields === 'function') {
       window._updateModuleConditionalFields(div);
