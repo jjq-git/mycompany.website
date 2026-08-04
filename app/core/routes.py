@@ -2456,6 +2456,11 @@ def _login_rate_limited(*keys):
 _AI_WINDOW_SECONDS = 600      # 10 分钟窗口
 _AI_MAX_PER_WINDOW = 30       # 每用户 10 分钟最多 30 次 AI 调用
 
+# 页面模块会产生远多于 50 个可翻译输入项。translator.translate_json 已经按字符数
+# 自动拆分模型请求，因此 HTTP 端点只需要限制整个页面级任务的合理上限。
+_TRANSLATE_MAX_FIELDS = 500
+_TRANSLATE_MAX_CHARS = 50_000
+
 
 def _ai_rate_limited(user):
     """AI 接口 per-user 限流；超额返回 True。user 为 None（理论不该发生）时按 IP 兜底。"""
@@ -7328,8 +7333,13 @@ def api_translate():
 
     if not texts or not isinstance(texts, dict):
         return {'error': '请提供 texts 字典'}, 400
-    if len(texts) > 50:
-        return {'error': '单次最多翻译 50 个字段'}, 400
+    if len(texts) > _TRANSLATE_MAX_FIELDS:
+        return {'error': f'单次最多翻译 {_TRANSLATE_MAX_FIELDS} 个字段'}, 400
+    if any(not isinstance(key, str) or not isinstance(value, str) for key, value in texts.items()):
+        return {'error': 'texts 的键和值必须是字符串'}, 400
+    total_chars = sum(len(key) + len(value) for key, value in texts.items())
+    if total_chars > _TRANSLATE_MAX_CHARS:
+        return {'error': f'单次翻译文本总量不能超过 {_TRANSLATE_MAX_CHARS} 个字符'}, 400
 
     try:
         translated = translate_json(texts, source_lang, target_lang)

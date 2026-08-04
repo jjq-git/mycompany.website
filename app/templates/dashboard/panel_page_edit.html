@@ -191,7 +191,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=139"></script>
+<script src="/static/js/admin_modules.js?v=140"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -3623,6 +3623,50 @@ function _fpSetItemField(itemEl, fieldName, value) {
   var LANG_LABELS = {};
   {{ languages | tojson }}.forEach(function(l){ LANG_LABELS[l.code] = l.name; });
 
+  function translationFieldKey(el, fallbackIndex) {
+    if (el && el.contentEditable === 'true') {
+      var wrapper = el.closest('.rte-wrapper');
+      var backing = wrapper ? wrapper.querySelector('textarea[name]:not(.rte-source-ta)') : null;
+      if (backing && backing.name) return backing.name;
+    }
+    return (el && (el.name || el.id)) || ('field_' + fallbackIndex);
+  }
+
+  function applyTranslationToForm(key, value) {
+    var named = document.getElementsByName(key);
+    var el = named.length ? named[0] : document.getElementById(key);
+    if (!el) return false;
+
+    var wrapper = el.closest ? el.closest('.rte-wrapper') : null;
+    var editor = el.contentEditable === 'true'
+      ? el
+      : (wrapper ? wrapper.querySelector('.rich-editor-body, .rte-editor') : null);
+    if (editor) {
+      editor.innerHTML = String(value);
+      var backing = wrapper ? wrapper.querySelector('textarea[name]:not(.rte-source-ta)') : null;
+      if (backing) backing.value = editor.innerHTML;
+      editor.dispatchEvent(new Event('input', { bubbles: true }));
+      if (backing) backing.dispatchEvent(new Event('input', { bubbles: true }));
+      return true;
+    }
+
+    el.value = value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+  }
+
+  function setTranslationLoading(active, fieldCount) {
+    var overlay = document.getElementById('aiTranslationLoadingOverlay');
+    if (!overlay) return;
+    var message = overlay.querySelector('.ai-translation-loading-message');
+    if (message && active) {
+      message.textContent = '正在翻译 ' + fieldCount + ' 个字段，请稍候…';
+    }
+    overlay.hidden = !active;
+    overlay.setAttribute('aria-hidden', active ? 'false' : 'true');
+    document.body.classList.toggle('ai-translation-busy', active);
+  }
+
   // 页面加载时检查是否有待恢复的译文
   (function restorePending() {
     var raw = sessionStorage.getItem(STORAGE_KEY);
@@ -3630,21 +3674,10 @@ function _fpSetItemField(itemEl, fieldName, value) {
     var pending = JSON.parse(raw);
     if (pending.targetLang !== CURRENT_LANG) return;
     sessionStorage.removeItem(STORAGE_KEY);
-    var translations = pending.translations;
-    var selector = [
-      'input[type="text"]:not([readonly]):not([name*="color"]):not([name*="url"]):not([name*="image"])',
-      'textarea:not([readonly])',
-      '[contenteditable="true"]'
-    ].join(', ');
-    document.querySelectorAll(selector).forEach(function(el){
-      var key = el.name || el.id;
+    var translations = pending.translations || {};
+    Object.keys(translations).forEach(function(key) {
       if (translations[key] !== undefined && translations[key] !== null) {
-        if (el.contentEditable === 'true') {
-          el.textContent = translations[key];
-        } else {
-          el.value = translations[key];
-        }
-        el.dispatchEvent(new Event('input', { bubbles: true }));
+        applyTranslationToForm(key, translations[key]);
       }
     });
   })();
@@ -3711,9 +3744,11 @@ function _fpSetItemField(itemEl, fieldName, value) {
 
     // 第一路径：扫描 DOM 中的文本输入框
     document.querySelectorAll(selector).forEach(function(el){
-      var key = el.name || el.id || ('field_' + inputKeys.length);
+      var key = translationFieldKey(el, inputKeys.length);
+      if (Object.prototype.hasOwnProperty.call(texts, key)) return;
       var sourceVal = sourceValueForField(key);
-      var val = (sourceVal == null ? (el.value || el.textContent || '') : sourceVal);
+      var currentValue = el.contentEditable === 'true' ? el.innerHTML : (el.value || el.textContent || '');
+      var val = (sourceVal == null ? currentValue : sourceVal);
       if (typeof val === 'object') return;
       if (!_canTranslate(val)) return;
       texts[key] = String(val).trim();
@@ -3736,6 +3771,7 @@ function _fpSetItemField(itemEl, fieldName, value) {
 
     btn.disabled = true;
     btn.textContent = '翻译中...';
+    setTranslationLoading(true, Object.keys(texts).length);
 
     fetch('/api/translate', {
       method: 'POST',
@@ -3749,9 +3785,9 @@ function _fpSetItemField(itemEl, fieldName, value) {
 
       var t = data.translated;
       var translatedMap = {};
-      Object.keys(texts).forEach(function(key, i){
+      Object.keys(texts).forEach(function(key){
         if (t[key] !== undefined && t[key] !== null) {
-          translatedMap[inputKeys[i]] = t[key];
+          translatedMap[key] = t[key];
         }
       });
 
@@ -3764,19 +3800,7 @@ function _fpSetItemField(itemEl, fieldName, value) {
       var filledCount = 0;
       var injectedCount = 0;
       Object.keys(translatedMap).forEach(function(key){
-        var el = document.querySelector('[name="' + key + '"], #' + key);
-        if (!el) {
-          document.querySelectorAll('[contenteditable="true"]').forEach(function(ce){
-            if ((ce.id || '') === key) el = ce;
-          });
-        }
-        if (el) {
-          if (el.contentEditable === 'true') {
-            el.textContent = translatedMap[key];
-          } else {
-            el.value = translatedMap[key];
-          }
-          el.dispatchEvent(new Event('input', { bubbles: true }));
+        if (applyTranslationToForm(key, translatedMap[key])) {
           filledCount++;
         } else if (fromSource) {
           // DOM 中没有对应字段 → 注入 hidden input，保存时自动纳入表单数据
@@ -3800,6 +3824,7 @@ function _fpSetItemField(itemEl, fieldName, value) {
       showTranslateMsg('翻译失败', err.message || '网络错误');
     })
     .finally(function(){
+      setTranslationLoading(false, 0);
       btn.disabled = false;
       btn.textContent = '从默认语言翻译';
     });
@@ -3848,6 +3873,43 @@ function _fpSetItemField(itemEl, fieldName, value) {
   }
 })();
 </script>
+
+<div id="aiTranslationLoadingOverlay" class="ai-translation-loading" hidden aria-hidden="true" aria-live="polite" aria-busy="true">
+  <div class="ai-translation-loading-card" role="status">
+    <span class="spinner-border text-primary" aria-hidden="true"></span>
+    <strong>AI 正在翻译页面</strong>
+    <span class="ai-translation-loading-message">正在准备翻译，请稍候…</span>
+    <span class="small text-muted">页面内容较多时可能需要几十秒，请不要关闭页面。</span>
+  </div>
+</div>
+<style>
+  body.ai-translation-busy { overflow: hidden; }
+  .ai-translation-loading[hidden] { display: none !important; }
+  .ai-translation-loading {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(15, 23, 42, .48);
+    backdrop-filter: blur(2px);
+  }
+  .ai-translation-loading-card {
+    width: min(360px, 100%);
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    padding: 28px 24px;
+    border: 1px solid rgba(255, 255, 255, .7);
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 24px 64px rgba(15, 23, 42, .22);
+    text-align: center;
+  }
+  .ai-translation-loading-card .spinner-border { width: 2rem; height: 2rem; }
+  .ai-translation-loading-message { color: #334155; font-size: 14px; }
+</style>
 
 {# Bootstrap 翻译提示弹框 #}
 <div class="modal fade" id="translateModal" tabindex="-1">
