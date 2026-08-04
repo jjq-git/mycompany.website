@@ -4491,6 +4491,11 @@
   });
 
   // HTML 源码切换：在 contenteditable 与 textarea 之间切换
+  // The RTE event handlers above are global and only need to be bound once.
+  // Drag sorting is different: the whole module list is replaced when a panel
+  // is loaded, so its initializer must remain available after that replacement.
+  }
+
   function initModuleDragSort(container) {
     if (!container || container.dataset.moduleDragSortReady === '1') return;
     container.dataset.moduleDragSortReady = '1';
@@ -4545,6 +4550,7 @@
       container.querySelectorAll(':scope > .module-item[draggable="true"]:not(.is-dragging)').forEach(function(item) { item.draggable = false; });
     });
   }
+  window.initModuleDragSort = initModuleDragSort;
   initModuleDragSort(document.getElementById('selectedModules'));
   initModuleDragSort(document.getElementById('selectedModulesDs'));
 
@@ -4577,5 +4583,4 @@
     if (ta) ta.value = rte.innerHTML;
   }
 
-  }
 })();

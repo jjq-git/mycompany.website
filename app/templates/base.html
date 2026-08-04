@@ -1919,6 +1919,10 @@
         // Initialize controls after all panel scripts have run.
         if (typeof initColorPickers === 'function') initColorPickers(container);
         initUnitPickers(container);
+        if (typeof window.initModuleDragSort === 'function') {
+          window.initModuleDragSort(container.querySelector('#selectedModules'));
+          window.initModuleDragSort(container.querySelector('#selectedModulesDs'));
+        }
       });
     }
 
