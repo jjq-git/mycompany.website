@@ -12,10 +12,10 @@ modules:
     btn_url: ''
     style_text-align: center
     style_bg-color: ''
-    style_bg: /assets/uploads/section_title-style-bg-20260803020437-0ede6ecb.webp
+    style_bg: /assets/uploads/section_title-style-bg-20260804094354-58568e47.webp
     style_bg_convert_webp: 'false'
     style_bg_alt: 一套系统,管住整个空间
-    style_min-height: 450px
+    style_min-height: 625px
     style_font-color: '#ffffff'
 - type: feature_grid
   order: 2
@@ -53,7 +53,7 @@ modules:
     _hidden_text_area: ''
     tag: 智能管理后台
     title: 一块屏在手，所有静音仓尽在掌握
-    desc: <p>不止管一台设备。云端后台把每一个静音仓统一纳管——在线状态、使用时长、今日告警一屏看清，图表实时更新。</p><p>设备型号、主机节点、固件
+    desc: <p>不止管一台设备。云端后台把每一个静音仓统一纳管——在线状态、使用时长、今日告警一屏看清，图表实时更新。 <br>设备型号、主机节点、固件
       OTA、MQTT 消息流集中管理，多家公司、多个角色分权协作，批量部署也不乱。</p>
     primaryBtn: 管理后台
     primaryLink: https://pods.dengtec.com/
@@ -91,7 +91,7 @@ modules:
     _hidden_text_area: ''
     tag: 核心技术
     title: “AI 控设备”边对话边控制
-    desc: <p>与AI大模型自然语言对话时，实时从流式回复中剥离形如 @{命令} 的设备控制标记并就地执行。</p><p>说一句“把灯调暖一点”，灯光、风扇、色温同步落地——这是德恩基自研的核心能力。</p>
+    desc: <p>与AI大模型自然语言对话时，实时从流式回复中剥离形如 @{命令} 的设备控制标记并就地执行。 <br>说一句“把灯调暖一点”，灯光、风扇、色温同步落地——这是德恩基自研的核心能力。</p>
     primaryBtn: ''
     primaryLink: ''
     secondaryBtn: ''
@@ -126,8 +126,8 @@ modules:
     _hidden_text_area: ''
     tag: 稳定架构
     title: 主从双芯片，各司其职
-    desc: <p>ESP32-S3 主机专注界面与 AI 编排，CH32V003 从机专责灯光、风扇、雷达等执行器驱动。 <br> <br>两颗芯片经自定义
-      I2C 寄存器协议协同，把对时序敏感的执行下沉到从机独立完成，运行更稳定。</p>
+    desc: <p>ESP32-S3 主机专注界面与 AI 编排，CH32V003 从机专责灯光、风扇、雷达等执行器驱动。 <br>两颗芯片经自定义 I2C
+      寄存器协议协同，把对时序敏感的执行下沉到从机独立完成，运行更稳定。</p>
     primaryBtn: ''
     primaryLink: ''
     secondaryBtn: ''
@@ -164,7 +164,7 @@ modules:
     _hidden_text_area: ''
     tag: 贴合场景
     title: 无喇叭语音，屏显可视化
-    desc: <p>静音舱不外放声音，语音识别结果与 AI 回复以文本卡片逐条上屏。 <br> <br>本地唤醒后弹出“我在，请说指令”浮条，安静环境里也能看得清、听得懂。</p>
+    desc: <p>静音舱不外放声音，语音识别结果与 AI 回复以文本卡片逐条上屏。 <br>本地唤醒后弹出“我在，请说指令”浮条，安静环境里也能看得清、听得懂。</p>
     primaryBtn: ''
     primaryLink: ''
     secondaryBtn: ''
@@ -183,8 +183,44 @@ modules:
     mobile:
       image_convert_webp: 'false'
       image_alt: 一块 86 面板，让空间听得懂、管得住
-- type: feature_grid
+- type: highlight_card
   order: 7
+  variant: dir_row
+  data:
+    _hidden: 'false'
+    media_type: image
+    _hidden_media_area: ''
+    image: /assets/uploads/highlight_card-image-20260804100335-1371d31c.webp
+    image_convert_webp: 'false'
+    image_alt: 一套系统,管住整个空间
+    video: ''
+    embed_url: ''
+    _hidden_text_area: ''
+    tag: 空间预约
+    title: 钉钉会议与空间预约
+    desc: <p>接入钉钉工作台，员工可随时查看静音仓状态、预约使用时段，并同步会议日程。预约成功后，设备可根据日程自动进入待用状态，实现空间、设备与会议协同管理。</p>
+    primaryBtn: ''
+    primaryLink: ''
+    secondaryBtn: ''
+    secondaryLink: ''
+    style_dir: row
+    style_bg-color: '#fafbfb'
+    style_bg: ''
+    style_bg_convert_webp: 'false'
+    style_bg_alt: 一套系统,管住整个空间
+    features: []
+    alt: 一套系统,管住整个空间
+  responsive:
+    tablet:
+      media_type: image
+      image_convert_webp: 'false'
+      image_alt: 一套系统,管住整个空间
+    mobile:
+      media_type: image
+      image_convert_webp: 'false'
+      image_alt: 一套系统,管住整个空间
+- type: feature_grid
+  order: 8
   variant: cols_4
   data:
     _hidden: 'false'
@@ -205,7 +241,7 @@ modules:
       title: 专注工作
       desc: 远离干扰高效产出
 - type: section_title
-  order: 8
+  order: 9
   variant: text-align_center
   data:
     _hidden: 'false'
