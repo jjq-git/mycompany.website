@@ -541,6 +541,63 @@ def rename_media_file(site_id, old_name, new_name):
     return new_file
 
 
+def _iter_pages_dirs(site_id):
+    """产出该站点所有存放 pages/*.yaml 的目录.
+
+    为什么扫目录而不按 enabled_languages 拼路径: 页面文件的物理位置有两种布局
+    —— 默认语言可能落在根 pages/, 也可能落在 lang/<default>/pages/(视建站/翻译
+    流程而定)。以磁盘上真实存在的目录为准, 才能覆盖两种情况, 不漏改也不误建。
+    """
+    root = site_root(site_id)
+    root_pages = root / 'pages'
+    if root_pages.is_dir():
+        yield root_pages
+    lang_base = root / 'lang'
+    if lang_base.is_dir():
+        for lang_dir in sorted(lang_base.iterdir()):
+            pages = lang_dir / 'pages'
+            if pages.is_dir():
+                yield pages
+
+
+def rename_page_files(site_id, old_key, new_key):
+    """把所有语言目录下的 pages/<old_key>.yaml 重命名为 <new_key>.yaml.
+
+    触发场景: 后台改了 page 类型菜单项的 target(即页面路径)。页面靠文件名 stem
+    与菜单 target 对应(见 builder), 只改 settings.yaml 不改文件名会导致构建时按
+    新路径找不到页面 -> 预览空白。这里补上文件同步重命名。
+
+    安全约束(对应 CLAUDE.md 十二: 不覆盖用户网站数据):
+    - key 只允许安全字符, 防止 '..'/'/' 逃逸出 pages/ 目录跨租户或越界写。
+    - <new>.yaml 已存在时跳过该目录并计入 conflicts, 绝不覆盖已有页面文件。
+    返回 (renamed_langs, conflicts): 便于调用方 flash 提示。
+    """
+    import re as _re
+    old_key = str(old_key or '').strip().strip('/')
+    new_key = str(new_key or '').strip().strip('/')
+    # 只接受与 page_key 一致的安全字符集(字母数字、连字符、下划线), 拒绝任何路径分隔符
+    safe = _re.compile(r'^[A-Za-z0-9_-]+$')
+    if not old_key or not new_key or old_key == new_key:
+        return [], []
+    if not safe.match(old_key) or not safe.match(new_key):
+        return [], []
+
+    renamed = []
+    conflicts = []
+    for pages_dir in _iter_pages_dirs(site_id):
+        src = pages_dir / f'{old_key}.yaml'
+        if not src.exists():
+            continue
+        dst = pages_dir / f'{new_key}.yaml'
+        if dst.exists():
+            # 目标已存在: 不覆盖用户数据, 记录冲突交由上层提示
+            conflicts.append(str(pages_dir))
+            continue
+        os.rename(src, dst)
+        renamed.append(str(pages_dir))
+    return renamed, conflicts
+
+
 def delete_media_file(site_id, name):
     """Delete an unreferenced upload file or media package."""
     if find_media_references(site_id, name):

@@ -170,6 +170,7 @@ from .site_storage import (copy_seed_data, init_site_folder, lang_root,
                             mark_site_content_changed,
                             remove_site_folder,
                             rename_media_file, delete_media_file,
+                            rename_page_files,
                             find_media_references, is_media_package_token,
                             media_package_name_from_token, media_package_token,
                             write_yaml)
@@ -5876,6 +5877,39 @@ def menu_edit():
 
         _lock_saved_menu_types(existing_menu, items)
         _ensure_menu_item_ids(items)
+
+        # ── page 类型改了 target(页面路径) → 同步重命名页面文件 + 迁移标签 key ──
+        # 页面靠文件名 stem 与菜单 target 对应(见 builder), 只改 settings.yaml
+        # 不改文件名, 构建时会按新路径找不到页面导致预览空白。这里用稳定 id 比对
+        # 新旧菜单, 找出 target 变化的 page 项, 把各语言 pages/<old>.yaml 一并改名。
+        #
+        # 不判断语言: target 属菜单共享结构, 任何语言界面(含英文)改 target 都会经
+        # merge_structure 覆盖到 settings['menu'](见 menu.py merge_structure), 因此
+        # 三种语言下都可能触发路径变更, 必须都处理。existing_menu 取自共享 menu, 与
+        # 当前编辑语言无关, 保证新旧 target 比对可靠。
+        def _page_targets_by_id(nodes, acc):
+            for it in nodes or []:
+                if not isinstance(it, dict):
+                    continue
+                if (it.get('type') or '') == 'page' and it.get('id') and it.get('target'):
+                    acc[str(it['id'])] = str(it['target'])
+                _page_targets_by_id(it.get('children') or [], acc)
+            return acc
+
+        old_targets = _page_targets_by_id(existing_menu, {})
+        new_targets = _page_targets_by_id(items, {})
+        for item_id, new_t in new_targets.items():
+            old_t = old_targets.get(item_id)
+            if not old_t or old_t == new_t:
+                continue
+            renamed, conflicts = rename_page_files(site.id, old_t, new_t)
+            # 同步迁移 menu_labels 各语言里旧 target key -> 新 key, 否则其它语言的
+            # 菜单标签会因 key 对不上而丢失(站点历史上就踩过这个坑)。
+            for _lang_code, _labels in (settings.get('menu_labels') or {}).items():
+                if isinstance(_labels, dict) and old_t in _labels:
+                    _labels[new_t] = _labels.pop(old_t)
+            if conflicts:
+                flash(f'页面路径 {old_t}→{new_t}：目标文件已存在，未覆盖，请检查')
 
         # 保存：结构写入 menu，标签写入 menu_labels.<lang>
         # 默认语言直接覆盖 menu；非默认语言用 merge_structure 保留已有标签
