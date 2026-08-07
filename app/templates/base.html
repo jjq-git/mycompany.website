@@ -7,7 +7,10 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <link rel="icon" href="{{ url_for('static', filename='brand-logo.svg') }}">
   <title>{% block title %}{{ site.slug if site else '' }}{% endblock %} — {{ platform_domain }}</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+  {# Bootstrap 固定在本地 app/static/vendor/，不走 CDN：后台是店主每次登录的必经界面，
+     CDN 一旦不可达不只是样式塌掉，Modal / Dropdown / Tab 这些交互也会整个失效。
+     JS 统一用 bundle 版（内含 Popper），避免再出现只引 bootstrap.min.js 却漏掉 Popper 的情况。 #}
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260806-product-comparison-editor">
   <style>
     :root {
@@ -778,8 +781,7 @@
 
   {# 所有 list 类型菜单项的 target，供 pageKeyFromPreviewPath 区分详情页 slug #}
   <script>window._datasetKeys = [{% for ds in all_list_datasets %}'{{ ds.target }}'{% if not loop.last %}, {% endif %} {% endfor %}];</script>
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"></script>
+  <script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
   <script>
     window.ADMIN_AUTO_SAVE = {{ 'true' if admin_auto_save else 'false' }};
     // 全局 fetch 包装：自动给同源的非 GET 请求带上 X-CSRFToken（Flask-WTF 校验用）。
