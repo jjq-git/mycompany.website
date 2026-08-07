@@ -259,6 +259,44 @@ def _register_template_filters(app):
             value = value.replace(tzinfo=timezone.utc)
         return value.astimezone(CN_TZ).strftime(fmt)
 
+    # 审计日志的 action 是稳定的机器码（写库、检索、对账都靠它，不能改），
+    # 但直接显示给店主等于让老板读 "site.content.update"。这里只做展示层映射，
+    # 库里存什么不变。覆盖当前库中出现过的全部事件码。
+    ACTION_LABELS = {
+        'site.content.update': '更新站点内容',
+        'site.identity.update': '修改站点信息',
+        'site.create': '创建站点',
+        'site.trash': '删除站点',
+        'site.restore': '恢复站点',
+        'site.publish': '发布站点',
+        'account.profile.update': '更新账户资料',
+        'organization.update': '更新组织信息',
+        'organization.member.role': '调整成员角色',
+        'organization.site.add': '站点加入组织',
+        'organization.site.remove': '站点移出组织',
+        'organization.invitation.create': '创建团队邀请',
+        'organization.invitation.accept': '接受团队邀请',
+        'organization.invitation.revoke': '撤销团队邀请',
+        'platform.user.delete': '删除平台用户',
+        'platform.user.suspend': '停用平台用户',
+        'platform.user.activate': '启用平台用户',
+        'platform.user.role.update': '调整平台角色',
+        'security.identity.bind': '绑定登录方式',
+        'security.identity.unbind': '解绑登录方式',
+        'security.identity.primary': '设为主登录方式',
+        'security.session.revoke': '退出登录设备',
+        'billing.order.create': '创建订单',
+        'wechat.bind.mock': '绑定微信',
+        'wechat.unbind': '解绑微信',
+    }
+
+    @app.template_filter('action_label')
+    def action_label(value):
+        """审计事件码转中文；未收录的码原样返回，便于发现遗漏而不是显示空白。"""
+        if not value:
+            return ''
+        return ACTION_LABELS.get(value, value)
+
 
 def _register_context_processors(app):
     """注入模板上下文: 当前站点的模板 meta, 用于动态渲染侧栏."""

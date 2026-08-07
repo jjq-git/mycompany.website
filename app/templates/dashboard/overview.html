@@ -103,7 +103,7 @@
 
       <article class="overview-card">
         <header class="overview-card-head"><h2>最近活动</h2><small>站点最近的操作记录</small></header>
-        {% if recent_logs %}<div class="overview-activity">{% for log in recent_logs %}<div class="overview-activity-item"><span class="overview-activity-dot"></span><span class="overview-activity-copy"><strong>{{ log.summary }}</strong><small>{{ log.action }}</small></span><time>{{ log.created_at|localtime('%m-%d %H:%M') }}</time></div>{% endfor %}</div>{% else %}<div class="overview-empty">暂无站点操作记录，开始编辑后会显示在这里。</div>{% endif %}
+        {% if recent_logs %}<div class="overview-activity">{% for log in recent_logs %}<div class="overview-activity-item"><span class="overview-activity-dot"></span><span class="overview-activity-copy"><strong>{{ log.summary }}</strong></span><time>{{ log.created_at|localtime('%m-%d %H:%M') }}</time></div>{% endfor %}</div>{% else %}<div class="overview-empty">暂无站点操作记录，开始编辑后会显示在这里。</div>{% endif %}
       </article>
     </div>
 
