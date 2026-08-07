@@ -337,7 +337,10 @@
       <div class="menu-config-card-title">菜单结构</div>
       <div class="menu-config-card-body">
         <div id="menuTree" class="menu-tree menu-tree-picker"></div>
-        <button type="button" class="btn btn-outline-primary btn-sm mt-3 menu-add-button" id="addRootMenu">+ 添加一级菜单</button>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+          <button type="button" class="btn btn-outline-primary btn-sm menu-add-button" id="addRootMenu">+ 添加一级菜单</button>
+          <button type="button" class="btn btn-outline-primary btn-sm menu-add-button" id="addComparisonMenu">+ 产品参数对比页</button>
+        </div>
       </div>
     </section>
     <aside class="menu-config-inspector">
@@ -382,6 +385,18 @@
     return {label: '新菜单', type: 'page', target: '', children: []};
   }
 
+  function newComparisonItem() {
+    return {
+      label: '产品参数对比',
+      type: 'list',
+      target: 'product-comparison',
+      dataset: 'products',
+      preset: 'product_comparison',
+      generate_details: false,
+      children: []
+    };
+  }
+
   function menuIconSvg(name) {
     return name ? '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#menu-icon-' + name + '"></use></svg>' : '';
   }
@@ -403,6 +418,12 @@
     if (type === 'list' || type === 'page' || type === 'group') {
       const target = String(item.target || '').trim();
       if (target) result.target = target;
+    }
+    if (type === 'list') {
+      const dataset = String(item.dataset || '').trim();
+      if (dataset && dataset !== result.target) result.dataset = dataset;
+      if (item.preset === 'product_comparison') result.preset = 'product_comparison';
+      if (item.generate_details === false) result.generate_details = false;
     }
     if (type === 'link') {
       const url = String(item.url || '').trim();
@@ -428,6 +449,21 @@
       callback(item, index, items, parentItems || null);
       walkItems(item.children || [], callback, items);
     });
+  }
+
+  function datasetOptions() {
+    const seen = {};
+    const values = [];
+    walkItems(initialMenu, function(item) {
+      if (item.type !== 'list') return;
+      const key = String(item.dataset || item.target || '').trim();
+      if (key && !seen[key]) {
+        seen[key] = true;
+        values.push(key);
+      }
+    });
+    if (!seen.products) values.unshift('products');
+    return values;
   }
 
   function ensureSelected() {
@@ -533,6 +569,16 @@
           '<input class="form-control form-control-sm menu-inspector-target" placeholder="如: products" value="' + escapeAttr(selectedItem.target) + '">' +
         '</div>' +
       '</div>' +
+      '<div class="menu-inspector-section menu-dataset-section">' +
+        '<label class="form-label small text-muted mb-1">内容数据源</label>' +
+        '<input class="form-control form-control-sm menu-inspector-dataset" list="menuDatasetOptions" placeholder="如: products" value="' + escapeAttr(selectedItem.dataset || selectedItem.target) + '">' +
+        '<datalist id="menuDatasetOptions">' + datasetOptions().map(function(key){ return '<option value="' + escapeAttr(key) + '"></option>'; }).join('') + '</datalist>' +
+        '<div class="menu-type-locked-note">可以让不同页面共用同一批产品；留空时与页面路径相同。</div>' +
+        '<label class="form-check form-switch mt-2 mb-0">' +
+          '<input class="form-check-input menu-inspector-generate-details" type="checkbox" ' + (selectedItem.generate_details === false ? '' : ' checked') + '>' +
+          '<span class="form-check-label small fw-semibold">在此路径生成内容详情页</span>' +
+        '</label>' +
+      '</div>' +
       '<div class="menu-inspector-section menu-url-section">' +
         '<label class="form-label small text-muted mb-1">链接地址</label>' +
         '<input class="form-control form-control-sm menu-inspector-url" placeholder="https://..." value="' + escapeAttr(selectedItem.url) + '">' +
@@ -552,8 +598,10 @@
   function updateInspectorFields() {
     const type = selectedItem ? selectedItem.type : '';
     const targetSection = inspector.querySelector('.menu-target-section');
+    const datasetSection = inspector.querySelector('.menu-dataset-section');
     const urlSection = inspector.querySelector('.menu-url-section');
     if (targetSection) targetSection.style.display = (type === 'home' || type === 'link') ? 'none' : '';
+    if (datasetSection) datasetSection.style.display = type === 'list' ? '' : 'none';
     if (urlSection) urlSection.style.display = type === 'link' ? '' : 'none';
   }
 
@@ -621,6 +669,8 @@
       render(initialMenu, tree, 0);
     } else if (e.target.classList.contains('menu-inspector-target')) {
       selectedItem.target = e.target.value.trim();
+    } else if (e.target.classList.contains('menu-inspector-dataset')) {
+      selectedItem.dataset = e.target.value.trim();
     } else if (e.target.classList.contains('menu-inspector-url')) {
       selectedItem.url = e.target.value.trim();
     } else if (e.target.classList.contains('menu-icon-search')) {
@@ -640,10 +690,18 @@
       } else {
         delete selectedItem.url;
       }
+      if (selectedItem.type !== 'list') {
+        delete selectedItem.dataset;
+        delete selectedItem.preset;
+        delete selectedItem.generate_details;
+      }
       rerenderAll();
     } else if (e.target.classList.contains('menu-inspector-visible')) {
       if (e.target.checked) delete selectedItem.hidden;
       else selectedItem.hidden = true;
+    } else if (e.target.classList.contains('menu-inspector-generate-details')) {
+      if (e.target.checked) delete selectedItem.generate_details;
+      else selectedItem.generate_details = false;
     }
   });
 
@@ -677,6 +735,13 @@
 
   document.getElementById('addRootMenu').addEventListener('click', function() {
     const item = newItem();
+    initialMenu.push(item);
+    selectedItem = item;
+    rerenderAll();
+  });
+
+  document.getElementById('addComparisonMenu').addEventListener('click', function() {
+    const item = newComparisonItem();
     initialMenu.push(item);
     selectedItem = item;
     rerenderAll();

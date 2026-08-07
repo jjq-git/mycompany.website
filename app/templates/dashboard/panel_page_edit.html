@@ -42,6 +42,8 @@
     {# 已转 data-* 的 block 类型：现有模块的编辑器也走 schema 表单（JS 挂载），
        而非旧硬编码 Jinja2 分支——保证存的是 data-* 渲染器读的新键名 #}
     {% set data_attr_types = blocks | selectattr('is_data_attr') | map(attribute='name') | list %}
+    {# Jinja 模块也可以显式声明使用 meta.yaml 的 fields 生成稳定表单。 #}
+    {% set meta_field_types = blocks | selectattr('editor', 'equalto', 'meta_fields') | map(attribute='name') | list %}
     <div id="selectedModules">
       {% for module in page.modules %}
       {% set i = loop.index0 %}
@@ -99,6 +101,18 @@
             <div class="content-style-panel panel-content schema-mount" data-mount="content" data-module-index="{{ i }}" data-device="desktop"></div>
             <div class="content-style-panel panel-style schema-mount" data-mount="style" data-module-index="{{ i }}" data-device="desktop" style="display:none"></div>
             <script type="application/json" class="schema-mount-data" data-module-index="{{ i }}" data-device="desktop">{{ mdata | tojson }}</script>
+{% elif module.type in meta_field_types %}
+            <div class="d-flex mb-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="switchContentStyleTab(this, 'content')">内容</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary content-style-tab flex-fill" data-tab="style" onclick="switchContentStyleTab(this, 'style')">样式</button>
+            </div>
+            <div class="content-style-panel panel-content">
+              <div class="meta-fields-mount" data-module-index="{{ i }}"></div>
+            </div>
+            <div class="content-style-panel panel-style" style="display:none">
+              <div class="meta-style-fields-mount" data-module-index="{{ i }}"></div>
+            </div>
+            <script type="application/json" class="meta-fields-mount-data" data-module-index="{{ i }}">{{ mdata | tojson }}</script>
             {% else %}
             {% if mdata is mapping %}
               {% for key, val in mdata.items() %}
@@ -129,6 +143,8 @@
 {% if module.type in data_attr_types %}
             <div class="schema-mount" data-mount="content" data-module-index="{{ i }}" data-device="tablet"></div>
             <script type="application/json" class="schema-mount-data" data-module-index="{{ i }}" data-device="tablet">{{ mdata_tablet | tojson }}</script>
+{% elif module.type in meta_field_types %}
+            {# 对比规则属于页面级配置，不为平板端重复一套字段。 #}
 {% else %}
 {% if mdata is mapping %}
               {% for key, val in mdata.items() %}
@@ -158,6 +174,8 @@
 {% if module.type in data_attr_types %}
             <div class="schema-mount" data-mount="content" data-module-index="{{ i }}" data-device="mobile"></div>
             <script type="application/json" class="schema-mount-data" data-module-index="{{ i }}" data-device="mobile">{{ mdata_mobile | tojson }}</script>
+{% elif module.type in meta_field_types %}
+            {# 对比规则属于页面级配置，不为手机端重复一套字段。 #}
 {% else %}
 {% if mdata is mapping %}
               {% for key, val in mdata.items() %}
@@ -191,7 +209,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=140"></script>
+<script src="/static/js/admin_modules.js?v=144"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -1124,17 +1142,27 @@ function renderDynamicField(prefix, field, value, placeholder) {
   var lowerKey = key.toLowerCase();
   var depVal = field.show_if && field.show_if.field === 'media_type' ? 'image' : null;
   var attrs = conditionalFieldAttrs(key, field.show_if, escapeHtml, depVal);
+  var isDynamicVisibility = _schemaIsVisibilityField({ name: key, key: key, type: type, options: field.options });
   if (_schemaIsHalfField({ name: key, key: key, type: type, show_if: field.show_if, options: field.options })) {
     attrs = attrs.replace('module-field', 'module-field module-field-half');
   }
+  if (type === 'number') {
+    attrs = attrs.replace('module-field', 'module-field module-number-field');
+  }
+  if (isDynamicVisibility) {
+    attrs = attrs.replace('module-field', 'module-field module-visibility-field');
+  }
   var isDynamicSegmented = type === 'select' && segmentedControl(prefix + key, field.options || [], value, escapeHtml);
-  if (type === 'select') {
+  if (type === 'select' && !isDynamicVisibility) {
     attrs = attrs.replace('module-field', 'module-field label-radio-row');
   }
   var html = '<div' + attrs + '><label class="form-label small mb-1 text-muted">' + escapeHtml(label) + '</label>';
 
   // 颜色字段: color / bg / text_ → 颜色选择器+文本
-  var isColor = /color|_bg$|^bg$/i.test(lowerKey) && !/image|cover|background_image|section_bg|background|media/i.test(lowerKey);
+  var isColor = type === 'color' || (
+    /color|_bg$|^bg$/i.test(lowerKey) &&
+    !/image|cover|background_image|section_bg|background|media/i.test(lowerKey)
+  );
   // 需要单位的字段
   var needsSizeUnit = /size|font/i.test(lowerKey);
   var needsWidthUnit = /width/i.test(lowerKey);
@@ -1142,7 +1170,9 @@ function renderDynamicField(prefix, field, value, placeholder) {
   var needsSpacingUnit = /margin|padding/i.test(lowerKey);
   var needsUnit = needsSizeUnit || needsWidthUnit || needsRadiusUnit || needsSpacingUnit;
 
-  if (type === 'richtext') {
+  if (isDynamicVisibility) {
+    html += _schemaVisibilityEye(prefix + key, value);
+  } else if (type === 'richtext') {
     html += richEditorHtml(prefix + key, value || '');
   } else if (type === 'image') {
     html += mediaUploadHtml(prefix + key, value || '', 'image', placeholder || '', field.alt || '');
@@ -1154,6 +1184,29 @@ function renderDynamicField(prefix, field, value, placeholder) {
     html += richEditorHtml(prefix + key, value || '', true);
   } else if (type === 'textarea') {
     html += '<textarea class="form-control form-control-sm" rows="4" name="' + prefix + key + '" placeholder="' + escapeHtml(placeholder || '') + '">' + escapeHtml(value || '') + '</textarea>';
+  } else if (key === 'dataset' || type === 'dataset') {
+    var currentDataset = String(value || field.default || '');
+    var availableDatasets = datasetNames || [];
+    var hasCurrentDataset = availableDatasets.some(function(ds) {
+      return String(ds.target || ds.value || ds.key || '') === currentDataset;
+    });
+    html += '<select class="form-select form-select-sm" data-no-segmented="1" name="' + escapeHtml(prefix + key) + '">';
+    if (!currentDataset) {
+      html += '<option value="" selected>请选择数据来源</option>';
+    } else if (!hasCurrentDataset) {
+      html += '<option value="' + escapeHtml(currentDataset) + '" selected>' + escapeHtml(currentDataset) + '（当前）</option>';
+    }
+    availableDatasets.forEach(function(ds) {
+      var target = String(ds.target || ds.value || ds.key || '');
+      if (!target) return;
+      var datasetLabel = ds.label || target;
+      html += '<option value="' + escapeHtml(target) + '"' + (currentDataset === target ? ' selected' : '') + '>' +
+        escapeHtml(datasetLabel + (String(datasetLabel) === target ? '' : ' (' + target + ')')) + '</option>';
+    });
+    if (!availableDatasets.length && !currentDataset) {
+      html += '<option value="" disabled>暂无数据来源</option>';
+    }
+    html += '</select>';
   } else if (isDynamicSegmented) {
     html += segmentedControl(prefix + key, field.options || [], value, escapeHtml);
   } else if (type === 'select') {
@@ -1206,6 +1259,43 @@ function renderDynamicFieldsGrouped(prefix, fields, values, placeholder) {
   });
   flushPendingHalf();
   return html;
+}
+
+function isMetaStyleField(field) {
+  var groupName = String((field && field.group) || '').trim().toLowerCase();
+  return groupName === '样式' || groupName === 'style' || groupName === 'appearance';
+}
+
+function renderMetaFieldGroups(prefix, fields, values) {
+  values = values || {};
+  var groups = [];
+  var grouped = {};
+  (fields || []).forEach(function(field) {
+    var groupName = String(field.group || '配置');
+    if (!grouped[groupName]) {
+      grouped[groupName] = [];
+      groups.push(groupName);
+    }
+    grouped[groupName].push(field);
+  });
+  return groups.map(function(groupName) {
+    return '<section class="module-meta-field-group">' +
+      '<div class="module-meta-field-group-title">' + escapeHtml(groupName) + '</div>' +
+      '<div class="module-meta-field-group-body">' +
+        renderDynamicFieldsGrouped(prefix, grouped[groupName], values, '') +
+      '</div>' +
+    '</section>';
+  }).join('');
+}
+
+function renderMetaFieldsEditor(prefix, fields, values) {
+  return renderMetaFieldGroups(prefix, (fields || []).filter(function(field) {
+    return !isMetaStyleField(field);
+  }), values);
+}
+
+function renderMetaStyleFieldsEditor(prefix, fields, values) {
+  return renderMetaFieldGroups(prefix, (fields || []).filter(isMetaStyleField), values);
 }
 
 function renderHiddenControl(idx, device, label) {
@@ -1762,15 +1852,21 @@ function addModule(type, variant, dataPreset) {
   var desktopFieldList = fields.filter(function(field) {
     return ['columns', 'max_items'].concat(pagerKeys).indexOf(field.key) === -1;
   });
-  var desktopFields = renderDynamicFieldsGrouped('module_' + idx + '_data_', desktopFieldList, dataPreset, '');
+  var desktopFields = meta.editor === 'meta_fields'
+    ? renderMetaFieldsEditor('module_' + idx + '_data_', desktopFieldList, dataPreset)
+    : renderDynamicFieldsGrouped('module_' + idx + '_data_', desktopFieldList, dataPreset, '');
   var tabletFieldList = fields.filter(function(field) {
     return ['columns', 'max_items'].concat(pagerKeys).indexOf(field.key) === -1;
   });
-  var tabletFields = renderDynamicFieldsGrouped('module_' + idx + '_resp_tablet_data_', tabletFieldList, {}, '继承电脑端');
+  var tabletFields = meta.editor === 'meta_fields'
+    ? ''
+    : renderDynamicFieldsGrouped('module_' + idx + '_resp_tablet_data_', tabletFieldList, {}, '继承电脑端');
   var mobileFieldList = fields.filter(function(field) {
     return ['columns', 'max_items'].concat(pagerKeys).indexOf(field.key) === -1;
   });
-  var mobileFields = renderDynamicFieldsGrouped('module_' + idx + '_resp_mobile_data_', mobileFieldList, {}, '继承电脑端');
+  var mobileFields = meta.editor === 'meta_fields'
+    ? ''
+    : renderDynamicFieldsGrouped('module_' + idx + '_resp_mobile_data_', mobileFieldList, {}, '继承电脑端');
 
   var cP = function(name, ph, dv) { return '<label class="form-label small mb-1 text-muted">' + ph + '</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="' + (dv || '#888888') + '" oninput="this.parentElement.querySelector(\'input[type=text]\').value=this.value"><input type="text" class="form-control form-control-sm" name="' + name + '" value="' + (dv || '') + '" placeholder="' + ph + '" oninput="this.parentElement.querySelector(\'input[type=color]\').value=this.value"></div>'; };
   var uP = function(name, ph, units, dv) { var o = units.map(function(u){return '<option value="'+u+'">'+u+'</option>';}).join(''); return '<label class="form-label small mb-1 text-muted">' + ph + '</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="' + name + '" value="' + (dv || '') + '" placeholder="' + ph + '" style="width:60%"><select class="form-select form-select-sm unit-picker" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name="' + name + '"]\');if(inp){var v=inp.value.replace(/(?:px|rem|%|vh|vw)$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option>' + o + '</select></div>'; };
@@ -1790,6 +1886,9 @@ function addModule(type, variant, dataPreset) {
   var container = document.getElementById('selectedModules');
   var specialEditor = '';
   var styleEditor = '';
+  if (meta.editor === 'meta_fields') {
+    styleEditor = renderMetaStyleFieldsEditor('module_' + idx + '_data_', desktopFieldList, dataPreset);
+  }
   // data-* 声明式 block：用 schema 自动生成表单，拦截在所有硬编码分支之前。
   // meta.is_data_attr/schema 由后端 scan_blocks 解析、随 blockLibraryJson 下发。
   // feature_grid 已经是 data-* 声明式模块；首次新增必须与保存后重载走同一套
@@ -3414,7 +3513,31 @@ function initSchemaMounts() {
     updateConditionalFields(mount.closest('.module-item') || mount);
   });
 }
+
+function initMetaFieldMounts() {
+  document.querySelectorAll('.meta-fields-mount').forEach(function(mount) {
+    if (mount.dataset.mounted) return;
+    var idx = mount.dataset.moduleIndex;
+    var typeEl = document.querySelector('[name="module_' + idx + '_type"]');
+    if (!typeEl) return;
+    var meta = findBlockMeta(typeEl.value);
+    if (meta.editor !== 'meta_fields') return;
+    var values = {};
+    var dataEl = document.querySelector('.meta-fields-mount-data[data-module-index="' + idx + '"]');
+    if (dataEl) {
+      try { values = JSON.parse(dataEl.textContent || '{}') || {}; } catch (e) { values = {}; }
+    }
+    mount.innerHTML = renderMetaFieldsEditor('module_' + idx + '_data_', meta.fields || [], values);
+    var styleMount = mount.closest('.module-item').querySelector('.meta-style-fields-mount[data-module-index="' + idx + '"]');
+    if (styleMount) {
+      styleMount.innerHTML = renderMetaStyleFieldsEditor('module_' + idx + '_data_', meta.fields || [], values);
+    }
+    mount.dataset.mounted = '1';
+    if (typeof enhanceCompactSelects === 'function') enhanceCompactSelects(mount);
+  });
+}
 initSchemaMounts();
+initMetaFieldMounts();
 applyFieldLabelTranslations(document);
 if (typeof enhanceCompactSelects === 'function') enhanceCompactSelects(document);
 bindNestedSortObserver();

@@ -148,6 +148,7 @@ def _detail_content_component_blocks():
 
 from . import datasets, style_registry
 from . import menu as menu_lib
+from .product_comparison import stable_parameter_key
 from .translator import (generate_seo_description, generate_seo_title,
                          is_configured as translation_configured,
                          translate_json)
@@ -400,14 +401,10 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
         'display_name': '规格参数',
         'category': 'detail',
         'icon': '',
-        'description': '读取当前数据项的 specs、parameters 或 attributes 字段，渲染紧凑的键值参数列表。',
+        'description': '按稳定分组键读取结构化参数；同时兼容旧格式参数字段，渲染紧凑的键值参数列表。',
         'fields': [
             {'key': 'title', 'label': '区块标题', 'type': 'text', 'group': '内容', 'default': ''},
-            {'key': 'source_field', 'label': '参数来源', 'type': 'select', 'group': '内容', 'default': 'specs', 'options': [
-                {'value': 'specs', 'label': '规格'},
-                {'value': 'parameters', 'label': '参数'},
-                {'value': 'attributes', 'label': '属性'},
-            ]},
+            {'key': 'key', 'label': '分组键（固定）', 'type': 'text', 'group': '内容', 'default': ''},
             {'key': 'max_rows', 'label': '最多行数', 'type': 'number', 'group': '显示规则', 'default': 10},
             {'key': 'columns', 'label': '每行列数', 'type': 'select', 'group': '显示规则', 'default': '1', 'options': [
                 {'value': '1', 'label': '1 列'},
@@ -417,6 +414,20 @@ DETAIL_TEMPLATE_COMPONENT_BLOCKS = [
             {'key': 'hide_empty_rows', 'label': '空行处理', 'type': 'select', 'group': '显示规则', 'default': 'true', 'options': [
                 {'value': 'true', 'label': '隐藏空行'},
                 {'value': 'false', 'label': '保留空行'},
+            ]},
+            {'key': 'fields', 'label': '对比参数', 'type': 'list', 'group': '内容', 'default': [], 'item_label': '参数', 'item_fields': [
+                {'key': 'key', 'label': '参数键', 'type': 'text'},
+                {'key': 'label', 'label': '参数名称', 'type': 'text'},
+                {'key': 'unit', 'label': '单位', 'type': 'text'},
+                {'key': 'compare', 'label': '参与对比', 'type': 'select', 'default': 'true', 'options': [
+                    {'value': 'true', 'label': '参与'},
+                    {'value': 'false', 'label': '不参与'},
+                ]},
+            ]},
+            {'key': 'source_field', 'label': '旧格式读取字段', 'type': 'select', 'group': '兼容设置', 'default': 'specs', 'options': [
+                {'value': 'specs', 'label': '规格（specs）'},
+                {'value': 'parameters', 'label': '参数（parameters）'},
+                {'value': 'attributes', 'label': '属性（attributes）'},
             ]},
             {'key': 'border_color', 'label': '分隔线颜色', 'type': 'color', 'group': '样式', 'default': '#e5e7eb'},
             {'key': 'section_bg', 'label': '背景色', 'type': 'color', 'group': '样式', 'default': ''},
@@ -1031,6 +1042,53 @@ def _detail_templates_for_page(page, dataset_key, label=None):
     return normalized or [_default_detail_template(dataset_key, label)]
 
 
+def _detail_templates_support_comparison(templates):
+    """Return whether detail templates expose fields to the comparison block.
+
+    A comparison page does not have to be present in the navigation menu.  The
+    explicit ``compare`` flag on detail-spec fields is therefore the stable
+    capability signal for custom product datasets.
+    """
+    enabled_values = {'true', '1', 'yes', 'on'}
+    for template in templates or []:
+        if not isinstance(template, dict):
+            continue
+        for module in template.get('modules') or []:
+            if not isinstance(module, dict) or module.get('type') != 'detail_specs':
+                continue
+            data = module.get('data') if isinstance(module.get('data'), dict) else {}
+            fields = data.get('fields') if isinstance(data.get('fields'), list) else module.get('fields')
+            for field in fields if isinstance(fields, list) else []:
+                if not isinstance(field, dict):
+                    continue
+                compare = field.get('compare')
+                if compare is True or str(compare).strip().lower() in enabled_values:
+                    return True
+    return False
+
+
+def _page_uses_product_comparison(page, dataset_key):
+    """Return whether a visible page module compares the current dataset.
+
+    自定义产品库不一定通过菜单的 ``product_comparison`` 预设创建；部分旧站点
+    直接在语言页面中放置对比模块。因此编辑器必须以页面实际模块作为能力信号，
+    不能只依赖菜单或详情参数里的 ``compare`` 标记。
+    """
+    hidden_values = {'true', '1', 'yes', 'on'}
+    for module in (page or {}).get('modules') or []:
+        if not isinstance(module, dict) or module.get('type') != 'product_comparison':
+            continue
+        data = module.get('data') if isinstance(module.get('data'), dict) else {}
+        if str(data.get('_hidden') or '').strip().lower() in hidden_values:
+            continue
+        if data.get('visible') is False or str(data.get('visible') or '').strip().lower() == 'false':
+            continue
+        module_dataset = str(data.get('dataset') or dataset_key).strip()
+        if module_dataset == str(dataset_key):
+            return True
+    return False
+
+
 def _default_detail_template_id(page, dataset_key, label=None):
     templates = _detail_templates_for_page(page, dataset_key, label)
     for tpl in templates:
@@ -1334,6 +1392,40 @@ def _ensure_detail_templates_for_menu(site_id, menu_items):
         target = entry.get('target')
         if target:
             _ensure_page_detail_templates(site_id, target, entry.get('label'), persist=True)
+
+
+def _ensure_product_comparison_pages_for_menu(site_id, menu_items):
+    """为菜单中的产品对比预设补齐页面模块，不覆盖用户已有模块。"""
+    def walk(items):
+        for item in items or []:
+            if not isinstance(item, dict):
+                continue
+            if item.get('type') == 'list' and item.get('preset') == 'product_comparison':
+                page_key = str(item.get('target') or '').strip()
+                dataset_key = str(item.get('dataset') or page_key).strip()
+                if page_key and dataset_key:
+                    page = read_yaml(site_id, f'pages/{page_key}.yaml', default={}) or {}
+                    modules = page.setdefault('modules', [])
+                    if not any(isinstance(mod, dict) and mod.get('type') == 'product_comparison' for mod in modules):
+                        modules.append({
+                            'type': 'product_comparison',
+                            'variant': 'default',
+                            'data': {
+                                'dataset': dataset_key,
+                                'title': item.get('label') or '产品参数对比',
+                                'max_products': 5,
+                                'default_count': 3,
+                                'show_search': 'true',
+                                'show_hide_same': 'true',
+                                'show_price': 'true',
+                                'show_image': 'true',
+                                'empty_text': '—',
+                            },
+                        })
+                        write_yaml(site_id, f'pages/{page_key}.yaml', page)
+            walk(item.get('children') or [])
+
+    walk(menu_items)
 
 
 def _hex_to_rgb(hex_color):
@@ -2978,6 +3070,7 @@ def _content_catalog(site, lang, default_lang):
     storage_lang = _storage_lang(site, lang, default_lang)
     source_storage_lang = _storage_lang(site, default_lang, default_lang)
     catalog = []
+    catalog_by_dataset = {}
 
     def localized_label(item):
         key = item.get('target') or ('__home__' if item.get('type') == 'home' else item.get('url'))
@@ -2992,16 +3085,37 @@ def _content_catalog(site, lang, default_lang):
             target = str(item.get('target') or '').strip()
             label = localized_label(item)
             next_parents = parents
-            if item_type == 'group':
+            # 页面和列表都可能继续包含子页面；内容中心必须保留完整父级路径，
+            # 否则隐藏在普通页面下的列表会被错误预览成一级地址。
+            if item_type in ('group', 'page', 'list') and target:
                 next_parents = parents + [{'label': label, 'target': target}]
             if item_type == 'list' and target:
+                dataset_key = str(item.get('dataset') or target).strip()
+                if dataset_key in catalog_by_dataset:
+                    # 同一产品库可有卡片页和参数对比页；内容中心只保留一个录入入口。
+                    existing_entry = catalog_by_dataset[dataset_key]
+                    existing_entry.setdefault('views', []).append(target)
+                    # 编辑/详情预览优先走真正生成详情页的入口，而不是参数对比页。
+                    if not existing_entry.get('generates_details') and item.get('generate_details') is not False:
+                        path_parts = [p.get('target') for p in parents if p.get('target')] + [target]
+                        existing_entry.update({
+                            'label': label,
+                            'category': parents[0]['label'] if parents else '',
+                            'parent_key': parents[0]['target'] if parents else '',
+                            'path': '/'.join(path_parts),
+                            'page_target': target,
+                            'generates_details': True,
+                        })
+                    walk(item.get('children') or [], next_parents)
+                    continue
                 # 内容中心是索引入口，浏览列表不能顺带迁移或改写站点文件。
-                page = read_yaml(site.id, f'pages/{target}.yaml', default={}) or {}
-                templates = _detail_templates_for_page(page, target, label)
-                default_template_id = _default_detail_template_id(page, target, label)
-                rows = datasets.load(site.id, target, lang=storage_lang)
+                # 详情模板属于数据集，而不是某个展示页面。
+                page = read_yaml(site.id, f'pages/{dataset_key}.yaml', default={}) or {}
+                templates = _detail_templates_for_page(page, dataset_key, label)
+                default_template_id = _default_detail_template_id(page, dataset_key, label)
+                rows = datasets.load(site.id, dataset_key, lang=storage_lang)
                 if storage_lang and not rows:
-                    rows = datasets.load(site.id, target, lang=source_storage_lang)
+                    rows = datasets.load(site.id, dataset_key, lang=source_storage_lang)
                 # 未显式选择模板的旧内容实际使用默认模板，统计时也必须计入。
                 for template in templates:
                     template_id = str(template.get('id') or '')
@@ -3012,16 +3126,21 @@ def _content_catalog(site, lang, default_lang):
                 parent_key = parents[0]['target'] if parents else ''
                 category = parents[0]['label'] if parents else ''
                 path_parts = [p.get('target') for p in parents if p.get('target')] + [target]
-                catalog.append({
-                    'key': target,
+                entry = {
+                    'key': dataset_key,
                     'label': label,
                     'category': category,
                     'parent_key': parent_key,
                     'path': '/'.join(path_parts),
+                    'page_target': target,
+                    'views': [target],
+                    'generates_details': item.get('generate_details') is not False,
                     'items': rows or [],
                     'templates': templates,
                     'default_template_id': default_template_id,
-                })
+                }
+                catalog.append(entry)
+                catalog_by_dataset[dataset_key] = entry
             walk(item.get('children') or [], next_parents)
 
     walk(raw_menu)
@@ -5925,6 +6044,8 @@ def menu_edit():
         write_yaml(site.id, 'settings.yaml', settings)
         if lang == default_lang:
             _ensure_detail_templates_for_menu(site.id, items)
+        # 菜单结构跨语言共享；从任意语言面板新建对比页都应立即得到页面模块。
+        _ensure_product_comparison_pages_for_menu(site.id, settings.get('menu') or items)
         flash('已保存，首页已保持为固定入口')
         if is_embed:
             return redirect(url_for('core.menu_edit', embed='1', site=site.id, lang=lang, saved='1'))
@@ -6602,6 +6723,8 @@ def _parse_detail_specs_form(form):
         group_count = 0
     groups = []
     for group_index in range(group_count):
+        group_key = form.get(f'detail_specs_{group_index}_key', '').strip() or f'group_{group_index}'
+        group_title = form.get(f'detail_specs_{group_index}_title', '').strip()
         try:
             row_count = int(form.get(f'detail_specs_{group_index}_count', '0'))
         except (ValueError, TypeError):
@@ -6611,9 +6734,22 @@ def _parse_detail_specs_form(form):
             name = form.get(f'detail_specs_{group_index}_{row_index}_name', '').strip()
             desc = form.get(f'detail_specs_{group_index}_{row_index}_desc', '').strip()
             value = form.get(f'detail_specs_{group_index}_{row_index}_value', '').strip()
-            if name or desc or value:
-                items.append({'name': name, 'desc': desc, 'value': value})
-        groups.append({'items': items, 'visible': bool(items)})
+            unit = form.get(f'detail_specs_{group_index}_{row_index}_unit', '').strip()
+            item_key = form.get(f'detail_specs_{group_index}_{row_index}_key', '').strip()
+            if name or desc or value or unit:
+                item = {
+                    'key': item_key or stable_parameter_key(name, f'row_{row_index}'),
+                    'name': name,
+                    'desc': desc,
+                    'value': value,
+                }
+                if unit:
+                    item['unit'] = unit
+                items.append(item)
+        group = {'key': group_key, 'items': items, 'visible': bool(items)}
+        if group_title:
+            group['title'] = group_title
+        groups.append(group)
     return groups
 
 
@@ -7853,14 +7989,15 @@ def dataset_edit(dataset_key, item_id):
         settings = read_yaml(site.id, 'settings.yaml') or {}
         menu_items = settings.get('menu') or []
         is_list_page = any(
-            mi.get('type') == 'list' and mi.get('target') == dataset_key
-            for mi in menu_items
+            entry.get('target') == dataset_key
+            for entry in menu_lib.collect_list_targets(menu_items)
         )
         from app.core.menu import find_menu_path
         meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
         meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
         raw_menu = menu_lib.upgrade_old_format(menu_items, meta.get('datasets', []))
         preview_path = find_menu_path(raw_menu, dataset_key)
+        comparison_preview_path = menu_lib.find_comparison_path(raw_menu, dataset_key)
         page_label = next(
             (entry.get('label') for entry in menu_lib.collect_list_targets(raw_menu) if entry.get('target') == dataset_key),
             dataset_key,
@@ -7884,6 +8021,15 @@ def dataset_edit(dataset_key, item_id):
             isinstance(module, dict) and module.get('type') == 'data_list_showcase'
             for candidate_page in list_page_configs
             for module in (candidate_page.get('modules') or [])
+        )
+        # 对比模块可能只存在于某个语言页面，且菜单仍是普通列表预设。
+        # 跨语言扫描页面配置后，用普通列表路径作为对比预览回退路径。
+        page_uses_product_comparison = any(
+            _page_uses_product_comparison(candidate_page, dataset_key)
+            for candidate_page in list_page_configs
+        )
+        effective_comparison_preview_path = comparison_preview_path or (
+            preview_path if page_uses_product_comparison else ''
         )
         # Field visibility in the dataset editor must follow the selected
         # detail template's components. Existing item data is preserved on
@@ -7917,6 +8063,12 @@ def dataset_edit(dataset_key, item_id):
                        page_key=dataset_key,
                         preview_slug=slug,
                         preview_path=preview_path,
+                        comparison_preview_path=effective_comparison_preview_path,
+                        is_product_dataset=(
+                            bool(effective_comparison_preview_path)
+                            or dataset_key == 'products'
+                            or _detail_templates_support_comparison(detail_templates)
+                        ),
                         detail_templates=detail_templates,
                         default_template_id=default_template_id,
                         selected_template_id=selected_template_id,
@@ -8279,7 +8431,12 @@ def page_panel(page_key):
         existing_modules = page.get('modules', [])
         if storage_lang and not existing_modules:
             source_page_for_save = read_yaml(site.id, f'pages/{page_key}.yaml', lang=source_storage_lang) or {}
-            existing_modules = source_page_for_save.get('modules', []) or existing_modules
+            shared_page_for_save = read_yaml(site.id, f'pages/{page_key}.yaml', lang=None) or {}
+            existing_modules = (
+                source_page_for_save.get('modules', [])
+                or shared_page_for_save.get('modules', [])
+                or existing_modules
+            )
         page['modules'] = _parse_modules_form(request.form, existing_modules)
         # 页面级 SEO 信息和模块配置共用同一个保存按钮；保存模块时不能把
         # title/description 清掉，否则健康检查引导填写后预览 head 仍然没有简介。
@@ -8310,20 +8467,22 @@ def page_panel(page_key):
             template_meta = _yaml.safe_load(meta_path.read_text(encoding='utf-8')) or {}
             menu_items = template_meta.get('default_menu', [])
 
-    def _find_list_in_menu(items, target_key):
+    def _find_list_dataset_in_menu(items, target_key):
         for item in (items or []):
             if item.get('type') == 'list' and item.get('target') == target_key:
-                return True
+                return str(item.get('dataset') or target_key)
             if item.get('children'):
-                if _find_list_in_menu(item['children'], target_key):
-                    return True
-        return False
+                found = _find_list_dataset_in_menu(item['children'], target_key)
+                if found:
+                    return found
+        return ''
 
-    is_list_page = _find_list_in_menu(menu_items, page_key)
+    list_dataset_key = _find_list_dataset_in_menu(menu_items, page_key)
+    is_list_page = bool(list_dataset_key)
     if is_list_page:
         # Ensure every list page has a default detail template. This only adds
         # missing config and never touches dataset items.
-        _ensure_page_detail_templates(site.id, page_key)
+        _ensure_page_detail_templates(site.id, list_dataset_key)
 
     # 收集数据集列表，供数据网格模块选择数据源，也供模板 datasetNamesJson 序列化
     from app.core.menu import upgrade_old_format, normalize_for_render, ensure_home
@@ -8350,8 +8509,21 @@ def page_panel(page_key):
 
     page = read_yaml(site.id, f'pages/{page_key}.yaml', lang=storage_lang)
     source_page = read_yaml(site.id, f'pages/{page_key}.yaml', lang=source_storage_lang) or {}
+    shared_page = read_yaml(site.id, f'pages/{page_key}.yaml', lang=None) or {}
+
+    # modules 是页面结构，通常保存在共享 pages/；语言文件只覆盖标题、描述等文案。
+    # 后台编辑器必须和站点构建器采用相同的回退规则，否则默认语言目录存在时，
+    # 一个已经由模块渲染的页面会被误判为“旧格式”，要求用户再次手动迁移。
+    if shared_page.get('modules') and not source_page.get('modules'):
+        source_override = copy.deepcopy(source_page)
+        source_override.pop('modules', None)
+        source_page = copy.deepcopy(shared_page)
+        source_page.update(source_override)
     if storage_lang and source_page.get('modules') and not (page or {}).get('modules'):
+        page_override = copy.deepcopy(page or {})
+        page_override.pop('modules', None)
         page = copy.deepcopy(source_page)
+        page.update(page_override)
 
     # 读取时仅在内存中兼容旧模块；用户下次明确保存时再持久化迁移。
     for _pg, _sl in [(page, storage_lang), (source_page, None)]:
@@ -8558,6 +8730,12 @@ def _parse_modules_form(form, existing_modules=None):
         for b in _get_available_blocks(_tpl_name):
             if b.get('is_data_attr') and b.get('schema') is not None:
                 schema_by_type[b['name']] = _merge_meta_lists_into_schema(b['schema'], b.get('fields') or [])
+        # 详情模板组件是虚拟 block，没有 template.html schema；仍需把 fields 里的
+        # list 定义交给同一解析器，否则规格字段列表保存后会丢失。
+        for b in DETAIL_TEMPLATE_COMPONENT_BLOCKS:
+            merged = _merge_meta_lists_into_schema({'fields': []}, b.get('fields') or [])
+            if merged.get('fields'):
+                schema_by_type[b['name']] = merged
     except Exception:
         current_app.logger.exception('_parse_modules_form: 构建 schema_by_type 失败，通用 list 解析将不生效——新添加的列表条目可能丢失')
         schema_by_type = {}
@@ -8696,6 +8874,14 @@ def _parse_modules_form(form, existing_modules=None):
                 data[list_name] = items
                 form_fields_for_module.add(list_name)  # 表单已表达该列表；空列表也要覆盖旧数据
                 handled_lists.add(list_name)
+
+            # 第一遍标量扫描会暂存 fields_count / fields_0_key 等表单控制键；
+            # list 已还原成真正数组后必须清除这些散字段，避免污染页面 YAML。
+            for list_name in handled_lists:
+                raw_prefix = f'{list_name}_'
+                for raw_key in list(data):
+                    if raw_key.startswith(raw_prefix):
+                        data.pop(raw_key, None)
 
         # 通用 data-* 顶层 image/video/embed 字段：处理文件上传（list 内字段已在上面处理）
         if _schema is not None:

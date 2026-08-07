@@ -1,12 +1,13 @@
 """菜单项工具.
 
 菜单项数据结构:
-    {label: 显示名, type: 类型, target: 目标 (按 type 不同), url: 外链,
+    {label: 显示名, type: 类型, target: 页面目标, dataset: 数据集（list 可选）,
+     url: 外链,
      children: [子菜单项...], dropdown_style: 下拉样式}
 
 type 取值:
     home  - 首页, 无 target, URL = /
-    list  - 数据集列表页, target = 数据集名, URL = /<target>
+    list  - 数据列表页, target = 页面路径, dataset = 数据集名（省略时等于 target）
     link  - 外链或自定义 URL, url = 完整 URL
     page  - 单页, target = 页面 key
 """
@@ -136,14 +137,18 @@ def filter_hidden_for_nav(items):
 
 
 def collect_list_targets(items, result=None, parent_targets=None):
-    """递归收集菜单里所有 list 类型项的 {target, label, path}。
+    """递归收集菜单里所有 list 类型项的数据源与页面路径。
 
     #22: 此前 routes.py 里以 _collect_list_targets/_collect_targets 内联复制了 3 份
     (逻辑逐字相同, 命名还不一致), 统一抽到这里。
 
     parent_targets: 上级 group 类型的 target 列表，用于构建完整菜单路径。
     如 产品(group, target=products) > Led灯条(list, target=led-strip)
-    → target='led-strip', path='products/led-strip'
+    → target='led-strip', page_target='led-strip', path='products/led-strip'
+
+    ``target`` 历史上被后台各处当作数据集 key 使用，因此这里继续让它返回
+    dataset；新增 ``page_target`` 明确表示页面路径。这样旧站点无需迁移，新的
+    对比页也可以用 product-comparison 页面展示 products 数据集。
     """
     if result is None:
         result = []
@@ -152,10 +157,14 @@ def collect_list_targets(items, result=None, parent_targets=None):
             continue
         if it.get('type') == 'list' and it.get('target'):
             # 将父级 group target 与当前 list target 拼接成完整菜单路径
-            path_parts = (parent_targets or []) + [it['target']]
+            page_target = str(it['target'])
+            dataset_key = str(it.get('dataset') or page_target)
+            path_parts = (parent_targets or []) + [page_target]
             result.append({
-                'target': it['target'],
-                'label': it.get('label', it['target']),
+                'target': dataset_key,
+                'dataset': dataset_key,
+                'page_target': page_target,
+                'label': it.get('label', page_target),
                 'path': '/'.join(path_parts),
             })
         if it.get('children'):
@@ -211,6 +220,15 @@ def clean_for_storage(items):
                 target = str(raw.get('target') or '').strip().strip('/')
                 if target:
                     item['target'] = target
+                if item_type == 'list':
+                    dataset_key = str(raw.get('dataset') or '').strip().strip('/')
+                    if dataset_key and dataset_key != target:
+                        item['dataset'] = dataset_key
+                    preset = str(raw.get('preset') or '').strip()
+                    if preset == 'product_comparison':
+                        item['preset'] = preset
+                    if raw.get('generate_details') is False:
+                        item['generate_details'] = False
             elif item_type == 'link':
                 url = str(raw.get('url') or '').strip()
                 if url:
@@ -246,7 +264,46 @@ def find_menu_path(menu_items, target):
                 if result:
                     return result
         return None
-    return _walk(menu_items) or target
+    exact = _walk(menu_items)
+    if exact:
+        return exact
+
+    # 新菜单允许页面路径与数据集分离；若没有同名页面，再寻找复用该数据集的入口。
+    def _walk_dataset(items, parent_path=''):
+        for item in items or []:
+            t = item.get('type')
+            item_target = item.get('target', '')
+            item_path = f'{parent_path}/{item_target}' if parent_path and item_target else (item_target or parent_path)
+            if t == 'list' and str(item.get('dataset') or item_target) == str(target):
+                return item_path
+            child_parent = item_path if t in ('page', 'list', 'group') and item_target else parent_path
+            found = _walk_dataset(item.get('children') or [], child_parent)
+            if found:
+                return found
+        return ''
+
+    return _walk_dataset(menu_items) or target
+
+
+def find_comparison_path(menu_items, dataset_key):
+    """查找指定数据集的产品对比页面完整路径，找不到时返回空字符串。"""
+    def _walk(items, parent_path=''):
+        for item in items or []:
+            if not isinstance(item, dict):
+                continue
+            target = str(item.get('target') or '')
+            item_path = f'{parent_path}/{target}' if parent_path and target else (target or parent_path)
+            if (item.get('type') == 'list'
+                    and item.get('preset') == 'product_comparison'
+                    and str(item.get('dataset') or target) == str(dataset_key)):
+                return item_path
+            child_parent = item_path if item.get('type') in ('page', 'list', 'group') and target else parent_path
+            found = _walk(item.get('children') or [], child_parent)
+            if found:
+                return found
+        return ''
+
+    return _walk(menu_items)
 
 
 def upgrade_old_format(items, datasets):
@@ -354,10 +411,15 @@ def collect_render_tasks(menu_items, tpl_html_dir, data, pages=None):
         'page_key': 'home',
     })
 
+    # 同一数据集可以有多个展示页，但详情页只应生成一套。优先使用菜单中第一个
+    # 未关闭 generate_details 的列表路径，避免产品对比页重复生成产品详情。
+    detail_datasets = set()
+
     def _walk(items, parent_path=''):
         for item in items or []:
             t = item.get('type')
             target = item.get('target', '')
+            dataset_key = item.get('dataset') or target
 
             # 计算当前项的 URL 路径 (含父级层级)
             # group/page/list 贡献其 target 到 item_path
@@ -378,12 +440,15 @@ def collect_render_tasks(menu_items, tpl_html_dir, data, pages=None):
             # 产品栏配成"分组(group)"做下拉菜单，此前只有 list 才生成详情页，group 会
             # 静默跳过，导致导航/列表里指向 /<target>/<slug>/ 的链接全部变死链、导出被拦。
             def _collect_detail_tasks():
+                if item.get('generate_details') is False or dataset_key in detail_datasets:
+                    return
                 # derive_detail_info 内部已覆盖"预定义映射 + 通用推导 + <target>_detail.html"
                 # 三种情况(见该函数)。
-                dt_tmpl, var_name, slug_field = derive_detail_info(target, tpl_html_dir)
+                dt_tmpl, var_name, slug_field = derive_detail_info(dataset_key, tpl_html_dir)
                 if not (dt_tmpl and var_name):
                     return
-                items_data = data.get(target, [])
+                detail_datasets.add(dataset_key)
+                items_data = data.get(dataset_key, [])
                 if isinstance(items_data, dict):
                     items_data = items_data.get('items', [])
                 for entry in items_data:
@@ -394,8 +459,9 @@ def collect_render_tasks(menu_items, tpl_html_dir, data, pages=None):
                             'template': dt_tmpl,
                             'output_path': f'{item_path}/{slug}/index.html',
                             'current_path': f'/{item_path}/{slug}/',
-                            'page_key': target,
-                            'dataset_key': target,
+                            # 详情模板属于数据集，不属于某个展示页面。
+                            'page_key': dataset_key,
+                            'dataset_key': dataset_key,
                             'var_name': var_name,
                             'item': entry,
                         })
@@ -413,7 +479,8 @@ def collect_render_tasks(menu_items, tpl_html_dir, data, pages=None):
                     'output_path': f'{item_path}/index.html',
                     'current_path': f'/{item_path}/',
                     'page_key': target,
-                    'dataset_key': target,
+                    'dataset_key': dataset_key,
+                    'generate_details': item.get('generate_details') is not False,
                 })
                 _collect_detail_tasks()
 

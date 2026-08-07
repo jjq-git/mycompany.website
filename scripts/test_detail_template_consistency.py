@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from jinja2 import Environment
 from werkzeug.datastructures import MultiDict
 
-from app.core import builder, routes
+from app.core import builder, product_comparison, routes
 
 
 def check(label, condition):
@@ -136,6 +136,48 @@ check('only populated specs group renders', [bool(value) for value in spec_html]
 legacy_spec_html = [str(builder._render_detail_specs({'specs': spec_item['specs']}, m['data'])) for m in spec_modules]
 check('legacy specs source renders only in the first component',
       [bool(value) for value in legacy_spec_html] == [True, False])
+
+# Stable group keys are canonical; position remains a backward-compatible fallback.
+keyed_spec_modules = builder._annotate_detail_modules([
+    {'type': 'detail_specs', 'order': 1, 'data': {'key': 'interfaces', 'columns': 2}},
+    {'type': 'detail_specs', 'order': 2, 'data': {'key': 'basic', 'columns': 2}},
+])
+keyed_spec_modules = [m for m in keyed_spec_modules if m['type'] == 'detail_specs']
+keyed_item = {'detail_specs': [
+    {'key': 'basic', 'items': [{'name': 'Basic marker', 'value': 'B'}]},
+    {'key': 'interfaces', 'items': [{'name': 'Interface marker', 'value': 'I'}]},
+]}
+keyed_html = [str(builder._render_detail_specs(keyed_item, m['data'])) for m in keyed_spec_modules]
+check('stable specs group keys survive component reordering',
+      'Interface marker' in keyed_html[0] and 'Basic marker' in keyed_html[1])
+
+legacy_source_modules = builder._annotate_detail_modules([
+    {'type': 'detail_specs', 'order': 1, 'data': {'source_field': 'specs', 'columns': 2}},
+    {'type': 'detail_specs', 'order': 2, 'data': {'source_field': 'parameters', 'columns': 2}},
+    {'type': 'detail_specs', 'order': 3, 'data': {'source_field': 'attributes', 'columns': 2}},
+])
+legacy_source_modules = [m for m in legacy_source_modules if m['type'] == 'detail_specs']
+legacy_source_item = {
+    'specs': {'Spec marker': 'S'},
+    'parameters': {'Parameter marker': 'P'},
+    'attributes': {'Attribute marker': 'A'},
+}
+legacy_source_html = [
+    str(builder._render_detail_specs(legacy_source_item, module['data']))
+    for module in legacy_source_modules
+]
+check('distinct legacy parameter sources each render once',
+      'Spec marker' in legacy_source_html[0]
+      and 'Parameter marker' in legacy_source_html[1]
+      and 'Attribute marker' in legacy_source_html[2])
+
+legacy_comparison_groups = product_comparison._product_groups(legacy_source_item, [
+    {'key': 'basic', 'title': '基本参数', 'source_field': 'specs'},
+    {'key': 'interfaces', 'title': '接口参数', 'source_field': 'parameters'},
+    {'key': 'electrical', 'title': '电气参数', 'source_field': 'attributes'},
+])
+check('comparison compatibility respects each configured legacy source',
+      [group['key'] for group in legacy_comparison_groups] == ['basic', 'interfaces', 'electrical'])
 
 link_modules = builder._annotate_detail_modules([
     {'type': 'detail_link', 'order': 1, 'data': {'hide_when_empty': 'true'}},

@@ -13,6 +13,7 @@
 | [seo.md](seo.md) | SEO + AI 检索（sitemap、hreflang、llms.txt 等） |
 | [LLM.md](LLM.md) | LLM / AI 爬虫检索优化（占位，待补） |
 | [module-list.md](module-list.md) | 页面模块列表搜索与分页：适用于 `/functions/`、`/modules/` 这类由多个图文模块组成的页面 |
+| [product-comparison.md](product-comparison.md) | 产品参数对比页：菜单与数据源解耦、参数结构、主题模块和预览流程 |
 | [i18n.md](i18n.md) | 多语言 + AI 翻译用户网站内容（Phase 2） |
 
 ## 工作流

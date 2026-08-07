@@ -24,6 +24,7 @@ from .icon_registry import get_icon_svg
 from .html_sanitizer import sanitize_richtext
 from . import menu as menu_lib
 from .models import Site
+from .product_comparison import build_product_comparison
 
 
 # block schema 解析缓存：同一次构建里一个 block 只解析一次。
@@ -439,7 +440,9 @@ def _detail_actions_html(item):
         label = str(entry.get('text') or entry.get('label') or '').strip()
         url = entry.get('url') or entry.get('link_url') or ''
         url = str(url or '').strip()
-        if url and not re.match(r'^(?:https?://|mailto:|tel:|#|/|\./|\.\./)', url, flags=re.IGNORECASE):
+        # 与声明式链接控件保持一致：允许普通相对路径（如 product/1、1），
+        # 同时拒绝 javascript:、data: 等带危险协议的地址。
+        if url and not re.match(r'^(?:https?:|mailto:|tel:|/|#|\./|\.\./|[^:]*$)', url, flags=re.IGNORECASE):
             url = ''
         if not label or not url:
             continue
@@ -528,17 +531,25 @@ def _render_detail_specs(item, data):
     spec_index = data.get('_detail_specs_index')
     spec_group = {}
     detail_specs = item.get('detail_specs')
-    if isinstance(spec_index, int) and isinstance(detail_specs, list):
-        if 0 <= spec_index < len(detail_specs) and isinstance(detail_specs[spec_index], dict):
+    source_field = data.get('source_field') or 'specs'
+    if isinstance(spec_index, int) and isinstance(detail_specs, list) and detail_specs:
+        # 新结构优先按稳定分组键绑定。这样模板组件重新排序后，内容仍会进入正确分组。
+        # 找不到键时继续按原位置回退，保证既有站点和尚未补键的历史内容不变。
+        group_key = str(data.get('key') or '').strip()
+        if group_key:
+            spec_group = next((
+                group for group in detail_specs
+                if isinstance(group, dict) and str(group.get('key') or '').strip() == group_key
+            ), {})
+        if not spec_group and 0 <= spec_index < len(detail_specs) and isinstance(detail_specs[spec_index], dict):
             spec_group = detail_specs[spec_index]
-        else:
+        if not spec_group:
             return Markup('')
-    elif isinstance(spec_index, int) and spec_index > 0:
-        # Historical specs/parameters/attributes are a single ungrouped source.
+    elif isinstance(spec_index, int) and _detail_int(data.get('_detail_specs_source_index'), spec_index) > 0:
+        # 旧格式的同一个根级来源只由首个组件消费，避免重复展示；不同来源可各显示一次。
         return Markup('')
     if spec_group.get('visible') is False:
         return Markup('')
-    source_field = data.get('source_field') or 'specs'
     specs_value = spec_group.get('items') if isinstance(spec_group.get('items'), list) else _detail_field_value(item, source_field)
     max_rows = _detail_int(data.get('max_rows'), 0)
     columns = max(1, min(3, _detail_int(data.get('columns'), 1) or 1))
@@ -564,7 +575,9 @@ def _render_detail_specs(item, data):
             cells.append(f'<div class="detail-spec-cell detail-spec-cell--desc">{escape(desc)}</div>')
             cells.append(f'<div class="detail-spec-cell detail-spec-cell--value">{escape(val)}</div>')
         body_rows.append(
-            f'<div class="detail-spec-row" style="--detail-spec-columns:{columns};border-bottom:1px solid {border}">{"".join(cells)}</div>'
+            # 列数类仅描述当前数据结构，主题可据此把三字段的说明移到值下方；
+            # 保留原有内联边框颜色，避免已有模板配置失效。
+            f'<div class="detail-spec-row detail-spec-row--columns-{columns}" style="--detail-spec-columns:{columns};border-bottom:1px solid {border}">{"".join(cells)}</div>'
         )
     rows = ''.join(body_rows)
     return Markup(
@@ -1340,6 +1353,27 @@ def _make_render_block(env, tpl_root, template_name, enable_data_attr):
             return Markup('')
         if block_type in DETAIL_COMPONENT_TYPES:
             return _render_detail_component(jinja_ctx, module)
+
+        if block_type == 'product_comparison':
+            # 对比表需要先把三种历史参数格式归一化，再交给两个主题各自渲染。
+            # 它是独立模块，不经过 data_grid 的声明式列表渲染路径。
+            raw_data = module.get('data') if isinstance(module.get('data'), dict) else {}
+            comparison = build_product_comparison(
+                jinja_ctx.get('all_datasets') or {},
+                jinja_ctx.get('all_pages') or {},
+                raw_data,
+                jinja_ctx.get('dataset_paths') or {},
+                jinja_ctx.get('base_url', '') or '',
+            )
+            try:
+                tpl = env.get_template(f'blocks/{block_type}/template.html')
+                sub_ctx = dict(jinja_ctx)
+                sub_ctx['module'] = module
+                sub_ctx['comparison'] = comparison
+                return Markup(tpl.render(**sub_ctx).rstrip('\n'))
+            except Exception as exc:
+                current_app.logger.error('block %s 渲染失败: %s', block_type, exc)
+                return Markup('')
 
         html, schema = _load_block_for_render(tpl_root, template_name, block_type, variant)
         if html is None:
@@ -2367,6 +2401,7 @@ def _annotate_detail_modules(modules):
     link_index = 0
     table_index = 0
     specs_index = 0
+    specs_source_counts = {}
     columns_index = 0  # 图文列支持模板里放多个，按出现顺序给每个模块编号，对应条目 detail_columns_groups[i]
     content_blocks_index = 0
     content_type_counts = {}
@@ -2394,6 +2429,9 @@ def _annotate_detail_modules(modules):
             data = module.get('data') if isinstance(module.get('data'), dict) else {}
             module['data'] = data
             data['_detail_specs_index'] = specs_index
+            source_field = str(data.get('source_field') or 'specs')
+            data['_detail_specs_source_index'] = specs_source_counts.get(source_field, 0)
+            specs_source_counts[source_field] = data['_detail_specs_source_index'] + 1
             specs_index += 1
         if module.get('type') == 'detail_columns':
             # 与 specs 同理：模板里 N 个图文列组件按顺序取条目 detail_columns_groups[0..N-1]，
@@ -2465,6 +2503,7 @@ def _render_task_html(env, task, common, pages, data, meta, dataset_paths):
         for key, path in dataset_paths.items()
     }
     ctx['page_key'] = task['page_key']
+    ctx['all_pages'] = pages
     ctx['lang_switch_path'] = task['current_path']
 
     if task['type'] == 'home':
@@ -2486,6 +2525,25 @@ def _render_task_html(env, task, common, pages, data, meta, dataset_paths):
     return _rewrite_preview_urls(tpl.render(**ctx), common.get('base_url', ''))
 
 
+def _dataset_paths_from_tasks(tasks):
+    """为每个数据集选定第一个列表入口作为稳定的详情链接前缀。"""
+    result = {}
+    # 先选实际生成详情页的列表；对比页即使排在菜单前面也不会抢占详情路径。
+    for task in tasks or []:
+        dataset_key = task.get('dataset_key')
+        current_path = task.get('current_path')
+        if (task.get('type') == 'list' and task.get('generate_details') is True
+                and dataset_key and current_path):
+            result.setdefault(dataset_key, current_path)
+    for task in tasks or []:
+        dataset_key = task.get('dataset_key')
+        current_path = task.get('current_path')
+        if task.get('type') == 'list' and dataset_key and current_path:
+            # 同一产品库可被卡片页和对比页复用，后者不能覆盖原详情路径。
+            result.setdefault(dataset_key, current_path)
+    return result
+
+
 def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, pages, data, meta, seo_records=None):
     """为一种语言渲染所有页面 (菜单驱动).
 
@@ -2505,11 +2563,7 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
     _common['settings']['menu'] = nav_menu
     menu_items = full_menu
     tasks = menu_lib.collect_render_tasks(menu_items, tpl_html_dir, data, pages)
-    dataset_paths = {
-        task.get('dataset_key'): task.get('current_path')
-        for task in tasks
-        if task.get('type') == 'list' and task.get('dataset_key') and task.get('current_path')
-    }
+    dataset_paths = _dataset_paths_from_tasks(tasks)
 
     failures = []
     for task in tasks:
@@ -2525,6 +2579,7 @@ def _render_for_language(env, tpl_html_dir, output_root, lang_code, common, page
             }
 
             ctx['page_key'] = task['page_key']
+            ctx['all_pages'] = pages
             # #27: 语言切换器默认把当前 current_path 拼到目标语言, 但详情页的 slug 是
             # 按语言各自生成的(zh 的 slug ≠ en 的 slug), 直接拼会 404。这里给详情页提供
             # 降级到"列表页"的 lang_switch_path; 其它页就用自身路径。模板的语言切换器改用它。
@@ -2698,11 +2753,7 @@ def render_site_page(site_id, filepath='index.html', base_url='', lang_code=None
     }
 
     tasks = menu_lib.collect_render_tasks(full_menu, tpl_html_dir, render_data, render_pages)
-    dataset_paths = {
-        task.get('dataset_key'): task.get('current_path')
-        for task in tasks
-        if task.get('type') == 'list' and task.get('dataset_key') and task.get('current_path')
-    }
+    dataset_paths = _dataset_paths_from_tasks(tasks)
     task = next((item for item in tasks if item.get('output_path') == rel), None)
     if task is None and rel == 'index.html':
         task = next((item for item in tasks if item.get('type') == 'home'), None)

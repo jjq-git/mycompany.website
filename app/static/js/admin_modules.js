@@ -922,6 +922,9 @@
     if (isHalfField(field)) {
       wrapperAttrs = wrapperAttrs.replace('module-field', 'module-field module-field-half');
     }
+    if (type === 'number') {
+      wrapperAttrs = wrapperAttrs.replace('module-field', 'module-field module-number-field');
+    }
     var isSegmented = type === 'select' && segmentedControl(prefix + key, field.options || [], value, esc);
     if (type === 'select') {
       wrapperAttrs = wrapperAttrs.replace('module-field', 'module-field label-radio-row');
@@ -944,6 +947,29 @@
       html += richEditorHtml(prefix + key, value || '', true);
     } else if (type === 'textarea') {
       html += '<textarea class="form-control form-control-sm" rows="4" name="' + prefix + key + '" placeholder="' + esc(placeholder || '') + '">' + esc(value || '') + '</textarea>';
+    } else if (key === 'dataset' || type === 'dataset') {
+      var currentDataset = String(value || field.default || '');
+      var availableDatasets = (window._moduleCtx && window._moduleCtx.datasetNames) || window.datasetNames || [];
+      var hasCurrentDataset = availableDatasets.some(function(ds) {
+        return String(ds.target || ds.value || ds.key || '') === currentDataset;
+      });
+      html += '<select class="form-select form-select-sm" data-no-segmented="1" name="' + esc(prefix + key) + '">';
+      if (!currentDataset) {
+        html += '<option value="" selected>请选择数据来源</option>';
+      } else if (!hasCurrentDataset) {
+        html += '<option value="' + esc(currentDataset) + '" selected>' + esc(currentDataset) + '（当前）</option>';
+      }
+      availableDatasets.forEach(function(ds) {
+        var target = String(ds.target || ds.value || ds.key || '');
+        if (!target) return;
+        var datasetLabel = ds.label || target;
+        html += '<option value="' + esc(target) + '"' + (currentDataset === target ? ' selected' : '') + '>' +
+          esc(datasetLabel + (String(datasetLabel) === target ? '' : ' (' + target + ')')) + '</option>';
+      });
+      if (!availableDatasets.length && !currentDataset) {
+        html += '<option value="" disabled>暂无数据来源</option>';
+      }
+      html += '</select>';
     } else if (isSegmented) {
       html += segmentedControl(prefix + key, field.options || [], value, esc);
     } else if (type === 'select') {
@@ -1077,15 +1103,15 @@
     var children = fieldChildren(field);
     var base = prefix.replace(/data_$/, '');
     var itemLabel = field.item_label || '条目';
-    var html = '<div class="schema-list-editor" data-list-base="' + attrEsc(base) + '" data-list-name="' + attrEsc(key) + '" data-children="' + attrEsc(JSON.stringify(children)) + '">';
-    html += '<div class="d-flex justify-content-between align-items-center mb-2">' +
+    var html = '<div class="schema-list-editor" data-list-base="' + attrEsc(base) + '" data-list-name="' + attrEsc(key) + '" data-item-label="' + attrEsc(itemLabel) + '" data-children="' + attrEsc(JSON.stringify(children)) + '">';
+    html += '<div class="schema-list-toolbar d-flex justify-content-between align-items-center mb-2">' +
       '<div class="small fw-semibold text-primary">' + esc(labelText(field)) + '</div>' +
       '<button type="button" class="btn btn-sm btn-outline-primary" onclick="window.schemaListAdd(this)">+ 添加' + esc(itemLabel) + '</button>' +
       '</div>';
     html += '<input type="hidden" class="schema-list-count" name="' + attrEsc(base + key + '_count') + '" value="' + items.length + '">';
     html += '<div class="schema-list-items">';
     items.forEach(function(item, i) {
-      html += schemaListItemHtml(base, key, i, children, item || {});
+      html += schemaListItemHtml(base, key, i, children, item || {}, itemLabel);
     });
     html += '</div></div>';
     if (key === 'items' && window._moduleCtx && window._moduleCtx.currentModuleType === 'featured_picks') {
@@ -1299,8 +1325,9 @@
     };
   }
 
-  function schemaListItemHtml(base, listName, index, children, itemData) {
+  function schemaListItemHtml(base, listName, index, children, itemData, itemLabel) {
     var itemPrefix = base + listName + '_' + index + '_';
+    itemLabel = itemLabel || '条目';
     var inner = '';
     (children || []).forEach(function(child) {
       inner += renderField(itemPrefix, child, itemData ? itemData[child.key] : '', '');
@@ -1309,7 +1336,7 @@
       '<div class="d-flex justify-content-between align-items-center schema-list-item-header" data-schema-list-toggle="1" style="cursor:pointer;user-select:none">' +
         '<span class="small fw-semibold d-flex align-items-center">' +
           '<svg class="schema-list-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;flex-shrink:0;color:#94a3b8;transition:transform 0.2s"><path d="M9 18l6-6-6-6"/></svg>' +
-          '条目 ' + (index + 1) +
+          esc(itemLabel) + ' ' + (index + 1) +
         '</span>' +
         '<button type="button" class="module-action-btn module-action-del schema-list-remove" title="删除" aria-label="删除条目">' + detailGalleryIcon('trash') + '</button>' +
       '</div>' +
@@ -1320,6 +1347,7 @@
   function schemaListReindex(editor) {
     var base = editor.dataset.listBase || '';
     var listName = editor.dataset.listName || '';
+    var itemLabel = editor.dataset.itemLabel || '条目';
     var prefixStr = base + listName + '_';
     var re = new RegExp('^(' + prefixStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')\\d+_');
     var items = editor.querySelectorAll('.schema-list-item');
@@ -1332,7 +1360,7 @@
       var label = item.querySelector('.schema-list-item-header .small.fw-semibold');
       if (label) {
         var svg = label.querySelector('svg');
-        label.textContent = '条目 ' + (i + 1);
+        label.textContent = itemLabel + ' ' + (i + 1);
         if (svg) label.insertBefore(svg, label.firstChild);
       }
       item.querySelectorAll('[name]').forEach(function(el) {
@@ -1346,11 +1374,12 @@
     if (!editor) return;
     var base = editor.dataset.listBase || '';
     var listName = editor.dataset.listName || '';
+    var itemLabel = editor.dataset.itemLabel || '条目';
     var children = [];
     try { children = JSON.parse(editor.dataset.children || '[]'); } catch (err) { children = []; }
     var list = editor.querySelector('.schema-list-items');
     var index = list ? list.querySelectorAll('.schema-list-item').length : 0;
-    if (list) list.insertAdjacentHTML('beforeend', schemaListItemHtml(base, listName, index, children, {}));
+    if (list) list.insertAdjacentHTML('beforeend', schemaListItemHtml(base, listName, index, children, {}, itemLabel));
     schemaListReindex(editor);
     updateConditionalFields(editor);
   };
@@ -1554,18 +1583,36 @@
       !/(来源|最多|为空|空行|显示|隐藏|开启|关闭|链接为空)/.test(label);
   }
 
-  function renderDetailTemplateComponentFields(prefix, fields, values) {
+  function renderDetailTemplateComponentFields(prefix, fields, values, componentType) {
     values = values || {};
     var primary = [];
     var advanced = [];
     (fields || []).forEach(function(field) {
       (isDetailAdvancedField(field) ? advanced : primary).push(field);
     });
+    function legacySourceHtml(field) {
+      var hasStructuredFields = Array.isArray(values.fields) && values.fields.length > 0;
+      var currentValue = values[field.key] || field.default || 'specs';
+      return '<details class="detail-specs-legacy-settings"' + (hasStructuredFields ? '' : ' open') + '>' +
+        '<summary><span class="detail-specs-legacy-title">旧数据兼容</span>' +
+          '<span class="detail-specs-legacy-status">' +
+            (hasStructuredFields ? '当前使用分组参数，无需设置' : '当前模板可读取旧格式参数') +
+          '</span></summary>' +
+        '<div class="detail-specs-legacy-body">' +
+          renderField(prefix, field, currentValue, '') +
+          '<div class="detail-specs-legacy-help">仅当产品没有分组参数时使用；不会修改或迁移原有数据。</div>' +
+        '</div></details>';
+    }
     function gridHtml(list, emptyText) {
       if (!list.length) return '<div class="text-muted small py-2">' + emptyText + '</div>';
-      var out = '<div class="detail-template-field-grid">';
+      var gridClass = 'detail-template-field-grid' + (componentType === 'detail_specs' ? ' detail-specs-field-grid' : '');
+      var out = '<div class="' + gridClass + '">';
       list.forEach(function(field) {
-        out += renderField(prefix, field, values[field.key] || field.default || '', '');
+        if (componentType === 'detail_specs' && field.key === 'source_field') {
+          out += legacySourceHtml(field);
+        } else {
+          out += renderField(prefix, field, values[field.key] || field.default || '', '');
+        }
       });
       return out + '</div>';
     }
@@ -2819,7 +2866,7 @@
 
     if (isDetailTplComponent) {
       html += '<div class="device-config device-desktop detail-template-component-config">' +
-        renderDetailTemplateComponentFields('module_' + idx + '_data_', desktopFieldList, d) +
+        renderDetailTemplateComponentFields('module_' + idx + '_data_', desktopFieldList, d, type) +
       '</div>';
     } else if (!isDataModule) {
       // 电脑绔細tab 按钮 + 两个面板（结构与 Jinja 模板涓自动达級

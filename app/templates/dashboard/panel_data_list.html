@@ -27,6 +27,26 @@
   .ds-template-row{display:grid;grid-template-columns:88px minmax(360px,1fr) minmax(260px,420px);gap:12px;align-items:center}
   .ds-basic-grid{display:grid;grid-template-columns:minmax(260px,360px) minmax(420px,1fr);gap:12px}
   .ds-basic-full{grid-column:1 / -1}
+  .ds-auto-tags-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px}
+  .ds-auto-tags-head .form-label,.ds-auto-tags-head .form-text{margin:0!important}
+  .ds-auto-tags-head .form-text{min-width:0;text-align:right}
+  .ds-compare-card{grid-column:1 / -1;border:1px solid #b9ddd9;border-left:3px solid #0f9a8a;background:#f8fcfb}
+  .ds-compare-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:9px 12px;border-bottom:1px solid #d7ebe8;background:#eff8f7}
+  .ds-compare-heading{display:flex;align-items:center;gap:10px;min-width:0}
+  .ds-compare-icon{width:28px;height:28px;flex:0 0 28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #9fd4ce;background:#fff;color:#0f766e}
+  .ds-compare-icon svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .ds-compare-title{font-size:13px;font-weight:700;color:#0f172a;line-height:1.35}
+  .ds-compare-subtitle{margin-top:2px;font-size:12px;color:#64748b;line-height:1.4}
+  .ds-compare-badge{flex:0 0 auto;padding:3px 8px;border:1px solid #a9d8d3;background:#fff;color:#0f766e;font-size:11px;line-height:1.4}
+  .ds-compare-body{display:grid;grid-template-columns:minmax(220px,1.25fr) minmax(170px,1fr) minmax(140px,.7fr) minmax(210px,1fr) minmax(170px,.85fr);gap:12px;padding:12px;background:#fff}
+  .ds-compare-field{min-width:0}
+  .ds-compare-field .form-label{font-weight:600;color:#334155}
+  .ds-compare-field-help{margin-top:5px;font-size:11px;color:#64748b;line-height:1.4}
+  .ds-compare-choice-group{display:flex;align-items:stretch;height:31px;border:1px solid #d9e1e8;background:#fff}
+  .ds-compare-choice{position:relative;display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;flex:1 1 50%;margin:0;padding:0 10px;color:#475569;font-size:12px;white-space:nowrap;cursor:pointer}
+  .ds-compare-choice+.ds-compare-choice{border-left:1px solid #d9e1e8}
+  .ds-compare-choice:has(input:checked){background:#eaf7f5;color:#0f766e;font-weight:600}
+  .ds-compare-choice input{width:13px;height:13px;flex:0 0 13px;margin:0;accent-color:#0f9a8a}
   .detail-actions-basic{margin-top:2px;padding-top:12px;border-top:1px solid #edf2f7}
   .detail-actions-basic-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
   .detail-actions-basic-title{font-size:12px;font-weight:700;color:#334155}
@@ -136,9 +156,10 @@
   .dataset-edit-form .detail-table-input-grid{grid-column:2;margin:12px}
   .dataset-edit-form .detail-spec-rows{grid-column:2;margin:12px;display:grid;grid-template-columns:1fr;gap:8px}
   .dataset-edit-form .detail-spec-rows .dataset-spec-item{padding:0!important;border:0!important;margin:0!important}
-  .dataset-edit-form .detail-spec-input-row{display:grid;grid-template-columns:minmax(110px,1fr) minmax(130px,1fr) minmax(130px,1fr) 34px;gap:8px;align-items:center}
-  .dataset-edit-form .detail-spec-rows[data-columns="1"] .detail-spec-input-row{grid-template-columns:minmax(0,1fr) 34px}
-  .dataset-edit-form .detail-spec-rows[data-columns="2"] .detail-spec-input-row{grid-template-columns:minmax(110px,1fr) minmax(130px,1fr) 34px}
+  .dataset-edit-form .detail-spec-input-row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(120px,.8fr) minmax(180px,1fr) minmax(68px,86px) 34px;gap:8px;align-items:center}
+  /* columns 表示详情页展示的内容列数；编辑器仍要为单位和删除按钮保留独立列。 */
+  .dataset-edit-form .detail-spec-rows[data-columns="1"] .detail-spec-input-row{grid-template-columns:minmax(180px,1fr) minmax(68px,86px) 34px}
+  .dataset-edit-form .detail-spec-rows[data-columns="2"] .detail-spec-input-row{grid-template-columns:minmax(150px,1fr) minmax(180px,1fr) minmax(68px,86px) 34px}
   .dataset-edit-form .detail-spec-rows[data-columns="1"] .detail-spec-name-field,
   .dataset-edit-form .detail-spec-rows[data-columns="1"] .detail-spec-desc-field,
   .dataset-edit-form .detail-spec-rows[data-columns="2"] .detail-spec-desc-field{display:none!important}
@@ -222,10 +243,9 @@
     .dataset-edit-form .detail-link-item>div:not(.small){grid-column:1}
     .dataset-edit-form .detail-spec-input-row,
     .dataset-edit-form .detail-spec-rows[data-columns="1"] .detail-spec-input-row,
-    .dataset-edit-form .detail-spec-rows[data-columns="2"] .detail-spec-input-row{grid-template-columns:1fr}
-    .dataset-edit-form .detail-spec-rows[data-columns="1"] .detail-spec-name-field,
-    .dataset-edit-form .detail-spec-rows[data-columns="1"] .detail-spec-desc-field,
-    .dataset-edit-form .detail-spec-rows[data-columns="2"] .detail-spec-desc-field{display:block!important}
+    .dataset-edit-form .detail-spec-rows[data-columns="2"] .detail-spec-input-row{grid-template-columns:minmax(0,1fr) minmax(68px,86px) 34px}
+    .dataset-edit-form .detail-spec-name-field,
+    .dataset-edit-form .detail-spec-desc-field{grid-column:1 / -1}
     .dataset-edit-form .dataset-media-field>.module-media-tools,
     .dataset-edit-form .dataset-media-field>.module-media-url-row,
     .dataset-edit-form .dataset-media-field>input.form-control,
@@ -244,12 +264,19 @@
     .ds-setting-row{align-items:flex-start;flex-direction:column}
     .ds-setting-actions{justify-content:flex-start}
     .detail-content-title-field{width:100%}
+    .ds-compare-head{align-items:flex-start;flex-direction:column}
+    .ds-compare-body{grid-template-columns:1fr}
+    .ds-auto-tags-head{align-items:flex-start;flex-direction:column;gap:3px}
+    .ds-auto-tags-head .form-text{text-align:left}
   }
 </style>
 
 <div class="ds-edit-head">
   <span class="ds-edit-title">{{ dataset_key | title }}{% if is_edit %} · 编辑 #{{ edit_item_id }}{% endif %}</span>
   <div class="d-flex gap-1">
+    {% if is_edit and comparison_preview_path | default('') %}
+    <a class="btn btn-sm btn-outline-primary" href="/live_preview/{{ site.id }}/{{ current_lang }}/{{ comparison_preview_path }}/index.html?compare={{ edit_item_id }}" target="_blank" rel="noopener">在对比页预览</a>
+    {% endif %}
     {% if workspace_mode %}
     <button class="ds-icon-btn" type="button" onclick="loadDatasetList()" title="返回内容列表" aria-label="返回内容列表">{{ ds_icon('list') }}</button>
     {% else %}
@@ -402,9 +429,11 @@
             {# 自动标签可手动修改：手改过（tags_auto=False）则显示已保存的手填值，
                否则预填本次自动值。改了内容保存后即锁定，不再被自动值覆盖。 #}
             {% set tags_manual = edit_item.tags_auto is defined and edit_item.tags_auto == false %}
-            <label class="form-label">标签{% if tags_manual %}<span class="text-muted small ms-1">（已手动修改）</span>{% endif %}</label>
+            <div class="ds-auto-tags-head">
+              <label class="form-label">标签{% if tags_manual %}<span class="text-muted small ms-1">（已手动修改）</span>{% endif %}</label>
+              <div class="form-text" id="autoTagsHelp">根据规格参数自动生成，可直接修改；改动保存后将以你填写的为准。</div>
+            </div>
             <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val if tags_manual else (generated_tags_val or tags_val) }}" aria-describedby="autoTagsHelp" placeholder="多个标签用逗号分隔，例如：width-1020, shape-U">
-            <div class="form-text" id="autoTagsHelp">根据规格参数自动生成，可直接修改；改动保存后将以你填写的为准。</div>
             {% else %}
             <label class="form-label">标签</label>
             <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val }}" placeholder="多个标签用逗号分隔，例如：LED, 灯条, 工程案例">
@@ -434,6 +463,53 @@
             </div>
           </div>
         </div>
+        {% if is_product_dataset | default(dataset_key == 'products') %}
+        <section class="ds-basic-full ds-compare-card" aria-labelledby="compareParamsTitle">
+          <div class="ds-compare-head">
+            <div class="ds-compare-heading">
+              <span class="ds-compare-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 7h16M4 17h16M8 4v6M16 14v6"/><circle cx="8" cy="7" r="2"/><circle cx="16" cy="17" r="2"/></svg>
+              </span>
+              <div>
+                <div class="ds-compare-title" id="compareParamsTitle">对比参数</div>
+                <div class="ds-compare-subtitle">控制该产品在参数对比页中的卡片信息、参与状态和排列顺序</div>
+              </div>
+            </div>
+            <span class="ds-compare-badge">仅用于产品对比页</span>
+          </div>
+          <div class="ds-compare-body">
+            <div class="ds-compare-field">
+              <label class="form-label">型号 / 副标题</label>
+              <input type="text" class="form-control form-control-sm" name="model" value="{{ edit_item.model or edit_item.subtitle or '' }}" placeholder="例如：D9 2026款 DM-i">
+            </div>
+            <div class="ds-compare-field">
+              <label class="form-label">价格</label>
+              <input type="text" class="form-control form-control-sm" name="price" value="{{ edit_item.price or '' }}" placeholder="例如：32.98万">
+            </div>
+            <div class="ds-compare-field">
+              <label class="form-label">价格说明</label>
+              <input type="text" class="form-control form-control-sm" name="price_note" value="{{ edit_item.price_note or edit_item.meta_label or '' }}" placeholder="例如：起 / 面议">
+            </div>
+            <div class="ds-compare-field">
+              <label class="form-label">是否参与对比</label>
+              <div class="ds-compare-choice-group" role="radiogroup" aria-label="是否参与参数对比">
+                <label class="ds-compare-choice">
+                  <input type="radio" name="compare_enabled" value="true"{% if edit_item.compare_enabled is not sameas false and edit_item.compare_enabled|string|lower != 'false' %} checked{% endif %}>
+                  <span>参与对比</span>
+                </label>
+                <label class="ds-compare-choice">
+                  <input type="radio" name="compare_enabled" value="false"{% if edit_item.compare_enabled is sameas false or edit_item.compare_enabled|string|lower == 'false' %} checked{% endif %}>
+                  <span>不参与</span>
+                </label>
+              </div>
+            </div>
+            <div class="ds-compare-field">
+              <label class="form-label">对比排序</label>
+              <input type="number" class="form-control form-control-sm" name="compare_order" value="{{ edit_item.compare_order or '' }}" min="0" step="1" placeholder="数字越小越靠前">
+            </div>
+          </div>
+        </section>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -575,6 +651,7 @@
   </div>
 
   {% set current_spec_group_count = namespace(value=0) %}
+  {% set current_spec_schemas = namespace(value=[]) %}
   {% set max_spec_group_count = namespace(value=0) %}
   {% set max_spec_rows = namespace(value=1) %}
   {% for tpl in detail_templates | default([]) %}
@@ -584,6 +661,7 @@
       {% if mod.type | default(mod.get('type')) == 'detail_specs' %}
         {% set spec_count.value = spec_count.value + 1 %}
         {% set mod_data = mod.data | default(mod.get('data', {})) %}
+        {% if tpl_id_tmp == current_template_id %}{% set _ = current_spec_schemas.value.append(mod_data) %}{% endif %}
         {% set rows_tmp = (mod_data.max_rows | default(mod_data.get('max_rows', 10))) | int %}
         {% if rows_tmp > max_spec_rows.value %}{% set max_spec_rows.value = rows_tmp %}{% endif %}
       {% endif %}
@@ -595,13 +673,17 @@
   <input type="hidden" name="detail_specs_count" id="detailSpecsCount" value="{{ current_spec_group_count.value }}">
       {% for spec_group_i in range(max_spec_group_count.value or 1) %}
         {% set group_item = saved_detail_specs[spec_group_i] if saved_detail_specs|length > spec_group_i and saved_detail_specs[spec_group_i] is mapping else {} %}
+        {% set group_schema = current_spec_schemas.value[spec_group_i] if current_spec_schemas.value|length > spec_group_i and current_spec_schemas.value[spec_group_i] is mapping else {} %}
         {% set group_items_raw = group_item.get('items', []) if group_item is mapping else [] %}
-        {% set group_items = group_items_raw if saved_detail_specs|length > spec_group_i and group_items_raw is iterable and group_items_raw is not string else (specs_items if spec_group_i == 0 else []) %}
+        {% set schema_items = group_schema.get('fields', []) if group_schema is mapping else [] %}
+        {% set group_items = group_items_raw if saved_detail_specs|length > spec_group_i and group_items_raw is iterable and group_items_raw is not string else (schema_items if schema_items is iterable and schema_items is not string and schema_items|length else (specs_items if spec_group_i == 0 else [])) %}
         <div class="border rounded p-2 detail-field-section detail-multi-section detail-spec-group-item editor-component" data-field-section="specs_{{ spec_group_i }}" data-spec-group-index="{{ spec_group_i }}"{% if spec_group_i >= current_spec_group_count.value %} hidden{% endif %} style="{% if spec_group_i >= current_spec_group_count.value %}display:none{% endif %}">
           <div class="d-flex justify-content-between align-items-center mb-2 editor-component__header">
             <span class="small fw-semibold">规格参数 {{ spec_group_i + 1 }}</span>
             <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDetailSpecRow({{ spec_group_i }})">+ 添加参数</button>
           </div>
+          <input type="hidden" name="detail_specs_{{ spec_group_i }}_key" value="{{ group_item.get('key') or group_schema.get('key') or ('group_' ~ spec_group_i) }}">
+          <input type="hidden" name="detail_specs_{{ spec_group_i }}_title" value="{{ group_item.get('title') or group_schema.get('title') or '' }}">
           <input type="hidden" name="detail_specs_{{ spec_group_i }}_count" class="detail-spec-row-count" value="{{ group_items|length }}">
           <div class="detail-spec-rows editor-component__body">
             {% for spec in group_items %}
@@ -611,9 +693,11 @@
                 <button type="button" class="ds-danger-icon" onclick="this.closest('.dataset-spec-item').remove();reindexDetailSpecRows({{ spec_group_i }})" title="删除参数" aria-label="删除参数">{{ ds_icon('trash') }}</button>
               </div>
               <div class="detail-spec-input-row">
-                <div class="detail-spec-name-field"><input type="text" class="form-control form-control-sm" name="detail_specs_{{ spec_group_i }}_{{ loop.index0 }}_name" value="{{ spec.name if spec is mapping else '' }}" placeholder="参数名"></div>
+                <input type="hidden" name="detail_specs_{{ spec_group_i }}_{{ loop.index0 }}_key" value="{{ spec.key if spec is mapping else '' }}">
+                <div class="detail-spec-name-field"><input type="text" class="form-control form-control-sm" name="detail_specs_{{ spec_group_i }}_{{ loop.index0 }}_name" value="{{ spec.name or spec.label if spec is mapping else '' }}" placeholder="参数名"></div>
                 <div class="detail-spec-desc-field"><input type="text" class="form-control form-control-sm" name="detail_specs_{{ spec_group_i }}_{{ loop.index0 }}_desc" value="{{ spec.desc or spec.description if spec is mapping else '' }}" placeholder="说明"></div>
                 <div class="detail-spec-value-field"><input type="text" class="form-control form-control-sm" name="detail_specs_{{ spec_group_i }}_{{ loop.index0 }}_value" value="{{ spec.value if spec is mapping else '' }}" placeholder="参数值"></div>
+                <div class="detail-spec-unit-field"><input type="text" class="form-control form-control-sm" name="detail_specs_{{ spec_group_i }}_{{ loop.index0 }}_unit" value="{{ spec.unit if spec is mapping else '' }}" placeholder="单位"></div>
                 <button type="button" class="ds-danger-icon" onclick="this.closest('.dataset-spec-item').remove();reindexDetailSpecRows({{ spec_group_i }})" title="删除参数" aria-label="删除参数">{{ ds_icon('trash') }}</button>
               </div>
             </div>
@@ -1122,7 +1206,7 @@
 </form>
 
 {# JS: 模块选择器交互 #}
-<script src="/static/js/admin_modules.js?v=140"></script>
+<script src="/static/js/admin_modules.js?v=144"></script>
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="iconListDsJson">{{ icon_list | default([]) | tojson }}</script>
@@ -1199,7 +1283,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     if (explicit) return explicit;
     var labels = {slug: 'Slug', title: '标题', summary: '简介'};
     if (labels[input.name]) return labels[input.name];
-    var wrapper = input.closest('.ds-basic-full, .ds-basic-meta-grid > div, .dataset-media-field');
+    var wrapper = input.closest('.ds-compare-field, .ds-basic-full, .ds-basic-meta-grid > div, .dataset-media-field');
     var label = wrapper ? wrapper.querySelector('.form-label') : null;
     return label ? label.textContent.replace('*', '').trim() : (input.name || '必填内容');
   }
@@ -1592,9 +1676,11 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var trashIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>';
     var html = '<div class="border rounded p-2 mb-2 dataset-spec-item" data-spec-index="' + next + '">' +
       '<div class="detail-spec-input-row">' +
+      '<input type="hidden" name="detail_specs_' + groupIndex + '_' + next + '_key" value="">' +
       '<div class="detail-spec-name-field"><input type="text" class="form-control form-control-sm" name="detail_specs_' + groupIndex + '_' + next + '_name" placeholder="参数名"></div>' +
       '<div class="detail-spec-desc-field"><input type="text" class="form-control form-control-sm" name="detail_specs_' + groupIndex + '_' + next + '_desc" placeholder="说明"></div>' +
       '<div class="detail-spec-value-field"><input type="text" class="form-control form-control-sm" name="detail_specs_' + groupIndex + '_' + next + '_value" placeholder="参数值"></div>' +
+      '<div class="detail-spec-unit-field"><input type="text" class="form-control form-control-sm" name="detail_specs_' + groupIndex + '_' + next + '_unit" placeholder="单位"></div>' +
       '<button type="button" class="ds-danger-icon" onclick="this.closest(&quot;.dataset-spec-item&quot;).remove();reindexDetailSpecRows(' + groupIndex + ')" title="删除参数" aria-label="删除参数">' + trashIcon + '</button></div>' +
       '</div>';
     list.insertAdjacentHTML('beforeend', html);

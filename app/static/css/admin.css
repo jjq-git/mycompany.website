@@ -2613,6 +2613,7 @@ body.dataset-wide-mode #rightPanel .right-panel-body {
   position: relative;
   box-shadow: -1px 0 0 rgba(0,0,0,.04), -4px 0 12px rgba(0,0,0,.03);
   transition: width 0.2s ease;
+  container: right-panel / inline-size;
 }
 
 /* 面板头部 */
@@ -4700,6 +4701,65 @@ body:not(.dataset-wide-mode) #rightPanel.panel-collapsed {
   max-width: calc(50% - 5px);
 }
 
+/* meta.yaml 驱动的传统 Jinja 模块：按配置分组，避免字段平铺成一条长表单。 */
+.module-meta-field-group {
+  margin-bottom: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.module-meta-field-group:last-child {
+  margin-bottom: 0;
+}
+
+.module-meta-field-group-title {
+  padding: 7px 10px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.module-meta-field-group-body {
+  padding: 10px;
+}
+
+.module-meta-field-group-body > .module-field:last-child,
+.module-meta-field-group-body > .module-field-row:last-child > .module-field {
+  margin-bottom: 0 !important;
+}
+
+/* The editor panel is resizable independently of the viewport.  At its
+   default width, two auto-generated half fields are too narrow for Chinese
+   labels plus their controls, so respond to the panel itself instead of only
+   to the browser width. */
+@container right-panel (max-width: 600px) {
+  .module-config .content-style-panel > .module-field-half,
+  .module-field-row > .module-field-half {
+    flex-basis: 100%;
+    max-width: 100%;
+  }
+
+  .module-meta-field-group-body .module-field-row > .module-number-field {
+    flex-basis: calc(50% - 5px);
+    max-width: calc(50% - 5px);
+    min-width: 0;
+  }
+}
+
+@container right-panel (max-width: 340px) {
+  .label-radio-row,
+  .module-field:has(> .seg-radio),
+  .module-field:has(> .form-select),
+  .mb-2:has(> .seg-radio),
+  .mb-2:has(> .form-select) {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
 .detail-template-component-config {
   padding: 2px 0;
 }
@@ -4748,6 +4808,189 @@ body:not(.dataset-wide-mode) #rightPanel.panel-collapsed {
 .detail-template-field-grid .form-control,
 .detail-template-field-grid .form-select {
   width: 100%;
+}
+
+/* 规格参数模板：分组信息紧凑排列，参数列表独占整行，避免重复标签和纵向留白。 */
+.module-item[data-module-type="detail_specs"] .detail-template-field-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+
+.module-item[data-module-type="detail_specs"] .detail-template-field-grid > .module-field {
+  grid-template-columns: 118px minmax(0, 1fr);
+}
+
+.module-item[data-module-type="detail_specs"] .detail-template-field-grid > .module-field:has(> .schema-list-editor[data-list-name="fields"]) {
+  display: block !important;
+  grid-column: 1 / -1;
+  padding-top: 4px;
+}
+
+.module-item[data-module-type="detail_specs"] .detail-template-field-grid > .module-field:has(> .schema-list-editor[data-list-name="fields"]) > .form-label {
+  display: none;
+}
+
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] {
+  width: 100%;
+}
+
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] > .schema-list-toolbar {
+  margin: 0 !important;
+  padding: 8px 10px;
+  border: 1px solid #dce6eb;
+  border-bottom: 0;
+  background: #f4f9f8;
+}
+
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] > .schema-list-toolbar .btn-outline-primary {
+  color: var(--theme-primary, var(--bs-primary)) !important;
+  border-color: var(--theme-primary, var(--bs-primary)) !important;
+  background: #fff !important;
+}
+
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] > .schema-list-toolbar .btn-outline-primary:hover,
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] > .schema-list-toolbar .btn-outline-primary:focus {
+  color: #fff !important;
+  border-color: var(--theme-primary-hover, var(--theme-primary, var(--bs-primary))) !important;
+  background: var(--theme-primary-hover, var(--theme-primary, var(--bs-primary))) !important;
+  box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), .12) !important;
+}
+
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] > .schema-list-items {
+  padding: 8px;
+  border: 1px solid #dce6eb;
+  background: #fafcfc;
+}
+
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] .schema-list-item {
+  margin-bottom: 8px !important;
+  padding: 0 !important;
+  overflow: hidden;
+  border-color: #dce4ea !important;
+  background: #fff;
+}
+
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] .schema-list-item:last-child {
+  margin-bottom: 0 !important;
+}
+
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] .schema-list-item-header {
+  padding: 7px 10px;
+  background: #fbfcfd;
+}
+
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] .schema-list-item-body {
+  grid-template-columns: minmax(180px, 1.2fr) minmax(180px, 1.2fr) minmax(90px, .55fr) minmax(180px, .9fr);
+  gap: 10px;
+  margin: 0 !important;
+  padding: 10px;
+  border-top: 1px solid #edf1f4;
+}
+
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] .schema-list-item:not(.collapsed) .schema-list-item-body {
+  display: grid;
+}
+
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] .schema-list-item.collapsed .schema-list-item-body {
+  display: none;
+}
+
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] .schema-list-item-body > .module-field,
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] .schema-list-item-body > .label-radio-row {
+  display: block !important;
+  width: auto;
+  margin: 0 !important;
+}
+
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] .schema-list-item-body .form-label {
+  display: block;
+  margin: 0 0 5px !important;
+  white-space: nowrap;
+}
+
+.module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] .schema-list-item-body .seg-radio {
+  min-height: 31px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.module-item[data-module-type="detail_specs"] .detail-specs-legacy-settings {
+  grid-column: 1 / -1;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.module-item[data-module-type="detail_specs"] .detail-specs-legacy-settings > summary {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  padding: 7px 10px 7px 28px;
+  list-style: none;
+  color: #475569;
+  background: #f8fafc;
+  cursor: pointer;
+  user-select: none;
+}
+
+.module-item[data-module-type="detail_specs"] .detail-specs-legacy-settings > summary::-webkit-details-marker {
+  display: none;
+}
+
+.module-item[data-module-type="detail_specs"] .detail-specs-legacy-settings > summary::before {
+  content: "›";
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  color: #94a3b8;
+  font-size: 18px;
+  line-height: 1;
+  transform: translateY(-50%);
+  transition: transform .15s ease;
+}
+
+.module-item[data-module-type="detail_specs"] .detail-specs-legacy-settings[open] > summary::before {
+  transform: translateY(-50%) rotate(90deg);
+}
+
+.module-item[data-module-type="detail_specs"] .detail-specs-legacy-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.module-item[data-module-type="detail_specs"] .detail-specs-legacy-status {
+  margin-left: auto;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.module-item[data-module-type="detail_specs"] .detail-specs-legacy-body {
+  padding: 10px;
+  border-top: 1px solid #e8edf2;
+}
+
+.module-item[data-module-type="detail_specs"] .detail-specs-legacy-body > .module-field {
+  margin-bottom: 6px !important;
+}
+
+.module-item[data-module-type="detail_specs"] .detail-specs-legacy-help {
+  padding-left: 142px;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+@media (max-width: 1100px) {
+  .module-item[data-module-type="detail_specs"] .detail-template-field-grid,
+  .module-item[data-module-type="detail_specs"] .schema-list-editor[data-list-name="fields"] .schema-list-item-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .module-item[data-module-type="detail_specs"] .detail-specs-legacy-help {
+    padding-left: 0;
+  }
 }
 
 .module-color-control {

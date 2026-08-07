@@ -174,6 +174,7 @@ def scan_blocks(template_name):
             'description': meta.get('description', ''),
             'fields': meta.get('fields', []),
             'variants': all_variants,
+            'editor': meta.get('editor', ''),
             'is_data_attr': is_data_attr,
             'schema': asdict(schema) if schema is not None else None,
         })
