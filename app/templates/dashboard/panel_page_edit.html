@@ -63,8 +63,12 @@
             <span class="module-title-main">
               {{ block_icon(module.type) }} {{ mod_title }}
             </span>
+            {# 必须用 or 而不是 default()：种子数据里 variant 写的是显式 null，
+               Jinja 的 default() 只在变量 undefined 时生效，None 会被原样渲染成
+               字符串 "None"；再经下面那个 hidden input 提交回写，就把 'None'
+               污染进 YAML（曾导致 47 个模块中招）。JS 动态生成版用的也是 ||。#}
             <span class="module-title-meta">
-              {{ module.variant | default('default') }}
+              {{ module.variant or 'default' }}
             </span>
           </span>
           </span>
@@ -82,7 +86,7 @@
           </div>
         </div>
         <input type="hidden" name="module_{{ i }}_type" value="{{ module.type }}">
-        <input type="hidden" name="module_{{ i }}_variant" value="{{ module.variant | default('default') }}">
+        <input type="hidden" name="module_{{ i }}_variant" value="{{ module.variant or 'default' }}">
         <input type="hidden" name="module_{{ i }}_order" value="{{ module.order | default(i + 1) }}">
         <input type="hidden" class="module-root-hidden" name="module_{{ i }}_data__hidden" value="{{ 'true' if module_hidden else 'false' }}">
 
@@ -1647,7 +1651,29 @@ function applyDataPresetToModule(item, idx, dataPreset) {
   dataPreset = dataPreset || {};
   Object.keys(dataPreset).forEach(function(key) {
     var name = 'module_' + idx + '_data_' + key;
-    var input = item.querySelector('[name="' + name + '"]');
+    var group = item.querySelectorAll('[name="' + name + '"]');
+    var first = group[0];
+
+    // radio/checkbox 组必须按值置 checked，不能写 .value。
+    // 样式型变体的预设（如 style_text-align: center）落在一组 radio 上，
+    // 旧写法 querySelector 只拿到第一个选项、再直接改它的 value，结果是：
+    //   1) 第一个选项的值被篡改（居左那项的 value 变成了 right）；
+    //   2) 仍然没有任何 radio 被选中 —— 浏览器不提交未选中的 radio 组，
+    //      样式数据整个丢失，变体选了等于没选。
+    // 「添加模块」路径没这个问题，它由 renderDynamicFieldsGrouped 生成
+    // HTML 时就带上 checked；只有「换变体」这条打补丁的路径需要在此修正。
+    if (first && (first.type === 'radio' || first.type === 'checkbox')) {
+      var want = String(dataPreset[key]);
+      Array.prototype.forEach.call(group, function(el) {
+        el.checked = (String(el.value) === want);
+      });
+      Array.prototype.forEach.call(group, function(el) {
+        if (el.checked) el.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      return;
+    }
+
+    var input = first;
     if (!input) {
       input = document.createElement('input');
       input.type = 'hidden';
