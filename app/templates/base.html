@@ -433,9 +433,11 @@
         {% set has_children = item.children | default([]) | length > 0 %}
         {% if has_children %}
         <div class="left-nav-group" data-level="{{ level }}">
-          <div class="left-nav-parent-row" data-row-toggle="1" onclick="toggleLeftSubmenu(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLeftSubmenu(this)}" role="button" tabindex="0" aria-expanded="false">
-            {% if item.type in ('list','page') and item.target %}
-            <span class="left-nav-item left-nav-parent-label flex-grow-1" title="{{ item.label }}">
+          {% if item.type in ('list','page') and item.target %}
+          <div class="left-nav-parent-row">
+            <a class="left-nav-item left-nav-parent-link flex-grow-1" href="{{ url_for('core.page_panel', page_key=item.target) }}"
+              data-panel="{{ item.type }}_{{ item.target }}" data-preview-page="{{ item.url }}"
+              style="padding-left: {{ 16 + level * 20 }}px;" title="编辑{{ item.label }}">
               {{ left_page_icon(item) }}
               {{ item.label }}
               {% if item.type == 'list' %}
@@ -443,20 +445,27 @@
               {% elif item.target == 'posts' %}<span class="nav-badge">{{ counts.posts }}</span>
               {% endif %}
               {% endif %}
-            </span>
-            {% else %}
+            </a>
+            <button class="left-nav-chevron-btn" type="button" onclick="event.stopPropagation();toggleLeftSubmenu(this)" title="展开/折叠子菜单" aria-label="展开/折叠{{ item.label }}" aria-expanded="false">
+              <svg class="left-nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </button>
+          </div>
+          {% else %}
+          <div class="left-nav-parent-row" data-row-toggle="1" onclick="toggleLeftSubmenu(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLeftSubmenu(this)}" role="button" tabindex="0" aria-expanded="false">
             {# 非 list/page 类型但带子项：纯容器，可折叠 #}
             <span class="left-nav-item left-nav-parent-label flex-grow-1" title="{{ item.label }}">
               {{ left_page_icon(item) }}
               {{ item.label }}
             </span>
-            {% endif %}
             <button class="left-nav-chevron-btn" type="button" onclick="event.stopPropagation();toggleLeftSubmenu(this)" title="展开/折叠子菜单">
               <svg class="left-nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 18l6-6-6-6"/>
               </svg>
             </button>
           </div>
+          {% endif %}
           <div class="left-nav-submenu" style="display:none">
             {{ render_left_menu(item.children, level + 1) }}
           </div>
