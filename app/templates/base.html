@@ -609,9 +609,14 @@
       </div>
       <div class="preview-frame-wrap flex-grow-1 overflow-auto d-flex justify-content-center" style="background:#e8eaed">
         {% if site %}
+        {# 概览页用 CSS 把整个预览面板隐藏了（见 overview.html 的 admin-overview-mode），
+           但 iframe 只要 src 有值，浏览器照样会把整个前台站点拉下来（HTML+CSS+图片+视频），
+           这些流量在概览页一个字都用不上。所以概览页 src 留空；data-preview-url 仍保留真实
+           地址，供切换到工作台后的 JS 使用，其它页面行为完全不变。 #}
+        {% set preview_initial_url = url_for('core.live_preview', site_id=site.slug, filepath=(current_lang | default(site.default_language or 'zh-CN', true)) ~ '/index.html') if site else 'about:blank' %}
         <iframe class="border-0 bg-white shadow preview-frame desktop" id="previewFrame"
-          src="{{ url_for('core.live_preview', site_id=site.slug, filepath=(current_lang | default(site.default_language or 'zh-CN', true)) ~ '/index.html') if site else 'about:blank' }}"
-          data-preview-url="{{ url_for('core.live_preview', site_id=site.slug, filepath=(current_lang | default(site.default_language or 'zh-CN', true)) ~ '/index.html') if site else 'about:blank' }}">
+          src="{{ 'about:blank' if active == 'overview' else preview_initial_url }}"
+          data-preview-url="{{ preview_initial_url }}">
         </iframe>
         <div class="preview-loading-overlay" id="previewLoadingOverlay" aria-live="polite" aria-hidden="true">
           <div class="preview-loading-box">
@@ -2389,7 +2394,9 @@
       var frame = document.getElementById('previewFrame');
       var initialUrl = previewUrlForPage('/');
       if (frame) frame.dataset.previewUrl = initialUrl;
-      openPreviewTab('home', '首页', initialUrl);
+      // 概览页传 skipFrameUpdate=true：标签页状态照常登记，但不调 setPreviewFrameUrl。
+      // 否则这里会把模板里刻意留空的 iframe src 重新填回真实地址，前面的省流就白做了。
+      openPreviewTab('home', '首页', initialUrl, {{ 'true' if active == 'overview' else 'false' }});
     })();
 
     (function openRequestedWorkbenchPanel() {
