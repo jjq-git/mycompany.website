@@ -255,7 +255,8 @@ def build_site_cmd(site_id, preview):
     if not site:
         raise click.ClickException(f'站点不存在: {site_id}')
     base_url = f'/preview/{site.slug}' if preview else ''
-    out = build_site(site_id, base_url=base_url)
+    # --preview 是开发预览，跳过昂贵的死链校验；正式构建(无 --preview)保留校验拦截坏链。
+    out = build_site(site_id, base_url=base_url, validate_links=not preview)
     if preview:
         click.echo(f'已生成: {out}')
         click.echo(f'预览: http://localhost:5000/preview/{site.slug}/')

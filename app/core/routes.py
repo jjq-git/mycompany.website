@@ -6541,7 +6541,9 @@ def build():
     _, site = _current_context()
     report = []
     try:
-        build_site(site.id, base_url=f'/preview/{site.slug}', report=report)
+        # 预览构建跳过死链校验(见 build_site validate_links 文档)：report 仍收集渲染缺页，
+        # 但不跑数万次 resolve() 死链遍历，把保存后预览从 ~83s 压到 ~3s。
+        build_site(site.id, base_url=f'/preview/{site.slug}', report=report, validate_links=False)
     except Exception as exc:
         current_app.logger.exception('站点 %s 构建失败', site.id)
         return jsonify({'ok': False, 'error': str(exc), 'report': report}), 500
@@ -6673,7 +6675,7 @@ def preview_site(site_id):
 
     # 构建条件：不存在任何产出。?_ 只是浏览器 cache-busting 参数，不触发重建。
     if _preview_needs_rebuild(site.id, out):
-        build_site(site.id, base_url=f'/preview/{site.slug}')
+        build_site(site.id, base_url=f'/preview/{site.slug}', validate_links=False)
 
     # 返回根 index.html：多语言站走 JS 浏览器语言检测，单语言站直接渲染
     return redirect(url_for('core.preview', site_id=site.slug))
@@ -6692,7 +6694,7 @@ def preview_or_build(site_id):
     out = Path(current_app.config['OUTPUT_DIR']) / str(site.id)
 
     if _preview_needs_rebuild(site.id, out):
-        build_site(site.id, base_url=f'/preview/{site.slug}')
+        build_site(site.id, base_url=f'/preview/{site.slug}', validate_links=False)
     # 产物里的相对语言链接与静态资源都以 /preview/<slug>/ 为基准；直接在
     # /preview_or_build/<slug> 下 send_file 会让 zh-CN/ 错解析成另一条路由。
     return redirect(url_for('core.preview', site_id=site.slug))
@@ -7394,14 +7396,14 @@ def preview(site_id, filepath='index.html'):
     if filepath == 'index.html':
         if _preview_needs_rebuild(site_id, out):
             try:
-                build_site(site.id, base_url=f'/preview/{site.slug}')
+                build_site(site.id, base_url=f'/preview/{site.slug}', validate_links=False)
             except Exception:
                 current_app.logger.exception('预览构建站点 %s 失败', site_id)
         if (out / 'index.html').exists():
             return _safe_send_from_directory(out, 'index.html')
     elif _preview_needs_rebuild(site_id, out):
         try:
-            build_site(site.id, base_url=f'/preview/{site.slug}')
+            build_site(site.id, base_url=f'/preview/{site.slug}', validate_links=False)
         except Exception:
             current_app.logger.exception('预览构建站点 %s 失败', site_id)
 
@@ -7412,7 +7414,7 @@ def preview(site_id, filepath='index.html'):
         filepath = f'{filepath.rstrip("/")}/index.html'
     if not full.exists():
         try:
-            build_site(site.id, base_url=f'/preview/{site.slug}')
+            build_site(site.id, base_url=f'/preview/{site.slug}', validate_links=False)
         except Exception:
             current_app.logger.exception('预览构建站点 %s 失败', site_id)  # #15: 留痕
     if not out.exists():

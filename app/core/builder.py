@@ -7,11 +7,12 @@
 """
 import json
 import copy
+import os
 import re
 import shutil
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import quote, urljoin, urlparse
+from urllib.parse import quote, unquote, urljoin, urlparse
 
 import yaml
 from flask import current_app
@@ -1568,14 +1569,41 @@ _HTML_URL_RE = re.compile(r'(?:href|src|action)=["\']([^"\']+)["\']', re.IGNOREC
 
 
 def _validate_output_links(output_root, base_url='', site_base_url=''):
-    """检查构建产物中的站内链接是否能映射到实际文件。"""
+    """检查构建产物中的站内链接是否能映射到实际文件。
+
+    性能：旧实现对每个链接的每个候选路径都 resolve()+is_file() 命中文件系统，
+    且成功链接不缓存——大站(数百页×数万链接)会累积数十万次磁盘调用，单站耗时约 80s。
+    这里改为：先一次性把 output 下所有文件收进内存集合(相对根、posix、小写)，
+    之后所有链接检查纯内存查表；再对(归一化后的目标路径)做 ok 缓存，
+    同一个 CSS/导航链接在数百页里只判定一次。零文件系统访问。
+    """
     root = Path(output_root).resolve()
     build_prefix = urlparse(base_url).path.rstrip('/') if base_url else ''
     internal_host = urlparse(site_base_url).netloc.lower() if site_base_url else ''
+
+    # 一次性建立"存在文件"集合。用 posix 小写路径做键：Windows 文件系统大小写不敏感，
+    # 链接大小写与磁盘不完全一致也应视为命中，避免误报坏链。
+    existing = set()
+    for p in root.rglob('*'):
+        if p.is_file():
+            existing.add(p.relative_to(root).as_posix().lower())
+
+    def _resolve_target(rel_posix):
+        """把一个相对(根)的 posix 路径经 normpath 归一，返回小写 posix；越界返回 None。"""
+        # os.path.normpath 折叠 ../ 和 ./；在 posix 语义下处理，最后统一成 / 分隔。
+        normalized = os.path.normpath('/' + rel_posix).replace('\\', '/').lstrip('/')
+        # normpath 之后若仍以 .. 开头，说明链接越界逃出了 output 根 → 视为坏链。
+        if normalized == '..' or normalized.startswith('../'):
+            return None
+        return normalized.lower()
+
     failures = []
-    seen = set()
+    seen = set()          # 去重同一页里重复报同一个坏链
+    ok_cache = set()      # 已判定存在的归一化目标路径，跨页复用
+    bad_cache = set()     # 已判定不存在的归一化目标路径，跨页复用
     for source in root.rglob('*.html'):
         html = source.read_text(encoding='utf-8', errors='ignore')
+        source_rel_dir = source.parent.relative_to(root).as_posix()  # 源页所在目录(相对根)
         for raw_url in _HTML_URL_RE.findall(html):
             url = raw_url.strip()
             if not url or url.startswith(('#', 'mailto:', 'tel:', 'data:', 'javascript:')):
@@ -1583,20 +1611,35 @@ def _validate_output_links(output_root, base_url='', site_base_url=''):
             parsed = urlparse(url)
             if parsed.scheme in {'http', 'https'} and parsed.netloc.lower() != internal_host:
                 continue
-            path = parsed.path or '/'
+            # URL 解码：磁盘文件名是解码后的形态(如 %20→空格、中文 slug)，
+            # 不解码会把合法链接误判成坏链。
+            path = unquote(parsed.path or '/')
+            # 剥掉预览前缀 /preview/<slug>：产物里链接带前缀，但文件按相对根存放。
             if build_prefix and (path == build_prefix or path.startswith(build_prefix + '/')):
                 path = path[len(build_prefix):] or '/'
+
+            # 归一成"相对 output 根"的 posix 路径。
             if path.startswith('/'):
-                relative = path.lstrip('/')
-                target = root / relative
+                rel = path.lstrip('/')
             else:
-                target = source.parent / path
-            candidates = [target]
-            if path.endswith('/') or not Path(path).suffix:
-                candidates.append(target / 'index.html')
-            if any(candidate.resolve().is_file() and root in candidate.resolve().parents
-                   for candidate in candidates):
+                # 相对链接：拼到源页所在目录下再归一。
+                rel = f'{source_rel_dir}/{path}' if source_rel_dir else path
+
+            # 目录风格链接(以 / 结尾或无扩展名)补 index.html。
+            if path.endswith('/') or not os.path.splitext(path)[1]:
+                rel = rel.rstrip('/') + '/index.html'
+
+            target = _resolve_target(rel)
+            if target is None:            # 越界
+                pass
+            elif target in ok_cache or target in existing:
+                ok_cache.add(target)
                 continue
+            elif target in bad_cache:
+                pass
+            else:
+                bad_cache.add(target)
+
             key = (source.relative_to(root).as_posix(), url)
             if key in seen:
                 continue
@@ -2762,7 +2805,7 @@ def render_site_page(site_id, filepath='index.html', base_url='', lang_code=None
     return _render_task_html(env, task, common, render_pages, render_data, meta, dataset_paths)
 
 
-def build_site(site_id, base_url='', report=None, output_root=None):
+def build_site(site_id, base_url='', report=None, output_root=None, validate_links=True):
     """生成站点到 output/<site_id>/. 返回输出根目录.
 
     支持多语言: 每种语言一个子目录, 根路径生成语言选择首页.
@@ -2773,6 +2816,12 @@ def build_site(site_id, base_url='', report=None, output_root=None):
     report:   #13 可选 list, 传入则收集所有渲染失败任务 [{lang,template,type,error}]。
               零侵入: 现有调用方不传即忽略; export/发布传入后可据此提示店主"N 页缺失",
               避免缺页 ZIP/缺页站点被静默发布。失败也会统一记 warning 日志。
+    validate_links: 是否在构建收尾跑站内死链校验。默认 True 保持导出/发布行为不变。
+              实测该校验在多语言大站上要遍历数万个链接、反复 resolve()+is_file() 命中
+              文件系统，占单次构建 95%+ 耗时(约 80s)。而"保存后刷新预览"场景只需要
+              页面能打开、并不消费死链报告(preview 接口无论有无坏链都返回 ok)，纯属拖累。
+              故所有预览类调用显式传 False，把预览构建从 ~83s 压到 ~3s；导出 ZIP、
+              未来正式发布保留 True，继续拦截缺页/坏链站点。
     """
     site = Site.query.get(site_id)
     if not site:
@@ -2954,7 +3003,9 @@ def build_site(site_id, base_url='', report=None, output_root=None):
         )
 
     _write_site_seo_files(output_root, seo_records, settings, site_base_url)
-    _all_failures.extend(_validate_output_links(output_root, base_url, site_base_url))
+    # 死链校验很贵(见 validate_links 文档)，预览类调用会显式关掉。
+    if validate_links:
+        _all_failures.extend(_validate_output_links(output_root, base_url, site_base_url))
 
     # #13: 汇总缺页。有失败时统一记 warning, 并填入调用方传入的 report。
     if _all_failures:
