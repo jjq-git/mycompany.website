@@ -232,7 +232,32 @@ def create_app(config_override=None):
         _migrate_sites_add_custom_domain()
 
     _register_context_processors(app)
+    _register_template_filters(app)
     return app
+
+
+def _register_template_filters(app):
+    """注册模板过滤器。"""
+    from datetime import timedelta, timezone
+
+    # 数据库里存的是 UTC（见 models.utcnow()），且 SQLite 读回来是不带 tzinfo 的 naive 值。
+    # 模板若直接 strftime，等于把 UTC 当本地时间显示，中国用户看到的时间会早 8 小时
+    # （老板下午改完内容，"最近更新"却显示上午，会以为没保存成功）。
+    #
+    # 这里用固定偏移而不是 ZoneInfo('Asia/Shanghai')，原因有两个：
+    #   1. 中国自 1991 年起不再实行夏令时，UTC+8 恒定，固定偏移的结果完全正确；
+    #   2. Windows 没有系统 tzdata，ZoneInfo 要额外装 tzdata 包，与"依赖能少则少"冲突。
+    CN_TZ = timezone(timedelta(hours=8))
+
+    @app.template_filter('localtime')
+    def localtime(value, fmt='%Y-%m-%d %H:%M'):
+        """把 UTC 时间转成东八区再格式化；空值返回空串，交给模板自己兜底文案。"""
+        if not value:
+            return ''
+        # naive 值一律按 UTC 解释；已带时区的值直接换算 —— 两种来源都能正确处理
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(CN_TZ).strftime(fmt)
 
 
 def _register_context_processors(app):

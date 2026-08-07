@@ -103,7 +103,7 @@
 
       <article class="overview-card">
         <header class="overview-card-head"><h2>最近活动</h2><small>站点最近的操作记录</small></header>
-        {% if recent_logs %}<div class="overview-activity">{% for log in recent_logs %}<div class="overview-activity-item"><span class="overview-activity-dot"></span><span class="overview-activity-copy"><strong>{{ log.summary }}</strong><small>{{ log.action }}</small></span><time>{{ log.created_at.strftime('%m-%d %H:%M') }}</time></div>{% endfor %}</div>{% else %}<div class="overview-empty">暂无站点操作记录，开始编辑后会显示在这里。</div>{% endif %}
+        {% if recent_logs %}<div class="overview-activity">{% for log in recent_logs %}<div class="overview-activity-item"><span class="overview-activity-dot"></span><span class="overview-activity-copy"><strong>{{ log.summary }}</strong><small>{{ log.action }}</small></span><time>{{ log.created_at|localtime('%m-%d %H:%M') }}</time></div>{% endfor %}</div>{% else %}<div class="overview-empty">暂无站点操作记录，开始编辑后会显示在这里。</div>{% endif %}
       </article>
     </div>
 
@@ -115,8 +115,8 @@
           <div><dt>使用模板</dt><dd>{{ (template_meta or {}).get('display_name') or site.template_name }}</dd></div>
           <div><dt>默认语言</dt><dd>{{ site.default_language }}</dd></div>
           <div><dt>模板版本</dt><dd>{{ site.template_version or '—' }}</dd></div>
-          <div><dt>最近更新</dt><dd>{{ site.updated_at.strftime('%Y-%m-%d %H:%M') if site.updated_at else '—' }}</dd></div>
-          <div><dt>最近发布</dt><dd>{{ site.last_published_at.strftime('%Y-%m-%d %H:%M') if site.last_published_at else '尚未发布' }}</dd></div>
+          <div><dt>最近更新</dt><dd>{{ site.updated_at|localtime('%Y-%m-%d %H:%M') if site.updated_at else '—' }}</dd></div>
+          <div><dt>最近发布</dt><dd>{{ site.last_published_at|localtime('%Y-%m-%d %H:%M') if site.last_published_at else '尚未发布' }}</dd></div>
           <div class="overview-address-fact"><dt>访问地址</dt><dd>{% if site.custom_domain %}<a class="overview-fact-address" href="https://{{ site.custom_domain }}" target="_blank" rel="noopener">{{ site.custom_domain }}</a>{% else %}<a class="overview-fact-address" href="{{ url_for('core.preview_site', site_id=site.id) }}" target="_blank">{{ site.slug }}.{{ platform_domain }}</a>{% endif %}</dd></div>
           <div class="overview-domain-fact"><dt>独立域名</dt><dd class="overview-domain-state">{% if site.custom_domain %}<span class="overview-domain-status ready">已绑定</span>{% else %}<span class="overview-domain-status">未绑定</span><a class="overview-domain-action" href="{{ url_for('core.account', section='sites', edit=site.id) }}" onclick="if(typeof openAccountWorkspaceUrl==='function'){openAccountWorkspaceUrl(this.getAttribute('href'));return false;}" title="在当前工作台中绑定独立域名"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1"/></svg>绑定域名</a>{% endif %}</dd></div>
         </dl>
