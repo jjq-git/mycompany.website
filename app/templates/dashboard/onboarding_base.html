@@ -33,7 +33,7 @@
 <body>
   <header class="onboard-header">
     <a class="onboard-brand" href="{{ url_for('core.overview') if site else url_for('core.templates_gallery') }}" title="返回" aria-label="返回">
-      <img class="onboard-logo" src="http://192.168.1.88:3000/attachments/74eb0913-3298-4a00-82f8-fe1c02db27ec" alt="">
+      <img class="onboard-logo" src="{{ url_for('static', filename='brand-logo.svg') }}" alt="">
     </a>
     <div class="onboard-header-actions">
       {% if site %}<a href="{{ url_for('core.overview', site=site.slug) }}">返回站点</a>{% endif %}

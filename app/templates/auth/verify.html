@@ -3,7 +3,7 @@
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>验证账号 — {{ platform_domain }}</title><link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}?v=20260720-captcha2"></head>
 <body><main class="auth-wrap">
-  <div class="auth-brand"><img src="http://192.168.1.88:3000/attachments/74eb0913-3298-4a00-82f8-fe1c02db27ec" alt="{{ platform_domain }}"></div>
+  <div class="auth-brand"><img src="{{ url_for('static', filename='brand-logo.svg') }}" alt="{{ platform_domain }}"></div>
   <section class="auth-card">
     <div class="auth-heading"><span class="auth-heading-icon">{{ auth_icon('shield') }}</span><h1>验证{{ '邮箱' if identity_type == 'email' else '手机号' }}</h1></div>
     <p class="auth-lead">{% if dev_code %}开发阶段已为 <strong>{{ identifier }}</strong> 生成随机验证码，10 分钟内有效。{% else %}验证码已发送至 <strong>{{ identifier }}</strong>，10 分钟内有效。{% endif %}</p>

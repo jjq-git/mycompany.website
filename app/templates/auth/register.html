@@ -3,7 +3,7 @@
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>注册 — {{ platform_domain }}</title><link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}?v=20260720-captcha2"></head>
 <body><main class="auth-wrap">
-  <div class="auth-brand"><img src="http://192.168.1.88:3000/attachments/74eb0913-3298-4a00-82f8-fe1c02db27ec" alt="{{ platform_domain }}"></div>
+  <div class="auth-brand"><img src="{{ url_for('static', filename='brand-logo.svg') }}" alt="{{ platform_domain }}"></div>
   <section class="auth-card">
     <div class="auth-heading"><span class="auth-heading-icon">{{ auth_icon('user-plus') }}</span><h1>{{ '接受团队邀请' if invitation else '注册账号' }}</h1></div>
     <p class="auth-lead">{% if invitation %}注册后将以 {{ invitation.role }} 身份加入“{{ invitation.organization.name }}”，不会自动获得个人建站权限。{% else %}可使用邮箱或手机号创建独立建站账号。{% endif %}</p>
