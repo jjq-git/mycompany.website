@@ -190,7 +190,7 @@ CSS 设计约定(参考 `site_templates/dengtec/static/css/main.css`):
 1. 同步到数据库:`flask --app run scan-templates`
 2. 创建测试站点:`flask --app run create-site test@test.com test-<name> --template <name>`
 3. 构建预览:`flask --app run build-site <new_site_id>`
-4. 启动服务器预览:`python run.py` → 访问后台
+4. 启动服务器预览:`$env:FLASK_HOST='0.0.0.0'; $env:FLASK_DEBUG='1'; python run.py` → 访问后台
 5. 迭代完善:对比参考模板,补充缺失的 Block 和页面
 
 ## 参考现有模板

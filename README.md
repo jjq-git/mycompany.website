@@ -42,6 +42,8 @@ python3 -m venv .venv
 # 4. 启动开发服务器
 .venv/bin/python run.py
 # 浏览器打开 http://127.0.0.1:5000/
+# 要让局域网内其他设备也能访问，加 FLASK_HOST（不加只绑回环）：
+# FLASK_HOST=0.0.0.0 FLASK_DEBUG=1 .venv/bin/python run.py
 
 # 其他
 .venv/bin/flask --app run list-sites

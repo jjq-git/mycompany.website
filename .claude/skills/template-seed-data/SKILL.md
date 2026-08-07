@@ -247,7 +247,7 @@ default_language: zh-CN
 2. `flask --app run create-site test@example.com test-site --template <name>`
 3. `flask --app run build-site <new_site_id>`
 4. 检查 `output/<site_id>/` 下的 HTML 文件
-5. 启动服务器 `python run.py`,用预览功能在浏览器验证
+5. 启动服务器 `$env:FLASK_HOST='0.0.0.0'; $env:FLASK_DEBUG='1'; python run.py`,用预览功能在浏览器验证
 
 常见问题:
 - YAML 缩进/语法错误 → 构建时解析失败

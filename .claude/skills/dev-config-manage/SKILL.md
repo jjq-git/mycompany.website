@@ -73,7 +73,7 @@ TRANSLATION_API_KEY=sk-xxx
 **方式二:设置环境变量**(临时,仅当前终端)
 ```
 $env:SECRET_KEY = "临时值"
-python run.py
+$env:FLASK_HOST='0.0.0.0'; $env:FLASK_DEBUG='1'; python run.py
 ```
 
 **方式三:修改 config.py**(修改默认值)
@@ -140,7 +140,7 @@ pip install psycopg2-binary
 
 | 问题 | 原因 | 修复 |
 |------|------|------|
-| 改了 .env 不生效 | 未重启 Flask | 停止并重新 `python run.py` |
+| 改了 .env 不生效 | 未重启 Flask | 停止并重新 `$env:FLASK_HOST='0.0.0.0'; $env:FLASK_DEBUG='1'; python run.py` |
 | SECRET_KEY 太弱 | 用了默认值 | 生成强随机值替换 |
 | 数据库找不到 | DATABASE_URL 路径不对 | 检查 SQLite 文件路径 |
 | 翻译功能不显示 | TRANSLATION_API_KEY 为空 | 设置 API Key 并重启 |

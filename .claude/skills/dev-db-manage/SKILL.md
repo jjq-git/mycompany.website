@@ -101,7 +101,7 @@ sqlite3 instance/app.db ".schema users"
 1. 先备份:复制 `instance/app.db` → `instance/app.db.backup-<时间戳>`
 2. 关闭 Flask 服务器
 3. 删除 `instance/app.db`
-4. 重启 Flask:`python run.py`(会自动建表)
+4. 重启 Flask:`$env:FLASK_HOST='0.0.0.0'; $env:FLASK_DEBUG='1'; python run.py`(会自动建表)
 5. 重新扫描模板:`flask --app run scan-templates`
 6. 重新创建用户和站点
 

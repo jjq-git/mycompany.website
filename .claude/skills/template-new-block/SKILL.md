@@ -145,7 +145,7 @@ Block 创建后不需要手动"注册"——`scan_blocks()` 会自动扫描 bloc
 Block 创建后立即可在后台页面编辑器中使用.
 
 验证:
-1. 启动服务器 `python run.py`
+1. 启动服务器 `$env:FLASK_HOST='0.0.0.0'; $env:FLASK_DEBUG='1'; python run.py`
 2. 进入后台 → 选择站点 → 页面管理 → 编辑某个页面
 3. 在模块选择器中应该能看到新 Block
 4. 添加 Block → 填写字段 → 保存 → 预览

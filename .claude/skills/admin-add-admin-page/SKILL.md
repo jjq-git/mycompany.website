@@ -247,7 +247,7 @@ def <page_key>():
 
 ## 第七步:验证
 
-1. 启动服务器:`python run.py`
+1. 启动服务器:`$env:FLASK_HOST='0.0.0.0'; $env:FLASK_DEBUG='1'; python run.py`
 2. 登录后台 → 选择站点
 3. 点击新增的导航项 → 确认面板正确加载
 4. 填写表单 → 保存 → 确认无报错,flash 消息显示"已保存"

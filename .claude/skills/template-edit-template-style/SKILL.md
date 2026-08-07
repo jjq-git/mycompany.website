@@ -274,7 +274,7 @@ Block 模板(`blocks/<name>/template.html`)中有两类样式:
 ## 预览验证
 
 样式修改后验证:
-1. `python run.py` 启动服务器
+1. `$env:FLASK_HOST='0.0.0.0'; $env:FLASK_DEBUG='1'; python run.py` 启动服务器
 2. 后台 → 选择站点 → 预览
 3. 在预览 iframe 中检查所有关键页面:首页、列表页、详情页
 4. 在浏览器 DevTools 中切换设备尺寸检查响应式

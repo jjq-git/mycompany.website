@@ -37,20 +37,32 @@ description: "启动 Flask 开发服务器"
 
 ## 启动服务器
 
-执行命令:
+执行命令(必须带这两个环境变量,原因见下):
 ```
-python run.py
+$env:FLASK_HOST='0.0.0.0'; $env:FLASK_DEBUG='1'; python run.py
 ```
+
+- `FLASK_HOST=0.0.0.0` —— 不设就只绑回环(`.env` 里这项是注释掉的),
+  局域网地址 http://192.168.1.31:5000 会断掉,别人正在看的服务会被弄停.
+- `FLASK_DEBUG=1` —— 不设则 `TEMPLATES_AUTO_RELOAD` 为 False,改模板不生效.
+  对外暴露时 `run.py` 会自动关掉 Werkzeug 交互式调试器(RCE 风险),模板热重载不受影响.
+
+启动前必须先杀光 5000 端口上的所有进程(含 Flask reloader 的父进程,
+只杀监听端口的子进程会留下父进程重新 fork 抢端口).
 
 服务器启动后输出类似:
 ```
+提示: host=0.0.0.0 对外暴露, 已自动关闭 Werkzeug 调试器(RCE 风险); 模板热重载仍生效。
+* Running on all addresses (0.0.0.0)
 * Running on http://127.0.0.1:5000
+* Running on http://192.168.1.31:5000
 ```
 
 ## 验证服务器
 
 启动后验证:
-1. 浏览器访问 `http://localhost:5000`
+1. 浏览器访问 `http://127.0.0.1:5000`(命令行工具尤其别用 `localhost`,
+   它在本机先解析到 IPv6 `::1`,而服务只监听 IPv4,每个请求要白等约 2 秒)
 2. 应该看到登录页面(如果没有用户,显示模板库引导页)
 3. 如果出现 500 错误,检查控制台输出的错误信息
 4. 如果数据库为空,先执行 `flask --app run create-user <email>` 创建用户
@@ -68,13 +80,16 @@ python run.py
 
 ## 开发热重载
 
-Flask 开发服务器默认启用热重载:
-- 修改 Python 文件 → 服务器自动重启
-- 修改模板文件 (HTML/Jinja2) → 刷新浏览器即可
-- 修改静态文件 (CSS/JS) → 刷新浏览器即可(注意浏览器缓存,按 Ctrl+Shift+R)
+热重载**不是默认开启的**——`run.py` 默认 `FLASK_DEBUG=0`,必须显式设 `FLASK_DEBUG=1`.
 
-不需要自动重启的情况(重启较慢时可关闭):
-设置环境变量 `FLASK_DEBUG=0` 或修改 `run.py` 中 `debug=True` 为 `False`.
+按上面的推荐命令(`FLASK_HOST=0.0.0.0` + `FLASK_DEBUG=1`)启动时:
+- 修改模板文件 (HTML/Jinja2) → 刷新浏览器即可,**不用重启**
+- 修改静态文件 (CSS/JS) → 刷新浏览器即可(注意浏览器缓存,按 Ctrl+Shift+R)
+- 修改 Python 文件 → **需要手动重启**.对外暴露时 Werkzeug reloader 随调试器
+  一起关闭了,不会自动重启进程
+
+只在回环地址(不设 `FLASK_HOST`)且 `FLASK_DEBUG=1` 时,Python 文件才会触发自动重启,
+此时交互式调试器也会打开.
 
 ## 关联技能
 

@@ -23,10 +23,10 @@
 - **富文本编辑器（RTE）只有一处定义**：`richEditorHtml()` 的唯一定义在 `app/static/js/admin_modules.js`。`panel_page_edit.html` 和 `panel_data_list.html` 都加载此 JS 后直接使用，不应在任何模板中重复定义同名函数。`page_home.html` 是独立体系（不加载 `admin_modules.js`，用 `onmousedown` 事件），暂不纳入统一。改 RTE 只改 `admin_modules.js` 即可生效于所有后台编辑面板。
 - **getMergedSchema 有两个独立版本，禁止合并**：`admin_modules.js` 和 `panel_page_edit.html` 各有一套 `getMergedSchema`（前者用 `schemaFieldToFormField` 转换，后者用 `_schemaChildren` + 手动合并），内部字段映射逻辑不同，合并会导致表单重复/缺字段。两处各自独立维护，改字段时要两边确认。
 - **硬编码编辑器 ≠ schema 自动生成，两者只能走一条路**：`feature_grid` 已统一使用 schema 自动表单，首次新增、保存后重载和变体切换都不得再回退到旧硬编码编辑器；否则旧表单的 `feature` 单数字段与 schema/后端的 `features` 列表不一致，会造成首次预览为空、保存丢内容和图标控件不同。仍保留硬编码编辑器的 block（如 `data_grid`）必须在 schema 通用路径中主动排除，避免生成重复字段。新增或迁移编辑器时，必须同时检查 `addModule`、`initSchemaMounts`、`admin_modules.js` 的 `buildModuleHTML` 三条路径。
-- **改完模板/CSS/JS 后自动重启 dev server**：涉及 HTML 模板、CSS、JS 文件改动后，改完立即杀掉旧进程并重启 `python run.py`，不要让用户提醒。Flask 热重载有时不生效（多进程残留、JS 缓存等），直接杀进程重启最可靠。
+- **改完模板/CSS/JS/Python 后自动重启 dev server**：涉及 HTML 模板、CSS、JS 文件改动后，改完立即杀掉旧进程，按下面「重启 dev server 必须带 FLASK_HOST 和 FLASK_DEBUG」那条的完整命令重启，不要让用户提醒。Flask 热重载有时不生效（多进程残留、JS 缓存等），直接杀进程重启最可靠。**改 Python 文件（`app/__init__.py` 的过滤器、`app/core/*.py` 的路由等）尤其必须重启**：局域网模式（`FLASK_HOST=0.0.0.0`）下 Werkzeug reloader 随调试器一起被关掉，只有模板会热重载，`.py` 改动完全不生效 —— 曾因新加了 Jinja 过滤器没重启，模板里一调用就找不到过滤器，账户中心整页 500。
 - **改完 JS 后自动升版本号**：每次修改 `admin_modules.js` 后，同时更新 `panel_page_edit.html` 和 `panel_data_list.html` 中 `<script src="/static/js/admin_modules.js?v=N">` 的版本号（递增），避免浏览器缓存导致修改不生效。
 - **重启 dev server 必须先杀光端口上所有进程**：`netstat -ano | grep ':5000'` 查看，`taskkill /F /PID <id>` 逐个杀。不能只 `Stop-Process python`（可能漏掉子进程）或信任旧进程已退出。Flask reloader 会 fork 子进程，多次重启会堆积僵尸进程，导致 HTTP 请求始终由最早的旧进程处理，代码改动不生效。杀完后用 `netstat -ano | grep ':5000.*LISTENING'` 确认端口清空，再启动。
-- **重启 dev server 必须 `FLASK_DEBUG=1`**：不加这个环境变量则 `TEMPLATES_AUTO_RELOAD` 为 False，Jinja2 缓存编译后的模板在内存里，改模板文件不会生效 —— 即使杀了旧进程也没用，因为下次启动后首次编译仍可能读到旧缓存。`$env:FLASK_DEBUG = '1'; python run.py`。
+- **重启 dev server 必须带 `FLASK_HOST=0.0.0.0` 和 `FLASK_DEBUG=1`**：缺 `FLASK_DEBUG=1` 则 `TEMPLATES_AUTO_RELOAD` 为 False，Jinja2 把编译后的模板缓存在内存里，改模板文件不会生效；缺 `FLASK_HOST=0.0.0.0` 则只绑回环，局域网地址 `http://192.168.1.31:5000` 会直接断掉（`.env` 里 `FLASK_HOST` 是注释掉的，不显式设就是 127.0.0.1，曾因此把别人正在看的服务弄停）。完整命令：`$env:FLASK_HOST='0.0.0.0'; $env:FLASK_DEBUG='1'; python run.py`。对外暴露时 `run.py` 会自动关掉 Werkzeug 交互式调试器（RCE 风险），模板热重载不受影响，两者已解耦。
 - **文件改动后必须字节级验证，禁止只看 Read 工具输出**：Read 工具可能读到的是 IDE 缓存或工作树快照。改完关键文件后用 `python -c "open(path,'rb').read()"` + 正则/hex 直接读磁盘字节确认改动真的写入了，不要信 Read 的输出。
 - **后台按钮图标统一用内联 SVG，禁用 Unicode 特殊字符**：`↑` `↓` 这类箭头是 ASCII 安全字符可以用，但 `⇄`（U+21C4）、`↔` 等落在 CJK/特殊符号区的字符在浏览器/系统字体下经常渲染成 `?` 乱码。新增按钮图标一律用和现有删除按钮同款 14×14 SVG（`stroke="currentColor" stroke-width="2"`），尺寸颜色风格对齐。这条同时适用于模板 Jinja 版和 JS 动态生成版 —— 两处必须同步改。
 
@@ -126,7 +126,7 @@ docs: 调整产品定位，明确不做整页所见即所得编辑器
 
 | 命令 | 用途 |
 |---|---|
-| `python run.py` | 启动开发服务器 (http://localhost:5000) |
+| `$env:FLASK_HOST='0.0.0.0'; $env:FLASK_DEBUG='1'; python run.py` | 启动开发服务器（本机 http://127.0.0.1:5000 、局域网 http://192.168.1.31:5000）——命令行别用 `localhost`，它会先试 IPv6 白等约 2 秒 |
 | `flask --app run scan-templates` | 扫描 site_templates/ 同步模板到数据库 |
 | `flask --app run create-user <email>` | 创建用户 (开发期跳过邮件验证) |
 | `flask --app run create-site <email> <slug> --template <name>` | 创建站点 + 复制种子数据 |
