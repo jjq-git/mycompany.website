@@ -3276,12 +3276,14 @@ def company_workspace():
     source_company = settings.get('company', {})
     current_contact = _merge_settings_section(settings.get('contact'), settings.get(contact_key))
     source_contact = settings.get('contact', {})
+    customer_service = settings.get('customer_service') or {}  # 在线客服跨语言共享，回填工作区表单
     return render_template('dashboard/settings_workspace.html',
                            title='公司信息',
                            panel_template='dashboard/panel_company.html',
                            user=user, site=site, active='company',
                            company=current_company,
                            contact=current_contact,
+                           customer_service=customer_service,
                            source_company=source_company,
                            source_contact=source_contact,
                            current_lang=lang,
@@ -3320,6 +3322,7 @@ def basic_settings():
     current_contact = _merge_settings_section(settings.get('contact'), settings.get(contact_key))
     source_company = settings.get('company', {})
     source_contact = settings.get('contact', {})
+    customer_service = settings.get('customer_service') or {}  # 在线客服跨语言共享，回填基础设置表单
 
     tpl_meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
     tpl_meta = _yaml.safe_load(tpl_meta_path.read_text(encoding='utf-8')) if tpl_meta_path.exists() else {}
@@ -3335,6 +3338,7 @@ def basic_settings():
                                user=user, site=site,
                                company=current_company,
                                contact=current_contact,
+                               customer_service=customer_service,
                                source_company=source_company,
                                source_contact=source_contact,
                                theme=theme,
@@ -3350,6 +3354,7 @@ def basic_settings():
                            user=user, site=site,
                            company=current_company,
                            contact=current_contact,
+                           customer_service=customer_service,
                            source_company=source_company,
                            source_contact=source_contact,
                            theme=theme,
@@ -4424,6 +4429,28 @@ def company():
                 settings[contact_key].pop(field, None)
         for field in ('address', 'business_hours'):
             settings[contact_key][field] = request.form.get(f'contact.{field}', '').strip()
+        # 在线客服：跨语言共享，直存顶层 customer_service，不进语言分支
+        cs = settings.setdefault('customer_service', {})
+        wechat = cs.setdefault('wechat', {})
+        wechat['enabled'] = bool(request.form.get('customer_service.wechat.enabled'))
+        wechat['label'] = request.form.get('customer_service.wechat.label', '').strip()
+        # 微信客服链接（如 work.weixin.qq.com/kfid/...）：填了则悬浮按钮直接跳转，
+        # 手机端拉起微信开聊，电脑端由微信自行处理（扫码/网页版）。留空则回退到弹二维码
+        wechat['url'] = request.form.get('customer_service.wechat.url', '').strip()
+        # 二维码：优先用新上传的文件，否则读文本框里的现有 URL（复用 logo 的上传逻辑）
+        qr_upload = request.files.get('customer_service_wechat_qrcode_file')
+        if qr_upload and qr_upload.filename:
+            try:
+                wechat['qrcode'] = _save_uploaded_image(site.id, qr_upload, prefix='wechat-qrcode')
+            except Exception as exc:
+                flash(f'微信二维码上传失败: {exc}')
+                if request.form.get('_workspace') == '1':
+                    return redirect(url_for('core.company_workspace', site=site.id, lang=lang))
+                if is_fragment:
+                    return redirect(url_for('core.company', _fragment='1', site=site.id, lang=lang))
+                return redirect(url_for('core.company', site=site.id, lang=lang))
+        else:
+            wechat['qrcode'] = request.form.get('customer_service.wechat.qrcode', '').strip()
         admin_settings = settings.setdefault('admin', {})
         admin_settings['auto_save'] = bool(request.form.get('admin.auto_save'))
         write_yaml(site.id, 'settings.yaml', settings)
@@ -4442,12 +4469,15 @@ def company():
     current_contact = _merge_settings_section(settings.get('contact'), settings.get(contact_key))
     source_company = settings.get('company', {})
     source_contact = settings.get('contact', {})
+    # 在线客服跨语言共享，直接取顶层 customer_service（含 wechat 子块），供表单回填
+    customer_service = settings.get('customer_service') or {}
 
     if is_fragment:
         return render_template('dashboard/panel_company.html',
                                user=user, site=site,
                                company=current_company,
                                contact=current_contact,
+                               customer_service=customer_service,
                                source_company=source_company,
                                source_contact=source_contact,
                                current_lang=lang,
@@ -4458,6 +4488,7 @@ def company():
                            user=user, site=site,
                            company=current_company,
                            contact=current_contact,
+                           customer_service=customer_service,
                            source_company=source_company,
                            source_contact=source_contact,
                            current_lang=lang,

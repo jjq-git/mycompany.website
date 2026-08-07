@@ -111,8 +111,12 @@
     </div>
     <div class="mb-3">
       <label class="form-label small mb-1">公司简介</label>
-      <textarea class="form-control form-control-sm" name="company.description" rows="2" maxlength="200" placeholder="一句话简介，SEO 分享摘要" style="min-height: 150px;">{{ company.get('description', '') }}</textarea>
-      <div class="form-text">80-160 字，SEO 和社交分享时作为默认页面简介</div>
+      <textarea class="form-control form-control-sm" id="companyDescInput" name="company.description" rows="2" maxlength="200" placeholder="一句话简介，SEO 分享摘要" style="min-height: 150px;">{{ company.get('description', '') }}</textarea>
+      {# 字数即时统计：建议 80-160 字，超范围时计数变红并提示 #}
+      <div class="form-text d-flex justify-content-between align-items-center gap-2">
+        <span>80-160 字，SEO 和社交分享时作为默认页面简介</span>
+        <span id="companyDescCount" class="text-nowrap fw-semibold"></span>
+      </div>
     </div>
     <div class="row g-2 mb-0">
       <div class="col-6">
@@ -153,6 +157,66 @@
     </div>
   </div>
 
+  {# 在线客服：跨语言共享，不随语言切换。国内用微信悬浮入口（客服链接优先，回退二维码） #}
+  {% set cs = customer_service|default({}) %}
+  {% set cs_wechat = cs.get('wechat') or {} %}
+  {% set cs_qrcode = cs_wechat.get('qrcode', '') %}
+  {# 在线客服卡通栏（cs-section），卡内分左右两栏（cs-grid）：左栏放"触达设置"（开关+客服链接），右栏放"展示物料"（二维码+按钮文字） #}
+  <div class="panel-section cs-section">
+    <div class="panel-section-title">在线客服</div>
+    <div class="cs-grid">
+    <div class="cs-col">
+    <div class="mb-2 d-flex align-items-center justify-content-between gap-2 rounded px-2 py-2" style="background:#f8fafc;border:1px solid #e2e8f0">
+      <div>
+        <div class="small fw-semibold">微信悬浮入口</div>
+        <div class="text-muted" style="font-size:12px">在网站右下角显示"微信咨询"按钮。填了下方链接则点击直接拉起微信客服，否则弹出二维码</div>
+      </div>
+      <label class="form-check form-switch m-0">
+        <input class="form-check-input" type="checkbox" name="customer_service.wechat.enabled" value="1" {% if cs_wechat.get('enabled') %}checked{% endif %}>
+      </label>
+    </div>
+    <div class="mb-0">
+      <label class="form-label small mb-1">微信客服链接（可选，优先）</label>
+      <input class="form-control form-control-sm" name="customer_service.wechat.url" value="{{ cs_wechat.get('url', '') }}" placeholder="例如：https://work.weixin.qq.com/kfid/xxxxx">
+      <div class="form-text">企业微信「微信客服」的接待链接。填了它，访客点悬浮按钮直接跳转开聊（手机拉起微信 App）；不填则回退为弹出二维码。</div>
+    </div>
+    </div>
+    <div class="cs-col">
+      <div class="mb-2">
+        <label class="form-label small mb-1">悬浮按钮文字</label>
+        <input class="form-control form-control-sm" name="customer_service.wechat.label" value="{{ cs_wechat.get('label', '') }}" placeholder="例如：微信咨询">
+      </div>
+      <div class="mb-0">
+        <label class="form-label small mb-1 text-muted">微信二维码</label>
+        <div class="module-media-layout company-media-layout">
+        <div class="module-media-tools">
+          <div class="module-media-picker{% if cs_qrcode %} has-media{% endif %}" role="button" tabindex="0" title="点击上传" onclick="openCompanyMediaPicker(event,this)" onkeydown="openCompanyMediaPicker(event,this)">
+            {% if cs_qrcode %}
+            <img src="{{ cs_qrcode }}" alt="">
+            <button type="button" class="module-media-preview-icon" onclick="previewCompanyMedia(event,this)" title="预览大图" aria-label="预览大图">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            {% else %}
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            {% endif %}
+            <input type="file" name="customer_service_wechat_qrcode_file" accept="image/*" onchange="handleCompanyMediaUpload(this)" style="display:none">
+            {% if cs_qrcode %}
+            <button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearCompanyMedia(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            {% endif %}
+          </div>
+        </div>
+        <div class="module-media-content"><div class="module-media-url-row">
+          <input type="text" class="form-control form-control-sm" name="customer_service.wechat.qrcode" value="{{ cs_qrcode }}" placeholder="二维码图片 URL" oninput="updateCompanyMediaPreview(this)">
+          <button type="button" class="module-media-library-btn" onclick="openCompanyMediaLibrary(this)" title="从媒体库选择">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </button>
+        </div><div class="form-text">企业微信客服码或个人微信码均可</div></div>
+        </div>
+      </div>
+    </div>{# /cs-col 右栏 #}
+    </div>{# /cs-grid #}
+  </div>
+
   <div class="panel-save-bar">
     <button class="btn btn-primary btn-sm w-100" type="submit" title="保存">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -161,12 +225,46 @@
 </form>
 
 <script>
+// ---- 公司简介字数即时统计 ----
+// 建议 80-160 字；不足或超出范围时计数变红并提示。中文按字符数计（与 maxlength 一致）
+(function(){
+  var input = document.getElementById('companyDescInput');
+  var counter = document.getElementById('companyDescCount');
+  if (!input || !counter) return;
+  var MIN = 80, MAX = 160;
+  function update(){
+    var n = input.value.length;
+    if (n === 0) {
+      // 空值不报警（允许不填），仅显示 0
+      counter.textContent = '0 字';
+      counter.style.color = '#94a3b8';
+      counter.title = '';
+    } else if (n < MIN) {
+      counter.textContent = n + ' 字 · 偏少（建议 ≥' + MIN + '）';
+      counter.style.color = '#dc2626';
+      counter.title = '少于 ' + MIN + ' 字，SEO 摘要偏短';
+    } else if (n > MAX) {
+      counter.textContent = n + ' 字 · 偏多（建议 ≤' + MAX + '）';
+      counter.style.color = '#dc2626';
+      counter.title = '超过 ' + MAX + ' 字，分享摘要可能被截断';
+    } else {
+      counter.textContent = n + ' 字';
+      counter.style.color = '#16a34a';
+      counter.title = '';
+    }
+  }
+  input.addEventListener('input', update);
+  update();  // 初始化时按已有内容显示一次
+})();
+
 // ---- 统一媒体上传组件（Logo / Favicon 共用） ----
 // 参考 admin_modules.js 中 renderModuleMediaPicker 的逻辑，内联实现不依赖外部 JS
 
-/** 从当前元素向上找到包含 picker 和 URL input 的共同容器（col-6 或独立 mb-2） */
+/** 从当前元素向上找到包含 picker 和 URL input 的共同容器。
+ * 优先使用媒体组件自身的 layout，避免二维码等新布局因外层不是 col-6/mb-2 而失效。
+ */
 function _companyMediaContainer(el) {
-  return el.closest('.col-6') || el.closest('.mb-2');
+  return el.closest('.module-media-layout') || el.closest('.col-6') || el.closest('.mb-2') || el.closest('.mb-0');
 }
 
 function openCompanyMediaPicker(event, picker) {

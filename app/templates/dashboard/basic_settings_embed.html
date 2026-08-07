@@ -77,6 +77,19 @@
     .basic-workspace-panel--combined #companyForm > .panel-section:first-of-type {
       grid-column: 1 / -1;
     }
+    /* 在线客服卡通栏（占满两列），卡内用 cs-grid 分左右两栏：左=触达设置，右=展示物料 */
+    .basic-workspace-panel--combined #companyForm > .panel-section.cs-section {
+      grid-column: 1 / -1;
+    }
+    .cs-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .cs-grid { grid-template-columns: minmax(0, 1fr); }
+    }
     .basic-workspace-panel--combined #companyForm > .panel-section,
     .basic-workspace-panel--combined #themeForm > .panel-section {
       height: auto;

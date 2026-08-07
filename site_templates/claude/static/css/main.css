@@ -4857,3 +4857,75 @@ a.ci-value:hover { color: var(--color-primary); }
     height: 40px;
   }
 }
+
+/* ===== 微信客服悬浮入口 ===== */
+/* 定位在"回到顶部"按钮正上方（back-to-top: bottom 24 + 高 44 + 间距 12 = 80），右对齐不重叠 */
+.cs-wechat {
+  position: fixed;
+  right: 24px;
+  bottom: 80px;
+  z-index: 1000;
+}
+.cs-wechat-btn {
+  display: flex;
+  align-items: center;
+  /* gap: 8px; */
+  height: 44px;
+  padding: 0 12px 0 12px;
+  border: none;
+  border-radius: 22px;
+  background: var(--color-primary, #cc785c);
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.cs-wechat-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.24);
+}
+.cs-wechat-label { white-space: nowrap;}
+/* 二维码弹层：从按钮上方弹出，右对齐 */
+.cs-wechat-popup {
+  position: absolute;
+  right: 0;
+  bottom: 56px;
+  width: 200px;
+  padding: 14px;
+  border: 1px solid var(--color-border, #e6dfd8);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+.cs-wechat-popup[hidden] { display: none; }
+.cs-wechat-popup img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+.cs-wechat-popup p {
+  margin: 10px 0 0;
+  color: var(--color-text, #1e293b);
+  font-size: 13px;
+}
+/* 手机端：按钮缩为纯图标圆钮，避免文字挤占屏幕 */
+@media (max-width: 768px) {
+  .cs-wechat {
+    right: 16px;
+    bottom: 64px;
+  }
+  .cs-wechat-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .cs-wechat-label { display: none; }
+  .cs-wechat-popup { bottom: 52px; }
+}
