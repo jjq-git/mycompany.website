@@ -274,30 +274,11 @@ function richEditorEscape(value) {
   });
 }
 
-function richEditorHtml(name, value) {
-  var safeName = richEditorEscape(name);
-  return '<div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius: 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">' +
-    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'bold\')" title="加粗" style="font-size:14px;line-height:1"><b>B</b></button>' +
-    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'italic\')" title="斜体" style="font-size:14px;line-height:1"><i>I</i></button>' +
-    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'underline\')" title="下划线" style="font-size:14px;line-height:1"><u>U</u></button>' +
-    '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'formatBlock\',\'h2\')" title="大标题" style="font-size:14px;line-height:1">H2</button>' +
-    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'formatBlock\',\'h3\')" title="小标题" style="font-size:14px;line-height:1">H3</button>' +
-    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'formatBlock\',\'p\')" title="正文段落" style="font-size:14px;line-height:1">P</button>' +
-    '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'justifyLeft\')" title="左对齐" style="font-size:14px;line-height:1">☰</button>' +
-    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'justifyCenter\')" title="居中" style="font-size:14px;line-height:1">≡</button>' +
-    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'justifyRight\')" title="右对齐" style="font-size:14px;line-height:1">☷</button>' +
-    '<span style="border-left:1px solid #dee2e6;margin:0 3px"></span>' +
-    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'insertUnorderedList\')" title="无序列表" style="font-size:14px;line-height:1">•≡</button>' +
-    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,\'insertOrderedList\')" title="有序列表" style="font-size:14px;line-height:1">1≡</button>' +
-    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorTable(this,event)" title="插入表格" style="font-size:14px;line-height:1">▦</button>' +
-    '<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorLink(this,event)" title="插入链接" style="font-size:14px;line-height:1">🔗</button>' +
-    '</div>' +
-    '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius: 0;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (value || '') + '</div>' +
-    '<textarea class="form-control form-control-sm d-none" name="' + safeName + '">' + richEditorEscape(value || '') + '</textarea>';
-}
-
+/* 本页是独立的 RTE 体系：不加载 admin_modules.js，用 onmousedown 事件避免
+   编辑器失焦（见 CLAUDE.md「富文本编辑器只有一处定义」那条的例外说明）。
+   所以这里保留自己的 richEditorHtml，不要改成调用 admin_modules.js 的版本；
+   但同一文件里只应有这一个定义 —— 此前另有一份旧版工具栏（12 个按钮，无
+   删除线/引用/颜色/撤销重做），被本函数覆盖后成了死代码，已删除。 */
 function richEditorHtml(name, value) {
   var safeName = richEditorEscape(name);
   return '<div class="rich-toolbar rte-toolbar" style="display:flex;gap:1px;flex-wrap:wrap;align-items:center">' +
