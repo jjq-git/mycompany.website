@@ -209,7 +209,7 @@
     .content-edit-panel .detail-faq-edit-item>.d-flex:first-child{margin-bottom:15px!important}
     .content-edit-panel #detailFilesList{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
     .content-edit-panel #detailFilesList>.detail-file-edit-item{margin:0!important}
-    /* 缁勪欢鍐呭鍖虹粺涓€淇濈暀 25px 鐪熷疄鍐呰窛锛屼笉鍐嶇敤璐熷杈硅窛鎷変几鏍囬銆?*/
+    /* 组件内容区统一保留 25px 真实内距，不再用负外边距拉伸标题。*/
     .content-edit-panel .dataset-edit-form>.detail-field-section,
     .content-edit-panel .dataset-edit-form .detail-table-item,
     .content-edit-panel .dataset-edit-form .detail-link-item,
@@ -236,7 +236,7 @@
       border-bottom:1px solid #edf1f4!important;
       background:#fff!important;
     }
-    /* 姝ｆ枃鍧楋細鐢诲竷淇濇寔瀹藉害锛屼絾瀹為檯缂栬緫瀛楁鎺у埗鍦ㄨ垝閫傞槄璇诲搴︺€?*/
+    /* 正文块：画布保持宽度，但实际编辑字段控制在舒适阅读宽度。*/
     .content-edit-panel .dataset-edit-form .detail-content-block-item{gap:0!important}
     .content-edit-panel .dataset-edit-form .detail-content-block-side{
       grid-template-columns:minmax(140px,1fr) 180px 210px;
@@ -261,7 +261,7 @@
     }
     .content-edit-panel .dataset-edit-form .detail-content-gallery-fields,
     .content-edit-panel .dataset-edit-form .detail-content-table-fields{max-width:1080px}
-    /* 鎻愮ず锛氭枃瀛楀湪宸︺€佹彁绀虹被鍨嬭缃湪鍙筹紝涓嶅啀鐣欎竴澶х墖绌虹櫧銆?*/
+    /* 提示：文字在左侧、提示类型设置在右，不再留一大片空白。*/
     .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main{
       display:grid;
       grid-template-columns:minmax(0,1fr) 220px;
@@ -271,7 +271,7 @@
     .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main>input:first-child{grid-column:1 / -1}
     .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-textarea-field{grid-column:1;grid-row:2}
     .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-note-fields{grid-column:2;grid-row:2;align-self:start}
-    /* 鍥炬枃锛氭爣棰樻í璺ㄦ暣琛岋紝鏂囧瓧涓庡獟浣撳苟鎺掔紪杈戙€?*/
+    /* 图文：标题横跨整行，文字与媒体并排编辑。*/
     .content-edit-panel .detail-content-block-item[data-block-type="media_text"] .detail-content-block-main{
       display:grid;
       grid-template-columns:minmax(360px,1.08fr) minmax(380px,.92fr);
@@ -286,7 +286,7 @@
     .content-edit-panel .detail-content-block-item[data-block-type="video"] .detail-content-video-fields{max-width:980px}
     .content-edit-panel [data-field-section="detail_content_blocks"]>.d-flex:first-child{align-items:center!important}
     .content-edit-panel [data-field-section="detail_content_blocks"]>.d-flex:first-child>.d-flex{justify-content:flex-end;gap:5px!important;flex-wrap:wrap}
-    /* 濯掍綋鍖猴細绫诲瀷鍗曠嫭涓€琛岋紝涓嬫柟鎵嶆槸棰勮涓庡瓧娈碉紝閬垮厤涓夋鍓茬銆?*/
+    /* 媒体区：类型单独一行，下方才是预览与字段，避免三栏割裂。*/
     .content-edit-panel [data-field-section="media"]>.ds-card-body{padding:0!important}
     .content-edit-panel [data-field-section="media"] .ds-media-grid{
       display:grid;
@@ -322,7 +322,7 @@
       grid-template-columns:120px minmax(0,1fr);
       column-gap:16px;
     }
-    /* 姝ｆ枃闈㈡澘涓庡唴閮ㄥ唴瀹瑰潡鍒嗗眰锛氬唴瀹瑰潡涓嶅啀璐村妗嗐€?*/
+    /* 正文面板与内部内容块分层：内容块不再贴边框。*/
     .content-edit-panel .dataset-edit-form>[data-field-section="detail_content_blocks"]{
       padding:0!important;
       background:#f3f6f8!important;
@@ -379,7 +379,7 @@
     .content-edit-panel .dataset-edit-form .detail-content-block-side .detail-content-layout-wrap{order:3;width:210px;flex:0 0 210px}
     .content-edit-panel .dataset-edit-form .detail-content-block-side .detail-content-layout-field{width:100%}
     .content-edit-panel .dataset-edit-form .detail-content-block-side .ds-danger-icon{order:4;margin-left:0!important}
-    /* 鎻愮ず鍧楋細鏍囬鍜岀被鍨嬪苟鎺掞紝姝ｆ枃鍗犳嵁瀹屾暣涓嬩竴琛屻€?*/
+    /* 提示块：标题和类型并排，正文占据完整下一行。*/
     .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main{
       grid-template-columns:minmax(0,1fr) 220px;
       gap:10px 16px;
@@ -388,7 +388,7 @@
     .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main>input:first-child{grid-column:1;grid-row:1}
     .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-note-fields{grid-column:2;grid-row:1}
     .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-textarea-field{grid-column:1 / -1;grid-row:2;min-height:92px}
-    /* 鍗曞獟浣撳潡鎺у埗瀹藉害锛岄瑙堝拰瀛楁褰㈡垚涓€涓畬鏁寸紪杈戠粍銆?*/
+    /* 单媒体块控制宽度，预览和字段形成一个完整编辑组。*/
     .content-edit-panel .detail-content-block-item[data-block-type="image"] .detail-content-block-main,
     .content-edit-panel .detail-content-block-item[data-block-type="video"] .detail-content-block-main{max-width:1080px}
     .content-edit-panel .detail-content-block-item[data-block-type="image"] .detail-content-image-fields,
@@ -396,7 +396,7 @@
     .content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-block-main,
     .content-edit-panel .detail-content-block-item[data-block-type="gallery"] .detail-content-block-main,
     .content-edit-panel .detail-content-block-item[data-block-type="embed"] .detail-content-block-main{max-width:1080px}
-    /* 缂栬緫缁勪欢缁熶竴缁撴瀯锛氭爣棰樸€佸唴瀹瑰尯銆佸彲閲嶅闆嗗悎銆佸唴瀹瑰潡銆?*/
+    /* 编辑组件统一结构：标题、内容区、可重复集合、内容块。*/
     .content-edit-panel .dataset-edit-form>.editor-component{
       display:block!important;
       padding:0!important;
@@ -532,7 +532,7 @@
       display:none!important;
       padding:0!important;
     }
-    /* 姝ｆ枃鍧楀唴閮ㄨ窡闅忓崱鐗囧搴︼紝涓嶅啀鐢ㄥ浐瀹?max-width 鍒堕€犲彸渚х┖鐧姐€?*/
+    /* 正文块内部跟随卡片宽度，不再用固定 max-width 制造右侧空白。*/
     .content-edit-panel #detailContentBlocksList .detail-content-block-main,
     .content-edit-panel #detailContentBlocksList .detail-content-media-fields,
     .content-edit-panel #detailContentBlocksList .detail-content-gallery-fields,
@@ -601,19 +601,19 @@
       .content-edit-panel #detailContentBlocksList{grid-template-columns:minmax(0,1fr)!important}
     }
     .content-edit-panel .editor-component__body>input[type="hidden"]{display:none}
-    /* 璇︽儏妯℃澘閫夋嫨鍣ㄦ槸宸ュ叿鏉★紝涓嶅鐢ㄦ櫘閫氱粍浠剁殑鍨傜洿缁撴瀯銆?*/
+    /* 详情模板选择器是工具条，不套用普通组件的垂直结构。*/
     .content-edit-panel .dataset-edit-form>.ds-template-card{display:block!important;margin:0 0 18px!important;padding:0!important;background:#fff!important;border:0!important;border-radius:0!important;box-shadow:0 5px 18px rgba(15,23,42,.065);overflow:hidden}
     .content-edit-panel .dataset-edit-form>.ds-template-card>.ds-template-card__body{display:grid!important;grid-template-columns:110px minmax(360px,1fr) minmax(280px,420px)!important;align-items:center;gap:18px;width:100%;margin:0!important;padding:18px 25px!important}
     .content-edit-panel .ds-template-card__body>.form-label{margin:0!important;font-weight:600;color:#334155}
     .content-edit-panel .ds-template-card__body>.ds-template-options{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
     .content-edit-panel .ds-template-card__body>.ds-help{margin:0;text-align:right;line-height:1.5}
     @media(max-width:1100px){.content-edit-panel .dataset-edit-form>.ds-template-card>.ds-template-card__body{grid-template-columns:96px minmax(0,1fr)!important}.content-edit-panel .ds-template-card__body>.ds-help{grid-column:2;text-align:left}}
-    /* Slug銆佹爣棰樸€佸垎绫诲悓琛岋紱鏍囩鍜岀畝浠嬪悇鑷嫭鍗犱竴琛屻€?*/
+    /* Slug、标题、分类同行；标签和简介各自独占一行。*/
     .content-edit-panel .editor-component__body>.ds-basic-grid{grid-template-columns:minmax(0,1fr)!important;gap:12px}
     .content-edit-panel .ds-basic-meta-grid,.content-edit-panel .ds-basic-taxonomy-grid{display:grid;grid-template-columns:minmax(190px,.75fr) minmax(320px,1.55fr) minmax(150px,.6fr);gap:12px}
     .content-edit-panel .ds-basic-taxonomy-grid>div:last-child{grid-column:2/-1}
     @media(max-width:900px){.content-edit-panel .ds-basic-meta-grid,.content-edit-panel .ds-basic-taxonomy-grid{grid-template-columns:minmax(0,1fr)}.content-edit-panel .ds-basic-taxonomy-grid>div:last-child{grid-column:auto}}
-    /* 鍗曟潯楂樼骇缂栬緫锛氫粎闄愬綋鍓嶅唴瀹瑰伐浣滃尯锛屼笉瑕嗙洊鍏变韩妯″潡鏍峰紡銆?*/
+    /* 单条高级编辑：仅限当前内容工作区，不覆盖共享模块样式。*/
     .content-edit-panel #datasetAdvancedModules{
       margin:18px 0 0;
       padding:18px;

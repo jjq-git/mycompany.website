@@ -1006,7 +1006,7 @@
           '</div>';
       });
     } else if (type === 'switch') {
-      // switch 开关控件（true/false），对齐 panel_page_edit.html 鐨?switch 渲染
+      // switch 开关控件（true/false），对齐 panel_page_edit.html 的 switch 渲染
       var checked = String(value || field.default || 'true') !== 'false';
       html += '<div class="form-check form-switch mb-0">' +
         '<input class="form-check-input" type="checkbox" role="switch" ' + (checked ? 'checked' : '') +
@@ -1439,7 +1439,7 @@
     }
     window._featuredImportButton = btn;
     select.innerHTML = '<option value="">-- 请选择数据集--</option>';
-    // 构建 target ↪完整菜单璺緞映射（含父级 group target锛?
+    // 构建 target → 完整菜单路径映射（含父级 group target）
     window._datasetPathMap = {};
     datasets.forEach(function(ds) {
       var target = ds.target || ds.value || ds.key || '';
@@ -1774,7 +1774,7 @@
     renderModuleMediaPicker(picker, URL.createObjectURL(file), fileInput.name, fileInput.getAttribute('accept') || '');
   };
 
-  // 图片预览：点击放澶?
+  // 图片预览：点击放大
   window.enlargeImage = function(img) {
     var src = img.src;
     if (!src) return;
@@ -1793,7 +1793,7 @@
     overlay.style.display = 'flex';
   };
 
-  // 图片预览：删除按閽竻除图鐗?
+  // 图片预览：删除按钮清除图片
   window.clearModuleImage = function(btn) {
     var container = btn.closest('.module-media-field, .dataset-media-field') || btn.closest('.hero-slide-body') || btn.closest('.mb-2');
     if (!container) return;
@@ -1805,7 +1805,7 @@
     renderModuleMediaPicker(picker, '', fileInput ? fileInput.name : '', fileInput ? fileInput.getAttribute('accept') : '');
   };
 
-  // 图片预览锛歎RL 输入框变化时更新预览
+  // 图片预览：URL 输入框变化时更新预览
   window.updateImagePreview = function(urlInput) {
     var container = urlInput.closest('.module-media-field, .dataset-media-field') || urlInput.closest('.hero-slide-body') || urlInput.closest('.mb-2');
     var picker = container ? container.querySelector('.module-media-picker') : null;
@@ -1890,7 +1890,7 @@
   window._esc = esc;
   window._renderField = renderField;
 
-  // 模块图标映射 —涓_block_icons.html 涓block_icon 宏保持一自动?
+  // 模块图标映射 —— 与 _block_icons.html 中 block_icon 宏保持一致
   function getBlockIconHTML(type) {
     var icons = {
       'hero_banner': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>',
@@ -2846,7 +2846,7 @@
         '</div>';
     }
 
-    /* ====== 构建 HTML (结构涓Jinja 模板对齐) ====== */
+    /* ====== 构建 HTML（结构与 Jinja 模板对齐） ====== */
     var html =
       '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="' + headerBg + 'cursor:pointer">' +
         '<span class="module-title-group ' + titleColor + '"><span class="module-drag-handle" title="拖动排序" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="1"/><circle cx="15" cy="7" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="17" r="1"/><circle cx="15" cy="17" r="1"/></svg></span><svg class="module-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><span class="module-order">' + (idx + 1) + '</span><span class="module-title-stack">' +
@@ -2869,7 +2869,7 @@
         renderDetailTemplateComponentFields('module_' + idx + '_data_', desktopFieldList, d, type) +
       '</div>';
     } else if (!isDataModule) {
-      // 电脑绔細tab 按钮 + 两个面板（结构与 Jinja 模板涓自动达級
+      // 电脑端：tab 按钮 + 两个面板（结构与 Jinja 模板中一致）
       html += '<div class="device-config device-desktop">' +
         '<div class="d-flex mb-2">' +
           '<button type="button" class="btn btn-sm btn-outline-secondary active content-style-tab flex-fill" data-tab="content" onclick="window._switchContentStyleTab(this, \'content\')">内容</button>' +
@@ -2895,7 +2895,7 @@
       '</div>';
     }
 
-    // 平板端?/ 手机绔紙结构涓Jinja 模板涓自动达紝涓.device-desktop 同级锛?
+    // 平板端 / 手机端（结构与 Jinja 模板中一致，与 .device-desktop 同级）
     if (!isDataModule && !isDetailTplComponent) {
       html +=
         '<div class="device-config device-tablet" style="display:none">' +
@@ -2929,13 +2929,13 @@
 
   /* ====== 手风琴展开/收缩 ======
    *
-   * server 绔覆染的模块头使鐢?onclick="toggleModuleAccordion(...)" 调用此函数，
-   * 鍥犳必须同时暴露涓window.toggleModuleAccordion（不带下划线）。?
+   * server 端渲染的模块头使用 onclick="toggleModuleAccordion(...)" 调用此函数，
+   * 因此必须同时暴露为 window.toggleModuleAccordion（不带下划线）。
    *
-   * 鍏煎 page editor 鍜?dataset editor 两种面板上下文：
-   *   - 显式控制 .module-config 鐨?display锛坧age editor 鐢紝不走 CSS !important锛?
-   *   - 显式控制 .content-style-panel 鐨?display（两种面板都鐢級
-   *   - 有条件调鐢?selectModuleInPreview锛堜粎 page editor 鏈夐瑙?iframe锛?
+   * 兼容 page editor 和 dataset editor 两种面板上下文：
+   *   - 显式控制 .module-config 的 display（page editor 用，不走 CSS !important）
+   *   - 显式控制 .content-style-panel 的 display（两种面板都用）
+   *   - 有条件调用 selectModuleInPreview（仅 page editor 有预览 iframe）
    */
   function toggleModuleAccordion(moduleItem) {
     var wasExpanded = moduleItem.classList.contains('expanded');
@@ -2944,7 +2944,7 @@
     if (container) {
       container.querySelectorAll('.module-item').forEach(function(item) {
         item.classList.remove('expanded');
-        // 隐藏 .module-config锛坧age editor 面板鐢級
+        // 隐藏 .module-config（page editor 面板用）
         var cfg = item.querySelector('.module-config');
         if (cfg) cfg.style.display = 'none';
         // 隐藏所有?content-style 面板
@@ -2964,7 +2964,7 @@
       var tabName = activeTab ? activeTab.dataset.tab : 'content';
       var target = moduleItem.querySelector('.panel-' + tabName);
       if (target) target.style.display = '';
-      // 联动涓棿预览 iframe锛堜粎 page editor 鐜鏈夎函数锛?
+      // 联动中间预览 iframe（仅 page editor 环境有此函数）
       if (typeof selectModuleInPreview === 'function') {
         selectModuleInPreview(moduleItem.dataset.moduleIndex);
       }
@@ -3138,9 +3138,9 @@
 
   /* ====== 富文本编辑器 (RTE) ======
    * 核心策略：?
-   *   1. 委托 mousedown 鍦?.rte-toolbar 涓preventDefault，阻止按閽偣鍑诲自动寸紪辑器失焦
+   *   1. 委托 mousedown 在 .rte-toolbar 中 preventDefault，阻止按钮点击导致编辑器失焦
    *   2. 委托 click 执行 execCommand，通过 _lastRteEditor 找到对应的编辑器
-   *   3. 颜色选择器和标题下拉鐢?change/input 事件
+   *   3. 颜色选择器和标题下拉用 change/input 事件
    */
   if (!window.__adminModulesRteBound) {
   window.__adminModulesRteBound = true;
@@ -3160,8 +3160,8 @@
 
   function restoreRteSelection(rte, range) {
     // 先捕获 range，再 focus —— rte.focus() 会同步触发 focusin 事件处理器，
-    // 后者调用?saveRteSelection() 鎶?_rteSavedRange 覆盖为编辑器开头位置0锛夛紝
-    // 如果鍏?focus 再取值会导致视频/图片/链接始终插在顶部而非光标位置銆?
+    // 后者调用 saveRteSelection() 把 _rteSavedRange 覆盖为编辑器开头（位置 0），
+    // 如果先 focus 再取值会导致视频/图片/链接始终插在顶部而非光标位置。
     var targetRange = range || _rteSavedRange;
     rte.focus();
     if (!targetRange) return;
@@ -3725,7 +3725,7 @@
     restoreRteSelection(rte);
     var safeUrl = String(url || '').replace(/"/g, '&quot;');
     if (!safeUrl) return;
-    // 鐢?contenteditable="false" 包裹视频为不可编辑原子单鍏冦€?
+    // 用 contenteditable="false" 包裹视频为不可编辑原子单元。
     // 删除按钮放在视频上方的小工具栏中，避免被浏览器原生控件遮挡。
     var wrapper = document.createElement('div');
     wrapper.setAttribute('contenteditable', 'false');
@@ -3758,8 +3758,8 @@
     video.style.cssText = 'max-width:100%;display:block;border-radius:0';
     wrapper.appendChild(video);
 
-    // 鐢?Range.insertNode 直接插入 DOM 节点，避鍏?execCommand insertHTML
-    // 琚祻览器 sanitize 鎺?contenteditable 属性自动?wrapper 退化为可编辑元绱犮€?
+    // 用 Range.insertNode 直接插入 DOM 节点，避免 execCommand insertHTML
+    // 被浏览器 sanitize 掉 contenteditable 属性，导致 wrapper 退化为可编辑元素。
     var sel = window.getSelection();
     if (sel.rangeCount) {
       var range = sel.getRangeAt(0);
@@ -3821,7 +3821,7 @@
   }
 
 
-  // 注册鍦?document 上用事件委托，因涓wrapper 鏄姩鎬?DOM 节点銆?
+  // 注册在 document 上用事件委托，因为 wrapper 是动态 DOM 节点。
   function openRteMediaLibrary(btn, rte) {
     if (!rte) return;
     saveRteSelection(rte);
@@ -3962,7 +3962,7 @@
     }
   });
 
-  // 鈹€鈹€ 工具鏍mousedown：阻止按閽伔走焦鐐?鈹€鈹€
+  // ── 工具栏 mousedown：阻止按钮偷走焦点 ──
   // rte-toolbar 内的按钮点击 preventDefault，阻止编辑器失焦
   document.addEventListener('mousedown', function(e) {
     if (e.target.closest('.rte-toolbar .rte-btn, .rte-toolbar .rte-color-picker')) {
@@ -3971,7 +3971,7 @@
     }
   });
 
-  // 鈹€鈹€ 工具鏍click：执行命浠?鈹€鈹€
+  // ── 工具栏 click：执行命令 ──
   document.addEventListener('click', function(e) {
     var btn = e.target.closest('.rte-btn');
     if (!btn) return;
@@ -4475,7 +4475,7 @@
   });
 
   // 取消 / 点击遮罩关闭
-  // 鐢?closest 匹配取消按钮锛堝彲鑳借点击的是按钮内的文本节点锛?
+  // 用 closest 匹配取消按钮（可能点击的是按钮内的文本节点）
   document.addEventListener('click', function(e) {
     if (e.target.closest('.rte-url-dialog-cancel')) {
       var overlay = e.target.closest('.rte-url-overlay');
@@ -4483,7 +4483,7 @@
       _rteDialogState = { rte: null, mode: '', existingLink: null, range: null };
       return;
     }
-    // 点击 overlay 自动韩（遮罩空鐧藉锛夊叧闂?
+    // 点击 overlay 自身（遮罩空白处）关闭
     if (e.target.classList.contains('rte-url-overlay')) {
       e.target.style.display = 'none';
       _rteDialogState = { rte: null, mode: '', existingLink: null, range: null };
