@@ -111,7 +111,7 @@
     var wrapper = btn && btn.closest ? btn.closest('.mb-2') : null;
     var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
     if (!editor) return false;
-    var size = window.prompt('表格行列，例濡?3x3', '3x3');
+    var size = window.prompt('表格行列，例如 3x3', '3x3');
     if (size === null) return false;
     var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,\x2c ]\s*(\d+)\s*$/);
     var rows = match ? parseInt(match[1], 10) : 3;
@@ -589,7 +589,7 @@
           dimensionUnits.map(function(unit) { return '<option value="' + schemaEsc(unit) + '"' + (dimensionUnit === unit ? ' selected' : '') + '>' + schemaEsc(unit) + '</option>'; }).join('') +
           '</select><input type="hidden" name="' + schemaEsc(name) + '" value="' + schemaEsc(dimensionMatch ? dimensionValue + dimensionUnit : '') + '"></div>';
       } else if (def.control === 'image') {
-        html += mediaUploadHtml(name, val || '', 'image', '背景鍥?URL');
+        html += mediaUploadHtml(name, val || '', 'image', '背景图 URL');
       } else {
         html += '<input type="text" class="form-control form-control-sm" name="' + schemaEsc(name) + '" value="' + schemaEsc(val) + '">';
       }
@@ -806,10 +806,10 @@
       '<div class="list-item-body">' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">图标</label>' + iconPickerHtml(p + 'icon', item.icon || '') + '</div>' +
         '<div class="row g-2">' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">数字</label><input type="number" step="any" class="form-control form-control-sm" name="' + p + 'number" value="' + esc(item.number || '') + '" placeholder="濡?500"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">后缀</label><input type="text" class="form-control form-control-sm" name="' + p + 'suffix" value="' + esc(item.suffix || '') + '" placeholder="濡?+"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">数字</label><input type="number" step="any" class="form-control form-control-sm" name="' + p + 'number" value="' + esc(item.number || '') + '" placeholder="如：500"></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">后缀</label><input type="text" class="form-control form-control-sm" name="' + p + 'suffix" value="' + esc(item.suffix || '') + '" placeholder="如：+"></div>' +
         '</div>' +
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签</label><input type="text" class="form-control form-control-sm" name="' + p + 'label" value="' + esc(item.label || '') + '" placeholder="濡?服务客户"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签</label><input type="text" class="form-control form-control-sm" name="' + p + 'label" value="' + esc(item.label || '') + '" placeholder="如：服务客户"></div>' +
       '</div>' +
     '</div>';
   };
@@ -2189,7 +2189,7 @@
         '<div class="row g-2">' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_text" value="' + esc(d.btn_text || '') + '"></div>' +
           '<div class="col-6"><label class="form-label small mb-1 text-muted">按钮链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_url" value="' + esc(d.btn_url || '') + '"></div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">打开方式</label><select class="form-select form-select-sm" name="module_' + idx + '_data_btn_target"><option value=""' + (d.btn_target !== '_blank' ? ' selected' : '') + '>当前窗口</option><option value="_blank"' + (d.btn_target === '_blank' ? ' selected' : '') + '>新窗鍙?/option></select></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">打开方式</label><select class="form-select form-select-sm" name="module_' + idx + '_data_btn_target"><option value=""' + (d.btn_target !== '_blank' ? ' selected' : '') + '>当前窗口</option><option value="_blank"' + (d.btn_target === '_blank' ? ' selected' : '') + '>新窗口</option></select></div>' +
         '</div>';
       styleEditor =
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
@@ -2264,7 +2264,7 @@
     } else if (type === 'feature_grid' && !schemaManaged) {
       var featCount = d.feature_count || '1';
       specialEditor =
-        '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title) + '" placeholder="濡?产品特点"></div>' +
+        '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title" value="' + esc(d.title) + '" placeholder="如：产品特点"></div>' +
         '<div class="mb-2"><label class="form-label small mb-1 text-muted">区块副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle" value="' + esc(d.subtitle) + '" placeholder="如：为什么选择我们"></div>' +
         '<div class="feature-items-editor" data-module-index="' + idx + '"><div class="d-flex justify-content-between align-items-center mb-2"><div class="small fw-semibold text-primary">功能卡片</div><button type="button" class="btn btn-sm btn-outline-primary" onclick="window._addFeatureItem(' + idx + ')">+ 添加功能卡片</button></div><input type="hidden" name="module_' + idx + '_feature_count" class="feature-item-count" value="' + featCount + '"><div class="feature-item-list">' + (window._featureItemHtml ? window._featureItemHtml(idx, 0, d) : '') + '</div></div>';
       styleEditor =
@@ -2680,7 +2680,7 @@
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg) + '</div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空不限制宽度锛?</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="濡?1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">--</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度 <span class="text-muted" style="font-weight:normal;">（留空不限制宽度）</span></label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="如：1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">--</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">内容层样式</div>' +
@@ -2712,7 +2712,7 @@
           visToggle('module_' + idx + '_data_show_name', '姓名', (d.show_name || 'true')) +
           visToggle('module_' + idx + '_data_show_email', '邮箱', (d.show_email || 'true')) +
           visToggle('module_' + idx + '_data_show_phone', '电话', (d.show_phone || 'true')) +
-          visToggle('module_' + idx + '_data_show_company', '鍏徃', (d.show_company || 'false')) +
+          visToggle('module_' + idx + '_data_show_company', '公司', (d.show_company || 'false')) +
           visToggle('module_' + idx + '_data_show_message', '留言', (d.show_message || 'true')) +
         '</div>' +
         '<div class="row g-2">' +
@@ -2734,7 +2734,7 @@
         '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
         '<div class="row g-2">' +
           '<div class="col-6">' + cn('module_' + idx + '_data_section_bg', 'Color', d.section_bg) + '</div>' +
-          '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="濡?1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">--</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+          '<div class="col-6"><label class="form-label small mb-1 text-muted">外层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_outer_width" value="' + esc(d.outer_width || '') + '" placeholder="如：1200px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=&quot;module_' + idx + '_data_outer_width&quot;]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="">--</option><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
         '</div>' +
         '<hr class="my-2">' +
         '<div class="small fw-semibold mb-1 text-muted">内容层样式</div>' +
@@ -3286,7 +3286,7 @@
   }
 
   function insertRteTable(rte) {
-    var size = window.prompt('表格行列，例濡?3x3', '3x3');
+    var size = window.prompt('表格行列，例如 3x3', '3x3');
     if (size === null) return;
     var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,\x2c ]\s*(\d+)\s*$/);
     var rows = match ? parseInt(match[1], 10) : 3;

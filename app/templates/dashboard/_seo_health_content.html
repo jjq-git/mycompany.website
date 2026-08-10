@@ -75,7 +75,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
       </div>
       <div class="modal-body">
-        <div class="small text-muted mb-3">这里只列出菜单中实际发布的页面€傛爣棰樺拰绠€浠嬬敤浜庢悳绱㈢粨鏋溿€佺ぞ浜ゅ垎浜拰 AI 妫€绱㈡憳瑕併€倇% if not report.ai_configured %}褰撳墠鏈配置 AI Key锛岀敓鎴愭寜閽細鍏堜娇鐢ㄦ湰鍦版憳瑕佸厹搴曘€倇% endif %}</div>
+        <div class="small text-muted mb-3">这里只列出菜单中实际发布的页面。标题和简介用于搜索结果、社交分享和 AI 检索摘要。{% if not report.ai_configured %}当前未配置 AI Key，生成按钮会先使用本地摘要兜底。{% endif %}</div>
         <div class="d-flex flex-column gap-3">
           {% for row in report.pages %}
           <form class="seo-page-row border rounded p-3" data-page-key="{{ row.key }}" data-generate-url="{{ row.generate_url }}" data-save-url="{{ row.save_url }}">
@@ -83,14 +83,14 @@
             <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
               <div>
                 <div class="fw-semibold">{{ row.title }}</div>
-                <div class="text-muted small">/{{ row.key }}/ 路 {{ row.status_detail }}</div>
+                <div class="text-muted small">/{{ row.key }}/ · {{ row.status_detail }}</div>
               </div>
               {% if row.status == 'ok' %}
-              <span class="badge text-bg-success">已设置?/span>
+              <span class="badge text-bg-success">已设置</span>
               {% elif row.status == 'auto' %}
-              <span class="badge text-bg-info">鍙嚜鍔ㄧ敓鎴?/span>
+              <span class="badge text-bg-info">可自动生成</span>
               {% else %}
-              <span class="badge text-bg-warning">闇€澶勭悊</span>
+              <span class="badge text-bg-warning">需处理</span>
               {% endif %}
             </div>
             <div class="row g-2">
@@ -106,7 +106,7 @@
             <div class="d-flex align-items-center justify-content-between mt-2 gap-2">
               <div class="small text-muted seo-row-msg"></div>
               <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="seoGenerateDescription(this)">{% if report.ai_configured %}AI 鐢熸垚{% else %}自动生成{% endif %}</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="seoGenerateDescription(this)">{% if report.ai_configured %}AI 生成{% else %}自动生成{% endif %}</button>
                 <button type="button" class="btn btn-sm btn-primary" onclick="seoSavePage(this)" title="保存" aria-label="保存">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                 </button>
@@ -134,33 +134,33 @@ function seoSetMsg(row, text, ok) {
 function seoGenerateDescription(btn) {
   var row = seoRowOf(btn);
   if (!row) return;
-  seoSetMsg(row, '鐢熸垚涓?..', true);
+  seoSetMsg(row, '生成中...', true);
   var url = (row.dataset.generateUrl || '').replace(/&amp;/g, '&');
   fetch(url, { method: 'POST' })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      if (!data.ok) throw new Error(data.error || '鐢熸垚澶辫触');
+      if (!data.ok) throw new Error(data.error || '生成失败');
       var textarea = row.querySelector('.seo-description');
       if (textarea) textarea.value = data.description || '';
-      var source = data.source === 'ai' ? 'AI 宸茬敓鎴? : '宸茬敤鏈湴鎽和鐢熸垚';
-      if (data.warning) source += '锛? + data.warning + '锛?;
-      seoSetMsg(row, source + '锛屽彲缁х画淇敼鍚庝繚瀛?, true);
+      var source = data.source === 'ai' ? 'AI 已生成' : '已用本地摘要生成';
+      if (data.warning) source += '（' + data.warning + '）';
+      seoSetMsg(row, source + '，可继续修改后保存', true);
     })
-    .catch(function(err) { seoSetMsg(row, err.message || '鐢熸垚澶辫触', false); });
+    .catch(function(err) { seoSetMsg(row, err.message || '生成失败', false); });
 }
 function seoSavePage(btn) {
   var row = seoRowOf(btn);
   if (!row) return;
-  seoSetMsg(row, '淇濆瓨涓?..', true);
+  seoSetMsg(row, '保存中...', true);
   var url = (row.dataset.saveUrl || '').replace(/&amp;/g, '&');
   fetch(url, { method: 'POST', body: new FormData(row) })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      if (!data.ok) throw new Error(data.error || '淇濆瓨澶辫触');
-      seoSetMsg(row, '宸蹭繚瀛?, true);
+      if (!data.ok) throw new Error(data.error || '保存失败');
+      seoSetMsg(row, '已保存', true);
       if (typeof markPreviewDirty === 'function') markPreviewDirty();
     })
-    .catch(function(err) { seoSetMsg(row, err.message || '淇濆瓨澶辫触', false); });
+    .catch(function(err) { seoSetMsg(row, err.message || '保存失败', false); });
 }
 function seoRunCheckAction(btn) {
   var url = (btn.dataset.panelUrl || '').replace(/&amp;/g, '&');
