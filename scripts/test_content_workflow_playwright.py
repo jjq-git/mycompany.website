@@ -151,7 +151,13 @@ try:
         check('legacy dataset handoff preselects category', product.evaluate('element => element.classList.contains("selected")'))
         check('preselected category enables next step', page.locator('#toTemplates').is_enabled())
         page.locator('#toTemplates').click()
-        page.locator('[data-dataset-template="products"]:visible').first.click()
+        visible_product_templates = page.locator('[data-dataset-template="products"]:visible')
+        if visible_product_templates.count() == 1:
+            check('single detail template is selected automatically',
+                  visible_product_templates.locator('input:checked').count() == 1)
+            check('automatic template selection enables editor step', page.locator('#createContent').is_enabled())
+        else:
+            visible_product_templates.first.click()
         page.locator('#createContent').click()
         page.wait_for_url('**/content/edit/products/0**')
         page.wait_for_load_state('networkidle')
@@ -199,9 +205,9 @@ try:
         page.get_by_role('button', name='保存详情模板').click()
         page.wait_for_load_state('networkidle')
         check('template SEO remains visible after save', page.locator('input[name="seo_title"]').input_value() == '{title} | Browser')
-        check('template preview action exists', page.get_by_role('link', name='预览模板').count() == 1)
+        check('template preview action exists', page.get_by_role('link', name='预览已保存版本').count() == 1)
         with page.expect_popup() as popup_info:
-            page.get_by_role('link', name='预览模板').click()
+            page.get_by_role('link', name='预览已保存版本').click()
         preview = popup_info.value
         preview.wait_for_load_state('networkidle')
         check('template preview renders saved template', preview.locator('body').count() == 1 and preview.locator('h1').count() >= 1)

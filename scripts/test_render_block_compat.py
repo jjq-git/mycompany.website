@@ -1,12 +1,13 @@
 """Phase 2 向后兼容验证：开关关闭时，render_block 旧路径 == 原始 {% include %}.
 
 不碰 git、不碰工作区文件，纯内存对比：
-对 site 1（dengtec）的真实页面数据，分别用
+对数据库中首个 dengtec 站点的真实页面数据，分别用
   A) 原始写法：_modules.html 里 {% include %}
   B) 新写法：  _modules.html 里 {{ render_block(module) }}
 渲染同一批 module，逐字符对比输出。开关关闭时两者必须完全一致。
 """
 import sys
+import re
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -22,7 +23,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 ORIGINAL_MODULES = '''{% if page.modules %}
   {% for module in page.modules | sort(attribute='order') %}
     {% if module.data is mapping or (module.type == 'hero_banner' and module.data is iterable and module.data is not string) %}
-      <div class="builder-module" data-builder-module-index="{{ loop.index0 }}" data-builder-module-type="{{ module.type }}">
+      <div class="builder-module" data-builder-module-index="{{ loop.index0 }}" data-builder-module-type="{{ module.type }}" data-builder-page-key="{{ page_key | default('') }}">
         {% include ['blocks/' ~ module.type ~ '/variants/' ~ (module.variant | default('default')) ~ '.html', 'blocks/' ~ module.type ~ '/template.jinja2.bak', 'blocks/' ~ module.type ~ '/template.html'] ignore missing %}
       </div>
     {% endif %}
@@ -32,8 +33,8 @@ ORIGINAL_MODULES = '''{% if page.modules %}
 
 app = create_app()
 with app.app_context():
-    site = Site.query.get(1)
-    assert site, 'site 1 不存在'
+    site = Site.query.filter_by(template_name='dengtec').order_by(Site.id).first()
+    assert site, '没有可用于兼容测试的 dengtec 站点'
     # 关闭开关：验证向后兼容
     from flask import current_app
     current_app.config['ENABLE_DATA_ATTR_BLOCKS'] = False
@@ -89,7 +90,9 @@ with app.app_context():
         tpl_b = env_b.get_template('_modules.html')
         out_b = tpl_b.render(**ctx)
 
-        if out_a.strip() == out_b.strip():
+        # render_block 会为可读性保留一个标签间换行；DOM 语义需与旧 include 一致。
+        normalize_markup = lambda value: re.sub(r'>\s+<', '><', value.strip())
+        if normalize_markup(out_a) == normalize_markup(out_b):
             print(f'  ✓ 页面 {pkey}（{len(pdata.get("modules", []))} 模块）输出一致')
         else:
             diffs += 1

@@ -345,12 +345,12 @@
     references(name).then(function(result) {
       var refs = result.data.refs || [];
       if (refs.length) {
-        setStatus('This media is referenced and cannot be deleted.', 'danger');
+        setStatus('该媒体文件已被引用，不能删除。', 'danger');
         previewBody.innerHTML = '<div class="media-ref-warning">' + refsHtml(refs) + '</div>';
         previewInfo.hidden = true;
         return;
       }
-      if (!confirm('Delete this media file?')) return;
+      if (!confirm('确认删除该媒体文件？')) return;
       return fetch('/api/media/delete?site={{ site.slug }}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

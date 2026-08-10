@@ -213,7 +213,7 @@
   </form>
 </div>
 
-<script src="/static/js/admin_modules.js?v=146"></script>
+<script src="/static/js/admin_modules.js?v=147"></script>
 <script type="application/json" id="blockLibraryJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="datasetNamesJson">{{ all_list_datasets | tojson }}</script>
 <script type="application/json" id="styleRegistryJson">{{ style_registry | default({}) | tojson }}</script>
@@ -1619,6 +1619,8 @@ if (paletteModalEl) {
       var t = document.querySelector('#blockPaletteModal .modal-title');
       if (t) t.textContent = '添加模块';
     }
+    var confirmBtn = document.getElementById('confirmAddBtn');
+    if (confirmBtn) confirmBtn.textContent = '确认添加';
   });
   paletteModalEl.addEventListener('show.bs.modal', function() {
     // 换变体模式：预选当前模块的类型与变体
@@ -1699,6 +1701,8 @@ function onBlockPaletteConfirm(type, variant, dataPreset) {
     switchTargetIndex = null;
     var t = document.querySelector('#blockPaletteModal .modal-title');
     if (t) t.textContent = '添加模块';
+    var confirmBtn = document.getElementById('confirmAddBtn');
+    if (confirmBtn) confirmBtn.textContent = '确认添加';
   } else {
     addModule(type, variant, dataPreset);
   }
@@ -1709,6 +1713,8 @@ function openVariantSwitch(idx) {
   switchTargetIndex = idx;
   var title = document.querySelector('#blockPaletteModal .modal-title');
   if (title) title.textContent = '更换变体';
+  var confirmBtn = document.getElementById('confirmAddBtn');
+  if (confirmBtn) confirmBtn.textContent = '确认更换';
   var modal = new bootstrap.Modal(document.getElementById('blockPaletteModal'));
   modal.show();
 }
@@ -3480,16 +3486,14 @@ function insertRichEditorTable(btn, event) {
    与新增模块走同一套 schema 表单（存 data-* 渲染器读的新键名）。幂等，可重复调用。 */
 function initSchemaMounts() {
   var mounts = document.querySelectorAll('.schema-mount[data-mount="content"]');
-  console.log("[initSchemaMounts] mounts count:", mounts.length);
   mounts.forEach(function(mount) {
     if (mount.dataset.mounted) return;
     var idx = mount.dataset.moduleIndex;
     var device = mount.dataset.device || "desktop";
     var typeEl = document.querySelector("[name=module_" + idx + "_type]");
-    if (!typeEl) { console.log("[initSchemaMounts] module_" + idx + " NO typeEl"); return; }
+    if (!typeEl) return;
     var meta = findBlockMeta(typeEl.value);
-    console.log("[initSchemaMounts] module_" + idx + " type=" + typeEl.value + " is_data_attr=" + meta.is_data_attr + " hasSchema=" + !!(meta.schema));
-    if (!meta.is_data_attr || !meta.schema) { console.log("[initSchemaMounts] module_" + idx + " SKIP"); return; }
+    if (!meta.is_data_attr || !meta.schema) return;
 
     var schema = _getMergedSchema(meta);
 

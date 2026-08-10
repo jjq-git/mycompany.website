@@ -3,9 +3,13 @@
 用法: flask --app run <command>
 """
 import re
+import secrets
 from datetime import datetime, timezone
+from pathlib import Path
 
 import click
+import yaml
+from flask import current_app
 from flask.cli import with_appcontext
 from werkzeug.security import generate_password_hash
 
@@ -13,11 +17,27 @@ from .core.builder import build_site
 from .core.db import db
 from .core.models import (AccountEntitlement, AccountIdentity, PasswordCredential,
                           SLUG_RESERVED, Site, Template, User)
-from .core.site_storage import copy_seed_data, init_site_folder, site_root
+from .core.site_storage import (copy_seed_data, init_site_folder, read_yaml,
+                                site_root, write_yaml)
 from .core.template_loader import scan_templates
 
 
 SLUG_PATTERN = re.compile(r'^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$')
+
+
+def _template_language_options(template_name):
+    """读取模板语言配置；CLI 建站必须与后台建站保持相同的数据模型。"""
+    meta_path = Path(current_app.config['TEMPLATES_DIR']) / template_name / 'meta.yaml'
+    meta = yaml.safe_load(meta_path.read_text(encoding='utf-8')) or {} if meta_path.exists() else {}
+    languages = meta.get('languages') or [{'code': 'zh-CN'}]
+    codes = list(dict.fromkeys(
+        item.get('code') for item in languages
+        if isinstance(item, dict) and item.get('code')
+    )) or ['zh-CN']
+    default_language = meta.get('default_language') or codes[0]
+    if default_language not in codes:
+        default_language = codes[0]
+    return codes, default_language
 
 
 def init_app(app):
@@ -47,16 +67,69 @@ def scan_templates_cmd():
 
 @click.command('create-user')
 @click.argument('email')
+@click.option('--password', default=None, help='指定登录密码；留空时为新账号生成一次性密码。')
 @with_appcontext
-def create_user_cmd(email):
-    """创建用户 (开发用, 跳过邮件验证)."""
-    if User.query.filter_by(email=email).first():
-        click.echo(f'用户已存在: {email}')
-        return
-    user = User(email=email, status='active')
-    db.session.add(user)
+def create_user_cmd(email, password):
+    """创建或补全一个可实际登录的账号。"""
+    normalized_email = (email or '').strip().lower()
+    if not normalized_email:
+        raise click.ClickException('邮箱不能为空')
+
+    now = datetime.now(timezone.utc)
+    identity = AccountIdentity.query.filter_by(
+        identity_type='email', identifier=normalized_email
+    ).first()
+    user = identity.user if identity else User.query.filter_by(email=normalized_email).first()
+    created = user is None
+    if created:
+        user = User(email=normalized_email, status='active', email_verified_at=now)
+        db.session.add(user)
+        db.session.flush()
+    else:
+        user.email = normalized_email
+        user.status = 'active'
+        user.email_verified_at = user.email_verified_at or now
+
+    if identity is None:
+        identity = AccountIdentity(
+            user_id=user.id,
+            identity_type='email',
+            identifier=normalized_email,
+            is_primary=True,
+            verified_at=now,
+        )
+        db.session.add(identity)
+    else:
+        identity.is_primary = True
+        identity.verified_at = identity.verified_at or now
+
+    credential = PasswordCredential.query.filter_by(user_id=user.id).first()
+    generated_password = None
+    if credential is None:
+        generated_password = password or secrets.token_urlsafe(12)
+        db.session.add(PasswordCredential(
+            user_id=user.id,
+            password_hash=generate_password_hash(generated_password),
+            password_changed_at=now,
+        ))
+    elif password:
+        credential.password_hash = generate_password_hash(password)
+        credential.password_changed_at = now
+
+    entitlement = AccountEntitlement.query.filter_by(user_id=user.id).first()
+    if entitlement is None:
+        db.session.add(AccountEntitlement(user_id=user.id, can_create_sites=True))
+    else:
+        entitlement.can_create_sites = True
+
     db.session.commit()
-    click.echo(f'已创建用户: id={user.id}, email={email}')
+    click.echo(f"{'已创建' if created else '已更新'}用户: {normalized_email}")
+    if generated_password and not password:
+        click.echo(f'一次性登录密码: {generated_password}')
+    elif password:
+        click.echo('登录密码已设置')
+    else:
+        click.echo('已有密码保持不变')
 
 
 @click.command('create-site')
@@ -95,6 +168,8 @@ def create_site_cmd(owner_email, slug, template, name):
             click.echo('数据库里没有模板, 先运行: flask --app run scan-templates')
             return
 
+    enabled_languages, default_language = _template_language_options(tpl.name)
+
     site = Site(
         owner_id=owner.id,
         name=name,
@@ -102,6 +177,8 @@ def create_site_cmd(owner_email, slug, template, name):
         folder_path='',  # 拿到 id 后再填
         template_name=tpl.name,
         template_version=tpl.current_version,
+        default_language=default_language,
+        enabled_languages=enabled_languages,
         cdn_provider='aliyun',
     )
     db.session.add(site)
@@ -112,6 +189,12 @@ def create_site_cmd(owner_email, slug, template, name):
     try:
         init_site_folder(site.id)
         copied = copy_seed_data(site.id, tpl.name)
+        settings = read_yaml(site.id, 'settings.yaml', default={}) or {}
+        header = settings.setdefault('header', {})
+        header['enabled_languages'] = enabled_languages
+        language_switcher = header.setdefault('language_switcher', {})
+        language_switcher['enabled'] = len(enabled_languages) > 1
+        write_yaml(site.id, 'settings.yaml', settings)
     except Exception as exc:
         db.session.rollback()
         raise click.ClickException(f'建站文件初始化失败, 已回滚: {exc}')

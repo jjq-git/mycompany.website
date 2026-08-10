@@ -272,7 +272,7 @@
 </style>
 
 <div class="ds-edit-head">
-  <span class="ds-edit-title">{{ dataset_key | title }}{% if is_edit %} · 编辑 #{{ edit_item_id }}{% endif %}</span>
+  <span class="ds-edit-title">{{ page_label or (dataset_key | title) }}{% if is_edit %} · 编辑 #{{ edit_item_id }}{% endif %}</span>
   <div class="d-flex gap-1">
     {% if is_edit and comparison_preview_path | default('') %}
     <a class="btn btn-sm btn-outline-primary" href="/live_preview/{{ site.id }}/{{ current_lang }}/{{ comparison_preview_path }}/index.html?compare={{ edit_item_id }}" target="_blank" rel="noopener">在对比页预览</a>
@@ -424,20 +424,22 @@
             <input type="text" class="form-control form-control-sm" name="category" value="{{ edit_item.category or '' }}">
           </div>
           <div>
-            {% if auto_tags_mode | default('suggest') == 'suggest' %}
             {% set generated_tags_val = auto_tags_preview | default([]) | join(', ') %}
+            {% set tags_manual = edit_item.tags_auto is defined and edit_item.tags_auto == false %}
+            {% set displayed_tags_val = tags_val if tags_manual else (generated_tags_val or tags_val) %}
+            {% if auto_tags_mode | default('suggest') == 'suggest' %}
             {# 自动标签可手动修改：手改过（tags_auto=False）则显示已保存的手填值，
                否则预填本次自动值。改了内容保存后即锁定，不再被自动值覆盖。 #}
-            {% set tags_manual = edit_item.tags_auto is defined and edit_item.tags_auto == false %}
             <div class="ds-auto-tags-head">
               <label class="form-label">标签{% if tags_manual %}<span class="text-muted small ms-1">（已手动修改）</span>{% endif %}</label>
               <div class="form-text" id="autoTagsHelp">根据规格参数自动生成，可直接修改；改动保存后将以你填写的为准。</div>
             </div>
-            <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val if tags_manual else (generated_tags_val or tags_val) }}" aria-describedby="autoTagsHelp" placeholder="多个标签用逗号分隔，例如：width-1020, shape-U">
+            <input type="text" class="form-control form-control-sm" name="tags" value="{{ displayed_tags_val }}" aria-describedby="autoTagsHelp" placeholder="多个标签用逗号分隔，例如：width-1020, shape-U">
             {% else %}
             <label class="form-label">标签</label>
             <input type="text" class="form-control form-control-sm" name="tags" value="{{ tags_val }}" placeholder="多个标签用逗号分隔，例如：LED, 灯条, 工程案例">
             {% endif %}
+            <input type="hidden" name="_original_tags" value="{{ displayed_tags_val }}">
           </div>
         </div>
         <div class="ds-basic-full">
@@ -1206,7 +1208,7 @@
 </form>
 
 {# JS: 模块选择器交互 #}
-<script src="/static/js/admin_modules.js?v=146"></script>
+<script src="/static/js/admin_modules.js?v=147"></script>
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="iconListDsJson">{{ icon_list | default([]) | tojson }}</script>

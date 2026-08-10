@@ -1356,7 +1356,7 @@ def _parse_tags_input(value):
     return result
 
 
-def _apply_detail_template_autofill(fields, template, page_label=None):
+def _apply_detail_template_autofill(fields, template, page_label=None, original_tags=None):
     if not isinstance(fields, dict):
         return fields
     auto_category = _detail_template_rule_value(template, 'auto_category', 'inherit')
@@ -1372,10 +1372,17 @@ def _apply_detail_template_autofill(fields, template, page_label=None):
             generated = generated_technical_tags(fields)
             fallback = generated or _suggest_tags_from_fields(fields)
             submitted = fields.get('tags')
-            # 检测手改：提交的 tags 与本次自动值不一致 → 认定为手动编辑，置 tags_auto=False 永久锁定。
-            # 说明：表单默认回填的就是上次的自动值，用户没动则两者相等，不会误锁。
-            if (isinstance(submitted, list) and fallback
-                    and [str(t) for t in submitted] != [str(t) for t in fallback]):
+            submitted_tags = _parse_tags_input(submitted)
+            # 判断是否手改必须和“表单打开时的值”比较。若直接和本次由新参数生成的标签比较，
+            # 用户只改规格也会被误判为手工接管，导致自动标签再也不更新。
+            if original_tags is not None:
+                user_changed_tags = submitted_tags != _parse_tags_input(original_tags)
+            else:
+                user_changed_tags = bool(
+                    isinstance(submitted, list) and fallback
+                    and submitted_tags != _parse_tags_input(fallback)
+                )
+            if user_changed_tags:
                 fields['tags_auto'] = False
             elif generated:
                 # 标签由结构化参数确定；未被手改则保存时同步刷新，并标记为自动管理。
@@ -4500,190 +4507,106 @@ def company():
 
 @bp.route('/products')
 def products():
-    user, site = _current_context()
-    lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = _storage_lang(site, lang, default_lang)
-    products = datasets.load(site.id, 'products', lang=storage_lang)
-    if request.args.get('_fragment'):
-        blocks = _get_available_blocks(site.template_name)
-        return render_template('dashboard/panel_data_list.html',
-                               user=user, site=site,
-                               dataset_key='products', items=products,
-                               blocks=blocks,
-                               current_lang=lang, languages=languages, default_lang=default_lang)
-    return render_template('dashboard/products.html',
-                           user=user, site=site, products=products, active='products')
+    """旧地址兼容入口；内容管理统一由内容中心承载。"""
+    _, site = _current_context()
+    lang, _, _ = _get_panel_lang(site)
+    return redirect(url_for('core.content_workspace', mode='list', dataset='products',
+                            site=site.id, lang=lang))
 
 
 @bp.route('/products/new', methods=['POST'])
 def product_new():
     _, site = _current_context()
-    lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = _storage_lang(site, lang, default_lang)
-    n = len(datasets.load(site.id, 'products', lang=storage_lang)) + 1
-    new_id = datasets.add(site.id, 'products', {
-        'name': '新产品', 'slug': f'product-{n}',
-        'summary': '', 'description': '', 'cover': '', 'category': '',
-        'price': '', 'specs': {},
-    }, lang=storage_lang)
-    return redirect(url_for('core.product_edit', product_id=new_id, site=site.id, lang=lang))
+    lang, _, _ = _get_panel_lang(site)
+    return redirect(url_for('core.content_workspace', mode='new', dataset='products',
+                            site=site.id, lang=lang), code=303)
 
 
 @bp.route('/products/<int:product_id>/delete', methods=['POST'])
 def product_delete(product_id):
     _, site = _current_context()
-    lang, _, default_lang = _get_panel_lang(site)
-    storage_lang = _storage_lang(site, lang, default_lang)
-    datasets.remove(site.id, 'products', product_id, lang=storage_lang)
-    flash('已删除')
-    return redirect(url_for('core.products', site=site.id, lang=lang))
+    lang, _, _ = _get_panel_lang(site)
+    flash('请在内容中心确认并删除该内容', 'info')
+    return redirect(url_for('core.content_workspace', mode='list', dataset='products',
+                            site=site.id, lang=lang), code=303)
 
 
 @bp.route('/products/<int:product_id>/edit', methods=['GET', 'POST'])
 def product_edit(product_id):
-    user, site = _current_context()
-    lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = _storage_lang(site, lang, default_lang)
-    product = datasets.find(site.id, 'products', product_id, lang=storage_lang)
-    if not product:
-        abort(404, f'产品不存在: id={product_id}')
-
-    if request.method == 'POST':
-        fields = {f: request.form.get(f, '').strip()
-                  for f in ('name', 'slug', 'category', 'summary', 'description', 'cover', 'price')}
-        fields['cover'] = _uploaded_image_or_form(site.id, 'cover', 'cover_file', 'product-cover')
-        # specs: 多行 "键: 值"
-        specs = {}
-        for line in request.form.get('specs', '').strip().splitlines():
-            if ':' in line:
-                k, v = line.split(':', 1)
-                if k.strip():
-                    specs[k.strip()] = v.strip()
-        fields['specs'] = specs
-        datasets.update(site.id, 'products', product_id, fields, lang=storage_lang)
-        flash('已保存')
-        return redirect(url_for('core.product_edit', product_id=product_id, site=site.id, lang=lang))
-
-    return render_template('dashboard/product_edit.html',
-                           user=user, site=site, product=product, active='products')
+    _, site = _current_context()
+    lang, _, _ = _get_panel_lang(site)
+    return redirect(url_for('core.content_item_workspace', dataset_key='products',
+                            item_id=product_id, site=site.id, lang=lang), code=303)
 
 
 # ----- 功能 -----
 
 @bp.route('/features')
 def features():
-    user, site = _current_context()
-    lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = _storage_lang(site, lang, default_lang)
-    items = datasets.load(site.id, 'features', lang=storage_lang)
-    if request.args.get('_fragment'):
-        blocks = _get_available_blocks(site.template_name)
-        return render_template('dashboard/panel_data_list.html',
-                               user=user, site=site,
-                               dataset_key='features', items=items,
-                               blocks=blocks,
-                               current_lang=lang, languages=languages, default_lang=default_lang)
-    return render_template('dashboard/features.html',
-                           user=user, site=site, items=items, active='features')
+    _, site = _current_context()
+    lang, _, _ = _get_panel_lang(site)
+    return redirect(url_for('core.content_workspace', mode='list', dataset='features',
+                            site=site.id, lang=lang))
 
 
 @bp.route('/features/new', methods=['POST'])
 def feature_new():
     _, site = _current_context()
-    lang, _, default_lang = _get_panel_lang(site)
-    storage_lang = _storage_lang(site, lang, default_lang)
-    new_id = datasets.add(site.id, 'features',
-                          {'icon': '', 'title': '新功能', 'desc': ''}, lang=storage_lang)
-    return redirect(url_for('core.feature_edit', item_id=new_id, site=site.id, lang=lang))
+    lang, _, _ = _get_panel_lang(site)
+    return redirect(url_for('core.content_workspace', mode='new', dataset='features',
+                            site=site.id, lang=lang), code=303)
 
 
 @bp.route('/features/<int:item_id>/delete', methods=['POST'])
 def feature_delete(item_id):
     _, site = _current_context()
-    lang, _, default_lang = _get_panel_lang(site)
-    storage_lang = _storage_lang(site, lang, default_lang)
-    datasets.remove(site.id, 'features', item_id, lang=storage_lang)
-    flash('已删除')
-    return redirect(url_for('core.features', site=site.id, lang=lang))
+    lang, _, _ = _get_panel_lang(site)
+    flash('请在内容中心确认并删除该内容', 'info')
+    return redirect(url_for('core.content_workspace', mode='list', dataset='features',
+                            site=site.id, lang=lang), code=303)
 
 
 @bp.route('/features/<int:item_id>/edit', methods=['GET', 'POST'])
 def feature_edit(item_id):
-    user, site = _current_context()
-    lang, _, default_lang = _get_panel_lang(site)
-    storage_lang = _storage_lang(site, lang, default_lang)
-    item = datasets.find(site.id, 'features', item_id, lang=storage_lang)
-    if not item:
-        abort(404)
-    if request.method == 'POST':
-        fields = {f: request.form.get(f, '').strip() for f in ('icon', 'title', 'desc')}
-        datasets.update(site.id, 'features', item_id, fields, lang=storage_lang)
-        flash('已保存')
-        return redirect(url_for('core.feature_edit', item_id=item_id, site=site.id, lang=lang))
-    return render_template('dashboard/feature_edit.html',
-                           user=user, site=site, item=item, active='features')
+    _, site = _current_context()
+    lang, _, _ = _get_panel_lang(site)
+    return redirect(url_for('core.content_item_workspace', dataset_key='features',
+                            item_id=item_id, site=site.id, lang=lang), code=303)
 
 
 # ----- 博客 -----
 
 @bp.route('/blog')
 def blog():
-    user, site = _current_context()
-    lang, languages, default_lang = _get_panel_lang(site)
-    storage_lang = _storage_lang(site, lang, default_lang)
-    items = datasets.load(site.id, 'posts', lang=storage_lang)
-    if request.args.get('_fragment'):
-        blocks = _get_available_blocks(site.template_name)
-        return render_template('dashboard/panel_data_list.html',
-                               user=user, site=site,
-                               dataset_key='posts', items=items,
-                               blocks=blocks,
-                               current_lang=lang, languages=languages, default_lang=default_lang)
-    return render_template('dashboard/blog.html',
-                           user=user, site=site, items=items, active='blog')
+    _, site = _current_context()
+    lang, _, _ = _get_panel_lang(site)
+    return redirect(url_for('core.content_workspace', mode='list', dataset='posts',
+                            site=site.id, lang=lang))
 
 
 @bp.route('/blog/new', methods=['POST'])
 def post_new():
-    from datetime import date as _date
     _, site = _current_context()
-    lang, _, default_lang = _get_panel_lang(site)
-    storage_lang = _storage_lang(site, lang, default_lang)
-    n = len(datasets.load(site.id, 'posts', lang=storage_lang)) + 1
-    new_id = datasets.add(site.id, 'posts', {
-        'slug': f'post-{n}', 'title': '新文章', 'date': str(_date.today()),
-        'cover': '', 'excerpt': '', 'body': '',
-    }, lang=storage_lang)
-    return redirect(url_for('core.post_edit', item_id=new_id, site=site.id, lang=lang))
+    lang, _, _ = _get_panel_lang(site)
+    return redirect(url_for('core.content_workspace', mode='new', dataset='posts',
+                            site=site.id, lang=lang), code=303)
 
 
 @bp.route('/blog/<int:item_id>/delete', methods=['POST'])
 def post_delete(item_id):
     _, site = _current_context()
-    lang, _, default_lang = _get_panel_lang(site)
-    storage_lang = _storage_lang(site, lang, default_lang)
-    datasets.remove(site.id, 'posts', item_id, lang=storage_lang)
-    flash('已删除')
-    return redirect(url_for('core.blog', site=site.id, lang=lang))
+    lang, _, _ = _get_panel_lang(site)
+    flash('请在内容中心确认并删除该内容', 'info')
+    return redirect(url_for('core.content_workspace', mode='list', dataset='posts',
+                            site=site.id, lang=lang), code=303)
 
 
 @bp.route('/blog/<int:item_id>/edit', methods=['GET', 'POST'])
 def post_edit(item_id):
-    user, site = _current_context()
-    lang, _, default_lang = _get_panel_lang(site)
-    storage_lang = _storage_lang(site, lang, default_lang)
-    item = datasets.find(site.id, 'posts', item_id, lang=storage_lang)
-    if not item:
-        abort(404)
-    if request.method == 'POST':
-        fields = {f: request.form.get(f, '').strip()
-                  for f in ('title', 'slug', 'date', 'cover', 'excerpt', 'body')}
-        fields['cover'] = _uploaded_image_or_form(site.id, 'cover', 'cover_file', 'post-cover')
-        datasets.update(site.id, 'posts', item_id, fields, lang=storage_lang)
-        flash('已保存')
-        return redirect(url_for('core.post_edit', item_id=item_id, site=site.id, lang=lang))
-    return render_template('dashboard/post_edit.html',
-                           user=user, site=site, item=item, active='blog')
+    _, site = _current_context()
+    lang, _, _ = _get_panel_lang(site)
+    return redirect(url_for('core.content_item_workspace', dataset_key='posts',
+                            item_id=item_id, site=site.id, lang=lang), code=303)
 
 
 @bp.route('/pages/home', methods=['GET', 'POST'])
@@ -7053,7 +6976,8 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
 
     fields = {}
     for key, val in item.items():
-        if key not in ('modules', 'csrf_token') and not key.startswith('_draft_'):
+        if (key not in ('modules', 'csrf_token', 'convert_webp')
+                and not key.startswith('_draft_') and not key.endswith('_convert_webp')):
             fields[key] = val
 
     for key in form:
@@ -7087,7 +7011,8 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
             continue
         if key.startswith('detail_content_blocks_') or key in ('detail_content_blocks_count',):
             continue
-        if key.startswith('module_') or key.startswith('_') or key in ('module_count', 'csrf_token'):
+        if (key.startswith('module_') or key.startswith('_') or key.endswith('_convert_webp')
+                or key in ('module_count', 'csrf_token', 'convert_webp')):
             continue
         fields[key] = form.get(key, '').strip()
 
@@ -7180,7 +7105,10 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
             (tpl for tpl in templates_for_autofill if str(tpl.get('id') or '') == str(default_template_id_for_autofill)),
             None,
         )
-    _apply_detail_template_autofill(fields, template_for_autofill or {}, page_label_for_templates)
+    _apply_detail_template_autofill(
+        fields, template_for_autofill or {}, page_label_for_templates,
+        original_tags=form.get('_original_tags'),
+    )
 
     force_template_preview = form.get('_draft_force_template_preview') == '1'
     if force_template_preview or form.get('_restore_template_modules') == '1':
@@ -8031,8 +7959,13 @@ def dataset_edit(dataset_key, item_id):
         raw_menu = menu_lib.upgrade_old_format(menu_items, meta.get('datasets', []))
         preview_path = find_menu_path(raw_menu, dataset_key)
         comparison_preview_path = menu_lib.find_comparison_path(raw_menu, dataset_key)
+        localized_menu = menu_lib.apply_labels(
+            raw_menu,
+            (settings.get('menu_labels') or {}).get(lang, {}) or {},
+        )
         page_label = next(
-            (entry.get('label') for entry in menu_lib.collect_list_targets(raw_menu) if entry.get('target') == dataset_key),
+            (entry.get('label') for entry in menu_lib.collect_list_targets(localized_menu)
+             if entry.get('target') == dataset_key),
             dataset_key,
         )
         page_cfg = _ensure_page_detail_templates(site.id, dataset_key, page_label)
@@ -8157,7 +8090,8 @@ def dataset_edit(dataset_key, item_id):
         # 用旧数据做底，表单字段覆盖，避免种子字段（name/category/cover 等）被静默删除
         fields = {}
         for key, val in item.items():
-            if key not in ('id', 'slug', 'modules', 'csrf_token') and not key.startswith('_draft_'):
+            if (key not in ('id', 'slug', 'modules', 'csrf_token', 'convert_webp')
+                    and not key.startswith('_draft_') and not key.endswith('_convert_webp')):
                 fields[key] = val
         for key in request.form:
             if key.startswith('_draft_'):
@@ -8195,7 +8129,9 @@ def dataset_edit(dataset_key, item_id):
             if key.startswith('detail_content_blocks_') or key in ('detail_content_blocks_count',):
                 continue
             # 跳过模块配置字段和 CSRF 令牌（不参与数据存储）
-            if key.startswith('module_') or key.startswith('_') or key in ('module_count', 'csrf_token'):
+            if (key.startswith('module_') or key.startswith('_')
+                    or key.endswith('_convert_webp')
+                    or key in ('module_count', 'csrf_token', 'convert_webp')):
                 continue
             val = request.form.get(key, '').strip()
             fields[key] = val
@@ -8302,7 +8238,10 @@ def dataset_edit(dataset_key, item_id):
                 (tpl for tpl in templates_for_autofill if str(tpl.get('id') or '') == str(default_template_id_for_autofill)),
                 None,
             )
-        _apply_detail_template_autofill(fields, template_for_autofill or {}, page_label_for_templates)
+        _apply_detail_template_autofill(
+            fields, template_for_autofill or {}, page_label_for_templates,
+            original_tags=request.form.get('_original_tags'),
+        )
         for field_name in ('cover', 'image', 'photo', 'logo'):
             upload = request.files.get(field_name) or request.files.get(f'{field_name}_file')
             alt_key = _image_alt_key(field_name)

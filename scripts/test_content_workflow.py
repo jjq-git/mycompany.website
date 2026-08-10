@@ -14,10 +14,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from app import create_app
-from app.core import datasets
+from app.core import datasets, menu as menu_lib
 from app.core.db import db
 from app.core.models import Site, Template, User
-from app.core.site_storage import copy_seed_data, read_yaml
+from app.core.routes import _apply_detail_template_autofill
+from app.core.site_storage import copy_seed_data, read_yaml, write_yaml
 
 
 passed = 0
@@ -58,6 +59,11 @@ db.session.commit()
 site.folder_path = f'sites/{site.id}'
 db.session.commit()
 copy_seed_data(site.id, 'dengtec')
+settings = read_yaml(site.id, 'settings.yaml') or {}
+base_labels = menu_lib.extract_labels(settings.get('menu') or [])
+products_label_key = next(key for key, value in base_labels.items() if value == '产品')
+settings.setdefault('menu_labels', {}).setdefault('zh-CN', {})[products_label_key] = '产品中心'
+write_yaml(site.id, 'settings.yaml', settings)
 uid, sid = user.id, site.id
 
 client = app.test_client()
@@ -138,6 +144,32 @@ response = client.post(edit_url, data={
 })
 check('stale editor cannot overwrite newer content', response.status_code == 409)
 
+# Upload UI switches are transport controls, not dataset fields.
+current = datasets.find(sid, 'products', minimal['id'])
+response = client.post(edit_url, data={
+    '_content_version': datasets.item_version(current), 'template_id': 'default',
+    'slug': 'minimal-one', 'title': 'Minimal v2', 'cover_convert_webp': 'false',
+})
+current = datasets.find(sid, 'products', minimal['id'])
+check('upload conversion switch never pollutes dataset YAML',
+      response.status_code == 302 and 'cover_convert_webp' not in current)
+
+# Unchanged tags remain automatic when structured specs change; actual tag edits lock them.
+auto_fields = {
+    'detail_specs': [{'items': [{'name': '输入电压', 'value': '24V'}]}],
+    'tags': ['voltage-12v'],
+}
+_apply_detail_template_autofill(auto_fields, {}, original_tags='voltage-12v')
+check('unchanged automatic tags follow changed specs',
+      auto_fields.get('tags') == ['voltage-24v'] and auto_fields.get('tags_auto') is True,
+      auto_fields)
+manual_fields = {
+    'detail_specs': [{'items': [{'name': '输入电压', 'value': '24V'}]}],
+    'tags': ['用户标签'],
+}
+_apply_detail_template_autofill(manual_fields, {}, original_tags='voltage-12v')
+check('real tag edits retain manual lock', manual_fields.get('tags_auto') is False, manual_fields)
+
 # Deleting a used template migrates item references to the current default.
 response = client.post('/content/templates/products' + query, data={
     '_template_action': 'delete', 'template_id': custom_id,
@@ -152,12 +184,21 @@ check('legacy creator retired without writes', response.status_code == 410 and l
 response = client.post('/_dataset/products/999999/delete' + query)
 check('legacy delete missing item is 404', response.status_code == 404)
 
+# Older public dashboard URLs stay useful but no longer execute duplicate CRUD implementations.
+response = client.get('/products' + query)
+check('legacy product list redirects to content center',
+      response.status_code == 302 and '/content/workspace' in response.location)
+response = client.get(f'/products/{minimal["id"]}/edit' + query)
+check('legacy product editor redirects instead of raising 500',
+      response.status_code == 303 and f'/content/edit/products/{minimal["id"]}' in response.location)
+
 # Chromium-compatible pattern and optimistic version token are present in the editor HTML.
 current = datasets.find(sid, 'products', minimal['id'])
 response = client.get(edit_url)
 html = response.get_data(as_text=True)
 check('editor exposes content version token', datasets.item_version(current) in html)
 check('slug pattern escapes v-mode hyphen', 'pattern="[a-z0-9][a-z0-9\\-]{1,28}[a-z0-9]"' in html)
+check('dataset editor uses localized menu label', '产品中心' in html and '>Products<' not in html)
 
 # Concurrent add calls are serialized and preserve both records with unique IDs.
 def add_race(title):

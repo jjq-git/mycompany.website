@@ -1,4 +1,4 @@
-"""Phase 4 数据集驱动 block 回归：data_grid / product_grid 用真实 seed 数据集渲染。
+"""数据集驱动 block 回归：统一使用 data_grid 渲染真实 seed 数据集。
 
 锁住渲染器新增能力：
 - data-source 数据集绑定（具名 products / 空串选 dataset）
@@ -32,10 +32,18 @@ with app.app_context():
 
     def render(block, data):
         html = (bdir / block / 'template.html').read_text(encoding='utf-8')
-        return br.render(html, bp.parse(html), data, ctx)
+        dataset_name = data.get('dataset', '')
+        render_ctx = {
+            **ctx,
+            'vars': {
+                **ctx['vars'],
+                'dataset_path': f'/zh-CN/{dataset_name}/' if dataset_name else '',
+            },
+        }
+        return br.render(html, bp.parse(html), data, render_ctx)
 
-    print('=== product_grid（data-source=products 固定数据集）===')
-    out = render('product_grid', {'title': '产品展示'})
+    print('=== data_grid → products ===')
+    out = render('data_grid', {'title': '产品展示', 'dataset': 'products'})
     chk('5 张产品卡', out.count('class="dg-card"') == 5, out.count('class="dg-card"'))
     chk('产品名注入（fallback 无关）', '静音仓 V2' in out)
     chk('每项 href 模板化', 'href="/zh-CN/products/silent-booth/"' in out)
@@ -59,7 +67,7 @@ with app.app_context():
     chk('无 data-* 残留', 'data-name' not in out and 'data-fallback' not in out)
 
     print('\n=== page_size 上限 + 空数据集隐藏 ===')
-    out = render('product_grid', {'title': 'x'})  # products 仅 5 条 < page-size 6 → 全显示
+    out = render('data_grid', {'title': 'x', 'dataset': 'products'})
     chk('page_size=6 不截断 5 条', out.count('class="dg-card"') == 5)
     out_empty = render('data_grid', {'title': '空', 'dataset': 'nonexistent'})
     chk('数据集不存在 → 0 卡片', out_empty.count('class="dg-card"') == 0)

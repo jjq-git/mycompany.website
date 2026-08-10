@@ -13,18 +13,19 @@ with app.app_context():
     st = blocks['section_title']
     print(f"section_title is_data_attr = {st['is_data_attr']}")
     assert st['is_data_attr'], 'section_title 应被识别为 data-* 声明式'
-    schema = st['schema']
-    print(f"  根类型={schema.root_type}, hideable={schema.hideable}, style={schema.style_tokens}")
-    print(f"  字段: {[(f.name, f.type, f.href_field) for f in schema.fields]}")
-    assert schema.root_type == 'group'
-    assert schema.hideable
-    assert schema.style_tokens == ['text-align']
-    names = {f.name for f in schema.fields}
+    schema_meta = st['schema']
+    print(f"  根类型={schema_meta['root_type']}, hideable={schema_meta['hideable']}, style={schema_meta['style_tokens']}")
+    print(f"  字段: {[(f['name'], f['type'], f.get('href_field')) for f in schema_meta['fields']]}")
+    assert schema_meta['root_type'] == 'group'
+    assert schema_meta['hideable']
+    assert schema_meta['style_tokens'] == ['text-align', 'bg-color']
+    names = {f['name'] for f in schema_meta['fields']}
     assert names == {'tag', 'title', 'desc', 'btn'}, f'字段不对: {names}'
 
     # 2. 完整数据渲染
     html = (Path(app.config['TEMPLATES_DIR']) / 'dengtec' / 'blocks'
             / 'section_title' / 'template.html').read_text(encoding='utf-8')
+    schema = bp.parse(html)
     out = br.render(html, schema, {
         'tag': '关于我们', 'title': '德恩基电子科技',
         'desc': '提供展示道具行业的电子产品解决方案',
