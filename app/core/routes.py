@@ -5526,12 +5526,26 @@ def header_edit():
                            active='header')
 
 
-def _footer_link_choices(settings, template_meta):
-    """Flatten configured navigation into selectable footer link targets."""
+def _footer_link_choices(settings, template_meta, lang_code=None, default_lang=None):
+    """Flatten configured navigation into language-aware footer link targets."""
     raw_menu = menu_lib.upgrade_old_format(
         settings.get('menu') or template_meta.get('default_menu', []),
         template_meta.get('datasets', []),
     )
+
+    # The menu structure is shared by all languages while translated labels live
+    # in ``menu_labels.<lang>``.  Footer choices previously skipped this overlay,
+    # so selecting a page in the English editor copied the Chinese base label.
+    labels_by_lang = settings.get('menu_labels') or {}
+    if lang_code and isinstance(labels_by_lang, dict):
+        default_labels = labels_by_lang.get(default_lang) if default_lang else {}
+        current_labels = labels_by_lang.get(lang_code)
+        label_map = dict(default_labels) if isinstance(default_labels, dict) else {}
+        if isinstance(current_labels, dict):
+            label_map.update(current_labels)
+        if label_map:
+            raw_menu = menu_lib.apply_labels(raw_menu, label_map)
+
     normalized = menu_lib.normalize_for_render(raw_menu)
     choices = []
     seen = set()
@@ -5565,7 +5579,7 @@ def footer_variant_edit():
     # Footer 变体列表
     tpl_meta_path = Path(current_app.config['TEMPLATES_DIR']) / site.template_name / 'meta.yaml'
     tpl_meta = _yaml.safe_load(tpl_meta_path.read_text(encoding='utf-8')) if tpl_meta_path.exists() else {}
-    footer_link_choices = _footer_link_choices(settings, tpl_meta)
+    footer_link_choices = _footer_link_choices(settings, tpl_meta, lang, default_lang)
     footer_variants = tpl_meta.get('footer_variants', [
         {'key': 'columns', 'label': '栏目模式', 'description': '多列链接和文本栏目'},
         {'key': 'minimal', 'label': '极简模式', 'description': '仅显示版权和备案信息'},
@@ -5708,7 +5722,7 @@ def header_footer_edit():
         {'key': 'columns_social', 'label': '栏目 + 社交', 'description': '左侧公司 Logo 和社交图标，右侧栏目'},
     ])
     footer_key = _lang_key('footer', site, lang, default_lang)
-    footer_link_choices = _footer_link_choices(settings, tpl_meta)
+    footer_link_choices = _footer_link_choices(settings, tpl_meta, lang, default_lang)
 
     if request.method == 'POST':
         section = request.form.get('_section') or tab

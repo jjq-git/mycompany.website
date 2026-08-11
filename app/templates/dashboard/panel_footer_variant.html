@@ -21,6 +21,26 @@
   min-width: 0;
   margin-bottom: 0 !important;
 }
+.footer-link-label-field {
+  flex: 0.8 1 0;
+  min-width: 0;
+}
+.footer-link-target-fields {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(112px, 0.7fr);
+  gap: 4px;
+  flex: 1.6 1 0;
+  min-width: 0;
+}
+@media (max-width: 767.98px) {
+  .footer-link-item {
+    flex-wrap: wrap;
+  }
+  .footer-link-label-field,
+  .footer-link-target-fields {
+    flex-basis: calc(100% - 38px);
+  }
+}
 </style>
 
 {% if translation_enabled and languages and languages|length > 1 and current_lang != default_lang %}
@@ -125,7 +145,6 @@
     <input type="hidden" name="footer_column_count" id="footerColumnCount" value="{{ current_footer.get('columns', []) | length }}">
     <div id="footerColumnsList">
       {% set footer_columns = current_footer.get('columns', []) %}
-      {% set footer_choice_urls = footer_link_choices | default([]) | map(attribute='url') | list %}
       {% if footer_columns %}
       {% for col in footer_columns %}
       <div class="border rounded p-2 mb-2 footer-column-item collapsed">
@@ -158,13 +177,13 @@
             <input type="hidden" name="footer_col_{{ col_idx }}_link_count" value="{{ links | length }}">
             {% for link in links %}
             <div class="d-flex gap-1 mb-1 footer-link-item">
-              <div class="flex-fill">
+              <div class="footer-link-label-field">
                 <input type="text" class="form-control form-control-sm" name="footer_col_{{ col_idx }}_link_{{ loop.index0 }}_label" value="{{ link.label | default('') }}" placeholder="名称">
               </div>
-              <div class="flex-fill">
-                <select class="form-select form-select-sm footer-link-target" name="footer_col_{{ col_idx }}_link_{{ loop.index0 }}_url" onchange="syncFooterLinkTarget(this)">
-                  <option value="">选择站内链接</option>
-                  {% if link.url and link.url not in footer_choice_urls %}<option value="{{ link.url }}" data-label="{{ link.label | default('') }}" selected>当前链接：{{ link.url }}</option>{% endif %}
+              <div class="footer-link-target-fields">
+                <input type="text" class="form-control form-control-sm footer-link-url" name="footer_col_{{ col_idx }}_link_{{ loop.index0 }}_url" value="{{ link.url | default('') }}" placeholder="/页面/ 或 https://..." title="可填写站内路径或站外网址" oninput="syncFooterLinkChoice(this)">
+                <select class="form-select form-select-sm footer-link-choice" aria-label="选择站内页面" title="从站内页面中选择" onchange="syncFooterLinkTarget(this)">
+                  <option value="">选择站内页面</option>
                   {% for choice in footer_link_choices | default([]) %}
                   <option value="{{ choice.url }}" data-label="{{ choice.label | replace('— ', '') }}" {% if link.url == choice.url %}selected{% endif %}>{{ choice.label }}</option>
                   {% endfor %}
@@ -209,15 +228,24 @@ function footerEscapeHtml(value) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 function footerLinkOptions() {
-  return '<option value="">选择站内链接</option>' + FOOTER_LINK_CHOICES.map(function(choice) {
+  return '<option value="">选择站内页面</option>' + FOOTER_LINK_CHOICES.map(function(choice) {
     return '<option value="' + footerEscapeHtml(choice.url) + '" data-label="' + footerEscapeHtml(String(choice.label || '').replace(/— /g, '')) + '">' + footerEscapeHtml(choice.label) + '</option>';
   }).join('');
 }
 function syncFooterLinkTarget(select) {
   var row = select.closest('.footer-link-item');
   var label = row && row.querySelector('input[name$="_label"]');
+  var url = row && row.querySelector('input[name$="_url"]');
   var option = select.options[select.selectedIndex];
-  if (label && option && option.dataset.label) label.value = option.dataset.label;
+  if (url) url.value = select.value;
+  if (label && !label.value.trim() && option && option.dataset.label) {
+    label.value = option.dataset.label;
+  }
+}
+function syncFooterLinkChoice(input) {
+  var row = input.closest('.footer-link-item');
+  var select = row && row.querySelector('.footer-link-choice');
+  if (select) select.value = input.value;
 }
 function syncFooterColumnType(select) {
   var item = select.closest('.footer-column-item');
@@ -283,8 +311,9 @@ function addFooterLink(btn) {
   var idx = parseInt(countInp?.value || '0');
   if (countInp) countInp.value = idx + 1;
   var html = '<div class="d-flex gap-1 mb-1 footer-link-item">' +
-    '<div class="flex-fill"><input type="text" class="form-control form-control-sm" name="footer_col_' + colIdx + '_link_' + idx + '_label" placeholder="名称"></div>' +
-    '<div class="flex-fill"><select class="form-select form-select-sm footer-link-target" name="footer_col_' + colIdx + '_link_' + idx + '_url" onchange="syncFooterLinkTarget(this)">' + footerLinkOptions() + '</select></div>' +
+    '<div class="footer-link-label-field"><input type="text" class="form-control form-control-sm" name="footer_col_' + colIdx + '_link_' + idx + '_label" placeholder="名称"></div>' +
+    '<div class="footer-link-target-fields"><input type="text" class="form-control form-control-sm footer-link-url" name="footer_col_' + colIdx + '_link_' + idx + '_url" placeholder="/页面/ 或 https://..." title="可填写站内路径或站外网址" oninput="syncFooterLinkChoice(this)">' +
+    '<select class="form-select form-select-sm footer-link-choice" aria-label="选择站内页面" title="从站内页面中选择" onchange="syncFooterLinkTarget(this)">' + footerLinkOptions() + '</select></div>' +
     '<div class="flex-shrink-0"><button type="button" class="btn btn-sm btn-outline-danger px-2" title="删除链接" onclick="this.closest(\'.footer-link-item\').remove()">✕</button></div></div>';
   linksDiv.insertAdjacentHTML('beforeend', html);
 }
