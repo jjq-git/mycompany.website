@@ -41,3 +41,9 @@ modules:
     style_bg-color: ''
     pagination_style: page_numbers
     pager_align: center
+# 必须显式声明英文 SEO 文案：en 的回退基底是"根版被默认语言 zh-CN 覆盖后"的结果
+# （builder._load_lang_overrides 先算默认语言再算其他语言），不写就会继承中文。
+title: Modules
+description: RIMU offers a growing collection of I2C modules for developers and integrators,
+  including GPIO expanders, PWM controllers, addressable LED drivers, stepper motor
+  drivers, RFID and DMX512, all communicating with the host over a unified I2C interface.
