@@ -30,6 +30,14 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><circle cx="5" cy="12" r="3"/></svg>
       </button>
     </div>
+    <div class="media-bulk-bar" id="mediaBulkBar" hidden>
+      <label class="media-bulk-select-all">
+        <input type="checkbox" id="mediaSelectAll">
+        <span>全选未引用</span>
+      </label>
+      <span class="media-bulk-count" id="mediaBulkCount">已选 0 项</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" id="mediaBatchDelete" disabled>批量删除</button>
+    </div>
     <div class="media-sort-bar">
       <span>排序：</span>
       <select class="form-select form-select-sm" id="mediaSortBy">
@@ -49,6 +57,11 @@
       <div class="media-grid" id="mediaGrid">
         {% for file in files %}
           <article class="media-card" data-category="{{ file.category }}" data-name="{{ file.api_name }}" data-display-name="{{ file.display_name }}" data-url="{{ file.url }}" data-ext="{{ file.ext }}" data-is-package="{{ '1' if file.is_package else '0' }}" data-size="{{ file.size_display }}" data-category-label="{{ file.category_label }}" data-reference-count="{{ file.reference_count|default(0) }}">
+            {% if file.can_delete %}
+            <label class="media-select-control" title="选择 {{ file.display_name }}">
+              <input type="checkbox" class="media-select-checkbox" aria-label="选择 {{ file.display_name }}">
+            </label>
+            {% endif %}
             <button class="media-thumb" type="button" data-action="preview" title="预览">
               {% if file.category == 'image' %}
                 <img src="{{ file.url }}" alt="{{ file.display_name }}" loading="lazy">
@@ -151,6 +164,10 @@
   var managerLayout = panel.querySelector('.media-manager-layout');
   var previewCard = panel.querySelector('.media-preview-card');
   var previewResizer = panel.querySelector('[data-preview-resizer]');
+  var bulkBar = document.getElementById('mediaBulkBar');
+  var selectAll = document.getElementById('mediaSelectAll');
+  var bulkCount = document.getElementById('mediaBulkCount');
+  var batchDeleteBtn = document.getElementById('mediaBatchDelete');
 
   function setStatus(text, type) {
     if (!status) return;
@@ -185,6 +202,36 @@
     if (!mediaCount) return;
     var visible = grid.querySelectorAll('.media-card:not([hidden])').length;
     updateMediaCount(visible);
+  }
+
+  function unreferencedCards() {
+    return Array.from(grid.querySelectorAll('.media-card')).filter(function(card) {
+      return Number(card.dataset.referenceCount || 0) === 0;
+    });
+  }
+
+  function selectedCards() {
+    return unreferencedCards().filter(function(card) {
+      var checkbox = card.querySelector('.media-select-checkbox');
+      return checkbox && checkbox.checked;
+    });
+  }
+
+  function updateBulkSelection() {
+    if (!bulkBar) return;
+    var active = panel.querySelector('.media-tab.active');
+    var isUnreferenced = !!(active && active.dataset.mediaFilter === 'unreferenced');
+    bulkBar.hidden = !isUnreferenced;
+    panel.classList.toggle('is-bulk-selecting', isUnreferenced);
+    var available = unreferencedCards();
+    var selected = selectedCards();
+    if (bulkCount) bulkCount.textContent = '已选 ' + selected.length + ' 项';
+    if (batchDeleteBtn) batchDeleteBtn.disabled = selected.length === 0;
+    if (selectAll) {
+      selectAll.checked = available.length > 0 && selected.length === available.length;
+      selectAll.indeterminate = selected.length > 0 && selected.length < available.length;
+      selectAll.disabled = available.length === 0;
+    }
   }
 
   function refsHtml(refs) {
@@ -434,6 +481,34 @@
     updateVisibleMediaCount();
     empty.hidden = matchingCards.length > 0;
     updateLoadMoreBtn();
+    updateBulkSelection();
+  }
+
+  function deleteSelectedCards() {
+    var cards = selectedCards();
+    if (!cards.length) return;
+    if (!confirm('确认删除选中的 ' + cards.length + ' 个未引用媒体文件？此操作不可撤销。')) return;
+    var names = cards.map(function(card) { return card.dataset.name; });
+    if (batchDeleteBtn) batchDeleteBtn.disabled = true;
+    setStatus('正在批量删除 ' + names.length + ' 个媒体文件...', 'muted');
+    fetch('/api/media/delete-batch?site={{ site.slug }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ names: names })
+    }).then(function(r) {
+      return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+    }).then(function(result) {
+      if (!result.ok || result.data.ok === false) throw new Error(result.data.error || '批量删除失败');
+      var deleted = new Set(result.data.deleted || names);
+      cards.forEach(function(card) {
+        if (deleted.has(card.dataset.name)) card.remove();
+      });
+      setStatus('已删除 ' + deleted.size + ' 个未引用媒体文件', 'success');
+      applyCurrentFilter();
+    }).catch(function(err) {
+      setStatus(err.message || '批量删除失败', 'danger');
+      updateBulkSelection();
+    });
   }
 
   function showMoreCards() {
@@ -556,6 +631,21 @@
     if (action === 'preview') preview(card);
     if (action === 'delete') deleteCard(card);
   });
+
+  grid.addEventListener('change', function(e) {
+    if (e.target.classList.contains('media-select-checkbox')) updateBulkSelection();
+  });
+
+  if (selectAll) {
+    selectAll.addEventListener('change', function() {
+      unreferencedCards().forEach(function(card) {
+        var checkbox = card.querySelector('.media-select-checkbox');
+        if (checkbox) checkbox.checked = selectAll.checked;
+      });
+      updateBulkSelection();
+    });
+  }
+  if (batchDeleteBtn) batchDeleteBtn.addEventListener('click', deleteSelectedCards);
 
   uploadZone.addEventListener('dragover', function(e) {
     e.preventDefault();

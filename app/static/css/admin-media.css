@@ -19,6 +19,31 @@
   margin-bottom: 12px;
 }
 
+.media-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.media-bulk-bar[hidden] {
+  display: none;
+}
+
+.media-bulk-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #334155;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.media-bulk-count {
+  color: var(--media-muted);
+  font-size: 12px;
+}
+
 .media-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -153,6 +178,7 @@
 }
 
 .media-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -160,6 +186,34 @@
   border-radius: 8px;
   background: #fff;
   overflow: hidden;
+}
+
+.media-select-control {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, .12);
+  cursor: pointer;
+}
+
+.media-panel.is-bulk-selecting .media-select-control {
+  display: flex;
+}
+
+.media-select-checkbox {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--admin-primary, #067a7a);
 }
 
 /* 强制隐藏分页卡片——display:flex 会覆盖浏览器默认 [hidden] 规则 */

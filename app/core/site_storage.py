@@ -40,6 +40,8 @@ MEDIA_CATEGORIES = {
 }
 
 _MEDIA_PACKAGE_PREFIX = '__package__:'
+_MEDIA_PACKAGE_URL_PREFIX = '/assets/media-packages'
+_LEGACY_MEDIA_PACKAGE_URL_PREFIX = '/media-packages'
 _READ_YAML_CACHE = {}
 _READ_YAML_CACHE_MAX = 512
 
@@ -67,6 +69,15 @@ def is_media_package_token(name):
 
 def media_package_name_from_token(name):
     return name[len(_MEDIA_PACKAGE_PREFIX):] if is_media_package_token(name) else name
+
+
+def media_package_url(package_name, legacy=False):
+    prefix = _LEGACY_MEDIA_PACKAGE_URL_PREFIX if legacy else _MEDIA_PACKAGE_URL_PREFIX
+    return f'{prefix}/{package_name}/'
+
+
+def _media_package_reference_urls(package_name):
+    return (media_package_url(package_name), media_package_url(package_name, legacy=True))
 
 
 def lang_root(site_id, lang_code):
@@ -338,7 +349,7 @@ def list_media_files(site_id):
                 continue
             size = _directory_size(path)
             mtime = max((p.stat().st_mtime for p in path.rglob('*') if p.exists()), default=path.stat().st_mtime)
-            entry_url = f'/media-packages/{path.name}/'
+            entry_url = media_package_url(path.name)
             items.append({
                 'name': path.name,
                 'display_name': path.name,
@@ -370,11 +381,11 @@ def list_media_files(site_id):
         for item in items:
             if item['api_name'] in ref_index:
                 continue  # 已有引用了，跳过（性能优化：不重复匹配）
-            needle = (
-                f'/media-packages/{media_package_name_from_token(item["api_name"])}/'
-                if item['is_package'] else f'/assets/uploads/{item["api_name"]}'
+            needles = (
+                _media_package_reference_urls(media_package_name_from_token(item['api_name']))
+                if item['is_package'] else (f'/assets/uploads/{item["api_name"]}',)
             )
-            if needle in text:
+            if any(needle in text for needle in needles):
                 ref_index.setdefault(item['api_name'], []).append(rel_path)
 
     for item in items:
@@ -419,10 +430,10 @@ def find_media_references(site_id, name):
     target_name = media_package_name_from_token(name)
     if is_package:
         target_name = _safe_package_name(target_name)
-        needle = f'/media-packages/{target_name}/'
+        needles = _media_package_reference_urls(target_name)
     else:
         target_name = _safe_media_filename(target_name)
-        needle = f'/assets/uploads/{target_name}'
+        needles = (f'/assets/uploads/{target_name}',)
 
     refs = []
     root = site_root(site_id)
@@ -436,8 +447,38 @@ def find_media_references(site_id, name):
             text = path.read_text(encoding='utf-8')
         except UnicodeDecodeError:
             continue
-        if needle in text:
+        if any(needle in text for needle in needles):
             refs.append(str(path.relative_to(root)).replace('\\', '/'))
+    return refs
+
+
+def find_media_references_many(site_id, names):
+    """Find references for several media items with one scan of the site's YAML."""
+    needles = {}
+    for name in names:
+        if is_media_package_token(name):
+            target_name = _safe_package_name(media_package_name_from_token(name))
+            needles[name] = _media_package_reference_urls(target_name)
+        else:
+            target_name = _safe_media_filename(name)
+            needles[name] = (f'/assets/uploads/{target_name}',)
+
+    refs = {name: [] for name in needles}
+    root = site_root(site_id)
+    if not root.exists():
+        return refs
+    yaml_paths = list(root.rglob('*.yaml')) + list(root.rglob('*.yml'))
+    for path in sorted(yaml_paths):
+        if not _is_content_yaml(path):
+            continue
+        try:
+            text = path.read_text(encoding='utf-8')
+        except UnicodeDecodeError:
+            continue
+        rel_path = str(path.relative_to(root)).replace('\\', '/')
+        for name, candidates in needles.items():
+            if any(needle in text for needle in candidates):
+                refs[name].append(rel_path)
     return refs
 
 
@@ -446,8 +487,8 @@ def _media_reference_urls(name, new_name):
         old_pkg = _safe_package_name(media_package_name_from_token(name))
         new_pkg = _safe_package_name(media_package_name_from_token(new_name))
         return (
-            f'/media-packages/{old_pkg}/',
-            f'/media-packages/{new_pkg}/',
+            _media_package_reference_urls(old_pkg),
+            media_package_url(new_pkg),
         )
 
     old_file = _safe_media_filename(name)
@@ -486,7 +527,10 @@ def _replace_media_references(site_id, refs, old_url, new_url):
             if not path.exists() or not _is_content_yaml(path):
                 continue
             text = path.read_text(encoding='utf-8')
-            new_text = text.replace(old_url, new_url)
+            old_urls = old_url if isinstance(old_url, (list, tuple)) else (old_url,)
+            new_text = text
+            for candidate in old_urls:
+                new_text = new_text.replace(candidate, new_url)
             if new_text == text:
                 continue
             originals[path] = text
@@ -613,3 +657,53 @@ def delete_media_file(site_id, name):
     path = get_media_file_path(site_id, filename)
     path.unlink()
     return True
+
+
+def delete_media_files(site_id, names):
+    """Delete multiple unreferenced media items after validating the whole batch."""
+    normalized = []
+    seen = set()
+    for raw_name in names or []:
+        name = str(raw_name or '').strip()
+        if not name or name in seen:
+            continue
+        if is_media_package_token(name):
+            _safe_package_name(media_package_name_from_token(name))
+        else:
+            _safe_media_filename(name)
+        seen.add(name)
+        normalized.append(name)
+
+    if not normalized:
+        abort(400, '请选择要删除的媒体文件')
+    if len(normalized) > 2000:
+        abort(400, '单次最多删除 2000 个媒体文件')
+
+    referenced = {
+        name: refs
+        for name, refs in find_media_references_many(site_id, normalized).items()
+        if refs
+    }
+    if referenced:
+        abort(409, '所选媒体中有文件已被引用，请刷新后重试')
+
+    paths = {}
+    for name in normalized:
+        if is_media_package_token(name):
+            package_name = _safe_package_name(media_package_name_from_token(name))
+            path = get_media_package_path(site_id, package_name)
+        else:
+            filename = _safe_media_filename(name)
+            path = get_media_file_path(site_id, filename)
+        if not path.exists():
+            abort(404, f'媒体文件不存在: {name}')
+        paths[name] = path
+
+    deleted = []
+    for name in normalized:
+        if is_media_package_token(name):
+            shutil.rmtree(paths[name])
+        else:
+            paths[name].unlink()
+        deleted.append(name)
+    return deleted

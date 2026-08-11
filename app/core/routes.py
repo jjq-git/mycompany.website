@@ -170,10 +170,10 @@ from .site_storage import (copy_seed_data, init_site_folder, lang_root,
                             list_media_files, list_yaml_files, read_yaml,
                             mark_site_content_changed,
                             remove_site_folder,
-                            rename_media_file, delete_media_file,
+                            rename_media_file, delete_media_file, delete_media_files,
                             rename_page_files,
                             find_media_references, is_media_package_token,
-                            media_package_name_from_token, media_package_token,
+                            media_package_name_from_token, media_package_token, media_package_url,
                             write_yaml)
 
 bp = Blueprint('core', __name__)
@@ -2143,7 +2143,7 @@ def _save_media_package(site_id, file_storage):
                 shutil.rmtree(target_dir, ignore_errors=True)
             raise
 
-    entry_url = f'/media-packages/{package_name}/'
+    entry_url = media_package_url(package_name)
     return {
         'name': package_name,
         'display_name': package_name,
@@ -2952,6 +2952,7 @@ def _media_package_assets_root():
     abort(404, '网页包不存在')
 
 
+@bp.route('/assets/media-packages/<package_name>/')
 @bp.route('/media-packages/<package_name>/')
 def media_package_index(package_name):
     package_name = secure_filename(package_name or '')
@@ -2968,6 +2969,7 @@ def media_package_index(package_name):
     return _safe_send_from_directory(package_dir, 'index.html')
 
 
+@bp.route('/assets/media-packages/<package_name>/<path:filename>')
 @bp.route('/media-packages/<package_name>/<path:filename>')
 def media_package_asset(package_name, filename):
     package_name = secure_filename(package_name or '')
@@ -3517,8 +3519,8 @@ def api_media_rename():
             'ok': True,
             'name': package_name,
             'api_name': new_api_name,
-            'url': f'/media-packages/{package_name}/',
-            'entry_url': f'/media-packages/{package_name}/',
+            'url': media_package_url(package_name),
+            'entry_url': media_package_url(package_name),
             'category': 'package',
             'updated_refs': refs,
             'count': len(refs),
@@ -3550,6 +3552,23 @@ def api_media_delete():
         return jsonify({'error': str(exc)}), 400
     mark_site_content_changed(site.id, f'assets/delete:{name}')
     return jsonify({'ok': True})
+
+
+@bp.route('/api/media/delete-batch', methods=['POST'])
+def api_media_delete_batch():
+    _, site = _current_context()
+    data = request.get_json(silent=True) or {}
+    names = data.get('names')
+    if not isinstance(names, list):
+        return jsonify({'error': '请选择要删除的媒体文件'}), 400
+    try:
+        deleted = delete_media_files(site.id, names)
+    except Exception as exc:
+        current_app.logger.warning('media batch delete failed: %s', exc)
+        status_code = getattr(exc, 'code', 400)
+        return jsonify({'ok': False, 'error': getattr(exc, 'description', str(exc))}), status_code
+    mark_site_content_changed(site.id, f'assets/delete-batch:{len(deleted)}')
+    return jsonify({'ok': True, 'deleted': deleted, 'count': len(deleted)})
 
 
 def _as_items(raw):

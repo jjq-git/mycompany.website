@@ -2565,7 +2565,8 @@ def _render_task_html(env, task, common, pages, data, meta, dataset_paths):
         ctx['lang_switch_path'] = current.rsplit('/', 1)[0] + '/' if '/' in current else '/'
 
     ctx['seo'] = _build_seo_context(task, ctx, common, meta)
-    return _rewrite_preview_urls(tpl.render(**ctx), common.get('base_url', ''))
+    rendered = tpl.render(**ctx).replace('/media-packages/', '/assets/media-packages/')
+    return _rewrite_preview_urls(rendered, common.get('base_url', ''))
 
 
 def _dataset_paths_from_tasks(tasks):

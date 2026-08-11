@@ -1,6 +1,8 @@
 """Media upload and image alt helpers for the dashboard."""
+import hashlib
 import re
 import secrets
+import threading
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -8,7 +10,7 @@ from pathlib import Path
 from flask import current_app, request
 from werkzeug.utils import secure_filename
 
-from .site_storage import media_package_token
+from .site_storage import media_package_token, media_package_url
 
 
 ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'}
@@ -22,6 +24,51 @@ MAX_MEDIA_PACKAGE_UNCOMPRESSED_BYTES = 96 * 1024 * 1024
 MAX_MEDIA_PACKAGE_DEPTH = 10
 MAX_IMAGE_PIXELS = 16_000_000
 MAX_IMAGE_BYTES = 12 * 1024 * 1024
+_UPLOAD_DEDUP_LOCK = threading.Lock()
+
+
+def _file_digest(path):
+    digest = hashlib.sha256()
+    with Path(path).open('rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def reuse_identical_upload(output_path):
+    """Reuse an existing byte-identical upload instead of keeping another copy."""
+    output_path = Path(output_path)
+    if not output_path.is_file():
+        return output_path
+
+    with _UPLOAD_DEDUP_LOCK:
+        if not output_path.is_file():
+            return output_path
+        output_stat = output_path.stat()
+        output_size = output_stat.st_size
+        output_rank = (output_stat.st_mtime_ns, output_path.name.lower())
+        output_suffix = output_path.suffix.lower()
+        output_digest = None
+        candidates = sorted(output_path.parent.iterdir(), key=lambda path: path.name.lower())
+        for candidate in candidates:
+            if candidate == output_path or not candidate.is_file():
+                continue
+            if candidate.suffix.lower() != output_suffix:
+                continue
+            try:
+                candidate_stat = candidate.stat()
+                candidate_rank = (candidate_stat.st_mtime_ns, candidate.name.lower())
+                if candidate_rank >= output_rank or candidate_stat.st_size != output_size:
+                    continue
+                if output_digest is None:
+                    output_digest = _file_digest(output_path)
+                if _file_digest(candidate) != output_digest:
+                    continue
+            except OSError:
+                continue
+            output_path.unlink()
+            return candidate
+    return output_path
 
 
 def check_upload_size(file_storage, max_bytes, label='文件'):
@@ -76,7 +123,8 @@ def save_uploaded_image(site_id, file_storage, prefix='image', convert_webp=None
         filename = f'{safe_prefix}-{ts}-{hex_part}.{suffix}'
         output_path = uploads_dir / filename
         file_storage.save(str(output_path))
-        return f'/assets/uploads/{filename}'
+        output_path = reuse_identical_upload(output_path)
+        return f'/assets/uploads/{output_path.name}'
 
     check_upload_size(file_storage, MAX_IMAGE_BYTES, label='图片')
 
@@ -96,7 +144,8 @@ def save_uploaded_image(site_id, file_storage, prefix='image', convert_webp=None
     background = Image.new('RGBA', first_frame.size, (255, 255, 255, 0))
     background.alpha_composite(first_frame)
     background.save(output_path, 'WEBP', quality=86, method=6)
-    return f'/assets/uploads/{filename}'
+    output_path = reuse_identical_upload(output_path)
+    return f'/assets/uploads/{output_path.name}'
 
 
 def filename_alt(file_storage):
@@ -176,7 +225,8 @@ def save_uploaded_media(site_id, file_storage, prefix='media'):
     filename = f"{safe_prefix}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(4)}.{suffix}"
     output_path = uploads_dir / filename
     file_storage.save(output_path)
-    return f'/assets/uploads/{filename}'
+    output_path = reuse_identical_upload(output_path)
+    return f'/assets/uploads/{output_path.name}'
 
 
 def save_any_file(site_id, file_storage, prefix='file'):
@@ -199,7 +249,8 @@ def save_any_file(site_id, file_storage, prefix='file'):
     filename = f"{safe_prefix}-{safe_stem}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(4)}.{suffix}"
     output_path = uploads_dir / filename
     file_storage.save(output_path)
-    return f'/assets/uploads/{filename}'
+    output_path = reuse_identical_upload(output_path)
+    return f'/assets/uploads/{output_path.name}'
 
 
 def safe_zip_member_name(name):
@@ -319,7 +370,7 @@ def save_media_package(site_id, file_storage):
                 shutil.rmtree(target_dir, ignore_errors=True)
             raise
 
-    entry_url = f'/media-packages/{package_name}/'
+    entry_url = media_package_url(package_name)
     return {
         'name': package_name,
         'display_name': package_name,
