@@ -676,9 +676,12 @@ function resetDataGridPager(pager) {
 function initFilterableGrids() {
   document.querySelectorAll('.filterable-grid[data-filter-id]').forEach(function(grid) {
     var filterId = grid.getAttribute('data-filter-id');
-    var panel = document.querySelector('.dg-filter-panel[data-filter-for="' + filterId + '"]');
     var section = grid.closest('.section') || grid.parentElement;
-    var searchPanel = document.querySelector('.dg-search-panel[data-search-for="' + filterId + '"]');
+    // 同一页可以有多个网格使用同一数据集；控件必须限定在当前组件实例内，
+    // 不能按 dataset 从 document 全局取第一个匹配项。
+    var scope = grid.closest('.builder-module') || section;
+    var panel = scope.querySelector('.dg-filter-panel[data-filter-for="' + filterId + '"]');
+    var searchPanel = scope.querySelector('.dg-search-panel[data-search-for="' + filterId + '"]');
 
     var showFiltersEl = panel ? panel.querySelector('[data-filter-key="show_filters"]') : null;
     var showFilters = !showFiltersEl || (showFiltersEl.textContent || '').trim() !== 'false';
@@ -687,7 +690,7 @@ function initFilterableGrids() {
     }
 
     var cards = Array.prototype.slice.call(grid.querySelectorAll('.dg-card'));
-    var empty = document.querySelector('[data-filter-empty="' + filterId + '"]');
+    var empty = scope.querySelector('[data-filter-empty="' + filterId + '"]');
     if (!cards.length) {
       if (panel) panel.hidden = true;
       if (searchPanel) searchPanel.hidden = true;
