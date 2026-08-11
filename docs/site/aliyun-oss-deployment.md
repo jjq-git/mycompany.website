@@ -62,7 +62,77 @@ python -c "import oss2; print(oss2.__version__)"
 - 直接写进 PowerShell 历史命令；
 - 输出到部署日志。
 
-推荐在 Windows 用户环境变量中保存：
+本项目首选把凭据保存在以下本机私密文件中：
+
+```text
+.private/aliyun-oss.env
+```
+
+该目录已被 `.gitignore` 忽略。文件只保存在受信任的部署电脑上，内容使用无引号的
+`KEY=value` 格式：
+
+```dotenv
+ALIYUN_OSS_ACCESS_KEY_ID=<实际 AccessKey ID>
+ALIYUN_OSS_ACCESS_KEY_SECRET=<实际 AccessKey Secret>
+```
+
+每次部署前，在项目根目录执行下面的 PowerShell。脚本会先确认文件确实被 Git 忽略，
+然后只把两个白名单变量加载到当前进程；检查结果只显示 `set` / `unset`，不会输出凭据：
+
+```powershell
+$credentialPath = ".private\aliyun-oss.env"
+
+git check-ignore --quiet -- $credentialPath
+if ($LASTEXITCODE -ne 0) {
+    throw "$credentialPath 未被 Git 忽略，拒绝加载"
+}
+if (-not (Test-Path -LiteralPath $credentialPath)) {
+    throw "缺少本机凭据文件：$credentialPath"
+}
+
+$credentialNames = @(
+    "ALIYUN_OSS_ACCESS_KEY_ID",
+    "ALIYUN_OSS_ACCESS_KEY_SECRET"
+)
+
+Get-Content -LiteralPath $credentialPath -Encoding UTF8 | ForEach-Object {
+    $line = $_.Trim()
+    if (-not $line -or $line.StartsWith("#")) {
+        return
+    }
+
+    $parts = $line.Split("=", 2)
+    if ($parts.Count -ne 2) {
+        throw "凭据文件存在无效行"
+    }
+
+    $name = $parts[0].Trim()
+    $value = $parts[1].Trim()
+    if ($credentialNames -contains $name) {
+        if ([string]::IsNullOrWhiteSpace($value)) {
+            throw "$name 未填写"
+        }
+        Set-Item -LiteralPath "Env:$name" -Value $value
+    }
+}
+
+$credentialNames | ForEach-Object {
+    $value = [Environment]::GetEnvironmentVariable($_, "Process")
+    "{0}={1}" -f $_, $(
+        if ([string]::IsNullOrWhiteSpace($value)) { "unset" } else { "set" }
+    )
+}
+
+if ($credentialNames | Where-Object {
+    [string]::IsNullOrWhiteSpace(
+        [Environment]::GetEnvironmentVariable($_, "Process")
+    )
+}) {
+    throw "OSS 发布凭据未完整加载"
+}
+```
+
+如果不使用本地私密文件，也可以选择在 Windows 用户环境变量中保存：
 
 ```powershell
 [Environment]::SetEnvironmentVariable(
@@ -77,7 +147,7 @@ python -c "import oss2; print(oss2.__version__)"
 )
 ```
 
-重新打开 PowerShell 后确认变量已设置，但不要打印变量值：
+重新打开 PowerShell 后确认用户变量已设置，但不要打印变量值：
 
 ```powershell
 @(
