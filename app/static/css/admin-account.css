@@ -75,3 +75,13 @@
 .domain-cname>div{display:flex;gap:12px;align-items:baseline;padding:8px 10px;background:#fff;border:1px solid #cfe6e3}
 .domain-cname dt{flex:0 0 108px;color:#526174;font-weight:600}
 .domain-cname dd{margin:0;font-family:ui-monospace,Menlo,Consolas,monospace;color:#0f172a;word-break:break-all}
+.site-export-link.is-loading{cursor:wait;opacity:.58;pointer-events:none}
+.site-export-link.is-loading .action-icon{animation:account-export-pulse .8s ease-in-out infinite alternate}
+@keyframes account-export-pulse{from{transform:translateY(0)}to{transform:translateY(3px)}}
+.account-export-loading{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(244,246,248,.82);backdrop-filter:blur(2px)}
+.account-export-loading[hidden]{display:none}
+.account-export-loading-card{display:flex;min-width:280px;max-width:420px;align-items:center;flex-direction:column;padding:30px 34px;border:1px solid #cfe3e1;background:#fff;box-shadow:0 20px 55px rgba(15,23,42,.16);text-align:center}
+.account-export-loading-card strong{margin-top:16px;color:#0f172a;font-size:16px}
+.account-export-loading-card small{margin-top:8px;color:#718096;line-height:1.55}
+.account-export-spinner{width:34px;height:34px;border:3px solid #d9eeee;border-top-color:#0d9488;border-radius:50%!important;animation:account-export-spin .8s linear infinite}
+@keyframes account-export-spin{to{transform:rotate(360deg)}}

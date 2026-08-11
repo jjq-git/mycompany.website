@@ -35,13 +35,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>账户中心</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-account.css') }}?v=20260803-domainmeta">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-account.css') }}?v=20260811-export-loading">
 </head>
 <body>
   <script>if(parent&&parent!==window){document.documentElement.classList.add('account-workspace-embedded');}</script>
   {% if request.args.get('workspace_changed') %}
   <script>if(parent&&parent!==window){parent.accountWorkspaceNeedsReload=true;}</script>
   {% endif %}
+  <div class="account-export-loading" id="siteExportLoading" role="status" aria-live="polite" aria-label="正在导出站点" hidden>
+    <div class="account-export-loading-card">
+      <span class="account-export-spinner" aria-hidden="true"></span>
+      <strong>正在构建并打包站点</strong>
+      <small>内容较多时可能需要几十秒，请稍候…</small>
+    </div>
+  </div>
   {% set visible_identifier = account_identifier or user.email %}
   {% set account_name = user.display_name or visible_identifier.split('@')[0] %}
   <div class="account-shell">
@@ -148,7 +155,7 @@
         {% for item in active_sites %}<article class="account-card site-card">
           <div class="site-card-head"><div><h2>{{ item.name }}</h2><code>/{{ item.slug }}</code>{# 平台管理员能看到全站，补一行归属账号以区分是自己的还是别人的；普通用户看到的都是自己站点，无需显示 #}{% if user.role == 'admin' %}<span class="site-owner-tag{{ ' is-mine' if item.owner_id == user.id else '' }}" title="{{ '我的站点' if item.owner_id == user.id else '归属账号：' + item.owner.email }}">{{ action_icon('user') }}{% if item.owner_id == user.id %}我{% else %}{% if item.owner.display_name %}{{ item.owner.display_name }} · {% endif %}{{ item.owner.email }}{% endif %}</span>{% endif %}</div><span class="status-icon {{ item.status }}" title="{{ {'draft':'草稿','published':'已发布','suspended':'已停用'}.get(item.status,item.status) }}" aria-label="{{ {'draft':'草稿','published':'已发布','suspended':'已停用'}.get(item.status,item.status) }}">{{ action_icon({'draft':'edit','published':'check','suspended':'ban'}.get(item.status,'view')) }}</span></div>
           <dl><div><dt>模板</dt><dd>{{ item.template_name }}{% if item.template_version %} · {{ item.template_version }}{% endif %}</dd></div><div><dt>语言</dt><dd>{{ (item.enabled_languages or [item.default_language])|join('、') }}</dd></div><div><dt>最近发布</dt><dd>{{ item.last_published_at|localtime('%Y-%m-%d %H:%M') if item.last_published_at else '尚未发布' }}</dd></div><div class="site-domain-row"><dt>独立域名</dt><dd>{% if item.custom_domain %}<a class="site-domain-value" href="https://{{ item.custom_domain }}" target="_blank" rel="noopener" title="访问独立域名">{{ item.custom_domain }}</a>{% else %}<span class="site-domain-status">未绑定</span><a class="site-domain-bind" href="{{ url_for('core.account', section='sites', edit=item.id) }}" title="绑定后导出或上线时，SEO 地址将使用正式域名">去绑定</a>{% endif %}</dd></div></dl>
-          <div class="site-actions"><a class="primary-btn icon-btn" href="{{ url_for('core.account', section='sites', edit=item.id) }}" title="编辑站点信息" aria-label="编辑站点信息">{{ action_icon('edit') }}</a><a class="secondary-btn icon-btn" href="{{ url_for('core.workbench', site=item.slug, open='home') }}" target="_top" title="进入工作台" aria-label="进入工作台">{{ action_icon('right') }}</a><a class="secondary-btn icon-btn" href="{{ url_for('core.preview_site', site_id=item.id) }}" target="_blank" title="预览" aria-label="预览">{{ action_icon('view') }}</a><a class="secondary-btn icon-btn" href="{{ url_for('core.export_zip', site=item.id) }}" target="_top" title="导出" aria-label="导出">{{ action_icon('download') }}</a>{# 发布功能暂时关闭：与顶栏、概览页发布按钮一致地禁用。此处原是直接 POST /publish 的 form，
+          <div class="site-actions"><a class="primary-btn icon-btn" href="{{ url_for('core.account', section='sites', edit=item.id) }}" title="编辑站点信息" aria-label="编辑站点信息">{{ action_icon('edit') }}</a><a class="secondary-btn icon-btn" href="{{ url_for('core.workbench', site=item.slug, open='home') }}" target="_top" title="进入工作台" aria-label="进入工作台">{{ action_icon('right') }}</a><a class="secondary-btn icon-btn" href="{{ url_for('core.preview_site', site_id=item.id) }}" target="_blank" title="预览" aria-label="预览">{{ action_icon('view') }}</a><a class="secondary-btn icon-btn site-export-link" href="{{ url_for('core.export_zip', site=item.id) }}" data-export-name="{{ item.slug }}-static.zip" title="导出" aria-label="导出">{{ action_icon('download') }}</a>{# 发布功能暂时关闭：与顶栏、概览页发布按钮一致地禁用。此处原是直接 POST /publish 的 form，
    现改为 type=button + is-disabled 类拦截提交（不用原生 disabled，否则 title 悬停提示不触发）。
    恢复发布时：button 改回 type=submit、去掉 is-disabled 类和 onclick、title 还原为“发布站点”。 #}
 <form class="site-publish-form" method="post" action="{{ url_for('core.publish_site', site=item.id) }}" onsubmit="return false"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-btn icon-btn is-disabled" type="button" onclick="return false;" aria-disabled="true" title="发布功能暂未开放，敬请期待" aria-label="发布站点（暂未开放）">{{ action_icon('publish') }}</button></form><form class="site-trash-form" method="post" action="{{ url_for('core.account_site_trash', site_id=item.id) }}" onsubmit="return confirm('将站点“{{ item.name }}”移入回收站？站点文件不会被删除。')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="danger-link icon-btn" type="submit" title="移入回收站" aria-label="移入回收站">{{ action_icon('trash') }}</button></form></div>
@@ -284,6 +291,68 @@
       sessionStorage.setItem(KEY,String(Date.now()+secs*1000));
       return true; // 不拦截提交，让表单正常 POST
     };
+  })();
+  // ZIP 构建耗时较长，直接跳转到 HTTP 下载地址还会触发 Chromium 的“不安全下载”拦截。
+  // 保持请求同源，通过 Blob URL 交给浏览器保存；生产部署仍必须由 HTTPS 保护传输。
+  (function(){
+    var exporting=false;
+    document.addEventListener('click',function(event){
+      var link=event.target.closest('a.site-export-link');
+      if(!link)return;
+      event.preventDefault();
+      if(exporting)return;
+      exporting=true;
+      var originalTitle=link.getAttribute('title')||'导出';
+      var loading=document.getElementById('siteExportLoading');
+      if(loading)loading.hidden=false;
+      link.classList.add('is-loading');
+      link.setAttribute('aria-disabled','true');
+      link.setAttribute('aria-busy','true');
+      link.setAttribute('title','正在构建 ZIP，请稍候…');
+
+      fetch(link.href,{
+        credentials:'same-origin',
+        headers:{'Accept':'application/zip, application/json','X-Requested-With':'XMLHttpRequest'}
+      })
+      .then(async function(response){
+        if(!response.ok){
+          var message='导出失败（HTTP '+response.status+'）';
+          try{
+            var payload=await response.json();
+            if(payload&&payload.error)message=payload.error;
+          }catch(ignore){}
+          throw new Error(message);
+        }
+        var contentType=(response.headers.get('Content-Type')||'').toLowerCase();
+        if(contentType.indexOf('application/zip')===-1){
+          throw new Error('导出接口未返回 ZIP 文件');
+        }
+        return response.blob();
+      })
+      .then(function(blob){
+        if(!blob.size)throw new Error('导出的 ZIP 文件为空');
+        var objectUrl=URL.createObjectURL(blob);
+        var download=document.createElement('a');
+        download.href=objectUrl;
+        download.download=link.dataset.exportName||'site-static.zip';
+        download.hidden=true;
+        document.body.appendChild(download);
+        download.click();
+        download.remove();
+        setTimeout(function(){URL.revokeObjectURL(objectUrl);},30000);
+      })
+      .catch(function(error){
+        alert(error&&error.message?error.message:'导出失败，请稍后重试');
+      })
+      .finally(function(){
+        exporting=false;
+        if(loading)loading.hidden=true;
+        link.classList.remove('is-loading');
+        link.removeAttribute('aria-disabled');
+        link.removeAttribute('aria-busy');
+        link.setAttribute('title',originalTitle);
+      });
+    });
   })();
   // 操作日志筛选/分页走 AJAX 局部刷新：整块替换 .audit-card，避免整页 iframe 重载的闪烁。
   // 替换整卡片（而非只换结果区）是为了让筛选表单值、清除按钮、分页状态一并同步，
