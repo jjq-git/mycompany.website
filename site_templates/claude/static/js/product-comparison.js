@@ -45,21 +45,58 @@
     node.setAttribute('title', label);
   }
 
+  var groupFilterSequence = 0;
+
   function fillGroupFilter(groupFilter, payload) {
-    // “对比分类”下拉：列出全站所有产品对比页，选中项跳转到对应对比页。
-    // 选项值为页面 URL，当前页用 current_page_key 匹配并选中。
+    // 2–4 个分类用并排单选；更多分类自动回落到下拉框，避免挤压工具栏。
     if (!groupFilter) return;
     var pages = Array.isArray(payload.comparison_pages) ? payload.comparison_pages : [];
-    // 少于 2 个对比页时下拉无意义，直接隐藏，避免出现只有一项的空壳
-    if (pages.length < 2) { groupFilter.parentNode.hidden = true; return; }
+    // 少于 2 个对比页时切换控件没有意义，直接隐藏。
+    if (pages.length < 2) { groupFilter.hidden = true; return; }
+    groupFilter.hidden = false;
     groupFilter.innerHTML = '';
+
+    if (pages.length <= 4) {
+      var options = el('div', 'pc-group-options');
+      options.setAttribute('role', 'radiogroup');
+      options.setAttribute('aria-label', '选择对比分类');
+      var groupName = groupFilter.dataset.pcGroupName;
+      if (!groupName) {
+        groupFilterSequence += 1;
+        groupName = 'pc-comparison-group-' + groupFilterSequence;
+        groupFilter.dataset.pcGroupName = groupName;
+      }
+      pages.forEach(function (page) {
+        var label = el('label', 'pc-group-option');
+        var input = document.createElement('input');
+        input.type = 'radio';
+        input.name = groupName;
+        input.value = text(page.url);
+        input.checked = text(page.key) === text(payload.current_page_key);
+        input.addEventListener('change', function () {
+          if (input.checked && input.value && input.value !== window.location.pathname) window.location.href = input.value;
+        });
+        label.appendChild(input);
+        label.appendChild(el('span', '', page.title));
+        options.appendChild(label);
+      });
+      groupFilter.appendChild(options);
+      return;
+    }
+
+    var select = document.createElement('select');
+    select.setAttribute('aria-label', '选择对比分类');
     pages.forEach(function (page) {
       var option = document.createElement('option');
       option.value = text(page.url);
       option.textContent = text(page.title);
       if (text(page.key) === text(payload.current_page_key)) option.selected = true;
-      groupFilter.appendChild(option);
+      select.appendChild(option);
     });
+    select.addEventListener('change', function () {
+      if (select.value && select.value !== window.location.pathname) window.location.href = select.value;
+    });
+    groupFilter.appendChild(select);
   }
 
   // 无产品时的操作区：外观与有产品时一致，但除“对比分类”下拉外全部禁用置灰。
@@ -88,13 +125,9 @@
     }
     var limit = root.querySelector('[data-pc-limit]');
     if (limit) limit.textContent = '已选择 0 / ' + totalProducts + ' 个产品';
-    // “对比分类”下拉照常可用，选中后跳转到对应对比页
+    // “对比分类”切换照常可用，选中后跳转到对应对比页。
     var groupFilter = root.querySelector('[data-pc-group-filter]');
     fillGroupFilter(groupFilter, payload);
-    if (groupFilter) groupFilter.addEventListener('change', function () {
-      var url = groupFilter.value;
-      if (url && url !== window.location.pathname) window.location.href = url;
-    });
   }
 
   function init(root) {
@@ -212,7 +245,20 @@
       stickyHeadScroll.innerHTML = '';
       var cloneTable = table.cloneNode(false);
       cloneTable.classList.add('pc-table--sticky');
-      cloneTable.style.width = table.scrollWidth + 'px';
+      // 克隆表头没有 tbody，浏览器会重新分配列宽。逐列复制原表的实际宽度，
+      // 确保吸顶表头与下方数据列在纵向和横向滚动时始终对齐。
+      var sourceCells = head.rows.length ? Array.prototype.slice.call(head.rows[0].cells) : [];
+      var columnWidths = sourceCells.map(function (cell) { return cell.getBoundingClientRect().width; });
+      var colgroup = document.createElement('colgroup');
+      columnWidths.forEach(function (width) {
+        var col = document.createElement('col');
+        col.style.width = width + 'px';
+        colgroup.appendChild(col);
+      });
+      var measuredWidth = columnWidths.reduce(function (total, width) { return total + width; }, 0);
+      cloneTable.style.width = (measuredWidth || table.scrollWidth) + 'px';
+      cloneTable.style.tableLayout = 'fixed';
+      cloneTable.appendChild(colgroup);
       cloneTable.appendChild(head.cloneNode(true));
       stickyHeadScroll.appendChild(cloneTable);
       // 吸顶表头保留产品图片（不再删除），尺寸由 .pc-sticky-head .pc-product-image 缩小
@@ -261,12 +307,6 @@
       setIconControl(button, iconName, label, false);
       return button;
     }
-    function productLink(label, iconName, href) {
-      var link = el('a', 'pc-mini pc-icon-button');
-      link.href = safeHref(href);
-      setIconControl(link, iconName, label, false);
-      return link;
-    }
     function renderHead(selectedProducts) {
       var visibleSlots = Math.max(selectedProducts.length, displaySlots);
       head.innerHTML = '';
@@ -278,18 +318,37 @@
         var cell = el('th', 'pc-product-head');
         cell.scope = 'col';
         var imageSrc = safeImage(product.image);
+        // 详情入口不再占用操作区按钮位，改由图片和标题本身承载（卡片整体更像一个可点的产品入口）
+        var detailHref = product.detail_url ? safeHref(product.detail_url) : '';
         if (payload.show_image && imageSrc) {
-          var image = el('img', 'pc-product-image'); image.src = imageSrc; image.alt = product.title; image.loading = 'lazy'; cell.appendChild(image);
+          var image = el('img', 'pc-product-image'); image.src = imageSrc; image.alt = product.title; image.loading = 'lazy';
+          if (detailHref) {
+            var imageLink = el('a', 'pc-product-image-link');
+            imageLink.href = detailHref;
+            imageLink.setAttribute('aria-label', product.title + ' 查看详情');
+            imageLink.appendChild(image);
+            cell.appendChild(imageLink);
+          } else cell.appendChild(image);
         }
-        cell.appendChild(el('div', 'pc-product-title', product.title));
-        if (payload.show_price && product.price) cell.appendChild(el('div', 'pc-product-price', product.price + (product.price_note ? ' ' + product.price_note : '')));
+        var meta = el('div', 'pc-product-meta');
+        // 标题外层 div 保留原有单行省略号布局，链接只包住文字，避免 inline 元素让 text-overflow 失效
+        var titleBox = el('div', 'pc-product-title');
+        if (detailHref) {
+          var titleLink = el('a', 'pc-product-link', product.title);
+          titleLink.href = detailHref;
+          titleLink.title = product.title + ' 查看详情';
+          titleBox.appendChild(titleLink);
+        } else titleBox.textContent = text(product.title);
+        meta.appendChild(titleBox);
         var actions = el('div', 'pc-product-actions');
         actions.setAttribute('aria-label', product.title + ' 操作');
         actions.appendChild(productButton('左移', 'left', 'left', product.id, index === 0));
         actions.appendChild(productButton('右移', 'right', 'right', product.id, index === selectedProducts.length - 1));
         actions.appendChild(productButton('从对比中隐藏', 'eye', 'remove', product.id, selectedProducts.length <= 1));
-        if (product.detail_url) actions.appendChild(productLink('查看详情', 'detail', product.detail_url));
-        cell.appendChild(actions); row.appendChild(cell);
+        meta.appendChild(actions);
+        cell.appendChild(meta);
+        if (payload.show_price && product.price) cell.appendChild(el('div', 'pc-product-price', product.price + (product.price_note ? ' ' + product.price_note : '')));
+        row.appendChild(cell);
       });
       // 只补足视觉槽位，不改变真实产品总数，也不限制后续加入产品。
       for (var pad = selectedProducts.length; pad < visibleSlots; pad++) {
@@ -315,11 +374,12 @@
         visibleRows += rows.length;
         var groupId = 'pc-group-' + groupIndex;
         var groupRow = document.createElement('tr'); groupRow.className = 'pc-group-row'; groupRow.id = groupId;
-        // 组标题行横跨参数列 + 全部视觉槽位，背景铺满整行。
-        var groupCell = el('th'); groupCell.colSpan = visibleSlots + 1; groupCell.scope = 'colgroup'; groupCell.appendChild(el('span', 'pc-group-title', group.title || '规格参数')); groupRow.appendChild(groupCell); body.appendChild(groupRow);
+        // 分组标题不再显示文字，用横跨整表的粗分隔线划分参数区块；保留 aria-label 供辅助技术识别。
+        var groupCell = el('th', 'pc-group-separator'); groupCell.colSpan = visibleSlots + 1; groupCell.scope = 'colgroup'; groupCell.setAttribute('aria-label', group.title || '规格参数'); groupRow.appendChild(groupCell); body.appendChild(groupRow);
         if (groupsNav) { var navButton = el('button', 'pc-group-link', group.title || '规格参数'); navButton.type = 'button'; navButton.dataset.target = groupId; groupsNav.appendChild(navButton); }
-        rows.forEach(function (rowData) {
+        rows.forEach(function (rowData, rowIndex) {
           var row = document.createElement('tr');
+          row.className = 'pc-data-row' + (rowIndex % 2 ? ' pc-data-row--alt' : '');
           var label = el('th', 'pc-param-name', rowData.label || rowData.key); label.scope = 'row';
           if (rowData.unit) label.appendChild(el('span', 'pc-param-unit', '(' + rowData.unit + ')'));
           row.appendChild(label);

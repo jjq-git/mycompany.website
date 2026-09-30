@@ -5971,6 +5971,12 @@ h6 { font-size: var(--font-size-md); }
   margin: 0 auto;
 }
 
+.detail-media--info-only .item-detail-header-only,
+.detail-media--info-only .detail-media-copy--solo {
+  width: 100%;
+  max-width: none;
+}
+
 /* ── 双栏布局：左图库 / 右信息区（对齐 claude，变量已换成 dengtec 体系） ── */
 .item-data-layout {
   display: grid;
@@ -6011,6 +6017,16 @@ h6 { font-size: var(--font-size-md); }
 
 .item-data-media iframe {
   min-height: 420px;
+}
+
+/* 详情正文中的独立网页包组件。 */
+.detail-content-embed iframe {
+  display: block;
+  width: 100%;
+  min-height: 420px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--color-surface, #f8fafc);
 }
 
 /* ── 多图轮播舞台 ── */
@@ -6403,6 +6419,9 @@ h6 { font-size: var(--font-size-md); }
   line-height: var(--line-height-relaxed);
   color: var(--color-text-secondary, #64748b);
 }
+.item-data-desc > :first-child { margin-top: 0; }
+.item-data-desc > :last-child { margin-bottom: 0; }
+.item-data-desc a { color: var(--color-primary, #067a7a); text-decoration: underline; }
 
 .item-data-desc ul,
 .item-data-desc ol {

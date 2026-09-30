@@ -22,7 +22,7 @@ from .tagging import with_generated_tags
 
 from . import block_parser, block_renderer
 from .icon_registry import get_icon_svg
-from .html_sanitizer import sanitize_richtext
+from .html_sanitizer import richtext_to_plain_text, sanitize_richtext
 from . import menu as menu_lib
 from .models import Site
 from .product_comparison import build_product_comparison
@@ -356,6 +356,7 @@ def _render_detail_media(item, data):
     images = _normalize_detail_images(item, data)
     title = item.get('title') or item.get('name') or ''
     summary = _first_text(item.get('summary'), item.get('description'), item.get('excerpt'))
+    summary_html = sanitize_richtext(summary, 'summary') if summary else ''
     publication_date = _first_text(item.get('date'), item.get('publish_date'), item.get('published_at'))
     category = item.get('category')
     price = item.get('price')
@@ -372,7 +373,7 @@ def _render_detail_media(item, data):
         f'{f"<div class=\"item-data-category\">{escape(category)}</div>" if category else ""}'
         f'{f"<h1 class=\"item-data-title\">{escape(title)}</h1>" if title else ""}'
         f'{f"<time class=\"item-data-date\" datetime=\"{escape(publication_date)}\">{escape(publication_date)}</time>" if publication_date else ""}'
-        f'{f"<p class=\"item-data-desc\">{escape(summary)}</p>" if summary else ""}'
+        f'{f"<div class=\"item-data-desc\">{summary_html}</div>" if summary_html else ""}'
         f'{f"<div class=\"item-data-tags\">{tags_html}</div>" if tags_html else ""}'
         f'{f"<div class=\"item-data-price\">{escape(price)}</div>" if price else ""}'
         f'{actions_html}'
@@ -425,7 +426,7 @@ def _render_detail_media(item, data):
     else:
         solo_info = info_html.replace(
             'class="item-data-info detail-media-copy"',
-            'class="item-data-info detail-media-copy detail-media-copy--solo" style="position:static;max-width:860px"',
+            'class="item-data-info detail-media-copy detail-media-copy--solo" style="position:static"',
             1,
         )
         body = f'<article class="item-data-article item-detail-header-only">{solo_info}</article>'
@@ -459,6 +460,7 @@ def _render_detail_base_header(item, data):
     """Render core detail information when the template has no media component."""
     title = item.get('title') or item.get('name') or ''
     summary = _first_text(item.get('summary'), item.get('description'), item.get('excerpt'))
+    summary_html = sanitize_richtext(summary, 'summary') if summary else ''
     publication_date = _first_text(item.get('date'), item.get('publish_date'), item.get('published_at'))
     category = item.get('category')
     tags = item.get('tags')
@@ -472,11 +474,11 @@ def _render_detail_base_header(item, data):
     return Markup(
         '<section class="section detail-component detail-base-header item-data-section"><div class="container">'
         '<article class="item-data-article item-detail-header-only">'
-        '<div class="item-data-info detail-media-copy detail-media-copy--solo" style="position:static;max-width:860px">'
+        '<div class="item-data-info detail-media-copy detail-media-copy--solo" style="position:static">'
         f'{f"<div class=\"item-data-category\">{escape(category)}</div>" if category else ""}'
         f'{f"<h1 class=\"item-data-title\">{escape(title)}</h1>" if title else ""}'
         f'{f"<time class=\"item-data-date\" datetime=\"{escape(publication_date)}\">{escape(publication_date)}</time>" if publication_date else ""}'
-        f'{f"<p class=\"item-data-desc\">{escape(summary)}</p>" if summary else ""}'
+        f'{f"<div class=\"item-data-desc\">{summary_html}</div>" if summary_html else ""}'
         f'{f"<div class=\"item-data-tags\">{tags_html}</div>" if tags_html else ""}'
         f'{actions_html}'
         '</div></article></div>'
@@ -832,7 +834,7 @@ def _render_detail_content_blocks(item, data):
             rows.append(
                 '<article class="detail-content-block detail-content-embed">'
                 f'{f"<h3>{escape(heading)}</h3>" if heading else ""}'
-                f'<iframe src="{escape(embed_url)}" loading="lazy" allowfullscreen style="height:{escape(data.get("iframe_height") or "520px")}"></iframe>'
+                f'<iframe src="{escape(embed_url)}" loading="lazy" scrolling="no" allowfullscreen style="height:{escape(data.get("iframe_height") or "520px")}"></iframe>'
                 f'{f"<p>{escape(text)}</p>" if text else ""}'
                 '</article>'
             )
@@ -1170,7 +1172,7 @@ def _render_detail_related(item, data, jinja_ctx):
     for entry in related:
         cover = entry.get('cover') or entry.get('image') or entry.get('photo') or ''
         name = entry.get('title') or entry.get('name') or ''
-        summary = entry.get('summary') or entry.get('description') or ''
+        summary = richtext_to_plain_text(entry.get('summary') or entry.get('description') or '')
         slug = entry.get('slug') or '#'
         href = f'../{escape(slug)}/' if slug != '#' else '#'
         cards.append(
@@ -1553,6 +1555,8 @@ _PREVIEW_URL_RE = re.compile(
     r'(?:(?:https?:)?//[^/\s"\']+)?(?:/[a-z]{2}(?:-[A-Z]{2})?)?/(?:live_)?preview/\d+(?=/|[?#\s"\']|$)',
     re.IGNORECASE,
 )
+_LEGACY_MEDIA_PACKAGE_URL_RE = re.compile(r'(?P<lead>["\']|url\(\s*)/media-packages/', re.IGNORECASE)
+_ROOT_ASSET_URL_RE = re.compile(r'(?P<lead>["\']|url\(\s*)/assets/', re.IGNORECASE)
 
 
 def _rewrite_preview_urls(html, base_url=''):
@@ -1562,7 +1566,15 @@ def _rewrite_preview_urls(html, base_url=''):
     预览 URL 不会进入导出包、平台子域名或自定义域名产物。
     """
     prefix = (base_url or '').rstrip('/')
-    return _PREVIEW_URL_RE.sub(prefix, html or '')
+    rendered = _PREVIEW_URL_RE.sub(prefix, html or '')
+    if prefix.startswith('/live_preview/'):
+        # 工作台可以同时打开多个站点；实时预览资源必须携带站点前缀，不能依赖共享
+        # session 中最后一次写入的 current_site_id，否则嵌套网页包会随机读错目录并返回 404。
+        rendered = _ROOT_ASSET_URL_RE.sub(
+            lambda match: f'{match.group("lead")}{prefix}/assets/',
+            rendered,
+        )
+    return rendered
 
 
 _HTML_URL_RE = re.compile(r'(?:href|src|action)=["\']([^"\']+)["\']', re.IGNORECASE)
@@ -1704,6 +1716,9 @@ def _format_detail_rule(rule, item, settings, t=None):
     values = {}
     if isinstance(item, dict):
         values.update({k: '' if v is None else v for k, v in item.items() if not isinstance(v, (dict, list))})
+    for key in ('summary', 'description', 'excerpt', 'body', 'content'):
+        if key in values:
+            values[key] = richtext_to_plain_text(values[key])
     values['site_name'] = _company_name(settings, t)
     try:
         return str(rule).format_map(_SafeValues(values)).strip()
@@ -1727,13 +1742,13 @@ def _seo_title_description(task, ctx, settings, t):
         template_title = _format_detail_rule(template_seo.get('title'), item, settings, t)
         template_description = _format_detail_rule(template_seo.get('description'), item, settings, t)
         title = _first_text(item.get('seo_title'), template_title, item.get('title'), item.get('name'), page.get('title'), page_key)
-        description = _first_text(
+        description = richtext_to_plain_text(_first_text(
             item.get('seo_description'),
             template_description,
             item.get('summary'),
             item.get('description'),
             item.get('excerpt'),
-        )
+        ))
     elif task.get('type') == 'home':
         title = _first_text(page.get('title'), company_name)
         description = _first_text(page.get('description'), _company_description(settings))
@@ -1769,7 +1784,7 @@ def _json_ld_for_task(task, seo, ctx, settings):
             '@context': 'https://schema.org',
             '@type': 'Product',
             'name': _first_text(item.get('name'), item.get('title')),
-            'description': _first_text(item.get('summary'), item.get('description')),
+            'description': richtext_to_plain_text(_first_text(item.get('summary'), item.get('description'))),
             'brand': {'@type': 'Brand', 'name': company_name},
         }
         image = _first_text(item.get('image'), item.get('image_url'), item.get('cover'), item.get('thumbnail'))
@@ -1781,7 +1796,7 @@ def _json_ld_for_task(task, seo, ctx, settings):
             '@context': 'https://schema.org',
             '@type': 'Article',
             'headline': _first_text(item.get('title'), item.get('name')),
-            'description': _first_text(item.get('summary'), item.get('description'), item.get('excerpt')),
+            'description': richtext_to_plain_text(_first_text(item.get('summary'), item.get('description'), item.get('excerpt'))),
             'author': {'@type': 'Organization', 'name': company_name},
         })
     elif task.get('page_key') == 'contact':
@@ -2565,7 +2580,13 @@ def _render_task_html(env, task, common, pages, data, meta, dataset_paths):
         ctx['lang_switch_path'] = current.rsplit('/', 1)[0] + '/' if '/' in current else '/'
 
     ctx['seo'] = _build_seo_context(task, ctx, common, meta)
-    rendered = tpl.render(**ctx).replace('/media-packages/', '/assets/media-packages/')
+    rendered = tpl.render(**ctx)
+    # 只迁移真正的旧根路径，不能用普通 replace；实时预览的 Block 渲染器已生成
+    # /live_preview/<site>/assets/media-packages/，再次替换会变成 assets/assets 并 404。
+    rendered = _LEGACY_MEDIA_PACKAGE_URL_RE.sub(
+        lambda match: f'{match.group("lead")}/assets/media-packages/',
+        rendered,
+    )
     return _rewrite_preview_urls(rendered, common.get('base_url', ''))
 
 

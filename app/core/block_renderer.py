@@ -23,6 +23,7 @@ from html import escape as html_escape
 from . import block_parser as bp
 from . import icon_registry
 from . import style_registry
+from .html_sanitizer import richtext_to_plain_text, sanitize_richtext
 
 # 媒体类型 → 注入到哪个属性
 _MEDIA_SRC_ATTR = {'image': 'src', 'video': 'src', 'audio': 'src', 'embed': 'src'}
@@ -212,6 +213,12 @@ def _inject_leaf(node, field_def, value):
             has_content = False
     elif dtype in _TEXT_TYPES:
         if has_content:
+            if dtype == 'text' and field_def.name in {'summary', 'description', 'excerpt', 'desc'}:
+                value = richtext_to_plain_text(value)
+                has_content = bool(value)
+            elif dtype == 'richtext' and field_def.name == 'summary':
+                value = sanitize_richtext(value, 'summary')
+                has_content = bool(richtext_to_plain_text(value))
             # richtext 始终按 innerHTML 注入；textarea 字段如果在
             # 编辑器中使用了富文本（isDescriptionKey 匹配），内容可能
             # 包含 HTML 标签，需要同样按 raw_html 处理，避免标签被转义显示。

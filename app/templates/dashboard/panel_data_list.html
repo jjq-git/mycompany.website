@@ -186,6 +186,7 @@
   .detail-content-block-item[data-block-type="image"] .detail-content-video-fields,
   .detail-content-block-item[data-block-type="image"] .detail-content-textarea-field,
   .detail-content-block-item[data-block-type="video"] .detail-content-textarea-field,
+  .detail-content-block-item[data-block-type="embed"] .detail-content-textarea-field,
   .detail-content-layout-wrap{display:none!important}
   .detail-content-caption-field{display:none!important}
   .detail-content-block-item[data-block-type="image"] .detail-content-caption-field,
@@ -198,7 +199,24 @@
   .detail-content-block-item[data-block-type="gallery"] .detail-content-gallery-fields,
   .detail-content-block-item[data-block-type="table"] .detail-content-table-fields,
   .detail-content-block-item[data-block-type="note"] .detail-content-note-fields,
-  .detail-content-block-item[data-block-type="embed"] .detail-content-embed-fields{display:block!important}
+  .detail-content-block-item[data-block-type="embed"] .detail-content-embed-fields{display:grid!important}
+  .detail-content-block-item:not([data-block-type="embed"]) .detail-content-embed-fields,
+  .detail-content-block-item .detail-content-embed-fields[hidden]{display:none!important}
+  .dataset-edit-form .detail-content-embed-fields.module-media-field{
+    grid-template-columns:minmax(0,1fr);
+    gap:8px;
+    width:min(620px,100%);
+    max-width:620px;
+  }
+  .dataset-edit-form .detail-content-embed-fields.module-media-field>.form-label{margin:0!important}
+  .dataset-edit-form .detail-content-embed-fields.module-media-field>.module-media-layout{
+    grid-template-columns:112px minmax(0,420px);
+    column-gap:12px;
+    width:100%;
+    min-width:0;
+    justify-content:start;
+  }
+  .dataset-edit-form .detail-content-embed-fields .module-media-content>.form-text{text-align:left!important}
   .detail-content-block-item[data-block-type="heading"] .detail-content-media-fields,
   .detail-content-block-item[data-block-type="heading"] .detail-content-layout-wrap,
   .detail-content-block-item[data-block-type="gallery"] .detail-content-media-fields,
@@ -445,7 +463,10 @@
         <div class="ds-basic-full">
           {% set summary_required = 'summary' in (current_req.get('_required_fields') or []) %}
           <label class="form-label">简介 <span class="text-danger dynamic-required-marker" data-required-marker="summary"{% if not summary_required %} style="display:none"{% endif %}>*</span></label>
-          <textarea class="form-control form-control-sm" name="summary" rows="2"{% if summary_required %} required{% endif %}>{{ edit_item.summary or edit_item.description or edit_item.excerpt or '' }}</textarea>
+          <div class="dataset-summary-editor" data-summary-required="{{ 'true' if summary_required else 'false' }}">
+            <textarea class="form-control form-control-sm dataset-summary-source" name="summary" rows="2"{% if summary_required %} required{% endif %}>{{ edit_item.summary or edit_item.description or edit_item.excerpt or '' }}</textarea>
+          </div>
+          <div class="form-text dataset-summary-help">详情页保留加粗、斜体、列表和链接；列表卡片、搜索、SEO 与分享信息自动使用纯文本。</div>
         </div>
         <div class="ds-basic-full detail-actions-basic" id="detailActionFields">
           <div class="detail-actions-basic-head">
@@ -1026,8 +1047,24 @@
             </select>
             {% endif %}
           </div>
-          <div class="detail-content-embed-fields">
-            <input type="text" class="form-control form-control-sm" name="detail_content_blocks_{{ loop.index0 }}_embed_url" value="{{ block.embed_url or '' }}" placeholder="嵌入 iframe URL">
+          <div class="detail-content-embed-fields module-media-field">
+            <label class="form-label small mb-1 text-muted">网页包</label>
+            <div class="module-media-layout">
+              <div class="module-media-tools">
+                <label class="module-media-picker{% if block.embed_url %} has-media{% endif %}" title="上传网页包 ZIP">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>
+                  <input type="file" name="detail_content_blocks_{{ loop.index0 }}_embed_file" accept=".zip,application/zip" onchange="handleModuleImageUpload(this)" style="display:none">
+                  {% if block.embed_url %}<button type="button" class="module-media-clear" onclick="event.preventDefault();event.stopPropagation();clearModuleImage(this)" title="删除后重新上传"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>{% endif %}
+                </label>
+              </div>
+              <div class="module-media-content">
+                <div class="module-media-url-row mb-1">
+                  <input type="text" class="form-control form-control-sm" name="detail_content_blocks_{{ loop.index0 }}_embed_url" value="{{ block.embed_url or '' }}" placeholder="上传网页包 ZIP，或从媒体库选择" oninput="updateImagePreview(this)" readonly>
+                  <button type="button" class="module-media-library-btn" onclick="openModuleMediaLibrary(this)" title="从媒体库选择网页包"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+                </div>
+                <div class="form-text">上传根目录包含 index.html 的 ZIP 网页包，或从媒体库选择已有网页包。</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1208,7 +1245,7 @@
 </form>
 
 {# JS: 模块选择器交互 #}
-<script src="/static/js/admin_modules.js?v=147"></script>
+<script src="/static/js/admin_modules.js?v=148"></script>
 <script type="application/json" id="blockLibraryDsJson">{{ blocks | tojson }}</script>
 <script type="application/json" id="styleRegistryDsJson">{{ style_registry | default({}) | tojson }}</script>
 <script type="application/json" id="iconListDsJson">{{ icon_list | default([]) | tojson }}</script>
@@ -1225,6 +1262,22 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   var DETAIL_REQUIREMENTS = {{ detail_requirements | default({}) | tojson }};
   var DETAIL_TEMPLATES = {{ detail_templates | default([]) | tojson }};
   var datasetForm = document.getElementById('datasetEditForm');
+
+  function initDatasetSummaryEditor() {
+    if (!datasetForm || typeof window.richEditorHtml !== 'function') return;
+    var host = datasetForm.querySelector('.dataset-summary-editor');
+    var source = host ? host.querySelector('.dataset-summary-source') : null;
+    if (!host || !source || host.querySelector('.rte-wrapper')) return;
+    var value = source.value || '';
+    var required = source.required;
+    host.innerHTML = window.richEditorHtml('summary', value, 'summary');
+    var hiddenInput = host.querySelector('textarea[name="summary"]:not(.rte-source-ta)');
+    if (hiddenInput) hiddenInput.removeAttribute('required');
+    var editor = host.querySelector('.rte-editor');
+    if (editor) editor.setAttribute('aria-required', required ? 'true' : 'false');
+  }
+
+  initDatasetSummaryEditor();
 
   function selectedDatasetMediaType() {
     var checked = datasetForm ? datasetForm.querySelector('input[type="radio"][name="media_type"]:checked') : null;
@@ -1246,9 +1299,18 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     var requiredFields = requirements._required_fields || ['slug', 'title'];
     ['slug', 'title', 'summary'].forEach(function(name) {
       var input = datasetForm.querySelector('[name="' + name + '"]');
-      if (input) input.required = requiredFields.indexOf(name) >= 0;
+      var required = requiredFields.indexOf(name) >= 0;
+      if (name === 'summary') {
+        var host = datasetForm.querySelector('.dataset-summary-editor');
+        var editor = host ? host.querySelector('.rte-editor') : null;
+        if (host) host.setAttribute('data-summary-required', required ? 'true' : 'false');
+        if (input) input.required = false;
+        if (editor) editor.setAttribute('aria-required', required ? 'true' : 'false');
+      } else if (input) {
+        input.required = required;
+      }
       datasetForm.querySelectorAll('[data-required-marker="' + name + '"]').forEach(function(marker) {
-        marker.style.display = requiredFields.indexOf(name) >= 0 ? '' : 'none';
+        marker.style.display = required ? '' : 'none';
       });
     });
     datasetForm.querySelectorAll('[data-required-marker="media"]').forEach(function(marker) {
@@ -1293,6 +1355,17 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   if (datasetForm) {
     datasetForm.addEventListener('submit', function(e) {
       updateDatasetMediaRequiredState();
+      var summaryHost = datasetForm.querySelector('.dataset-summary-editor[data-summary-required="true"]');
+      var summaryEditor = summaryHost ? summaryHost.querySelector('.rte-editor') : null;
+      var summaryText = summaryEditor ? (summaryEditor.textContent || '').replace(/\s+/g, ' ').trim() : '';
+      if (summaryEditor && !summaryText) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.alert('保存失败，请填写以下必填项：\n- 简介');
+        summaryEditor.scrollIntoView({behavior: 'smooth', block: 'center'});
+        window.setTimeout(function() { summaryEditor.focus({preventScroll: true}); }, 260);
+        return;
+      }
       if (!datasetForm.checkValidity()) {
         e.preventDefault();
         e.stopPropagation();
@@ -1893,6 +1966,15 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   function detailContentVideoPicker(fileName) {
     return detailContentPicker(fileName, 'video/mp4,video/webm,video/ogg,video/quicktime', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>');
   }
+  function detailContentEmbedPicker(fileName) {
+    return detailContentPicker(fileName, '.zip,application/zip', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>');
+  }
+  function detailContentEmbedField(base) {
+    return '<div class="detail-content-embed-fields module-media-field"><label class="form-label small mb-1 text-muted">网页包</label>' +
+      '<div class="module-media-layout">' + detailContentEmbedPicker(base + '_embed_file') +
+      '<div class="module-media-content"><div class="module-media-url-row mb-1"><input type="text" class="form-control form-control-sm" name="' + base + '_embed_url" value="" placeholder="上传网页包 ZIP，或从媒体库选择" oninput="updateImagePreview(this)" readonly>' + mediaLibraryButton() + '</div>' +
+      '<div class="form-text">上传根目录包含 index.html 的 ZIP 网页包，或从媒体库选择已有网页包。</div></div></div></div>';
+  }
   function detailContentTableGrid(base, rows, cols) {
     rows = rows || 4;
     cols = cols || 4;
@@ -1986,9 +2068,31 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     (target || main).appendChild(caption);
   }
 
+  function syncDetailContentTypeFields(item) {
+    if (!item) return;
+    var type = item.getAttribute('data-block-type') || 'text';
+    var typeFields = [
+      ['.detail-content-image-fields', type === 'image' || type === 'media_text'],
+      ['.detail-content-video-fields', type === 'video'],
+      ['.detail-content-gallery-fields', type === 'gallery'],
+      ['.detail-content-table-fields', type === 'table'],
+      ['.detail-content-note-fields', type === 'note'],
+      ['.detail-content-embed-fields', type === 'embed']
+    ];
+    typeFields.forEach(function(entry) {
+      var field = item.querySelector(entry[0]);
+      if (!field) return;
+      field.hidden = !entry[1];
+      field.querySelectorAll('input,select,textarea,button').forEach(function(control) {
+        control.disabled = !entry[1];
+      });
+    });
+  }
+
   document.querySelectorAll('#detailFieldSections .detail-content-block-item').forEach(function(item) {
     syncDetailContentTextEditor(item);
     syncDetailContentCaptionPosition(item);
+    syncDetailContentTypeFields(item);
   });
 
   window.updateDetailContentBlockType = function(select) {
@@ -1998,6 +2102,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
     syncDetailContentTextEditor(item);
     syncDetailContentCaptionPosition(item);
     syncDetailContentLayoutVisibility(item);
+    syncDetailContentTypeFields(item);
   };
 
   function syncDetailContentLayoutVisibility(item) {
@@ -2058,12 +2163,13 @@ window._dsEditItemJson = {{ edit_item | tojson }};
         '<div class="detail-content-gallery-fields"><label class="form-label small mb-1 text-muted">多图</label>' + gallery + '</div>' +
         '<div class="detail-content-table-fields">' + detailContentTableGrid(base, 4, 4) + '</div>' +
         '<div class="detail-content-note-fields"><select class="form-select form-select-sm" name="' + base + '_note_style"><option value="info">信息</option><option value="success">成功</option><option value="warning">警告</option><option value="danger">危险</option></select></div>' +
-        '<div class="detail-content-embed-fields"><input type="text" class="form-control form-control-sm" name="' + base + '_embed_url" placeholder="嵌入 iframe URL"></div>' +
+        detailContentEmbedField(base) +
       '</div></div>';
     list.insertAdjacentHTML('beforeend', html);
     countEl.value = next + 1;
     syncDetailContentCaptionPosition(list.lastElementChild);
     syncDetailContentLayoutVisibility(list.lastElementChild);
+    syncDetailContentTypeFields(list.lastElementChild);
     initDetailContentTables(list.lastElementChild);
     window.reindexDetailContentBlocks();
   };
@@ -2173,6 +2279,7 @@ window._dsEditItemJson = {{ edit_item | tojson }};
   window.setTimeout(function() {
     initDetailContentTables(document);
     document.querySelectorAll('#datasetEditForm .detail-content-block-item').forEach(syncDetailContentLayoutVisibility);
+    document.querySelectorAll('#datasetEditForm .detail-content-block-item').forEach(syncDetailContentTypeFields);
     window.reindexDetailContentBlocks();
   }, 0);
   window._moduleCtx = {

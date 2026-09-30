@@ -245,14 +245,14 @@
       tb += '<button type="button" class="btn btn-sm btn-light rte-btn rte-source-btn" title="查看/编辑 HTML 源码" aria-label="查看源码">' + icons.code + '</button>';
     }
     tb += '</div>';
-    if (richProfile === 'content' || richProfile === 'notice') {
+    if (richProfile === 'content' || richProfile === 'notice' || richProfile === 'summary') {
       var removeSpecial = richProfile === 'content'
         ? ['rte-table-btn', 'rte-table-settings-btn', 'rte-image-btn', 'rte-upload-image-btn', 'rte-video-url-btn', 'rte-upload-video-btn', 'rte-media-library-btn', 'rte-source-btn']
         : ['rte-heading-btn', 'rte-structure-btn', 'rte-table-btn', 'rte-table-settings-btn', 'rte-image-btn', 'rte-upload-image-btn', 'rte-video-url-btn', 'rte-upload-video-btn', 'rte-media-library-btn', 'rte-source-btn'];
       removeSpecial.forEach(function(className) {
         tb = tb.replace(new RegExp('<button[^>]*\\b' + className + '\\b[^>]*>[\\s\\S]*?<\\/button>', 'g'), '');
       });
-      if (richProfile === 'notice') {
+      if (richProfile === 'notice' || richProfile === 'summary') {
         ['justifyLeft', 'justifyCenter', 'justifyRight', 'indent', 'outdent', 'insertHorizontalRule', 'subscript', 'superscript'].forEach(function(command) {
           tb = tb.replace(new RegExp('<button[^>]*data-cmd="' + command + '"[^>]*>[\\s\\S]*?<\\/button>', 'g'), '');
         });
@@ -262,9 +262,11 @@
         tb = tb.replace(/(?:<span class="rte-sep(?: [^"]*)?"><\/span>\s*){2,}/g, '<span class="rte-sep"></span>');
       }
     }
+    var editorMinHeight = richProfile === 'summary' ? '96px' : '150px';
+    var editorMaxHeight = richProfile === 'summary' ? '240px' : '400px';
     return '<div class="rte-wrapper rte-profile-' + richProfile + '">' +
       tb +
-      '<div contenteditable="true" class="rich-editor-body form-control form-control-sm rte-editor" style="min-height:150px;max-height:400px;overflow-y:auto;line-height:1.7;font-size:14px;outline:none" data-placeholder="">' + (value || '') + '</div>' +
+      '<div contenteditable="true" class="rich-editor-body form-control form-control-sm rte-editor" style="min-height:' + editorMinHeight + ';max-height:' + editorMaxHeight + ';overflow-y:auto;line-height:1.7;font-size:14px;outline:none" data-placeholder="">' + (value || '') + '</div>' +
       '<textarea class="form-control form-control-sm d-none rte-source-ta" style="min-height:150px;max-height:400px;font-family:Consolas,Monaco,monospace;font-size:14px;line-height:1.5" spellcheck="false"></textarea>' +
       '<textarea class="form-control form-control-sm d-none" name="' + esc(name) + '">' + esc(value || '') + '</textarea>' +
       '</div>';

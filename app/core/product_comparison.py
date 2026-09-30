@@ -221,8 +221,13 @@ def _collect_comparison_pages(all_pages, dataset_paths):
             continue
         seen_urls.add(url)
         module_data = module.get('data') if isinstance(module.get('data'), dict) else {}
-        # 标题优先用模块自定义标题，其次页面标题，最后回落到 page_key
-        title = str(module_data.get('title') or page.get('title') or page_key)
+        # 分类下拉使用简短名称；未配置时兼容旧数据，继续使用页面标题。
+        title = str(
+            module_data.get('comparison_label')
+            or module_data.get('title')
+            or page.get('title')
+            or page_key
+        )
         result.append({'key': str(page_key), 'title': title, 'url': url})
     result.sort(key=lambda item: item['title'])
     return result

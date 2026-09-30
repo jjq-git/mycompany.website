@@ -15,6 +15,10 @@ _NOTICE_TAGS = {
     'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's',
     'ul', 'ol', 'li', 'a',
 }
+_SUMMARY_TAGS = {
+    'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's',
+    'ul', 'ol', 'li', 'a',
+}
 _VOID_TAGS = {'br', 'hr'}
 _DROP_CONTENT_TAGS = {'script', 'style', 'iframe', 'object', 'embed', 'svg', 'math'}
 _SAFE_COLOR = re.compile(
@@ -55,7 +59,12 @@ class _RichTextSanitizer(HTMLParser):
     def __init__(self, profile):
         super().__init__(convert_charrefs=False)
         self.profile = profile
-        self.allowed_tags = _NOTICE_TAGS if profile == 'notice' else _CONTENT_TAGS
+        if profile == 'notice':
+            self.allowed_tags = _NOTICE_TAGS
+        elif profile == 'summary':
+            self.allowed_tags = _SUMMARY_TAGS
+        else:
+            self.allowed_tags = _CONTENT_TAGS
         self.output = []
         self.drop_depth = 0
 
@@ -74,7 +83,7 @@ class _RichTextSanitizer(HTMLParser):
                 safe_attrs.append(('href', href))
             if attrs.get('target') == '_blank':
                 safe_attrs.extend((('target', '_blank'), ('rel', 'noopener noreferrer')))
-        if self.profile != 'notice':
+        if self.profile == 'content':
             align = str(attrs.get('align') or '').lower()
             if align in {'left', 'center', 'right'}:
                 safe_attrs.append(('style', f'text-align:{align}'))
@@ -114,7 +123,49 @@ class _RichTextSanitizer(HTMLParser):
 
 def sanitize_richtext(value, profile='content'):
     """Return allow-listed HTML; plain text remains valid and safely escaped."""
-    parser = _RichTextSanitizer('notice' if profile == 'notice' else 'content')
+    parser = _RichTextSanitizer(profile if profile in {'content', 'notice', 'summary'} else 'content')
     parser.feed(str(value or ''))
     parser.close()
     return ''.join(parser.output).strip()
+
+
+class _PlainTextExtractor(HTMLParser):
+    """Extract readable single-line text from editor HTML."""
+
+    _BLOCK_TAGS = {'p', 'div', 'br', 'ul', 'ol', 'li', 'h2', 'h3', 'h4', 'blockquote', 'hr'}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.parts = []
+        self.drop_depth = 0
+
+    def handle_starttag(self, tag, attrs):
+        tag = tag.lower()
+        if tag in _DROP_CONTENT_TAGS:
+            self.drop_depth += 1
+        elif not self.drop_depth and tag in self._BLOCK_TAGS:
+            self.parts.append(' ')
+
+    def handle_endtag(self, tag):
+        tag = tag.lower()
+        if tag in _DROP_CONTENT_TAGS:
+            if self.drop_depth:
+                self.drop_depth -= 1
+        elif not self.drop_depth and tag in self._BLOCK_TAGS:
+            self.parts.append(' ')
+
+    def handle_data(self, data):
+        if not self.drop_depth:
+            self.parts.append(data)
+
+
+def richtext_to_plain_text(value):
+    """Return rich text as compact plain text for cards, search, and SEO."""
+    if value is None:
+        return ''
+    if isinstance(value, (int, float)):
+        return str(value)
+    parser = _PlainTextExtractor()
+    parser.feed(str(value))
+    parser.close()
+    return re.sub(r'\s+', ' ', ''.join(parser.parts)).strip()

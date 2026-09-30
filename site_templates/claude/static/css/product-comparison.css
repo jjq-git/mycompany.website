@@ -23,17 +23,14 @@
 /* 对齐页面标准 .container：max-width 与左右 padding 都跟随全局变量，
    让对比模块和其他 block 左右边缘对齐（原本 1500px + 16px 边距会更宽更贴边） */
 .pc--claude .pc-shell { box-sizing: border-box; width: 100%; max-width: var(--container-max, 1400px); margin-inline: auto; padding-inline: var(--space-lg, 24px); }
-.pc--claude .pc-heading { display: flex; align-items: flex-start; gap: 12px; max-width: 920px; margin: 0 0 22px; }
-.pc--claude .pc-heading-icon { display: grid; flex: 0 0 40px; width: 40px; height: 40px; place-items: center; border: 1px solid var(--pc-tint-strong); border-radius: 8px; background: var(--pc-tint); color: var(--pc-accent); }
-.pc--claude .pc-heading-icon svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
-.pc--claude .pc-eyebrow { margin: 0; color: var(--pc-accent); font-size: 12px; font-weight: 700; letter-spacing: .12em; }
-.pc--claude .pc-heading h1 { margin: 4px 0 6px; font-family: var(--font-display, Georgia, 'Times New Roman', serif); font-size: clamp(30px, 3vw, 42px); font-weight: 500; line-height: 1.1; }
-.pc--claude .pc-subtitle { max-width: 720px; margin: 0; color: var(--pc-muted); }
+.pc--claude .pc-heading { max-width: 920px; margin: 0 0 22px; }
+.pc--claude .pc-heading h1 { margin: 0; font-family: var(--font-display, Georgia, 'Times New Roman', serif); font-size: clamp(30px, 3vw, 42px); font-weight: 500; line-height: 1.1; }
 
 .pc--claude .pc-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 16px; border: 1px solid var(--pc-line); border-radius: 14px; background: var(--pc-surface); box-shadow: 0 8px 24px color-mix(in srgb, var(--pc-text) 5%, transparent); }
-/* 对比分类下拉放在工具栏最后，并与左侧操作区保留稳定间距；不再 flex 拉伸，按内容定宽。 */
-.pc--claude .pc-group-filter { flex: 0 0 auto; min-width: 200px; margin-left: clamp(18px, 2vw, 70px); }
-.pc--claude .pc-group-filter select { width: 100%; }
+/* 少量对比分类并排显示；分类较多时 JS 自动生成下拉框。 */
+.pc--claude .pc-group-filter { display: flex; flex: 0 0 auto; min-width: 0; margin-left: clamp(18px, 2vw, 70px); }
+.pc--claude .pc-group-filter[hidden] { display: none; }
+.pc--claude .pc-group-filter select { width: 100%; min-width: 200px; }
 .pc--claude .pc-toolbar-fields,
 .pc--claude .pc-add-control,
 .pc--claude .pc-toolbar-summary { display: contents; }
@@ -45,6 +42,13 @@
 .pc--claude select { min-height: 40px; padding: 8px 11px; border: 1px solid var(--pc-line); border-radius: 8px; outline: 0; background: var(--pc-card); color: var(--pc-text); }
 .pc--claude input:focus,
 .pc--claude select:focus { border-color: var(--pc-accent); box-shadow: 0 0 0 2px rgba(212, 93, 69, .12); }
+.pc--claude .pc-group-options { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--pc-line); border-radius: 10px; background: var(--pc-card); }
+.pc--claude .pc-toolbar .pc-group-option { position: relative; display: block; color: var(--pc-muted); font-size: 13px; cursor: pointer; }
+.pc--claude .pc-group-option input { position: absolute; width: 1px; min-height: 0; height: 1px; padding: 0; margin: -1px; overflow: hidden; opacity: 0; }
+.pc--claude .pc-group-option span { display: flex; min-width: 72px; min-height: 34px; align-items: center; justify-content: center; padding: 6px 14px; border-radius: 7px; white-space: nowrap; transition: color 150ms ease, background 150ms ease; }
+.pc--claude .pc-group-option:hover span { color: var(--pc-accent); background: var(--pc-tint); }
+.pc--claude .pc-group-option input:checked + span { background: var(--pc-accent); color: #fff; font-weight: 600; }
+.pc--claude .pc-group-option input:focus-visible + span { outline: 2px solid var(--pc-accent); outline-offset: 2px; }
 .pc--claude .pc-toolbar-actions { display: flex; gap: 7px; }
 .pc--claude .pc-button,
 .pc--claude .pc-mini { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--pc-line); border-radius: 8px; background: var(--pc-surface); color: var(--pc-text); cursor: pointer; text-decoration: none; transition: border-color 150ms ease, color 150ms ease, background 150ms ease; }
@@ -92,19 +96,30 @@
    加到 6 列（1534px）才超出触发横向滚动 */
 .pc--claude .pc-product-head { position: sticky; top: 0; z-index: 5; width: 224px; background: var(--pc-surface); text-align: left; vertical-align: top !important; }
 /* 正方形容器：aspect-ratio 1/1 固定方形，object-fit: contain 完整显示图片不裁切（四周按需留白） */
-.pc--claude .pc-product-image { width: 100%; aspect-ratio: 1 / 1; margin-bottom: 10px; border-radius: 10px; background: var(--pc-soft); object-fit: contain; }
-.pc--claude .pc-product-title { font-size: 15px; line-height: 1.4; }
+.pc--claude .pc-product-image { box-sizing: border-box; width: 100%; aspect-ratio: 1 / 1; margin-bottom: 10px; padding: 10px; border-radius: 10px; background: color-mix(in srgb, var(--color-surface-card, var(--pc-card)), var(--color-primary, var(--pc-accent)) 4%); object-fit: contain; }
+/* 详情入口移到图片与标题上：图片链接撑满图区，hover 时轻微压暗提示可点 */
+.pc--claude .pc-product-image-link { display: block; }
+.pc--claude .pc-product-image-link:hover .pc-product-image { opacity: .85; }
+.pc--claude .pc-product-link { color: inherit; text-decoration: none; }
+.pc--claude .pc-product-link:hover { text-decoration: underline; }
+.pc--claude .pc-product-meta { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 7px 5px 10px; border-radius: 8px; background: var(--pc-accent); color: #fff; }
+.pc--claude .pc-product-title { min-width: 0; overflow: hidden; font-size: 15px; font-weight: 700; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
 .pc--claude .pc-product-subtitle { display: -webkit-box; margin-top: 4px; overflow: hidden; color: var(--pc-muted); font-size: 12px; font-weight: 400; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .pc--claude .pc-product-price { margin-top: 8px; color: var(--pc-accent-2); font-weight: 800; }
-.pc--claude .pc-product-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.pc--claude .pc-product-actions { display: flex; flex: 0 0 auto; gap: 1px; flex-wrap: nowrap; margin: 0; }
 .pc--claude .pc-mini { width: 32px; height: 32px; padding: 0; }
 .pc--claude .pc-mini svg { width: 16px; height: 16px; }
-.pc--claude .pc-group-row th { scroll-margin-top: 76px; padding: 10px 16px; background: var(--pc-tint); box-shadow: inset 3px 0 0 var(--pc-accent); color: var(--pc-accent-2); font-size: 13px; font-weight: 700; text-align: left; }
-.pc--claude .pc-group-title { position: sticky; left: 16px; display: inline-block; z-index: 4; }
+.pc--claude .pc-product-actions .pc-mini { width: 24px; min-width: 24px; height: 27px; border: 0; border-radius: 4px; background: transparent; box-shadow: none; color: #fff; }
+.pc--claude .pc-product-actions .pc-mini:hover:not(:disabled) { background: rgba(255, 255, 255, .16); color: #fff; }
+.pc--claude .pc-group-row th { height: 7px; scroll-margin-top: 76px; padding: 0; border: 0; background: var(--pc-line-strong); box-shadow: none; }
 .pc--claude .pc-param-name { color: var(--pc-text); font-size: 13px; font-weight: 600; }
 /* 单位跟在参数名右侧同一行、紧贴名称（inline + 小左边距），不再单独换行 */
 .pc--claude .pc-param-unit { display: inline; margin-left: 4px; color: var(--pc-muted); font-size: 11px; font-weight: 400; }
 .pc--claude .pc-table td { font-size: 14px; }
+.pc--claude .pc-data-row > th,
+.pc--claude .pc-data-row > td { background: var(--pc-surface); }
+.pc--claude .pc-data-row--alt > th,
+.pc--claude .pc-data-row--alt > td { background: color-mix(in srgb, var(--pc-tint), var(--pc-surface) 46%); }
 .pc--claude .pc-table tbody tr:not(.pc-group-row):hover td { background: color-mix(in srgb, var(--pc-tint), var(--pc-surface) 62%); }
 .pc--claude .pc-table tbody tr:not(.pc-group-row):hover .pc-param-name { background: var(--pc-tint); }
 .pc--claude .pc-empty,
@@ -133,7 +148,6 @@
 @media (max-width: 760px) {
   /* 窄屏左右 padding 收窄到 --space-md，与全局 .container 移动端保持一致 */
   .pc--claude .pc-shell { padding-inline: var(--space-md, 16px); }
-  .pc--claude .pc-heading-icon { flex-basis: 36px; width: 36px; height: 36px; }
   .pc--claude .pc-heading h1 { font-size: 30px; }
   .pc--claude .pc-toolbar-fields,
   .pc--claude .pc-toolbar-summary { display: contents; }
@@ -142,6 +156,8 @@
   .pc--claude .pc-group-filter { flex: 1 1 100%; min-width: 0; }
   /* 窄屏恢复正常流：取消桌面版的右推，独占一行 */
   .pc--claude .pc-group-filter { margin-left: 0; }
+  .pc--claude .pc-group-options { width: 100%; }
+  .pc--claude .pc-group-option { flex: 1 1 0; }
   .pc--claude .pc-layout { grid-template-columns: 1fr; }
   .pc--claude .pc-groups { position: sticky; top: var(--header-height, 64px); left: 0; z-index: 22; padding: 0; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--pc-line); border-radius: 14px 14px 0 0; }
   .pc--claude .pc-groups-sticky { position: static; padding: 10px; border-radius: 14px 14px 0 0; }

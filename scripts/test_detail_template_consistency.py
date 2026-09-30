@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from jinja2 import Environment
-from werkzeug.datastructures import MultiDict
+from werkzeug.datastructures import FileStorage, MultiDict
 
 from app.core import builder, product_comparison, routes
 
@@ -86,6 +86,13 @@ annotated_hidden_media = builder._annotate_detail_modules([
 ])
 check('hidden media still gets a visible base heading', annotated_hidden_media[0]['type'] == '_detail_base_header')
 
+info_only_html = str(builder._render_detail_media({
+    'title': 'Info only',
+    'summary': 'No top media is configured.',
+}, {'layout': 'gallery_left'}))
+check('info-only detail header uses the full container width',
+      'detail-media--info-only' in info_only_html and 'max-width:860px' not in info_only_html)
+
 direct_video_html = str(builder._render_detail_content_blocks({
     'detail_content_blocks': [{'type': 'video', 'video': '/assets/uploads/demo.mp4'}],
 }, {'video_ratio': '16/9'}))
@@ -120,6 +127,38 @@ try:
 except ValueError:
     save_rejected = True
 check('saving rejects video webpage URLs', save_rejected)
+
+embed_upload_form = MultiDict([
+    ('detail_content_blocks_count', '1'),
+    ('detail_content_blocks_0_type', 'embed'),
+])
+embed_upload_files = MultiDict([
+    ('detail_content_blocks_0_embed_file', FileStorage(filename='interactive-demo.zip')),
+])
+original_save_media_package = routes._save_media_package
+try:
+    routes._save_media_package = lambda site_id, upload: {
+        'entry_url': '/assets/media-packages/interactive-demo/'
+    }
+    parsed_embed_blocks = routes._parse_detail_content_blocks_form(
+        embed_upload_form,
+        files=embed_upload_files,
+        site_id=1,
+        dataset_key='products',
+    )
+finally:
+    routes._save_media_package = original_save_media_package
+check('detail embed accepts a webpage package upload', parsed_embed_blocks == [{
+    'type': 'embed',
+    'embed_url': '/assets/media-packages/interactive-demo/',
+}])
+
+embed_html = str(builder._render_detail_content_blocks({
+    'detail_content_blocks': parsed_embed_blocks,
+}, {'iframe_height': '520px'}))
+check('detail embed renders the uploaded package without an inner scrollbar',
+      'src="/assets/media-packages/interactive-demo/"' in embed_html
+      and 'scrolling="no"' in embed_html)
 
 # Empty positional groups must not fall back to group 1 / legacy fields.
 spec_modules = builder._annotate_detail_modules([

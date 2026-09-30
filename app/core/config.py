@@ -59,6 +59,19 @@ def load_config(override=None):
 
         # 平台
         'PLATFORM_DOMAIN': os.environ.get('PLATFORM_DOMAIN', ''),  # 生产部署时必须在 .env 中设置真实域名
+        # 认证限流允许显式覆盖；未设置时由请求地址判定：仅本机回环访问默认关闭，
+        # 局域网/公网访问默认开启。生产部署建议显式设为 1。
+        'AUTH_RATE_LIMIT_ENABLED': (
+            None if os.environ.get('AUTH_RATE_LIMIT_ENABLED', '').strip() == ''
+            else os.environ.get('AUTH_RATE_LIMIT_ENABLED', '').strip().lower()
+            in ('1', 'true', 'yes', 'on')
+        ),
+        'LOGIN_RATE_LIMIT_WINDOW_SECONDS': int(
+            os.environ.get('LOGIN_RATE_LIMIT_WINDOW_SECONDS', '600')
+        ),
+        'LOGIN_RATE_LIMIT_MAX_FAILURES': int(
+            os.environ.get('LOGIN_RATE_LIMIT_MAX_FAILURES', '10')
+        ),
         # 邮件/短信发送器接入后设为 1。开发/测试环境仍可在页面回显验证码；
         # 生产环境未接发送器时认证路由会明确拒绝，不能假装发送成功。
         'SMTP_HOST': os.environ.get('SMTP_HOST', '').strip(),

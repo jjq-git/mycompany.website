@@ -259,6 +259,27 @@
       min-height:96px!important;
       height:96px!important;
     }
+    .content-edit-panel .dataset-edit-form .detail-content-block-item[data-block-type="embed"] .detail-content-embed-fields.module-media-field{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr)!important;
+      gap:8px!important;
+      width:min(620px,100%)!important;
+      max-width:620px!important;
+    }
+    .content-edit-panel .dataset-edit-form .detail-content-embed-fields>.module-media-layout{
+      grid-template-columns:112px minmax(0,420px)!important;
+      column-gap:12px!important;
+      width:100%;
+      justify-content:start!important;
+    }
+    .content-edit-panel .dataset-edit-form .detail-content-embed-fields .module-media-picker{
+      width:112px!important;
+      min-height:96px!important;
+      height:96px!important;
+    }
+    .content-edit-panel .dataset-edit-form .detail-content-embed-fields .module-media-content>.form-text{text-align:left!important}
+    .content-edit-panel .dataset-edit-form .detail-content-block-item:not([data-block-type="embed"]) .detail-content-embed-fields,
+    .content-edit-panel .dataset-edit-form .detail-content-embed-fields[hidden]{display:none!important}
     .content-edit-panel .dataset-edit-form .detail-content-gallery-fields,
     .content-edit-panel .dataset-edit-form .detail-content-table-fields{max-width:1080px}
     /* 提示：文字在左侧、提示类型设置在右，不再留一大片空白。*/

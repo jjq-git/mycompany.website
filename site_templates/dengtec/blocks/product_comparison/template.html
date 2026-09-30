@@ -1,16 +1,9 @@
 <section class="pc pc--dengtec" data-product-comparison data-max-products="{{ comparison.max_products }}" data-empty-text="{{ comparison.empty_text }}"{% if comparison.section_bg %} style="--pc-bg: {{ comparison.section_bg }}"{% endif %}>
   <div class="pc-shell">
     <header class="pc-heading">
-      <span class="pc-heading-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M7 7h12M15 3l4 4-4 4M17 17H5M9 13l-4 4 4 4"/></svg>
-      </span>
-      <div>
-        <p class="pc-eyebrow">PRODUCT COMPARISON</p>
-        <h1>{{ comparison.title }}</h1>
-        {% if comparison.subtitle %}<p class="pc-subtitle">{{ comparison.subtitle }}</p>{% endif %}
-      </div>
+      <h1>{{ comparison.title }}</h1>
     </header>
-    <!-- 操作区始终渲染：无产品时 JS 会把搜索/加入/操作按钮置灰，仅“对比分类”下拉可用，
+    <!-- 操作区始终渲染：无产品时 JS 会把搜索/加入/操作按钮置灰，仅“对比分类”切换可用，
          方便用户跳到其他有产品的对比页；控件的禁用态由 JS 统一处理，模板不做分支 -->
     <div class="pc-toolbar" aria-label="对比工具">
       <div class="pc-toolbar-fields">
@@ -24,12 +17,11 @@
         <div class="pc-toolbar-actions" role="group" aria-label="对比操作">
           {% if comparison.show_hide_same %}<button type="button" class="pc-button pc-icon-button" data-pc-hide-same aria-pressed="false">隐藏相同项</button>{% endif %}
           <button type="button" class="pc-button pc-icon-button" data-pc-reset>恢复默认</button>
-          <button type="button" class="pc-button pc-icon-button" data-pc-share>复制对比链接</button>
         </div>
         <span class="pc-limit" data-pc-limit></span>
       </div>
-      <!-- 对比分类下拉框：列出全站所有产品对比页，选中后跳转到对应对比页（少于 2 个时 JS 自动隐藏） -->
-      <label class="pc-group-filter"><select data-pc-group-filter aria-label="选择对比分类"></select></label>
+      <!-- 对比分类：2–4 项显示为并排单选，更多选项自动改用下拉框；少于 2 项时隐藏。 -->
+      <div class="pc-group-filter" data-pc-group-filter aria-label="选择对比分类"></div>
     </div>
     {% if comparison.products %}
     <div class="pc-layout">
@@ -43,6 +35,6 @@
     {% endif %}
   </div>
   <script type="application/json" data-pc-payload>{{ comparison | tojson }}</script>
-  <link rel="stylesheet" href="{{ base_url }}/static/css/product-comparison.css?v=25">
-  <script src="{{ base_url }}/static/js/product-comparison.js?v=20" defer></script>
+  <link rel="stylesheet" href="{{ base_url }}/static/css/product-comparison.css?v=34">
+  <script src="{{ base_url }}/static/js/product-comparison.js?v=24" defer></script>
 </section>

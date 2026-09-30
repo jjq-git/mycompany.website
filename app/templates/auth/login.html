@@ -2,7 +2,31 @@
 <!doctype html>
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>登录 — {{ platform_domain }}</title><link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}?v=20260720-captcha2"></head>
-<body><main class="auth-wrap">
+<body>
+<script>
+// 会话可能在工作台已打开后失效，此时 iframe / AJAX 面板请求会被重定向到本登录页。
+// 登录页不能嵌在预览区或编辑面板中；统一让最外层窗口登录，并在成功后返回原工作台。
+(function () {
+  var loginPath = {{ url_for('core.login') | tojson }};
+  var embedded = window.top !== window.self;
+  var injectedIntoWorkbench = !embedded && window.location.pathname !== loginPath;
+  if (!embedded && !injectedIntoWorkbench) return;
+
+  var next = '/';
+  try {
+    next = window.top.location.pathname + window.top.location.search + window.top.location.hash;
+  } catch (ignore) {
+    next = '/';
+  }
+  var target = loginPath + '?next=' + encodeURIComponent(next || '/');
+  try {
+    window.top.location.replace(target);
+  } catch (ignore) {
+    window.location.replace(target);
+  }
+})();
+</script>
+<main class="auth-wrap">
   <div class="auth-brand"><img src="{{ url_for('static', filename='brand-logo.svg') }}" alt="{{ platform_domain }}"></div>
   <section class="auth-card">
     <div class="auth-heading"><span class="auth-heading-icon">{{ auth_icon('login') }}</span><h1>登录账号</h1></div>

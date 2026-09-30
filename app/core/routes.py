@@ -34,7 +34,7 @@ import yaml as _yaml
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
-from .html_sanitizer import sanitize_richtext
+from .html_sanitizer import richtext_to_plain_text, sanitize_richtext
 from .tagging import generated_technical_tags
 
 _LIVE_PREVIEW_CACHE = {}
@@ -934,7 +934,7 @@ def _content_field_present(fields, field_name):
         if alias == 'detail_gallery' and isinstance(value, dict):
             value = value.get('images')
         if isinstance(value, str):
-            if value.strip():
+            if (richtext_to_plain_text(value) if field_name == 'summary' else value.strip()):
                 return True
         elif value not in (None, '', [], {}):
             return True
@@ -2502,18 +2502,56 @@ def _safe_next_url(candidate):
     return candidate
 
 
-# #9: /login 的轻量内存限流。MVP 不引入 Redis/flask-limiter 新依赖(符合"依赖能少则少"),
-# 单进程内用滑动窗口足够挡住"接入真实邮件后的邮件轰炸/刷库"。key 为 IP 或邮箱, 值为时间戳列表。
+# #9: 认证接口的轻量内存限流。MVP 不引入 Redis/flask-limiter 新依赖(符合"依赖能少则少"),
+# 单进程内用滑动窗口足够挡住密码爆破、邮件轰炸和刷库。key 为 IP 或账号, 值为失败时间戳列表。
 # 注意: 多 worker 部署下各进程独立计数, 规模化时再换集中式限流。
 _LOGIN_ATTEMPTS = {}
 _LOGIN_WINDOW_SECONDS = 600   # 10 分钟窗口
-_LOGIN_MAX_PER_WINDOW = 5     # 同一 IP/邮箱 10 分钟内最多 5 次
+_LOGIN_MAX_PER_WINDOW = 10    # 同一 IP/账号 10 分钟内最多 10 次失败
 
 
 def _client_ip():
     """取客户端真实 IP。用 remote_addr（M1：配合 ProxyFix 归一，不再直接取可伪造的
     X-Forwarded-For 首段，杜绝伪造该头绕过限流）。"""
     return request.remote_addr or ''
+
+
+def _auth_rate_limit_enabled():
+    """是否启用认证限流。
+
+    AUTH_RATE_LIMIT_ENABLED 显式配置优先。未配置时，仅当客户端和访问主机都是
+    本机回环地址才关闭；局域网、公网以及反向代理后的真实域名访问仍默认开启。
+    """
+    configured = current_app.config.get('AUTH_RATE_LIMIT_ENABLED')
+    if configured is not None:
+        return bool(configured)
+    client_ip = _client_ip().strip().lower()
+    request_host = (request.host or '').strip().lower()
+    local_clients = {'127.0.0.1', '::1', 'localhost'}
+    local_host = (
+        request_host == 'localhost'
+        or request_host.startswith('localhost:')
+        or request_host == '127.0.0.1'
+        or request_host.startswith('127.0.0.1:')
+        or request_host == '::1'
+        or request_host.startswith('[::1]')
+    )
+    return not (client_ip in local_clients and local_host)
+
+
+def _login_limit_settings():
+    """返回经过兜底校验的登录失败窗口和上限。"""
+    window = current_app.config.get('LOGIN_RATE_LIMIT_WINDOW_SECONDS', _LOGIN_WINDOW_SECONDS)
+    limit = current_app.config.get('LOGIN_RATE_LIMIT_MAX_FAILURES', _LOGIN_MAX_PER_WINDOW)
+    try:
+        window = max(1, int(window))
+    except (TypeError, ValueError):
+        window = _LOGIN_WINDOW_SECONDS
+    try:
+        limit = max(1, int(limit))
+    except (TypeError, ValueError):
+        limit = _LOGIN_MAX_PER_WINDOW
+    return window, limit
 
 
 def _rate_limited(keys, window=_LOGIN_WINDOW_SECONDS, limit=_LOGIN_MAX_PER_WINDOW):
@@ -2546,8 +2584,51 @@ def _rate_limit_peek(key, window=_LOGIN_WINDOW_SECONDS):
     return len(hits)
 
 
+def _login_failure_limit_status(*keys):
+    """只读检查登录失败次数，返回 (是否受限, 剩余等待秒数)。"""
+    if not _auth_rate_limit_enabled():
+        return False, 0
+    window, limit = _login_limit_settings()
+    now = datetime.now(timezone.utc).timestamp()
+    retry_after = 0
+    for key in keys:
+        if not key:
+            continue
+        hits = [t for t in _LOGIN_ATTEMPTS.get(key, []) if now - t < window]
+        if hits:
+            _LOGIN_ATTEMPTS[key] = hits
+        else:
+            _LOGIN_ATTEMPTS.pop(key, None)
+        if len(hits) >= limit:
+            retry_after = max(retry_after, max(1, int(window - (now - hits[0])) + 1))
+    return retry_after > 0, retry_after
+
+
+def _record_login_failure(*keys):
+    """仅在账号密码验证失败后记录一次，不让成功登录消耗配额。"""
+    if not _auth_rate_limit_enabled():
+        return
+    window, _ = _login_limit_settings()
+    now = datetime.now(timezone.utc).timestamp()
+    for key in keys:
+        if not key:
+            continue
+        hits = [t for t in _LOGIN_ATTEMPTS.get(key, []) if now - t < window]
+        hits.append(now)
+        _LOGIN_ATTEMPTS[key] = hits
+
+
+def _clear_login_failures(*keys):
+    """登录成功后清除该 IP 和账号的历史失败记录。"""
+    for key in keys:
+        if key:
+            _LOGIN_ATTEMPTS.pop(key, None)
+
+
 def _login_rate_limited(*keys):
     """登录/发码限流（保持原签名兼容所有调用方）。"""
+    if not _auth_rate_limit_enabled():
+        return False
     return _rate_limited(keys)
 
 
@@ -2595,19 +2676,24 @@ def login():
             flash('请输入有效的邮箱或手机号', 'danger')
         elif needs_captcha and not captcha_lib.verify(session, request.form.get('captcha')):
             flash('图形验证码错误', 'danger')
-        elif _login_rate_limited(client_ip, identifier):
-            flash('请求过于频繁，请稍后再试。', 'danger')
         else:
-            identity = AccountIdentity.query.filter_by(identifier=identifier).first()
-            # 旧邮箱用户尚未建立身份时，不自动创建凭据，必须走邮箱验证设置密码。
-            user = identity.user if identity else None
-            credential = PasswordCredential.query.filter_by(user_id=user.id).first() if user else None
-            if user and user.status == 'active' and credential and check_password_hash(credential.password_hash, password):
+            login_keys = (f'login-ip:{client_ip}', f'login-id:{identifier}')
+            limited, retry_after = _login_failure_limit_status(*login_keys)
+            if limited:
+                flash(f'登录失败次数过多，请 {retry_after} 秒后再试。', 'danger')
+            else:
+                identity = AccountIdentity.query.filter_by(identifier=identifier).first()
+                # 旧邮箱用户尚未建立身份时，不自动创建凭据，必须走邮箱验证设置密码。
+                user = identity.user if identity else None
+                credential = PasswordCredential.query.filter_by(user_id=user.id).first() if user else None
+            if not limited and user and user.status == 'active' and credential and check_password_hash(credential.password_hash, password):
+                _clear_login_failures(*login_keys)
                 session.pop('login_needs_captcha', None)  # 成功后清除验证码要求
                 _start_user_session(user)
                 flash('已登录', 'success')
                 return redirect(_safe_next_url(request.args.get('next')) or url_for('core.overview'))
-            else:
+            elif not limited:
+                _record_login_failure(*login_keys)
                 session['login_needs_captcha'] = True  # 失败后下次登录要求图形验证码
                 needs_captcha = True
                 flash('账号或密码不正确', 'danger')
@@ -3583,13 +3669,7 @@ def _as_items(raw):
 
 def _plain_text(value):
     """把模块字段压成短文本，供 SEO 简介自动生成使用。"""
-    if value is None:
-        return ''
-    if isinstance(value, str):
-        return re.sub(r'<[^>]+>', ' ', value).strip()
-    if isinstance(value, (int, float)):
-        return str(value)
-    return ''
+    return richtext_to_plain_text(value)
 
 
 def _complete_seo_excerpt(value, soft_limit=180, hard_limit=500):
@@ -6895,6 +6975,7 @@ def _parse_detail_content_blocks_form(form, files=None, site_id=None, dataset_ke
         layout = form.get(f'detail_content_blocks_{idx}_layout', 'image_left').strip() or 'image_left'
         image_upload = files.get(f'detail_content_blocks_{idx}_image_file') if files else None
         video_upload = files.get(f'detail_content_blocks_{idx}_video_file') if files else None
+        embed_upload = files.get(f'detail_content_blocks_{idx}_embed_file') if files else None
         if image_upload and image_upload.filename and site_id:
             try:
                 image = _save_uploaded_image(site_id, image_upload, prefix=f'{dataset_key}-content-{idx + 1}')
@@ -6906,6 +6987,15 @@ def _parse_detail_content_blocks_form(form, files=None, site_id=None, dataset_ke
                 video = _save_uploaded_media(site_id, video_upload, prefix=f'{dataset_key}-content-video-{idx + 1}')
             except Exception as exc:
                 current_app.logger.warning('详情内容视频上传失败: %s', exc)
+        if embed_upload and embed_upload.filename and site_id:
+            try:
+                package = _save_media_package(site_id, embed_upload)
+                embed_url = package.get('entry_url') or package.get('url') or ''
+            except ValueError:
+                raise
+            except Exception as exc:
+                current_app.logger.warning('详情内容网页包上传失败: %s', exc)
+                raise ValueError('网页包上传失败，请检查 ZIP 文件后重试') from exc
         if video and not _is_direct_video_url(video):
             if site_id:
                 raise ValueError(DIRECT_VIDEO_URL_ERROR)
@@ -7048,6 +7138,9 @@ def _parse_dataset_draft_item(site, dataset_key, item_id, form, storage_lang, so
                 or key in ('module_count', 'csrf_token', 'convert_webp')):
             continue
         fields[key] = form.get(key, '').strip()
+
+    if 'summary' in fields:
+        fields['summary'] = sanitize_richtext(fields['summary'], 'summary')
 
     detail_btn_mode = form.get('_show_detail_btn_mode')
     if detail_btn_mode == 'inherit':
@@ -7213,6 +7306,28 @@ def _live_preview_cache_set(key, html):
         oldest = min(_LIVE_PREVIEW_CACHE.items(), key=lambda item: item[1][0])[0]
         _LIVE_PREVIEW_CACHE.pop(oldest, None)
     _LIVE_PREVIEW_CACHE[key] = (time.monotonic(), html)
+
+
+@bp.route('/live_preview/<site_id>/assets/<path:filename>', strict_slashes=False)
+def live_preview_asset(site_id, filename):
+    """按站点提供工作台实时预览资源，避免嵌套 iframe 依赖易被覆盖的 session 上下文。"""
+    site = _site_from_ref(site_id)
+    if not site:
+        abort(404)
+    _require_site_access(site)
+    session['current_site_id'] = site.id
+
+    asset_path = (filename or '').replace('\\', '/').lstrip('/')
+    assets_root = Path(current_app.config['SITES_DIR']) / str(site.id) / 'assets'
+    candidate = (assets_root / asset_path).resolve()
+    try:
+        candidate.relative_to(assets_root.resolve())
+    except ValueError:
+        abort(403, '非法路径')
+    # 网页包入口保存为目录 URL；这里显式落到 index.html，保持包内相对资源路径正确。
+    if candidate.is_dir():
+        asset_path = f'{asset_path.rstrip("/")}/index.html'
+    return _safe_send_from_directory(assets_root, asset_path)
 
 
 @bp.route('/live_preview/<site_id>/')
@@ -7589,7 +7704,7 @@ def api_dataset_items(site_id, dataset_name):
             'id': it.get('id'),
             'title': str(title).strip(),
             'cover': str(cover).strip(),
-            'summary': str(summary).strip(),
+            'summary': richtext_to_plain_text(summary),
             'slug': str(slug).strip(),
             'category': str(category).strip(),
         })
@@ -8048,11 +8163,14 @@ def dataset_edit(dataset_key, item_id):
         from .style_registry import STYLE_REGISTRY
         from .icon_registry import icon_names
         template_name = 'dashboard/content_item_workspace.html' if workspace_mode else 'dashboard/panel_data_list.html'
+        editor_item = copy.deepcopy(current_item)
+        if editor_item.get('summary') not in (None, ''):
+            editor_item['summary'] = sanitize_richtext(editor_item['summary'], 'summary')
         return _render(template_name,
                        user=user, site=site,
-                       dataset_key=dataset_key, items=[current_item],
+                       dataset_key=dataset_key, items=[editor_item],
                        edit_prefix=f'_dataset/{dataset_key}',
-                       edit_item=current_item, edit_item_id=item_id,
+                       edit_item=editor_item, edit_item_id=item_id,
                        source_item=current_source_item or source_item,
                        current_lang=lang, languages=languages, default_lang=default_lang,
                        active=dataset_key,
@@ -8168,6 +8286,8 @@ def dataset_edit(dataset_key, item_id):
                 continue
             val = request.form.get(key, '').strip()
             fields[key] = val
+        if 'summary' in fields:
+            fields['summary'] = sanitize_richtext(fields['summary'], 'summary')
         detail_btn_mode = request.form.get('_show_detail_btn_mode')
         if detail_btn_mode == 'inherit':
             fields.pop('show_detail_btn', None)

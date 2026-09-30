@@ -22,17 +22,14 @@
 /* 对齐 dengtec 页面标准 .container：max-width 从 1500px 收到 --container-max(1400px)，
    与其他 block 左右边缘对齐（原本更宽会显得贴边突出）；窄屏保留 32px 安全边距不贴死屏幕 */
 .pc--dengtec .pc-shell { width: min(var(--container-max, 1400px), calc(100% - 32px)); margin: auto; }
-.pc--dengtec .pc-heading { display: flex; align-items: flex-start; gap: 12px; max-width: 920px; margin: 0 0 22px; }
-.pc--dengtec .pc-heading-icon { display: grid; flex: 0 0 40px; width: 40px; height: 40px; place-items: center; border: 1px solid var(--pc-tint-strong); background: var(--pc-tint); color: var(--pc-accent); }
-.pc--dengtec .pc-heading-icon svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
-.pc--dengtec .pc-eyebrow { margin: 0; color: var(--pc-accent); font-size: 12px; font-weight: 800; letter-spacing: .18em; }
-.pc--dengtec .pc-heading h1 { margin: 4px 0 6px; font-size: clamp(28px, 3vw, 40px); line-height: 1.12; }
-.pc--dengtec .pc-subtitle { max-width: 720px; margin: 0; color: var(--pc-muted); }
+.pc--dengtec .pc-heading { max-width: 920px; margin: 0 0 22px; }
+.pc--dengtec .pc-heading h1 { margin: 0; font-size: clamp(28px, 3vw, 40px); line-height: 1.12; }
 
 .pc--dengtec .pc-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 16px; border: 1px solid var(--pc-line); background: var(--pc-surface); box-shadow: 0 8px 24px color-mix(in srgb, var(--pc-text) 5%, transparent); }
-/* 对比分类下拉放在工具栏最后，并与左侧操作区保留稳定间距；不再 flex 拉伸，按内容定宽。 */
-.pc--dengtec .pc-group-filter { flex: 0 0 auto; min-width: 200px; margin-left: clamp(18px, 2vw, 70px); }
-.pc--dengtec .pc-group-filter select { width: 100%; }
+/* 少量对比分类并排显示；分类较多时 JS 自动生成下拉框。 */
+.pc--dengtec .pc-group-filter { display: flex; flex: 0 0 auto; min-width: 0; margin-left: clamp(18px, 2vw, 70px); }
+.pc--dengtec .pc-group-filter[hidden] { display: none; }
+.pc--dengtec .pc-group-filter select { width: 100%; min-width: 200px; }
 .pc--dengtec .pc-toolbar-fields,
 .pc--dengtec .pc-add-control,
 .pc--dengtec .pc-toolbar-summary { display: contents; }
@@ -44,6 +41,13 @@
 .pc--dengtec select { min-height: 40px; padding: 8px 11px; border: 1px solid var(--pc-line); border-radius: 0; outline: 0; background: var(--pc-card); color: var(--pc-text); }
 .pc--dengtec input:focus,
 .pc--dengtec select:focus { border-color: var(--pc-accent); box-shadow: 0 0 0 2px rgba(13, 148, 136, .12); }
+.pc--dengtec .pc-group-options { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--pc-line); background: var(--pc-card); }
+.pc--dengtec .pc-toolbar .pc-group-option { position: relative; display: block; color: var(--pc-muted); font-size: 13px; cursor: pointer; }
+.pc--dengtec .pc-group-option input { position: absolute; width: 1px; min-height: 0; height: 1px; padding: 0; margin: -1px; overflow: hidden; opacity: 0; }
+.pc--dengtec .pc-group-option span { display: flex; min-width: 72px; min-height: 34px; align-items: center; justify-content: center; padding: 6px 14px; white-space: nowrap; transition: color 150ms ease, background 150ms ease; }
+.pc--dengtec .pc-group-option:hover span { color: var(--pc-accent); background: var(--pc-tint); }
+.pc--dengtec .pc-group-option input:checked + span { background: var(--pc-accent); color: #fff; font-weight: 600; }
+.pc--dengtec .pc-group-option input:focus-visible + span { outline: 2px solid var(--pc-accent); outline-offset: 2px; }
 .pc--dengtec .pc-toolbar-actions { display: flex; gap: 7px; }
 .pc--dengtec .pc-button,
 .pc--dengtec .pc-mini { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--pc-line); border-radius: 0; background: var(--pc-surface); color: var(--pc-text); cursor: pointer; text-decoration: none; transition: border-color 150ms ease, color 150ms ease, background 150ms ease; }
@@ -91,19 +95,30 @@
    加到 6 列（1534px）才超出触发横向滚动 */
 .pc--dengtec .pc-product-head { position: sticky; top: 0; z-index: 5; width: 224px; background: var(--pc-surface); text-align: left; vertical-align: top !important; }
 /* 正方形容器：aspect-ratio 1/1 固定方形，object-fit: contain 完整显示图片不裁切（四周按需留白） */
-.pc--dengtec .pc-product-image { width: 100%; aspect-ratio: 1 / 1; margin-bottom: 10px; background: var(--pc-soft); object-fit: contain; }
-.pc--dengtec .pc-product-title { font-size: 15px; line-height: 1.4; }
+.pc--dengtec .pc-product-image { box-sizing: border-box; width: 100%; aspect-ratio: 1 / 1; margin-bottom: 10px; padding: 10px; background: color-mix(in srgb, var(--color-surface-card, var(--pc-card)), var(--color-primary, var(--pc-accent)) 4%); object-fit: contain; }
+/* 详情入口移到图片与标题上：图片链接撑满图区，hover 时轻微压暗提示可点 */
+.pc--dengtec .pc-product-image-link { display: block; }
+.pc--dengtec .pc-product-image-link:hover .pc-product-image { opacity: .85; }
+.pc--dengtec .pc-product-link { color: inherit; text-decoration: none; }
+.pc--dengtec .pc-product-link:hover { text-decoration: underline; }
+.pc--dengtec .pc-product-meta { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 7px 5px 10px; border-radius: 8px; background: var(--pc-accent); color: #fff; }
+.pc--dengtec .pc-product-title { min-width: 0; overflow: hidden; font-size: 15px; font-weight: 700; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
 .pc--dengtec .pc-product-subtitle { display: -webkit-box; margin-top: 4px; overflow: hidden; color: var(--pc-muted); font-size: 12px; font-weight: 400; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .pc--dengtec .pc-product-price { margin-top: 8px; color: var(--pc-accent-2); font-weight: 800; }
-.pc--dengtec .pc-product-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.pc--dengtec .pc-product-actions { display: flex; flex: 0 0 auto; gap: 1px; flex-wrap: nowrap; margin: 0; }
 .pc--dengtec .pc-mini { width: 32px; height: 32px; padding: 0; }
 .pc--dengtec .pc-mini svg { width: 16px; height: 16px; }
-.pc--dengtec .pc-group-row th { scroll-margin-top: 76px; padding: 10px 16px; background: var(--pc-tint); box-shadow: inset 3px 0 0 var(--pc-accent); color: var(--pc-accent-2); font-size: 13px; font-weight: 700; text-align: left; }
-.pc--dengtec .pc-group-title { position: sticky; left: 16px; display: inline-block; z-index: 4; }
+.pc--dengtec .pc-product-actions .pc-mini { width: 24px; min-width: 24px; height: 27px; border: 0; border-radius: 4px; background: transparent; box-shadow: none; color: #fff; }
+.pc--dengtec .pc-product-actions .pc-mini:hover:not(:disabled) { background: rgba(255, 255, 255, .16); color: #fff; }
+.pc--dengtec .pc-group-row th { height: 7px; scroll-margin-top: 76px; padding: 0; border: 0; background: var(--pc-line-strong); box-shadow: none; }
 .pc--dengtec .pc-param-name { color: var(--pc-text); font-size: 13px; font-weight: 600; }
 /* 单位跟在参数名右侧同一行、紧贴名称（inline + 小左边距），不再单独换行 */
 .pc--dengtec .pc-param-unit { display: inline; margin-left: 4px; color: var(--pc-muted); font-size: 11px; font-weight: 400; }
 .pc--dengtec .pc-table td { font-size: 14px; }
+.pc--dengtec .pc-data-row > th,
+.pc--dengtec .pc-data-row > td { background: var(--pc-surface); }
+.pc--dengtec .pc-data-row--alt > th,
+.pc--dengtec .pc-data-row--alt > td { background: color-mix(in srgb, var(--pc-tint), var(--pc-surface) 46%); }
 .pc--dengtec .pc-table tbody tr:not(.pc-group-row):hover td { background: color-mix(in srgb, var(--pc-tint), var(--pc-surface) 62%); }
 .pc--dengtec .pc-table tbody tr:not(.pc-group-row):hover .pc-param-name { background: var(--pc-tint); }
 .pc--dengtec .pc-empty,
@@ -131,7 +146,6 @@
 
 @media (max-width: 760px) {
   .pc--dengtec .pc-shell { width: min(100% - 20px, var(--container-max, 1400px)); }
-  .pc--dengtec .pc-heading-icon { flex-basis: 36px; width: 36px; height: 36px; }
   .pc--dengtec .pc-heading h1 { font-size: 28px; }
   .pc--dengtec .pc-toolbar-fields,
   .pc--dengtec .pc-toolbar-summary { display: contents; }
@@ -140,6 +154,8 @@
   .pc--dengtec .pc-group-filter { flex: 1 1 100%; min-width: 0; }
   /* 窄屏恢复正常流：取消桌面版的右推，独占一行 */
   .pc--dengtec .pc-group-filter { margin-left: 0; }
+  .pc--dengtec .pc-group-options { width: 100%; }
+  .pc--dengtec .pc-group-option { flex: 1 1 0; }
   .pc--dengtec .pc-layout { grid-template-columns: 1fr; }
   .pc--dengtec .pc-groups { position: sticky; top: var(--header-height, 64px); left: 0; z-index: 22; padding: 0; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--pc-line); }
   .pc--dengtec .pc-groups-sticky { position: static; padding: 10px; }

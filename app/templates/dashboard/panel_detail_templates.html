@@ -340,7 +340,7 @@
       <select class="form-select form-select-sm" id="detailTemplatePreviewItem" name="preview_item_id">
         <option value="" data-title="{{ page_label }}模板预览" data-summary="用于检查字段缺失、空值隐藏和组件降级的安全示例数据。">安全示例数据</option>
         {% for item in dataset_items or [] %}
-        <option value="{{ item.id }}" data-title="{{ item.title or item.name or item.slug or '未命名' }}" data-summary="{{ item.summary or item.description or item.excerpt or '' }}">#{{ item.id }} {{ item.title or item.name or item.slug or '未命名' }}</option>
+        <option value="{{ item.id }}" data-title="{{ item.title or item.name or item.slug or '未命名' }}" data-summary="{{ (item.summary or item.description or item.excerpt or '') | striptags }}">#{{ item.id }} {{ item.title or item.name or item.slug or '未命名' }}</option>
         {% endfor %}
       </select>
       <div class="dt-preview-actions">
