@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="{{ (current_lang or 'zh-CN')[:2] }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{{ page_label }} · {{ '创建副本' if is_duplicate_content else ('新建内容' if is_new_content else ('编辑 #' ~ edit_item_id)) }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260721-minfont">
+  <style>
+    :root{--bs-primary:{{ admin_primary }};--bs-primary-rgb:{{ admin_primary_rgb }};--theme-primary:{{ admin_primary }};--theme-primary-hover:{{ admin_primary_hover }}}
+    *{box-sizing:border-box}
+    body{margin:0;background:#eee;color:#172033;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}
+    .content-edit-workspace{min-height:100vh;padding:28px 24px 44px}
+    .content-edit-shell{max-width:1540px;margin:0 auto;position:relative}
+    .content-edit-hero{margin:0 0 20px;padding-right:48px}
+    .content-edit-hero h1{font-size:24px;line-height:1.2;margin:0 0 7px;letter-spacing:-.02em;font-weight:720}
+    .content-edit-hero p{margin:0;color:#64748b}
+    .content-edit-panel{background:transparent;border:0;box-shadow:none;padding:0}
+    .content-edit-layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:18px;align-items:start}
+    .content-edit-outline{position:sticky;top:18px;border:1px solid #dfe6eb;background:#fff;box-shadow:0 4px 16px rgba(15,23,42,.055)}
+    .content-edit-outline-title{padding:12px 14px;border-bottom:1px solid #e8edf1;background:#fafcfd;font-size:13px;font-weight:700;color:#172033}
+    .content-edit-outline-list{padding:7px;max-height:calc(100vh - 82px);overflow-y:auto;overscroll-behavior:contain}
+    .content-edit-outline-button{width:100%;min-height:34px;padding:7px 9px;border:0;background:transparent;color:#526172;text-align:left;font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer}
+    .content-edit-outline-button:before{content:"";width:4px;height:4px;flex:0 0 4px;background:#aab5bf}
+    .content-edit-outline-button:hover{background:#f1f5f6;color:{{ admin_primary }}}
+    .content-edit-outline-button.is-active{background:{{ admin_primary_light }};color:{{ admin_primary }};font-weight:700}
+    .content-edit-outline-button.is-active:before{background:{{ admin_primary }}}
+    .content-edit-outline-button.is-child{padding-left:22px;color:#6b7785}
+    .content-edit-outline-button.is-child:before{width:10px;height:1px;flex-basis:10px;background:#c5ced6}
+    .content-edit-outline-button.is-child.is-active{color:{{ admin_primary }}}
+    .content-edit-outline-button.is-child.is-active:before{background:{{ admin_primary }}}
+    .content-edit-main{min-width:0}
+    .content-edit-panel .ds-edit-head{position:absolute;top:0;right:0;width:auto;margin:0;padding:0;z-index:5;justify-content:flex-end}
+    .content-edit-panel .ds-edit-title{display:none}
+    .content-edit-panel .dataset-edit-form{width:100%;margin:0;padding:0;background:transparent}
+    .content-edit-panel .dataset-edit-form>.ds-card,
+    .content-edit-panel .dataset-edit-form>.detail-field-section{
+      background:#fff!important;
+      border:0!important;
+      border-radius:0!important;
+      box-shadow:0 5px 18px rgba(15,23,42,.065);
+      margin-bottom:18px!important;
+      overflow:hidden;
+    }
+    .content-edit-panel .dataset-edit-form>.ds-card:last-of-type,
+    .content-edit-panel .dataset-edit-form>.detail-field-section:last-of-type{margin-bottom:0!important}
+    .content-edit-panel .dataset-edit-form .ds-side-card,
+    .content-edit-panel .dataset-edit-form .detail-field-section{
+      grid-template-columns:minmax(0,1fr)!important;
+    }
+    .content-edit-panel .dataset-edit-form .ds-side-card>.ds-card-head,
+    .content-edit-panel .dataset-edit-form .detail-field-section>.small.fw-semibold,
+    .content-edit-panel .dataset-edit-form .detail-field-section>.d-flex:first-child{
+      grid-column:1!important;
+      grid-row:auto!important;
+      padding:12px 16px!important;
+      border-right:0!important;
+      border-bottom:1px solid #edf1f4!important;
+      background:linear-gradient(180deg,#fff,#fafcfd);
+      font-weight:700;
+    }
+    .content-edit-panel .dataset-edit-form .detail-field-section>.d-flex:first-child{flex-direction:row;align-items:center!important;justify-content:space-between!important;gap:10px}
+    .content-edit-panel .dataset-edit-form .detail-field-section>*:not(:first-child){grid-column:1!important}
+    .content-edit-panel .dataset-edit-form .detail-table-item,
+    .content-edit-panel .dataset-edit-form .detail-link-item,
+    .content-edit-panel .dataset-edit-form .detail-spec-group-item{
+      grid-template-columns:minmax(0,1fr)!important;
+      border:1px solid #e7ecf0!important;
+      border-radius:0!important;
+      background:#fff;
+      box-shadow:0 2px 8px rgba(15,23,42,.045);
+      overflow:hidden;
+    }
+    .content-edit-panel .dataset-edit-form .detail-table-item>.small.fw-semibold,
+    .content-edit-panel .dataset-edit-form .detail-link-item>.small.fw-semibold,
+    .content-edit-panel .dataset-edit-form .detail-spec-group-item>.d-flex:first-child{
+      grid-column:1!important;
+      grid-row:auto!important;
+      padding:12px 16px!important;
+      border-right:0!important;
+      border-bottom:1px solid #edf1f4!important;
+      background:linear-gradient(180deg,#fff,#fafcfd);
+    }
+    .content-edit-panel .dataset-edit-form .detail-spec-group-item>.d-flex:first-child{flex-direction:row;align-items:center!important;justify-content:space-between!important;gap:10px}
+    .content-edit-panel .dataset-edit-form .detail-table-input-grid,
+    .content-edit-panel .dataset-edit-form .detail-spec-rows,
+    .content-edit-panel .dataset-edit-form .detail-link-item>.mb-2,
+    .content-edit-panel .dataset-edit-form .detail-link-item>div:not(.small){
+      grid-column:1!important;
+      margin:0!important;
+    }
+    .content-edit-panel .dataset-edit-form .detail-content-block-item{grid-template-columns:minmax(0,1fr)!important;gap:12px;border:1px solid #e7ecf0!important;border-radius:0!important;box-shadow:0 2px 8px rgba(15,23,42,.045)}
+    .content-edit-panel .dataset-edit-form .detail-content-block-side{
+      display:grid;
+      grid-template-columns:minmax(130px,auto) minmax(140px,220px) minmax(160px,240px);
+      align-items:center;
+      gap:10px;
+      padding-bottom:10px;
+      border-bottom:1px solid #edf1f4;
+    }
+    .content-edit-panel .dataset-edit-form .detail-content-block-side>.d-flex:first-child{min-width:130px}
+    .content-edit-panel #detailContentBlocksList,
+    .content-edit-panel #detailFeaturesList,
+    .content-edit-panel #detailFaqsList{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr)!important;
+      gap:14px!important;
+      margin:0!important;
+    }
+    .content-edit-panel #detailContentBlocksList>.detail-content-block-item,
+    .content-edit-panel .detail-spec-group-item,
+    .content-edit-panel .detail-table-item,
+    .content-edit-panel .detail-link-item,
+    .content-edit-panel #detailFeaturesList>.detail-feature-item,
+    .content-edit-panel #detailFaqsList>.detail-faq-edit-item{margin:0!important;min-width:0}
+    .content-edit-panel .dataset-edit-form .ds-card-body{width:100%;margin:0;padding:14px 16px}
+    .content-edit-panel .dataset-edit-form textarea.form-control{min-height:56px}
+    .content-edit-panel .form-control,.content-edit-panel .form-select{border-color:#d9e1e8;border-radius:0;background-color:#fff}
+    .content-edit-panel .rounded,.content-edit-panel .card{border-radius:0!important}
+    .content-edit-panel .form-control:focus,.content-edit-panel .form-select:focus{border-color:{{ admin_primary }};box-shadow:0 0 0 3px rgba({{ admin_primary_rgb }},.10)}
+    .content-edit-panel .btn{border-radius:0}
+    .content-edit-panel .btn-outline-primary{color:{{ admin_primary }};border-color:{{ admin_primary }};background:#fff}
+    .content-edit-panel .btn-outline-primary:hover,
+    .content-edit-panel .btn-outline-primary:focus{color:#fff;border-color:{{ admin_primary_hover }};background:{{ admin_primary_hover }};box-shadow:none}
+    .content-edit-panel .btn-primary{color:#fff;border-color:{{ admin_primary }};background:{{ admin_primary }}}
+    .content-edit-panel #detailGalleryList{grid-template-columns:repeat(3,minmax(260px,1fr));gap:12px}
+    .content-edit-panel .dataset-edit-form #detailGalleryList .detail-gallery-item,
+    .content-edit-panel .dataset-edit-form .detail-feature-item,
+    .content-edit-panel .dataset-edit-form .detail-file-edit-item,
+    .content-edit-panel .dataset-edit-form .detail-faq-edit-item{
+      background:#fff;
+      /* border:0!important; */
+      border-radius:0!important;
+      box-shadow:0 3px 12px rgba(15,23,42,.065);
+    }
+    .content-edit-panel #detailGalleryList .detail-gallery-item{grid-template-columns:80px minmax(0,1fr);}
+    .content-edit-panel #detailGalleryList .module-media-picker{width:82px;height:72px;min-height:72px}
+    .content-edit-panel #detailGalleryList .module-media-url-row,
+    .content-edit-panel #detailGalleryList .module-media-alt-input{min-width:0}
+    .content-edit-panel .panel-save-bar{position:static;display:flex;justify-content:flex-end;width:max-content;margin:20px 0 0 auto;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none;backdrop-filter:none}
+    .content-edit-panel .panel-save-bar .btn{width:auto!important;min-width:112px;height:36px;padding:0 20px;font-size:13px;font-weight:700}
+    .content-edit-panel .panel-save-bar .btn svg{width:15px;height:15px}
+    /* 所有组件统一为：标题栏 + 25px 编辑内容区；不再用子元素 margin 模拟内距。 */
+    .content-edit-panel .dataset-edit-form>.ds-card>.ds-card-body{padding:25px!important}
+    .content-edit-panel .dataset-edit-form>.detail-field-section{
+      padding:0 25px 25px!important;
+    }
+    .content-edit-panel .dataset-edit-form>.detail-field-section>.small.fw-semibold,
+    .content-edit-panel .dataset-edit-form>.detail-field-section>.d-flex:first-child{
+      margin:0 -25px 25px!important;
+      padding:12px 25px!important;
+    }
+    .content-edit-panel .dataset-edit-form .detail-table-item,
+    .content-edit-panel .dataset-edit-form .detail-link-item,
+    .content-edit-panel .dataset-edit-form .detail-spec-group-item,
+    .content-edit-panel .dataset-edit-form .detail-content-block-item{
+      padding:0 25px 25px!important;
+    }
+    .content-edit-panel .dataset-edit-form .detail-table-item>.small.fw-semibold,
+    .content-edit-panel .dataset-edit-form .detail-link-item>.small.fw-semibold,
+    .content-edit-panel .dataset-edit-form .detail-spec-group-item>.d-flex:first-child,
+    .content-edit-panel .dataset-edit-form .detail-content-block-item>.detail-content-block-side{
+      margin:0 -25px 25px!important;
+      padding:12px 25px!important;
+    }
+    .content-edit-panel .dataset-edit-form .detail-gallery-item,
+    .content-edit-panel .dataset-edit-form .detail-feature-item,
+    .content-edit-panel .dataset-edit-form .detail-file-edit-item,
+    .content-edit-panel .dataset-edit-form .detail-faq-edit-item{
+      padding:0 25px 25px!important;
+    }
+    .content-edit-panel .dataset-edit-form .detail-gallery-item>.d-flex:first-child,
+    .content-edit-panel .dataset-edit-form .detail-feature-item>.d-flex:first-child,
+    .content-edit-panel .dataset-edit-form .detail-file-edit-item>.d-flex:first-child,
+    .content-edit-panel .dataset-edit-form .detail-faq-edit-item>.d-flex:first-child{
+      margin:0 -25px 25px!important;
+      padding:12px 25px!important;
+      border-bottom:1px solid #edf1f4;
+      background:#fafcfd;
+    }
+    .content-edit-panel .dataset-edit-form .detail-table-input-grid,
+    .content-edit-panel .dataset-edit-form .detail-spec-rows,
+    .content-edit-panel .dataset-edit-form .detail-link-item>.mb-2,
+    .content-edit-panel .dataset-edit-form .detail-link-item>div:not(.small){padding:0!important;margin:0!important}
+    .content-edit-panel .dataset-edit-form .detail-link-item{display:grid;gap:12px}
+    /* 不同数据类型采用各自适合的紧凑布局。 */
+    .content-edit-panel #detailGalleryList{
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      justify-content:stretch;
+      align-items:start;
+    }
+    .content-edit-panel #detailFeaturesList,
+    .content-edit-panel #detailFaqsList{
+      display:grid!important;
+      grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      gap:14px!important;
+    }
+    .content-edit-panel #detailFeaturesList>.detail-feature-item,
+    .content-edit-panel #detailFaqsList>.detail-faq-edit-item{margin:0!important;min-width:0}
+    .content-edit-panel .detail-feature-item>.row{
+      display:grid;
+      grid-template-columns:minmax(120px,160px) minmax(150px,200px) minmax(0,1fr);
+      gap:10px;
+      margin:0;
+    }
+    .content-edit-panel .detail-feature-item>.row>[class*="col-"]{width:auto;max-width:none;padding:0}
+    .content-edit-panel .detail-faq-edit-item{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+    .content-edit-panel .detail-faq-edit-item>.d-flex:first-child{margin-bottom:15px!important}
+    .content-edit-panel #detailFilesList{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+    .content-edit-panel #detailFilesList>.detail-file-edit-item{margin:0!important}
+    /* 组件内容区统一保留 25px 真实内距，不再用负外边距拉伸标题。*/
+    .content-edit-panel .dataset-edit-form>.detail-field-section,
+    .content-edit-panel .dataset-edit-form .detail-table-item,
+    .content-edit-panel .dataset-edit-form .detail-link-item,
+    .content-edit-panel .dataset-edit-form .detail-spec-group-item,
+    .content-edit-panel .dataset-edit-form .detail-content-block-item,
+    .content-edit-panel .dataset-edit-form .detail-gallery-item,
+    .content-edit-panel .dataset-edit-form .detail-feature-item,
+    .content-edit-panel .dataset-edit-form .detail-file-edit-item,
+    .content-edit-panel .dataset-edit-form .detail-faq-edit-item{
+      padding:25px!important;
+    }
+    .content-edit-panel .dataset-edit-form>.detail-field-section>.small.fw-semibold,
+    .content-edit-panel .dataset-edit-form>.detail-field-section>.d-flex:first-child,
+    .content-edit-panel .dataset-edit-form .detail-table-item>.small.fw-semibold,
+    .content-edit-panel .dataset-edit-form .detail-link-item>.small.fw-semibold,
+    .content-edit-panel .dataset-edit-form .detail-spec-group-item>.d-flex:first-child,
+    .content-edit-panel .dataset-edit-form .detail-content-block-item>.detail-content-block-side,
+    .content-edit-panel .dataset-edit-form .detail-gallery-item>.d-flex:first-child,
+    .content-edit-panel .dataset-edit-form .detail-feature-item>.d-flex:first-child,
+    .content-edit-panel .dataset-edit-form .detail-file-edit-item>.d-flex:first-child,
+    .content-edit-panel .dataset-edit-form .detail-faq-edit-item>.d-flex:first-child{
+      margin:0 0 18px!important;
+      padding:5px 0 5px!important;
+      border-bottom:1px solid #edf1f4!important;
+      background:#fff!important;
+    }
+    /* 正文块：画布保持宽度，但实际编辑字段控制在舒适阅读宽度。*/
+    .content-edit-panel .dataset-edit-form .detail-content-block-item{gap:0!important}
+    .content-edit-panel .dataset-edit-form .detail-content-block-side{
+      grid-template-columns:minmax(140px,1fr) 180px 210px;
+      gap:12px;
+    }
+    .content-edit-panel .dataset-edit-form .detail-content-block-main{
+      width:100%;
+      max-width:none;
+      gap:10px;
+      min-width:0;
+    }
+    .content-edit-panel .dataset-edit-form .detail-content-block-main textarea{min-height:84px}
+    .content-edit-panel .dataset-edit-form .detail-content-media-fields.module-media-field{
+      grid-template-columns:112px minmax(0,1fr)!important;
+      gap:12px!important;
+      max-width:1040px;
+    }
+    .content-edit-panel .dataset-edit-form .detail-content-media-fields .module-media-picker{
+      width:112px!important;
+      min-height:96px!important;
+      height:96px!important;
+    }
+    .content-edit-panel .dataset-edit-form .detail-content-block-item[data-block-type="embed"] .detail-content-embed-fields.module-media-field{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr)!important;
+      gap:8px!important;
+      width:min(620px,100%)!important;
+      max-width:620px!important;
+    }
+    .content-edit-panel .dataset-edit-form .detail-content-embed-fields>.module-media-layout{
+      grid-template-columns:112px minmax(0,420px)!important;
+      column-gap:12px!important;
+      width:100%;
+      justify-content:start!important;
+    }
+    .content-edit-panel .dataset-edit-form .detail-content-embed-fields .module-media-picker{
+      width:112px!important;
+      min-height:96px!important;
+      height:96px!important;
+    }
+    .content-edit-panel .dataset-edit-form .detail-content-embed-fields .module-media-content>.form-text{text-align:left!important}
+    .content-edit-panel .dataset-edit-form .detail-content-block-item:not([data-block-type="embed"]) .detail-content-embed-fields,
+    .content-edit-panel .dataset-edit-form .detail-content-embed-fields[hidden]{display:none!important}
+    .content-edit-panel .dataset-edit-form .detail-content-gallery-fields,
+    .content-edit-panel .dataset-edit-form .detail-content-table-fields{max-width:1080px}
+    /* 提示：文字在左侧、提示类型设置在右，不再留一大片空白。*/
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 220px;
+      gap:10px 18px;
+      align-items:start;
+    }
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main>input:first-child{grid-column:1 / -1}
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-textarea-field{grid-column:1;grid-row:2}
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-note-fields{grid-column:2;grid-row:2;align-self:start}
+    /* 图文：标题横跨整行，文字与媒体并排编辑。*/
+    .content-edit-panel .detail-content-block-item[data-block-type="media_text"] .detail-content-block-main{
+      display:grid;
+      grid-template-columns:minmax(360px,1.08fr) minmax(380px,.92fr);
+      gap:12px 22px;
+      align-items:start;
+    }
+    .content-edit-panel .detail-content-block-item[data-block-type="media_text"] .detail-content-block-main>input:first-child{grid-column:1 / -1}
+    .content-edit-panel .detail-content-block-item[data-block-type="media_text"] .detail-content-textarea-field{grid-column:1;grid-row:2}
+    .content-edit-panel .detail-content-block-item[data-block-type="media_text"] .detail-content-image-fields{grid-column:2;grid-row:2}
+    .content-edit-panel .detail-content-block-item[data-block-type="media_text"] .detail-content-media-fields.module-media-field{max-width:none}
+    .content-edit-panel .detail-content-block-item[data-block-type="image"] .detail-content-image-fields,
+    .content-edit-panel .detail-content-block-item[data-block-type="video"] .detail-content-video-fields{max-width:980px}
+    .content-edit-panel [data-field-section="detail_content_blocks"]>.d-flex:first-child{align-items:center!important}
+    .content-edit-panel [data-field-section="detail_content_blocks"]>.d-flex:first-child>.d-flex{justify-content:flex-end;gap:5px!important;flex-wrap:wrap}
+    /* 媒体区：类型单独一行，下方才是预览与字段，避免三栏割裂。*/
+    .content-edit-panel [data-field-section="media"]>.ds-card-body{padding:0!important}
+    .content-edit-panel [data-field-section="media"] .ds-media-grid{
+      display:grid;
+      grid-template-columns:minmax(0,1fr);
+      gap:20px;
+      max-width:1080px;
+    }
+    .content-edit-panel [data-field-section="media"] .ds-media-preview-col{
+      display:grid;
+      grid-template-columns:80px max-content;
+      align-items:center;
+      justify-content:start;
+      gap:12px;
+      padding-bottom:16px;
+      border-bottom:1px solid #edf1f4;
+    }
+    .content-edit-panel [data-field-section="media"] .ds-media-preview-col>.form-label{margin:0}
+    .content-edit-panel [data-field-section="media"] .ds-media-preview-col>.seg-radio{
+      flex-wrap:nowrap;
+      align-items:center;
+      white-space:nowrap;
+    }
+    .content-edit-panel [data-field-section="media"] .ds-media-preview-col>.seg-radio .seg-radio-option{margin:0}
+    .content-edit-panel [data-field-section="media"] .ds-media-fields-col{width:100%;max-width:980px;gap:0}
+    .content-edit-panel [data-field-section="media"] .dataset-media-field{
+      grid-template-columns:120px minmax(0,1fr);
+      gap:8px 16px;
+      align-items:start;
+    }
+    .content-edit-panel [data-field-section="media"] .dataset-media-field>.form-label{padding-top:2px}
+    .content-edit-panel [data-field-section="media"] .module-media-picker{width:120px;height:100px;min-height:100px}
+    .content-edit-panel [data-field-section="media"] .dataset-media-field[data-media-kind="embed"]>.module-media-layout{
+      grid-template-columns:120px minmax(0,1fr);
+      column-gap:16px;
+    }
+    /* 正文面板与内部内容块分层：内容块不再贴边框。*/
+    .content-edit-panel .dataset-edit-form>[data-field-section="detail_content_blocks"]{
+      padding:0!important;
+      background:#f3f6f8!important;
+    }
+    .content-edit-panel .dataset-edit-form>[data-field-section="detail_content_blocks"]>.d-flex:first-child{
+      margin:0!important;
+      padding:14px 25px!important;
+      background:#fff!important;
+      border-bottom:1px solid #e5ebef!important;
+    }
+    .content-edit-panel .dataset-edit-form>[data-field-section="detail_content_blocks"]>#detailContentBlocksList{
+      padding:25px!important;
+      gap:16px!important;
+      background:#f3f6f8;
+    }
+    .content-edit-panel .detail-content-slot-section{
+      padding:0!important;
+      background:#fff!important;
+      border:0!important;
+      box-shadow:0 5px 18px rgba(15,23,42,.065)!important;
+    }
+    .content-edit-panel .detail-content-slot-section>.editor-component__body{
+      padding:25px!important;
+    }
+    .content-edit-panel .detail-content-slot-section .detail-content-template-slot{
+      display:block!important;
+      margin:0!important;
+      padding:0!important;
+      background:#fff!important;
+      border:0!important;
+      box-shadow:none!important;
+    }
+    .content-edit-panel .detail-content-slot-section .detail-content-template-slot>.detail-content-block-side{
+      display:none!important;
+    }
+    .content-edit-panel .detail-content-slot-section .detail-content-template-slot>.detail-content-block-main{
+      width:100%;
+      max-width:none!important;
+    }
+    .content-edit-panel #detailContentBlocksList>.detail-content-block-item{
+      /* border:0!important; */
+      box-shadow:0 3px 12px rgba(15,23,42,.07)!important;
+    }
+    .content-edit-panel .dataset-edit-form .detail-content-block-item>.detail-content-block-side{
+      display:flex;
+      align-items:center;
+      margin:0 0 20px!important;
+      padding:5px 0 5px!important;
+      gap:12px;
+    }
+    .content-edit-panel .dataset-edit-form .detail-content-block-side>.d-flex:first-child{display:contents!important}
+    .content-edit-panel .dataset-edit-form .detail-content-block-side>.d-flex:first-child>.small{order:1;margin-right:auto}
+    .content-edit-panel .dataset-edit-form .detail-content-block-side .detail-content-type-select{order:2;width:180px;flex:0 0 180px}
+    .content-edit-panel .dataset-edit-form .detail-content-block-side .detail-content-layout-wrap{order:3;width:210px;flex:0 0 210px}
+    .content-edit-panel .dataset-edit-form .detail-content-block-side .detail-content-layout-field{width:100%}
+    .content-edit-panel .dataset-edit-form .detail-content-block-side .ds-danger-icon{order:4;margin-left:0!important}
+    /* 提示块：标题和类型并排，正文占据完整下一行。*/
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main{
+      grid-template-columns:minmax(0,1fr) 220px;
+      gap:10px 16px;
+      max-width:1080px;
+    }
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main>input:first-child{grid-column:1;grid-row:1}
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-note-fields{grid-column:2;grid-row:1}
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-textarea-field{grid-column:1 / -1;grid-row:2;min-height:92px}
+    /* 单媒体块控制宽度，预览和字段形成一个完整编辑组。*/
+    .content-edit-panel .detail-content-block-item[data-block-type="image"] .detail-content-block-main,
+    .content-edit-panel .detail-content-block-item[data-block-type="video"] .detail-content-block-main{max-width:1080px}
+    .content-edit-panel .detail-content-block-item[data-block-type="image"] .detail-content-image-fields,
+    .content-edit-panel .detail-content-block-item[data-block-type="video"] .detail-content-video-fields{max-width:980px}
+    .content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-block-main,
+    .content-edit-panel .detail-content-block-item[data-block-type="gallery"] .detail-content-block-main,
+    .content-edit-panel .detail-content-block-item[data-block-type="embed"] .detail-content-block-main{max-width:1080px}
+    /* 编辑组件统一结构：标题、内容区、可重复集合、内容块。*/
+    .content-edit-panel .dataset-edit-form>.editor-component{
+      display:block!important;
+      padding:0!important;
+      overflow:visible;
+      background:#fff!important;
+      border:0!important;
+      box-shadow:0 5px 18px rgba(15,23,42,.065);
+    }
+    .content-edit-panel .editor-component>.editor-component__header{
+      display:flex!important;
+      align-items:center!important;
+      justify-content:space-between!important;
+      gap:12px!important;
+      margin:0!important;
+      padding:13px 16px!important;
+      border:0!important;
+      border-bottom:1px solid #e7ecef!important;
+      background:#fff!important;
+    }
+    .content-edit-panel .editor-component>.editor-component__body{
+      display:block!important;
+      width:100%;
+      margin:0!important;
+      padding:25px!important;
+      background:#fff;
+      border:0!important;
+      min-width:0;
+    }
+    .content-edit-panel .editor-component>.editor-component__body.has-editor-collection{background:#f3f6f8}
+    .content-edit-panel .editor-component>.editor-component__body.editor-component__collection{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr);
+      gap:16px!important;
+      padding:25px!important;
+      /* background:#f3f6f8; */
+    }
+    .content-edit-panel .editor-component__collection{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr);
+      gap:16px!important;
+      width:100%;
+      margin:0!important;
+      padding:0!important;
+    }
+    .content-edit-panel .editor-component__collection>.editor-component__item{
+      min-width:0;
+      margin:0!important;
+      padding:0 25px 20px!important;
+      background:#fff!important;
+      /* border:0!important; */
+      border-radius:0!important;
+      box-shadow:0 3px 12px rgba(15,23,42,.07)!important;
+    }
+    .content-edit-panel .editor-component__item>.d-flex:first-child,
+    .content-edit-panel .editor-component__item>.small.fw-semibold:first-child,
+    .content-edit-panel .editor-component__item>.detail-content-block-side{
+      width:100%;
+      margin:0 0 14px!important;
+      padding:11px 0 10px!important;
+      border:0!important;
+      border-bottom:1px solid #edf1f4!important;
+      background:#fff!important;
+    }
+    .content-edit-panel .editor-component__item>.editor-component__item-header{
+      display:flex!important;
+      align-items:center!important;
+      justify-content:space-between!important;
+      gap:12px!important;
+      width:100%;
+      margin:0 0 14px!important;
+      padding:11px 0 10px!important;
+      /* border:0!important; */
+      border-bottom:1px solid #edf1f4!important;
+      background:#fff!important;
+    }
+    .content-edit-panel .editor-component__item>.editor-component__item-body{
+      width:100%;
+      margin:0!important;
+      padding:0!important;
+      min-width:0;
+    }
+    .content-edit-panel .editor-component-stack,
+    .content-edit-panel .editor-component-stack__body{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr);
+      gap:18px!important;
+      padding:0!important;
+      background:transparent!important;
+    }
+    .content-edit-panel .editor-component-stack{margin:0 0 18px!important}
+    .content-edit-panel .editor-component-stack__body{margin:0!important}
+    /* 详情模板组件虽然需要放在同一排序容器中，但视觉和锚点上必须各自独立。
+       直属分区统一保留卡片间距，避免相邻的规格参数与详情链接看成一个组件。 */
+    .content-edit-panel #detailFieldSections>.detail-field-section{
+      display:block;
+      margin:0 0 18px!important;
+      background:#fff!important;
+      border:0!important;
+      box-shadow:0 5px 18px rgba(15,23,42,.065);
+      scroll-margin-top:64px;
+    }
+    .content-edit-panel #detailFieldSections>.detail-field-section:last-child{margin-bottom:0!important}
+    .content-edit-panel .detail-spec-group-item.editor-component{
+      display:block!important;
+      margin:0!important;
+      padding:0!important;
+      background:#fff!important;
+      border:0!important;
+      border-radius:0!important;
+      box-shadow:0 5px 18px rgba(15,23,42,.065)!important;
+    }
+    .content-edit-panel .dataset-edit-form #detailFieldSections>.detail-spec-group-item.editor-component>.editor-component__header{
+      display:flex!important;
+      align-items:center!important;
+      justify-content:space-between!important;
+      gap:12px!important;
+      margin:0!important;
+      padding:13px 25px!important;
+      border:0!important;
+      border-bottom:1px solid #e7ecef!important;
+      background:#fff!important;
+    }
+    .content-edit-panel .dataset-edit-form #detailFieldSections>.detail-spec-group-item.editor-component>.editor-component__body{
+      display:grid!important;
+      width:100%;
+      gap:8px!important;
+      margin:0!important;
+      padding:25px!important;
+      background:#fff!important;
+    }
+    /* 没有参数行时收起空内容区；新增第一行后 :has 条件自动失效并恢复正常内边距。 */
+    .content-edit-panel .dataset-edit-form #detailFieldSections>.detail-spec-group-item.editor-component>.editor-component__body:not(:has(>.dataset-spec-item)){
+      display:none!important;
+      padding:0!important;
+    }
+    /* 正文块内部跟随卡片宽度，不再用固定 max-width 制造右侧空白。*/
+    .content-edit-panel #detailContentBlocksList .detail-content-block-main,
+    .content-edit-panel #detailContentBlocksList .detail-content-media-fields,
+    .content-edit-panel #detailContentBlocksList .detail-content-gallery-fields,
+    .content-edit-panel #detailContentBlocksList .detail-content-table-fields,
+    .content-edit-panel #detailContentBlocksList .detail-content-note-fields,
+    .content-edit-panel #detailContentBlocksList .detail-content-embed-fields{
+      width:100%;
+      max-width:none!important;
+    }
+    .content-edit-panel #detailContentBlocksList{
+      grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      align-items:start;
+    }
+    .content-edit-panel #detailContentBlocksList .detail-content-block-item[data-block-type="media_text"] .detail-content-block-main{
+      grid-template-columns:minmax(0,1fr)!important;
+    }
+    .content-edit-panel #detailContentBlocksList .detail-content-block-item[data-block-type="media_text"] .detail-content-block-main>*{
+      grid-column:1!important;
+      grid-row:auto!important;
+    }
+    /* 提示信息：标题与模板说明紧邻排列，正文独占下一行。 */
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main{
+      grid-template-columns:minmax(280px,520px) max-content minmax(0,1fr)!important;
+      gap:10px 14px!important;
+    }
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-title-field{
+      grid-column:1!important;
+      grid-row:1!important;
+      width:100%!important;
+    }
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-note-fields{
+      grid-column:2!important;
+      grid-row:1!important;
+      align-self:center!important;
+      white-space:nowrap;
+    }
+    .content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-textarea-field{
+      grid-column:1/-1!important;
+      grid-row:2!important;
+    }
+    /* 表格内容：标题和行列工具同一行，表格网格放在下一行。 */
+    .content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-block-main{
+      display:grid!important;
+      grid-template-columns:minmax(280px,520px) max-content minmax(0,1fr)!important;
+      gap:8px 12px!important;
+      align-items:center;
+    }
+    .content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-title-field{
+      grid-column:1!important;
+      grid-row:1!important;
+      width:100%!important;
+    }
+    .content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-table-fields{display:contents!important}
+    .content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-table-tools{
+      grid-column:2!important;
+      grid-row:1!important;
+      margin:0!important;
+      flex-wrap:nowrap;
+    }
+    .content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-table-grid{
+      grid-column:1/-1!important;
+      grid-row:2!important;
+      width:100%;
+    }
+    @media(max-width:1100px){
+      .content-edit-panel #detailContentBlocksList{grid-template-columns:minmax(0,1fr)!important}
+    }
+    .content-edit-panel .editor-component__body>input[type="hidden"]{display:none}
+    /* 详情模板选择器是工具条，不套用普通组件的垂直结构。*/
+    .content-edit-panel .dataset-edit-form>.ds-template-card{display:block!important;margin:0 0 18px!important;padding:0!important;background:#fff!important;border:0!important;border-radius:0!important;box-shadow:0 5px 18px rgba(15,23,42,.065);overflow:hidden}
+    .content-edit-panel .dataset-edit-form>.ds-template-card>.ds-template-card__body{display:grid!important;grid-template-columns:110px minmax(360px,1fr) minmax(280px,420px)!important;align-items:center;gap:18px;width:100%;margin:0!important;padding:18px 25px!important}
+    .content-edit-panel .ds-template-card__body>.form-label{margin:0!important;font-weight:600;color:#334155}
+    .content-edit-panel .ds-template-card__body>.ds-template-options{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+    .content-edit-panel .ds-template-card__body>.ds-help{margin:0;text-align:right;line-height:1.5}
+    @media(max-width:1100px){.content-edit-panel .dataset-edit-form>.ds-template-card>.ds-template-card__body{grid-template-columns:96px minmax(0,1fr)!important}.content-edit-panel .ds-template-card__body>.ds-help{grid-column:2;text-align:left}}
+    /* Slug、标题、分类同行；标签和简介各自独占一行。*/
+    .content-edit-panel .editor-component__body>.ds-basic-grid{grid-template-columns:minmax(0,1fr)!important;gap:12px}
+    .content-edit-panel .ds-basic-meta-grid,.content-edit-panel .ds-basic-taxonomy-grid{display:grid;grid-template-columns:minmax(190px,.75fr) minmax(320px,1.55fr) minmax(150px,.6fr);gap:12px}
+    .content-edit-panel .ds-basic-taxonomy-grid>div:last-child{grid-column:2/-1}
+    @media(max-width:900px){.content-edit-panel .ds-basic-meta-grid,.content-edit-panel .ds-basic-taxonomy-grid{grid-template-columns:minmax(0,1fr)}.content-edit-panel .ds-basic-taxonomy-grid>div:last-child{grid-column:auto}}
+    /* 单条高级编辑：仅限当前内容工作区，不覆盖共享模块样式。*/
+    .content-edit-panel #datasetAdvancedModules{
+      margin:18px 0 0;
+      padding:18px;
+      background:#f3f6f8;
+      border:1px solid #e0e7ec;
+      border-radius:0;
+    }
+    .content-edit-panel #datasetAdvancedModules .dataset-advanced-toolbar{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      margin:0 0 14px;
+      padding:12px 14px;
+      background:#fff;
+      border:1px solid #e4eaee;
+      box-shadow:0 2px 8px rgba(15,23,42,.045);
+    }
+    .content-edit-panel #datasetAdvancedModules .dataset-advanced-toolbar-copy{display:grid;gap:1px;min-width:0;margin-right:auto}
+    .content-edit-panel #datasetAdvancedModules .dataset-advanced-toolbar-copy strong{font-size:13px;color:#172033}
+    .content-edit-panel #datasetAdvancedModules .dataset-advanced-toolbar-copy span{font-size:12px;color:#718096}
+    .content-edit-panel #datasetAdvancedModules .dataset-advanced-module-list{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+    .content-edit-panel #datasetAdvancedModules .module-item.card{margin:0!important;border:1px solid #dde5ea!important;box-shadow:0 3px 12px rgba(15,23,42,.055)}
+    .content-edit-panel #datasetAdvancedModules .module-item.card .module-header{min-height:44px;padding:9px 14px!important;background:#fafcfd}
+    .content-edit-panel #datasetAdvancedModules .module-item.expanded.card .module-header{background:#fff}
+    .content-edit-panel #datasetAdvancedModules .module-item.card .module-config{padding:0 16px 16px!important;background:#fff}
+    .content-edit-panel #datasetAdvancedModules .content-style-tabs{margin:0 0 14px!important}
+    .content-edit-panel #datasetAdvancedModules .content-style-panel{padding:0!important}
+    .content-edit-panel #datasetAdvancedModules .module-config .form-label{margin-bottom:5px}
+    .content-edit-panel #datasetAdvancedModules .module-config .mb-3{margin-bottom:14px!important}
+    .content-edit-panel #datasetAdvancedModules .module-config .form-text{margin-top:5px;text-align:left}
+    /* 高级编辑的细节图库独立布局，避免被普通内容编辑器的图库卡片规则挤压。 */
+    .content-edit-panel #datasetAdvancedModules .detail-gallery-list{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr)!important;
+      gap:10px!important;
+    }
+    .content-edit-panel #datasetAdvancedModules .detail-gallery-item{
+      display:block!important;
+      width:100%!important;
+      min-height:0!important;
+      margin:0!important;
+      padding:0!important;
+      overflow:hidden!important;
+      background:#fff!important;
+      border:1px solid #dfe6eb!important;
+      box-shadow:none!important;
+    }
+    .content-edit-panel #datasetAdvancedModules .detail-gallery-item-header{
+      width:100%!important;
+      min-height:40px!important;
+      margin:0!important;
+      padding:8px 12px!important;
+      border:0!important;
+      background:#fafcfd!important;
+    }
+    .content-edit-panel #datasetAdvancedModules .detail-gallery-item.collapsed .detail-gallery-item-body{
+      display:none!important;
+    }
+    .content-edit-panel #datasetAdvancedModules .detail-gallery-item-body{
+      display:block;
+      width:100%!important;
+      min-width:0;
+      margin:0!important;
+      padding:14px!important;
+      border-top:1px solid #e7edf1;
+      background:#fff;
+    }
+    .content-edit-panel #datasetAdvancedModules .detail-gallery-item-body>.module-media-layout{
+      grid-template-columns:120px minmax(0,1fr);
+      column-gap:14px;
+      row-gap:0;
+    }
+    .content-edit-panel #datasetAdvancedModules .detail-gallery-item-body .module-media-picker{
+      width:120px!important;
+      height:96px!important;
+      min-height:96px!important;
+    }
+    @media(max-width:760px){
+      .content-edit-panel #datasetAdvancedModules .detail-gallery-item-body>.module-media-layout{grid-template-columns:84px minmax(0,1fr)}
+      .content-edit-panel #datasetAdvancedModules .detail-gallery-item-body .module-media-picker{width:84px!important;height:84px!important;min-height:84px!important}
+    }
+    @media(max-width:760px){.content-edit-panel #datasetAdvancedModules{padding:12px}.content-edit-panel #datasetAdvancedModules .dataset-advanced-toolbar{align-items:flex-start;flex-wrap:wrap}.content-edit-panel #datasetAdvancedModules .dataset-advanced-toolbar-copy{order:-1;flex:1 0 100%}}
+    @media(max-width:1200px){.content-edit-layout{grid-template-columns:180px minmax(0,1fr)}.content-edit-panel #detailGalleryList{grid-template-columns:repeat(2,minmax(0,1fr))}.content-edit-panel #detailFeaturesList,.content-edit-panel #detailFaqsList{grid-template-columns:1fr!important}}
+    @media(max-width:900px){.content-edit-workspace{padding:14px}.content-edit-panel{padding:12px}.content-edit-hero{padding-right:44px}.content-edit-layout{display:block}.content-edit-outline{display:none}.content-edit-panel #detailGalleryList{grid-template-columns:1fr}.content-edit-panel .dataset-edit-form .detail-content-block-side{display:grid;grid-template-columns:1fr}.content-edit-panel .dataset-edit-form .detail-content-block-side .detail-content-type-select,.content-edit-panel .dataset-edit-form .detail-content-block-side .detail-content-layout-wrap{width:100%;flex-basis:auto}.content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main,.content-edit-panel .detail-content-block-item[data-block-type="media_text"] .detail-content-block-main,.content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-block-main{grid-template-columns:1fr!important}.content-edit-panel .detail-content-block-item[data-block-type="note"] .detail-content-block-main>*,.content-edit-panel .detail-content-block-item[data-block-type="media_text"] .detail-content-block-main>*,.content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-title-field,.content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-table-tools,.content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-table-grid{grid-column:1!important;grid-row:auto!important}.content-edit-panel .detail-content-block-item[data-block-type="table"] .detail-content-table-tools{flex-wrap:wrap}}
+    /* Workspace layout uses !important display rules for component stacks.
+       Keep template-controlled hidden sections authoritative. */
+    .content-edit-panel .dataset-edit-form [hidden]{display:none!important}
+  </style>
+</head>
+<body>
+  <main class="content-edit-workspace"><div class="content-edit-shell">
+    <header class="content-edit-hero">
+      <h1>{{ page_label }} · {{ '创建副本' if is_duplicate_content else ('新建内容' if is_new_content else ('编辑 #' ~ edit_item_id)) }}</h1>
+      <p>{% if is_duplicate_content %}当前为临时副本，检查并修改内容后，填写必填项并保存才会正式创建。{% elif is_new_content %}当前为临时编辑状态，填写必填项并保存后才会正式创建内容。{% else %}编辑内容字段、媒体和详情组件，保存后会更新对应详情页。{% endif %}</p>
+    </header>
+    <section class="content-edit-panel">
+      <div class="content-edit-layout">
+        <aside class="content-edit-outline" aria-label="内容编辑导航">
+          <div class="content-edit-outline-title">内容导航</div>
+          <nav class="content-edit-outline-list" id="contentEditOutline"></nav>
+        </aside>
+        <div class="content-edit-main">{% include 'dashboard/panel_data_list.html' %}</div>
+      </div>
+    </section>
+  </div></main>
+  <script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
+  <script>
+  (function(){
+    var form=document.getElementById('datasetEditForm');
+    var outline=document.getElementById('contentEditOutline');
+    if(!form||!outline)return;
+    var collectionSelector='#detailGalleryList,#detailFeaturesList,#detailFilesList,#detailFaqsList,#detailContentBlocksList';
+    var itemSelector='.detail-gallery-item,.detail-feature-item,.detail-file-edit-item,.detail-faq-edit-item,.detail-content-block-item';
+    function markEditorCollection(collection){
+      collection.classList.add('editor-component__collection');
+      Array.from(collection.children).forEach(function(item){if(item.matches(itemSelector))item.classList.add('editor-component__item');});
+    }
+    Array.from(form.querySelectorAll(':scope>.ds-card:not(.ds-template-card),:scope>.detail-field-section,:scope>.detail-multi-section')).forEach(function(component){
+      component.classList.add('editor-component');
+      var header=component.querySelector(':scope>.ds-card-head,:scope>.small.fw-semibold,:scope>.d-flex:first-child');
+      if(header)header.classList.add('editor-component__header');
+      var body=component.querySelector(':scope>.editor-component__body,:scope>.ds-card-body');
+      if(!body){
+        body=document.createElement('div');
+        body.className='editor-component__body';
+        Array.from(component.childNodes).forEach(function(node){if(node!==header)body.appendChild(node);});
+        component.appendChild(body);
+      }else{
+        body.classList.add('editor-component__body');
+      }
+      var collections=body.matches(collectionSelector)?[body]:Array.from(body.querySelectorAll(collectionSelector));
+      collections.forEach(markEditorCollection);
+      if(collections.length)body.classList.add('has-editor-collection');
+    });
+    var collectionObserver=new MutationObserver(function(records){
+      records.forEach(function(record){
+        if(record.target instanceof Element&&record.target.matches(collectionSelector))markEditorCollection(record.target);
+      });
+    });
+    form.querySelectorAll(collectionSelector).forEach(function(collection){collectionObserver.observe(collection,{childList:true});});
+    /* 内容导航只绑定顶层组件。子项不参与锚点收集，确保“规格参数”和“详情链接”
+       分别滚动到 specs_N / link_N，而不是命中共同容器或内部字段。 */
+    var sectionSelector=':scope>.ds-card,:scope>.detail-field-section,:scope>.ds-settings-card,:scope>#detailFieldSections>.detail-field-section';
+    var sections=Array.from(form.querySelectorAll(sectionSelector)).filter(function(node){
+      if(node.offsetParent===null)return false;
+      return !(node.classList.contains('detail-content-template-slot')&&node.closest('.detail-content-slot-section'));
+    });
+    var navEntries=[];
+    sections.forEach(function(section,index){
+      var label=section.querySelector(':scope>.ds-card-head .ds-card-title,:scope>.ds-card-head,:scope>.small.fw-semibold,:scope>.d-flex:first-child .small.fw-semibold,:scope>.detail-content-block-side>.d-flex:first-child .small.fw-semibold');
+      var text=(label&&label.textContent||'').trim().replace(/\s+/g,' ');
+      if(!text)return;
+      section.id=section.id||'content-edit-section-'+index;
+      var button=document.createElement('button');
+      button.type='button';button.className='content-edit-outline-button';button.textContent=text;
+      button.addEventListener('click',function(){section.scrollIntoView({behavior:'smooth',block:'start'});});
+      outline.appendChild(button);
+      navEntries.push({section:section,button:button});
+    });
+    var buttons=navEntries.map(function(entry){return entry.button;});
+    if(buttons[0])buttons[0].classList.add('is-active');
+    if('IntersectionObserver'in window){
+      var observer=new IntersectionObserver(function(entries){
+        entries.filter(function(entry){return entry.isIntersecting;}).sort(function(a,b){return b.intersectionRatio-a.intersectionRatio;}).slice(0,1).forEach(function(entry){
+          var index=navEntries.findIndex(function(item){return item.section===entry.target;});buttons.forEach(function(btn,i){btn.classList.toggle('is-active',i===index);});
+        });
+      },{rootMargin:'-15% 0px -70% 0px',threshold:[0,.1,.5]});
+      navEntries.forEach(function(entry){observer.observe(entry.section);});
+    }
+  })();
+  </script>
+  {% include "dashboard/_readonly_guard.html" %}
+</body>
+</html>

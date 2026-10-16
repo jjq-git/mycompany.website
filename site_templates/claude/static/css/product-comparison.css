@@ -1,0 +1,174 @@
+.pc--claude {
+  /* 全部引用站点主题变量（settings.yaml theme 注入到 :root 的 --color-*），
+     不再硬编码；派生色用 color-mix 从主题色算出，任何站点自动跟随自己的主题 */
+  --pc-accent: var(--color-primary, #cc785c);
+  --pc-accent-2: var(--color-primary-hover, color-mix(in srgb, var(--color-primary, #cc785c), black 12%));
+  --pc-bg: var(--color-bg, #faf9f5);
+  --pc-card: var(--color-surface, #efe9de);
+  --pc-text: var(--color-text, #141413);
+  --pc-muted: var(--color-text-secondary, #6c6a64);
+  --pc-line: var(--color-border, #e6dfd8);
+  /* 大面积保持中性，仅用低浓度品牌色建立层级，避免整块高饱和色抢夺内容焦点。 */
+  --pc-surface: color-mix(in srgb, var(--pc-card), white 42%);
+  --pc-soft: color-mix(in srgb, var(--pc-surface), var(--pc-bg) 38%);
+  --pc-tint: color-mix(in srgb, var(--pc-accent) 7%, var(--pc-surface));
+  --pc-tint-strong: color-mix(in srgb, var(--pc-accent) 14%, var(--pc-surface));
+  --pc-line-strong: color-mix(in srgb, var(--pc-line), var(--pc-text) 8%);
+  padding: clamp(28px, 4vw, 52px) 0 72px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--pc-bg), white 18%) 0, var(--pc-bg) 280px);
+  color: var(--pc-text);
+  font-family: var(--font-sans, sans-serif);
+}
+
+/* 对齐页面标准 .container：max-width 与左右 padding 都跟随全局变量，
+   让对比模块和其他 block 左右边缘对齐（原本 1500px + 16px 边距会更宽更贴边） */
+.pc--claude .pc-shell { box-sizing: border-box; width: 100%; max-width: var(--container-max, 1400px); margin-inline: auto; padding-inline: var(--space-lg, 24px); }
+.pc--claude .pc-heading { max-width: 920px; margin: 0 0 22px; }
+.pc--claude .pc-heading h1 { margin: 0; font-family: var(--font-display, Georgia, 'Times New Roman', serif); font-size: clamp(30px, 3vw, 42px); font-weight: 500; line-height: 1.1; }
+
+.pc--claude .pc-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 16px; border: 1px solid var(--pc-line); border-radius: 14px; background: var(--pc-surface); box-shadow: 0 8px 24px color-mix(in srgb, var(--pc-text) 5%, transparent); }
+/* 少量对比分类并排显示；分类较多时 JS 自动生成下拉框。 */
+.pc--claude .pc-group-filter { display: flex; flex: 0 0 auto; min-width: 0; margin-left: clamp(18px, 2vw, 70px); }
+.pc--claude .pc-group-filter[hidden] { display: none; }
+.pc--claude .pc-group-filter select { width: 100%; min-width: 200px; }
+.pc--claude .pc-toolbar-fields,
+.pc--claude .pc-add-control,
+.pc--claude .pc-toolbar-summary { display: contents; }
+.pc--claude .pc-toolbar label { display: grid; gap: 5px; color: var(--pc-muted); font-size: 12px; }
+.pc--claude .pc-search { flex: 1 1 240px; }
+.pc--claude .pc-search input { width: 100%; }
+.pc--claude .pc-add { min-width: 210px; }
+.pc--claude input,
+.pc--claude select { min-height: 40px; padding: 8px 11px; border: 1px solid var(--pc-line); border-radius: 8px; outline: 0; background: var(--pc-card); color: var(--pc-text); }
+.pc--claude input:focus,
+.pc--claude select:focus { border-color: var(--pc-accent); box-shadow: 0 0 0 2px rgba(212, 93, 69, .12); }
+.pc--claude .pc-group-options { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--pc-line); border-radius: 10px; background: var(--pc-card); }
+.pc--claude .pc-toolbar .pc-group-option { position: relative; display: block; color: var(--pc-muted); font-size: 13px; cursor: pointer; }
+.pc--claude .pc-group-option input { position: absolute; width: 1px; min-height: 0; height: 1px; padding: 0; margin: -1px; overflow: hidden; opacity: 0; }
+.pc--claude .pc-group-option span { display: flex; min-width: 72px; min-height: 34px; align-items: center; justify-content: center; padding: 6px 14px; border-radius: 7px; white-space: nowrap; transition: color 150ms ease, background 150ms ease; }
+.pc--claude .pc-group-option:hover span { color: var(--pc-accent); background: var(--pc-tint); }
+.pc--claude .pc-group-option input:checked + span { background: var(--pc-accent); color: #fff; font-weight: 600; }
+.pc--claude .pc-group-option input:focus-visible + span { outline: 2px solid var(--pc-accent); outline-offset: 2px; }
+.pc--claude .pc-toolbar-actions { display: flex; gap: 7px; }
+.pc--claude .pc-button,
+.pc--claude .pc-mini { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--pc-line); border-radius: 8px; background: var(--pc-surface); color: var(--pc-text); cursor: pointer; text-decoration: none; transition: border-color 150ms ease, color 150ms ease, background 150ms ease; }
+.pc--claude .pc-button { min-height: 40px; padding: 8px 13px; gap: 7px; }
+.pc--claude .pc-icon-button { width: 40px; min-width: 33px; padding: 0; }
+.pc--claude .pc-button svg,
+.pc--claude .pc-mini svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.pc--claude .pc-button:hover:not(:disabled),
+.pc--claude .pc-button[aria-pressed="true"],
+.pc--claude .pc-mini:hover:not(:disabled) { border-color: var(--pc-accent); color: var(--pc-accent); }
+.pc--claude .pc-button:focus-visible,
+.pc--claude .pc-mini:focus-visible,
+.pc--claude .pc-group-link:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 2px; }
+.pc--claude .pc-button--primary { border-color: var(--pc-accent); background: var(--pc-accent); color: #fff; font-weight: 600; }
+.pc--claude .pc-button--primary:hover:not(:disabled) { border-color: var(--pc-accent-2); background: var(--pc-accent-2); color: #fff; }
+.pc--claude .pc-button:disabled,
+.pc--claude .pc-mini:disabled { opacity: .38; cursor: not-allowed; }
+/* 无产品时搜索框/产品下拉也置灰，禁用观感与按钮一致（分类下拉不禁用，不受影响） */
+.pc--claude .pc-toolbar input:disabled,
+.pc--claude .pc-toolbar select:disabled { opacity: .5; cursor: not-allowed; background: var(--pc-card); }
+.pc--claude .pc-limit { display: inline-flex; min-height: 40px; align-items: center; margin-left: auto; color: var(--pc-muted); font-size: 13px; line-height: 1.4; white-space: nowrap; }
+
+/* 已移除左侧“参数分类”侧栏：单列布局，表格占满整宽（少了 180px 侧栏，5 列在 1400 容器内不再溢出） */
+.pc--claude .pc-layout { display: grid; grid-template-columns: 1fr; margin-top: 16px; border: 1px solid var(--pc-line); border-radius: 14px; background: var(--pc-surface); box-shadow: 0 12px 30px color-mix(in srgb, var(--pc-text) 5%, transparent); }
+.pc--claude .pc-groups { position: relative; align-self: stretch; padding: 0; border-right: 1px solid var(--pc-line); border-radius: 14px 0 0 14px; background: var(--pc-card); }
+.pc--claude .pc-groups-sticky { position: sticky; top: var(--header-height, 64px); z-index: 22; padding: 20px 14px; border-radius: 14px 0 0 14px; background: var(--pc-card); }
+.pc--claude .pc-groups-sticky > strong { display: block; margin: 0 8px 12px; font-size: 13px; }
+.pc--claude .pc-groups nav { display: grid; gap: 4px; }
+.pc--claude .pc-group-link { width: 100%; padding: 9px 8px; border: 0; border-left: 3px solid transparent; background: transparent; color: var(--pc-muted); font: inherit; text-align: left; cursor: pointer; }
+.pc--claude .pc-group-link:hover,
+.pc--claude .pc-group-link.active { border-color: var(--pc-accent); background: var(--pc-tint); color: var(--pc-accent-2); }
+.pc--claude .pc-table-scroll { max-width: 100%; overflow: auto; border-radius: 14px; }
+/* width:max-content 让固定列宽相加决定总宽——不足 display_slots 时靠空占位列撑到恒定宽度不拉伸，
+   达到上限且总宽超过容器时才由 .pc-table-scroll 触发横向滚动 */
+.pc--claude .pc-table { width: max-content; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+.pc--claude .pc-product-head--empty { background: color-mix(in srgb, var(--pc-soft), var(--pc-surface) 42%); }
+.pc--claude .pc-cell--empty { background: var(--pc-soft); }
+.pc--claude .pc-table th,
+.pc--claude .pc-table td { padding: 12px 16px; border-right: 1px solid var(--pc-line); border-bottom: 1px solid var(--pc-line); vertical-align: middle; }
+.pc--claude .pc-table tr > *:last-child { border-right: 0; }
+.pc--claude .pc-param-head,
+.pc--claude .pc-param-name { position: sticky; left: 0; z-index: 3; width: 190px; background: var(--pc-soft); text-align: left; }
+.pc--claude .pc-param-head { z-index: 6; top: 0; }
+/* 224px：5 列固定总宽 = 190 + 5×224 = 1310px < 容器可用区 1320px，满宽下不滚动；
+   加到 6 列（1534px）才超出触发横向滚动 */
+.pc--claude .pc-product-head { position: sticky; top: 0; z-index: 5; width: 224px; background: var(--pc-surface); text-align: left; vertical-align: top !important; }
+/* 正方形容器：aspect-ratio 1/1 固定方形，object-fit: contain 完整显示图片不裁切（四周按需留白） */
+.pc--claude .pc-product-image { box-sizing: border-box; width: 100%; aspect-ratio: 1 / 1; margin-bottom: 10px; padding: 10px; border-radius: 10px; background: color-mix(in srgb, var(--color-surface-card, var(--pc-card)), var(--color-primary, var(--pc-accent)) 4%); object-fit: contain; }
+/* 详情入口移到图片与标题上：图片链接撑满图区，hover 时轻微压暗提示可点 */
+.pc--claude .pc-product-image-link { display: block; }
+.pc--claude .pc-product-image-link:hover .pc-product-image { opacity: .85; }
+.pc--claude .pc-product-link { color: inherit; text-decoration: none; }
+.pc--claude .pc-product-link:hover { text-decoration: underline; }
+.pc--claude .pc-product-meta { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 7px 5px 10px; border-radius: 8px; background: var(--pc-accent); color: #fff; }
+.pc--claude .pc-product-title { min-width: 0; overflow: hidden; font-size: 15px; font-weight: 700; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.pc--claude .pc-product-subtitle { display: -webkit-box; margin-top: 4px; overflow: hidden; color: var(--pc-muted); font-size: 12px; font-weight: 400; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.pc--claude .pc-product-price { margin-top: 8px; color: var(--pc-accent-2); font-weight: 800; }
+.pc--claude .pc-product-actions { display: flex; flex: 0 0 auto; gap: 1px; flex-wrap: nowrap; margin: 0; }
+.pc--claude .pc-mini { width: 32px; height: 32px; padding: 0; }
+.pc--claude .pc-mini svg { width: 16px; height: 16px; }
+.pc--claude .pc-product-actions .pc-mini { width: 24px; min-width: 24px; height: 27px; border: 0; border-radius: 4px; background: transparent; box-shadow: none; color: #fff; }
+.pc--claude .pc-product-actions .pc-mini:hover:not(:disabled) { background: rgba(255, 255, 255, .16); color: #fff; }
+.pc--claude .pc-group-row th { height: 7px; scroll-margin-top: 76px; padding: 0; border: 0; background: var(--pc-line-strong); box-shadow: none; }
+.pc--claude .pc-param-name { color: var(--pc-text); font-size: 13px; font-weight: 600; }
+/* 单位跟在参数名右侧同一行、紧贴名称（inline + 小左边距），不再单独换行 */
+.pc--claude .pc-param-unit { display: inline; margin-left: 4px; color: var(--pc-muted); font-size: 11px; font-weight: 400; }
+.pc--claude .pc-table td { font-size: 14px; }
+.pc--claude .pc-data-row > th,
+.pc--claude .pc-data-row > td { background: var(--pc-surface); }
+.pc--claude .pc-data-row--alt > th,
+.pc--claude .pc-data-row--alt > td { background: color-mix(in srgb, var(--pc-tint), var(--pc-surface) 46%); }
+.pc--claude .pc-table tbody tr:not(.pc-group-row):hover td { background: color-mix(in srgb, var(--pc-tint), var(--pc-surface) 62%); }
+.pc--claude .pc-table tbody tr:not(.pc-group-row):hover .pc-param-name { background: var(--pc-tint); }
+.pc--claude .pc-empty,
+.pc--claude .pc-no-products { margin-top: 16px; padding: 28px; border: 1px solid var(--pc-line); border-radius: 14px; background: var(--pc-card); color: var(--pc-muted); text-align: center; }
+.pc--claude .pc-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.pc--claude .pc-sticky-head { position: fixed; display: none; z-index: 21; overflow: hidden; border: 1px solid var(--pc-line); border-top: 0; border-radius: 0; background: var(--pc-card); box-shadow: 0 4px 10px rgba(40, 35, 31, .1); }
+.pc--claude .pc-sticky-head.is-visible { display: block; }
+.pc--claude.pc-sticky-active .pc-table-scroll > .pc-table > thead { visibility: hidden; }
+.pc--claude .pc-sticky-head-scroll { width: 100%; overflow: hidden; }
+.pc--claude .pc-sticky-head .pc-table { margin: 0; }
+.pc--claude .pc-sticky-head .pc-product-head { position: static; }
+/* 吸顶表头里的产品图片缩到约一半（112px 方形），既能看到图又不让吸顶条太高 */
+.pc--claude .pc-sticky-head .pc-product-image { width: 112px; aspect-ratio: 1 / 1; margin-inline: auto; }
+/* 吸顶时产品列图片与标题水平居中（正常表头仍左对齐） */
+.pc--claude .pc-sticky-head .pc-product-head { text-align: center; }
+/* 操作按钮组本身是 flex，吸顶时改为居中对齐 */
+.pc--claude .pc-sticky-head .pc-product-actions { justify-content: center; }
+.pc--claude .pc-floating-scroll { position: fixed; display: none; z-index: 24; height: 18px; overflow-x: auto; overflow-y: hidden; border: 1px solid var(--pc-line); border-radius: 8px; background: var(--pc-card); box-shadow: 0 -3px 10px rgba(40, 35, 31, .14); }
+.pc--claude .pc-floating-scroll.is-visible { display: block; }
+.pc--claude .pc-floating-scroll-spacer { height: 1px; }
+.pc--claude .pc-floating-scroll { scrollbar-color: color-mix(in srgb, var(--pc-accent) 45%, #888) var(--pc-soft); scrollbar-width: auto; }
+.pc--claude .pc-floating-scroll::-webkit-scrollbar { height: 12px; }
+.pc--claude .pc-floating-scroll::-webkit-scrollbar-track { background: var(--pc-soft); }
+.pc--claude .pc-floating-scroll::-webkit-scrollbar-thumb { border: 2px solid var(--pc-soft); border-radius: 999px; background: color-mix(in srgb, var(--pc-accent) 45%, #888); }
+
+@media (max-width: 760px) {
+  /* 窄屏左右 padding 收窄到 --space-md，与全局 .container 移动端保持一致 */
+  .pc--claude .pc-shell { padding-inline: var(--space-md, 16px); }
+  .pc--claude .pc-heading h1 { font-size: 30px; }
+  .pc--claude .pc-toolbar-fields,
+  .pc--claude .pc-toolbar-summary { display: contents; }
+  .pc--claude .pc-search,
+  .pc--claude .pc-add,
+  .pc--claude .pc-group-filter { flex: 1 1 100%; min-width: 0; }
+  /* 窄屏恢复正常流：取消桌面版的右推，独占一行 */
+  .pc--claude .pc-group-filter { margin-left: 0; }
+  .pc--claude .pc-group-options { width: 100%; }
+  .pc--claude .pc-group-option { flex: 1 1 0; }
+  .pc--claude .pc-layout { grid-template-columns: 1fr; }
+  .pc--claude .pc-groups { position: sticky; top: var(--header-height, 64px); left: 0; z-index: 22; padding: 0; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--pc-line); border-radius: 14px 14px 0 0; }
+  .pc--claude .pc-groups-sticky { position: static; padding: 10px; border-radius: 14px 14px 0 0; }
+  .pc--claude .pc-groups-sticky > strong { display: none; }
+  .pc--claude .pc-groups nav { display: flex; width: max-content; }
+  .pc--claude .pc-group-link { width: auto; border-left: 0; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .pc--claude .pc-table-scroll { border-radius: 0 0 14px 14px; }
+  .pc--claude .pc-table { min-width: 650px; }
+  .pc--claude .pc-param-head,
+  .pc--claude .pc-param-name { width: 145px; }
+  .pc--claude .pc-product-head { width: 205px; }
+  .pc--claude .pc-product-image { aspect-ratio: 1 / 1; }
+  .pc--claude .pc-limit { width: 100%; margin: 0; }
+}

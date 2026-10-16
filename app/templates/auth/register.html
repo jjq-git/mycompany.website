@@ -1,0 +1,22 @@
+{% from 'auth/_icons.html' import auth_icon, password_toggle %}
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>注册 — {{ platform_domain }}</title><link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}?v=20260720-captcha2"></head>
+<body><main class="auth-wrap">
+  <div class="auth-brand"><img src="{{ url_for('static', filename='brand-logo.svg') }}" alt="{{ platform_domain }}"></div>
+  <section class="auth-card">
+    <div class="auth-heading"><span class="auth-heading-icon">{{ auth_icon('user-plus') }}</span><h1>{{ '接受团队邀请' if invitation else '注册账号' }}</h1></div>
+    <p class="auth-lead">{% if invitation %}注册后将以 {{ invitation.role }} 身份加入“{{ invitation.organization.name }}”，不会自动获得个人建站权限。{% else %}可使用邮箱或手机号创建独立建站账号。{% endif %}</p>
+    {% include 'auth/_messages.html' %}
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>邮箱或手机号<div class="auth-input-wrap">{{ auth_icon('mail') }}<input name="identifier" value="{{ form.identifier }}" autocomplete="username" required autofocus {{ 'readonly' if invitation else '' }}></div></label>
+      <label>昵称（选填）<div class="auth-input-wrap">{{ auth_icon('account') }}<input name="display_name" maxlength="80" value="{{ form.display_name }}"></div></label>
+      <label>密码<div class="auth-input-wrap">{{ auth_icon('lock') }}<input name="password" type="password" autocomplete="new-password" minlength="8" required>{{ password_toggle() }}</div><small>至少 8 位，同时包含字母和数字。</small></label>
+      <label>确认密码<div class="auth-input-wrap">{{ auth_icon('lock') }}<input name="password_confirm" type="password" autocomplete="new-password" minlength="8" required>{{ password_toggle() }}</div></label>
+      <label>图形验证码<div class="auth-captcha-row"><div class="auth-input-wrap">{{ auth_icon('shield') }}<input name="captcha" maxlength="4" autocomplete="off" required placeholder="图中字符"></div><img class="auth-captcha-img" src="{{ url_for('core.captcha_image') }}" alt="图形验证码" title="点击刷新" onclick="this.src='{{ url_for('core.captcha_image') }}?r='+Date.now()"></div></label>
+      <button class="auth-primary" type="submit">{{ auth_icon('send') }}<span>获取验证码</span></button>
+    </form>
+    <div class="auth-links single"><a href="{{ url_for('core.login', next=url_for('core.organization_invitation_resume')) if invitation else url_for('core.login') }}">{{ auth_icon('arrow-left') }}<span>已有账号，去登录</span></a></div>
+  </section>
+</main>{% include 'auth/_password_script.html' %}</body></html>

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="{{ (current_lang or 'zh-CN')[:2] }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{{ page_label }}详情模板</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260806-detail-specs-compat">
+  <style>
+    :root{--bs-primary:{{ admin_primary }};--bs-primary-rgb:{{ admin_primary_rgb }};--theme-primary:{{ admin_primary }};--theme-primary-hover:{{ admin_primary_hover }}}
+    *{box-sizing:border-box}
+    body{margin:0;background:#f5f7f9;color:#172033;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}
+    .dt-workspace{min-height:100vh;padding:24px}
+    .dt-workspace-shell{max-width:1540px;margin:0 auto}
+    .dt-workspace-hero{margin-bottom:18px}
+    .dt-workspace-hero h1{font-size:25px;line-height:1.2;margin:0 0 7px;letter-spacing:-.02em}
+    .dt-workspace-hero p{margin:0;color:#64748b}
+    .dt-workspace-panel{background:#fff;border:1px solid #e4e9ef;box-shadow:0 12px 34px rgba(15,23,42,.07);padding:16px}
+    .panel-save-bar{position:static;width:max-content;max-width:100%;margin:16px 0 0 auto;padding:0;background:transparent;border:0;box-shadow:none;backdrop-filter:none}
+    @media(max-width:900px){.dt-workspace{padding:14px}.dt-workspace-panel{padding:12px}}
+  </style>
+</head>
+<body>
+  <main class="dt-workspace">
+    <div class="dt-workspace-shell">
+      <header class="dt-workspace-hero">
+        <h1>{{ page_label }}详情模板</h1>
+        <p>管理该内容分类的详情结构、组件顺序和模板使用方式。</p>
+      </header>
+      <section class="dt-workspace-panel">
+        {% include 'dashboard/panel_detail_templates.html' %}
+      </section>
+    </div>
+  </main>
+  <script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
+  {% include "dashboard/_readonly_guard.html" %}
+</body>
+</html>

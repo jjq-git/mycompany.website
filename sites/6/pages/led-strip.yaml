@@ -1,0 +1,176 @@
+modules: []
+detail_templates:
+- id: default
+  name: 默认led-strip详情
+  is_default: true
+  modules:
+  - type: detail_media
+    order: 1
+    variant: gallery_left
+    data:
+      _hidden: 'false'
+      source: cover_and_gallery
+      layout: gallery_left
+      max_images: 6
+      empty_behavior: hide_module
+      image_ratio: 4/3
+      image_radius: 2px
+      section_bg: ''
+  - type: detail_content_note
+    order: 2
+    variant: note
+    data:
+      _hidden: 'false'
+      slot_id: content-mrpylsdv-85994a
+      title: ''
+      note_style: info
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
+  - type: detail_specs
+    order: 3
+    variant: list
+    data:
+      _hidden: 'false'
+      title: 固定的参数
+      key: ''
+      source_field: specs
+      max_rows: 10
+      columns: 3
+      hide_empty_rows: 'true'
+      border_color: '#e5e7eb'
+      section_bg: ''
+      fields: []
+  - type: detail_specs
+    order: 4
+    variant: list
+    data:
+      _hidden: 'false'
+      title: 可定制的参数
+      key: ''
+      source_field: specs
+      max_rows: 10
+      columns: 3
+      hide_empty_rows: 'true'
+      border_color: '#e5e7eb'
+      section_bg: ''
+      fields: []
+  - type: detail_files
+    order: 5
+    variant: list
+    data:
+      _hidden: 'false'
+      title: 资料下载
+      empty_behavior: hide_module
+      link_color: ''
+      section_bg: '#f8fafc'
+  - type: detail_related
+    order: 6
+    variant: grid
+    data:
+      _hidden: 'false'
+      title: 相关推荐
+      match_by: category
+      max_items: 8
+      columns: 4
+      auto_scroll: 'true'
+      scroll_interval: 4
+      click_scroll: 'true'
+      show_dots: 'true'
+      section_bg: ''
+  required_fields:
+  - slug
+  - title
+  optional_fields:
+  - summary
+  - media
+  - category
+  - tags
+  - detail_images
+  - detail_content_blocks
+  - specs
+  - detail_files
+  - detail_related
+  seo:
+    title: '{title} - {site_name}'
+    description: '{summary}'
+    image: cover
+- id: '01'
+  name: 项目详情01
+  is_default: false
+  modules:
+  - type: detail_media
+    order: 1
+    variant: gallery_left
+    data:
+      source: gallery_only
+      layout: gallery_left
+      max_images: 6
+      empty_behavior: hide_module
+      image_ratio: 4/3
+      image_radius: 8px
+      section_bg: ''
+    responsive:
+      tablet:
+        source: cover_and_gallery
+        layout: gallery_top
+        max_images: 6
+        empty_behavior: hide_module
+        image_ratio: 4/3
+        image_radius: 8px
+      mobile:
+        source: cover_and_gallery
+        layout: gallery_top
+        max_images: 6
+        empty_behavior: hide_module
+        image_ratio: 4/3
+        image_radius: 8px
+  - type: detail_content_blocks
+    variant: blocks
+    data:
+      title: ''
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
+    order: 2
+  - type: detail_specs
+    variant: list
+    data:
+      title: ''
+      source_field: specs
+      max_rows: 50
+      columns: 3
+      hide_empty_rows: 'true'
+      border_color: '#e5e7eb'
+      section_bg: ''
+    order: 3
+  - type: detail_specs
+    variant: list
+    data:
+      title: ''
+      source_field: specs
+      max_rows: 50
+      columns: 3
+      hide_empty_rows: 'true'
+      border_color: '#e5e7eb'
+      section_bg: ''
+    order: 4
+  - type: detail_files
+    variant: list
+    data:
+      title: 资料下载
+      empty_behavior: hide_module
+      link_color: ''
+      section_bg: ''
+    order: 5
+  required_fields:
+  - slug
+  - title
+  optional_fields:
+  - body
+  - detail_content_blocks
+  - detail_files
+  seo:
+    title: '{title} - {site_name}'
+    description: '{summary}'
+    image: cover

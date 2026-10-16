@@ -1,0 +1,133 @@
+name: 合作品牌墙
+category: content
+icon: logo_cloud.svg
+description: Logo 网格展示合作品牌/客户，支持灰度滤镜、链接跳转，适合展示客户背书
+fields:
+  - key: section_bg
+    label: 外层背景色
+    type: color
+    group: 外层样式
+    default: ""
+    placeholder: 如 #f5f7fa（留空=使用默认）
+  - key: outer_width
+    label: 外层宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空不限制宽度）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: inner_bg
+    label: 内层背景色
+    type: color
+    group: 内层样式
+    default: ""
+    placeholder: 如 #ffffff（留空=透明）
+  - key: padding_top
+    label: 上内边距
+    type: text
+    group: 内层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_right
+    label: 右内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_bottom
+    label: 下内边距
+    type: text
+    group: 内层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_left
+    label: 左内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: logo_bg
+    label: Logo 卡片背景色
+    type: color
+    group: Logo 卡片样式
+    default: ""
+    placeholder: 如 #f8fafc（留空=透明）
+  - key: logo_border
+    label: Logo 卡片边框
+    type: text
+    group: Logo 卡片样式
+    default: ""
+    placeholder: 如 1px solid #e5e7eb（留空=无边框）
+  - key: logo_border_color
+    label: Logo 卡片边框色
+    type: color
+    group: Logo 卡片样式
+    default: ""
+    placeholder: 如 #e5e7eb
+  - key: logo_radius
+    label: Logo 卡片圆角
+    type: text
+    group: Logo 卡片样式
+    default: ""
+    placeholder: 如 8px（留空=无圆角）
+  - key: logo_width
+    label: Logo 图片宽度
+    type: text
+    group: Logo 卡片样式
+    default: ""
+    placeholder: 如 120px（留空=自适应）
+  - key: logo_height
+    label: Logo 图片高度
+    type: text
+    group: Logo 卡片样式
+    default: ""
+    placeholder: 如 60px（留空=自适应）
+  - key: heading
+    label: 区块标题
+    type: text
+    group: 内容
+    default: ""
+  - key: subheading
+    label: 区块副标题
+    type: text
+    group: 内容
+    default: ""
+  - key: columns
+    label: 每行列数
+    type: select
+    group: 内容
+    default: "4"
+    options:
+      - value: "4"
+        label: 四列
+      - value: "5"
+        label: 五列
+      - value: "6"
+        label: 六列
+  - key: grayscale
+    label: 灰度滤镜
+    type: select
+    group: 内容
+    default: "true"
+    options:
+      - value: "true"
+        label: 开启（hover时恢复彩色）
+      - value: "false"
+        label: 关闭（保持原色）
+  - key: logos
+    label: Logo 列表
+    type: list
+    group: Logo 列表
+    item_label: 标志
+    item_fields:
+      - key: logo
+        label: Logo 图片
+        type: image
+      - key: link
+        label: 链接（可选）
+        type: url

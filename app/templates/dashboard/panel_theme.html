@@ -1,0 +1,151 @@
+{# 主题颜色面板 #}
+{% if not basic_settings_embed|default(false) %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <span class="fw-semibold">主题颜色</span>
+</div>
+{% endif %}
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}
+    <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+<form method="post" action="{{ url_for('core.theme_edit', site=site.id) if settings_workspace|default(false) else url_for('core.theme_edit', _fragment='1', site=site.id) }}" id="themeForm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if settings_workspace|default(false) %}<input type="hidden" name="_workspace" value="1">{% endif %}
+  {% if basic_settings_embed|default(false) %}<input type="hidden" name="_basic_settings" value="1"><input type="hidden" name="_embed" value="1">{% endif %}
+  <div class="panel-section">
+    <div class="panel-section-title">颜色配置</div>
+<div class="row g-2">
+  {% for key, label, default_key in [('color-primary','主色','color-primary'),('color-bg','背景','color-bg'),('color-surface','面板色','color-surface'),('color-text','文字色','color-text'),('color-text-secondary','次要文字','color-text-secondary'),('color-border','边框色','color-border')] %}
+    <div class="col-12 col-sm-4 mb-2">
+      <label class="form-label small mb-1">{{ label }}
+        <span class="text-muted">(默认: {{ default_theme.get(key, '') }})</span></label>
+      <div class="input-group input-group-sm">
+        <input type="color" class="form-control form-control-color theme-color-picker"
+               id="picker_{{ key }}" value="{{ theme.get(key, default_theme.get(key, '')) }}"
+               oninput="syncColorFromPicker('{{ key }}')" style="max-width:40px; padding:2px;">
+        <input type="text" class="form-control form-control-sm theme-text-input" name="{{ key }}"
+               id="text_{{ key }}" value="{{ theme.get(key, '') }}"
+               placeholder="选择颜色"
+               oninput="syncColorFromText('{{ key }}')">
+      </div>
+    </div>
+  {% endfor %}
+</div>
+  </div>
+  <div class="panel-section theme-typography-section">
+    <div class="panel-section-title">字体与文字大小</div>
+    <div class="mb-3">
+      <label class="form-label small mb-1" for="themeFontFamily">字体</label>
+      <select class="form-select form-select-sm theme-font-control" id="themeFontFamily" name="font-family-base" onchange="applyThemeDraftToPreview()">
+        <option value="system" {% if font_choice == 'system' %}selected{% endif %}>系统无衬线</option>
+        <option value="yahei" {% if font_choice == 'yahei' %}selected{% endif %}>中文无衬线</option>
+        <option value="serif" {% if font_choice == 'serif' %}selected{% endif %}>衬线字体</option>
+      </select>
+    </div>
+    <div>
+      <label class="form-label small mb-1" for="themeFontSize">正文大小：<span id="themeFontSizeValue">{{ font_size_value|default('16px') }}</span></label>
+      <input class="form-range theme-font-control" id="themeFontSize" name="font-size-base" type="range" min="12" max="22" step="1"
+             value="{{ font_size_value|default('16px')|replace('px','') }}" oninput="document.getElementById('themeFontSizeValue').textContent=this.value+'px';applyThemeDraftToPreview()">
+    </div>
+  </div>
+  <div class="panel-save-bar">
+    <button class="btn btn-primary btn-sm w-100" type="submit" title="保存">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    </button>
+  </div>
+</form>
+<script>
+function syncColorFromPicker(key) {
+  var picker = document.getElementById('picker_' + key);
+  var text = document.getElementById('text_' + key);
+  if (picker && text) text.value = picker.value;
+  applyThemeDraftToPreview();
+}
+function syncColorFromText(key) {
+  var text = document.getElementById('text_' + key);
+  var picker = document.getElementById('picker_' + key);
+  if (picker && text) {
+    var v = text.value.trim();
+    if (/^#[0-9a-fA-F]{3,8}$/.test(v)) picker.value = v;
+  }
+  applyThemeDraftToPreview();
+}
+
+function applyThemeDraftToPreview() {
+  var frame = document.getElementById('previewFrame');
+  if (!frame) return;
+  var doc;
+  try { doc = frame.contentDocument || frame.contentWindow.document; } catch(e) { return; }
+  if (!doc || !doc.head) return;
+  var style = doc.getElementById('liveThemeDraftStyle');
+  if (!style) {
+    style = doc.createElement('style');
+    style.id = 'liveThemeDraftStyle';
+    doc.head.appendChild(style);
+  }
+  var css = ':root{';
+  document.querySelectorAll('#themeForm .theme-text-input[name]').forEach(function(input) {
+    var key = input.name;
+    var value = (input.value || '').trim();
+    if (key && value && /^#[0-9a-fA-F]{3,8}$|^rgba?\([\d.,%\s]+\)$|^hsla?\([\d.,%\s]+\)$|^[a-zA-Z]+$/.test(value)) {
+      css += '--' + key + ':' + value + ';';
+    }
+  });
+  var fontChoice = document.getElementById('themeFontFamily');
+  var fontSize = document.getElementById('themeFontSize');
+  var fontMap = {
+    system: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif",
+    yahei: "'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', sans-serif",
+    serif: "Georgia, 'Times New Roman', 'Songti SC', serif"
+  };
+  if (fontChoice && fontMap[fontChoice.value]) {
+    css += '--font-family-base:' + fontMap[fontChoice.value] + ';--font-sans:' + fontMap[fontChoice.value] + ';';
+  }
+  if (fontSize) css += '--font-size-base:' + fontSize.value + 'px;--text-body-md:' + fontSize.value + 'px;';
+  css += '}';
+  style.textContent = css;
+}
+document.getElementById('themeForm').addEventListener('submit', function(e) {
+  if (!document.getElementById('rightPanelBody')) return;
+  e.preventDefault();
+  this.dataset.saving = '1';
+  this.dataset.panelDirty = '';
+  if (typeof setPanelEditStatus === 'function') setPanelEditStatus('previewing', '保存中...');
+  var formData = new FormData(this);
+  fetch(this.action, {method: 'POST', body: formData})
+    .then(function(r) { return r.text().then(function(html) { return {ok: r.ok, html: html}; }); })
+    .then(function(result) {
+      var panel = document.getElementById('rightPanelBody');
+      var footer = document.getElementById('rightPanelFooter');
+      if (panel) { panel.innerHTML = result.html; runPanelScripts(panel); }
+      // 将保存按钮移到面板底部悬浮栏，同时清理旧的 footer 避免重复按钮
+      var saveBar = panel.querySelector('.basic-settings-pane') ? null : panel.querySelector('.panel-save-bar');
+      if (saveBar && footer) {
+        if (typeof preparePanelSaveBar === 'function') {
+          preparePanelSaveBar(saveBar, footer);
+        } else {
+          var form = saveBar.closest('form');
+          var btn = saveBar.querySelector('button[type="submit"]');
+          if (btn && form) {
+            form.dataset.panelGuard = '1';
+            if (!form.id) form.id = '_panelForm_' + Date.now();
+            btn.setAttribute('form', form.id);
+          }
+          footer.innerHTML = '';
+          footer.appendChild(saveBar);
+          footer.style.display = '';
+        }
+      }
+      if (result.ok) {
+        if (typeof setPanelEditStatus === 'function') setPanelEditStatus('saved', '已保存');
+        if (typeof markPreviewDirty === 'function') markPreviewDirty();
+      } else if (typeof setPanelEditStatus === 'function') {
+        setPanelEditStatus('error', '保存失败，请重试');
+      }
+    })
+    .catch(function() {
+      if (typeof setPanelEditStatus === 'function') setPanelEditStatus('error', '保存失败，请重试');
+    });
+});
+</script>

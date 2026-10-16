@@ -1,0 +1,50 @@
+{% from 'auth/_icons.html' import auth_icon, password_toggle %}
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>验证账号 — {{ platform_domain }}</title><link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}?v=20260720-captcha2"></head>
+<body><main class="auth-wrap">
+  <div class="auth-brand"><img src="{{ url_for('static', filename='brand-logo.svg') }}" alt="{{ platform_domain }}"></div>
+  <section class="auth-card">
+    <div class="auth-heading"><span class="auth-heading-icon">{{ auth_icon('shield') }}</span><h1>验证{{ '邮箱' if identity_type == 'email' else '手机号' }}</h1></div>
+    <p class="auth-lead">{% if dev_code %}开发阶段已为 <strong>{{ identifier }}</strong> 生成随机验证码，10 分钟内有效。{% else %}验证码已发送至 <strong>{{ identifier }}</strong>，10 分钟内有效。{% endif %}</p>
+    {% include 'auth/_messages.html' %}
+    {% if dev_code %}<div class="auth-dev-code">开发环境验证码：<strong>{{ dev_code }}</strong></div>{% endif %}
+    <form method="post" action="{{ url_for('core.register_verify') if purpose == 'register' else url_for('core.password_setup_verify') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="identifier" value="{{ identifier }}">
+      <label>6 位验证码<div class="auth-input-wrap">{{ auth_icon('shield') }}<input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required autofocus></div></label>
+      {% if set_password %}<label>新密码<div class="auth-input-wrap">{{ auth_icon('lock') }}<input name="password" type="password" minlength="8" autocomplete="new-password" required>{{ password_toggle() }}</div></label><label>确认新密码<div class="auth-input-wrap">{{ auth_icon('lock') }}<input name="password_confirm" type="password" minlength="8" autocomplete="new-password" required>{{ password_toggle() }}</div></label>{% endif %}
+      <button class="auth-primary" type="submit">{{ auth_icon('check') }}<span>{{ '完成注册' if purpose == 'register' else '确认并设置密码' }}</span></button>
+    </form>
+    <div class="auth-links single"><a id="resend-link" href="{{ url_for('core.register') if purpose == 'register' else url_for('core.password_setup') }}">{{ auth_icon('arrow-left') }}<span id="resend-text">返回重新获取</span></a></div>
+  </section>
+</main>{% if set_password %}{% include 'auth/_password_script.html' %}{% endif %}
+<script>
+// 验证页重发倒计时：进入本页即代表刚发过一次码，"返回重新获取"先禁用 60 秒。
+// 用 localStorage 按 identifier 记发码时间戳，刷新页面不会重置倒计时（防刷新绕过）。
+// 注意：这是体验层的防误触，真正的频率防护由后端限流 + 图形验证码保证。
+(function () {
+  var COOLDOWN = 60; // 秒
+  var key = 'otp_sent_' + encodeURIComponent({{ identifier | tojson }});
+  var link = document.getElementById('resend-link');
+  var text = document.getElementById('resend-text');
+  if (!link || !text) return;
+  var now = Math.floor(Date.now() / 1000);
+  var last = parseInt(localStorage.getItem(key) || '0', 10);
+  // 距上次发码已超过冷却期（或没记录）→ 视为本次新发码，重置时间戳
+  if (!last || now - last >= COOLDOWN) { last = now; localStorage.setItem(key, String(last)); }
+  var original = text.textContent;
+  function tick() {
+    var remain = COOLDOWN - (Math.floor(Date.now() / 1000) - last);
+    if (remain <= 0) {
+      link.style.pointerEvents = ''; link.style.opacity = '';
+      text.textContent = original;
+      return;
+    }
+    link.style.pointerEvents = 'none'; link.style.opacity = '0.5';
+    text.textContent = remain + ' 秒后可重新获取';
+    setTimeout(tick, 1000);
+  }
+  tick();
+})();
+</script>
+</body></html>

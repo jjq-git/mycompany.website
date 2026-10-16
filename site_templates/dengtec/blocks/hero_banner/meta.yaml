@@ -1,0 +1,159 @@
+name: Hero Banner
+category: content
+icon: hero_banner.svg
+description: 首页轮播大图模块，支持图片/视频，可配置标题、副标题、按钮
+fields:
+  - key: hero_width
+    label: Banner 最大宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 100%（留空=全宽）
+  - key: hero_height
+    label: Banner 整体高度
+    type: text
+    group: 外层样式
+    default: "77vh"
+    placeholder: 如 500px 或 77vh（留空=CSS 默认 77vh）
+  - key: content_width
+    label: Banner 内容区宽度
+    type: text
+    group: 外层样式
+    default: "900px"
+    placeholder: 如 1200px（留空=CSS 默认 900px）
+  - key: banner_align
+    label: Banner 文字排版
+    type: select
+    group: 外层样式
+    options:
+      - value: ""
+        label: 默认（全宽）
+      - value: center
+        label: 居中
+      - value: left
+        label: 居左
+      - value: right
+        label: 居右
+  - key: outer_width
+    label: 外层宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空不限制宽度）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: padding_top
+    label: 上内边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 2rem（留空=CSS 默认 0）
+  - key: padding_right
+    label: 右内边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 2rem
+  - key: padding_bottom
+    label: 下内边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 2rem（留空=CSS 默认 0）
+  - key: padding_left
+    label: 左内边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 2rem
+  - key: overlay_enabled
+    label: 启用遮罩
+    type: select
+    group: 遮罩层
+    default: "true"
+    options:
+      - value: "true"
+        label: 启用
+      - value: "false"
+        label: 不启用
+  - key: title_font_size
+    label: 标题字号
+    type: text
+    group: 配色
+    default: "3rem"
+    placeholder: 如 3.5rem（留空=CSS 默认 3rem）
+  - key: title_color
+    label: 标题颜色
+    type: color
+    group: 配色
+    default: "#ffffff"
+    placeholder: 如 #ffffff（留空=CSS 默认白色）
+  - key: subtitle_font_size
+    label: 副标题字号
+    type: text
+    group: 配色
+    default: "1.25rem"
+    placeholder: 如 1.25rem（留空=CSS 默认 1.25rem）
+  - key: subtitle_color
+    label: 副标题颜色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #ffffff（留空=CSS 默认 rgba(255,255,255,0.9) 半透明白）
+  - key: btn_font_size
+    label: 按钮字号
+    type: text
+    group: 配色
+    default: ""
+    placeholder: 如 1rem（留空=默认）
+  - key: btn_text_color
+    label: 按钮文字色
+    type: color
+    group: 配色
+    default: "#ffffff"
+    placeholder: 如 #ffffff（留空=CSS 默认白色）
+  - key: btn_bg
+    label: 按钮背景色
+    type: color
+    group: 配色
+    default: "#067a7a"
+    placeholder: 如 #067a7a（留空=CSS 默认主色）
+  - key: slides
+    label: 轮播媒体项
+    type: list
+    group: 轮播媒体项
+    item_label: 媒体项
+    item_fields:
+      - key: type
+        label: 媒体类型
+        type: select
+        options:
+          - value: image
+            label: 图片
+          - value: video
+            label: 视频
+      - key: media
+        label: 媒体地址
+        type: url
+      - key: title
+        label: 主标题
+        type: text
+      - key: subtitle
+        label: 副标题
+        type: text
+      - key: primaryBtn
+        label: 主按钮文字
+        type: text
+      - key: primaryBtnLink
+        label: 主按钮链接
+        type: url
+      - key: secondaryBtn
+        label: 副按钮文字
+        type: text
+      - key: secondaryBtnLink
+        label: 副按钮链接
+        type: url

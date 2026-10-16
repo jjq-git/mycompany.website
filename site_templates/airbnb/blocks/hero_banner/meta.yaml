@@ -1,0 +1,159 @@
+﻿name: Hero Banner
+category: content
+icon: hero_banner.svg
+description: 棣栭〉杞挱澶у浘妯″潡锛屾敮鎸佸浘鐗?瑙嗛锛屽彲閰嶇疆鏍囬銆佸壇鏍囬銆佹寜閽?
+fields:
+  - key: hero_width
+    label: Banner 鏈€澶у搴?
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?100%锛堢暀绌?鍏ㄥ锛?
+  - key: hero_height
+    label: Banner 鏁翠綋楂樺害
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: "77vh"
+    placeholder: 濡?500px 鎴?77vh锛堢暀绌?CSS 榛樿 77vh锛?
+  - key: content_width
+    label: Banner 鍐呭鍖哄搴?
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: "900px"
+    placeholder: 濡?1200px锛堢暀绌?CSS 榛樿 900px锛?
+  - key: banner_align
+    label: Banner 鏂囧瓧鎺掔増
+    type: select
+    group: 澶栧眰鏍峰紡
+    options:
+      - value: ""
+        label: 榛樿锛堝叏瀹斤級
+      - value: center
+        label: 灞呬腑
+      - value: left
+        label: 灞呭乏
+      - value: right
+        label: 灞呭彸
+  - key: outer_width
+    label: 澶栧眰瀹藉害
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?1200px锛堢暀绌轰笉闄愬埗瀹藉害锛?
+  - key: inner_width
+    label: 鍐呭眰鍐呭鍖哄搴?
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?1200px锛堢暀绌?鍏ㄥ锛?
+  - key: padding_top
+    label: 涓婂唴杈硅窛
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?CSS 榛樿 0锛?
+  - key: padding_right
+    label: 鍙冲唴杈硅窛
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?2rem
+  - key: padding_bottom
+    label: 涓嬪唴杈硅窛
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?CSS 榛樿 0锛?
+  - key: padding_left
+    label: 宸﹀唴杈硅窛
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?2rem
+  - key: overlay_enabled
+    label: 鍚敤閬僵
+    type: select
+    group: 閬僵灞?
+    default: "true"
+    options:
+      - value: "true"
+        label: 鍚敤
+      - value: "false"
+        label: 涓嶅惎鐢?
+  - key: title_font_size
+    label: 鏍囬瀛楀彿
+    type: text
+    group: 閰嶈壊
+    default: "3rem"
+    placeholder: 濡?3.5rem锛堢暀绌?CSS 榛樿 3rem锛?
+  - key: title_color
+    label: 鏍囬棰滆壊
+    type: color
+    group: 閰嶈壊
+    default: "#ffffff"
+    placeholder: 濡?#ffffff锛堢暀绌?CSS 榛樿鐧借壊锛?
+  - key: subtitle_font_size
+    label: 鍓爣棰樺瓧鍙?
+    type: text
+    group: 閰嶈壊
+    default: "1.25rem"
+    placeholder: 濡?1.25rem锛堢暀绌?CSS 榛樿 1.25rem锛?
+  - key: subtitle_color
+    label: 鍓爣棰橀鑹?
+    type: color
+    group: 閰嶈壊
+    default: ""
+    placeholder: 濡?#ffffff锛堢暀绌?CSS 榛樿 rgba(255,255,255,0.9) 鍗婇€忔槑鐧斤級
+  - key: btn_font_size
+    label: 鎸夐挳瀛楀彿
+    type: text
+    group: 閰嶈壊
+    default: ""
+    placeholder: 濡?1rem锛堢暀绌?榛樿锛?
+  - key: btn_text_color
+    label: 鎸夐挳鏂囧瓧鑹?
+    type: color
+    group: 閰嶈壊
+    default: "#ffffff"
+    placeholder: 濡?#ffffff锛堢暀绌?CSS 榛樿鐧借壊锛?
+  - key: btn_bg
+    label: 鎸夐挳鑳屾櫙鑹?
+    type: color
+    group: 閰嶈壊
+    default: "#ff385c"
+    placeholder: 濡?#ff385c锛堢暀绌?CSS 榛樿涓昏壊锛?
+  - key: slides
+    label: 杞挱濯掍綋椤?
+    type: list
+    group: 杞挱濯掍綋椤?
+    item_label: 濯掍綋椤?
+    item_fields:
+      - key: type
+        label: 濯掍綋绫诲瀷
+        type: select
+        options:
+          - value: image
+            label: 鍥剧墖
+          - value: video
+            label: 瑙嗛
+      - key: media
+        label: 濯掍綋鍦板潃
+        type: url
+      - key: title
+        label: 涓绘爣棰?
+        type: text
+      - key: subtitle
+        label: 鍓爣棰?
+        type: text
+      - key: primaryBtn
+        label: 涓绘寜閽枃瀛?
+        type: text
+      - key: primaryBtnLink
+        label: 涓绘寜閽摼鎺?
+        type: url
+      - key: secondaryBtn
+        label: 鍓寜閽枃瀛?
+        type: text
+      - key: secondaryBtnLink
+        label: 鍓寜閽摼鎺?
+        type: url

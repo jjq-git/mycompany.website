@@ -1,0 +1,84 @@
+<!-- 条目详情模块 - 双栏布局（data-* 声明式） -->
+<section data-name="item_detail" data-type="group" data-hideable class="section">
+  <div class="container">
+    <div class="id-grid">
+      <!-- 左侧：图片区（单列表展开一次，CSS 区分主图和缩略图） -->
+      <div class="id-image-zone">
+        <div class="id-magnify-container">
+          <img class="id-main-image" src="" alt="">
+          <div class="id-magnify-glass" style="display:none"></div>
+        </div>
+        <div data-name="images" data-type="list" class="id-thumb-list">
+          <div class="id-thumb-item" data-name="thumb" data-type="group">
+            <img data-name="url" data-type="image" src="" alt="" style="display:none">
+          </div>
+        </div>
+      </div>
+      <!-- 右侧：信息区 -->
+      <div class="id-info-zone">
+        <h1 data-name="title" data-type="text" class="id-title"></h1>
+        <p data-name="desc" data-type="textarea" class="id-desc"></p>
+        <div data-name="tags" data-type="list" class="id-tags">
+          <span data-name="tag" data-type="text" class="id-tag"></span>
+        </div>
+        <h2 class="id-specs-title">规格参数</h2>
+        <table data-name="specs" data-type="list" class="id-specs-table">
+          <tbody data-name="spec" data-type="group">
+            <tr>
+              <td data-name="name" data-type="text" class="id-spec-name"></td>
+              <td data-name="value" data-type="text" class="id-spec-value"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function() {
+      var section = document.currentScript.parentElement;
+      var mainImg = section.querySelector('.id-main-image');
+      var magnify = section.querySelector('.id-magnify-container');
+      var glass = section.querySelector('.id-magnify-glass');
+      /* 从渲染后的缩略图读取 src，设为 background-image + 初始化主图 */
+      var thumbImgs = section.querySelectorAll('.id-thumb-item img');
+      thumbImgs.forEach(function(img, i) {
+        var src = img.getAttribute('src') || img.src;
+        if (src && !/^\s*$/.test(src)) {
+          img.parentElement.style.backgroundImage = 'url(' + src + ')';
+          if (i === 0 && mainImg && !mainImg.getAttribute('src')) mainImg.src = src;
+        }
+      });
+      /* 缩略图点击切换主图 */
+      section.querySelectorAll('.id-thumb-item').forEach(function(thumb) {
+        thumb.addEventListener('click', function() {
+          var bg = thumb.style.backgroundImage;
+          var match = bg && bg.match(/url\(["']?([^"')]+)["']?\)/);
+          if (match && mainImg) mainImg.src = match[1];
+          section.querySelectorAll('.id-thumb-item').forEach(function(t) { t.classList.remove('active'); });
+          thumb.classList.add('active');
+        });
+      });
+      /* 首个缩略图默认激活 */
+      var firstThumb = section.querySelector('.id-thumb-item');
+      if (firstThumb) firstThumb.classList.add('active');
+      /* 放大镜 */
+      if (magnify && mainImg && glass) {
+        magnify.addEventListener('mousemove', function(e) {
+          glass.style.display = 'block';
+          var rect = magnify.getBoundingClientRect();
+          var x = e.clientX - rect.left;
+          var y = e.clientY - rect.top;
+          var glassW = 180, glassH = 180;
+          var left = Math.max(0, Math.min(x - glassW / 2, rect.width - glassW));
+          var top = Math.max(0, Math.min(y - glassH / 2, rect.height - glassH));
+          glass.style.left = left + 'px';
+          glass.style.top = top + 'px';
+          glass.style.backgroundImage = 'url(' + mainImg.src + ')';
+          glass.style.backgroundSize = (rect.width * 2.5) + 'px ' + (rect.height * 2.5) + 'px';
+          glass.style.backgroundPosition = '-' + (left * 2.5 - glassW / 2) + 'px -' + (top * 2.5 - glassH / 2) + 'px';
+        });
+        magnify.addEventListener('mouseleave', function() { glass.style.display = 'none'; });
+      }
+    })();
+  </script>
+</section>

@@ -1,0 +1,147 @@
+name: 流程步骤
+category: content
+icon: process_steps.svg
+description: 步骤/流程图展示，适合服务流程、合作方式、公司发展历程
+fields:
+  - key: section_bg
+    label: 外层背景色
+    type: color
+    group: 外层样式
+    default: ""
+    placeholder: 如 #f5f7fa（留空=使用默认）
+  - key: outer_width
+    label: 外层宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空不限制宽度）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: inner_bg
+    label: 内层背景色
+    type: color
+    group: 内层样式
+    default: ""
+    placeholder: 如 #ffffff（留空=透明）
+  - key: padding_top
+    label: 上内边距
+    type: text
+    group: 内层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_right
+    label: 右内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_bottom
+    label: 下内边距
+    type: text
+    group: 内层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_left
+    label: 左内边距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: title_font_size
+    label: 标题字号
+    type: text
+    group: 字体样式
+    default: "1.125rem"
+    placeholder: 如 1.25rem（留空=CSS 默认 1.125rem）
+  - key: title_color
+    label: 标题颜色
+    type: color
+    group: 字体样式
+    default: "#1e293b"
+    placeholder: 如 #1e293b（留空=CSS 默认深色）
+  - key: desc_font_size
+    label: 描述字号
+    type: text
+    group: 字体样式
+    default: "0.875rem"
+    placeholder: 如 0.95rem（留空=CSS 默认 0.875rem）
+  - key: desc_color
+    label: 描述颜色
+    type: color
+    group: 字体样式
+    default: "#64748b"
+    placeholder: 如 #64748b（留空=CSS 默认灰色）
+  - key: icon_color
+    label: 图标颜色
+    type: color
+    group: 配色
+    default: "#067a7a"
+    placeholder: 如 #067a7a（留空=CSS 默认主色）
+  - key: number_bg
+    label: 序号背景色
+    type: color
+    group: 配色
+    default: "#067a7a"
+    placeholder: 如 #067a7a（留空=CSS 默认主色）
+  - key: number_font_size
+    label: 序号字号
+    type: text
+    group: 配色
+    default: "0.875rem"
+    placeholder: 如 1.5rem（留空=CSS 默认 0.875rem）
+  - key: title
+    label: 区块标题
+    type: text
+    group: 内容
+    default: ""
+  - key: subtitle
+    label: 区块副标题
+    type: text
+    group: 内容
+    default: ""
+  - key: direction
+    label: 排列方向
+    type: select
+    group: 内容
+    default: "horizontal"
+    options:
+      - value: "horizontal"
+        label: 横向
+      - value: "vertical"
+        label: 纵向
+  - key: step_style
+    label: 步骤样式
+    type: select
+    group: 内容
+    default: "number"
+    options:
+      - value: "number"
+        label: 数字序号
+      - value: "icon"
+        label: 图标
+  - key: steps
+    label: 步骤列表
+    type: list
+    group: 步骤列表
+    item_label: 步骤
+    item_fields:
+      - key: title
+        label: 步骤标题
+        type: text
+      - key: desc
+        label: 步骤描述
+        type: textarea
+      - key: icon
+        label: 图标（仅icon样式时使用）
+        type: icon
+variants:
+  - key: horizontal
+    label: 横向排列
+  - key: vertical
+    label: 纵向排列
+  - key: numbered
+    label: 数字序号

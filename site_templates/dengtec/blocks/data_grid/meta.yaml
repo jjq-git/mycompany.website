@@ -1,0 +1,202 @@
+name: 数据网格
+category: data
+icon: data_grid.svg
+description: 通用数据列表模块，支持所有数据集，可配置筛选面板、卡片布局、分页、价格/日期、查看全部按钮
+fields:
+  - key: dataset
+    label: 数据来源（数据集名称）
+    type: text
+    group: 数据
+    default: portfolio
+    placeholder: 如 products/portfolio/posts，或自定义数据集名
+  - key: max_items
+    label: 最大显示（总共展示几条）
+    type: number
+    group: 数据
+    default: 6
+  - key: card_layout
+    label: 卡片布局
+    type: select
+    group: 数据
+    default: "image_top"
+    options:
+      - value: "image_top"
+        label: 上图下文
+      - value: "image_left"
+        label: 左图右文
+      - value: "image_right"
+        label: 左文右图
+  - key: show_filters
+    label: 显示筛选
+    type: select
+    group: 筛选
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_search
+    label: 显示搜索框
+    type: select
+    group: 筛选
+    default: "false"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_pagination
+    label: 显示分页
+    type: select
+    group: 分页
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: pagination_style
+    label: 分页样式
+    type: select
+    group: 分页
+    default: "load_more"
+    options:
+      - value: "load_more"
+        label: 加载更多
+      - value: "page_numbers"
+        label: 页码导航
+  - key: items_per_page
+    label: 每页条数
+    type: select
+    group: 分页
+    default: "6"
+    options:
+      - value: "3"
+        label: 3 条/页
+      - value: "4"
+        label: 4 条/页
+      - value: "6"
+        label: 6 条/页
+      - value: "8"
+        label: 8 条/页
+      - value: "10"
+        label: 10 条/页
+      - value: "12"
+        label: 12 条/页
+      - value: "18"
+        label: 18 条/页
+      - value: "24"
+        label: 24 条/页
+  - key: show_view_all
+    label: 显示"查看全部"按钮
+    type: select
+    group: 分页
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: card_show_border
+    label: 显示卡片边框
+    type: select
+    group: 数据
+    default: "true"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: show_detail_btn
+    label: 显示卡片按钮
+    type: select
+    group: 数据
+    default: "false"
+    options:
+      - value: "true"
+        label: 显示
+      - value: "false"
+        label: 隐藏
+  - key: pager_align
+    label: 分页对齐
+    type: select
+    group: 分页
+    default: "center"
+    options:
+      - value: "center"
+        label: 居中
+      - value: "left"
+        label: 居左
+      - value: "right"
+        label: 居右
+  - key: section_bg
+    label: 外层背景色
+    type: color
+    group: 外层样式
+    default: ""
+    placeholder: 如 #f5f7fa（留空=使用默认）
+  - key: outer_width
+    label: 外层宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空不限制宽度）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: padding_top
+    label: 上内边距
+    type: text
+    group: 外层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_right
+    label: 右内边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_bottom
+    label: 下内边距
+    type: text
+    group: 外层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_left
+    label: 左内边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: margin_top
+    label: 外层上外边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 40px
+  - key: margin_right
+    label: 外层右外边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 40px
+  - key: margin_bottom
+    label: 外层下外边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 40px
+  - key: margin_left
+    label: 外层左外边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 40px
+  - key: title
+    label: 区块标题
+    type: text
+    group: 内容

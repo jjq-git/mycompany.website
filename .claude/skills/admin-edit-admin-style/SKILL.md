@@ -1,0 +1,175 @@
+---
+name: admin-edit-admin-style
+description: "修改店主后台样式(admin.css 布局/配色/组件)"
+---
+
+当用户想调整店主后台管理界面的外观时触发.典型场景:
+- 调整后台配色、字体、间距
+- 修改左侧导航栏样式
+- 调整右侧属性面板的外观
+- 给新增的后台页面添加样式
+- 调整预览区、拖拽条等 UI 细节
+
+后台样式集中在一个 CSS 文件 `app/static/css/admin.css` 和 `base.html` 末尾的 `<style>` 块中.
+前台依赖 Bootstrap 5 CDN(不修改 CDN 的 Bootstrap),通过更高优先级选择器覆盖.
+
+## 定位目标区域
+
+根据要修改的 UI 区域,在 admin.css 中找到对应分区:
+
+| 行号范围 | 区域 | CSS 前缀 |
+|----------|------|----------|
+| 1-134 | 顶部 Header | `.admin-*` `.header-*` |
+| 135-427 | 左侧导航栏 | `.left-nav-*` `#leftNav` |
+| 428-438 | 预览 iframe | `.preview-frame` `.preview-device-btn` |
+| 439-454 | 通用表单与空状态 | `.form-group` `.empty` |
+| 455-711 | 菜单树编辑器 | `.menu-tree-*` |
+| 712-725 | 拖拽分隔条 | `.resizer-handle` |
+| 726-869 | 右侧属性面板 | `.right-panel-*` |
+| 870-931 | 模板选择卡片 | `.template-pick-*` |
+
+注意:行号是编写时的快照,修改后可能偏移.用 CSS 选择器搜索更可靠.
+
+## 设计体系(Design Tokens)
+
+**颜色体系**(严格遵循,保持视觉一致性):
+
+| 颜色 | 色值 | 用途 |
+|------|------|------|
+| 品牌主色 | `#067a7a` | 按钮背景、链接、active 状态、主操作 |
+| 主色 hover | `#056666` | 按钮/链接 hover 态 |
+| 强调绿 | `#0d9488` | 左侧激活指示条、聚焦边框 |
+| 主文字 | `#1e293b` | 标题、正文 |
+| 次文字 | `#475569` | 辅助说明 |
+| 三级文字 | `#64748b` | 提示、标签 |
+| 四级文字 | `#94a3b8` | 占位符、禁用态 |
+| 主边框 | `#e8ecf0` | 卡片、面板边框 |
+| 次边框 | `#e2e8f0` | 细线、分割线 |
+| 浅灰背景 | `#f8fafc` | 面板背景、hover 行 |
+| 侧栏深色背景 | `#1e293b` | 左侧导航栏背景 |
+
+**尺寸约定**:
+| 用途 | 尺寸 |
+|------|------|
+| 小元素圆角(按钮、标签) | 6px |
+| 卡片圆角 | 8-10px |
+| 过渡动画 | 0.12s ease |
+| 基础字号 | 13-14px |
+| 小字号(辅助) | 11-12px |
+| 标题字号 | 14-16px |
+| 左侧导航栏宽度(展开) | 240px |
+| 左侧导航栏宽度(收缩) | 60px |
+
+## CSS 命名约定
+
+所有自定义 class 用功能前缀,避免与 Bootstrap 冲突:
+
+| 前缀 | 用途 |
+|------|------|
+| `.admin-*` | 顶部管理栏 |
+| `.header-*` | 顶部 Header |
+| `.left-nav-*` | 左侧导航 |
+| `.right-panel-*` | 右侧属性面板 |
+| `.menu-tree-*` | 菜单树编辑器 |
+| `.template-pick-*` | 模板选择卡片 |
+| `.preview-*` | 预览相关 |
+| `.resizer-*` | 拖拽分隔条 |
+
+不使用 `.btn`、`.card`、`.nav` 等 Bootstrap 类名做自定义前缀.
+
+## Bootstrap 覆盖策略
+
+不修改 CDN 加载的 Bootstrap CSS,通过更高优先级选择器覆盖:
+
+```css
+/* 正确:用层级选择器覆盖 */
+.right-panel-body .form-control-sm {
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* 也正确:用属性选择器 */
+.left-nav-item[data-panel="products"] {
+  color: var(--bs-primary);
+}
+
+/* 错误:不要直接覆盖 Bootstrap 类 */
+/* .form-control { border-radius: 6px; }  可能影响整个后台 */
+```
+
+需要覆盖的 Bootstrap 组件:
+- `.form-control` / `.form-control-sm`:输入框样式
+- `.btn` / `.btn-sm` / `.btn-primary`:按钮(一般不覆盖,用内联 style)
+- `.nav` / `.nav-link`:导航
+- `.card`:卡片
+- `.badge`:标签
+
+## 新增组件样式
+
+当 `add-admin-page` 创建了新页面需要配套样式时:
+
+1. 先确认样式是否能复用现有的 class(如 `.panel-section`、`.right-panel-body`)
+2. 如果需要新样式,追加到 admin.css 对应分区末尾
+3. 类名使用功能前缀
+4. 如果用到了新的 Bootstrap 组件,记得测试 Bootstrap 覆盖是否生效
+
+示例(给"合作伙伴"页面加 Logo 预览样式):
+```css
+/* 追加到 admin.css 分区的末尾 */
+.partner-logo-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 6px;
+  border: 1px solid #e8ecf0;
+  object-fit: contain;
+  background: #f8fafc;
+}
+```
+
+## 页面特有样式
+
+如果某个样式只用于特定页面,写在 `base.html` 末尾的 `<style>` 块中
+(约第 676-681 行附近),不放入 admin.css.
+
+优点:
+- 不增加全局 CSS 体积
+- 不影响其他页面
+
+示例:
+```html
+<style>
+  /* 概览页面特有的统计卡片 */
+  .overview-stat-card {
+    background: linear-gradient(135deg, #067a7a 0%, #0d9488 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 20px;
+  }
+</style>
+```
+
+## 响应式
+
+后台**不做移动端适配**.管理后台在手机上使用场景极少.
+唯一的状态切换是**侧栏收缩**(240px ↔ 60px),通过 JS 切换 class 实现.
+
+## 修改流程
+
+1. 确认修改范围(颜色 / 布局 / 组件)
+2. 在 admin.css 中找到对应分区
+3. 修改 CSS 规则
+4. 刷新浏览器即可验证(无需重启服务器,CSS 是静态文件)
+5. 如果修改不生效,可能是浏览器缓存 → 按 Ctrl+Shift+R 强制刷新
+
+如果修改涉及多个页面(如全局颜色调整),修改后需要:
+- 测试概览页面
+- 测试左侧导航
+- 测试右侧面板
+- 测试菜单树编辑器
+- 测试模板库
+
+## 关联技能
+
+- `add-admin-page`:新增后台页面时可能需要配套样式
+- `edit-template-style`:修改前端网站样式(面向访客,不是后台)
+- `dev-server`:启动服务器查看效果

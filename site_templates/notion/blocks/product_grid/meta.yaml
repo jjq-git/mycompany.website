@@ -1,0 +1,63 @@
+name: 产品网格
+category: data
+icon: product_grid.svg
+description: 从产品数据集自动拉取产品卡片展示
+fields:
+  - key: dataset
+    label: 数据来源
+    type: select
+    group: 数据
+    options:
+      - value: products
+        label: 产品
+  - key: max_items
+    label: 最大显示数量
+    type: number
+    group: 数据
+    default: 6
+  - key: section_bg
+    label: 外层背景色
+    type: color
+    group: 外层样式
+    default: ""
+    placeholder: 如 #f5f7fa（留空=使用默认）
+  - key: outer_width
+    label: 外层宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空不限制宽度）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: padding_top
+    label: 上内边距
+    type: text
+    group: 外层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_right
+    label: 右内边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_bottom
+    label: 下内边距
+    type: text
+    group: 外层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_left
+    label: 左内边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: title
+    label: 区块标题
+    type: text
+    group: 内容

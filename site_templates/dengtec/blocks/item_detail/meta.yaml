@@ -1,0 +1,121 @@
+name: 条目详情
+category: content
+description: 双栏布局详情展示：左侧多图切换+放大镜，右侧标题/描述/标签/规格表
+fields:
+  - key: section_bg
+    label: 外层背景色
+    type: color
+    group: 外层样式
+    default: ""
+    placeholder: 如 #f5f7fa（留空=使用默认）
+  - key: outer_width
+    label: 外层宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空不限制宽度）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: inner_bg
+    label: 内层背景色
+    type: color
+    group: 内层样式
+    default: ""
+    placeholder: 如 #ffffff（留空=透明）
+  - key: padding_top
+    label: 内层上间距
+    type: text
+    group: 内层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_right
+    label: 内层右间距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_bottom
+    label: 内层下间距
+    type: text
+    group: 内层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_left
+    label: 内层左间距
+    type: text
+    group: 内层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: img_border_radius
+    label: 图片圆角
+    type: text
+    group: 图片样式
+    default: "8px"
+    placeholder: 如 12px（留空=CSS 默认 8px）
+  - key: img_height
+    label: 图片高度
+    type: text
+    group: 图片样式
+    default: ""
+    placeholder: 如 400px（留空=自适应）
+  - key: text_bg
+    label: 文本区背景色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #ffffff（留空=透明）
+  - key: text_color
+    label: 文本区字体颜色
+    type: color
+    group: 配色
+    default: ""
+    placeholder: 如 #333333（留空=默认）
+  - key: tag_bg
+    label: 标签背景色
+    type: color
+    group: 配色
+    default: "#f5f7fa"
+    placeholder: 如 #067a7a（留空=CSS 默认灰底）
+  - key: tag_color
+    label: 标签字体颜色
+    type: color
+    group: 配色
+    default: "#64748b"
+    placeholder: 如 #ffffff（留空=CSS 默认灰色）
+  - key: title
+    label: 标题
+    type: text
+    group: 内容
+  - key: desc
+    label: 描述
+    type: textarea
+    group: 内容
+  - key: tags
+    label: 标签（逗号分隔）
+    type: text
+    group: 内容
+  - key: images
+    label: 图片列表
+    type: list
+    group: 图片列表
+    item_label: 图片
+    item_fields:
+      - key: url
+        label: 图片URL
+        type: image
+  - key: specs
+    label: 规格参数
+    type: list
+    group: 规格参数
+    item_label: 规格
+    item_fields:
+      - key: name
+        label: 参数名
+        type: text
+      - key: value
+        label: 参数值
+        type: text

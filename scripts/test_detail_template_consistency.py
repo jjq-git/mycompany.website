@@ -1,0 +1,282 @@
+"""Regression checks for detail-template editor, item editor and renderer consistency."""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from jinja2 import Environment
+from werkzeug.datastructures import FileStorage, MultiDict
+
+from app.core import builder, product_comparison, routes
+
+
+def check(label, condition):
+    if not condition:
+        raise AssertionError(label)
+    print(f"PASS: {label}")
+
+
+# Palette/category coverage.
+component_by_name = {item['name']: item for item in routes.DETAIL_TEMPLATE_COMPONENT_BLOCKS}
+check('all palette components use the detail category', all(
+    item.get('category') == 'detail' for item in component_by_name.values()
+))
+check('all exposed component types have a renderer', all(
+    name in builder.DETAIL_COMPONENT_TYPES for name in component_by_name
+))
+for required_type in ('detail_media', 'detail_text', 'detail_table'):
+    check(f'{required_type} can be added again after deletion', not component_by_name[required_type].get('palette_hidden'))
+
+# Explicit order is canonical in both admin and renderer paths.
+unordered = [
+    {'type': 'detail_text', 'order': 3, 'data': {'content_field': 'body'}},
+    {'type': 'detail_specs', 'order': 1, 'data': {}},
+    {'type': 'detail_link', 'order': 2, 'data': {}},
+]
+expected_order = ['detail_specs', 'detail_link', 'detail_text']
+check('admin detail modules follow explicit order', [
+    item['type'] for item in routes._sort_detail_modules(unordered)
+] == expected_order)
+check('renderer detail modules follow explicit order', [
+    item['type'] for item in builder._sort_detail_modules(unordered)
+] == expected_order)
+
+# Component classification controls the corresponding item-editor section only.
+classification_cases = {
+    'detail_media': 'detail_images',
+    'detail_specs': 'specs',
+    'detail_table': 'detail_tables',
+    'detail_link': 'link',
+    'detail_features': 'detail_features',
+    'detail_columns': 'detail_columns',
+    'detail_files': 'detail_files',
+    'detail_faq': 'detail_faqs',
+    'detail_related': 'detail_related',
+    'detail_content_blocks': 'detail_content_blocks',
+}
+for component_type, section_key in classification_cases.items():
+    requirements = routes._detail_template_field_requirements({
+        'modules': [{'type': component_type, 'data': {}}],
+    })
+    check(f'{component_type} maps to {section_key}', requirements[section_key] is True)
+summary_requirements = routes._detail_template_field_requirements({
+    'modules': [{'type': 'detail_text', 'data': {'content_field': 'summary'}}],
+})
+check('summary field text does not expose an unrelated body editor', summary_requirements['body'] is False)
+
+# Singleton components cannot create duplicate editor/preview sections.
+duplicates = [
+    {'type': 'detail_media', 'order': 1, 'data': {}},
+    {'type': 'detail_media', 'order': 2, 'data': {}},
+    {'type': 'detail_columns', 'order': 3, 'data': {}},
+    {'type': 'detail_columns', 'order': 4, 'data': {}},
+]
+deduped = routes._dedupe_detail_singletons(duplicates)
+check('single-source components are deduplicated', [m['type'] for m in deduped].count('detail_media') == 1)
+check('positional components remain repeatable', [m['type'] for m in deduped].count('detail_columns') == 2)
+
+# Root visibility is authoritative in preview rendering.
+hidden_html = builder._render_detail_component(
+    {'item': {'title': 'Hidden title', 'body': 'Hidden body'}},
+    {'type': 'detail_text', 'data': {'content_field': 'body', '_hidden': 'true'}},
+)
+check('hidden detail component renders no HTML', str(hidden_html) == '')
+annotated_hidden_media = builder._annotate_detail_modules([
+    {'type': 'detail_media', 'order': 1, 'data': {'_hidden': 'true'}},
+])
+check('hidden media still gets a visible base heading', annotated_hidden_media[0]['type'] == '_detail_base_header')
+
+info_only_html = str(builder._render_detail_media({
+    'title': 'Info only',
+    'summary': 'No top media is configured.',
+}, {'layout': 'gallery_left'}))
+check('info-only detail header uses the full container width',
+      'detail-media--info-only' in info_only_html and 'max-width:860px' not in info_only_html)
+
+direct_video_html = str(builder._render_detail_content_blocks({
+    'detail_content_blocks': [{'type': 'video', 'video': '/assets/uploads/demo.mp4'}],
+}, {'video_ratio': '16/9'}))
+check('detail video uses only the native video player',
+      '<video ' in direct_video_html and '<iframe ' not in direct_video_html)
+share_page_html = str(builder._render_detail_content_blocks({
+    'detail_content_blocks': [{
+        'type': 'video',
+        'video': 'https://haokan.baidu.com/v?vid=1969238850215732344',
+    }],
+}, {'video_ratio': '16/9'}))
+check('renderer ignores stored video webpage URLs', share_page_html == '')
+check('video URL validation accepts direct media files and query strings',
+      routes._is_direct_video_url('https://cdn.example.com/video.mp4?token=abc')
+      and routes._is_direct_video_url('/assets/uploads/demo.webm'))
+check('video URL validation rejects share pages and unsafe schemes',
+      not routes._is_direct_video_url(
+          'https://haokan.baidu.com/v?vid=1969238850215732344&pd=pcshare'
+      )
+      and not routes._is_direct_video_url('javascript:alert(1)'))
+
+invalid_video_form = MultiDict([
+    ('detail_content_blocks_count', '1'),
+    ('detail_content_blocks_0_type', 'video'),
+    ('detail_content_blocks_0_video', 'https://haokan.baidu.com/v?vid=1969238850215732344'),
+])
+check('draft preview drops video webpage URLs',
+      routes._parse_detail_content_blocks_form(invalid_video_form) == [])
+save_rejected = False
+try:
+    routes._parse_detail_content_blocks_form(invalid_video_form, site_id=1)
+except ValueError:
+    save_rejected = True
+check('saving rejects video webpage URLs', save_rejected)
+
+embed_upload_form = MultiDict([
+    ('detail_content_blocks_count', '1'),
+    ('detail_content_blocks_0_type', 'embed'),
+])
+embed_upload_files = MultiDict([
+    ('detail_content_blocks_0_embed_file', FileStorage(filename='interactive-demo.zip')),
+])
+original_save_media_package = routes._save_media_package
+try:
+    routes._save_media_package = lambda site_id, upload: {
+        'entry_url': '/assets/media-packages/interactive-demo/'
+    }
+    parsed_embed_blocks = routes._parse_detail_content_blocks_form(
+        embed_upload_form,
+        files=embed_upload_files,
+        site_id=1,
+        dataset_key='products',
+    )
+finally:
+    routes._save_media_package = original_save_media_package
+check('detail embed accepts a webpage package upload', parsed_embed_blocks == [{
+    'type': 'embed',
+    'embed_url': '/assets/media-packages/interactive-demo/',
+}])
+
+embed_html = str(builder._render_detail_content_blocks({
+    'detail_content_blocks': parsed_embed_blocks,
+}, {'iframe_height': '520px'}))
+check('detail embed renders the uploaded package without an inner scrollbar',
+      'src="/assets/media-packages/interactive-demo/"' in embed_html
+      and 'scrolling="no"' in embed_html)
+
+# Empty positional groups must not fall back to group 1 / legacy fields.
+spec_modules = builder._annotate_detail_modules([
+    {'type': 'detail_specs', 'order': 1, 'data': {}},
+    {'type': 'detail_specs', 'order': 2, 'data': {}},
+])
+spec_modules = [m for m in spec_modules if m['type'] == 'detail_specs']
+spec_item = {
+    'specs': [{'name': 'legacy', 'value': 'must not repeat'}],
+    'detail_specs': [{'items': [{'name': 'A', 'value': '1'}], 'visible': True}],
+}
+spec_html = [str(builder._render_detail_specs(spec_item, m['data'])) for m in spec_modules]
+check('only populated specs group renders', [bool(value) for value in spec_html] == [True, False])
+legacy_spec_html = [str(builder._render_detail_specs({'specs': spec_item['specs']}, m['data'])) for m in spec_modules]
+check('legacy specs source renders only in the first component',
+      [bool(value) for value in legacy_spec_html] == [True, False])
+
+# Stable group keys are canonical; position remains a backward-compatible fallback.
+keyed_spec_modules = builder._annotate_detail_modules([
+    {'type': 'detail_specs', 'order': 1, 'data': {'key': 'interfaces', 'columns': 2}},
+    {'type': 'detail_specs', 'order': 2, 'data': {'key': 'basic', 'columns': 2}},
+])
+keyed_spec_modules = [m for m in keyed_spec_modules if m['type'] == 'detail_specs']
+keyed_item = {'detail_specs': [
+    {'key': 'basic', 'items': [{'name': 'Basic marker', 'value': 'B'}]},
+    {'key': 'interfaces', 'items': [{'name': 'Interface marker', 'value': 'I'}]},
+]}
+keyed_html = [str(builder._render_detail_specs(keyed_item, m['data'])) for m in keyed_spec_modules]
+check('stable specs group keys survive component reordering',
+      'Interface marker' in keyed_html[0] and 'Basic marker' in keyed_html[1])
+
+legacy_source_modules = builder._annotate_detail_modules([
+    {'type': 'detail_specs', 'order': 1, 'data': {'source_field': 'specs', 'columns': 2}},
+    {'type': 'detail_specs', 'order': 2, 'data': {'source_field': 'parameters', 'columns': 2}},
+    {'type': 'detail_specs', 'order': 3, 'data': {'source_field': 'attributes', 'columns': 2}},
+])
+legacy_source_modules = [m for m in legacy_source_modules if m['type'] == 'detail_specs']
+legacy_source_item = {
+    'specs': {'Spec marker': 'S'},
+    'parameters': {'Parameter marker': 'P'},
+    'attributes': {'Attribute marker': 'A'},
+}
+legacy_source_html = [
+    str(builder._render_detail_specs(legacy_source_item, module['data']))
+    for module in legacy_source_modules
+]
+check('distinct legacy parameter sources each render once',
+      'Spec marker' in legacy_source_html[0]
+      and 'Parameter marker' in legacy_source_html[1]
+      and 'Attribute marker' in legacy_source_html[2])
+
+legacy_comparison_groups = product_comparison._product_groups(legacy_source_item, [
+    {'key': 'basic', 'title': '基本参数', 'source_field': 'specs'},
+    {'key': 'interfaces', 'title': '接口参数', 'source_field': 'parameters'},
+    {'key': 'electrical', 'title': '电气参数', 'source_field': 'attributes'},
+])
+check('comparison compatibility respects each configured legacy source',
+      [group['key'] for group in legacy_comparison_groups] == ['basic', 'interfaces', 'electrical'])
+
+link_modules = builder._annotate_detail_modules([
+    {'type': 'detail_link', 'order': 1, 'data': {'hide_when_empty': 'true'}},
+    {'type': 'detail_link', 'order': 2, 'data': {'hide_when_empty': 'true'}},
+])
+link_modules = [m for m in link_modules if m['type'] == 'detail_link']
+link_item = {
+    'detail_links': [{'text': 'First', 'url': '/first/'}],
+    'download_url': '/must-not-repeat/',
+}
+link_html = [str(builder._render_detail_link(link_item, m['data'])) for m in link_modules]
+check('only populated link group renders', [bool(value) for value in link_html] == [True, False])
+
+# Parsers preserve positional empty groups.
+links = routes._parse_detail_links_form(MultiDict([
+    ('detail_links_0_text', 'First'), ('detail_links_0_url', '/first/'),
+    ('detail_links_2_text', 'Third'), ('detail_links_2_url', '/third/'),
+]), 3)
+check('link parser preserves middle empty group', len(links) == 3 and not links[1]['url'] and links[2]['url'] == '/third/')
+
+columns_form = [('detail_columns_count', '3')]
+for index in range(3):
+    columns_form.extend([
+        (f'detail_columns_{index}_heading', ''),
+        (f'detail_columns_{index}_count', '1' if index == 2 else '0'),
+    ])
+columns_form.extend([
+    ('detail_columns_2_0_title', 'Third'),
+    ('detail_columns_2_0_text', 'Only third group'),
+    ('detail_columns_2_0_image', ''),
+    ('detail_columns_2_0_alt', ''),
+])
+column_groups = routes._parse_detail_columns_form(MultiDict(columns_form))
+check('columns parser preserves leading empty groups',
+      len(column_groups) == 3 and not column_groups[0]['items'] and column_groups[2]['items'])
+column_modules = builder._annotate_detail_modules([
+    {'type': 'detail_columns', 'order': 1, 'data': {}},
+    {'type': 'detail_columns', 'order': 2, 'data': {}},
+])
+column_modules = [m for m in column_modules if m['type'] == 'detail_columns']
+legacy_columns = {'detail_columns': {'heading': 'Legacy', 'items': [{'text': 'Once'}]}}
+legacy_column_html = [str(builder._render_detail_columns(legacy_columns, m['data'])) for m in column_modules]
+check('legacy columns source renders only in the first component',
+      [bool(value) for value in legacy_column_html] == [True, False])
+
+# Detail editor uses one independent section per repeated specs/columns component.
+panel_path = Path(__file__).resolve().parent.parent / 'app/templates/dashboard/panel_data_list.html'
+panel_source = panel_path.read_text(encoding='utf-8')
+Environment().parse(panel_source)
+check('specs editor groups are independent sections',
+      'data-field-section="specs_{{ spec_group_i }}"' in panel_source and 'id="detailSpecsList"' not in panel_source)
+check('columns editor groups are independent sections',
+      'data-field-section="detail_columns_{{ col_group_i }}"' in panel_source and 'id="detailColumnsList"' not in panel_source)
+check('table editor groups are independent sections',
+      'data-field-section="detail_tables_{{ table_i }}"' in panel_source and 'id="detailTablesList"' not in panel_source)
+check('link editor groups are independent sections',
+      'data-field-section="link_{{ i }}"' in panel_source and 'id="detailLinksList"' not in panel_source)
+check('video URL fields explain and validate the direct-file requirement',
+      'validateDirectVideoUrl' in panel_source
+      and '不支持视频网页或分享链接' in panel_source
+      and '好看视频分享地址' not in panel_source)
+
+print('All detail-template consistency checks passed.')

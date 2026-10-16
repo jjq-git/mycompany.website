@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}创建站点{% endblock %} — {{ platform_domain }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-account.css') }}?v=20260721-pubdisable">
+  <style>
+    :root{--onboard-primary:#0d9488;--onboard-primary-hover:#0b7f76;--onboard-bg:#f4f6f8;--bs-primary:#0d9488;--bs-primary-rgb:13,148,136;--bs-link-color:#0d9488;--bs-link-hover-color:#0b7f76}
+    body{margin:0;background:var(--onboard-bg);color:#0f172a;font-family:Arial,"Microsoft YaHei",sans-serif}
+    .onboard-header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid #e1e7ec;background:#fff}
+    .onboard-brand{display:flex;align-items:center;gap:10px;color:#0f172a;text-decoration:none;font-weight:700}
+    .onboard-logo{width:30px;height:30px;object-fit:contain}
+    .onboard-header-actions{display:flex;align-items:center;gap:10px}
+    .onboard-header-actions a{color:#526174;text-decoration:none;font-size:13px}
+    .onboard-logout{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:1px solid transparent;background:transparent;color:#64748b;cursor:pointer}
+    .onboard-logout:hover{border-color:#fecaca;background:#fef2f2;color:#c53030}.onboard-logout svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .onboard-shell{width:min(1120px,calc(100% - 32px));margin:0 auto;padding:42px 0 70px}
+    .onboard-step{margin-bottom:10px;color:var(--onboard-primary);font-size:12px;font-weight:700;letter-spacing:.08em}
+    .onboard-title{margin:0;font-size:30px;line-height:1.25}
+    .onboard-subtitle{max-width:680px;margin:10px 0 28px;color:#718096;line-height:1.7}
+    .onboard-back{display:inline-flex;align-items:center;gap:7px;margin-bottom:18px;color:#526174;text-decoration:none;font-size:13px}
+    .onboard-back:hover{color:var(--onboard-primary)}
+    .btn-primary{--bs-btn-bg:var(--onboard-primary);--bs-btn-border-color:var(--onboard-primary);--bs-btn-hover-bg:var(--onboard-primary-hover);--bs-btn-hover-border-color:var(--onboard-primary-hover);--bs-btn-active-bg:var(--onboard-primary-hover);--bs-btn-active-border-color:var(--onboard-primary-hover);--bs-btn-disabled-bg:var(--onboard-primary);--bs-btn-disabled-border-color:var(--onboard-primary)}
+    .form-check-input:checked{background-color:var(--onboard-primary);border-color:var(--onboard-primary)}
+    .form-check-input:focus,.form-control:focus,.form-select:focus{border-color:var(--onboard-primary);box-shadow:0 0 0 .2rem rgba(13,148,136,.14)}
+    @media(max-width:640px){.onboard-header{padding:0 14px}.onboard-shell{padding-top:26px}.onboard-title{font-size:25px}.onboard-header-actions .account-link-label{display:none}}
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="onboard-header">
+    <a class="onboard-brand" href="{{ url_for('core.overview') if site else url_for('core.templates_gallery') }}" title="返回" aria-label="返回">
+      <img class="onboard-logo" src="{{ url_for('static', filename='brand-logo.svg') }}" alt="">
+    </a>
+    <div class="onboard-header-actions">
+      {% if site %}<a href="{{ url_for('core.overview', site=site.slug) }}">返回站点</a>{% endif %}
+      <a href="{{ url_for('core.account', section='profile') }}"><span class="account-link-label">账号中心</span></a>
+      <form method="post" action="{{ url_for('core.logout') }}" target="_top" style="margin:0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="onboard-logout" type="submit" title="退出登录" aria-label="退出登录"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg></button>
+      </form>
+    </div>
+  </header>
+  <main class="onboard-shell">
+    {% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="alert alert-{{ category if category in ['success','danger','warning','info'] else 'info' }}">{{ message }}</div>{% endfor %}{% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

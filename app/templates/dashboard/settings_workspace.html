@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{{ title }}</title>
+  <link href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260721-minfont">
+  <style>
+    :root {
+      --bs-primary: {{ admin_primary }};
+      --bs-primary-rgb: {{ admin_primary_rgb }};
+      --bs-primary-bg-subtle: {{ admin_primary_light }};
+      --bs-link-color: {{ admin_primary }};
+      --bs-link-hover-color: {{ admin_primary_hover }};
+      --admin-primary: {{ admin_primary }};
+      --admin-primary-rgb: {{ admin_primary_rgb }};
+      --admin-primary-hover: {{ admin_primary_hover }};
+      --admin-primary-active: {{ admin_primary_active }};
+      --admin-primary-light: {{ admin_primary_light }};
+      --theme-primary: {{ admin_primary }};
+    }
+    body {
+      margin: 0;
+      background: #f6f7f9;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 14px;
+    }
+    .settings-workspace { min-height: 100vh; padding: 16px; }
+    .settings-workspace-inner { max-width: 1540px; margin: 0 auto; }
+    .settings-workspace-panel {
+      padding: 18px;
+      border: 1px solid #dfe4ea;
+      border-radius: 0;
+      background: #fff;
+      box-shadow: 0 12px 36px rgba(15,23,42,.06);
+    }
+    .settings-workspace-panel form { max-width: none; }
+    .settings-workspace-panel .panel-save-bar {
+      position: static;
+      margin: 16px 0 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      backdrop-filter: none;
+    }
+    .btn-outline-primary {
+      --bs-btn-color: var(--admin-primary);
+      --bs-btn-border-color: var(--admin-primary);
+      --bs-btn-hover-bg: var(--admin-primary);
+      --bs-btn-hover-border-color: var(--admin-primary);
+      --bs-btn-active-bg: var(--admin-primary-active);
+      --bs-btn-active-border-color: var(--admin-primary-active);
+      --bs-btn-disabled-color: var(--admin-primary);
+      --bs-btn-disabled-border-color: var(--admin-primary);
+    }
+    .btn-primary {
+      --bs-btn-bg: var(--admin-primary);
+      --bs-btn-border-color: var(--admin-primary);
+      --bs-btn-hover-bg: var(--admin-primary-hover);
+      --bs-btn-hover-border-color: var(--admin-primary-hover);
+      --bs-btn-active-bg: var(--admin-primary-active);
+      --bs-btn-active-border-color: var(--admin-primary-active);
+    }
+  </style>
+</head>
+<body>
+  <script>
+    try {
+      if (window.parent && window.parent !== window) {
+        var parentMenuSprite = window.parent.document.getElementById('menuIconSprite');
+        if (parentMenuSprite) document.body.appendChild(parentMenuSprite.cloneNode(true));
+      }
+    } catch (e) {}
+  </script>
+  <main class="settings-workspace settings-workspace--{{ active|default('settings') }}">
+    <div class="settings-workspace-inner">
+      <section class="settings-workspace-panel">
+        {% include panel_template %}
+      </section>
+    </div>
+  </main>
+  <script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
+  <script>
+  (function () {
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    var token = meta ? meta.getAttribute('content') : '';
+    if (token) {
+      var origFetch = window.fetch;
+      window.fetch = function (input, init) {
+        init = init || {};
+        var method = (init.method || 'GET').toUpperCase();
+        if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+          init.headers = new Headers(init.headers || {});
+          if (!init.headers.has('X-CSRFToken')) init.headers.set('X-CSRFToken', token);
+        }
+        return origFetch.call(this, input, init);
+      };
+    }
+
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('saved') === '1' && window.parent && window.parent !== window) {
+      try {
+        if (typeof window.parent.markPreviewDirty === 'function') {
+          window.parent.markPreviewDirty();
+        }
+        if (typeof window.parent.refreshLeftNavigation === 'function') {
+          window.parent.refreshLeftNavigation();
+        }
+      } catch (e) {}
+    }
+  })();
+  </script>
+  {% include "dashboard/_readonly_guard.html" %}
+</body>
+</html>

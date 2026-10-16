@@ -1,0 +1,49 @@
+# 空白站点的干净外壳设置：占位公司信息 + 仅首页菜单 + 极简页脚。
+# 老板创建站点后在后台逐项填写；这里不含任何德恩基/示例业务内容。
+
+company:
+  name: "Your Company"
+  short_name: "Company"
+  logo: ''
+  icp: ''
+
+# 联系方式留空：footer 用 minimal 变体，不渲染联系区块（空 dict 安全）
+contact: {}
+
+social:
+  enabled: false
+  twitter: ''
+  linkedin: ''
+  github: ''
+
+theme: {}
+
+# 初始菜单只有首页
+menu:
+- label: Home
+  type: home
+
+# 只保留首页的多语言标签；其余菜单项由老板在后台添加时自动补齐
+menu_labels:
+  zh-CN:
+    __home__: 首页
+  zh-TW:
+    __home__: 首頁
+  en:
+    __home__: Home
+
+header:
+  variant: logo_left_menu_right
+  language_switcher:
+    enabled: true
+    style: vertical_dropdown
+  # 建站时会按老板实际勾选的语言覆盖此列表
+  enabled_languages:
+  - zh-CN
+  - zh-TW
+  - en
+
+# 极简页脚：只渲染版权行，无链接栏 / 联系方式 / 社交（columns 留空）
+footer:
+  variant: minimal
+  columns: []

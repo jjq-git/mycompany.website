@@ -1,0 +1,79 @@
+name: 产品参数对比
+category: data
+icon: data_grid.svg
+editor: meta_fields
+description: 独立的产品参数对比页，共用现有产品数据，不改变原产品列表。
+fields:
+  - key: dataset
+    label: 产品数据源
+    type: text
+    group: 数据
+    default: products
+  - key: detail_template_id
+    label: 详情模板 ID（留空自动）
+    type: text
+    group: 数据
+    default: ''
+  - key: default_product_ids
+    label: 默认产品 ID（逗号分隔）
+    type: text
+    group: 数据
+    default: ''
+  - key: title
+    label: 页面标题
+    type: text
+    group: 内容
+    default: 产品参数对比
+  - key: comparison_label
+    label: 分类名称
+    type: text
+    group: 内容
+    default: ''
+    help: 用于对比分类下拉框；留空时使用页面标题
+  - key: subtitle
+    label: 页面说明
+    type: text
+    group: 内容
+    default: 选择产品并逐项比较关键规格
+  - key: show_image
+    label: 显示产品图片
+    type: select
+    group: 显示
+    default: 'true'
+    options:
+      - {value: 'true', label: 显示}
+      - {value: 'false', label: 隐藏}
+  - key: show_price
+    label: 显示价格
+    type: select
+    group: 显示
+    default: 'true'
+    options:
+      - {value: 'true', label: 显示}
+      - {value: 'false', label: 隐藏}
+  - key: show_search
+    label: 显示参数搜索
+    type: select
+    group: 交互
+    default: 'true'
+    options:
+      - {value: 'true', label: 开启}
+      - {value: 'false', label: 关闭}
+  - key: show_hide_same
+    label: 显示隐藏相同项功能
+    type: select
+    group: 交互
+    default: 'true'
+    options:
+      - {value: 'true', label: 开启}
+      - {value: 'false', label: 关闭}
+  - key: empty_text
+    label: 无数据占位符
+    type: text
+    group: 显示
+    default: '—'
+  - key: section_bg
+    label: 背景颜色
+    type: color
+    group: 样式
+    default: ''

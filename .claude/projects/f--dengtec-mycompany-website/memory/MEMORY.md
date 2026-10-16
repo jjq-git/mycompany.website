@@ -1,0 +1,1 @@
+- [修改或新增文件前需询问确认](feedback_file-editing.md) — 每次 Edit/Write 前先询问用户，不在 IDE 新开窗口

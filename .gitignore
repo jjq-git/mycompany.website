@@ -1,5 +1,6 @@
 # Claude Code 本地配置
-.claude/
+.claude/scheduled_tasks.lock
+.claude/settings.local.json
 
 # Python
 __pycache__/
@@ -20,7 +21,7 @@ instance/
 *.sqlite3
 
 # 项目运行时目录
-uploads/
+/uploads/
 output/
 # 店主数据，不进 git（生产环境备份在别处）
 sites/
@@ -32,9 +33,15 @@ sites/
 # 私有文档（商业策略、定价、客户、凭证等，不进 git）
 .private/
 
+# Block 迁移备份文件
+*.bak
+
 # IDE / 编辑器
 .vscode/
 .idea/
 *.swp
 *.swo
 .DS_Store
+
+# Flask 开发服务器日志
+flask_*.log

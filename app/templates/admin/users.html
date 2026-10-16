@@ -3,26 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>用户管理 — mycompany.website 管理后台</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+  <title>用户管理 — {{ platform_domain }} 管理后台</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260721-minfont">
   <style>
     .topbar.admin { background: #1a1a2e; color: #fff; }
     .topbar.admin .logo { color: #fff; }
     .role-badge {
       display: inline-block;
-      padding: 2px 8px; border-radius: 10px;
-      font-size: 12px; font-weight: 500;
+      padding: 2px 8px; border-radius: 0;
+      font-size: 14px; font-weight: 500;
     }
     .role-admin { background: #fef3c7; color: #92400e; }
-    .role-owner { background: #e0e7ff; color: #3730a3; }
+    .role-user { background: #e0e7ff; color: #3730a3; }
     .status-active { color: var(--success); }
     .status-suspended { color: var(--danger); }
+    .role-form { display: flex; align-items: center; gap: 6px; }
+    .role-form select { height: 34px; border: 1px solid var(--border); border-radius: 0; background: #fff; }
+    .role-form button { height: 34px; padding: 0 12px; border: 1px solid #0d9488; border-radius: 0; background: #0d9488; color: #fff; cursor: pointer; }
+    .admin-alert { margin: 0 0 14px; padding: 10px 12px; border: 1px solid var(--border); background: #fff; }
   </style>
 </head>
 <body>
 
 <header class="topbar admin">
-  <div class="logo">mycompany.website · 管理后台</div>
+  <div class="logo">{{ platform_domain }} · 管理后台</div>
   <div class="spacer"></div>
   <span style="opacity: 0.7; margin-right: 12px;">{{ user.email }}</span>
   <a class="btn" href="{{ url_for('core.overview') }}">回到店主后台</a>
@@ -30,14 +34,15 @@
 
 <main class="main" style="margin-left: 0; padding: 24px 32px;">
   <h1 class="page-title">用户管理</h1>
-  <p class="page-subtitle">共 {{ rows|length }} 个用户</p>
+  <p class="page-subtitle">共 {{ rows|length }} 个用户；平台角色只区分普通用户和平台管理员。</p>
+  {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="admin-alert {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
 
-  <table class="table" style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+  <table class="table" style="border: 1px solid var(--border); border-radius: 0; overflow: hidden;">
     <thead>
       <tr>
         <th style="width: 60px;">ID</th>
-        <th>邮箱</th>
-        <th style="width: 80px;">角色</th>
+        <th>登录账号</th>
+        <th style="width: 230px;">平台角色</th>
         <th style="width: 80px;">状态</th>
         <th style="width: 70px;">站点</th>
         <th style="width: 160px;">注册时间</th>
@@ -48,14 +53,21 @@
       {% for r in rows %}
       <tr>
         <td class="muted">{{ r.id }}</td>
-        <td><strong>{{ r.email }}</strong></td>
+        <td><strong>{{ r.identifier }}</strong></td>
         <td>
-          <span class="role-badge role-{{ r.role }}">{{ r.role }}</span>
+          <form class="role-form" method="post" action="{{ url_for('admin.user_role_update', user_id=r.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select name="role" aria-label="用户 {{ r.identifier }} 的平台角色">
+              <option value="user" {{ 'selected' if r.role == 'user' else '' }}>普通用户</option>
+              <option value="admin" {{ 'selected' if r.role == 'admin' else '' }}>平台管理员</option>
+            </select>
+            <button type="submit">保存</button>
+          </form>
         </td>
         <td class="status-{{ r.status }}">{{ r.status }}</td>
         <td>{{ r.site_count }}</td>
-        <td class="muted">{{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else '-' }}</td>
-        <td class="muted">{{ r.last_login_at.strftime('%Y-%m-%d %H:%M') if r.last_login_at else '从未登录' }}</td>
+        <td class="muted">{{ r.created_at|localtime('%Y-%m-%d %H:%M') if r.created_at else '-' }}</td>
+        <td class="muted">{{ r.last_login_at|localtime('%Y-%m-%d %H:%M') if r.last_login_at else '从未登录' }}</td>
       </tr>
       {% endfor %}
     </tbody>

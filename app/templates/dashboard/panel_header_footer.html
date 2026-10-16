@@ -1,0 +1,241 @@
+<style>
+.header-footer-tab-group .btn {
+  border-color: rgba(var(--admin-primary-rgb), .28);
+  color: var(--admin-primary);
+}
+.header-footer-tab-group .btn:hover,
+.header-footer-tab-group .btn.active {
+  background: var(--admin-primary);
+  border-color: var(--admin-primary);
+  color: #fff;
+}
+.header-footer-tab-group .btn:focus-visible {
+  box-shadow: 0 0 0 .2rem rgba(var(--admin-primary-rgb), .18);
+}
+.header-footer-editor .variant-card-grid {
+  grid-template-columns: repeat(3, minmax(128px, 1fr));
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.header-footer-editor .variant-card {
+  min-width: 128px;
+}
+@media (max-width: 420px) {
+  .header-footer-editor .variant-card-grid {
+    grid-template-columns: repeat(3, minmax(128px, 1fr));
+  }
+}
+
+/* 与基本设置工作台一致的区块卡片布局。 */
+.settings-workspace--header_footer {
+  padding: 28px 32px 88px;
+}
+.settings-workspace--header_footer .settings-workspace-inner {
+  max-width: 1200px;
+}
+.settings-workspace--header_footer .settings-workspace-panel {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.settings-workspace--header_footer .header-footer-editor {
+  display: block;
+}
+.settings-workspace--header_footer #headerFooterHeaderPane,
+.settings-workspace--header_footer #headerFooterFooterPane {
+  min-width: 0;
+  margin: 0 0 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.settings-workspace--header_footer .header-footer-pane > .d-flex:first-child {
+  margin: 0 0 12px !important;
+  padding: 0;
+  color: #718096;
+  font-size: 15px;
+}
+.settings-workspace--header_footer #headerForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.settings-workspace--header_footer #footerForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.settings-workspace--header_footer #footerForm > .footer-settings-left,
+.settings-workspace--header_footer #footerForm > .footer-settings-right {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.settings-workspace--header_footer #footerForm > .footer-settings-left {
+  grid-column: 1;
+}
+.settings-workspace--header_footer #footerForm > .footer-settings-right {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.settings-workspace--header_footer #footerForm .footer-settings-left .variant-card-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.settings-workspace--header_footer #footerForm > .footer-settings-left,
+.settings-workspace--header_footer #footerForm > .footer-settings-right {
+  display: contents;
+}
+.settings-workspace--header_footer #footerForm .footer-settings-left > .panel-section {
+  grid-column: 1;
+  grid-row: 1;
+}
+.settings-workspace--header_footer #footerColumnsSection {
+  grid-column: 1;
+  grid-row: 2;
+}
+.settings-workspace--header_footer #footerSocialSection {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+.settings-workspace--header_footer #headerForm > .panel-section,
+.settings-workspace--header_footer .footer-settings-left > .panel-section,
+.settings-workspace--header_footer .footer-settings-left > .footer-meta-field,
+.settings-workspace--header_footer #footerColumnsSection,
+.settings-workspace--header_footer #footerSocialSection {
+  height: auto;
+  margin: 0 !important;
+  padding: 20px 26px 22px;
+  border: 1px solid #e1e6eb;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, .08);
+}
+.settings-workspace--header_footer #footerColumnsSection {
+  margin-top: -12px !important;
+}
+.settings-workspace--header_footer #headerForm > .panel-section > .panel-section-title,
+.settings-workspace--header_footer .footer-settings-left > .panel-section > .panel-section-title {
+  margin: -20px -26px 20px;
+  padding: 16px 26px 14px;
+  border-bottom: 1px solid #e8ecf0;
+  color: #172033;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.settings-workspace--header_footer #footerForm hr {
+  display: none;
+}
+.settings-workspace--header_footer .header-footer-editor--combined #headerForm > .panel-save-bar,
+.settings-workspace--header_footer .header-footer-editor--combined #footerForm > .panel-save-bar {
+  display: none;
+}
+.settings-workspace--header_footer .header-footer-combined-save {
+  position: static;
+  display: flex;
+  justify-content: flex-end;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+.settings-workspace--header_footer .form-control,
+.settings-workspace--header_footer .form-select {
+  border-color: #d9e0e7;
+  border-radius: 0;
+}
+.settings-workspace--header_footer .footer-link-item .btn-outline-danger {
+  color: #64748b;
+  border-color: #cbd5e1;
+  background: #fff;
+}
+.settings-workspace--header_footer .footer-link-item .btn-outline-danger:hover,
+.settings-workspace--header_footer .footer-link-item .btn-outline-danger:focus-visible {
+  color: #334155;
+  border-color: #94a3b8;
+  background: #f1f5f9;
+  box-shadow: none;
+}
+@media (max-width: 900px) {
+  .settings-workspace--header_footer {
+    padding: 18px 16px 80px;
+  }
+  .settings-workspace--header_footer #footerForm {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-workspace--header_footer #footerForm > .footer-settings-left,
+  .settings-workspace--header_footer #footerForm > .footer-settings-right {
+    grid-column: 1;
+  }
+  .settings-workspace--header_footer #footerForm > .footer-settings-right {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-workspace--header_footer #footerForm .footer-settings-left > .panel-section {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .settings-workspace--header_footer #footerColumnsSection {
+    grid-column: 1;
+    grid-row: 2;
+    margin-top: 0 !important;
+  }
+  .settings-workspace--header_footer #footerSocialSection {
+    grid-column: 1;
+    grid-row: 3;
+  }
+}
+</style>
+
+<div class="header-footer-editor header-footer-editor--combined">
+  <div id="headerFooterHeaderPane" class="header-footer-pane header-footer-pane--header">
+    {% set header_footer_embed = true %}
+    {% include 'dashboard/panel_header.html' %}
+  </div>
+
+  <div id="headerFooterFooterPane" class="header-footer-pane header-footer-pane--footer">
+    {% set header_footer_embed = true %}
+    {% include 'dashboard/panel_footer_variant.html' %}
+  </div>
+
+  <div class="header-footer-combined-save">
+    <button class="btn btn-primary btn-sm w-100" type="button" id="saveHeaderFooterAll" title="保存">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      保存
+    </button>
+  </div>
+</div>
+
+<script>
+var saveHeaderFooterAll = document.getElementById('saveHeaderFooterAll');
+if (saveHeaderFooterAll) {
+  saveHeaderFooterAll.addEventListener('click', function() {
+    var forms = [document.getElementById('headerForm'), document.getElementById('footerForm')].filter(Boolean);
+    var originalHtml = saveHeaderFooterAll.innerHTML;
+    saveHeaderFooterAll.disabled = true;
+    saveHeaderFooterAll.textContent = '保存中...';
+    forms.reduce(function(chain, form) {
+      return chain.then(function() {
+        return fetch(form.action, { method: 'POST', body: new FormData(form), credentials: 'same-origin' });
+      });
+    }, Promise.resolve()).then(function() {
+      saveHeaderFooterAll.textContent = '已保存';
+      setTimeout(function() { window.location.reload(); }, 350);
+    }).catch(function() {
+      saveHeaderFooterAll.disabled = false;
+      saveHeaderFooterAll.innerHTML = originalHtml;
+      alert('保存失败，请重试');
+    });
+  });
+}
+</script>

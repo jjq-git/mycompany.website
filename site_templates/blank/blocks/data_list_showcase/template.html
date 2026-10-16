@@ -1,0 +1,81 @@
+<!-- Data list showcase: dataset driven list using highlight-card preview style. -->
+<section data-name="data_list_showcase" data-type="group" data-hideable data-style="bg,bg-color" class="section data-list-showcase">
+  <div class="container module-list-region">
+    <div data-name="search" data-type="group" class="dg-search-panel module-list-toolbar" data-search-for="{dataset}">
+      <span data-name="show_search" data-type="text" data-search-key="show_search" hidden>true</span>
+      <label class="module-list-search-wrap">
+        <span class="module-list-search-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        </span>
+        <input class="module-list-search dg-search-input" type="search" placeholder="Search..." autocomplete="off">
+      </label>
+      <span class="module-list-count dg-search-count"></span>
+    </div>
+
+    <div data-name="filters" data-type="group" class="dg-filter-panel" data-filter-for="{dataset}">
+      <span data-name="show_filters" data-type="text" data-filter-key="show_filters" hidden>true</span>
+      <div class="dg-filter-group">
+        <span class="dg-filter-label">Category</span>
+        <div class="dg-filter-options" data-filter-group="category"></div>
+      </div>
+      <div class="dg-filter-group">
+        <span class="dg-filter-label">Tags</span>
+        <div class="dg-filter-options" data-filter-group="tag"></div>
+      </div>
+    </div>
+
+    <div data-name="items" data-type="list" data-source="" class="data-list-showcase__items filterable-grid" data-filter-id="{dataset}">
+      <div data-name="item" data-type="group" data-href-template="{dataset_path}{slug}/" class="data-list-showcase__item dg-card">
+        <section class="section data-list-showcase__card">
+          <div class="hl-grid">
+            <div class="hl-image data-list-showcase__image-link">
+              <img data-name="cover" data-fallback="image,photo,logo,thumbnail" data-type="image" data-show-when="media_type:image" src="" alt="" loading="lazy">
+              <video data-name="video" data-type="video" data-show-when="media_type:video" src="" controls playsinline preload="metadata"></video>
+              <iframe data-name="embed_url" data-type="embed" data-show-when="media_type:embed" src="" title="Embedded content" loading="lazy" allowfullscreen></iframe>
+            </div>
+            <div class="hl-text">
+              <span data-name="category" data-type="text" class="hl-tag filter-source-category">Category</span>
+              <h3 data-name="title" data-fallback="name" data-type="text" class="hl-title">Title</h3>
+              <span data-name="date" data-type="text" class="hl-date">Date</span>
+              <p data-name="summary" data-fallback="excerpt,description" data-type="richtext" class="hl-desc">Summary</p>
+              <div data-name="tags" data-type="list" class="dg-card-tags filter-source-tags data-list-showcase__tags">
+                <span data-name="tag" data-type="text" class="dg-card-tag">Tag</span>
+              </div>
+              <span data-name="show_detail_btn" data-type="text" hidden>true</span>
+              <div class="hl-actions">
+                <a data-show-when="show_detail_btn:true" class="hl-btn hl-btn--primary"><span data-i18n="actions.learnMore">Learn More</span></a>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <p class="dg-empty-state module-list-empty" data-filter-empty="{dataset}" hidden>No matching items.</p>
+
+    <div data-name="pager" data-type="group" class="dg-pager module-list-pagination" style="display:none">
+      <span data-name="show_pagination" data-type="text" data-pager-key="show_pagination" hidden>true</span>
+      <span data-name="pagination_style" data-type="text" data-pager-key="pagination_style" hidden>page_numbers</span>
+      <span data-name="items_per_page" data-type="text" data-pager-key="items_per_page" hidden>6</span>
+      <span data-name="pager_align" data-type="text" data-pager-key="pager_align" hidden>center</span>
+      <button class="btn btn-outline-primary dg-load-more" style="display:none" onclick="loadMoreDataGrid(this)">Load more <span class="dg-remaining"></span></button>
+      <div class="dg-page-numbers" style="display:none"></div>
+    </div>
+
+    <span data-name="show_view_all" data-type="text" data-view-key="show_view_all" hidden>false</span>
+    <div class="text-center dg-view-all data-list-showcase__view-all">
+      <a data-href-template="{dataset_path}" class="btn btn-primary">View all</a>
+    </div>
+  </div>
+  <script>
+(function(){
+  var items = document.querySelectorAll('.data-list-showcase__item[href]');
+  items.forEach(function(item) {
+    var btn = item.querySelector('.hl-btn--primary');
+    if (btn && !btn.getAttribute('href')) {
+      btn.setAttribute('href', item.getAttribute('href'));
+    }
+  });
+})();
+</script>
+</section>

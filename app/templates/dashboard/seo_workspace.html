@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="{{ (current_lang or default_lang or 'zh-CN')[:2] }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>SEO 健康检查</title>
+  <link href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-seo.css') }}?v=20260721-minfont">
+  <style>
+    :root {
+      --bs-primary: {{ admin_primary }};
+      --bs-primary-rgb: {{ admin_primary_rgb }};
+      --bs-primary-bg-subtle: {{ admin_primary_light }};
+      --bs-primary-border-subtle: {{ admin_primary_light }};
+      --bs-link-color: {{ admin_primary }};
+      --bs-link-hover-color: {{ admin_primary_hover }};
+      --theme-primary: {{ admin_primary }};
+      --theme-primary-hover: {{ admin_primary_hover }};
+      --theme-primary-active: {{ admin_primary_active }};
+      --theme-btn-bg: {{ admin_primary }};
+      --theme-btn-border-color: {{ admin_primary }};
+      --theme-btn-hover-bg: {{ admin_primary_hover }};
+      --theme-btn-hover-border-color: {{ admin_primary_hover }};
+      --theme-btn-active-bg: {{ admin_primary_active }};
+      --theme-btn-active-border-color: {{ admin_primary_active }};
+      --seo-primary-soft: rgba({{ admin_primary_rgb }}, .10);
+      --seo-primary-border: rgba({{ admin_primary_rgb }}, .28);
+
+      /* SEO 工作台中面色定义 */
+      --seo-bg: #f6f7f9;
+      --seo-panel: #fff;
+      --seo-border: #dfe4ea;
+      --seo-border-strong: #cbd5e1;
+      --seo-muted: #64748b;
+      --seo-ink: #172033;
+    }
+
+    .btn-primary {
+      --bs-btn-bg: var(--theme-btn-bg);
+      --bs-btn-border-color: var(--theme-btn-border-color);
+      --bs-btn-hover-bg: var(--theme-btn-hover-bg);
+      --bs-btn-hover-border-color: var(--theme-btn-hover-border-color);
+      --bs-btn-active-bg: var(--theme-btn-active-bg);
+      --bs-btn-active-border-color: var(--theme-btn-active-border-color);
+      --bs-btn-disabled-bg: var(--theme-btn-bg);
+      --bs-btn-disabled-border-color: var(--theme-btn-border-color);
+    }
+
+    .btn-outline-secondary {
+      --bs-btn-color: var(--theme-primary);
+      --bs-btn-border-color: var(--seo-primary-border);
+      --bs-btn-hover-bg: var(--seo-primary-soft);
+      --bs-btn-hover-border-color: var(--theme-primary);
+      --bs-btn-hover-color: var(--theme-primary-active);
+      --bs-btn-active-bg: var(--seo-primary-soft);
+      --bs-btn-active-border-color: var(--theme-primary-active);
+      --bs-btn-active-color: var(--theme-primary-active);
+    }
+
+    .form-control:focus {
+      border-color: var(--theme-primary);
+      box-shadow: 0 0 0 .18rem rgba({{ admin_primary_rgb }}, .16);
+    }
+  </style>
+</head>
+<body>
+  {% macro status_icon(status, label='') -%}
+    {% set icon_status = 'ok' if status == 'ok' else ('auto' if status == 'auto' else ('warn' if status == 'warn' else 'info')) %}
+    <span class="seo-status-icon {{ icon_status }}" title="{{ label }}" aria-label="{{ label }}" role="img">
+      {% if icon_status == 'ok' %}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+      {% elif icon_status == 'auto' %}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3Z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z"/></svg>
+      {% elif icon_status == 'warn' %}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 4.2 2.7 18a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+      {% else %}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      {% endif %}
+    </span>
+  {%- endmacro %}
+  {% set editable_pages = report.pages|rejectattr('kind', 'equalto', 'group')|list %}
+  {% set first_page = editable_pages[0] if editable_pages else none %}
+
+  <main class="seo-shell">
+    <header class="seo-header">
+      <div>
+        <h1 class="seo-title" id="seoCurrentPageTitle">{{ first_page.menu_label if first_page else 'SEO 健康检查' }}</h1>
+        <div class="seo-subtitle">
+          左侧选择会实际发布的页面，右侧集中维护页面标题和页面简介。标题和简介会用于搜索结果、社交分享、AI 检索摘要和自动生成的 SEO 文件。
+        </div>
+      </div>
+      <div class="seo-header-actions">
+      <div class="seo-score">
+        <div class="seo-score-number">
+          <strong id="seoCurrentScore">{{ first_page.health_score if first_page else 0 }}</strong>
+          <div class="seo-help">当前页健康分</div>
+        </div>
+        <div class="seo-stat-grid" aria-label="SEO 状态汇总">
+          <div class="seo-stat">
+            <strong class="text-success" id="seoCurrentOk">{{ first_page.ok_count if first_page else 0 }}</strong>
+            <span>正常</span>
+          </div>
+          <div class="seo-stat">
+            <strong class="text-warning" id="seoCurrentWarn">{{ first_page.warn_count if first_page else 0 }}</strong>
+            <span>建议</span>
+          </div>
+          <div class="seo-stat">
+            <strong class="text-secondary" id="seoCurrentInfo">{{ first_page.info_count if first_page else 0 }}</strong>
+            <span>优化</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn btn-outline-secondary btn-sm seo-site-settings-btn" id="seoSiteSettingsToggle" onclick="seoOpenSiteSettings()" aria-haspopup="dialog" aria-controls="seoSiteSettings" aria-label="全站设置" title="全站设置">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      </div>
+    </header>
+
+    <div class="seo-layout">
+      <aside class="seo-sidebar" aria-label="页面列表">
+        <div class="seo-sidebar-head">
+          <h2 class="seo-section-title">页面</h2>
+          <span class="seo-help">{{ editable_pages|length }} 个</span>
+        </div>
+        <div class="seo-page-nav">
+          {% for row in report.pages %}
+          {% set children = report.pages|selectattr('parent_id', 'equalto', row.id)|list %}
+          {% set is_group = row.kind == 'group' %}
+          <div class="seo-page-node{% if row.parent_id %} seo-tree-child is-collapsed{% endif %}"
+               data-node-id="{{ row.id }}" data-parent-id="{{ row.parent_id }}" data-depth="{{ row.depth }}"
+               data-expanded="false">
+            {% if is_group %}
+            {# group 容器：外观与普通页面一致，不可选页，点击或右侧箭头展开/折叠子项 #}
+            <button type="button"
+                    class="seo-page-link"
+                    data-page-key="{{ row.id }}"
+                    aria-expanded="false"
+                    onclick="seoToggleChildren(this, event)">
+              <span>
+              <span class="seo-page-name">{{ row.menu_label }}</span>
+              <span class="seo-page-key">{{ row.url_path }}</span>
+              </span>
+            </button>
+            {% else %}
+            <button type="button"
+                    class="seo-page-link{% if first_page and row.id == first_page.id %} active{% endif %}"
+                    data-page-key="{{ row.id }}"
+                    data-health-score="{{ row.health_score }}"
+                    data-ok-count="{{ row.ok_count }}"
+                    data-warn-count="{{ row.warn_count }}"
+                    data-info-count="{{ row.info_count }}"
+                    onclick="seoSelectPage(this.dataset.pageKey)">
+              <span>
+              <span class="seo-page-name">{{ row.menu_label }}</span>
+              <span class="seo-page-key">
+                {% if row.kind == 'detail' %}{{ row.dataset_key }} / {{ row.key }}{% else %}/{{ row.key }}/{% endif %}
+              </span>
+              </span>
+              <span class="seo-page-score score-{{ row.score }}" aria-label="SEO {{ row.score }} 分：{{ row.score_reason }}" title="SEO {{ row.score }} 分：{{ row.score_reason }}">
+                {% if row.score >= 4 %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
+                {% elif row.score == 3 %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 4.2 2.7 18a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>
+                {% else %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/></svg>
+                {% endif %}
+                <span>{{ row.score }}</span>
+              </span>
+            </button>
+            {% endif %}
+            {% if children %}
+            <button type="button" class="seo-tree-toggle" onclick="seoToggleChildren(this, event)" aria-expanded="false" aria-label="展开{{ row.menu_label }}的下级页面">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+            {% else %}
+            <span class="seo-tree-toggle-placeholder" aria-hidden="true"></span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </aside>
+
+      <div class="seo-content">
+        <dialog class="seo-site-settings-dialog" id="seoSiteSettings" aria-labelledby="seoSiteSettingsTitle">
+          <div class="seo-site-settings-head">
+            <div><h2 class="seo-section-title" id="seoSiteSettingsTitle">全站设置与系统检查</h2><p>检查站点级 SEO 文件、索引规则和公共信息。</p></div>
+            <button type="button" class="seo-dialog-close" onclick="seoCloseSiteSettings()" aria-label="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+          </div>
+          <div class="seo-check-list">
+            {% for check in report.checks %}
+            <div class="seo-check">
+              <div class="fw-semibold small">{{ status_icon(check.status, check.title) }} {{ check.title }}</div>
+              <div class="seo-help mt-1">{{ check.detail }}</div>
+              {% if check.status != 'ok' and check.action_url %}
+              <button type="button" class="seo-check-link" data-panel-url="{{ check.action_url }}" data-action-kind="{{ check.action_kind or 'link' }}" onclick="return seoRunCheckAction(this)" title="处理" aria-label="处理：{{ check.title }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></button>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </dialog>
+        {% if not editable_pages %}
+        <div class="seo-empty-state">当前菜单中没有可编辑的页面。</div>
+        {% endif %}
+        {% for row in editable_pages %}
+        <form class="seo-detail{% if first_page and row.id == first_page.id %} active{% endif %}"
+              data-page-key="{{ row.id }}"
+              data-generate-url="{{ row.generate_url }}"
+              data-save-url="{{ row.save_url }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {# 区块 1：当前页面检查 + 头部 #}
+          <div class="seo-card">
+            <div class="seo-detail-head">
+              <div class="seo-page-path">
+                {% if row.kind == 'detail' %}{{ row.dataset_key }} / {{ row.key }}{% else %}/{{ row.key }}/{% endif %}
+                · {{ row.status_detail }}
+              </div>
+              <div class="seo-detail-status">
+                <span class="seo-status-text">{{ row.status_label }}</span>
+                <span class="seo-detail-status-icon">{{ status_icon(row.status, row.status_label) }}</span>
+              </div>
+            </div>
+
+            <section class="seo-page-inspection">
+              <h3>当前页面检查</h3>
+              <div class="seo-inspection-grid">
+                <div class="check-ok"><strong>URL</strong><span>{{ row.inspection.path }}</span><small>路径应简短、稳定且可读。</small></div>
+                <div class="{{ 'check-waiting' if not row.inspection.built else ('check-warn' if row.inspection.h1_count != 1 or row.inspection.heading_issue else 'check-ok') }}"><strong>H1 / 标题层级</strong><span>{% if row.inspection.built %}H1：{{ row.inspection.h1_count }} 个{% if row.inspection.heading_issue %}，存在跳级{% endif %}{% else %}待构建后检查{% endif %}</span><small>每页应有且仅有一个 H1，后续标题逐级排列。</small></div>
+                <div class="{{ 'check-waiting' if not row.inspection.built else ('check-warn' if row.inspection.images_missing_alt else 'check-ok') }}"><strong>图片 alt</strong><span>{% if row.inspection.built %}{{ row.inspection.images_total }} 张；缺少属性 {{ row.inspection.images_missing_alt }}；空 alt {{ row.inspection.images_empty_alt }}{% else %}待构建后检查{% endif %}</span><small>空 alt 可用于装饰图片；内容图片需要替代文本。</small></div>
+                <div class="{{ 'check-waiting' if not row.inspection.built else ('check-warn' if not row.inspection.has_open_graph or not row.inspection.has_twitter_card else 'check-ok') }}"><strong>结构化与社交数据</strong><span>{% if row.inspection.built %}JSON-LD {{ '有' if row.inspection.has_jsonld else '无' }} / OG {{ '有' if row.inspection.has_open_graph else '无' }} / Twitter {{ '有' if row.inspection.has_twitter_card else '无' }}{% else %}待构建后检查{% endif %}</span><small>结果来自最终生成的 HTML。</small></div>
+              </div>
+            </section>
+          </div>
+
+          {% if row.inspection.built and row.inspection.images %}
+          {# 区块 2：查看图片明细 #}
+          <div class="seo-card">
+            <details class="seo-image-details">
+              <summary>查看图片明细（{{ row.inspection.images|length }}{% if row.inspection.images_total > row.inspection.images|length %} / {{ row.inspection.images_total }}{% endif %}）</summary>
+              <div class="seo-image-list">
+                {% for image in row.inspection.images %}
+                <div class="seo-image-row alt-{{ image.alt_state }}">
+                  <span class="seo-image-state">{{ '正常' if image.alt_state == 'ok' else ('装饰图' if image.alt_state == 'decorative' else ('空 alt' if image.alt_state == 'empty' else '缺少 alt')) }}</span>
+                  <code title="{{ image.src }}">{{ image.src }}</code>
+                  <span title="{{ image.alt }}">{{ image.alt or '—' }}</span>
+                </div>
+                {% endfor %}
+              </div>
+            </details>
+          </div>
+          {% endif %}
+
+          {# 区块 3：页面标题 + 页面简介 + 预览 #}
+          <div class="seo-card">
+            <div class="seo-editor-grid">
+            <div>
+              <div class="mb-3">
+                <label class="form-label small text-muted mb-1" for="seo-title-{{ loop.index }}">页面标题</label>
+                <div class="seo-ai-field"><input class="form-control" id="seo-title-{{ loop.index }}" name="title" value="{{ row.title }}" maxlength="200" oninput="seoSyncPreview(this)"><button type="button" class="seo-ai-btn" onclick="seoGenerateField(this,'title')" title="智能优化标题" aria-label="智能优化标题"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.2 3.3L16.5 7.5l-3.3 1.2L12 12l-1.2-3.3-3.3-1.2 3.3-1.2L12 3Z"/><path d="m18 13 .8 2.2L21 16l-2.2.8L18 19l-.8-2.2L15 16l2.2-.8L18 13ZM6 13l.8 2.2L9 16l-2.2.8L6 19l-.8-2.2L3 16l2.2-.8L6 13Z"/></svg></button></div>
+                <div class="seo-help mt-1 seo-title-hint"><span class="seo-title-count">0</span> 个字符（含空格和符号）；超过约 60 个字符时搜索结果可能截断，但仍可完整保存</div>
+              </div>
+              <div>
+                <label class="form-label small text-muted mb-1" for="seo-description-{{ loop.index }}">页面简介</label>
+                <div class="seo-ai-field"><textarea class="form-control seo-description"
+                          id="seo-description-{{ loop.index }}"
+                          name="description"
+                          rows="6"
+                          style="height:120px"
+                          maxlength="500"
+                          placeholder="{{ row.auto_description }}"
+                          oninput="seoSyncPreview(this)">{{ row.description }}</textarea><button type="button" class="seo-ai-btn" onclick="seoGenerateField(this,'description')" title="智能优化描述" aria-label="智能优化描述"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.2 3.3L16.5 7.5l-3.3 1.2L12 12l-1.2-3.3-3.3-1.2 3.3-1.2L12 3Z"/><path d="m18 13 .8 2.2L21 16l-2.2.8L18 19l-.8-2.2L15 16l2.2-.8L18 13ZM6 13l.8 2.2L9 16l-2.2.8L6 19l-.8-2.2L3 16l2.2-.8L6 13Z"/></svg></button></div>
+                <div class="seo-help mt-1 seo-desc-hint"><span class="seo-desc-count">0</span> 个字符（含空格和符号）；搜索结果会按设备宽度截断，但仍可完整保存</div>
+              </div>
+            </div>
+
+            <aside class="seo-preview-box" aria-label="搜索结果预览">
+              <div class="seo-help mb-2">搜索结果预览</div>
+              <div class="seo-preview-title">{{ row.title }}</div>
+              <div class="seo-preview-url">
+                {{ site.slug if site else 'site' }} /
+                {% if row.kind == 'detail' %}{{ row.dataset_key }} / {{ row.key }}{% else %}{{ row.key }}{% endif %}
+              </div>
+              <div class="seo-preview-desc">{{ row.description or row.auto_description or '保存页面简介后，这里会显示搜索结果摘要。' }}</div>
+              <div class="seo-help mt-3">
+                {% if report.ai_configured %}智能生成可用{% else %}当前使用页面内容生成摘要{% endif %}
+              </div>
+            </aside>
+          </div>
+          </div>{# /seo-card 区块 3 #}
+
+          <div class="seo-actions">
+            <div class="seo-row-msg" role="status" aria-live="polite"></div>
+            <div class="d-flex gap-2 justify-content-end">
+              <button type="button" class="btn btn-primary" onclick="seoSavePage(this)" title="保存" aria-label="保存">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              </button>
+            </div>
+          </div>
+        </form>
+        {% endfor %}
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var meta = document.querySelector('meta[name="csrf-token"]');
+      var token = meta ? meta.getAttribute('content') : '';
+      if (!token) return;
+      var origFetch = window.fetch;
+      window.fetch = function (input, init) {
+        init = init || {};
+        var method = (init.method || (typeof input === 'object' && input.method) || 'GET').toUpperCase();
+        if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+          init.headers = new Headers(init.headers || {});
+          if (!init.headers.has('X-CSRFToken')) init.headers.set('X-CSRFToken', token);
+        }
+        return origFetch.call(this, input, init);
+      };
+    })();
+
+    function seoRowOf(btn) {
+      return btn.closest('.seo-detail');
+    }
+
+    function seoSelectPage(pageKey) {
+      document.querySelectorAll('.seo-page-link').forEach(function (btn) {
+        btn.classList.toggle('active', btn.dataset.pageKey === pageKey);
+      });
+      document.querySelectorAll('.seo-detail').forEach(function (row) {
+        row.classList.toggle('active', row.dataset.pageKey === pageKey);
+      });
+      var detail = document.querySelector('.seo-detail[data-page-key="' + CSS.escape(pageKey) + '"]');
+      var heading = document.getElementById('seoCurrentPageTitle');
+      var selectedLink = document.querySelector('.seo-page-link[data-page-key="' + CSS.escape(pageKey) + '"]');
+      var menuName = selectedLink ? selectedLink.querySelector('.seo-page-name') : null;
+      if (heading && menuName) heading.textContent = menuName.textContent;
+      if (selectedLink) {
+        document.getElementById('seoCurrentScore').textContent = selectedLink.dataset.healthScore || '0';
+        document.getElementById('seoCurrentOk').textContent = selectedLink.dataset.okCount || '0';
+        document.getElementById('seoCurrentWarn').textContent = selectedLink.dataset.warnCount || '0';
+        document.getElementById('seoCurrentInfo').textContent = selectedLink.dataset.infoCount || '0';
+      }
+      seoRevealAncestors(pageKey);
+    }
+
+    function seoOpenSiteSettings() {
+      var dialog = document.getElementById('seoSiteSettings');
+      if (dialog && !dialog.open) dialog.showModal();
+    }
+
+    function seoCloseSiteSettings() {
+      var dialog = document.getElementById('seoSiteSettings');
+      if (dialog && dialog.open) dialog.close();
+    }
+
+    function seoDirectChildren(nodeId) {
+      return Array.from(document.querySelectorAll('.seo-page-node')).filter(function(node) {
+        return node.dataset.parentId === nodeId;
+      });
+    }
+
+    function seoSetBranch(node, expanded) {
+      node.dataset.expanded = String(expanded);
+      var toggle = node.querySelector(':scope > .seo-tree-toggle') ||
+                   node.querySelector(':scope > .seo-page-link > .seo-tree-toggle');
+      if (toggle) {
+        toggle.setAttribute('aria-expanded', String(expanded));
+        toggle.classList.toggle('open', expanded);
+      }
+      var groupButton = node.querySelector(':scope > .seo-page-link[aria-expanded]');
+      if (groupButton) groupButton.setAttribute('aria-expanded', String(expanded));
+      seoDirectChildren(node.dataset.nodeId).forEach(function(child) {
+        child.classList.toggle('is-collapsed', !expanded);
+        if (!expanded) seoSetBranch(child, false);
+      });
+    }
+
+    function seoToggleChildren(button, clickEvent) {
+      if (clickEvent) {
+        clickEvent.preventDefault();
+        clickEvent.stopImmediatePropagation();
+      }
+      var node = button.closest('.seo-page-node');
+      if (!node) return;
+      var children = seoDirectChildren(node.dataset.nodeId);
+      if (!children.length) return;
+      var shouldExpand = children.some(function(child) {
+        return child.classList.contains('is-collapsed');
+      });
+      seoSetBranch(node, shouldExpand);
+    }
+
+    function seoRevealAncestors(nodeId) {
+      var node = document.querySelector('.seo-page-node[data-node-id="' + CSS.escape(nodeId) + '"]');
+      while (node && node.dataset.parentId) {
+        var parent = document.querySelector('.seo-page-node[data-node-id="' + CSS.escape(node.dataset.parentId) + '"]');
+        if (!parent) break;
+        seoSetBranch(parent, true);
+        node = parent;
+      }
+    }
+
+    function seoSetMsg(row, text, ok) {
+      var msg = row ? row.querySelector('.seo-row-msg') : null;
+      if (!msg) return;
+      msg.textContent = text || '';
+      msg.classList.toggle('text-success', !!ok);
+      msg.classList.toggle('text-danger', ok === false);
+    }
+
+    function seoUpdateCount(textarea) {
+      var row = textarea.closest('.seo-detail');
+      var counter = row ? row.querySelector('.seo-desc-count') : null;
+      var length = (textarea.value || '').length;
+      if (counter) counter.textContent = String(length);
+      var hint = row ? row.querySelector('.seo-desc-hint') : null;
+      // 长度只作为搜索结果展示建议，不阻止用户保存完整、自然的句子。
+      if (hint) hint.style.color = length > 180 ? '#b45309' : '';
+    }
+
+    function seoSyncPreview(input) {
+      var row = input.closest('.seo-detail');
+      if (!row) return;
+      var title = row.querySelector('input[name="title"]');
+      var desc = row.querySelector('.seo-description');
+      var previewTitle = row.querySelector('.seo-preview-title');
+      var previewDesc = row.querySelector('.seo-preview-desc');
+      if (previewTitle && title) previewTitle.textContent = title.value || '未命名页面';
+      if (previewDesc && desc) previewDesc.textContent = desc.value || desc.getAttribute('placeholder') || '保存页面简介后，这里会显示搜索结果摘要。';
+      var titleCounter = row.querySelector('.seo-title-count');
+      if (titleCounter && title) {
+        var titleLength = (title.value || '').length;
+        titleCounter.textContent = String(titleLength);
+        var titleHint = row.querySelector('.seo-title-hint');
+        // Google 按显示宽度截断标题，60 字符只是经验提示，不是输入硬上限。
+        if (titleHint) titleHint.style.color = titleLength > 60 ? '#b45309' : '';
+      }
+      if (desc) seoUpdateCount(desc);
+    }
+
+    function seoStatusIconHtml(status, label) {
+      var iconStatus = status === 'ok' ? 'ok' : (status === 'auto' ? 'auto' : (status === 'warn' ? 'warn' : 'info'));
+      var svg = '';
+      if (iconStatus === 'ok') {
+        svg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+      } else if (iconStatus === 'auto') {
+        svg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3Z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z"/></svg>';
+      } else if (iconStatus === 'warn') {
+        svg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 4.2 2.7 18a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+      } else {
+        svg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>';
+      }
+      var safeLabel = String(label || '').replace(/"/g, '&quot;');
+      return '<span class="seo-status-icon ' + iconStatus + '" title="' + safeLabel + '" aria-label="' + safeLabel + '" role="img">' + svg + '</span>';
+    }
+
+    function seoMarkSaved(row) {
+      var statusText = row ? row.querySelector('.seo-status-text') : null;
+      if (statusText) statusText.textContent = '已设置';
+      var detailIcon = row ? row.querySelector('.seo-detail-status-icon') : null;
+      if (detailIcon) {
+        detailIcon.innerHTML = seoStatusIconHtml('ok', '已设置');
+      }
+      var nav = null;
+      if (row) {
+        document.querySelectorAll('.seo-page-link').forEach(function (btn) {
+          if (btn.dataset.pageKey === row.dataset.pageKey) nav = btn;
+        });
+      }
+      var navStatus = nav ? nav.querySelector('.seo-nav-status') : null;
+      if (navStatus) {
+        navStatus.innerHTML = seoStatusIconHtml('ok', '已设置');
+      }
+    }
+
+    function seoGenerateDescription(btn) {
+      var row = seoRowOf(btn);
+      if (!row) return;
+      seoSetMsg(row, '生成中...', true);
+      var url = (row.dataset.generateUrl || '').replace(/&amp;/g, '&');
+      fetch(url, { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.ok) throw new Error(data.error || '生成失败');
+          var textarea = row.querySelector('.seo-description');
+          if (textarea) {
+            textarea.value = data.description || '';
+            seoSyncPreview(textarea);
+          }
+          var source = data.source === 'ai' ? 'AI 已生成' : '已用本地摘要生成';
+          if (data.warning) source += '（' + data.warning + '）';
+          seoSetMsg(row, source + '，可继续修改后保存', true);
+        })
+        .catch(function(err) { seoSetMsg(row, err.message || '生成失败', false); });
+    }
+
+    function seoGenerateField(btn, field) {
+      var row = seoRowOf(btn);
+      if (!row || btn.disabled) return;
+      var original = row.querySelector('[name="' + field + '"]');
+      var formData = new FormData();
+      formData.append('field', field);
+      btn.disabled = true;
+      seoSetMsg(row, '智能生成中...', true);
+      fetch((row.dataset.generateUrl || '').replace(/&amp;/g, '&'), { method:'POST', body:formData })
+        .then(function(r) { return r.json().then(function(data) { if (!r.ok) throw new Error(data.error || '生成失败'); return data; }); })
+        .then(function(data) {
+          if (!data.ok) throw new Error(data.error || '生成失败');
+          if (original) { original.value = data.value || ''; seoSyncPreview(original); }
+          seoSetMsg(row, data.source === 'ai' ? 'AI 已生成，可修改后保存' : '已根据页面内容生成，可修改后保存', true);
+        })
+        .catch(function(err) { seoSetMsg(row, err.message || '生成失败', false); })
+        .finally(function() { btn.disabled = false; });
+    }
+
+    function seoSavePage(btn) {
+      var row = seoRowOf(btn);
+      if (!row || btn.disabled) return;
+      btn.disabled = true;
+      seoSetMsg(row, '保存中...', true);
+      var url = (row.dataset.saveUrl || '').replace(/&amp;/g, '&');
+      fetch(url, { method: 'POST', body: new FormData(row) })
+        .then(function(r) { return r.json().then(function(data) { if (!r.ok) throw new Error(data.error || '保存失败'); return data; }); })
+        .then(function(data) {
+          if (!data.ok) throw new Error(data.error || '保存失败');
+          seoMarkSaved(row);
+          seoSetMsg(row, '已保存', true);
+        })
+        .catch(function(err) { seoSetMsg(row, err.message || '保存失败', false); })
+        .finally(function() { btn.disabled = false; });
+    }
+
+    function seoRunCheckAction(btn) {
+      var url = (btn.dataset.panelUrl || '').replace(/&amp;/g, '&');
+      if (!url) return false;
+      if (btn.dataset.actionKind !== 'post') {
+        if (parent && parent !== window && typeof parent.openSeoActionLink === 'function') parent.openSeoActionLink(url);
+        else if (typeof openSeoActionLink === 'function') openSeoActionLink(url);
+        else window.location.href = url;
+        return false;
+      }
+      btn.disabled = true;
+      fetch(url, { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.ok) throw new Error(data.error || '修复失败');
+          alert('已补齐 ' + (data.count || 0) + ' 个图片 alt');
+          if (parent && parent !== window && typeof parent.markPreviewDirty === 'function') parent.markPreviewDirty();
+          window.location.reload();
+        })
+        .catch(function(err) {
+          alert(err.message || '修复失败');
+          btn.disabled = false;
+        });
+      return false;
+    }
+
+    document.querySelectorAll('.seo-detail').forEach(function (row) {
+      var field = row.querySelector('.seo-description') || row.querySelector('input[name="title"]');
+      if (field) seoSyncPreview(field);
+    });
+  </script>
+  {% include "dashboard/_readonly_guard.html" %}
+</body>
+</html>

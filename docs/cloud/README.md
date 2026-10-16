@@ -8,7 +8,7 @@
 | --- | --- |
 | [domains.md](domains.md) | 子域分配、slug 规则、URL 路径与多语言、预览、自定义域名 |
 
-> CDN / SSL 自动化（证书签发、续期、provisioning）属后期，暂未单独成文。
+> CDN / SSL 自动化（证书签发、续期、provisioning）的完整实现细节见项目根目录的 [infrastructure.md](../infrastructure.md)（迁移中，最终并入本文档）。
 
 ## 工作流
 

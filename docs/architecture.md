@@ -41,7 +41,7 @@ flowchart TD
 | 数据库（SQLAlchemy） | 只存平台级元数据：账号、站点登记、主题登记、登录 token |
 | 磁盘 `sites/<name>/` | 一个网站的全部：源内容（YAML）+ 资源 + 构建产物 `output/`；name = 子域名 slug |
 | builder | 把 `sites/<name>/` 源文件 + 主题 渲染成 `sites/<name>/output/` 静态站 |
-| 主题 `themes/` | 访客端外观（HTML + Jinja2 + CSS），管理员上传 ZIP 安装 |
+| 主题 `site_templates/` | 访客端外观（HTML + Jinja2 + CSS），git 管理 + 管理员上传 ZIP 安装 |
 | 导出 | 把 `sites/<name>/output/` 打包成 ZIP 给用户下载（当前唯一发布方式） |
 
 ## 数据存哪里（核心原则）
@@ -61,19 +61,61 @@ app/
   core/              模型、路由、builder、主题加载、菜单、block、翻译
   templates/         后台页面（Flask template，≠ 主题）
   static/            后台 CSS / JS
-themes/<name>/       一套主题（meta.yaml + layouts/ + blocks/ + i18n/<lang>/ + static/，layouts/blocks/static 语言无关，i18n/<lang>/ 按语言分整套 seed：settings.yaml + pages + data）
+site_templates/<name>/  一套主题（meta.yaml + layouts/ + blocks/ + seed_data/ + static/）
 sites/<name>/        一个网站的全部（name = 子域名 slug，gitignored）
   *.yaml / pages/ …  源内容（设置 / 页面 / 数据集 / 翻译 / 资源）
   output/            该站生成的静态站（build 产物，导出即打包它）
 instance/            SQLite 数据库（gitignored）
 ```
 
+> **术语注**：文档目标是将目录 `site_templates/` 重命名为 `themes/`、内部 `seed_data/` 重组为 `i18n/<lang>/`，代码尚未跟进。详见 [TODO-code.md](TODO-code.md)。
+
 ## 关键约束
 
 - 产出永远是静态文件；后台只在编辑 / 构建时运行。
-- 主题由管理员上传 ZIP 安装（本地开发可直接放 `themes/`）。
+- 主题由开发者写代码（git 管理），也支持管理员上传 ZIP 安装。
 - 登录用邮箱魔法链接。
 - 网站名（name）= 创建时选定，遵循子域名规则（小写字母数字 + 连字符，3–30 字符，全局唯一，排除保留字），作为站点目录名；创建后 1 个月内不可改，之后改名 = 迁移目录。
+
+## 关键技术决策
+
+### 为什么用 Flask
+
+轻量、Python 生态成熟、Jinja2 直接复用做静态生成。MVP 阶段不需要重武器。
+
+### 为什么静态生成而不是 SSR
+
+定位上就是「发布完不动」的网站。SSR 意味着永远在运行，违背产品理念。
+
+### 为什么 SQLite 起步
+
+MVP 阶段单机就够。每个用户的数据量很小（几十个产品 + 几十张图）。当用户上千、并发上来再换 PostgreSQL。
+
+### 为什么站点数据存文件而不是数据库
+
+- **导出 = 复制文件夹**，无需序列化逻辑
+- **schema 弹性**：主题字段变化不需要 ALTER TABLE
+- **多语言天然嵌套**：YAML 自然支持
+- **AI 友好**：直接读、改、调试
+- **平台死了，用户拿到文件夹仍能跑**
+
+代价（在小企业站规模下基本不存在）：
+
+- 跨用户运营报表 → 关键统计回写到 SQL 冗余字段
+- 单站搜索产品 → 几百条 YAML 全文扫描足够快
+- 并发写入 → 单用户单写者 + 文件锁
+
+### 为什么模板是文件不是数据库
+
+主题少（3-5 套）、变更频率低、需要 review 和版本控制。git 是已经为这种场景设计的最佳工具。
+
+### 为什么不用可视化模板编辑器
+
+3-5 套模板不值得为它建一整套可视化系统（Grapes.js 等）。2026 年 AI 写 HTML / CSS 已经很好用：设计师给 Figma 截图，AI 出 HTML 骨架，开发者微调。主题做完就稳定了，不需要持续可视化编辑。
+
+### 为什么不分前后端
+
+用户端只是表单，复杂度低，Flask + 少量 vanilla JS 足够。避免引入 Vue / React 增加新人上手门槛。
 
 ## 子系统文档
 

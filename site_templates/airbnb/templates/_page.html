@@ -1,0 +1,6 @@
+{% extends "_base.html" %}
+{% block title %}{{ page.title | default(t.pages[page_key] | default(page_key | title)) }} - {{ t.company }}{% endblock %}
+{% block description %}{{ page.description | default('') }}{% endblock %}
+{% block content %}
+{% include '_modules.html' %}
+{% endblock %}

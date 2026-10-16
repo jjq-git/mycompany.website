@@ -1,0 +1,113 @@
+modules: []
+detail_templates:
+- id: default
+  name: 默认blog详情
+  is_default: true
+  modules:
+  - type: detail_media
+    order: 1
+    variant: gallery_top
+    data:
+      _hidden: 'false'
+      source: cover_and_gallery
+      layout: gallery_top
+      max_images: 6
+      empty_behavior: hide_module
+      image_ratio: 4/3
+      image_radius: 8px
+      section_bg: ''
+  - type: detail_content_video
+    order: 2
+    variant: video
+    data:
+      _hidden: 'false'
+      slot_id: content-mrvjpq8r-bql41p
+      title: ''
+      video_ratio: 16/9
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
+  - type: detail_columns
+    order: 3
+    variant: grid
+    data:
+      _hidden: 'false'
+      heading_align: left
+      media_order: image_top
+      section_bg: ''
+      text_color: ''
+  - type: detail_columns
+    order: 4
+    variant: grid
+    data:
+      _hidden: 'false'
+      heading_align: left
+      media_order: image_top
+      section_bg: ''
+      text_color: ''
+  - type: detail_columns
+    order: 5
+    variant: grid
+    data:
+      _hidden: 'false'
+      heading_align: left
+      media_order: image_top
+      section_bg: ''
+      text_color: ''
+  - type: detail_columns
+    order: 6
+    variant: grid
+    data:
+      _hidden: 'false'
+      heading_align: left
+      media_order: image_top
+      section_bg: ''
+      text_color: ''
+  - type: detail_columns
+    order: 7
+    variant: grid
+    data:
+      _hidden: 'false'
+      heading_align: left
+      media_order: image_top
+      section_bg: ''
+      text_color: ''
+  - type: detail_content_blocks
+    order: 8
+    variant: blocks
+    data:
+      _hidden: 'false'
+      title: ''
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
+  - type: detail_content_note
+    order: 9
+    variant: note
+    data:
+      _hidden: 'false'
+      slot_id: content-mru7k64s-jp0n8c
+      title: ''
+      note_style: info
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
+  required_fields:
+  - title
+  - slug
+  optional_fields:
+  - cover
+  - summary
+  - detail_images
+  - specs
+  - category
+  - tags
+  - link_url
+  - body
+  - detail_content_blocks
+  - detail_specs
+  - detail_files
+  seo:
+    title: '{title} - {site_name}'
+    description: '{summary}'
+    image: cover

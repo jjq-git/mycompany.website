@@ -1,0 +1,458 @@
+﻿name: 鑱旂郴琛ㄥ崟
+category: content
+icon: contact_form.svg
+description: 鍦ㄧ嚎鐣欒█琛ㄥ崟锛岃瀹㈠～鍐欏悗鎻愪氦鍒版寚瀹氬湴鍧€锛堝 Formspree 绛夎〃鍗曟湇鍔★級
+fields:
+  - key: title
+    label: 鍖哄潡鏍囬
+    type: text
+    group: 鍐呭
+    default: ""
+  - key: subtitle
+    label: 鍖哄潡鍓爣棰?
+    type: text
+    group: 鍐呭
+    default: ""
+  - key: form_action
+    label: 琛ㄥ崟鎻愪氦鍦板潃
+    type: url
+    group: 鍐呭
+    default: ""
+    placeholder: 濡?https://formspree.io/f/your-form-id
+  - key: show_name
+    label: 鏄剧ず濮撳悕
+    type: select
+    group: 琛ㄥ崟瀛楁
+    default: "true"
+    options:
+      - value: "true"
+        label: 鏄剧ず
+      - value: "false"
+        label: 闅愯棌
+  - key: show_email
+    label: 鏄剧ず閭
+    type: select
+    group: 琛ㄥ崟瀛楁
+    default: "true"
+    options:
+      - value: "true"
+        label: 鏄剧ず
+      - value: "false"
+        label: 闅愯棌
+  - key: show_phone
+    label: 鏄剧ず鐢佃瘽
+    type: select
+    group: 琛ㄥ崟瀛楁
+    default: "true"
+    options:
+      - value: "true"
+        label: 鏄剧ず
+      - value: "false"
+        label: 闅愯棌
+  - key: show_company
+    label: 鏄剧ず鍏徃
+    type: select
+    group: 琛ㄥ崟瀛楁
+    default: "false"
+    options:
+      - value: "true"
+        label: 鏄剧ず
+      - value: "false"
+        label: 闅愯棌
+  - key: show_message
+    label: 鏄剧ず鐣欒█
+    type: select
+    group: 琛ㄥ崟瀛楁
+    default: "true"
+    options:
+      - value: "true"
+        label: 鏄剧ず
+      - value: "false"
+        label: 闅愯棌
+  - key: show_form
+    label: 鏄剧ず琛ㄥ崟
+    type: select
+    group: 琛ㄥ崟鏄鹃殣
+    default: "true"
+    options:
+      - value: "true"
+        label: 鏄剧ず
+      - value: "false"
+        label: 闅愯棌
+  - key: title_size
+    label: 鏍囩瀛楀彿
+    type: text
+    group: 琛ㄥ崟鏍峰紡
+    default: "0.875rem"
+    placeholder: 濡?1rem锛堢暀绌?CSS 榛樿 0.875rem锛?
+  - key: input_height
+    label: 杈撳叆妗嗛珮搴?
+    type: text
+    group: 琛ㄥ崟鏍峰紡
+    default: ""
+    placeholder: 濡?48px锛堢暀绌?榛樿锛?
+  - key: field_gap
+    label: 瀛楁闂磋窛
+    type: text
+    group: 琛ㄥ崟鏍峰紡
+    default: ""
+    placeholder: 濡?1.25rem锛堢暀绌?榛樿锛?
+  - key: label_style
+    label: 鏍囩鎺掔増
+    type: select
+    group: 琛ㄥ崟鏍峰紡
+    default: "top"
+    options:
+      - value: "top"
+        label: 鏍囩鍦ㄤ笂
+      - value: "left"
+        label: 鏍囩鍦ㄥ乏
+      - value: "hidden"
+        label: 闅愯棌鏍囩
+  - key: form_bg
+    label: 琛ㄥ崟鑳屾櫙鑹?
+    type: color
+    group: 琛ㄥ崟鏍峰紡
+    default: ""
+    placeholder: 濡?#ffffff锛堢暀绌?閫忔槑锛?
+  - key: input_bg
+    label: 杈撳叆妗嗚儗鏅壊
+    type: color
+    group: 琛ㄥ崟鏍峰紡
+    default: "#ffffff"
+    placeholder: 濡?#ffffff锛堢暀绌?CSS 榛樿鐧借壊锛?
+  - key: input_border
+    label: 杈撳叆妗嗚竟妗嗚壊
+    type: color
+    group: 琛ㄥ崟鏍峰紡
+    default: "#e2e8f0"
+    placeholder: 濡?#e5e7eb锛堢暀绌?CSS 榛樿 #e2e8f0锛?
+  - key: text_color
+    label: 鏂囧瓧棰滆壊
+    type: color
+    group: 琛ㄥ崟鏍峰紡
+    default: "#1e293b"
+    placeholder: 濡?#1e293b锛堢暀绌?CSS 榛樿娣辫壊锛?
+  - key: input_radius
+    label: 杈撳叆妗嗗渾瑙?
+    type: text
+    group: 琛ㄥ崟鏍峰紡
+    default: "8px"
+    placeholder: 濡?8px锛堢暀绌?CSS 榛樿 8px锛?
+  - key: form_radius
+    label: 琛ㄥ崟鍦嗚
+    type: text
+    group: 琛ㄥ崟鏍峰紡
+    default: "8px"
+    placeholder: 濡?12px锛堢暀绌?CSS 榛樿 8px锛?
+  - key: form_padding_top
+    label: 琛ㄥ崟涓婂唴杈硅窛
+    type: text
+    group: 琛ㄥ崟鏍峰紡
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: form_padding_right
+    label: 琛ㄥ崟鍙冲唴杈硅窛
+    type: text
+    group: 琛ㄥ崟鏍峰紡
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: form_padding_bottom
+    label: 琛ㄥ崟涓嬪唴杈硅窛
+    type: text
+    group: 琛ㄥ崟鏍峰紡
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: form_padding_left
+    label: 琛ㄥ崟宸﹀唴杈硅窛
+    type: text
+    group: 琛ㄥ崟鏍峰紡
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: form_margin_top
+    label: 琛ㄥ崟涓婂杈硅窛
+    type: text
+    group: 琛ㄥ崟澶栬竟璺?
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: form_margin_right
+    label: 琛ㄥ崟鍙冲杈硅窛
+    type: text
+    group: 琛ㄥ崟澶栬竟璺?
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: form_margin_bottom
+    label: 琛ㄥ崟涓嬪杈硅窛
+    type: text
+    group: 琛ㄥ崟澶栬竟璺?
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: form_margin_left
+    label: 琛ㄥ崟宸﹀杈硅窛
+    type: text
+    group: 琛ㄥ崟澶栬竟璺?
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: submit_text
+    label: 鎸夐挳鏂囧瓧
+    type: text
+    group: 鎸夐挳
+    default: "鍙戦€佺暀瑷€"
+  - key: btn_bg
+    label: 鎸夐挳鑳屾櫙鑹?
+    type: color
+    group: 鎸夐挳
+    default: "#ff385c"
+    placeholder: 濡?#ff385c锛堢暀绌?CSS 榛樿涓昏壊锛?
+  - key: btn_color
+    label: 鎸夐挳鏂囧瓧鑹?
+    type: color
+    group: 鎸夐挳
+    default: "#ffffff"
+    placeholder: 濡?#ffffff锛堢暀绌?CSS 榛樿鐧借壊锛?
+  - key: btn_size
+    label: 鎸夐挳鏂囧瓧澶у皬
+    type: text
+    group: 鎸夐挳
+    default: "1rem"
+    placeholder: 濡?1rem锛堢暀绌?CSS 榛樿 1rem锛?
+  - key: btn_radius
+    label: 鎸夐挳鍦嗚
+    type: text
+    group: 鎸夐挳
+    default: "8px"
+    placeholder: 濡?8px锛堢暀绌?CSS 榛樿 8px锛?
+  - key: btn_align
+    label: 鎸夐挳浣嶇疆
+    type: select
+    group: 鎸夐挳
+    default: "left"
+    options:
+      - value: "left"
+        label: 闈犲乏
+      - value: "center"
+        label: 灞呬腑
+      - value: "right"
+        label: 闈犲彸
+  - key: btn_padding_top
+    label: 鎸夐挳涓婂唴杈硅窛
+    type: text
+    group: 鎸夐挳
+    default: ""
+    placeholder: 濡?0.75rem锛堢暀绌?榛樿锛?
+  - key: btn_padding_right
+    label: 鎸夐挳鍙冲唴杈硅窛
+    type: text
+    group: 鎸夐挳
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: btn_padding_bottom
+    label: 鎸夐挳涓嬪唴杈硅窛
+    type: text
+    group: 鎸夐挳
+    default: ""
+    placeholder: 濡?0.75rem锛堢暀绌?榛樿锛?
+  - key: btn_padding_left
+    label: 鎸夐挳宸﹀唴杈硅窛
+    type: text
+    group: 鎸夐挳
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: btn_margin_top
+    label: 鎸夐挳涓婂杈硅窛
+    type: text
+    group: 鎸夐挳
+    default: ""
+    placeholder: 濡?1rem锛堢暀绌?榛樿锛?
+  - key: btn_margin_right
+    label: 鎸夐挳鍙冲杈硅窛
+    type: text
+    group: 鎸夐挳
+    default: ""
+    placeholder: 濡?0锛堢暀绌?榛樿锛?
+  - key: btn_margin_bottom
+    label: 鎸夐挳涓嬪杈硅窛
+    type: text
+    group: 鎸夐挳
+    default: ""
+    placeholder: 濡?0锛堢暀绌?榛樿锛?
+  - key: btn_margin_left
+    label: 鎸夐挳宸﹀杈硅窛
+    type: text
+    group: 鎸夐挳
+    default: ""
+    placeholder: 濡?0锛堢暀绌?榛樿锛?
+  - key: show_map
+    label: 鏄剧ず鍦板浘
+    type: select
+    group: 鍦板浘
+    default: "false"
+    options:
+      - value: "true"
+        label: 鏄剧ず
+      - value: "false"
+        label: 闅愯棌
+  - key: map_src
+    label: 鍦板浘宓屽叆鍦板潃
+    type: url
+    group: 鍦板浘
+    default: ""
+    placeholder: 浠庨珮寰?Google 鍦板浘鑾峰彇鐨勫祵鍏ラ摼鎺ワ紙iframe src锛?
+  - key: layout
+    label: 鎺掔増鏂瑰紡
+    type: select
+    group: 鍦板浘
+    default: "form_left"
+    options:
+      - value: "form_left"
+        label: 琛ㄥ崟宸?鍦板浘鍙?
+      - value: "form_right"
+        label: 鍦板浘宸?琛ㄥ崟鍙?
+  - key: map_width_ratio
+    label: 鍦板浘鍗犳瘮
+    type: select
+    group: 鍦板浘
+    default: "40"
+    options:
+      - value: "30"
+        label: 30%
+      - value: "35"
+        label: 35%
+      - value: "40"
+        label: 40%
+      - value: "45"
+        label: 45%
+      - value: "50"
+        label: 50%
+      - value: "60"
+        label: 60%
+      - value: "70"
+        label: 70%
+      - value: "100"
+        label: 100%
+  - key: map_height
+    label: 鍦板浘楂樺害
+    type: text
+    group: 鍦板浘鏍峰紡
+    default: ""
+    placeholder: 濡?500px锛堢暀绌?鑷€傚簲鎾戞弧锛?
+  - key: map_radius
+    label: 鍦板浘鍦嗚
+    type: text
+    group: 鍦板浘鏍峰紡
+    default: ""
+    placeholder: 濡?12px锛堢暀绌?0锛?
+  - key: map_margin_top
+    label: 鍦板浘涓婂杈硅窛
+    type: text
+    group: 鍦板浘澶栬竟璺?
+    default: ""
+    placeholder: 濡?1rem锛堢暀绌?榛樿锛?
+  - key: map_margin_right
+    label: 鍦板浘鍙冲杈硅窛
+    type: text
+    group: 鍦板浘澶栬竟璺?
+    default: ""
+    placeholder: 濡?1rem锛堢暀绌?榛樿锛?
+  - key: map_margin_bottom
+    label: 鍦板浘涓嬪杈硅窛
+    type: text
+    group: 鍦板浘澶栬竟璺?
+    default: ""
+    placeholder: 濡?1rem锛堢暀绌?榛樿锛?
+  - key: map_margin_left
+    label: 鍦板浘宸﹀杈硅窛
+    type: text
+    group: 鍦板浘澶栬竟璺?
+    default: ""
+    placeholder: 濡?1rem锛堢暀绌?榛樿锛?
+  - key: map_padding_top
+    label: 鍦板浘涓婂唴杈硅窛
+    type: text
+    group: 鍦板浘鍐呰竟璺?
+    default: ""
+    placeholder: 濡?1rem锛堢暀绌?榛樿锛?
+  - key: map_padding_right
+    label: 鍦板浘鍙冲唴杈硅窛
+    type: text
+    group: 鍦板浘鍐呰竟璺?
+    default: ""
+    placeholder: 濡?1rem锛堢暀绌?榛樿锛?
+  - key: map_padding_bottom
+    label: 鍦板浘涓嬪唴杈硅窛
+    type: text
+    group: 鍦板浘鍐呰竟璺?
+    default: ""
+    placeholder: 濡?1rem锛堢暀绌?榛樿锛?
+  - key: map_padding_left
+    label: 鍦板浘宸﹀唴杈硅窛
+    type: text
+    group: 鍦板浘鍐呰竟璺?
+    default: ""
+    placeholder: 濡?1rem锛堢暀绌?榛樿锛?
+  - key: section_bg
+    label: 澶栧眰鑳屾櫙鑹?
+    type: color
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?#f5f7fa锛堢暀绌?閫忔槑锛?
+  - key: outer_width
+    label: 澶栧眰瀹藉害
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?1200px锛堢暀绌轰笉闄愬埗瀹藉害锛?
+  - key: inner_width
+    label: 鍐呭眰鍐呭鍖哄搴?
+    type: text
+    group: 澶栧眰鏍峰紡
+    default: ""
+    placeholder: 濡?800px锛堢暀绌?鍏ㄥ锛?
+  - key: margin_top
+    label: 涓婂杈硅窛
+    type: text
+    group: 澶栧眰澶栬竟璺?
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: margin_right
+    label: 鍙冲杈硅窛
+    type: text
+    group: 澶栧眰澶栬竟璺?
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: margin_bottom
+    label: 涓嬪杈硅窛
+    type: text
+    group: 澶栧眰澶栬竟璺?
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: margin_left
+    label: 宸﹀杈硅窛
+    type: text
+    group: 澶栧眰澶栬竟璺?
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: padding_top
+    label: 涓婂唴杈硅窛
+    type: text
+    group: 鍐呭眰鏍峰紡
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: padding_right
+    label: 鍙冲唴杈硅窛
+    type: text
+    group: 鍐呭眰鏍峰紡
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: padding_bottom
+    label: 涓嬪唴杈硅窛
+    type: text
+    group: 鍐呭眰鏍峰紡
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?
+  - key: padding_left
+    label: 宸﹀唴杈硅窛
+    type: text
+    group: 鍐呭眰鏍峰紡
+    default: ""
+    placeholder: 濡?2rem锛堢暀绌?榛樿锛?

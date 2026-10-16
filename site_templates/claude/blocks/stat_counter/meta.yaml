@@ -1,0 +1,75 @@
+name: 数据统计
+category: content
+icon: stat_counter.svg
+description: 数字 + 标签展示，支持图标、后缀，自动滚动计数动画，适合展示公司实力数据
+fields:
+  - key: section_bg
+    label: 外层背景色
+    type: color
+    group: 外层样式
+    default: ""
+    placeholder: 如 #f5f7fa（留空=使用默认）
+  - key: outer_width
+    label: 外层宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空不限制宽度）
+  - key: inner_width
+    label: 内层内容区宽度
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 1200px（留空=全宽）
+  - key: padding_top
+    label: 上内边距
+    type: text
+    group: 外层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_right
+    label: 右内边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_bottom
+    label: 下内边距
+    type: text
+    group: 外层样式
+    default: "1rem"
+    placeholder: 如 2rem（留空=默认）
+  - key: padding_left
+    label: 左内边距
+    type: text
+    group: 外层样式
+    default: ""
+    placeholder: 如 2rem（留空=默认）
+  - key: title
+    label: 区块标题
+    type: text
+    group: 内容
+    default: ""
+  - key: subtitle
+    label: 区块副标题
+    type: text
+    group: 内容
+    default: ""
+  - key: stats
+    label: 统计项列表
+    type: list
+    group: 统计项
+    item_label: 统计项
+    item_fields:
+      - key: number
+        label: 数字
+        type: number
+      - key: suffix
+        label: 后缀（可选）
+        type: text
+      - key: label
+        label: 标签文字
+        type: text
+      - key: icon
+        label: 图标
+        type: icon

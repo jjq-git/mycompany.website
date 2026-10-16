@@ -1,0 +1,104 @@
+{% extends "_base.html" %}
+{% block title %}{{ product.title | default(product.name) }} — {{ t.company }}{% endblock %}
+{% block description %}{{ product.summary | default(product.description | default('')) }}{% endblock %}
+
+{% block content %}
+<div class="product-detail">
+  <div class="container">
+    <div class="product-detail__grid">
+      {# 图片区：与 _generic_detail.html 和 item_detail block 共用同一套逻辑 #}
+      {% if product.images or product.image or product.cover %}
+      <section class="item-detail-carousel">
+        <div class="detail-carousel-stage">
+          <div class="detail-images">
+            {% if product.images %}
+              {% for img in product.images %}
+                {% set src = img.url if img is mapping else img %}
+                <img class="detail-gallery-img{% if loop.first %} active{% endif %}" src="{{ src }}" alt="{{ product.title | default(product.name) }}" loading="{{ 'eager' if loop.first else 'lazy' }}">
+              {% endfor %}
+            {% elif product.image %}
+              <img class="detail-gallery-img active" src="{{ product.image }}" alt="{{ product.title | default(product.name) }}" loading="eager">
+            {% elif product.cover %}
+              <img class="detail-gallery-img active" src="{{ product.cover }}" alt="{{ product.title | default(product.name) }}" loading="eager">
+            {% endif %}
+          </div>
+          <button class="detail-carousel-prev btn-icon-circular" aria-label="Previous image">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button class="detail-carousel-next btn-icon-circular" aria-label="Next image">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <button class="detail-zoom-btn btn-icon-circular" aria-label="Zoom image">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+        </div>
+        <div class="detail-thumbs"></div>
+      </section>
+      {% endif %}
+
+      {# 信息区 #}
+      <div class="product-detail__info">
+        <div class="product-detail__tags">
+          {% if product.tags %}
+            {% for tag in product.tags %}
+              {% set tag_text = tag if tag is string else tag.label | default('') %}
+              <span class="badge badge-pill">{{ tag_text }}</span>
+            {% endfor %}
+          {% endif %}
+          {% if product.category %}
+            <span class="badge badge-pill">{{ product.category }}</span>
+          {% endif %}
+        </div>
+        <h1 class="product-detail__title">{{ product.title | default(product.name) }}</h1>
+
+        {% if product.summary or product.description %}
+        <p class="product-detail__desc">{{ product.summary | default(product.description) }}</p>
+        {% endif %}
+
+        <div class="product-detail__meta">
+          {% if product.price %}
+          <span>Starting at {{ product.price }}</span>
+          {% elif product.date %}
+          <span>{{ product.date }}</span>
+          {% endif %}
+          {% if product.meta_label %}
+          <span>{{ product.meta_label }}</span>
+          {% endif %}
+        </div>
+
+        {% if product.specs %}
+        <ul class="product-detail__specs">
+          {% for spec in product.specs %}
+          <li><span>{{ spec.name }}</span><span>{{ spec.value }}</span></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+
+        <div>
+          <a href="#" class="btn btn-primary" data-i18n="actions.getStarted">Get Paperlab free</a>
+        </div>
+      </div>
+    </div>
+
+    {% if product.description %}
+    <div class="generic-detail" style="padding-top: var(--space-xxl); padding-bottom: 0;">
+      <div class="generic-detail__body" style="max-width: var(--content-max-narrow);">
+        {{ product.description | safe }}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{# ── 店主自定义模块（数据集编辑中为该产品配置的模块） ── #}
+{% set modules = product.modules | default([]) %}
+{% if modules %}
+  {% for module in modules %}
+    {% if module.type != 'item_data' %}
+    <div class="builder-module" data-builder-module-index="{{ loop.index0 }}" data-builder-module-type="{{ module.type }}" data-builder-page-key="{{ page_key }}">
+      {{- render_block(module) }}
+    </div>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,35 @@
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <span class="fw-semibold">基本设置</span>
+</div>
+
+<div class="btn-group btn-group-sm w-100 mb-3 basic-tab-group" role="tablist" aria-label="基本设置">
+  <button type="button"
+          class="btn btn-outline-secondary {% if basic_settings_tab != 'theme' %}active{% endif %}"
+          onclick="switchBasicSettingsTab('company')">基础设置</button>
+  <button type="button"
+          class="btn btn-outline-secondary {% if basic_settings_tab == 'theme' %}active{% endif %}"
+          onclick="switchBasicSettingsTab('theme')">主题颜色</button>
+</div>
+
+<div id="basicSettingsCompany" class="basic-settings-pane" {% if basic_settings_tab == 'theme' %}style="display:none"{% endif %}>
+  {% set basic_settings_embed = true %}
+  {% include 'dashboard/panel_company.html' %}
+</div>
+
+<div id="basicSettingsTheme" class="basic-settings-pane" {% if basic_settings_tab != 'theme' %}style="display:none"{% endif %}>
+  {% set basic_settings_embed = true %}
+  {% include 'dashboard/panel_theme.html' %}
+</div>
+
+<script>
+window.ADMIN_AUTO_SAVE = {{ 'true' if admin_settings.get('auto_save') else 'false' }};
+function switchBasicSettingsTab(tab) {
+  var company = document.getElementById('basicSettingsCompany');
+  var theme = document.getElementById('basicSettingsTheme');
+  if (company) company.style.display = tab === 'theme' ? 'none' : '';
+  if (theme) theme.style.display = tab === 'theme' ? '' : 'none';
+  document.querySelectorAll('[role="tablist"] .btn').forEach(function(btn, idx) {
+    btn.classList.toggle('active', (tab === 'theme') === (idx === 1));
+  });
+}
+</script>

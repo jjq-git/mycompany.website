@@ -1,0 +1,46 @@
+{% if page.modules %}
+  {% set module_list = page.module_list | default({}) %}
+  {% set module_list_enabled = module_list.enabled | default(false) %}
+  {% set module_list_search = module_list.search | default(true) %}
+  {% set module_list_pagination = module_list.pagination | default(true) %}
+  {% set module_list_target_types = module_list.target_types | default([]) %}
+  {% if module_list_enabled %}
+  <div class="module-list-region"
+       data-module-list-page-size="{{ module_list.page_size | default(6) }}"
+       data-module-list-results-label="{{ module_list.results_label | default('results') }}"
+       data-module-list-empty-text="{{ module_list.empty_text | default('No matching items.') }}"
+       data-module-list-prev-label="{{ module_list.prev_label | default('Previous') }}"
+       data-module-list-next-label="{{ module_list.next_label | default('Next') }}">
+  {% endif %}
+  {% set module_list_state = namespace(controls_rendered=false) %}
+  {% for module in page.modules | sort(attribute='order') %}
+    {% if module.data is mapping or (module.type == 'hero_banner' and module.data is iterable and module.data is not string) %}
+      {% set is_module_list_item = module_list_enabled and module.type in module_list_target_types %}
+      {% if is_module_list_item and not module_list_state.controls_rendered %}
+        {% if module_list_search %}
+    <div class="module-list-toolbar">
+      <label class="module-list-search-wrap">
+        <span class="module-list-search-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><line x1="16.65" y1="16.65" x2="21" y2="21"/></svg>
+        </span>
+        <input class="module-list-search" type="search" placeholder="{{ module_list.search_placeholder | default('Search...') }}" autocomplete="off">
+      </label>
+      <span class="module-list-count"></span>
+    </div>
+        {% endif %}
+        {% set module_list_state.controls_rendered = true %}
+      {% endif %}
+      <div class="builder-module" data-builder-module-index="{{ loop.index0 }}" data-builder-module-type="{{ module.type }}" data-builder-page-key="{{ page_key }}"{% if is_module_list_item %} data-module-list-item="true"{% endif %}>
+        {# render_block 全权处理：data-* 声明式走渲染器，旧式回退 Jinja2 include #}
+        {{- render_block(module) }}
+      </div>
+    {% endif %}
+  {% endfor %}
+  {% if module_list_enabled %}
+    <p class="module-list-empty" hidden>{{ module_list.empty_text | default('No matching items.') }}</p>
+    {% if module_list_pagination %}
+    <nav class="module-list-pagination" aria-label="Pagination"></nav>
+    {% endif %}
+  </div>
+  {% endif %}
+{% endif %}

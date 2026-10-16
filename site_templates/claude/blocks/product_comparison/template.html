@@ -1,0 +1,40 @@
+<section class="pc pc--claude" data-product-comparison data-max-products="{{ comparison.max_products }}" data-empty-text="{{ comparison.empty_text }}"{% if comparison.section_bg %} style="--pc-bg: {{ comparison.section_bg }}"{% endif %}>
+  <div class="pc-shell">
+    <header class="pc-heading">
+      <h1>{{ comparison.title }}</h1>
+    </header>
+    <!-- 操作区始终渲染：无产品时 JS 会把搜索/加入/操作按钮置灰，仅“对比分类”切换可用，
+         方便用户跳到其他有产品的对比页；控件的禁用态由 JS 统一处理，模板不做分支 -->
+    <div class="pc-toolbar" aria-label="对比工具">
+      <div class="pc-toolbar-fields">
+        {% if comparison.show_search %}<label class="pc-search"><input type="search" data-pc-search placeholder="输入参数名称或参数值" aria-label="搜索参数"></label>{% endif %}
+        <div class="pc-add-control">
+          <label class="pc-add"><select data-pc-candidate aria-label="选择要添加的产品"></select></label>
+          <button type="button" class="pc-button pc-button--primary" data-pc-add>加入对比</button>
+        </div>
+      </div>
+      <div class="pc-toolbar-summary">
+        <div class="pc-toolbar-actions" role="group" aria-label="对比操作">
+          {% if comparison.show_hide_same %}<button type="button" class="pc-button pc-icon-button" data-pc-hide-same aria-pressed="false">隐藏相同项</button>{% endif %}
+          <button type="button" class="pc-button pc-icon-button" data-pc-reset>恢复默认</button>
+        </div>
+        <span class="pc-limit" data-pc-limit></span>
+      </div>
+      <!-- 对比分类：2–4 项显示为并排单选，更多选项自动改用下拉框；少于 2 项时隐藏。 -->
+      <div class="pc-group-filter" data-pc-group-filter aria-label="选择对比分类"></div>
+    </div>
+    {% if comparison.products %}
+    <div class="pc-layout">
+      <div class="pc-table-scroll" tabindex="0" aria-label="产品参数对比表，可横向滚动">
+        <table class="pc-table"><caption class="pc-sr-only">{{ comparison.title }}</caption><thead data-pc-head></thead><tbody data-pc-body></tbody></table>
+      </div>
+    </div>
+    <p class="pc-empty" data-pc-empty hidden>没有符合条件的参数。</p>
+    {% else %}
+    <div class="pc-no-products">当前数据源中还没有可对比的产品，请先创建产品并填写规格参数。</div>
+    {% endif %}
+  </div>
+  <script type="application/json" data-pc-payload>{{ comparison | tojson }}</script>
+  <link rel="stylesheet" href="{{ base_url }}/static/css/product-comparison.css?v=34">
+  <script src="{{ base_url }}/static/js/product-comparison.js?v=24" defer></script>
+</section>

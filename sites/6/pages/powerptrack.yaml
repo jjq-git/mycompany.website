@@ -1,0 +1,74 @@
+modules: []
+detail_templates:
+- id: default
+  name: 默认powerptrack详情
+  is_default: true
+  modules:
+  - type: detail_media
+    variant: gallery_left
+    data:
+      source: cover_and_gallery
+      layout: gallery_left
+      max_images: 6
+      empty_behavior: hide_module
+      image_ratio: 4/3
+      image_radius: 8px
+  - type: detail_content_blocks
+    variant: blocks
+    data:
+      title: ''
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
+  - type: detail_specs
+    variant: table
+    data:
+      title: ''
+      source_field: specs
+      max_rows: 10
+      hide_empty_rows: 'true'
+      mobile_layout: stacked
+      border_color: '#e5e7eb'
+  - type: detail_link
+    variant: button
+    data:
+      label: 了解更多
+      url_field: link_url
+      style: button
+      hide_when_empty: 'true'
+  - type: detail_specs
+    variant: list
+    data:
+      title: ''
+      source_field: specs
+      max_rows: 50
+      columns: 3
+      hide_empty_rows: 'true'
+      border_color: '#e5e7eb'
+      section_bg: ''
+  - type: detail_files
+    variant: list
+    data:
+      title: 资料下载
+      empty_behavior: hide_module
+      link_color: ''
+      section_bg: ''
+  required_fields:
+  - title
+  - slug
+  optional_fields:
+  - cover
+  - summary
+  - detail_images
+  - specs
+  - category
+  - tags
+  - link_url
+  - body
+  - detail_content_blocks
+  - detail_specs
+  - detail_files
+  seo:
+    title: '{title} - {site_name}'
+    description: '{summary}'
+    image: cover

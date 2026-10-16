@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>基本设置</title>
+  <link href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=20260721-minfont">
+  <style>
+    :root {
+      --bs-primary: {{ admin_primary }};
+      --bs-primary-rgb: {{ admin_primary_rgb }};
+      --bs-primary-bg-subtle: {{ admin_primary_light }};
+      --bs-link-color: {{ admin_primary }};
+      --bs-link-hover-color: {{ admin_primary_hover }};
+      --admin-primary: {{ admin_primary }};
+      --admin-primary-rgb: {{ admin_primary_rgb }};
+      --admin-primary-hover: {{ admin_primary_hover }};
+      --admin-primary-active: {{ admin_primary_active }};
+      --admin-primary-light: {{ admin_primary_light }};
+      --theme-primary: {{ admin_primary }};
+    }
+    body {
+      margin: 0; padding: 0;
+      background: #f6f7f9;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 14px;
+    }
+    .basic-workspace { min-height: 100vh; padding: 28px 32px 88px; }
+    .basic-workspace-inner { max-width: 1200px; margin: 0 auto; }
+    .basic-workspace-panel {
+      /* padding: 18px;
+      border: 1px solid #dfe4ea;
+      border-radius: 0;
+      background: #fff;
+      box-shadow: 0 12px 36px rgba(15,23,42,.06); */
+    }
+    .basic-workspace-panel form { max-width: none; }
+    .basic-workspace-panel .panel-save-bar {
+      position: static;
+      margin: 16px 0 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      backdrop-filter: none;
+    }
+    .basic-workspace-panel--combined .basic-settings-pane .panel-save-bar { display: none; }
+    .basic-workspace-panel.basic-workspace-panel--combined {
+      display: block;
+    }
+    .basic-workspace-panel--combined > .basic-settings-pane {
+      min-width: 0;
+      margin: 0 0 28px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .basic-workspace-panel--combined > .basic-settings-pane > .d-flex:first-child {
+      margin: 0 0 12px !important;
+      padding: 0;
+      color: #718096;
+      font-size: 15px;
+    }
+    .basic-workspace-panel--combined #companyForm,
+    .basic-workspace-panel--combined #themeForm {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      align-items: stretch;
+    }
+    .basic-workspace-panel--combined #themeForm {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .basic-workspace-panel--combined #companyForm > .panel-section:first-of-type {
+      grid-column: 1 / -1;
+    }
+    /* 在线客服卡通栏（占满两列），卡内用 cs-grid 分左右两栏：左=触达设置，右=展示物料 */
+    .basic-workspace-panel--combined #companyForm > .panel-section.cs-section {
+      grid-column: 1 / -1;
+    }
+    .cs-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .cs-grid { grid-template-columns: minmax(0, 1fr); }
+    }
+    .basic-workspace-panel--combined #companyForm > .panel-section,
+    .basic-workspace-panel--combined #themeForm > .panel-section {
+      height: auto;
+      margin: 0;
+      padding: 20px 26px 22px;
+      border: 1px solid #e1e6eb;
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, .08);
+    }
+    .basic-workspace-panel--combined .panel-section-title {
+      margin: -20px -26px 20px;
+      padding: 16px 26px 14px;
+      border-bottom: 1px solid #e8ecf0;
+      color: #172033;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .basic-workspace-panel--combined .form-control,
+    .basic-workspace-panel--combined .form-select,
+    .basic-workspace-panel--combined .input-group-text {
+      border-color: #d9e0e7;
+      border-radius: 0;
+    }
+    .basic-settings-combined-save {
+      position: static;
+      grid-column: 1 / -1;
+      margin-top: 16px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      backdrop-filter: none;
+      box-shadow: none;
+    }
+    @media (max-width: 900px) {
+      .basic-workspace { padding: 18px 16px 80px; }
+      .basic-workspace-panel--combined #companyForm,
+      .basic-workspace-panel--combined #themeForm {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .basic-workspace-panel--combined #companyForm > .panel-section:first-of-type {
+        grid-column: auto;
+      }
+    }
+    .flash-toast {
+      padding: 8px 14px; border-radius: 0; font-size: 14px;
+      margin-bottom: 12px; background: #f0fdf6; border: 1px solid #bbf7d0; color: #15803d;
+    }
+    .btn-primary {
+      --bs-btn-bg: var(--admin-primary);
+      --bs-btn-border-color: var(--admin-primary);
+      --bs-btn-hover-bg: var(--admin-primary-hover);
+      --bs-btn-hover-border-color: var(--admin-primary-hover);
+      --bs-btn-active-bg: var(--admin-primary-active);
+      --bs-btn-active-border-color: var(--admin-primary-active);
+    }
+  </style>
+</head>
+<body>
+<main class="basic-workspace">
+  <div class="basic-workspace-inner">
+    <section class="basic-workspace-panel basic-workspace-panel--combined">
+      <div id="basicSettingsCompany" class="basic-settings-pane basic-settings-pane--company">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <span class="fw-semibold">基础设置</span>
+        </div>
+        {% set basic_settings_embed = true %}
+        {% include 'dashboard/panel_company.html' %}
+      </div>
+
+      <div id="basicSettingsTheme" class="basic-settings-pane basic-settings-pane--theme">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <span class="fw-semibold">主题颜色</span>
+        </div>
+        {% set basic_settings_embed = true %}
+        {% include 'dashboard/panel_theme.html' %}
+      </div>
+
+      <div class="basic-settings-combined-save">
+        <button class="btn btn-primary btn-sm w-100" type="button" id="saveBasicSettingsAll" title="保存">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          保存
+        </button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
+<script>
+(function () {
+  // CSRF token 注入到 fetch
+  var meta = document.querySelector('meta[name="csrf-token"]');
+  var token = meta ? meta.getAttribute('content') : '';
+  if (token) {
+    var origFetch = window.fetch;
+    window.fetch = function (input, init) {
+      init = init || {};
+      var method = (init.method || 'GET').toUpperCase();
+      if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+        init.headers = new Headers(init.headers || {});
+        if (!init.headers.has('X-CSRFToken')) init.headers.set('X-CSRFToken', token);
+      }
+      return origFetch.call(this, input, init);
+    };
+  }
+
+  // 自动保存：停止编辑 5 秒后自动提交表单
+  var autoSave = {{ 'true' if admin_settings.get('auto_save') else 'false' }};
+  if (autoSave) {
+    var timer = null;
+    var saving = false;
+    function schedule(event) {
+      if (saving) return;
+      var target = event.target;
+      if (!target || target.type === 'file') return;
+      var form = target.closest && target.closest('form');
+      if (!form || (form.method || 'get').toLowerCase() !== 'post') return;
+      clearTimeout(timer);
+      timer = setTimeout(function() {
+        if (!document.body.contains(form)) return;
+        saving = true;
+        if (typeof form.requestSubmit === 'function') form.requestSubmit();
+        else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        setTimeout(function() { saving = false; }, 1000);
+      }, 5000);
+    }
+    document.addEventListener('input', schedule, true);
+    document.addEventListener('change', schedule, true);
+  }
+})();
+
+var saveAllBtn = document.getElementById('saveBasicSettingsAll');
+if (saveAllBtn) {
+  saveAllBtn.addEventListener('click', function() {
+    var forms = [document.getElementById('companyForm'), document.getElementById('themeForm')].filter(Boolean);
+    var originalHtml = saveAllBtn.innerHTML;
+    saveAllBtn.disabled = true;
+    saveAllBtn.textContent = '保存中...';
+    forms.reduce(function(chain, form) {
+      return chain.then(function() {
+        return fetch(form.action, { method: 'POST', body: new FormData(form), credentials: 'same-origin' });
+      });
+    }, Promise.resolve()).then(function() {
+      saveAllBtn.textContent = '已保存';
+      setTimeout(function() { window.location.reload(); }, 350);
+    }).catch(function() {
+      saveAllBtn.disabled = false;
+      saveAllBtn.innerHTML = originalHtml;
+      alert('保存失败，请重试');
+    });
+  });
+}
+</script>
+{% include "dashboard/_readonly_guard.html" %}
+</body>
+</html>

@@ -1,0 +1,171 @@
+.pc--dengtec {
+  /* 全部引用站点主题变量（settings.yaml theme 注入到 :root 的 --color-*），
+     不再硬编码；派生色用 color-mix 从主题色算出，任何站点自动跟随自己的主题 */
+  --pc-accent: var(--color-primary, #0d9488);
+  --pc-accent-2: var(--color-primary-hover, color-mix(in srgb, var(--color-primary, #0d9488), black 12%));
+  --pc-bg: var(--color-bg, #f2f7f7);
+  --pc-card: var(--color-surface, #fff);
+  --pc-text: var(--color-text, #102a2a);
+  --pc-muted: var(--color-text-secondary, #667b7b);
+  --pc-line: var(--color-border, #dce7e6);
+  /* 大面积保持中性，仅用低浓度品牌色建立层级，避免整块高饱和色抢夺内容焦点。 */
+  --pc-surface: color-mix(in srgb, var(--pc-card), white 35%);
+  --pc-soft: color-mix(in srgb, var(--pc-surface), var(--pc-bg) 38%);
+  --pc-tint: color-mix(in srgb, var(--pc-accent) 7%, var(--pc-surface));
+  --pc-tint-strong: color-mix(in srgb, var(--pc-accent) 14%, var(--pc-surface));
+  --pc-line-strong: color-mix(in srgb, var(--pc-line), var(--pc-text) 8%);
+  padding: clamp(28px, 4vw, 52px) 0 72px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--pc-bg), white 18%) 0, var(--pc-bg) 280px);
+  color: var(--pc-text);
+}
+
+/* 对齐 dengtec 页面标准 .container：max-width 从 1500px 收到 --container-max(1400px)，
+   与其他 block 左右边缘对齐（原本更宽会显得贴边突出）；窄屏保留 32px 安全边距不贴死屏幕 */
+.pc--dengtec .pc-shell { width: min(var(--container-max, 1400px), calc(100% - 32px)); margin: auto; }
+.pc--dengtec .pc-heading { max-width: 920px; margin: 0 0 22px; }
+.pc--dengtec .pc-heading h1 { margin: 0; font-size: clamp(28px, 3vw, 40px); line-height: 1.12; }
+
+.pc--dengtec .pc-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 16px; border: 1px solid var(--pc-line); background: var(--pc-surface); box-shadow: 0 8px 24px color-mix(in srgb, var(--pc-text) 5%, transparent); }
+/* 少量对比分类并排显示；分类较多时 JS 自动生成下拉框。 */
+.pc--dengtec .pc-group-filter { display: flex; flex: 0 0 auto; min-width: 0; margin-left: clamp(18px, 2vw, 70px); }
+.pc--dengtec .pc-group-filter[hidden] { display: none; }
+.pc--dengtec .pc-group-filter select { width: 100%; min-width: 200px; }
+.pc--dengtec .pc-toolbar-fields,
+.pc--dengtec .pc-add-control,
+.pc--dengtec .pc-toolbar-summary { display: contents; }
+.pc--dengtec .pc-toolbar label { display: grid; gap: 5px; color: var(--pc-muted); font-size: 12px; }
+.pc--dengtec .pc-search { flex: 1 1 240px; }
+.pc--dengtec .pc-search input { width: 100%; }
+.pc--dengtec .pc-add { min-width: 210px; }
+.pc--dengtec input,
+.pc--dengtec select { min-height: 40px; padding: 8px 11px; border: 1px solid var(--pc-line); border-radius: 0; outline: 0; background: var(--pc-card); color: var(--pc-text); }
+.pc--dengtec input:focus,
+.pc--dengtec select:focus { border-color: var(--pc-accent); box-shadow: 0 0 0 2px rgba(13, 148, 136, .12); }
+.pc--dengtec .pc-group-options { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--pc-line); background: var(--pc-card); }
+.pc--dengtec .pc-toolbar .pc-group-option { position: relative; display: block; color: var(--pc-muted); font-size: 13px; cursor: pointer; }
+.pc--dengtec .pc-group-option input { position: absolute; width: 1px; min-height: 0; height: 1px; padding: 0; margin: -1px; overflow: hidden; opacity: 0; }
+.pc--dengtec .pc-group-option span { display: flex; min-width: 72px; min-height: 34px; align-items: center; justify-content: center; padding: 6px 14px; white-space: nowrap; transition: color 150ms ease, background 150ms ease; }
+.pc--dengtec .pc-group-option:hover span { color: var(--pc-accent); background: var(--pc-tint); }
+.pc--dengtec .pc-group-option input:checked + span { background: var(--pc-accent); color: #fff; font-weight: 600; }
+.pc--dengtec .pc-group-option input:focus-visible + span { outline: 2px solid var(--pc-accent); outline-offset: 2px; }
+.pc--dengtec .pc-toolbar-actions { display: flex; gap: 7px; }
+.pc--dengtec .pc-button,
+.pc--dengtec .pc-mini { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--pc-line); border-radius: 0; background: var(--pc-surface); color: var(--pc-text); cursor: pointer; text-decoration: none; transition: border-color 150ms ease, color 150ms ease, background 150ms ease; }
+.pc--dengtec .pc-button { min-height: 40px; padding: 8px 13px; gap: 7px; }
+.pc--dengtec .pc-icon-button { width: 40px; min-width: 33px; padding: 0; }
+.pc--dengtec .pc-button svg,
+.pc--dengtec .pc-mini svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.pc--dengtec .pc-button:hover:not(:disabled),
+.pc--dengtec .pc-button[aria-pressed="true"],
+.pc--dengtec .pc-mini:hover:not(:disabled) { border-color: var(--pc-accent); color: var(--pc-accent); }
+.pc--dengtec .pc-button:focus-visible,
+.pc--dengtec .pc-mini:focus-visible,
+.pc--dengtec .pc-group-link:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 2px; }
+.pc--dengtec .pc-button--primary { border-color: var(--pc-accent); background: var(--pc-accent); color: #fff; font-weight: 600; }
+.pc--dengtec .pc-button--primary:hover:not(:disabled) { border-color: var(--pc-accent-2); background: var(--pc-accent-2); color: #fff; }
+.pc--dengtec .pc-button:disabled,
+.pc--dengtec .pc-mini:disabled { opacity: .38; cursor: not-allowed; }
+/* 无产品时搜索框/产品下拉也置灰，禁用观感与按钮一致（分类下拉不禁用，不受影响） */
+.pc--dengtec .pc-toolbar input:disabled,
+.pc--dengtec .pc-toolbar select:disabled { opacity: .5; cursor: not-allowed; background: var(--pc-card); }
+.pc--dengtec .pc-limit { display: inline-flex; min-height: 40px; align-items: center; margin-left: auto; color: var(--pc-muted); font-size: 13px; line-height: 1.4; white-space: nowrap; }
+
+/* 已移除左侧“参数分类”侧栏：单列布局，表格占满整宽（少了 180px 侧栏，5 列在 1400 容器内不再溢出） */
+.pc--dengtec .pc-layout { display: grid; grid-template-columns: 1fr; margin-top: 16px; border: 1px solid var(--pc-line); background: var(--pc-surface); box-shadow: 0 12px 30px color-mix(in srgb, var(--pc-text) 5%, transparent); }
+.pc--dengtec .pc-groups { position: relative; align-self: stretch; padding: 0; border-right: 1px solid var(--pc-line); background: var(--pc-card); }
+.pc--dengtec .pc-groups-sticky { position: sticky; top: var(--header-height, 64px); z-index: 22; padding: 20px 14px; background: var(--pc-card); }
+.pc--dengtec .pc-groups-sticky > strong { display: block; margin: 0 8px 12px; font-size: 13px; }
+.pc--dengtec .pc-groups nav { display: grid; gap: 4px; }
+.pc--dengtec .pc-group-link { width: 100%; padding: 9px 8px; border: 0; border-left: 3px solid transparent; background: transparent; color: var(--pc-muted); font: inherit; text-align: left; cursor: pointer; }
+.pc--dengtec .pc-group-link:hover,
+.pc--dengtec .pc-group-link.active { border-color: var(--pc-accent); background: var(--pc-tint); color: var(--pc-accent-2); }
+.pc--dengtec .pc-table-scroll { max-width: 100%; overflow: auto; }
+/* width:max-content 让固定列宽相加决定总宽——不足 display_slots 时靠空占位列撑到恒定宽度不拉伸，
+   达到上限且总宽超过容器时才由 .pc-table-scroll 触发横向滚动 */
+.pc--dengtec .pc-table { width: max-content; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+.pc--dengtec .pc-product-head--empty { background: color-mix(in srgb, var(--pc-soft), var(--pc-surface) 42%); }
+.pc--dengtec .pc-cell--empty { background: var(--pc-soft); }
+.pc--dengtec .pc-table th,
+.pc--dengtec .pc-table td { padding: 12px 16px; border-right: 1px solid var(--pc-line); border-bottom: 1px solid var(--pc-line); vertical-align: middle; }
+.pc--dengtec .pc-table tr > *:last-child { border-right: 0; }
+.pc--dengtec .pc-param-head,
+.pc--dengtec .pc-param-name { position: sticky; left: 0; z-index: 3; width: 190px; background: var(--pc-soft); text-align: left; }
+.pc--dengtec .pc-param-head { z-index: 6; top: 0; }
+/* 224px：5 列固定总宽 = 190 + 5×224 = 1310px < 容器可用区 1320px，满宽下不滚动；
+   加到 6 列（1534px）才超出触发横向滚动 */
+.pc--dengtec .pc-product-head { position: sticky; top: 0; z-index: 5; width: 224px; background: var(--pc-surface); text-align: left; vertical-align: top !important; }
+/* 正方形容器：aspect-ratio 1/1 固定方形，object-fit: contain 完整显示图片不裁切（四周按需留白） */
+.pc--dengtec .pc-product-image { box-sizing: border-box; width: 100%; aspect-ratio: 1 / 1; margin-bottom: 10px; padding: 10px; background: color-mix(in srgb, var(--color-surface-card, var(--pc-card)), var(--color-primary, var(--pc-accent)) 4%); object-fit: contain; }
+/* 详情入口移到图片与标题上：图片链接撑满图区，hover 时轻微压暗提示可点 */
+.pc--dengtec .pc-product-image-link { display: block; }
+.pc--dengtec .pc-product-image-link:hover .pc-product-image { opacity: .85; }
+.pc--dengtec .pc-product-link { color: inherit; text-decoration: none; }
+.pc--dengtec .pc-product-link:hover { text-decoration: underline; }
+.pc--dengtec .pc-product-meta { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 7px 5px 10px; border-radius: 8px; background: var(--pc-accent); color: #fff; }
+.pc--dengtec .pc-product-title { min-width: 0; overflow: hidden; font-size: 15px; font-weight: 700; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.pc--dengtec .pc-product-subtitle { display: -webkit-box; margin-top: 4px; overflow: hidden; color: var(--pc-muted); font-size: 12px; font-weight: 400; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.pc--dengtec .pc-product-price { margin-top: 8px; color: var(--pc-accent-2); font-weight: 800; }
+.pc--dengtec .pc-product-actions { display: flex; flex: 0 0 auto; gap: 1px; flex-wrap: nowrap; margin: 0; }
+.pc--dengtec .pc-mini { width: 32px; height: 32px; padding: 0; }
+.pc--dengtec .pc-mini svg { width: 16px; height: 16px; }
+.pc--dengtec .pc-product-actions .pc-mini { width: 24px; min-width: 24px; height: 27px; border: 0; border-radius: 4px; background: transparent; box-shadow: none; color: #fff; }
+.pc--dengtec .pc-product-actions .pc-mini:hover:not(:disabled) { background: rgba(255, 255, 255, .16); color: #fff; }
+.pc--dengtec .pc-group-row th { height: 7px; scroll-margin-top: 76px; padding: 0; border: 0; background: var(--pc-line-strong); box-shadow: none; }
+.pc--dengtec .pc-param-name { color: var(--pc-text); font-size: 13px; font-weight: 600; }
+/* 单位跟在参数名右侧同一行、紧贴名称（inline + 小左边距），不再单独换行 */
+.pc--dengtec .pc-param-unit { display: inline; margin-left: 4px; color: var(--pc-muted); font-size: 11px; font-weight: 400; }
+.pc--dengtec .pc-table td { font-size: 14px; }
+.pc--dengtec .pc-data-row > th,
+.pc--dengtec .pc-data-row > td { background: var(--pc-surface); }
+.pc--dengtec .pc-data-row--alt > th,
+.pc--dengtec .pc-data-row--alt > td { background: color-mix(in srgb, var(--pc-tint), var(--pc-surface) 46%); }
+.pc--dengtec .pc-table tbody tr:not(.pc-group-row):hover td { background: color-mix(in srgb, var(--pc-tint), var(--pc-surface) 62%); }
+.pc--dengtec .pc-table tbody tr:not(.pc-group-row):hover .pc-param-name { background: var(--pc-tint); }
+.pc--dengtec .pc-empty,
+.pc--dengtec .pc-no-products { margin-top: 16px; padding: 28px; border: 1px solid var(--pc-line); background: var(--pc-card); color: var(--pc-muted); text-align: center; }
+.pc--dengtec .pc-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.pc--dengtec .pc-sticky-head { position: fixed; display: none; z-index: 21; overflow: hidden; border: 1px solid var(--pc-line); border-top: 0; border-radius: 0; background: var(--pc-card); box-shadow: 0 4px 10px rgba(16, 42, 42, .08); }
+.pc--dengtec .pc-sticky-head.is-visible { display: block; }
+.pc--dengtec.pc-sticky-active .pc-table-scroll > .pc-table > thead { visibility: hidden; }
+.pc--dengtec .pc-sticky-head-scroll { width: 100%; overflow: hidden; }
+.pc--dengtec .pc-sticky-head .pc-table { margin: 0; }
+.pc--dengtec .pc-sticky-head .pc-product-head { position: static; }
+/* 吸顶表头里的产品图片缩到约一半（112px 方形），既能看到图又不让吸顶条太高 */
+.pc--dengtec .pc-sticky-head .pc-product-image { width: 112px; aspect-ratio: 1 / 1; margin-inline: auto; }
+/* 吸顶时产品列图片与标题水平居中（正常表头仍左对齐） */
+.pc--dengtec .pc-sticky-head .pc-product-head { text-align: center; }
+/* 操作按钮组本身是 flex，吸顶时改为居中对齐 */
+.pc--dengtec .pc-sticky-head .pc-product-actions { justify-content: center; }
+.pc--dengtec .pc-floating-scroll { position: fixed; display: none; z-index: 24; height: 18px; overflow-x: auto; overflow-y: hidden; border: 1px solid var(--pc-line); background: var(--pc-card); box-shadow: 0 -3px 10px rgba(16, 42, 42, .12); }
+.pc--dengtec .pc-floating-scroll.is-visible { display: block; }
+.pc--dengtec .pc-floating-scroll-spacer { height: 1px; }
+.pc--dengtec .pc-floating-scroll { scrollbar-color: color-mix(in srgb, var(--pc-accent) 45%, #888) var(--pc-soft); scrollbar-width: auto; }
+.pc--dengtec .pc-floating-scroll::-webkit-scrollbar { height: 12px; }
+.pc--dengtec .pc-floating-scroll::-webkit-scrollbar-track { background: var(--pc-soft); }
+.pc--dengtec .pc-floating-scroll::-webkit-scrollbar-thumb { border: 2px solid var(--pc-soft); border-radius: 999px; background: color-mix(in srgb, var(--pc-accent) 45%, #888); }
+
+@media (max-width: 760px) {
+  .pc--dengtec .pc-shell { width: min(100% - 20px, var(--container-max, 1400px)); }
+  .pc--dengtec .pc-heading h1 { font-size: 28px; }
+  .pc--dengtec .pc-toolbar-fields,
+  .pc--dengtec .pc-toolbar-summary { display: contents; }
+  .pc--dengtec .pc-search,
+  .pc--dengtec .pc-add,
+  .pc--dengtec .pc-group-filter { flex: 1 1 100%; min-width: 0; }
+  /* 窄屏恢复正常流：取消桌面版的右推，独占一行 */
+  .pc--dengtec .pc-group-filter { margin-left: 0; }
+  .pc--dengtec .pc-group-options { width: 100%; }
+  .pc--dengtec .pc-group-option { flex: 1 1 0; }
+  .pc--dengtec .pc-layout { grid-template-columns: 1fr; }
+  .pc--dengtec .pc-groups { position: sticky; top: var(--header-height, 64px); left: 0; z-index: 22; padding: 0; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--pc-line); }
+  .pc--dengtec .pc-groups-sticky { position: static; padding: 10px; }
+  .pc--dengtec .pc-groups-sticky > strong { display: none; }
+  .pc--dengtec .pc-groups nav { display: flex; width: max-content; }
+  .pc--dengtec .pc-group-link { width: auto; border-left: 0; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .pc--dengtec .pc-table { min-width: 650px; }
+  .pc--dengtec .pc-param-head,
+  .pc--dengtec .pc-param-name { width: 145px; }
+  .pc--dengtec .pc-product-head { width: 205px; }
+  .pc--dengtec .pc-product-image { aspect-ratio: 1 / 1; }
+  .pc--dengtec .pc-limit { width: 100%; margin: 0; }
+}

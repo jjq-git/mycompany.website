@@ -2,34 +2,136 @@
 {% block title %}概览{% endblock %}
 
 {% block content %}
-<h1 class="page-title">概览</h1>
-<p class="page-subtitle">站点 <strong>{{ site.slug }}</strong> 的最新状态</p>
+<style>
+  body.admin-overview-mode #previewPane,
+  body.admin-overview-mode #panelResizer,
+  body.admin-overview-mode .panel-collapse-anchor { display:none!important; }
+  body.admin-overview-mode #rightPanel { display:flex!important;flex:1 1 auto!important;width:auto!important;min-width:0!important;max-width:none!important;transform:none!important; }
+  body.admin-overview-mode #rightPanel>.right-panel-header { display:none!important; }
+  body.admin-overview-mode #rightPanelBody { padding:0;background:#f3f6f8; }
+  .site-overview{max-width:1240px;margin:0 auto;padding:30px 32px 64px;color:#0f172a}
+  .overview-card{border:1px solid #dbe3ea;background:#fff;box-shadow:0 8px 22px rgba(15,23,42,.045)}
+  .overview-hero{display:flex;align-items:center;justify-content:space-between;gap:28px;padding:24px 26px;border-top:3px solid var(--theme-primary)}
+  .overview-site{display:flex;align-items:center;gap:16px;min-width:0}
+  .overview-site-mark{display:grid;place-items:center;width:52px;height:52px;flex:0 0 52px;background:#e5f5f4;color:var(--theme-primary);font-size:22px;font-weight:700}
+  .overview-title-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .overview-title-line h1{margin:0;font-size:25px;line-height:1.2}
+  .overview-role{display:inline-flex;align-items:center;height:24px;padding:0 8px;background:#e5f5f4;color:#087f76;font-size:12px}
+  .overview-status{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#f1f5f9;color:#64748b}
+  .overview-status svg{width:15px;height:15px}
+  .overview-status.published{background:#dcfce7;color:#15803d}.overview-status.suspended{background:#fee2e2;color:#b91c1c}
+  .overview-fact-address{display:block;color:#334155;text-decoration:none;overflow-wrap:anywhere}.overview-fact-address:hover{color:var(--theme-primary)}
+  .overview-domain-state{display:flex;align-items:center;gap:7px!important;flex-wrap:wrap}
+  .overview-domain-status{display:inline-flex;align-items:center;gap:6px;color:#92400e;font-size:12px}.overview-domain-status::before{width:6px;height:6px;background:#d97706;content:""}
+  .overview-domain-status.ready{color:#15803d}.overview-domain-status.ready::before{background:#22c55e}
+  .overview-domain-action{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;background:#e5f5f4;color:#087f76;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap}
+  .overview-domain-action:hover{background:#cdeeea;color:#066c65}
+  .overview-domain-action svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2}
+  .overview-hero-actions{display:flex;align-items:center;gap:9px;flex:0 0 auto}
+  .overview-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:0 14px;border:1px solid #cbd5df;background:#fff;color:#334155;text-decoration:none;cursor:pointer}
+  .overview-btn:hover{border-color:var(--theme-primary);color:var(--theme-primary);background:#f0fdfa}.overview-btn.primary{border-color:var(--theme-primary);background:var(--theme-primary);color:#fff}
+  .overview-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2}
+  .overview-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:14px}
+  .overview-stat{display:grid;grid-template-columns:42px 1fr;align-items:center;gap:14px;padding:18px 20px}
+  .overview-stat-icon{display:grid;place-items:center;width:42px;height:42px;background:#eef8f7;color:var(--theme-primary)}
+  .overview-stat-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8}
+  .overview-stat small,.overview-stat strong,.overview-stat span{display:block}.overview-stat small{color:#718096}.overview-stat strong{margin-top:3px;font-size:25px;line-height:1.1}.overview-stat span{margin-top:4px;color:#94a3b8;font-size:12px}
+  .overview-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.75fr);gap:14px;margin-top:14px}
+  .overview-column{display:grid;align-content:start;gap:14px}
+  .overview-card-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-bottom:1px solid #e5e9ed}
+  .overview-card-head h2{margin:0;font-size:15px}.overview-card-head small{color:#8492a3}
+  .overview-progress-wrap{padding:18px 20px 20px}.overview-progress-summary{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:10px}.overview-progress-summary strong{font-size:24px}.overview-progress-summary span{color:#718096;font-size:12px}
+  .overview-progress{height:7px;background:#e8edf1;overflow:hidden}.overview-progress>span{display:block;height:100%;background:var(--theme-primary)}
+  .overview-tasks{border-top:1px solid #edf0f3;margin-top:18px}
+  .overview-task{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:11px;width:100%;min-height:55px;padding:0;border:0;border-bottom:1px solid #edf0f3;background:transparent;color:#334155;text-align:left;text-decoration:none;cursor:pointer}
+  .overview-task:last-child{border-bottom:0}.overview-task:hover{color:var(--theme-primary)}
+  /* 发布功能暂时关闭：禁用态灰显、去掉 hover 变色、光标示意不可点。恢复发布时可删除本行 */
+  .overview-task-disabled,.overview-task-disabled:hover{color:#b6bfca;cursor:not-allowed}.overview-task-disabled .overview-check{border-color:#e2e8f0;color:#c3ccd6}
+  .overview-check{display:grid;place-items:center;width:20px;height:20px;border:1px solid #cbd5df;color:#94a3b8;font-size:12px}.overview-check svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.5}.overview-task.done .overview-check{border-color:#86d2ca;background:#e5f5f4;color:var(--theme-primary)}
+  .overview-task-copy strong,.overview-task-copy small{display:block}.overview-task-copy strong{font-size:13px}.overview-task-copy small{margin-top:3px;color:#8492a3;font-size:12px}.overview-task>svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}
+  .overview-facts{display:grid;grid-template-columns:1fr 1fr;margin:0;padding:4px 20px 18px}.overview-facts div{padding:14px 0;border-bottom:1px solid #edf0f3}.overview-facts div:nth-child(even){padding-left:20px}.overview-facts dt{color:#8492a3;font-size:12px}.overview-facts dd{margin:5px 0 0;color:#334155;overflow-wrap:anywhere}
+  .overview-activity{padding:2px 20px 12px}.overview-activity-item{display:grid;grid-template-columns:9px 1fr auto;align-items:start;gap:12px;padding:13px 0;border-bottom:1px solid #edf0f3}.overview-activity-item:last-child{border-bottom:0}.overview-activity-dot{width:8px;height:8px;margin-top:5px;background:#8acfc8}.overview-activity-copy strong,.overview-activity-copy small{display:block}.overview-activity-copy strong{font-size:13px;font-weight:600}.overview-activity-copy small{margin-top:3px;color:#8492a3;font-size:12px}.overview-activity time{color:#94a3b8;font-size:12px;white-space:nowrap}.overview-empty{padding:28px 20px;text-align:center;color:#8492a3;font-size:12px}
+  .overview-quick{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:16px 20px 20px}.overview-quick .overview-btn{justify-content:flex-start;padding:0 11px;font-size:12px}
+  @media(max-width:1050px){.overview-stats{grid-template-columns:1fr 1fr}.overview-layout{grid-template-columns:1fr}.overview-hero{align-items:flex-start;flex-direction:column}.overview-hero-actions{width:100%}.overview-hero-actions .overview-btn{flex:1}}
+  @media(max-width:650px){.site-overview{padding:18px 12px 42px}.overview-stats{grid-template-columns:1fr}.overview-hero{padding:20px 16px}.overview-site{align-items:flex-start}.overview-hero-actions{flex-direction:column}.overview-hero-actions .overview-btn{width:100%}.overview-facts{grid-template-columns:1fr}.overview-facts div:nth-child(even){padding-left:0}.overview-quick{grid-template-columns:1fr}}
+</style>
 
-<div class="stats">
-  <div class="stat">
-    <div class="stat-label">模板</div>
-    <div class="stat-value">{{ site.template.name if site.template else '未选择' }}</div>
-  </div>
-  <div class="stat">
-    <div class="stat-label">产品数</div>
-    <div class="stat-value">{{ counts.products }}</div>
-  </div>
-  <div class="stat">
-    <div class="stat-label">页面数</div>
-    <div class="stat-value">{{ counts.pages }}</div>
-  </div>
-  <div class="stat">
-    <div class="stat-label">最近发布</div>
-    <div class="stat-value muted" style="font-size: 14px;">尚未发布</div>
-  </div>
-</div>
+{% set role_label = {'platform_admin':'平台管理员','owner':'站点所有者','admin':'管理员','editor':'编辑者','viewer':'查看者'}.get(site_access_role, site_access_role) %}
+<main class="site-overview">
+  <section class="overview-card overview-hero">
+    <div class="overview-site">
+      <div class="overview-site-mark">{{ (site.name or site.slug)[:1]|upper }}</div>
+      <div>
+        <div class="overview-title-line">
+          <h1>{{ site.name }}</h1>
+          <span class="overview-status {{ site.status }}" title="{{ {'draft':'草稿','published':'已发布','suspended':'已暂停'}.get(site.status,site.status) }}" aria-label="{{ {'draft':'草稿','published':'已发布','suspended':'已暂停'}.get(site.status,site.status) }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{% if site.status == 'published' %}<path d="m5 12 4 4L19 6"/>{% elif site.status == 'suspended' %}<circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>{% else %}<path d="M12 20h9"/><path d="m16.5 3.5 4 4L8 20H4v-4z"/>{% endif %}</svg></span>
+          {% if role_label %}<span class="overview-role">{{ role_label }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="overview-hero-actions">
+      <a class="overview-btn" href="{{ url_for('core.preview_site', site_id=site.id) }}" target="_blank"><svg viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>预览站点</a>
+      <a class="overview-btn primary" href="{{ url_for('core.workbench', site=site.slug, open='home') }}"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L8 20H4v-4z"/></svg>进入编辑</a>
+    </div>
+  </section>
 
-<div class="card" style="margin-top: 16px;">
-  <div class="card-title">下一步</div>
-  <ul style="margin: 0; padding-left: 20px; line-height: 1.9;">
-    <li>填写公司信息 → <a href="{{ url_for('core.company') }}">公司</a></li>
-    <li>添加产品 → <a href="{{ url_for('core.products') }}">产品</a></li>
-    <li>预览效果，确认无误后点右上角"发布"</li>
-  </ul>
-</div>
+  <section class="overview-stats" aria-label="站点数据概览">
+    <article class="overview-card overview-stat"><div class="overview-stat-icon"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg></div><div><small>页面</small><strong>{{ page_count }}</strong><span>网站页面总数</span></div></article>
+    <article class="overview-card overview-stat"><div class="overview-stat-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/></svg></div><div><small>内容</small><strong>{{ content_count }}</strong><span>已录入内容条目</span></div></article>
+    <article class="overview-card overview-stat"><div class="overview-stat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg></div><div><small>语言</small><strong>{{ enabled_language_count }}</strong><span>已启用语言版本</span></div></article>
+    <article class="overview-card overview-stat"><div class="overview-stat-icon"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div><div><small>建站进度</small><strong>{{ setup_percent }}%</strong><span>{{ setup_completed }} / {{ setup_checks|length }} 项完成</span></div></article>
+  </section>
+
+  <section class="overview-layout">
+    <div class="overview-column">
+      <article class="overview-card">
+        <header class="overview-card-head"><h2>下一步建议</h2><small>完成关键设置后即可正式发布</small></header>
+        <div class="overview-progress-wrap">
+          <div class="overview-progress-summary"><span>站点准备度</span><strong>{{ setup_percent }}%</strong></div>
+          <div class="overview-progress"><span style="width:{{ setup_percent }}%"></span></div>
+          <div class="overview-tasks">
+            <a class="overview-task {{ 'done' if setup_checks.site else '' }}" href="{{ url_for('core.workbench', site=site.slug, open='basic_settings') }}"><span class="overview-check">{% if setup_checks.site %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>{% else %}1{% endif %}</span><span class="overview-task-copy"><strong>完善站点基本信息</strong><small>设置站点名称、Logo 和品牌信息</small></span><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></a>
+            <a class="overview-task {{ 'done' if setup_checks.pages else '' }}" href="{{ url_for('core.workbench', site=site.slug, open='home') }}"><span class="overview-check">{% if setup_checks.pages %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>{% else %}2{% endif %}</span><span class="overview-task-copy"><strong>编辑网站页面</strong><small>完善首页和其他核心页面</small></span><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></a>
+            <a class="overview-task {{ 'done' if setup_checks.content else '' }}" href="{{ url_for('core.workbench', site=site.slug, open='content_new') }}"><span class="overview-check">{% if setup_checks.content %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>{% else %}3{% endif %}</span><span class="overview-task-copy"><strong>添加第一条内容</strong><small>录入产品、案例或文章内容</small></span><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></a>
+            {# 发布功能暂时关闭：与顶栏发布按钮一致地禁用，避免店主误以为站点已对外上线。
+               恢复时把 disabled 去掉、onclick 还原为 doPublish()、删掉 title 即可。 #}
+            {% if site_can_edit %}<button class="overview-task overview-task-disabled" type="button" onclick="return false;" aria-disabled="true" title="发布功能暂未开放，敬请期待"><span class="overview-check">4</span><span class="overview-task-copy"><strong>发布站点</strong><small>发布功能暂未开放，敬请期待</small></span><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>{% endif %}
+          </div>
+        </div>
+      </article>
+
+      <article class="overview-card">
+        <header class="overview-card-head"><h2>最近活动</h2><small>站点最近的操作记录</small></header>
+        {% if recent_logs %}<div class="overview-activity">{% for log in recent_logs %}<div class="overview-activity-item"><span class="overview-activity-dot"></span><span class="overview-activity-copy"><strong>{{ log.summary }}</strong></span><time>{{ log.created_at|localtime('%m-%d %H:%M') }}</time></div>{% endfor %}</div>{% else %}<div class="overview-empty">暂无站点操作记录，开始编辑后会显示在这里。</div>{% endif %}
+      </article>
+    </div>
+
+    <aside class="overview-column">
+      <article class="overview-card">
+        <header class="overview-card-head"><h2>站点信息</h2></header>
+        <dl class="overview-facts">
+          <div><dt>当前状态</dt><dd>{{ {'draft':'草稿','published':'已发布','suspended':'已暂停'}.get(site.status,site.status) }}</dd></div>
+          <div><dt>使用模板</dt><dd>{{ (template_meta or {}).get('display_name') or site.template_name }}</dd></div>
+          <div><dt>默认语言</dt><dd>{{ site.default_language }}</dd></div>
+          <div><dt>模板版本</dt><dd>{{ site.template_version or '—' }}</dd></div>
+          <div><dt>最近更新</dt><dd>{{ site.updated_at|localtime('%Y-%m-%d %H:%M') if site.updated_at else '—' }}</dd></div>
+          <div><dt>最近发布</dt><dd>{{ site.last_published_at|localtime('%Y-%m-%d %H:%M') if site.last_published_at else '尚未发布' }}</dd></div>
+          <div class="overview-address-fact"><dt>访问地址</dt><dd>{% if site.custom_domain %}<a class="overview-fact-address" href="https://{{ site.custom_domain }}" target="_blank" rel="noopener">{{ site.custom_domain }}</a>{% else %}<a class="overview-fact-address" href="{{ url_for('core.preview_site', site_id=site.id) }}" target="_blank">{{ site.slug }}.{{ platform_domain }}</a>{% endif %}</dd></div>
+          <div class="overview-domain-fact"><dt>独立域名</dt><dd class="overview-domain-state">{% if site.custom_domain %}<span class="overview-domain-status ready">已绑定</span>{% else %}<span class="overview-domain-status">未绑定</span><a class="overview-domain-action" href="{{ url_for('core.account', section='sites', edit=site.id) }}" onclick="if(typeof openAccountWorkspaceUrl==='function'){openAccountWorkspaceUrl(this.getAttribute('href'));return false;}" title="在当前工作台中绑定独立域名"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1"/></svg>绑定域名</a>{% endif %}</dd></div>
+        </dl>
+      </article>
+      <article class="overview-card">
+        <header class="overview-card-head"><h2>快捷入口</h2></header>
+        <div class="overview-quick">
+          <a class="overview-btn" href="{{ url_for('core.workbench', site=site.slug, open='content_new') }}"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>新建内容</a>
+          <a class="overview-btn" href="{{ url_for('core.workbench', site=site.slug, open='media') }}"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>媒体管理</a>
+          <a class="overview-btn" href="{{ url_for('core.workbench', site=site.slug, open='seo') }}"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>SEO 检查</a>
+          <a class="overview-btn" href="{{ url_for('core.workbench', site=site.slug, open='menu') }}"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>菜单配置</a>
+        </div>
+      </article>
+    </aside>
+  </section>
+</main>
 {% endblock %}
+
+{% block scripts %}<script>document.body.classList.add('admin-overview-mode');</script>{% endblock %}

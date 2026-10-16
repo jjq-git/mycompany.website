@@ -1,106 +1,640 @@
-{% extends "base.html" %}
-{% block title %}首页编辑{% endblock %}
+{# 首页模块编辑器 — 右侧面板内容（含三设备独立配置） #}
+{% from 'dashboard/_block_icons.html' import block_icon %}
+{% macro alignment_control(name, current='left') -%}
+<div class="seg-radio seg-radio--align" role="radiogroup">
+  {% for value, label, paths in [
+    ('left', '居左', ['M2 4h12', 'M2 8h8', 'M2 12h10']),
+    ('center', '居中', ['M2 4h12', 'M4 8h8', 'M3 12h10']),
+    ('right', '居右', ['M2 4h12', 'M6 8h8', 'M4 12h10'])
+  ] %}
+  <label class="seg-radio-option{% if current == value %} active{% endif %}" role="radio" aria-checked="{{ 'true' if current == value else 'false' }}" title="{{ label }}">
+    <input type="radio" name="{{ name }}" value="{{ value }}"{% if current == value %} checked{% endif %} onchange="var input=this;var g=input.closest('.seg-radio');g.querySelectorAll('.seg-radio-option').forEach(function(b){b.classList.toggle('active',b.contains(input));b.setAttribute('aria-checked',b.contains(input)?'true':'false');});">
+    <span class="seg-radio-label"><svg class="seg-radio-align-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">{% for path in paths %}<path d="{{ path }}" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>{% endfor %}</svg><span class="visually-hidden">{{ label }}</span></span>
+  </label>
+  {% endfor %}
+</div>
+{%- endmacro %}
+{% if is_modules_format %}
 
-{% block content %}
-<a class="muted" href="{{ url_for('core.pages') }}">← 全部页面</a>
-<h1 class="page-title" style="margin-top: 12px;">首页</h1>
-<p class="page-subtitle">编辑各区块的内容和开关</p>
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <span class="fw-semibold">首页模块</span>
+  <button class="btn btn-sm btn-outline-secondary" onclick="refreshPreview()">刷新预览</button>
+</div>
 
 {% with messages = get_flashed_messages() %}
   {% for m in messages %}
-    <div class="card" style="max-width: 720px; background: #ecfdf5; border-color: #a7f3d0; color: #065f46;">{{ m }}</div>
+    <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('core.page_home') }}">
-
-<div class="card" style="max-width: 720px;">
-  <div class="card-title">Hero（首屏）</div>
-  <div class="form-row">
-    <label>主标题</label>
-    <input type="text" name="hero.title" value="{{ page.hero.title or '' }}">
-  </div>
-  <div class="form-row">
-    <label>副标题</label>
-    <input type="text" name="hero.subtitle" value="{{ page.hero.subtitle or '' }}">
-  </div>
-  <div class="form-row">
-    <label>徽章（可选，例如 "限时上线"）</label>
-    <input type="text" name="hero.badge" value="{{ page.hero.badge or '' }}">
-  </div>
-  <div class="form-row">
-    <label>按钮文字</label>
-    <input type="text" name="hero.cta_text" value="{{ page.hero.cta_text or '' }}">
-  </div>
-  <div class="form-row">
-    <label>按钮链接</label>
-    <input type="text" name="hero.cta_url" value="{{ page.hero.cta_url or '' }}" placeholder="/products">
-  </div>
-  <div class="form-row">
-    <label>背景视频 URL（优先）</label>
-    <input type="text" name="hero.video_url" value="{{ page.hero.video_url or '' }}" placeholder="/assets/hero.mp4">
-  </div>
-  <div class="form-row">
-    <label>背景图 URL（视频留空时使用）</label>
-    <input type="text" name="hero.background_image" value="{{ page.hero.background_image or '' }}" placeholder="/assets/hero.jpg">
-  </div>
+{# ---- 添加模块按钮 ---- #}
+<div class="mb-3">
+  <button class="btn btn-outline-primary btn-sm w-100" type="button" data-bs-toggle="modal" data-bs-target="#blockPaletteModal">
+    + 添加模块
+  </button>
 </div>
 
-{% set sections = [
-  ('featured_section', '产品矩阵'),
-  ('features_section', '功能亮点'),
-  ('about_brief', '关于一句话'),
-  ('blog_section', '博客最新'),
-  ('subscribe_section', '邮件订阅'),
-] %}
+{# ---- 可用模块弹框（通用组件） ---- #}
+{% include 'dashboard/_block_palette.html' %}
 
-{% for key, label in sections %}
-{% set sec = page[key] or {} %}
-<div class="card" style="max-width: 720px;">
-  <div class="card-title" style="display: flex; align-items: center; justify-content: space-between;">
-    <span>{{ label }}</span>
-    <label style="font-weight: normal; font-size: 13px;">
-      <input type="checkbox" name="{{ key }}.enabled" {% if sec.enabled %}checked{% endif %}>
-      启用
-    </label>
-  </div>
-  <div class="form-row">
-    <label>标题</label>
-    <input type="text" name="{{ key }}.title" value="{{ sec.title or '' }}">
-  </div>
-  {% if 'subtitle' in sec or key in ('featured_section', 'features_section', 'subscribe_section') %}
-  <div class="form-row">
-    <label>副标题 / 一句话</label>
-    <input type="text" name="{{ key }}.subtitle" value="{{ sec.subtitle or '' }}">
-  </div>
-  {% endif %}
-  {% if key == 'about_brief' %}
-  <div class="form-row">
-    <label>正文</label>
-    <textarea name="about_brief.body">{{ sec.body or '' }}</textarea>
-  </div>
-  <div class="form-row">
-    <label>按钮文字 / 链接</label>
-    <div style="display: flex; gap: 8px;">
-      <input type="text" name="about_brief.cta_text" value="{{ sec.cta_text or '' }}" placeholder="了解更多">
-      <input type="text" name="about_brief.cta_url" value="{{ sec.cta_url or '' }}" placeholder="/about">
+{# ---- 已选模块列表 ---- #}
+<div>
+  <div class="small text-muted mb-2">已选模块（拖拽排序 | 点击配置）</div>
+  <form method="post" action="{{ url_for('core.page_home', site=site.id) }}?_fragment=1" id="modulesForm" data-page-key="home" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="_format" value="modules">
+    <input type="hidden" name="module_count" id="moduleCount" value="{{ page.modules | length }}">
+
+    <div id="selectedModules">
+      {% set display_names = {} %}
+      {% for blk in blocks %}
+        {% set _ = display_names.update({blk.name: blk.display_name}) %}
+      {% endfor %}
+      {% for module in page.modules %}
+      {% set i = loop.index0 %}
+      {% set mod_title = display_names.get(module.type, module.type | replace('_', ' ') | title) %}
+      <div class="card mb-2 module-item" data-index="{{ i }}" data-module-index="{{ i }}" style="cursor:move">
+        <div class="d-flex align-items-center justify-content-between p-2 module-header"
+             onclick="this.closest('.module-item').classList.toggle('expanded')">
+          <span class="small fw-semibold">{{ mod_title }}</span>
+          <div class="d-flex gap-1">
+            <button type="button" class="btn btn-sm btn-outline-secondary remove-module-btn" style="font-size:14px">✕</button>
+          </div>
+        </div>
+        <input type="hidden" name="module_{{ i }}_type" value="{{ module.type }}">
+        <input type="hidden" name="module_{{ i }}_order" value="{{ module.order | default(i + 1) }}">
+
+        <div class="module-config p-2 border-top" style="display:none">
+{% set mdata = module.data if module.data is mapping else ({'slides': module.data} if module.type == 'hero_banner' and module.data is iterable and module.data is not string else {}) %}
+          {% set resp = module.get('responsive', {}) if module.get('responsive', {}) is mapping else {} %}
+          {% set mdata_tablet = resp.get('tablet', {}) %}
+          {% set mdata_mobile = resp.get('mobile', {}) %}
+          <div class="device-config device-desktop">
+{% if module.type == 'text_content' %}
+            {# 文本内容专属表单 #}
+            <div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title" value="{{ mdata.get('title', '') }}"></div>
+            <div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label>
+              <div class="rich-toolbar" style="border:1px solid #dee2e6;border-bottom:none;border-radius: 0;padding:3px 4px;background:#f8f9fa;display:flex;gap:1px;flex-wrap:wrap">
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'bold')" title="加粗" style="font-size:14px;line-height:1"><b>B</b></button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'italic')" title="斜体" style="font-size:14px;line-height:1"><i>I</i></button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'underline')" title="下划线" style="font-size:14px;line-height:1"><u>U</u></button>
+                <span style="border-left:1px solid #dee2e6;margin:0 3px"></span>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'formatBlock','h2')" title="大标题" style="font-size:14px;line-height:1">H2</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'formatBlock','h3')" title="小标题" style="font-size:14px;line-height:1">H3</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'formatBlock','p')" title="正文段落" style="font-size:14px;line-height:1">P</button>
+                <span style="border-left:1px solid #dee2e6;margin:0 3px"></span>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'justifyLeft')" title="左对齐" style="font-size:14px;line-height:1">☰</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'justifyCenter')" title="居中" style="font-size:14px;line-height:1">≡</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'justifyRight')" title="右对齐" style="font-size:14px;line-height:1">☷</button>
+                <span style="border-left:1px solid #dee2e6;margin:0 3px"></span>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'insertUnorderedList')" title="无序列表" style="font-size:14px;line-height:1">•≡</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return richEditorCommand(this,event,'insertOrderedList')" title="有序列表" style="font-size:14px;line-height:1">1≡</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorTable(this,event)" title="插入表格" style="font-size:14px;line-height:1">▦</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" onmousedown="return insertRichEditorLink(this,event)" title="插入链接" style="font-size:14px;line-height:1">🔗</button>
+              </div>
+              <div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius: 0;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">{{ mdata.get('body', '') | safe }}</div>
+              <textarea class="form-control form-control-sm d-none" name="module_{{ i }}_data_body">{{ mdata.get('body', '') }}</textarea>
+            </div>
+            <div class="row g-2">
+              <div class="col-6 label-radio-row"><label class="form-label small mb-1 text-muted">文字排版</label>{{ alignment_control('module_' ~ i ~ '_data_text_align', mdata.get('text_align', 'left')) }}</div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">分栏</label><select class="form-select form-select-sm" name="module_{{ i }}_data_columns"><option value="1" {% if mdata.get('columns', 1)|int == 1 %}selected{% endif %}>单栏</option><option value="2" {% if mdata.get('columns')|int == 2 %}selected{% endif %}>双栏</option></select></div>
+            </div>
+            <hr class="my-2">
+            <div class="small fw-semibold mb-1 text-muted">外层样式</div>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small mb-1 text-muted">外层背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('section_bg', '#888888') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_section_bg" value="{{ mdata.get('section_bg', '') }}" placeholder="如 #f5f7fa" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">内层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_inner_width" value="{{ mdata.get('inner_width', '') }}" placeholder="如 800px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_inner_width\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>
+            </div>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small mb-1 text-muted">标题颜色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="{{ mdata.get('title_color', '#888888') }}" oninput="this.parentElement.querySelector('input[type=text]').value=this.value"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title_color" value="{{ mdata.get('title_color', '') }}" placeholder="如 #1e293b" oninput="this.parentElement.querySelector('input[type=color]').value=this.value"></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">正文颜色</label><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_body_color" value="{{ mdata.get('body_color', '') }}" placeholder="如 #475569"></div>
+            </div>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small mb-1 text-muted">标题字号</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_title_size" value="{{ mdata.get('title_size', '') }}" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_title_size\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
+              <div class="col-6"><label class="form-label small mb-1 text-muted">正文字号</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_{{ i }}_data_body_size" value="{{ mdata.get('body_size', '') }}" placeholder="如 1rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector('[name=\'module_{{ i }}_data_body_size\']');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>
+            </div>
+            {% elif mdata is mapping %}
+              {% set prefix = 'module_' ~ i ~ '_data_' %}
+              {% for key, val in mdata.items() %}
+              {% if key not in ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'] %}
+              {% set key_lower = key|lower %}
+              {% set is_color = 'color' in key_lower or key_lower.endswith('_bg') %}
+              <div class="mb-2">
+                <label class="form-label small mb-1 text-muted">{{ key | replace('_', ' ') | title }}</label>
+                {% if val is mapping or (val is iterable and val is not string) %}
+                <textarea class="form-control form-control-sm" rows="4"
+                          name="{{ prefix }}{{ key }}">{{ val }}</textarea>
+                {% elif is_color %}
+                <div class="input-group input-group-sm">
+                  <input type="color" class="form-control form-control-color"
+                         value="{{ val if val and val.startswith('#') else '#888888' }}"
+                         oninput="this.parentElement.querySelector('input[type=text]').value=this.value" style="max-width:40px; padding:2px;">
+                  <input type="text" class="form-control form-control-sm"
+                         name="{{ prefix }}{{ key }}" value="{{ val }}" placeholder="选择颜色"
+                         oninput="if(/^#[0-9a-fA-F]{3,8}$/.test(this.value.trim()))this.parentElement.querySelector('input[type=color]').value=this.value.trim()">
+                </div>
+                {% elif 'image' in key|lower or 'cover' in key|lower or 'background' in key|lower or 'media' in key|lower or 'photo' in key|lower or 'logo' in key|lower %}
+                <input type="text" class="form-control form-control-sm"
+                       name="{{ prefix }}{{ key }}" value="{{ val }}" oninput="updateImagePreview(this)">
+                <label class="d-flex align-items-center gap-2 mt-1 px-3 py-2 rounded-2" style="border:1px dashed #cbd5e1;background:#f8fafc;cursor:pointer;font-size:14px;color:#64748b;transition:border-color .15s,background .15s" onmouseenter="this.style.borderColor='#94a3b8';this.style.background='#f1f5f9'" onmouseleave="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>上传图片<input type="file" name="{{ prefix }}{{ key }}_file" accept="image/*" onchange="handleModuleImageUpload(this)" style="display:none"></label>
+                <div class="form-text mt-1">支持 JPG/PNG/GIF/WebP，最大 12MB，上传后自动转 WebP</div>
+                <div class="module-image-url-text mt-1" style="font-size:12px;color:#94a3b8;word-break:break-all;display:none"></div>
+                <div class="mt-2 module-image-preview" style="display:none"><div style="position:relative;display:inline-block"><img src="" style="max-width:120px;max-height:90px;border-radius: 0;border:1px solid #dee2e6;cursor:pointer" onclick="enlargeImage(this)" onerror="this.parentElement.parentElement.style.display='none'"><button type="button" class="btn btn-sm" onclick="clearModuleImage(this)" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius: 0;background:#dc3545;color:#fff;font-size:14px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center" title="移除图片">&times;</button></div></div>
+                {% else %}
+                <input type="text" class="form-control form-control-sm"
+                       name="{{ prefix }}{{ key }}" value="{{ val }}">
+                {% endif %}
+              </div>
+              {% endif %}
+              {% endfor %}
+            {% endif %}
+            {% if module.type == 'hero_banner' %}
+            <div class="mb-2">
+              <label class="form-label small mb-1 text-muted">轮播媒体（可多选图片/视频）</label>
+              <input type="file" class="form-control form-control-sm" name="module_{{ i }}_data_slides_files" multiple accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime">
+              <div class="form-text">一次选择多个图片或视频，保存后会追加到 slides 轮播列表。</div>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="device-config device-tablet" style="display:none">
+{% if mdata is mapping %}
+              {% for key, val in mdata.items() %}
+              {% if key not in ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'] %}
+              {% set tval = mdata_tablet.get(key, '') %}
+              {% set key_lower = key|lower %}
+              {% set is_color = 'color' in key_lower or key_lower.endswith('_bg') %}
+              <div class="mb-2">
+                <label class="form-label small mb-1 text-muted">{{ key | replace('_', ' ') | title }}</label>
+                {% if is_color %}
+                <div class="input-group input-group-sm">
+                  <input type="color" class="form-control form-control-color"
+                         value="{{ tval if tval and tval.startswith('#') else '#888888' }}"
+                         oninput="this.parentElement.querySelector('input[type=text]').value=this.value" style="max-width:40px; padding:2px;">
+                  <input type="text" class="form-control form-control-sm"
+                         name="module_{{ i }}_resp_tablet_data_{{ key }}"
+                         value="{{ tval }}" placeholder="继承: {{ val }}"
+                         oninput="if(/^#[0-9a-fA-F]{3,8}$/.test(this.value.trim()))this.parentElement.querySelector('input[type=color]').value=this.value.trim()">
+                </div>
+                {% else %}
+                <input type="text" class="form-control form-control-sm"
+                       name="module_{{ i }}_resp_tablet_data_{{ key }}"
+                       value="{{ tval }}" placeholder="继承: {{ val }}">
+                {% endif %}
+              </div>
+              {% endif %}
+              {% endfor %}
+            {% endif %}
+            <div class="mb-2 mt-2">
+              <label class="form-check-label small">
+                <input type="checkbox" class="form-check-input"
+                       name="module_{{ i }}_resp_tablet_hidden" value="1"
+                       {% if mdata_tablet.get('hidden') %}checked{% endif %}>
+                平板端隐藏此模块
+              </label>
+            </div>
+          </div>
+
+          <div class="device-config device-mobile" style="display:none">
+{% if mdata is mapping %}
+              {% for key, val in mdata.items() %}
+              {% if key not in ['columns', 'max_items', 'items_per_page', 'show_pagination', 'pagination_style', 'pager_align', 'pager'] %}
+              {% set mval = mdata_mobile.get(key, '') %}
+              {% set key_lower = key|lower %}
+              {% set is_color = 'color' in key_lower or key_lower.endswith('_bg') %}
+              <div class="mb-2">
+                <label class="form-label small mb-1 text-muted">{{ key | replace('_', ' ') | title }}</label>
+                {% if is_color %}
+                <div class="input-group input-group-sm">
+                  <input type="color" class="form-control form-control-color"
+                         value="{{ mval if mval and mval.startswith('#') else '#888888' }}"
+                         oninput="this.parentElement.querySelector('input[type=text]').value=this.value" style="max-width:40px; padding:2px;">
+                  <input type="text" class="form-control form-control-sm"
+                         name="module_{{ i }}_resp_mobile_data_{{ key }}"
+                         value="{{ mval }}" placeholder="继承: {{ val }}"
+                         oninput="if(/^#[0-9a-fA-F]{3,8}$/.test(this.value.trim()))this.parentElement.querySelector('input[type=color]').value=this.value.trim()">
+                </div>
+                {% else %}
+                <input type="text" class="form-control form-control-sm"
+                       name="module_{{ i }}_resp_mobile_data_{{ key }}"
+                       value="{{ mval }}" placeholder="继承: {{ val }}">
+                {% endif %}
+              </div>
+              {% endif %}
+              {% endfor %}
+            {% endif %}
+            <div class="mb-2 mt-2">
+              <label class="form-check-label small">
+                <input type="checkbox" class="form-check-input"
+                       name="module_{{ i }}_resp_mobile_hidden" value="1"
+                       {% if mdata_mobile.get('hidden') %}checked{% endif %}>
+                手机端隐藏此模块
+              </label>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
     </div>
-  </div>
-  {% endif %}
-  {% if key in ('features_section', 'blog_section') %}
-  <div class="form-row">
-    <label>显示数量</label>
-    <input type="number" name="{{ key }}.limit" value="{{ sec.limit or 6 }}" min="1" max="20" style="width: 100px;">
-  </div>
-  {% endif %}
-</div>
-{% endfor %}
 
-<div style="max-width: 720px;">
-  <div class="form-actions">
-    <button class="btn btn-primary" type="submit">保存</button>
-  </div>
+    <div class="mt-2 d-flex gap-2">
+      <button type="submit" class="btn btn-primary btn-sm rounded-0">保存模块配置</button>
+    </div>
+  </form>
 </div>
 
+<script>
+function alignmentControlHtml(name, current) {
+  var labels = {left: '居左', center: '居中', right: '居右'};
+  var positions = {left: [2, 2, 2], center: [2, 4, 3], right: [2, 6, 4]};
+  var widths = [12, 8, 10];
+  return '<div class="seg-radio seg-radio--align" role="radiogroup">' + ['left', 'center', 'right'].map(function(value) {
+    var active = value === current;
+    var id = (name + '_' + value).replace(/[^a-zA-Z0-9_-]/g, '_');
+    var icon = '<svg class="seg-radio-align-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">' + widths.map(function(width, i) {
+      return '<path d="M' + positions[value][i] + ' ' + (4 + i * 4) + 'h' + width + '" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>';
+    }).join('') + '</svg>';
+    return '<label class="seg-radio-option' + (active ? ' active' : '') + '" role="radio" aria-checked="' + (active ? 'true' : 'false') + '" title="' + labels[value] + '" for="' + id + '">' +
+      '<input type="radio" id="' + id + '" name="' + name + '" value="' + value + '"' + (active ? ' checked' : '') + ' onchange="var input=this;var g=input.closest(\'.seg-radio\');g.querySelectorAll(\'.seg-radio-option\').forEach(function(b){b.classList.toggle(\'active\',b.contains(input));b.setAttribute(\'aria-checked\',b.contains(input)?\'true\':\'false\');});">' +
+      '<span class="seg-radio-label">' + icon + '<span class="visually-hidden">' + labels[value] + '</span></span></label>';
+  }).join('') + '</div>';
+}
+
+window.blockLibrary = {{ blocks | tojson }};
+
+// 模块选择回调
+function onBlockPaletteConfirm(type, variant, dataPreset) {
+  addModule(type, variant || 'default', dataPreset);
+}
+
+function richEditorEscape(value) {
+  return String(value || '').replace(/[&<>"']/g, function(ch) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+  });
+}
+
+/* 本页是独立的 RTE 体系：不加载 admin_modules.js，用 onmousedown 事件避免
+   编辑器失焦（见 CLAUDE.md「富文本编辑器只有一处定义」那条的例外说明）。
+   所以这里保留自己的 richEditorHtml，不要改成调用 admin_modules.js 的版本；
+   但同一文件里只应有这一个定义 —— 此前另有一份旧版工具栏（12 个按钮，无
+   删除线/引用/颜色/撤销重做），被本函数覆盖后成了死代码，已删除。 */
+function richEditorHtml(name, value) {
+  var safeName = richEditorEscape(name);
+  return '<div class="rich-toolbar rte-toolbar" style="display:flex;gap:1px;flex-wrap:wrap;align-items:center">' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'bold\')" title="Bold"><b>B</b></button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'italic\')" title="Italic"><i>I</i></button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'underline\')" title="Underline"><u>U</u></button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'strikeThrough\')" title="Strike"><s>S</s></button>' +
+    '<select class="form-select form-select-sm rte-heading-select" onchange="return richEditorSelectCommand(this,\'formatBlock\',this.value)" title="Heading"><option value="p">标题</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="h4">H4</option></select>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'justifyLeft\')" title="Align left">☰</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'justifyCenter\')" title="Align center">≡</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'justifyRight\')" title="Align right">☷</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'insertUnorderedList\')" title="Bullet list">•≡</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'insertOrderedList\')" title="Numbered list">1≡</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return insertRichEditorTable(this,event)" title="Table">▦</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return insertRichEditorLink(this,event)" title="Link">🔗</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'formatBlock\',\'blockquote\')" title="Quote">❝</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'insertHorizontalRule\')" title="Horizontal rule">—</button>' +
+    '<input type="color" class="rte-color-picker" value="#000000" oninput="return richEditorSelectCommand(this,\'foreColor\',this.value)" title="Text color">' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'removeFormat\')" title="Clear format">✕</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'undo\')" title="Undo">↩</button>' +
+    '<button type="button" class="btn btn-sm btn-light rte-btn" onmousedown="return richEditorCommand(this,event,\'redo\')" title="Redo">↪</button>' +
+    '</div>' +
+    '<div contenteditable="true" class="rich-editor-body form-control form-control-sm" style="border-radius: 0;min-height:150px;max-height:400px;overflow-y:auto" oninput="this.nextElementSibling.value=this.innerHTML">' + (value || '') + '</div>' +
+    '<textarea class="form-control form-control-sm d-none" name="' + safeName + '">' + richEditorEscape(value || '') + '</textarea>';
+}
+
+function richEditorCommand(btn, event, cmd, arg) {
+  if (event) event.preventDefault();
+  var wrapper = btn && btn.closest ? btn.closest('.mb-2') : null;
+  var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+  if (!editor) return false;
+  editor.focus();
+  document.execCommand(cmd, false, arg || null);
+  var textarea = editor.nextElementSibling;
+  if (textarea) textarea.value = editor.innerHTML;
+  return false;
+}
+
+function richEditorSelectCommand(control, cmd, arg) {
+  var wrapper = control && control.closest ? control.closest('.mb-2') : null;
+  var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+  if (!editor) return false;
+  editor.focus();
+  document.execCommand(cmd, false, arg || null);
+  var textarea = editor.nextElementSibling;
+  if (textarea) textarea.value = editor.innerHTML;
+  if (control && control.classList && control.classList.contains('rte-heading-select')) {
+    control.value = 'p';
+  }
+  return false;
+}
+
+function insertRichEditorTable(btn, event) {
+  if (event) event.preventDefault();
+  var wrapper = btn && btn.closest ? btn.closest('.mb-2') : null;
+  var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+  if (!editor) return false;
+  var size = window.prompt('表格行列，例如 3x3', '3x3');
+  if (size === null) return false;
+  var match = String(size || '').toLowerCase().match(/^\s*(\d+)\s*[x*,，, ]\s*(\d+)\s*$/);
+  var rows = match ? parseInt(match[1], 10) : 3;
+  var cols = match ? parseInt(match[2], 10) : 3;
+  rows = Math.max(1, Math.min(rows || 3, 20));
+  cols = Math.max(1, Math.min(cols || 3, 10));
+  editor.focus();
+  var html = '<table><tbody>';
+  for (var r = 0; r < rows; r++) {
+    html += '<tr>';
+    for (var c = 0; c < cols; c++) html += '<td><br></td>';
+    html += '</tr>';
+  }
+  html += '</tbody></table><p><br></p>';
+  document.execCommand('insertHTML', false, html);
+  var textarea = editor.nextElementSibling;
+  if (textarea) textarea.value = editor.innerHTML;
+  return false;
+}
+
+function insertRichEditorLink(btn, event) {
+  if (event) event.preventDefault();
+  var wrapper = btn && btn.closest ? btn.closest('.mb-2') : null;
+  var editor = wrapper ? wrapper.querySelector('.rich-editor-body') : null;
+  if (!editor) return false;
+  var sel = window.getSelection();
+  var range = null;
+  if (sel && sel.rangeCount && editor.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+    range = sel.getRangeAt(0).cloneRange();
+  }
+  var url = window.prompt('链接地址');
+  if (!url) return false;
+  editor.focus();
+  var link = document.createElement('a');
+  link.href = url;
+  link.target = '_blank';
+  link.rel = 'noopener';
+  if (range && !range.collapsed) {
+    try {
+      range.surroundContents(link);
+    } catch (err) {
+      var fragment = range.extractContents();
+      link.appendChild(fragment);
+      range.insertNode(link);
+    }
+  } else {
+    link.textContent = url;
+    if (!range) {
+      range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+    }
+    range.insertNode(link);
+  }
+  var textarea = editor.nextElementSibling;
+  if (textarea) textarea.value = editor.innerHTML;
+  return false;
+}
+
+// 展开第一个模块
+(function(){
+  var items = document.querySelectorAll('.module-item');
+  if (items.length) items[0].classList.add('expanded');
+  items.forEach(function(item){
+    var cfg = item.querySelector('.module-config');
+    if (item.classList.contains('expanded') && cfg) cfg.style.display = 'block';
+    item.querySelector('.module-header').addEventListener('click', function(){
+      if (cfg) cfg.style.display = item.classList.contains('expanded') ? 'block' : 'none';
+    });
+    if (cfg && item.classList.contains('expanded')) cfg.style.display = 'block';
+  });
+  document.querySelectorAll('.remove-module-btn').forEach(function(btn){
+    btn.addEventListener('click', function(event){
+      event.stopPropagation();
+      btn.closest('.module-item').remove();
+      reindexModules();
+    });
+  });
+})();
+
+
+function addModule(type, variant, dataPreset) {
+  dataPreset = dataPreset || {};
+  var count = document.getElementById('moduleCount');
+  var idx = parseInt(count.value);
+  count.value = idx + 1;
+
+  var container = document.getElementById('selectedModules');
+  var heroEditor = type === 'hero_banner'
+    ? '<div class="mb-2"><label class="form-label small mb-1 text-muted">主标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">副标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_subtitle"></div>' +
+      '<div class="row g-2">' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">主按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryBtn"></div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">主按钮链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_primaryBtnLink"></div>' +
+      '</div>' +
+      '<hr class="my-2">' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">轮播媒体（可多选图片/视频）</label><input type="file" class="form-control form-control-sm" name="module_' + idx + '_data_slides_files" multiple accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime"><div class="form-text">一次选择多个图片或视频，保存后会追加到 slides 轮播列表。</div></div>'
+    : '';
+  var sectionEditor = type === 'section_title'
+    ? '<div class="mb-2"><label class="form-label small mb-1 text-muted">标签文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_tag" placeholder="模块上方小标签"></div>' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">描述文字</label><textarea class="form-control form-control-sm" rows="2" name="module_' + idx + '_data_desc"></textarea></div>' +
+      '<hr class="my-2">' +
+      '<div class="small fw-semibold mb-1 text-muted">颜色</div>' +
+      '<div class="row g-2">' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">外层背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="#888888" oninput="this.parentElement.querySelector(\'input[type=text]\').value=this.value" style="max-width:40px;padding:2px;"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_section_bg" placeholder="选择颜色" oninput="if(/^#[0-9a-fA-F]{3,8}$/.test(this.value.trim()))this.parentElement.querySelector(\'input[type=color]\').value=this.value.trim()"></div></div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">标题颜色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="#888888" oninput="this.parentElement.querySelector(\'input[type=text]\').value=this.value" style="max-width:40px;padding:2px;"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title_color" placeholder="选择颜色" oninput="if(/^#[0-9a-fA-F]{3,8}$/.test(this.value.trim()))this.parentElement.querySelector(\'input[type=color]\').value=this.value.trim()"></div></div>' +
+      '</div>' +
+      '<hr class="my-2">' +
+      '<div class="small fw-semibold mb-1 text-muted">按钮</div>' +
+      '<div class="row g-2">' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">按钮文字</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_text"></div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">按钮链接</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_btn_url"></div>' +
+      '</div>'
+    : '';
+  var textEditor = type === 'text_content'
+    ? '<div class="mb-2"><label class="form-label small mb-1 text-muted">标题</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title"></div>' +
+      '<div class="mb-2"><label class="form-label small mb-1 text-muted">正文</label>' + richEditorHtml('module_' + idx + '_data_body', '') + '</div>' +
+      '<div class="row g-2">' +
+        '<div class="col-6 label-radio-row"><label class="form-label small mb-1 text-muted">文字排版</label>' + alignmentControlHtml('module_' + idx + '_data_text_align', 'left') + '</div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">分栏</label><select class="form-select form-select-sm" name="module_' + idx + '_data_columns"><option value="1">单栏</option><option value="2">双栏</option></select></div>' +
+      '</div>' +
+      '<hr class="my-2">' +
+      '<div class="small fw-semibold mb-1 text-muted">外层样式</div>' +
+      '<div class="row g-2">' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">外层背景色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="#888888" oninput="this.parentElement.querySelector(\'input[type=text]\').value=this.value"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_section_bg" placeholder="如 #f5f7fa" oninput="this.parentElement.querySelector(\'input[type=color]\').value=this.value"></div></div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">内层宽度</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_inner_width" placeholder="如 800px" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=module_' + idx + '_data_inner_width]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="%">%</option><option value="rem">rem</option></select></div></div>' +
+      '</div>' +
+      '<div class="row g-2">' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">标题颜色</label><div class="input-group input-group-sm"><input type="color" class="form-control form-control-color" value="#888888" oninput="this.parentElement.querySelector(\'input[type=text]\').value=this.value"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title_color" placeholder="如 #1e293b" oninput="this.parentElement.querySelector(\'input[type=color]\').value=this.value"></div></div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">正文颜色</label><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_body_color" placeholder="如 #475569"></div>' +
+      '</div>' +
+      '<div class="row g-2">' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">标题字号</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_title_size" placeholder="如 2rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=module_' + idx + '_data_title_size]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>' +
+        '<div class="col-6"><label class="form-label small mb-1 text-muted">正文字号</label><div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" name="module_' + idx + '_data_body_size" placeholder="如 1rem" style="width:60%"><select class="form-select form-select-sm" style="width:40%" onchange="var inp=this.parentElement.querySelector(\'[name=module_' + idx + '_data_body_size]\');if(inp){var v=inp.value.replace(/px|rem|%$/i,\'\').trim();var u=this.value;if(v&&u)inp.value=v+u;}"><option value="px">px</option><option value="rem">rem</option></select></div></div>' +
+      '</div>'
+    : '';
+  var div = document.createElement('div');
+  div.className = 'card mb-2 module-item expanded';
+  div.innerHTML =
+    '<div class="d-flex align-items-center justify-content-between p-2 module-header" style="cursor:pointer">' +
+      '<span class="small fw-semibold">' + type.replace(/_/g, ' ') + '</span>' +
+      '<button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:14px" onclick="event.stopPropagation(); this.closest(\'.module-item\').remove(); reindexModules()">✕</button>' +
+    '</div>' +
+    '<input type="hidden" name="module_' + idx + '_type" value="' + type + '">' +
+    '<input type="hidden" name="module_' + idx + '_order" value="' + (idx + 1) + '">' +
+    '<div class="module-config p-2 border-top" style="display:block">' +
+      '<div class="device-config device-desktop">' +
+          heroEditor + sectionEditor + textEditor +
+      '</div>' +
+      '<div class="device-config device-tablet" style="display:none"></div>' +
+      '<div class="device-config device-mobile" style="display:none"></div>' +
+    '</div>';
+  container.appendChild(div);
+  initColorPickers(div);
+
+  // toggle config
+  div.querySelector('.module-header').addEventListener('click', function(){
+    var cfg = div.querySelector('.module-config');
+    div.classList.toggle('expanded');
+    cfg.style.display = div.classList.contains('expanded') ? 'block' : 'none';
+  });
+}
+
+function removeModule(idx) {
+  var items = document.querySelectorAll('.module-item');
+  items.forEach(function(item, i){
+    if (i === idx) item.remove();
+  });
+  reindexModules();
+}
+
+function reindexModules() {
+  var items = document.querySelectorAll('.module-item');
+  document.getElementById('moduleCount').value = items.length;
+  items.forEach(function(item, i){
+    item.querySelectorAll('input[type="hidden"]').forEach(function(inp){
+      var name = inp.getAttribute('name');
+      if (name) inp.setAttribute('name', name.replace(/module_\d+_/, 'module_' + i + '_'));
+    });
+    item.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el){
+      var name = el.getAttribute('name');
+      if (name && name.startsWith('module_')) {
+        el.setAttribute('name', name.replace(/module_\d+_/, 'module_' + i + '_'));
+      }
+    });
+  });
+}
+
+// form submission via AJAX
+document.getElementById('modulesForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  var formData = new FormData(this);
+  fetch(this.action, {method:'POST', body: formData})
+    .then(function(r) { return r.text().then(function(html) { return {ok: r.ok, html: html}; }); })
+    .then(function(result) {
+      var panel = document.getElementById('rightPanelBody');
+      panel.innerHTML = result.html;
+      runPanelScripts(panel);
+      if (result.ok && typeof markPreviewDirty === 'function') markPreviewDirty();
+    });
+});
+
+// 图片上传：选择文件后本地预览
+function handleModuleImageUpload(fileInput) {
+  var file = fileInput.files[0];
+  var container = fileInput.closest('.hero-slide-body') || fileInput.closest('.mb-2');
+  var preview = container ? container.querySelector('.module-image-preview') : null;
+  if (!preview && container) {
+    preview = document.createElement('div');
+    preview.className = 'mt-2 module-image-preview';
+    preview.style.display = 'none';
+    preview.innerHTML = "<div style=\"position:relative;display:inline-block\"><img src=\"\" style=\"max-width:120px;max-height:90px;border-radius: 0;border:1px solid #dee2e6;cursor:pointer\" onclick=\"enlargeImage(this)\" onerror=\"this.parentElement.parentElement.style.display='none'\"><button type=\"button\" class=\"btn btn-sm\" onclick=\"clearModuleImage(this)\" style=\"position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius: 0;background:#dc3545;color:#fff;font-size:14px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center\" title=\"移除图片\">&times;</button></div>";
+    container.appendChild(preview);
+  }
+  var img = preview ? preview.querySelector('img') : null;
+  var urlText = container ? container.querySelector('.module-image-url-text') : null;
+  if (!file || !preview || !img) return;
+  var isImage = (file.type || '').indexOf('image/') === 0 || /\.svgz?$/i.test(file.name || '');
+  if (isImage) {
+    img.onload = function() { preview.style.display = ''; };
+    img.onerror = function() { preview.style.display = 'none'; };
+    img.src = URL.createObjectURL(file);
+    preview.style.display = '';
+  }
+  if (urlText) { urlText.textContent = file.name; urlText.style.display = ''; }
+}
+
+// 图片预览：点击放大
+function enlargeImage(img) {
+  var src = img.src;
+  if (!src) return;
+  var overlay = document.getElementById('imgLightbox');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'imgLightbox';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:pointer';
+    overlay.onclick = function() { overlay.style.display = 'none'; };
+    var lbImg = document.createElement('img');
+    lbImg.style.cssText = 'max-width:95vw;max-height:95vh;object-fit:contain;background-color:#fff;background-image:linear-gradient(45deg,#eef2f7 25%,transparent 25%),linear-gradient(-45deg,#eef2f7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef2f7 75%),linear-gradient(-45deg,transparent 75%,#eef2f7 75%);background-position:0 0,0 8px,8px -8px,-8px 0;background-size:16px 16px;border-radius: 0;padding:12px;box-shadow:0 4px 30px rgba(0,0,0,.5)';
+    overlay.appendChild(lbImg);
+    document.body.appendChild(overlay);
+  }
+  overlay.querySelector('img').src = src;
+  overlay.style.display = 'flex';
+}
+
+// 图片预览：删除按钮清除图片
+function clearModuleImage(btn) {
+  var container = btn.closest('.hero-slide-body') || btn.closest('.mb-2');
+  if (!container) return;
+  var urlInput = container.querySelector('input[type="hidden"]') || container.querySelector('input[type="text"]');
+  var fileInput = container.querySelector('input[type="file"]');
+  var urlText = container.querySelector('.module-image-url-text');
+  var preview = container.querySelector('.module-image-preview');
+  var img = preview ? preview.querySelector('img') : null;
+  if (urlInput) urlInput.value = '';
+  if (fileInput) fileInput.value = '';
+  if (urlText) { urlText.textContent = ''; urlText.style.display = 'none'; }
+  if (img) img.src = '';
+  if (preview) preview.style.display = 'none';
+}
+
+// 图片预览：URL 输入框变化时更新预览
+function updateImagePreview(urlInput) {
+  var container = urlInput.closest('.hero-slide-body') || urlInput.closest('.mb-2');
+  var preview = container ? container.querySelector('.module-image-preview') : null;
+  var img = preview ? preview.querySelector('img') : null;
+  if (!preview || !img) return;
+  var url = urlInput.value.trim();
+  if (url) {
+    img.src = url;
+    preview.style.display = '';
+  } else {
+    preview.style.display = 'none';
+    img.src = '';
+  }
+}
+</script>
+
+<style>
+{# 可用模块面板卡片 #}
+.block-palette-card { cursor: pointer; border: 1px solid #dee2e6; border-radius: 0; transition: all 0.15s ease; }
+.block-palette-card:hover { border-color: #067a7a; background: #f0f7ff; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(6,122,122,0.1); }
+.block-palette-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 0; background: rgba(6,122,122,0.06); color: #067a7a; }
+.module-item.expanded .module-config { display: block !important; }
+.device-config { padding: 4px 0; }
+</style>
+
+{% else %}
+{# 旧格式兼容 #}
+<div class="small text-muted mb-3">此模板使用旧格式，建议升级到模块库模式</div>
+<form method="post" action="{{ url_for('core.page_home', site=site.id) }}?_fragment=1">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="mb-2"><label class="form-label small">主标题</label>
+    <input class="form-control form-control-sm" name="hero.title" value="{{ page.hero.title or '' }}"></div>
+  <div class="mb-2"><label class="form-label small">副标题</label>
+    <input class="form-control form-control-sm" name="hero.subtitle" value="{{ page.hero.subtitle or '' }}"></div>
+  <button class="btn btn-primary btn-sm" type="submit">保存</button>
 </form>
-{% endblock %}
+{% endif %}

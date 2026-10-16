@@ -1,0 +1,178 @@
+{# 网站头部变体选择面板 #}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <span class="fw-semibold">页头设置</span>
+  {% if not header_footer_embed|default(false) %}
+  <span class="small text-muted">模板: {{ site.template_name }}</span>
+  {% endif %}
+</div>
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}
+    <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+
+{% set header_form_action = header_form_action | default(url_for('core.header_edit', _fragment='1', site=site.id, lang=current_lang)) %}
+<style>
+.lang-style-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.lang-style-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  padding: 2px 0;
+  color: #475569;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  transition: color .15s;
+  user-select: none;
+}
+.lang-style-option::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: inset 0 0 0 3px #fff;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+  flex: 0 0 auto;
+}
+.lang-style-option:hover,
+.lang-style-option.selected {
+  color: var(--admin-primary);
+}
+.lang-style-option.selected::before {
+  border-color: var(--admin-primary);
+  background: var(--admin-primary);
+  box-shadow: inset 0 0 0 3px #fff, 0 0 0 2px rgba(var(--admin-primary-rgb), .12);
+}
+.lang-style-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.header-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.header-settings-grid .panel-section {
+  min-width: 0;
+  height: 100%;
+  background: #fff;
+}
+.header-settings-grid .variant-card-grid {
+  grid-template-columns: 1fr;
+}
+</style>
+<form method="post" action="{{ header_form_action }}" id="headerForm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="_section" value="header">
+  <input type="hidden" name="_header_footer_tab" value="header">
+  {# Header 变体选择 - 卡片式 #}
+  {% set selected_variant = current_header.get('variant', header_variants[0].key) %}
+  <div class="header-settings-grid">
+  <div class="panel-section">
+    <div class="panel-section-title">头部布局</div>
+    <div class="variant-card-grid">
+      {% for variant in header_variants %}
+      <label class="variant-card {% if selected_variant == variant.key %}selected{% endif %}" data-variant="{{ variant.key }}">
+        <input type="radio" name="header_variant" value="{{ variant.key }}"
+               {% if selected_variant == variant.key %}checked{% endif %}
+               class="variant-card-radio">
+        <div class="variant-card-icon">
+          {% if variant.key == 'logo_left_menu_right' %}
+          <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="2" y="8" width="10" height="16" rx="2" fill="currentColor" opacity="0.7"/><rect x="16" y="12" width="6" height="8" rx="1" fill="currentColor" opacity="0.35"/><rect x="25" y="12" width="6" height="8" rx="1" fill="currentColor" opacity="0.35"/><rect x="34" y="12" width="6" height="8" rx="1" fill="currentColor" opacity="0.35"/></svg>
+          {% elif variant.key == 'logo_center_menu_below' %}
+          <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="19" y="4" width="10" height="10" rx="2" fill="currentColor" opacity="0.7"/><rect x="10" y="18" width="6" height="6" rx="1" fill="currentColor" opacity="0.35"/><rect x="21" y="18" width="6" height="6" rx="1" fill="currentColor" opacity="0.35"/><rect x="32" y="18" width="6" height="6" rx="1" fill="currentColor" opacity="0.35"/></svg>
+          {% elif variant.key == 'minimal_hamburger' %}
+          <svg width="48" height="32" viewBox="0 0 48 32" fill="none"><rect x="2" y="10" width="8" height="12" rx="2" fill="currentColor" opacity="0.7"/><rect x="34" y="11" width="12" height="3" rx="1.5" fill="currentColor" opacity="0.5"/><rect x="36" y="16" width="10" height="3" rx="1.5" fill="currentColor" opacity="0.5"/><rect x="38" y="21" width="8" height="3" rx="1.5" fill="currentColor" opacity="0.5"/></svg>
+          {% endif %}
+        </div>
+        <div class="variant-card-label">{{ variant.label }}</div>
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# 语言设置 #}
+  <div class="panel-section">
+    <div class="panel-section-title">语言设置</div>
+    <p class="text-muted mb-3" style="font-size:12px;line-height:1.5;">开启后可在前台切换语言版本，同时需勾选至少两项语言。</p>
+
+    {# 语言切换按钮开关 #}
+    {% set sw_enabled = current_header.get('language_switcher', {}).get('enabled', True) %}
+    <div class="form-check form-switch mb-3">
+      <input class="form-check-input" type="checkbox" name="lang_switcher_enabled" value="1"
+             id="langSwitcherToggle" {% if sw_enabled %}checked{% endif %}>
+      <label class="form-check-label small fw-semibold" for="langSwitcherToggle">在前台显示语言切换按钮</label>
+    </div>
+
+    {# 语言版本 + 样式（切换按钮开启时显示） #}
+    <div id="langSwitcherPanel" style="{% if not sw_enabled %}display:none;{% endif %}">
+      <div style="font-size:14px;font-weight:600;margin-bottom:0.5rem">网站语言版本</div>
+      <div class="d-flex gap-3 mb-3" id="langVersionCheckboxes">
+        {% for lang_opt in template_languages %}
+        <label class="d-flex align-items-center gap-2 lang-version-option" style="cursor:pointer;">
+          <input class="form-check-input mt-0" type="checkbox" name="enabled_lang" value="{{ lang_opt.code }}"
+                 {% if lang_opt.code in enabled_languages %}checked{% endif %}>
+          <span style="font-size:14px">{{ lang_opt.name }}</span>
+        </label>
+        {% endfor %}
+      </div>
+
+      <div style="font-size:14px;font-weight:600;margin-bottom:0.5rem">按钮样式</div>
+      {% set current_style = current_header.get('language_switcher', {}).get('style', 'vertical_dropdown') %}
+      <div class="lang-style-options" role="radiogroup" aria-label="语言切换按钮样式">
+        {% for s in lang_switcher_styles %}
+        <label class="lang-style-option {% if current_style == s.key %}selected{% endif %}">
+          <input type="radio" name="lang_switcher_style" value="{{ s.key }}"
+                 {% if current_style == s.key %}checked{% endif %}>
+          <span>{{ s.label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div class="panel-save-bar">
+    <button class="btn btn-primary btn-sm w-100" type="submit">保存</button>
+  </div>
+</form>
+
+<script>
+// 头部布局卡片点击切换
+document.querySelectorAll('#headerForm .variant-card').forEach(function(card) {
+  card.addEventListener('click', function() {
+    document.querySelectorAll('#headerForm .variant-card').forEach(function(c) { c.classList.remove('selected'); });
+    this.classList.add('selected');
+    this.querySelector('.variant-card-radio').checked = true;
+  });
+});
+
+// 切换按钮控制下方语言版本 + 样式面板的显示
+document.getElementById('langSwitcherToggle').addEventListener('change', function(){
+  document.getElementById('langSwitcherPanel').style.display = this.checked ? '' : 'none';
+});
+
+document.querySelectorAll('#headerForm .lang-style-option').forEach(function(option) {
+  option.addEventListener('click', function() {
+    document.querySelectorAll('#headerForm .lang-style-option').forEach(function(item) {
+      item.classList.remove('selected');
+    });
+    this.classList.add('selected');
+    var input = this.querySelector('input[type="radio"]');
+    if (input) input.checked = true;
+  });
+});
+
+</script>

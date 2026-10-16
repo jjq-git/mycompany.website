@@ -4,16 +4,52 @@
 
     sites/<site_id>/
     ├── settings.yaml         站点设置
-    ├── pages/*.yaml          页面字段值
-    ├── data/*.yaml           数据集 (产品/案例/博客)
+    ├── pages/*.yaml          页面字段值 (默认语言)
+    ├── data/*.yaml           数据集 (默认语言)
     ├── translations/*.yaml   翻译缓存 (Phase 2)
+    ├── lang/<code>/          其他语言版本
+    │   ├── pages/*.yaml
+    │   ├── data/*.yaml
+    │   └── settings.yaml     语言特有设置 (如 menu 覆盖)
     └── assets/               上传的图片/文件
 """
+import os
+import copy
 import shutil
+import tempfile
 from pathlib import Path
 
 import yaml
-from flask import current_app
+from flask import abort, current_app, g, has_request_context, request
+from werkzeug.utils import secure_filename
+
+
+MEDIA_CATEGORIES = {
+    'image': {
+        'label': '图片',
+        'extensions': {'jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'},
+    },
+    'video': {
+        'label': '视频',
+        'extensions': {'mp4', 'webm', 'ogg', 'mov'},
+    },
+    'document': {
+        'label': '文档',
+        'extensions': {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'zip'},
+    },
+}
+
+_MEDIA_PACKAGE_PREFIX = '__package__:'
+_MEDIA_PACKAGE_URL_PREFIX = '/assets/media-packages'
+_LEGACY_MEDIA_PACKAGE_URL_PREFIX = '/media-packages'
+_READ_YAML_CACHE = {}
+_READ_YAML_CACHE_MAX = 512
+
+
+def _is_content_yaml(path):
+    """Return true for real content YAML files, excluding atomic-write leftovers."""
+    name = Path(path).name
+    return name.endswith(('.yaml', '.yml')) and not name.startswith('.tmp-')
 
 
 def site_root(site_id):
@@ -22,30 +58,153 @@ def site_root(site_id):
     return base / str(site_id)
 
 
+def media_package_token(package_name):
+    """Return the API token used to address a media package."""
+    return f'{_MEDIA_PACKAGE_PREFIX}{package_name}'
+
+
+def is_media_package_token(name):
+    return isinstance(name, str) and name.startswith(_MEDIA_PACKAGE_PREFIX)
+
+
+def media_package_name_from_token(name):
+    return name[len(_MEDIA_PACKAGE_PREFIX):] if is_media_package_token(name) else name
+
+
+def media_package_url(package_name, legacy=False):
+    prefix = _LEGACY_MEDIA_PACKAGE_URL_PREFIX if legacy else _MEDIA_PACKAGE_URL_PREFIX
+    return f'{prefix}/{package_name}/'
+
+
+def _media_package_reference_urls(package_name):
+    return (media_package_url(package_name), media_package_url(package_name, legacy=True))
+
+
+def lang_root(site_id, lang_code):
+    """获取站点某语言版本的根目录 (lang/<code>/)."""
+    return site_root(site_id) / 'lang' / lang_code
+
+
+def _safe_path(site_id, relative_path, lang=None):
+    """把 relative_path 解析到站点(或语言)根目录下, 并强制校验不逃出边界.
+
+    为什么需要: page_key / dataset_key 经 Flask <path:> 转换器接收, 保留了
+    `..` 和 `/`, 一路传到这里拼成 relative_path。若不校验, 已登录店主可用
+    `../../<别人站点id>/...` 跨租户读写他人 .yaml, 或写到 sites/ 目录之外。
+    这里是所有 YAML 读写的单一出口, 在此兜底一次即可全覆盖。
+    """
+    base = (lang_root(site_id, lang) if lang else site_root(site_id)).resolve()
+    full = (base / relative_path).resolve()
+    try:
+        full.relative_to(base)
+    except ValueError:
+        abort(400, '非法路径')
+    return full
+
+
 def init_site_folder(site_id):
-    """为新站点创建初始目录结构."""
+    """为新站点创建初始目录结构.
+
+    防脏目录：sites/<id>/ 目录可能残留上一个被删站点的文件（DB 记录删了、
+    磁盘目录没删干净，且 site_id 是自增主键，被删站的目录名会被后续新站复用）。
+    残留的 lang/<code>/pages/*.yaml 尤其危险——建站只复制新模板的 seed_data
+    （copytree dirs_exist_ok=True 只叠加不清空），空白模板没有对应的空语言文件去
+    覆盖旧的语言页面，导致新站默认语言是空白、切到其他语言却冒出上一个站的旧内容。
+    因此这里在初始化前，若目录已存在就先彻底清空，保证新站从干净空目录起步。
+    这只在建站这一刻针对"刚分配给新站的目录"执行，不触及任何在用站点。
+    """
     folder = site_root(site_id)
+    if folder.exists():
+        shutil.rmtree(folder, ignore_errors=True)
     for sub in ('pages', 'data', 'translations', 'assets'):
         (folder / sub).mkdir(parents=True, exist_ok=True)
     return folder
 
 
-def write_yaml(site_id, relative_path, data):
-    """写 YAML 文件到 sites/<id>/<relative_path>."""
-    path = site_root(site_id) / relative_path
+def remove_site_folder(site_id):
+    """Remove exactly one site's storage directory after a failed creation.
+
+    The resolved-path check keeps cleanup scoped to a direct child of SITES_DIR,
+    even if this helper is ever called with an unexpected identifier.
+    """
+    base = Path(current_app.config['SITES_DIR']).resolve()
+    folder = site_root(site_id).resolve()
+    if folder.parent != base:
+        raise ValueError('Refusing to remove a path outside SITES_DIR')
+    if folder.exists():
+        shutil.rmtree(folder)
+
+
+def mark_site_content_changed(site_id, relative_path):
+    """Record a successful request-scoped content mutation for DB/audit sync."""
+    if not has_request_context() or request.method not in {'POST', 'PUT', 'PATCH', 'DELETE'}:
+        return
+    changes = getattr(g, 'site_content_changes', None)
+    if changes is None:
+        changes = g.site_content_changes = {}
+    changes.setdefault(int(site_id), set()).add(str(relative_path))
+
+
+def write_yaml(site_id, relative_path, data, lang=None):
+    """写 YAML 文件到 sites/<id>/<relative_path>.
+
+    如果指定了 lang (非默认语言), 写入 lang/<lang>/<relative_path>.
+    """
+    path = _safe_path(site_id, relative_path, lang=lang)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        yaml.safe_dump(data, allow_unicode=True, sort_keys=False, indent=2),
-        encoding='utf-8',
-    )
+    text = yaml.safe_dump(data, allow_unicode=True, sort_keys=False, indent=2)
+    # 原子写: 这是店主网站内容(pages/data/settings)的唯一权威副本, 无备份、不入仓。
+    # 直接 'w' 模式会先把目标截断为 0 再写, 进程中途崩溃/被 kill/磁盘满就会
+    # 留下截断或半写的损坏文件(yaml.safe_load 静默返回 None, 内容全失)。
+    # 改为: 先写同目录临时文件 -> fsync 落盘 -> os.replace 原子替换。
+    # 与产品 P0 信念"网站像 PDF, 5 年后还能打开"一致。
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix='.tmp-', suffix='.yaml')
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)  # 同目录原子替换, 替换前后目标始终是完整文件
+        mark_site_content_changed(site_id, f'lang/{lang}/{relative_path}' if lang else relative_path)
+    except Exception:
+        # 写失败时清理临时文件, 不留垃圾; 原文件保持原样(未被截断)
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
 
 
-def read_yaml(site_id, relative_path, default=None):
-    """读 YAML 文件. 不存在返回 default."""
-    path = site_root(site_id) / relative_path
+def read_yaml(site_id, relative_path, default=None, lang=None):
+    """读 YAML 文件.
+
+    如果指定了 lang: 先尝试 lang/<lang>/<relative_path>, 不存在则回退到根路径.
+    不指定 lang: 只读根路径.
+    """
+    def _read_cached(path):
+        try:
+            stat = path.stat()
+            cache_key = (str(path.resolve()), stat.st_mtime_ns, stat.st_size)
+            cached = _READ_YAML_CACHE.get(cache_key)
+            if cached is not None:
+                return copy.deepcopy(cached)
+            data = yaml.safe_load(path.read_text(encoding='utf-8'))
+            if len(_READ_YAML_CACHE) >= _READ_YAML_CACHE_MAX:
+                _READ_YAML_CACHE.pop(next(iter(_READ_YAML_CACHE)), None)
+            _READ_YAML_CACHE[cache_key] = data
+            return copy.deepcopy(data)
+        except OSError:
+            return default
+
+    # 先尝试语言特定版本 (路径同样过 _safe_path 兜底, 防 .. 逃逸)
+    if lang:
+        lang_path = _safe_path(site_id, relative_path, lang=lang)
+        if lang_path.exists():
+            return _read_cached(lang_path)
+
+    # 回退到根路径
+    path = _safe_path(site_id, relative_path)
     if not path.exists():
         return default
-    return yaml.safe_load(path.read_text(encoding='utf-8'))
+    return _read_cached(path)
 
 
 def copy_seed_data(site_id, template_name):
@@ -63,9 +222,488 @@ def copy_seed_data(site_id, template_name):
     return True
 
 
-def list_yaml_files(site_id, subdir):
-    """列出某子目录下的所有 YAML 文件."""
+def list_yaml_files(site_id, subdir, lang=None):
+    """列出某子目录下的所有 YAML 文件.
+
+    如果指定了 lang, 同时列出语言特定目录和根目录的文件 (去重).
+    """
+    items = []
+    seen = set()
+
+    # 语言特定文件优先
+    if lang:
+        lang_dir = lang_root(site_id, lang) / subdir
+        if lang_dir.exists():
+            for f in sorted(lang_dir.glob('*.yaml')):
+                if not _is_content_yaml(f):
+                    continue
+                seen.add(f.name)
+                items.append(f)
+
+    # 根目录文件 (排除已存在的)
     path = site_root(site_id) / subdir
+    if path.exists():
+        for f in sorted(path.glob('*.yaml')):
+            if not _is_content_yaml(f):
+                continue
+            if f.name not in seen:
+                items.append(f)
+
+    return items
+
+
+def _format_size(size_bytes):
+    size = float(size_bytes or 0)
+    for unit in ('B', 'KB', 'MB', 'GB'):
+        if size < 1024 or unit == 'GB':
+            if unit == 'B':
+                return f'{int(size)} B'
+            return f'{size:.1f} {unit}'
+        size /= 1024
+    return f'{int(size_bytes or 0)} B'
+
+
+def _media_category_for_extension(ext):
+    ext = (ext or '').lower().lstrip('.')
+    for category, meta in MEDIA_CATEGORIES.items():
+        if ext in meta['extensions']:
+            return category
+    return 'other'
+
+
+def _safe_media_filename(filename):
+    filename = (filename or '').strip()
+    if not filename or filename.startswith(('.', '/')) or '\\' in filename or '/' in filename or '..' in filename:
+        abort(400, '非法文件名')
+    safe = secure_filename(filename)
+    if not safe or safe != filename:
+        abort(400, '非法文件名')
+    return safe
+
+
+def _safe_package_name(package_name):
+    package_name = (package_name or '').strip()
+    if not package_name or package_name.startswith(('.', '/')) or '\\' in package_name or '/' in package_name or '..' in package_name:
+        abort(400, '非法网页包名称')
+    safe = secure_filename(package_name)
+    if not safe or safe != package_name:
+        abort(400, '非法网页包名称')
+    return safe
+
+
+def _directory_size(path):
+    total = 0
     if not path.exists():
-        return []
-    return sorted(path.glob('*.yaml'))
+        return 0
+    for item in path.rglob('*'):
+        if item.is_file():
+            try:
+                total += item.stat().st_size
+            except OSError:
+                continue
+    return total
+
+
+def list_media_files(site_id):
+    """List uploaded files and iframe-previewable media packages for a site."""
+    assets_root = site_root(site_id) / 'assets'
+    uploads_dir = assets_root / 'uploads'
+    packages_dir = assets_root / 'media-packages'
+    items = []
+
+    if uploads_dir.exists():
+        for path in sorted(uploads_dir.iterdir(), key=lambda p: p.name.lower()):
+            if not path.is_file() or path.name.startswith('.'):
+                continue
+            ext = path.suffix.lower().lstrip('.')
+            stat = path.stat()
+            category = _media_category_for_extension(ext)
+            # 读取图片宽高，用于媒体管理卡片显示分辨率
+            img_width = img_height = None
+            if category == 'image':
+                try:
+                    from PIL import Image
+                    with Image.open(path) as img:
+                        img_width, img_height = img.size
+                except Exception:
+                    pass  # 非标准图片文件或损坏，跳过尺寸读取
+            items.append({
+                'name': path.name,
+                'display_name': path.name,
+                'size_bytes': stat.st_size,
+                'size_display': _format_size(stat.st_size),
+                'mtime': stat.st_mtime,
+                'category': category,
+                'category_label': MEDIA_CATEGORIES.get(category, {}).get('label', '其他'),
+                'ext': ext,
+                'url': f'/assets/uploads/{path.name}',
+                'api_name': path.name,
+                'is_package': False,
+                'width': img_width,
+                'height': img_height,
+            })
+
+    if packages_dir.exists():
+        for path in sorted(packages_dir.iterdir(), key=lambda p: p.name.lower()):
+            if not path.is_dir() or path.name.startswith('.') or not (path / 'index.html').exists():
+                continue
+            size = _directory_size(path)
+            mtime = max((p.stat().st_mtime for p in path.rglob('*') if p.exists()), default=path.stat().st_mtime)
+            entry_url = media_package_url(path.name)
+            items.append({
+                'name': path.name,
+                'display_name': path.name,
+                'size_bytes': size,
+                'size_display': _format_size(size),
+                'mtime': mtime,
+                'category': 'package',
+                'category_label': '网页包',
+                'ext': 'package',
+                'url': entry_url,
+                'entry_url': entry_url,
+                'api_name': media_package_token(path.name),
+                'is_package': True,
+            })
+
+    # 单次扫描所有 YAML 文件构建引用索引，避免每个文件都调用 find_media_references
+    # 导致 O(n × m) 性能问题（n=文件数, m=YAML 文件数）
+    ref_index = {}
+    root = site_root(site_id)
+    yaml_paths = list(root.rglob('*.yaml')) + list(root.rglob('*.yml'))
+    for path in sorted(yaml_paths):
+        if not _is_content_yaml(path):
+            continue
+        try:
+            text = path.read_text(encoding='utf-8')
+        except UnicodeDecodeError:
+            continue
+        rel_path = str(path.relative_to(root)).replace('\\', '/')
+        for item in items:
+            if item['api_name'] in ref_index:
+                continue  # 已有引用了，跳过（性能优化：不重复匹配）
+            needles = (
+                _media_package_reference_urls(media_package_name_from_token(item['api_name']))
+                if item['is_package'] else (f'/assets/uploads/{item["api_name"]}',)
+            )
+            if any(needle in text for needle in needles):
+                ref_index.setdefault(item['api_name'], []).append(rel_path)
+
+    for item in items:
+        refs = ref_index.get(item['api_name'], [])
+        item['reference_count'] = len(refs)
+        item['is_referenced'] = bool(refs)
+        item['can_delete'] = not refs
+
+    category_order = {'image': 0, 'video': 1, 'package': 2, 'document': 3, 'other': 4}
+    return sorted(items, key=lambda item: (category_order.get(item['category'], 9), -item.get('mtime', 0), item['display_name'].lower()))
+
+
+def get_media_file_path(site_id, filename):
+    filename = _safe_media_filename(filename)
+    path = (site_root(site_id) / 'assets' / 'uploads' / filename).resolve()
+    base = (site_root(site_id) / 'assets' / 'uploads').resolve()
+    try:
+        path.relative_to(base)
+    except ValueError:
+        abort(400, '非法文件路径')
+    if not path.exists() or not path.is_file():
+        abort(404, '文件不存在')
+    return path
+
+
+def get_media_package_path(site_id, package_name):
+    package_name = _safe_package_name(package_name)
+    path = (site_root(site_id) / 'assets' / 'media-packages' / package_name).resolve()
+    base = (site_root(site_id) / 'assets' / 'media-packages').resolve()
+    try:
+        path.relative_to(base)
+    except ValueError:
+        abort(400, '非法网页包路径')
+    if not path.exists() or not path.is_dir():
+        abort(404, '网页包不存在')
+    return path
+
+
+def find_media_references(site_id, name):
+    """Find YAML files that reference an uploaded file or media package."""
+    is_package = is_media_package_token(name)
+    target_name = media_package_name_from_token(name)
+    if is_package:
+        target_name = _safe_package_name(target_name)
+        needles = _media_package_reference_urls(target_name)
+    else:
+        target_name = _safe_media_filename(target_name)
+        needles = (f'/assets/uploads/{target_name}',)
+
+    refs = []
+    root = site_root(site_id)
+    if not root.exists():
+        return refs
+    yaml_paths = list(root.rglob('*.yaml')) + list(root.rglob('*.yml'))
+    for path in sorted(yaml_paths):
+        if not _is_content_yaml(path):
+            continue
+        try:
+            text = path.read_text(encoding='utf-8')
+        except UnicodeDecodeError:
+            continue
+        if any(needle in text for needle in needles):
+            refs.append(str(path.relative_to(root)).replace('\\', '/'))
+    return refs
+
+
+def find_media_references_many(site_id, names):
+    """Find references for several media items with one scan of the site's YAML."""
+    needles = {}
+    for name in names:
+        if is_media_package_token(name):
+            target_name = _safe_package_name(media_package_name_from_token(name))
+            needles[name] = _media_package_reference_urls(target_name)
+        else:
+            target_name = _safe_media_filename(name)
+            needles[name] = (f'/assets/uploads/{target_name}',)
+
+    refs = {name: [] for name in needles}
+    root = site_root(site_id)
+    if not root.exists():
+        return refs
+    yaml_paths = list(root.rglob('*.yaml')) + list(root.rglob('*.yml'))
+    for path in sorted(yaml_paths):
+        if not _is_content_yaml(path):
+            continue
+        try:
+            text = path.read_text(encoding='utf-8')
+        except UnicodeDecodeError:
+            continue
+        rel_path = str(path.relative_to(root)).replace('\\', '/')
+        for name, candidates in needles.items():
+            if any(needle in text for needle in candidates):
+                refs[name].append(rel_path)
+    return refs
+
+
+def _media_reference_urls(name, new_name):
+    if is_media_package_token(name):
+        old_pkg = _safe_package_name(media_package_name_from_token(name))
+        new_pkg = _safe_package_name(media_package_name_from_token(new_name))
+        return (
+            _media_package_reference_urls(old_pkg),
+            media_package_url(new_pkg),
+        )
+
+    old_file = _safe_media_filename(name)
+    new_file = _safe_media_filename(new_name)
+    return (
+        f'/assets/uploads/{old_file}',
+        f'/assets/uploads/{new_file}',
+    )
+
+
+def _atomic_write_text(path, text):
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix='.tmp-', suffix=path.suffix)
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except Exception:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
+
+
+def _replace_media_references(site_id, refs, old_url, new_url):
+    root = site_root(site_id).resolve()
+    changed = []
+    originals = {}
+    try:
+        for ref in refs:
+            path = (root / ref).resolve()
+            try:
+                path.relative_to(root)
+            except ValueError:
+                abort(400, '非法引用路径')
+            if not path.exists() or not _is_content_yaml(path):
+                continue
+            text = path.read_text(encoding='utf-8')
+            old_urls = old_url if isinstance(old_url, (list, tuple)) else (old_url,)
+            new_text = text
+            for candidate in old_urls:
+                new_text = new_text.replace(candidate, new_url)
+            if new_text == text:
+                continue
+            originals[path] = text
+            _atomic_write_text(path, new_text)
+            changed.append(str(path.relative_to(root)).replace('\\', '/'))
+    except Exception:
+        for path, text in originals.items():
+            try:
+                _atomic_write_text(path, text)
+            except Exception as rollback_exc:
+                current_app.logger.warning('media reference rollback failed for %s: %s', path, rollback_exc)
+        raise
+    return changed
+
+
+def rename_media_file(site_id, old_name, new_name):
+    """Rename an upload file or media package and update YAML references."""
+    refs = find_media_references(site_id, old_name)
+    old_url, new_url = _media_reference_urls(old_name, new_name)
+
+    if is_media_package_token(old_name):
+        old_pkg = _safe_package_name(media_package_name_from_token(old_name))
+        new_pkg = _safe_package_name(media_package_name_from_token(new_name))
+        src = get_media_package_path(site_id, old_pkg)
+        dst = src.parent / new_pkg
+        if dst.exists():
+            abort(409, '目标名称已存在')
+        os.rename(src, dst)
+        try:
+            _replace_media_references(site_id, refs, old_url, new_url)
+        except Exception:
+            if dst.exists() and not src.exists():
+                os.rename(dst, src)
+            raise
+        return media_package_token(new_pkg)
+
+    old_file = _safe_media_filename(old_name)
+    new_file = _safe_media_filename(new_name)
+    if Path(old_file).suffix.lower() != Path(new_file).suffix.lower():
+        abort(400, '重命名不能修改文件后缀名')
+    src = get_media_file_path(site_id, old_file)
+    dst = src.parent / new_file
+    if dst.exists():
+        abort(409, '目标名称已存在')
+    os.rename(src, dst)
+    try:
+        _replace_media_references(site_id, refs, old_url, new_url)
+    except Exception:
+        if dst.exists() and not src.exists():
+            os.rename(dst, src)
+        raise
+    return new_file
+
+
+def _iter_pages_dirs(site_id):
+    """产出该站点所有存放 pages/*.yaml 的目录.
+
+    为什么扫目录而不按 enabled_languages 拼路径: 页面文件的物理位置有两种布局
+    —— 默认语言可能落在根 pages/, 也可能落在 lang/<default>/pages/(视建站/翻译
+    流程而定)。以磁盘上真实存在的目录为准, 才能覆盖两种情况, 不漏改也不误建。
+    """
+    root = site_root(site_id)
+    root_pages = root / 'pages'
+    if root_pages.is_dir():
+        yield root_pages
+    lang_base = root / 'lang'
+    if lang_base.is_dir():
+        for lang_dir in sorted(lang_base.iterdir()):
+            pages = lang_dir / 'pages'
+            if pages.is_dir():
+                yield pages
+
+
+def rename_page_files(site_id, old_key, new_key):
+    """把所有语言目录下的 pages/<old_key>.yaml 重命名为 <new_key>.yaml.
+
+    触发场景: 后台改了 page 类型菜单项的 target(即页面路径)。页面靠文件名 stem
+    与菜单 target 对应(见 builder), 只改 settings.yaml 不改文件名会导致构建时按
+    新路径找不到页面 -> 预览空白。这里补上文件同步重命名。
+
+    安全约束(对应 CLAUDE.md 十二: 不覆盖用户网站数据):
+    - key 只允许安全字符, 防止 '..'/'/' 逃逸出 pages/ 目录跨租户或越界写。
+    - <new>.yaml 已存在时跳过该目录并计入 conflicts, 绝不覆盖已有页面文件。
+    返回 (renamed_langs, conflicts): 便于调用方 flash 提示。
+    """
+    import re as _re
+    old_key = str(old_key or '').strip().strip('/')
+    new_key = str(new_key or '').strip().strip('/')
+    # 只接受与 page_key 一致的安全字符集(字母数字、连字符、下划线), 拒绝任何路径分隔符
+    safe = _re.compile(r'^[A-Za-z0-9_-]+$')
+    if not old_key or not new_key or old_key == new_key:
+        return [], []
+    if not safe.match(old_key) or not safe.match(new_key):
+        return [], []
+
+    renamed = []
+    conflicts = []
+    for pages_dir in _iter_pages_dirs(site_id):
+        src = pages_dir / f'{old_key}.yaml'
+        if not src.exists():
+            continue
+        dst = pages_dir / f'{new_key}.yaml'
+        if dst.exists():
+            # 目标已存在: 不覆盖用户数据, 记录冲突交由上层提示
+            conflicts.append(str(pages_dir))
+            continue
+        os.rename(src, dst)
+        renamed.append(str(pages_dir))
+    return renamed, conflicts
+
+
+def delete_media_file(site_id, name):
+    """Delete an unreferenced upload file or media package."""
+    if find_media_references(site_id, name):
+        abort(409, '文件已被引用，不能删除')
+
+    if is_media_package_token(name):
+        package_name = _safe_package_name(media_package_name_from_token(name))
+        path = get_media_package_path(site_id, package_name)
+        shutil.rmtree(path)
+        return True
+
+    filename = _safe_media_filename(name)
+    path = get_media_file_path(site_id, filename)
+    path.unlink()
+    return True
+
+
+def delete_media_files(site_id, names):
+    """Delete multiple unreferenced media items after validating the whole batch."""
+    normalized = []
+    seen = set()
+    for raw_name in names or []:
+        name = str(raw_name or '').strip()
+        if not name or name in seen:
+            continue
+        if is_media_package_token(name):
+            _safe_package_name(media_package_name_from_token(name))
+        else:
+            _safe_media_filename(name)
+        seen.add(name)
+        normalized.append(name)
+
+    if not normalized:
+        abort(400, '请选择要删除的媒体文件')
+    if len(normalized) > 2000:
+        abort(400, '单次最多删除 2000 个媒体文件')
+
+    referenced = {
+        name: refs
+        for name, refs in find_media_references_many(site_id, normalized).items()
+        if refs
+    }
+    if referenced:
+        abort(409, '所选媒体中有文件已被引用，请刷新后重试')
+
+    paths = {}
+    for name in normalized:
+        if is_media_package_token(name):
+            package_name = _safe_package_name(media_package_name_from_token(name))
+            path = get_media_package_path(site_id, package_name)
+        else:
+            filename = _safe_media_filename(name)
+            path = get_media_file_path(site_id, filename)
+        if not path.exists():
+            abort(404, f'媒体文件不存在: {name}')
+        paths[name] = path
+
+    deleted = []
+    for name in normalized:
+        if is_media_package_token(name):
+            shutil.rmtree(paths[name])
+        else:
+            paths[name].unlink()
+        deleted.append(name)
+    return deleted

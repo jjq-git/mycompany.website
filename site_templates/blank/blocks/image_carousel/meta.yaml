@@ -1,0 +1,71 @@
+name: 图片轮播
+category: content
+icon: image_carousel.svg
+description: 图片横向滚动展示，支持箭头导航和自动滚动，可配置每行显示张数
+
+fields:
+  # --- 内容 ---
+  - key: title
+    label: 标题
+    type: text
+    group: 内容
+    default: 标题
+
+  - key: desc
+    label: 描述
+    type: textarea
+    group: 内容
+    default: 描述
+
+  # --- 图片列表（对应 HTML 中 data-name="images"） ---
+  - key: images
+    label: 图片列表
+    type: list
+    group: 内容
+    item_label: 图片
+    item_fields:
+      - key: image
+        label: 图片
+        type: image
+      - key: caption
+        label: 图片说明
+        type: text
+        default: 图片说明
+      - key: alt
+        label: 替代文字
+        type: text
+        default: ""
+      - key: link
+        label: 点击链接
+        type: url
+        default: ""
+
+  # --- 滚动行为 ---
+  - key: auto_scroll
+    label: 自动滚动
+    type: switch
+    group: 滚动行为
+    default: "true"
+
+  - key: scroll_interval
+    label: 滚动间隔(秒)
+    type: select
+    group: 滚动行为
+    default: "4"
+    options:
+      - value: "2"
+        label: "2 秒"
+      - value: "3"
+        label: "3 秒"
+      - value: "4"
+        label: "4 秒"
+      - value: "5"
+        label: "5 秒"
+      - value: "8"
+        label: "8 秒"
+
+  - key: show_dots
+    label: 显示圆点
+    type: switch
+    group: 滚动行为
+    default: "true"

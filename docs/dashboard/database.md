@@ -105,8 +105,8 @@ erDiagram
   - `User.phone`：手机号（联系 / 后续实名或通知用）。
 - **用户权限**：
   - `User.role`：平台角色（owner / admin）；
-  - `User.level`：会员等级，与主题 `level` 比较决定可选用哪些主题（[meta.yaml.md](../themes/meta.yaml.md) §四）；
-  - 能开几种语言等配额由 `level` 决定，**分级待定**（[i18n.md](../site/i18n.md) §〇）；
+  - `User.level`：会员等级，与主题 `level` 比较决定可选用哪些主题；
+  - 能开几种语言等配额由 `level` 决定，**分级待定**；
   - 计费 / 到期不在 `User`，按站点走 `Site.expires_at`。
 - **主题多值字段**：
   - `industry` / `tags` / `languages`：数组（JSON 列）；
@@ -122,8 +122,8 @@ erDiagram
 
 ## 三、代码现状（与本文目标的差异）
 
-本文（含上面的 ER 图）是**目标 schema**。代码 [app/core/models.py](../../app/core/models.py) 尚未对齐，差异已记入 [TODO-code.md](../TODO-code.md)：
+本文（含上面的 ER 图）是**目标 schema**。代码 `app/core/models.py` 尚未对齐，差异已记入 [TODO-code.md](../TODO-code.md)：
 
 - 主题表模型仍叫 `Template`（表名 `templates`），待改 `Theme` / `themes`；`Site.template_name` / `template_version` 待改 `theme_*`。
 - 主题表缺 `languages` / `level` / `tags` / `author` 字段；`industry` 现为单值字符串（目标为数组）；`description` 等多语言 / 多值字段的 JSON 存法待定。
-- 表由 `db.create_all()` 启动时建（[app/__init__.py](../../app/__init__.py)），**无迁移文件**；字段定稿后再决定迁移方式。
+- 表由 `db.create_all()` 启动时建（`app/__init__.py`），**无迁移文件**；字段定稿后再决定迁移方式。

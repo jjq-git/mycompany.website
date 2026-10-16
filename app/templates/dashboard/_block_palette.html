@@ -1,0 +1,813 @@
+{# 通用组件选择弹框（左右分栏：左侧类型列表 + 右侧变体预览）
+   使用方式：
+   1. 引入前设置 blockLibrary JS 变量
+   2. 定义 onBlockPaletteConfirm(type, variant) 回调
+   3. {% include 'dashboard/_block_palette.html' %}
+   4. 按钮 data-bs-target="#blockPaletteModal" 触发 #}
+
+<style>
+  #blockPaletteModal #confirmAddBtn {
+    min-width: 96px;
+    height: 34px;
+    padding: 0 14px;
+    border-color: var(--theme-primary, var(--bs-primary)) !important;
+    background: var(--theme-primary, var(--bs-primary)) !important;
+    color: #fff !important;
+  }
+  #blockPaletteModal #confirmAddBtn:hover:not(:disabled) {
+    border-color: var(--theme-primary-hover, var(--bs-primary)) !important;
+    background: var(--theme-primary-hover, var(--bs-primary)) !important;
+  }
+  #blockPaletteModal #confirmAddBtn:disabled {
+    opacity: .48;
+  }
+</style>
+
+<div class="modal fade" id="blockPaletteModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h5 class="modal-title">添加组件</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="block-modal-layout">
+          <div class="block-list-panel" id="blockListPanel"></div>
+          <div class="variant-preview-panel" id="variantPanel">
+            <div class="variant-empty-hint">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <span>从左侧选择一个组件类型</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer py-2">
+        <span class="text-muted me-auto" style="font-size:12px" id="variantConfirmHint"></span>
+        <button type="button" class="btn btn-primary btn-sm" id="confirmAddBtn" disabled onclick="confirmBlockPaletteAdd()">确认添加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var selectedBlockType = null;
+  var selectedVariantKey = null;
+  var selectedDataPreset = null;  // 样式型变体的 data 预填值（如 {style_cols: '3'}）
+  var _variantMeta = {};  // (blockType, variantKey) → {source, data_preset} 快速索引
+  var paletteFilter = { query: '', category: 'all' };
+
+  function paletteEsc(value) {
+    return String(value == null ? '' : value).replace(/[&<>'"]/g, function(ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch];
+    });
+  }
+
+  // 模块图标映射
+  function getBlockIconHTML(type) {
+    var icons = {
+      'hero_banner': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>',
+      'section_title': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16"/><path d="M4 10h12"/><path d="M4 15h8"/><path d="M4 20h4"/></svg>',
+      'text_content': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
+      'highlight_card': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="8" height="16" rx="1"/><path d="M10 9h12v-2a1 1 0 0 0-1-1H10z"/><path d="M10 14h9"/><path d="M10 18h6"/></svg>',
+      'feature_grid': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
+      'data_grid': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>',
+      'stat_counter': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>',
+      'contact_info': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M9 13h4"/><circle cx="8.5" cy="8.5" r="0.5" fill="currentColor"/><circle cx="8.5" cy="12.5" r="0.5" fill="currentColor"/></svg>',
+      'contact_form': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l5-3 8 3 5-3v15l-5 3-8-3-5 3z"/><path d="M8 3v15M16 6v15"/><path d="M12 10a2 2 0 1 1 4 0c0 2-2 4-2 4s-2-2-2-4z"/></svg>',
+      'process_steps': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><path d="M8 12h1"/><path d="M15 12h1"/></svg>',
+      'logo_cloud': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="6" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>',
+      'item_data': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14"/><path d="M5 9h10"/><path d="M5 14h14"/><path d="M5 19h8"/></svg>',
+      'item_detail': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><path d="M13 15h4"/><path d="M13 19h6"/></svg>',
+      'image_carousel': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="7" height="13" rx="1"/><rect x="13" y="5" width="7" height="13" rx="1"/><path d="m1 10 2 2-2 2"/><path d="m23 14-2-2 2-2"/></svg>',
+      'featured_picks': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M17.5 14l1.2 2.5 2.7.4-2 2 .5 2.7-2.4-1.3-2.4 1.3.5-2.7-2-2 2.7-.4z"/></svg>'
+    };
+    icons.detail_media = icons.image_carousel;
+    icons.detail_text = icons.text_content;
+    icons.detail_content_blocks = icons.text_content;
+    icons.detail_specs = icons.data_grid;
+    icons.detail_table = icons.data_grid;
+    icons.detail_link = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"/></svg>';
+    icons.detail_features = icons.feature_grid;
+    icons.detail_files = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>';
+    icons.detail_faq = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.9 1.4-2.5 2.3-.3.4-.4.8-.4 1.2"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>';
+    icons.detail_related = icons.featured_picks;
+    // 详情页「独立正文组件」系列：9 种内容类型各配独立图标，避免全部落到默认方块图标看起来一样
+    icons.detail_content_text = icons.text_content;
+    icons.detail_content_image = icons.hero_banner;
+    icons.detail_content_video = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg>';
+    icons.detail_content_media_text = icons.highlight_card;
+    icons.detail_content_gallery = icons.image_carousel;
+    icons.detail_content_table = icons.data_grid;
+    icons.detail_content_heading = icons.section_title;
+    icons.detail_content_note = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M11 12h1v4h1"/></svg>';
+    icons.detail_content_embed = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8h18"/><path d="m8 13-2 2 2 2"/><path d="m16 13 2 2-2 2"/></svg>';
+    return icons[type] || '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>';
+  }
+
+  // 变体缩略图（v 为变体对象，含 source/data_preset 等元数据）
+  function buildVariantThumb(blockType, variantKey, v) {
+    v = v || {};
+    function miniGrid(count, extraClass) {
+      var cols = '';
+      for (var i = 0; i < count; i++) cols += '<div class="mini-col"></div>';
+      return '<div class="mini-grid ' + (extraClass || '') + '">' + cols + '</div>';
+    }
+    function miniStats(count) {
+      var stats = '';
+      for (var i = 0; i < count; i++) stats += '<div class="mini-stat"><div class="mini-num"></div><div class="mini-label"></div></div>';
+      return '<div class="mini-stat-grid">' + stats + '</div>';
+    }
+    function miniLogos(count) {
+      var logos = '';
+      for (var i = 0; i < count; i++) logos += '<div class="mini-logo"></div>';
+      return '<div class="mini-logo-grid">' + logos + '</div>';
+    }
+    function miniCarousel(count) {
+      var cards = '';
+      for (var i = 0; i < count; i++) cards += '<div class="mini-carousel-card"><div class="mini-img"></div><div class="mini-line"></div></div>';
+      return '<div class="mini-carousel">' + cards + '</div>';
+    }
+    function miniCards(count, gap, radius) {
+      var cards = '';
+      for (var i = 0; i < count; i++) cards += '<div class="mini-card" style="' + (radius ? 'border-radius:' + radius : '') + '"><div class="mini-img"></div><div class="mini-line"></div><div class="mini-line short"></div></div>';
+      return '<div class="mini-card-grid" style="' + (gap ? 'gap:' + gap : '') + '">' + cards + '</div>';
+    }
+    function miniDataCards(count) {
+      var cards = '';
+      for (var i = 0; i < count; i++) cards += '<div class="mini-data-card"><div class="mini-img"></div><div class="mini-body"><div class="mini-line"></div><div class="mini-line short"></div><div class="mini-tag"></div></div></div>';
+      return '<div class="mini-data-grid">' + cards + '</div>';
+    }
+    function miniFeatureCards(count) {
+      var cards = '';
+      for (var i = 0; i < count; i++) cards += '<div class="mini-feature-card"><div class="mini-icon"></div><div class="mini-line"></div><div class="mini-line short"></div></div>';
+      return '<div class="mini-feature-grid">' + cards + '</div>';
+    }
+    function miniStepCards(count, numbered) {
+      var cards = '';
+      for (var i = 0; i < count; i++) cards += '<div class="mini-step-card"><div class="' + (numbered ? 'mini-step-num' : 'mini-step-dot') + '"></div><div class="mini-line"></div><div class="mini-line short"></div></div>';
+      return '<div class="mini-step-grid">' + cards + '</div>';
+    }
+    function miniMediaText(dir) {
+      var vertical = dir === 'column';
+      var reverse = dir === 'row-reverse';
+      var cls = vertical ? ' mini-card-vertical' : (reverse ? ' mini-card-reverse' : '');
+      return '<div class="mini-card-horizontal' + cls + '"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:80%;height:5px"></div><div class="mini-line" style="width:70%;height:3px"></div><div class="mini-line" style="width:55%;height:3px"></div></div></div>';
+    }
+    function miniHeroDir(dir) {
+      var cls = dir === 'column' ? ' mini-hero-dir-vertical' : (dir === 'row-reverse' ? ' mini-hero-dir-reverse' : '');
+      return '<div class="mini-hero-dir' + cls + '"><div class="mini-hero-copy"><div class="mini-title"></div><div class="mini-sub"></div><div class="mini-actions"></div></div><div class="mini-hero-media"></div></div>';
+    }
+    function miniHeroAlign(align) {
+      var itemStyle = align === 'right' ? 'align-items:flex-end;text-align:right' : (align === 'left' ? 'align-items:flex-start;text-align:left' : 'align-items:center;text-align:center');
+      return '<div class="mini-hero-text-overlay"><div class="mini-hero-align-copy" style="' + itemStyle + '"><div class="mini-title"></div><div class="mini-sub"></div><div class="mini-btn"></div></div></div>';
+    }
+    function miniMapLayout() {
+      return '<div class="mini-contact-form"><div class="mini-map" style="width:100%"></div></div>';
+    }
+    function miniContactInfoCards() {
+      var cards = '';
+      for (var i = 0; i < 3; i++) cards += '<div class="mini-contact-card"><div class="mini-icon"></div><div class="mini-line"></div><div class="mini-line short"></div></div>';
+      return '<div class="mini-contact-card-grid">' + cards + '</div>';
+    }
+    // 样式型变体：按 token 类型泛化生成缩略图，不再逐个 block 硬编码
+    if (v.source === 'style') {
+      var colsMatch = variantKey.match(/^cols_(\d+)$/);
+      var nestedColsMatch = variantKey.match(/_cols_(\d+)$/);
+      if (colsMatch || nestedColsMatch) {
+        var n = parseInt((colsMatch || nestedColsMatch)[1]);
+        if (blockType === 'data_grid') return miniDataCards(n);
+        if (blockType === 'feature_grid') return miniFeatureCards(n);
+        if (blockType === 'process_steps') return miniStepCards(n, variantKey.indexOf('numbered_') === 0);
+        if (blockType === 'stat_counter') return miniStats(n);
+        if (blockType === 'logo_cloud') return miniLogos(n);
+        if (blockType === 'featured_picks' || blockType === 'image_carousel') return miniCarousel(n);
+        return miniGrid(n);
+      }
+      var textAlignMatch = variantKey.match(/^text-align_(.+)$/);
+      if (textAlignMatch) {
+        var align = textAlignMatch[1];
+        if (blockType === 'hero_banner') return miniHeroAlign(align);
+        var style = align === 'center' ? 'align-items:center' : (align === 'right' ? 'align-items:flex-end' : 'align-items:flex-start');
+        return '<div class="mini-text-block" style="' + style + '"><div class="mini-w80"></div><div class="mini-w70"></div><div class="mini-w60"></div></div>';
+      }
+      var dirMatch = variantKey.match(/^dir_(.+)$/);
+      var nestedDirMatch = variantKey.match(/_dir_(.+)$/);
+      if (dirMatch || nestedDirMatch) {
+        var dirValue = (dirMatch || nestedDirMatch)[1];
+        if (blockType === 'hero_banner') return miniHeroDir(dirValue);
+        return miniMediaText(dirValue);
+      }
+      var gapMatch = variantKey.match(/^card-gap_(.+)$/);
+      if (gapMatch) {
+        return miniCards(4, gapMatch[1], '');
+      }
+      var radiusMatch = variantKey.match(/^card-radius_(.+)$/);
+      if (radiusMatch) {
+        return miniCards(4, '', radiusMatch[1]);
+      }
+      // 未知样式变体回退
+      return '<div class="mini-section-title"><div class="mini-tag"></div><div class="mini-title-line"></div><div class="mini-desc"></div></div>';
+    }
+
+    // 结构型变体：保留现有逐 block 映射
+    var builders = {
+      hero_banner: {
+        text_overlay: function(){ return '<div class="mini-hero-text-overlay"><div class="mini-title"></div><div class="mini-sub"></div><div class="mini-btn"></div></div>'; },
+        text_below_slide: function(){ return '<div class="mini-hero-text-below"><div class="mini-img"></div><div class="mini-caption"><div class="mini-line" style="width:60%;height:4px"></div><div class="mini-line" style="width:40%;height:3px"></div></div></div>'; },
+        fullscreen: function(){ return '<div class="mini-hero-fullscreen"><div class="mini-line" style="width:55%;height:7px"></div><div class="mini-line" style="width:35%;height:4px"></div><div class="mini-line" style="width:25%;height:5px;background:#0d9488;margin-top:4px"></div></div>'; },
+        split_media: function(){ return '<div class="mini-hero-split"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:60%;height:5px"></div><div class="mini-line" style="width:40%;height:3px"></div><div class="mini-line" style="width:30%;height:4px;background:#0d9488;margin-top:2px"></div></div></div>'; }
+      },
+      section_title: {
+        default: function(){ return '<div class="mini-section-title"><div class="mini-tag"></div><div class="mini-title-line"></div><div class="mini-desc"></div></div>'; }
+      },
+      highlight_card: {
+        media_left: function(){ return '<div class="mini-card-horizontal"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:80%;height:5px"></div><div class="mini-line" style="width:90%;height:3px"></div><div class="mini-line" style="width:70%;height:3px"></div></div></div>'; },
+        media_right: function(){ return '<div class="mini-card-flip"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:80%;height:5px"></div><div class="mini-line" style="width:90%;height:3px"></div><div class="mini-line" style="width:70%;height:3px"></div></div></div>'; },
+        stack: function(){ return '<div class="mini-card-stack"><div class="mini-img"></div><div class="mini-text"><div class="mini-line" style="width:70%;height:4px"></div><div class="mini-line" style="width:90%;height:3px"></div></div></div>'; },
+        bento: function(){ return '<div class="mini-bento"><div class="mini-cell"></div><div class="mini-cell"></div><div class="mini-cell"></div><div class="mini-cell"></div></div>'; }
+      },
+      data_grid: {
+        grid_3: function(){ return miniDataCards(3); },
+        default: function(){ return miniDataCards(3); }
+      },
+      feature_grid: {
+        default: function(){ return miniFeatureCards(3); }
+      },
+      featured_picks: {
+        default: function(){ return miniCarousel(3); }
+      },
+      text_content: {
+        default: function(){ return '<div class="mini-text-block"><div class="mini-w80"></div><div class="mini-w90"></div><div class="mini-w70"></div><div class="mini-w60"></div></div>'; }
+      },
+      stat_counter: {
+        default: function(){ return miniStats(4); }
+      },
+      logo_cloud: {
+        default: function(){ return miniLogos(5); }
+      },
+      contact_form: {
+        default: function(){ return miniMapLayout(); }
+      },
+      item_detail: {
+        default: function(){ return miniMediaText('row'); }
+      },
+      contact_info: {
+        cards: function(){ return miniContactInfoCards(); },
+        list: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-thumb"></div><div class="mini-line"></div></div>'; return '<div class="mini-list-v">'+h+'</div>'; }
+      },
+      process_steps: {
+        horizontal: function(){ var h=''; for(var i=0;i<4;i++) h+='<div class="mini-step"><div class="mini-dot"></div><div class="mini-line"></div></div>'; return '<div class="mini-steps-h">'+h+'</div>'; },
+        vertical: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-num"></div><div class="mini-line"></div></div>'; return '<div class="mini-steps-v">'+h+'</div>'; },
+        numbered: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-num"></div><div class="mini-line"></div></div>'; return '<div class="mini-steps-numbered">'+h+'</div>'; }
+      },
+      image_carousel: {
+        default: function(){ return miniCarousel(4); }
+      },
+      detail_media: {
+        gallery_top: function(){ return '<div class="mini-detail-media mini-detail-media-top"><div class="mini-main-img"></div><div class="mini-thumbs"><span></span><span></span><span></span></div></div>'; },
+        gallery_left: function(){ return '<div class="mini-detail-media mini-detail-media-split"><div class="mini-main-img"></div><div class="mini-info"><i></i><b></b><span></span><span></span></div></div>'; }
+      },
+      detail_text: {
+        plain: function(){ return '<div class="mini-text-block"><div class="mini-w80"></div><div class="mini-w90"></div><div class="mini-w70"></div><div class="mini-w60"></div></div>'; },
+        centered: function(){ return '<div class="mini-text-block" style="align-items:center;text-align:center"><div class="mini-w80"></div><div class="mini-w70"></div><div class="mini-w60"></div></div>'; }
+      },
+      detail_content_blocks: {
+        blocks: function(){ return '<div class="mini-content-blocks"><div class="mini-block-line strong"></div><div class="mini-block-media"></div><div class="mini-block-line"></div><div class="mini-block-line short"></div></div>'; }
+      },
+      detail_specs: {
+        list: function(){ return '<div class="mini-spec-table"><div></div><div></div><div></div><div></div><div></div><div></div></div>'; }
+      },
+      detail_table: {
+        table: function(){ return '<div class="mini-custom-table"><div></div><div></div><div></div><div></div><div></div><div></div></div>'; }
+      },
+      detail_link: {
+        button: function(){ return '<div class="mini-link-preview"><div class="mini-link-button"></div></div>'; },
+        text_link: function(){ return '<div class="mini-link-preview"><div class="mini-link-text"></div></div>'; }
+      },
+      detail_features: {
+        cards: function(){ return miniFeatureCards(3); }
+      },
+      detail_files: {
+        list: function(){ var h=''; for(var i=0;i<3;i++) h+='<div class="mini-row"><div class="mini-thumb"></div><div class="mini-line"></div></div>'; return '<div class="mini-list-v">'+h+'</div>'; }
+      },
+      detail_faq: {
+        list: function(){ return '<div class="mini-faq-preview"><div><b></b><span></span></div><div><b></b><span></span></div></div>'; }
+      },
+      detail_related: {
+        grid: function(){ return miniCarousel(4); }
+      },
+      // 详情页「独立正文组件」系列：变体 key 即内容类型，各自给出区分度明显的缩略图，
+      // 不再统一落到 mini-section-title 默认回退（否则 9 个组件预览长得一模一样）
+      detail_content_text: {
+        text: function(){ return '<div class="mini-text-block"><div class="mini-w80"></div><div class="mini-w90"></div><div class="mini-w70"></div><div class="mini-w60"></div></div>'; }
+      },
+      detail_content_image: {
+        image: function(){ return '<div class="mini-single-media"><div class="mini-media-frame"></div></div>'; }
+      },
+      detail_content_video: {
+        video: function(){ return '<div class="mini-single-media"><div class="mini-media-frame mini-media-video"><span class="mini-play"></span></div></div>'; }
+      },
+      detail_content_media_text: {
+        media_text: function(){ return miniMediaText('row'); }
+      },
+      detail_content_gallery: {
+        gallery: function(){ return miniCarousel(4); }
+      },
+      detail_content_table: {
+        table: function(){ return '<div class="mini-custom-table"><div></div><div></div><div></div><div></div><div></div><div></div></div>'; }
+      },
+      detail_content_heading: {
+        heading: function(){ return '<div class="mini-section-title"><div class="mini-tag"></div><div class="mini-title-line"></div><div class="mini-desc"></div></div>'; }
+      },
+      detail_content_note: {
+        note: function(){ return '<div class="mini-note-preview"><span class="mini-note-bar"></span><div class="mini-note-body"><div class="mini-line" style="width:70%;height:5px"></div><div class="mini-line" style="width:88%;height:4px"></div></div></div>'; }
+      },
+      detail_content_embed: {
+        embed: function(){ return '<div class="mini-embed-preview"><div class="mini-embed-bar"><i></i><i></i><i></i></div><div class="mini-embed-body"></div></div>'; }
+      }
+    };
+    var blockBuilders = builders[blockType];
+    if (blockBuilders && blockBuilders[variantKey]) return blockBuilders[variantKey]();
+    if (/grid|网格|列/.test(variantKey)) {
+      var n = parseInt(variantKey.match(/\d+/)) || 3;
+      var cols = ''; for(var i=0;i<n;i++) cols += '<div class="mini-col"></div>';
+      return '<div class="mini-grid">'+cols+'</div>';
+    }
+    if (/list|列表/.test(variantKey)) {
+      var rows = ''; for(var i=0;i<3;i++) rows += '<div class="mini-row"><div class="mini-thumb"></div><div class="mini-line"></div></div>';
+      return '<div class="mini-list-v">'+rows+'</div>';
+    }
+    return '<div class="mini-section-title"><div class="mini-tag"></div><div class="mini-title-line"></div><div class="mini-desc"></div></div>';
+  }
+
+  function variantDisplayLabel(blockType, v) {
+    if (!v) return '';
+    var key = v.key || '';
+    var detailLabels = {
+      detail_media: { gallery_top: '大图在上', gallery_left: '左右分栏' },
+      detail_text: { plain: '普通文本', centered: '居中文本' },
+      detail_content_blocks: { blocks: '自由正文' },
+      detail_specs: { list: '参数列表' },
+      detail_table: { table: '手填表格' },
+      detail_link: { button: '按钮链接', text_link: '文字链接' },
+      detail_features: { cards: '卖点卡片' },
+      detail_files: { list: '资料列表' },
+      detail_faq: { list: '问答列表' },
+      detail_related: { grid: '推荐卡片' }
+    };
+    if (detailLabels[blockType] && detailLabels[blockType][key]) return detailLabels[blockType][key];
+    var colsMatch = key.match(/(?:^|_)cols_(\d+)$/);
+    if (colsMatch) {
+      var colsLabel = (blockType === 'image_carousel' || blockType === 'featured_picks') ? colsMatch[1] + '张/屏' : colsMatch[1] + '列';
+      if (v.base_variant) {
+        var baseNames = { numbered: '数字序号', horizontal: '横向排列', vertical: '纵向时间轴' };
+        return (baseNames[v.base_variant] || v.base_variant) + ' / ' + colsLabel;
+      }
+      return colsLabel;
+    }
+    var commonStructural = {
+      contact_info: {
+        cards: '卡片网格',
+        list: '纵向列表'
+      },
+      process_steps: {
+        horizontal: '横向排列',
+        vertical: '纵向时间轴',
+        numbered: '数字序号'
+      }
+    };
+    if (commonStructural[blockType] && commonStructural[blockType][key]) {
+      return commonStructural[blockType][key];
+    }
+    if (blockType === 'hero_banner') {
+      var heroLabels = {
+        dir_row: '媒体左文案右',
+        'dir_row-reverse': '文案左媒体右',
+        dir_column: '媒体上文案下'
+      };
+      if (heroLabels[key]) return heroLabels[key];
+    }
+    return v.label || v.key;
+  }
+
+  function variantDescription(blockType, v) {
+    var key = (v && v.key) || '';
+    var descriptions = {
+      detail_media: {
+        gallery_top: '主图和缩略图集中展示，适合以图片为核心的产品详情。',
+        gallery_left: '图片区域与基础信息并列，适合首屏同时看图和看基础信息。'
+      },
+      detail_text: {
+        plain: '读取正文、简介或摘要字段，按普通段落输出。',
+        centered: '适合短介绍、宣传语或居中说明。'
+      },
+      detail_content_blocks: {
+        blocks: '在单条详情里自由添加文本、图片、视频、图文、多图、表格、提示和嵌入。'
+      },
+      detail_specs: {
+        list: '从规格、参数或属性字段读取键值数据，按参数表展示。'
+      },
+      detail_table: {
+        table: '每条数据单独填写行列内容，支持单元格链接。'
+      },
+      detail_link: {
+        button: '适合下载、询价、跳转详情等强操作入口。',
+        text_link: '适合正文之间的轻量跳转。'
+      },
+      detail_features: {
+        cards: '逐条填写卖点，支持图标、标题、说明。'
+      },
+      detail_files: {
+        list: '用于规格书、说明书、认证文件等资料下载。'
+      },
+      detail_faq: {
+        list: '用于常见问题、安装说明、售前问答。'
+      },
+      detail_related: {
+        grid: '自动推荐同分类、同标签或全部产品，可配置滚动。'
+      }
+    };
+    if (descriptions[blockType] && descriptions[blockType][key]) return descriptions[blockType][key];
+    var generalDescriptions = {
+      hero_banner: {
+        text_overlay: '文字覆盖在主视觉上，适合首屏品牌或产品主张。',
+        text_below_slide: '图片与说明分区，适合轮播图下方补充信息。',
+        fullscreen: '大面积主视觉，适合强视觉首页首屏。',
+        split_media: '媒体和文案左右分栏，适合产品介绍或活动入口。',
+        dir_row: '媒体在左、文案在右的分栏首屏。',
+        'dir_row-reverse': '文案在左、媒体在右的分栏首屏。',
+        dir_column: '媒体在上、文案在下的纵向首屏。'
+      },
+      section_title: {
+        default: '用于给一组内容添加标题、说明和视觉分隔。'
+      },
+      text_content: {
+        default: '用于普通正文、说明文字或较长介绍。'
+      },
+      highlight_card: {
+        media_left: '图片在左、文字在右，适合图文介绍。',
+        media_right: '文字在左、图片在右，适合交替排版。',
+        stack: '图片在上、文字在下，适合单张内容卡。',
+        bento: '错落卡片布局，适合展示多重点内容。'
+      },
+      data_grid: {
+        default: '从数据集中读取条目，渲染为卡片网格。',
+        grid_3: '三列数据卡片，适合常规产品或项目列表。'
+      },
+      feature_grid: {
+        default: '展示功能、优势、服务亮点等图标卡片。'
+      },
+      featured_picks: {
+        default: '精选条目横向展示，适合推荐内容。'
+      },
+      stat_counter: {
+        default: '展示数字指标、里程碑或经营数据。'
+      },
+      logo_cloud: {
+        default: '展示客户、伙伴、认证或品牌 Logo。'
+      },
+      contact_form: {
+        default: '展示地图位置，可配置标题、副标题和地图嵌入链接。'
+      },
+      contact_info: {
+        cards: '用卡片展示电话、邮箱、地址等联系信息。',
+        list: '用紧凑列表展示联系信息。'
+      },
+      process_steps: {
+        horizontal: '横向流程步骤，适合简短流程。',
+        vertical: '纵向时间线，适合较长流程。',
+        numbered: '数字序号步骤，适合操作流程。'
+      },
+      image_carousel: {
+        default: '多图横向轮播展示。'
+      },
+      item_detail: {
+        default: '用于数据详情页的基础详情展示。'
+      }
+    };
+    if (generalDescriptions[blockType] && generalDescriptions[blockType][key]) return generalDescriptions[blockType][key];
+    if (v && v.description) return v.description;
+    if (v && v.source === 'style') return '应用一组默认样式配置，添加后仍可在组件里调整。';
+    return '添加后可继续配置内容和样式。';
+  }
+
+  function presetLabel(key, value) {
+    var keyLabels = {
+      layout: '布局',
+      source: '来源',
+      text_align: '对齐',
+      style: '样式',
+      columns: '每行',
+      table_rows: '行数',
+      table_cols: '列数',
+      max_items: '最多',
+      match_by: '推荐',
+      auto_scroll: '滚动'
+    };
+    var valueLabels = {
+      gallery_top: '大图在上',
+      gallery_left: '左右分栏',
+      cover_and_gallery: '封面+细节图',
+      gallery_only: '细节图',
+      cover_only: '封面图',
+      left: '居左',
+      center: '居中',
+      button: '按钮',
+      text_link: '文字链接',
+      category: '同分类',
+      tags: '同标签',
+      all: '全部',
+      true: '开启',
+      false: '关闭'
+    };
+    var label = keyLabels[key] || key.replace(/_/g, ' ');
+    var val = valueLabels[String(value)] || value;
+    if (key === 'columns') val = value + ' 个';
+    if (key === 'table_rows') val = value + ' 行';
+    if (key === 'table_cols') val = value + ' 列';
+    return label + ': ' + val;
+  }
+
+  function variantPresetSummary(v) {
+    var preset = (v && v.data_preset) || {};
+    var keys = Object.keys(preset).filter(function(key) {
+      return preset[key] !== '' && preset[key] != null;
+    });
+    if (!keys.length) return '';
+    return '<div class="variant-preview-meta">' + keys.slice(0, 3).map(function(key) {
+      return '<span>' + paletteEsc(presetLabel(key, preset[key])) + '</span>';
+    }).join('') + '</div>';
+  }
+
+  function getBlockLibrary() {
+    if (window.blockLibrary && window.blockLibrary.length) return window.blockLibrary;
+    var jsonEl = document.getElementById('blockLibraryJson') || document.getElementById('blockLibraryDsJson');
+    if (!jsonEl) return [];
+    try {
+      window.blockLibrary = JSON.parse(jsonEl.textContent || '[]') || [];
+    } catch (e) {
+      window.blockLibrary = [];
+    }
+    return window.blockLibrary;
+  }
+
+  function buildPaletteData() {
+    return getBlockLibrary().filter(function(b) {
+      // item_data 仅在数据集编辑器中自动追加，不出现在模块选择弹框中
+      return b.name !== 'item_data' && !b.palette_hidden;
+    }).map(function(b) {
+      return {
+        type: b.name,
+        name: b.display_name || b.name,
+        description: b.description || '',
+        category: b.category || blockCategory(b.name),
+        variants: b.variants || []
+      };
+    });
+  }
+
+  function blockCategory(type) {
+    if (/^detail_/.test(type)) return 'detail';
+    if (/hero|section_title|text_content|highlight_card/.test(type)) return 'content';
+    if (/data|item|product|featured|carousel|logo|stat|feature|process/.test(type)) return 'data';
+    if (/contact|form|message|social/.test(type)) return 'conversion';
+    return 'basic';
+  }
+
+  function categoryLabel(category) {
+    return {
+      all: '全部',
+      detail: '详情',
+      content: '内容',
+      data: '数据',
+      conversion: '转化',
+      basic: '基础'
+    }[category] || category;
+  }
+
+  function filterPaletteData(paletteData) {
+    var q = String(paletteFilter.query || '').trim().toLowerCase();
+    return paletteData.filter(function(blk) {
+      var inCategory = paletteFilter.category === 'all' || blk.category === paletteFilter.category;
+      if (!inCategory) return false;
+      if (!q) return true;
+      var haystack = [
+        blk.type,
+        blk.name,
+        categoryLabel(blk.category),
+        (blk.variants || []).map(function(v) { return [v.key, v.label, variantDisplayLabel(blk.type, v)].join(' '); }).join(' ')
+      ].join(' ').toLowerCase();
+      return haystack.indexOf(q) !== -1;
+    });
+  }
+
+  function resetConfirmBtn() {
+    selectedBlockType = null;
+    selectedVariantKey = null;
+    selectedDataPreset = null;
+    var btn = document.getElementById('confirmAddBtn');
+    if (btn) btn.disabled = true;
+    var hint = document.getElementById('variantConfirmHint');
+    if (hint) hint.textContent = '';
+  }
+
+  function initBlockPalette() {
+    var listPanel = document.getElementById('blockListPanel');
+    if (!listPanel) return;
+    var paletteData = buildPaletteData();
+    var filtered = filterPaletteData(paletteData);
+    var categories = ['all', 'detail', 'content', 'data', 'conversion', 'basic'];
+    var html = '<div class="block-library-tools">';
+    html += '<div class="block-library-title"><span>组件库</span><strong>' + filtered.length + '/' + paletteData.length + '</strong></div>';
+    html += '<input type="search" class="block-library-search" placeholder="搜索模块或排版" value="' + paletteEsc(paletteFilter.query) + '" oninput="window._filterBlockPalette(this.value)">';
+    html += '<div class="block-library-cats">';
+    categories.forEach(function(cat) {
+      html += '<button type="button" class="block-library-cat' + (paletteFilter.category === cat ? ' active' : '') + '" onclick="window._setBlockPaletteCategory(\'' + cat + '\')">' + categoryLabel(cat) + '</button>';
+    });
+    html += '</div></div>';
+    if (!filtered.length) {
+      html += '<div class="block-list-empty">没有匹配的模块</div>';
+    }
+    filtered.forEach(function(blk) {
+      var vcount = blk.variants.length;
+      html += '<div class="block-list-item" data-block-type="' + paletteEsc(blk.type) + '" onclick="window._selectBlockType(\'' + blk.type + '\')">';
+      html += '<div class="block-list-icon">' + getBlockIconHTML(blk.type) + '</div>';
+      html += '<div class="block-list-text"><div class="block-list-name">' + paletteEsc(blk.name) + '</div><div class="block-list-count">' + categoryLabel(blk.category) + ' · ' + (vcount ? vcount + ' 个选项' : '默认配置') + '</div></div>';
+      html += '</div>';
+    });
+    listPanel.innerHTML = html;
+    document.querySelectorAll('#blockListPanel .block-list-item').forEach(function(item) {
+      item.classList.toggle('active', item.dataset.blockType === selectedBlockType);
+    });
+  }
+
+  window._filterBlockPalette = function(query) {
+    paletteFilter.query = query || '';
+    selectedBlockType = null;
+    selectedVariantKey = null;
+    selectedDataPreset = null;
+    _variantMeta = {};
+    resetConfirmBtn();
+    initBlockPalette();
+    focusPaletteSearch();
+    renderPaletteEmptyState();
+  };
+
+  window._setBlockPaletteCategory = function(category) {
+    paletteFilter.category = category || 'all';
+    selectedBlockType = null;
+    selectedVariantKey = null;
+    selectedDataPreset = null;
+    _variantMeta = {};
+    resetConfirmBtn();
+    initBlockPalette();
+    renderPaletteEmptyState();
+  };
+
+  function renderPaletteEmptyState() {
+    var panel = document.getElementById('variantPanel');
+    if (!panel) return;
+    panel.innerHTML = '<div class="variant-empty-hint"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17h7"/><path d="M17.5 13.5v7"/></svg><span>选择左侧模块，查看可用排版</span></div>';
+  }
+
+  function focusPaletteSearch() {
+    var input = document.querySelector('#blockListPanel .block-library-search');
+    if (!input) return;
+    input.focus();
+    try {
+      var end = input.value.length;
+      input.setSelectionRange(end, end);
+    } catch (e) {}
+  }
+
+  window._selectBlockType = function(blockType) {
+    selectedBlockType = blockType;
+    selectedVariantKey = null;
+    selectedDataPreset = null;
+    _variantMeta = {};
+
+    document.querySelectorAll('#blockListPanel .block-list-item').forEach(function(item) {
+      item.classList.toggle('active', item.dataset.blockType === blockType);
+    });
+
+    var paletteData = buildPaletteData();
+    var blk = paletteData.find(function(b) { return b.type === blockType; });
+    if (!blk) return;
+
+    var panel = document.getElementById('variantPanel');
+    var variantCount = blk.variants.length;
+
+    // 无变体：直接确认（不需要选变体）
+    if (!variantCount) {
+      panel.innerHTML = '<div class="variant-panel-head"><div class="variant-panel-icon">' + getBlockIconHTML(blk.type) + '</div><div><div class="variant-panel-title">' + paletteEsc(blk.name) + '</div><div class="variant-panel-desc">' + paletteEsc(blk.description || '该组件使用默认配置，添加后可继续编辑。') + '</div></div></div><button type="button" class="variant-default-pick selected" onclick="window._selectDefaultBlock(\'' + blk.type + '\')"><span>默认配置</span><small>直接添加后再编辑内容和样式</small></button>';
+      var btn = document.getElementById('confirmAddBtn');
+      if (btn) btn.disabled = false;
+      var hint = document.getElementById('variantConfirmHint');
+      if (hint) hint.textContent = '已选: ' + blk.name + '（默认排版）';
+      return;
+    }
+
+    // 建立变体元数据索引（避免 onclick 中传 JSON 的转义地狱）
+    blk.variants.forEach(function(v) {
+      _variantMeta[v.key] = {
+        source: v.source || 'structural',
+        data_preset: v.data_preset || null,
+        base_variant: v.base_variant || null
+      };
+    });
+
+    var html = '<div class="variant-panel-head"><div class="variant-panel-icon">' + getBlockIconHTML(blk.type) + '</div><div><div class="variant-panel-title">' + paletteEsc(blk.name) + '</div><div class="variant-panel-desc">' + paletteEsc(blk.description || '选择一个起始配置，添加后可继续编辑。') + '</div></div></div>';
+    html += '<div class="variant-section-title">' + (variantCount > 1 ? '选择起始布局' : '默认配置') + '<span>' + variantCount + ' 个选项</span></div>';
+    html += '<div class="variant-preview-grid">';
+    blk.variants.forEach(function(v, idx) {
+      html += '<div class="variant-preview-card' + (idx === 0 ? ' selected' : '') + '" data-block-type="' + blk.type + '" data-variant="' + v.key + '" onclick="window._selectVariant(this, \'' + blk.type + '\', \'' + v.key + '\')">';
+      html += '<div class="variant-preview-thumb">' + buildVariantThumb(blk.type, v.key, v) + '</div>';
+      html += '<div class="variant-preview-body"><div class="variant-preview-label"><span>' + paletteEsc(variantDisplayLabel(blk.type, v)) + '</span><i></i></div>';
+      html += '<div class="variant-preview-desc">' + paletteEsc(variantDescription(blk.type, v)) + '</div>';
+      html += variantPresetSummary(v);
+      html += '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    panel.innerHTML = html;
+    if (blk.variants[0]) {
+      selectedVariantKey = blk.variants[0].key;
+      selectedDataPreset = blk.variants[0].data_preset || null;
+      var btn = document.getElementById('confirmAddBtn');
+      if (btn) btn.disabled = false;
+      var hint = document.getElementById('variantConfirmHint');
+      if (hint) hint.textContent = '已选: ' + blk.name + ' / ' + variantDisplayLabel(blk.type, blk.variants[0]);
+    }
+  };
+
+  window._selectDefaultBlock = function(blockType) {
+    selectedBlockType = blockType;
+    selectedVariantKey = null;
+    selectedDataPreset = null;
+    document.querySelectorAll('#variantPanel .variant-default-pick').forEach(function(c) { c.classList.remove('selected'); });
+    var btnEl = document.querySelector('#variantPanel .variant-default-pick');
+    if (btnEl) btnEl.classList.add('selected');
+    var btn = document.getElementById('confirmAddBtn');
+    if (btn) btn.disabled = false;
+  };
+
+  window._selectVariant = function(card, blockType, variantKey) {
+    document.querySelectorAll('#variantPanel .variant-preview-card').forEach(function(c) {
+      c.classList.remove('selected');
+    });
+    card.classList.add('selected');
+    selectedBlockType = blockType;
+    selectedVariantKey = variantKey;
+    // 从索引取变体元数据（样式型变体需要 data_preset 预填）
+    var meta = _variantMeta[variantKey] || {};
+    selectedDataPreset = meta.data_preset || null;
+
+    var paletteData = buildPaletteData();
+    var blk = paletteData.find(function(b) { return b.type === blockType; });
+    var vlabel = variantKey;
+    if (blk) {
+      var v = blk.variants.find(function(x) { return x.key === variantKey; });
+      if (v) vlabel = variantDisplayLabel(blockType, v);
+    }
+    var btn = document.getElementById('confirmAddBtn');
+    if (btn) btn.disabled = false;
+    var hint = document.getElementById('variantConfirmHint');
+    if (hint) hint.textContent = '已选: ' + (blk ? blk.name : blockType) + ' / ' + vlabel;
+  };
+
+  // 确认添加 → 调页面定义的 onBlockPaletteConfirm 回调
+  window.confirmBlockPaletteAdd = function() {
+    if (!selectedBlockType) return;
+    // 有变体但未选 → 不允许确认
+    var paletteData = buildPaletteData();
+    var blk = paletteData.find(function(b) { return b.type === selectedBlockType; });
+    var hasVariants = blk && blk.variants && blk.variants.length > 0;
+    if (hasVariants && !selectedVariantKey) return;
+
+    var type = selectedBlockType;
+    var meta = _variantMeta[selectedVariantKey] || {};
+    var variant = meta.base_variant || selectedVariantKey || 'default';
+    var dataPreset = selectedDataPreset;
+    // 关闭弹框
+    var modalEl = document.getElementById('blockPaletteModal');
+    if (modalEl) {
+      var modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
+    }
+    if (typeof onBlockPaletteConfirm === 'function') {
+      onBlockPaletteConfirm(type, variant, dataPreset);
+    }
+  };
+
+  // 弹框事件
+  var paletteModalEl = document.getElementById('blockPaletteModal');
+  if (paletteModalEl) {
+    paletteModalEl.addEventListener('show.bs.modal', function() {
+      resetConfirmBtn();
+      initBlockPalette();
+      renderPaletteEmptyState();
+    });
+  }
+})();
+</script>

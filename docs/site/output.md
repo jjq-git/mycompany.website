@@ -8,7 +8,7 @@
 
 ```text
 company_a.com/
-├── index.html              ← 根：自动按浏览器语言重定向到 /en/ 或 /de/
+├── index.html              ← 根：JS 读 navigator.language 智能跳转；JS 禁用时展示手动语言选择页
 │
 ├── en/                     ← 英文整站（自包含）
 │   ├── index.html
@@ -66,6 +66,21 @@ company_a.com/
 - **筛选**：构建期把每条的可筛字段盖到 `data-f-*`（如 `data-f-tags`，tag 是用户建产品时自定义打的），JS 读它显隐，不取 json；筛选条按 distinct tag 自动生成，MVP 单选。
 - **图片**：条目图片用原生 `loading="lazy"`（首屏除外）；被分页 / 筛选隐藏的条目，其图片不下载——所以即使几百条全在 DOM 里，首屏也只下当前可见的那几张。
 - **降级**：关 JS → 列表展示全部条目、不分页，内容完整。
+
+### 页面模块列表的搜索与分页
+
+`/functions/`、`/modules/` 这类页面可能不是数据集列表，而是由很多页面模块组成：每个条目本身就是一个 `highlight_card` 等模块。此时不要把内容强行迁移到 `data_grid`，而是在页面 YAML 顶层启用 `module_list`。
+
+`module_list` 的产物策略和数据集列表一致：全部模块已经在 HTML 里，浏览器 JS 只做搜索过滤和分页显隐，不请求后端、不取 JSON、不生成 `/page/2/`。关 JS 时全部模块可见。
+
+区别在于作用对象：
+
+| 能力 | 内容来源 | JS 作用对象 |
+| --- | --- | --- |
+| `data_grid` | `data/*.yaml` 数据集 | 数据集卡片，如 `.dg-card` |
+| `module_list` | `pages/*.yaml` 的 `modules` 数组 | 页面模块 wrapper，如 `.builder-module[data-module-list-item]` |
+
+编辑说明见 [module-list.md](module-list.md)，开发实现约定见 [../themes/layouts/module-list.md](../themes/layouts/module-list.md)。
 
 ### 这还算"静态网站"吗？算
 

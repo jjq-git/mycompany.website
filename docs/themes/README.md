@@ -2,6 +2,8 @@
 
 一套主题（`themes/<name>/`）= 网站的"皮肤"：页面布局 + block 库 + 样式 + 初始内容。**用代码写**（HTML / Jinja2 / CSS），不是可视化拖拽。本文是写主题的规则。
 
+> 新模板落地前必须按 [新模板开发规范清单](template-development-checklist.md) 自检，尤其是种子数据完整性、多语言、详情页多图交互和 data-attr block 纯声明式写法。
+
 > 术语：**主题（theme）** 生成用户网站；**template** 一词留给后台 Flask（`app/templates/`）。主题内部的 Jinja2 页面骨架叫**布局（layout）**。
 
 ## 一、目录结构
@@ -12,11 +14,14 @@ themes/<name>/
   preview/             主题缩略图 / 截图（后台展示用，不进 build）—— 语言无关
     cover.webp         固定文件名，后台列表的主缩略图
   layouts/             页面布局（Jinja2）—— 语言无关的皮肤
-    _base.html         最外层：<head>、CSS/JS、主题色变量注入、header、footer
+    _base.html         最外层：<head>、CSS/JS、主题色变量注入、header、footer include
     _modules.html      把 page.modules 渲染成 block 序列
     index.html         首页
     _page.html         独立页（about / contact…）
-    product_detail.html / _generic_detail.html   详情页（按数据集选，_generic 兜底）
+    list.html          数据集列表页（products / news…）—— 构建期全量渲进 HTML，JS 只做显隐 / 分页，不走 JSON
+    detail.html        详情页，一个模板通吃所有数据集，靠 CSS 区分外观
+    header/            头部导航（按 settings.header.variant 切变体）
+    footer/            页脚（按 settings.footer.variant 切变体）
   blocks/<名>/          内容 block 库（写法见 blocks/）—— 语言无关
   static/              —— 语言无关
     css/main.css       全局样式（设计令牌 + 组件 + block 样式）
@@ -29,6 +34,7 @@ themes/<name>/
 ```
 
 - 所有页面 `{% extends "_base.html" %}`。
+- 页面如果由大量 `highlight_card` 等模块组成，并需要当前页搜索 / 分页（如 `/functions/`、`/modules/`），使用页面顶层 `module_list` 配置；开发约定见 [layouts/module-list.md](layouts/module-list.md)。
 - `meta.yaml` 在管理员上传主题 ZIP 时解析进数据库（`Theme` 表）。字段逐项说明见 [meta.yaml.md](meta.yaml.md)。其中 `languages` 字段（如 `languages: [en, zh, ja]`）声明本主题为哪些语言提供了 `i18n/<lang>/` 整套 seed。
 - `settings.yaml` 是主题自带的默认站点设置，位于 `i18n/<lang>/` 下（每语言一份），字段见 [settings.yaml.md](settings.yaml.md)。
 - `layouts/` `blocks/` `static/` `preview/` `translations.yaml` 是语言无关的皮肤，不进 `i18n/`（`translations.yaml` 一个文件含所有语言的 UI 文案，渲染时按当前语言取 `t.*`）。建站时系统按用户选的语言把 `i18n/<lang>/` 整套拷进 `sites/<id>/`，该语言即成为站点源语言（`settings.default_language`）。

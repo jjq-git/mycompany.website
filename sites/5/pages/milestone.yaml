@@ -1,0 +1,119 @@
+modules:
+- type: section_title
+  order: 1
+  variant: text-align_center
+  data:
+    tag: ''
+    title: RIMU's Beginnings
+    desc: A Story of Dedication and Vision. Defining a product, especially one like
+      RIMU with long-term support in mind, has been a truly challenging journey. We’ve
+      gone through countless revisions and refinements, always striving to lay a solid
+      foundation that allows for future scalability and ensures RIMU’s continued growth.
+      This process has demanded immense effort and dedication, but we firmly believe
+      that every step, every revision, has been worth it. The latest version of the
+      module has been updated and is now live. In addition, we have received many
+      valuable suggestions, mainly from communities such as Reddit and Facebook. We
+      have compiled all the collected suggestions on the community and will evaluate
+      and implement them one by one.
+    btn: ''
+    btn_url: ''
+    _hidden: 'false'
+    style_text-align: center
+    style_bg-color: '#f9fbfb'
+    style_bg: ''
+  responsive:
+    tablet:
+      _hidden: 'false'
+    mobile:
+      _hidden: 'false'
+- type: data_grid
+  order: 2
+  variant: cols_3
+  data:
+    title: ''
+    subtitle: ''
+    show_filters: 'false'
+    dataset: milestone
+    show_pagination: 'true'
+    pagination_style: page_numbers
+    items_per_page: 6
+    pager_align: center
+    show_view_all: 'false'
+    _hidden: 'false'
+    style_cols: 3
+    style_bg: ''
+    style_bg-color: ''
+  responsive:
+    tablet:
+      show_filters: 'true'
+      show_pagination: 'true'
+      pagination_style: load_more
+      pager_align: center
+      show_view_all: 'true'
+      _hidden: 'false'
+    mobile:
+      show_filters: 'true'
+      show_pagination: 'true'
+      pagination_style: load_more
+      pager_align: center
+      show_view_all: 'true'
+      _hidden: 'false'
+- type: text_content
+  order: 3
+  variant: text-align_center
+  data:
+    title: ''
+    subtitle: ''
+    body: Your voice matters! We’re committed to making RIMU the best it can be, and
+      your feedback plays a crucial role. Share your suggestions and ideas with us
+      at community so we can continue to improve RIMU for you and others.
+    _hidden: 'false'
+    style_text-align: center
+  responsive:
+    tablet:
+      _hidden: 'false'
+    mobile:
+      _hidden: 'false'
+title: Milestone
+description: RIMU’s milestone page shares the story behind its long-term product development,
+  highlighting dedication, continuous refinement, and community-driven improvements
+  through user feed
+detail_templates:
+- id: default
+  name: 默认milestone详情
+  is_default: true
+  modules:
+  - type: detail_media
+    variant: gallery_top
+    data:
+      source: cover_and_gallery
+      layout: gallery_top
+      max_images: 6
+      empty_behavior: hide_module
+      image_ratio: 4/3
+      image_radius: 8px
+  - type: detail_content_blocks
+    variant: blocks
+    data:
+      title: ''
+      empty_behavior: hide_module
+      section_bg: ''
+      text_color: ''
+  required_fields:
+  - title
+  - slug
+  optional_fields:
+  - cover
+  - summary
+  - body
+  - detail_images
+  - category
+  - tags
+  - detail_content_blocks
+  - detail_specs
+  - detail_files
+  - detail_links
+  seo:
+    title: '{title} - {site_name}'
+    description: '{summary}'
+    image: cover

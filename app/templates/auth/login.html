@@ -1,0 +1,44 @@
+{% from 'auth/_icons.html' import auth_icon, password_toggle %}
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>登录 — {{ platform_domain }}</title><link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}?v=20260720-captcha2"></head>
+<body>
+<script>
+// 会话可能在工作台已打开后失效，此时 iframe / AJAX 面板请求会被重定向到本登录页。
+// 登录页不能嵌在预览区或编辑面板中；统一让最外层窗口登录，并在成功后返回原工作台。
+(function () {
+  var loginPath = {{ url_for('core.login') | tojson }};
+  var embedded = window.top !== window.self;
+  var injectedIntoWorkbench = !embedded && window.location.pathname !== loginPath;
+  if (!embedded && !injectedIntoWorkbench) return;
+
+  var next = '/';
+  try {
+    next = window.top.location.pathname + window.top.location.search + window.top.location.hash;
+  } catch (ignore) {
+    next = '/';
+  }
+  var target = loginPath + '?next=' + encodeURIComponent(next || '/');
+  try {
+    window.top.location.replace(target);
+  } catch (ignore) {
+    window.location.replace(target);
+  }
+})();
+</script>
+<main class="auth-wrap">
+  <div class="auth-brand"><img src="{{ url_for('static', filename='brand-logo.svg') }}" alt="{{ platform_domain }}"></div>
+  <section class="auth-card">
+    <div class="auth-heading"><span class="auth-heading-icon">{{ auth_icon('login') }}</span><h1>登录账号</h1></div>
+    <p class="auth-lead">使用邮箱或手机号登录网站工作台。</p>
+    {% include 'auth/_messages.html' %}
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>邮箱或手机号<div class="auth-input-wrap">{{ auth_icon('mail') }}<input name="identifier" value="{{ identifier or '' }}" autocomplete="username" autofocus required placeholder="name@example.com / +86 13800000000"></div></label>
+      <label>密码<div class="auth-input-wrap">{{ auth_icon('lock') }}<input name="password" type="password" autocomplete="current-password" required>{{ password_toggle() }}</div></label>
+      {% if needs_captcha %}<label>图形验证码<div class="auth-captcha-row"><div class="auth-input-wrap">{{ auth_icon('shield') }}<input name="captcha" maxlength="4" autocomplete="off" required placeholder="图中字符"></div><img class="auth-captcha-img" src="{{ url_for('core.captcha_image') }}" alt="图形验证码" title="点击刷新" onclick="this.src='{{ url_for('core.captcha_image') }}?r='+Date.now()"></div></label>{% endif %}
+      <button class="auth-primary" type="submit">{{ auth_icon('login') }}<span>登录</span></button>
+    </form>
+    <div class="auth-links"><a href="{{ url_for('core.password_setup') }}">{{ auth_icon('key') }}<span>设置或找回密码</span></a><a href="{{ url_for('core.register') }}">{{ auth_icon('user-plus') }}<span>注册账号</span></a></div>
+  </section>
+</main>{% include 'auth/_password_script.html' %}</body></html>

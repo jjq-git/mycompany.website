@@ -1,0 +1,172 @@
+---
+name: dev-list-info
+description: "查看系统信息(所有用户/站点/模板/发布状态一览)"
+---
+
+当用户说"查看系统状态"、"有哪些用户"、"所有站点列表"、"系统概览"时触发.
+统一查看系统所有实体的信息——用户、站点、模板的当前状态.
+
+这是最常用的巡检操作组合,将分散的 CLI 命令整合为一个标准流程.
+
+## 系统全貌一览
+
+依次执行以下命令获取系统全貌:
+
+1. **模板列表**
+   ```
+   flask --app run scan-templates
+   ```
+   输出已同步的模板数量、名称、行业.
+
+2. **用户列表**
+   ```
+   flask --app run list-users
+   ```
+   输出每个用户的 id、email、role、status、拥有的站点数.
+
+3. **站点列表**
+   ```
+   flask --app run list-sites
+   ```
+   输出每个站点的 id、slug、template、status、owner.
+
+## 深入查看:flask shell
+
+在 flask shell 中可以获取更详细的信息:
+
+```python
+flask shell
+>>> from app.core.models import User, Site, Template, LoginToken
+>>> from app.core.db import db
+>>> from sqlalchemy import func
+
+# 统计概览
+>>> User.query.count()           # 用户总数
+>>> Site.query.count()           # 站点总数
+>>> Template.query.count()       # 模板总数
+
+# 按状态分布
+>>> from sqlalchemy import func
+>>> db.session.query(Site.status, func.count(Site.id)).group_by(Site.status).all()
+# 输出: [('draft', 3), ('published', 1)]
+
+# 最近创建的站点
+>>> Site.query.order_by(Site.created_at.desc()).limit(5).all()
+
+# 最近登录的用户
+>>> User.query.filter(User.last_login_at.isnot(None)).order_by(User.last_login_at.desc()).limit(5).all()
+
+# 查找特定用户的所有站点
+>>> user = User.query.filter_by(email='admin@test.com').first()
+>>> Site.query.filter_by(owner_id=user.id).all()
+
+# 查找使用特定模板的站点
+>>> Site.query.filter_by(template_name='dengtec').all()
+
+# 检查站点文件夹完整性
+>>> from pathlib import Path
+>>> from flask import current_app
+>>> sites_dir = Path(current_app.config['SITES_DIR'])
+>>> for site in Site.query.all():
+...     folder = sites_dir / str(site.id)
+...     has_settings = (folder / 'settings.yaml').exists()
+...     print(f'  #{site.id} {site.slug}: folder={"OK" if folder.exists() else "缺失"}, settings={"OK" if has_settings else "缺失"}')
+```
+
+## 检查数据完整性
+
+全面检查系统数据健康状态:
+
+```python
+flask shell
+>>> from app.core.models import User, Site, Template
+>>> from app.core.db import db
+>>> from pathlib import Path
+>>> from flask import current_app
+
+>>> issues = []
+
+# 检查站点记录 vs 文件夹
+>>> sites_dir = Path(current_app.config['SITES_DIR'])
+>>> for site in Site.query.all():
+...     folder = sites_dir / str(site.id)
+...     if not folder.exists():
+...         issues.append(f'站点 #{site.id} ({site.slug}) 文件夹缺失')
+...     elif not (folder / 'settings.yaml').exists():
+...         issues.append(f'站点 #{site.id} ({site.slug}) settings.yaml 缺失')
+
+# 检查站点引用的模板是否存在
+>>> for site in Site.query.all():
+...     tpl = Template.query.filter_by(name=site.template_name).first()
+...     if not tpl:
+...         issues.append(f'站点 #{site.id} 引用的模板 {site.template_name} 不存在')
+
+# 检查模板版本一致性
+>>> import yaml
+>>> templates_dir = Path(current_app.config['TEMPLATES_DIR'])
+>>> for site in Site.query.all():
+...     meta_path = templates_dir / site.template_name / 'meta.yaml'
+...     if meta_path.exists():
+...         meta = yaml.safe_load(meta_path.read_text(encoding='utf-8'))
+...         tpl_version = meta.get('version')
+...         if tpl_version and site.template_version != tpl_version:
+...             issues.append(f'站点 #{site.id} 模板版本不一致: 记录={site.template_version}, 磁盘={tpl_version}')
+
+# 打印所有问题
+>>> if issues:
+...     print(f'发现 {len(issues)} 个问题:')
+...     for issue in issues:
+...         print(f'  - {issue}')
+... else:
+...     print('系统数据完整,未发现问题')
+```
+
+## 按用户查看站点分布
+
+```python
+flask shell
+>>> from app.core.models import User, Site
+>>> for user in User.query.order_by(User.id).all():
+...     sites = Site.query.filter_by(owner_id=user.id).all()
+...     print(f'{user.email} ({user.role}): {len(sites)} 个站点')
+...     for s in sites:
+...         print(f'    #{s.id} {s.slug} [{s.template_name}] status={s.status}')
+```
+
+## 查看磁盘使用情况
+
+```python
+flask shell
+>>> from pathlib import Path
+>>> from flask import current_app
+
+>>> def dir_size(path):
+...     if not path.exists():
+...         return 0
+...     return sum(f.stat().st_size for f in path.rglob('*') if f.is_file())
+
+>>> # 站点数据大小
+>>> sites_dir = Path(current_app.config['SITES_DIR'])
+>>> for site_dir in sorted(sites_dir.iterdir()):
+...     if site_dir.is_dir():
+...         size_mb = dir_size(site_dir) / 1024 / 1024
+...         print(f'{site_dir.name}: {size_mb:.1f} MB')
+
+>>> # 构建输出大小
+>>> output_dir = Path(current_app.config['OUTPUT_DIR'])
+>>> for out_dir in sorted(output_dir.iterdir()):
+...     if out_dir.is_dir():
+...         size_mb = dir_size(out_dir) / 1024 / 1024
+...         print(f'output/{out_dir.name}: {size_mb:.1f} MB')
+
+>>> # 数据库大小
+>>> db_path = Path('instance/app.db')
+>>> if db_path.exists():
+...     print(f'数据库: {db_path.stat().st_size / 1024 / 1024:.1f} MB')
+```
+
+## 关联技能
+
+- `db-manage`:数据库备份和深度管理
+- `cleanup`:根据检查结果清理
+- `debug-site`:发现问题后的诊断

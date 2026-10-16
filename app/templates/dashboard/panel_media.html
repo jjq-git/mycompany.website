@@ -1,0 +1,690 @@
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-media.css') }}?v=20260721-minfont">
+
+<div class="media-panel" id="mediaPanel">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <span class="fw-semibold">媒体管理</span>
+    <span class="media-count">{{ files|length }} 个资源</span>
+  </div>
+
+  <div class="media-toolbar">
+    <div class="media-tabs" role="tablist" aria-label="媒体分类">
+      <button class="media-tab active" type="button" data-media-filter="all" title="全部">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </button>
+      <button class="media-tab" type="button" data-media-filter="unreferenced" title="未引用">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      </button>
+      <button class="media-tab" type="button" data-media-filter="image" title="图片">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      </button>
+      <button class="media-tab" type="button" data-media-filter="video" title="视频">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      </button>
+      <button class="media-tab" type="button" data-media-filter="package" title="网页包">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      </button>
+      <button class="media-tab" type="button" data-media-filter="document" title="文档">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h6"/></svg>
+      </button>
+      <button class="media-tab" type="button" data-media-filter="other" title="其他">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><circle cx="5" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <div class="media-bulk-bar" id="mediaBulkBar" hidden>
+      <label class="media-bulk-select-all">
+        <input type="checkbox" id="mediaSelectAll">
+        <span>全选未引用</span>
+      </label>
+      <span class="media-bulk-count" id="mediaBulkCount">已选 0 项</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" id="mediaBatchDelete" disabled>批量删除</button>
+    </div>
+    <div class="media-sort-bar">
+      <span>排序：</span>
+      <select class="form-select form-select-sm" id="mediaSortBy">
+        <option value="name">文件名</option>
+        <option value="category">类型</option>
+        <option value="size">文件大小</option>
+        <option value="refs">引用数</option>
+      </select>
+      <button type="button" class="btn btn-sm btn-light media-sort-dir-btn" id="mediaSortDir" title="切换升降序">
+        <svg class="media-sort-dir-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M18 11l-6-6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="media-manager-layout">
+    <div class="media-list-pane">
+      <div class="media-grid" id="mediaGrid">
+        {% for file in files %}
+          <article class="media-card" data-category="{{ file.category }}" data-name="{{ file.api_name }}" data-display-name="{{ file.display_name }}" data-url="{{ file.url }}" data-ext="{{ file.ext }}" data-is-package="{{ '1' if file.is_package else '0' }}" data-size="{{ file.size_display }}" data-category-label="{{ file.category_label }}" data-reference-count="{{ file.reference_count|default(0) }}">
+            {% if file.can_delete %}
+            <label class="media-select-control" title="选择 {{ file.display_name }}">
+              <input type="checkbox" class="media-select-checkbox" aria-label="选择 {{ file.display_name }}">
+            </label>
+            {% endif %}
+            <button class="media-thumb" type="button" data-action="preview" title="预览">
+              {% if file.category == 'image' %}
+                <img src="{{ file.url }}" alt="{{ file.display_name }}" loading="lazy">
+              {% elif file.category == 'video' %}
+                <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              {% elif file.category == 'package' %}
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8h18"/><path d="M8 13l-2 2 2 2"/><path d="M16 13l2 2-2 2"/><path d="M13 12l-2 6"/></svg>
+              {% elif file.category == 'document' %}
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h6"/></svg>
+              {% else %}
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              {% endif %}
+            </button>
+            <div class="media-card-body">
+              <div class="media-name" title="{{ file.display_name }}">{{ file.display_name }}</div>
+              <div class="media-meta">
+                {# 类型图标 #}
+                {% if file.category == 'image' %}
+                <svg class="media-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                {% elif file.category == 'video' %}
+                <svg class="media-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                {% elif file.category == 'package' %}
+                <svg class="media-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                {% elif file.category == 'document' %}
+                <svg class="media-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h6"/></svg>
+                {% else %}
+                <svg class="media-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                {% endif %}
+                <span class="media-meta-size">
+                  {% if file.width and file.height %}{{ file.width }}×{{ file.height }} · {% endif %}{{ file.size_display }}
+                </span>
+              </div>
+            </div>
+            <div class="media-actions">
+              <a class="media-action" href="{{ file.url }}" download title="下载" aria-label="下载">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+              </a>
+              {% if file.can_delete %}
+              <button type="button" class="media-action media-action-danger" data-action="delete" title="删除" aria-label="删除">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+              </button>
+              {% endif %}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+
+      <div class="media-empty" id="mediaEmpty" {% if files %}hidden{% endif %}>暂无媒体文件</div>
+      <button type="button" class="media-load-more-btn" id="mediaLoadMoreBtn" hidden>加载更多</button>
+    </div>
+
+    <div class="media-right-col">
+      <label class="media-upload-zone" id="mediaUploadZone">
+        <input type="file" id="mediaUploadInput" hidden>
+        <span class="media-upload-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+        </span>
+        <span class="media-upload-text">拖拽文件到此处或点击上传</span>
+        <span class="media-upload-hint">支持图片、视频、文档；包含 index.html 的 zip 会作为网页包处理</span>
+      </label>
+      <div class="media-status" id="mediaStatus" hidden></div>
+
+    <aside class="media-preview-card" aria-label="媒体预览">
+      <div class="media-preview-resizer" data-preview-resizer role="separator" aria-orientation="vertical" tabindex="0" title="拖拽调整预览宽度"></div>
+      <div class="media-preview-head">
+        <div class="media-preview-label">预览</div>
+      </div>
+      <div class="media-preview-body" id="mediaPreviewBody">
+        <div class="media-preview-placeholder">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          <div>点击左侧资源进行预览</div>
+        </div>
+      </div>
+      <div class="media-preview-info" id="mediaPreviewInfo" hidden>
+        <div class="media-preview-meta-row">
+          <div><span>大小</span><strong data-preview-size></strong></div>
+          <div><span>路径</span><code data-preview-url></code></div>
+        </div>
+        <div class="media-preview-filename"><span>文件名</span><code data-preview-name title="点击修改文件名"></code></div>
+      </div>
+    </aside>
+    </div><!-- /.media-right-col -->
+  </div>
+</div>
+
+<script>
+(function() {
+  var panel = document.getElementById('mediaPanel');
+  if (!panel) return;
+  var grid = document.getElementById('mediaGrid');
+  var empty = document.getElementById('mediaEmpty');
+  var status = document.getElementById('mediaStatus');
+  var uploadZone = document.getElementById('mediaUploadZone');
+  var uploadInput = document.getElementById('mediaUploadInput');
+  var mediaCount = panel.querySelector('.media-count');
+  var previewBody = document.getElementById('mediaPreviewBody');
+  var previewInfo = document.getElementById('mediaPreviewInfo');
+  var previewUrlCode = previewInfo ? previewInfo.querySelector('[data-preview-url]') : null;
+  var previewNameCode = previewInfo ? previewInfo.querySelector('[data-preview-name]') : null;
+  var managerLayout = panel.querySelector('.media-manager-layout');
+  var previewCard = panel.querySelector('.media-preview-card');
+  var previewResizer = panel.querySelector('[data-preview-resizer]');
+  var bulkBar = document.getElementById('mediaBulkBar');
+  var selectAll = document.getElementById('mediaSelectAll');
+  var bulkCount = document.getElementById('mediaBulkCount');
+  var batchDeleteBtn = document.getElementById('mediaBatchDelete');
+
+  function setStatus(text, type) {
+    if (!status) return;
+    status.hidden = !text;
+    status.textContent = text || '';
+    status.className = 'media-status ' + (type ? 'media-status-' + type : '');
+  }
+
+  function siteQuery() {
+    var params = new URLSearchParams(window.location.search);
+    var site = params.get('site') || '{{ site.id }}';
+    return site ? '?site=' + encodeURIComponent(site) : '';
+  }
+
+  function refreshPanel() {
+    if (typeof loadPanel === 'function') {
+      return loadPanel('{{ url_for("core.media") }}?_fragment=1&site={{ site.slug }}');
+    }
+    window.location.reload();
+  }
+
+  function references(name) {
+    return fetch('/api/media/references?filename=' + encodeURIComponent(name) + '&site={{ site.slug }}')
+      .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); });
+  }
+
+  function updateMediaCount(count) {
+    if (mediaCount) mediaCount.textContent = count + ' items';
+  }
+
+  function updateVisibleMediaCount() {
+    if (!mediaCount) return;
+    var visible = grid.querySelectorAll('.media-card:not([hidden])').length;
+    updateMediaCount(visible);
+  }
+
+  function unreferencedCards() {
+    return Array.from(grid.querySelectorAll('.media-card')).filter(function(card) {
+      return Number(card.dataset.referenceCount || 0) === 0;
+    });
+  }
+
+  function selectedCards() {
+    return unreferencedCards().filter(function(card) {
+      var checkbox = card.querySelector('.media-select-checkbox');
+      return checkbox && checkbox.checked;
+    });
+  }
+
+  function updateBulkSelection() {
+    if (!bulkBar) return;
+    var active = panel.querySelector('.media-tab.active');
+    var isUnreferenced = !!(active && active.dataset.mediaFilter === 'unreferenced');
+    bulkBar.hidden = !isUnreferenced;
+    panel.classList.toggle('is-bulk-selecting', isUnreferenced);
+    var available = unreferencedCards();
+    var selected = selectedCards();
+    if (bulkCount) bulkCount.textContent = '已选 ' + selected.length + ' 项';
+    if (batchDeleteBtn) batchDeleteBtn.disabled = selected.length === 0;
+    if (selectAll) {
+      selectAll.checked = available.length > 0 && selected.length === available.length;
+      selectAll.indeterminate = selected.length > 0 && selected.length < available.length;
+      selectAll.disabled = available.length === 0;
+    }
+  }
+
+  function refsHtml(refs) {
+    return '<div class="mb-1">该资源正在被引用；重命名会自动更新这些 YAML 引用，删除仍会被阻止</div><ul>' +
+      refs.map(function(ref) { return '<li>' + String(ref).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }) + '</li>'; }).join('') +
+      '</ul>';
+  }
+
+  function splitFilename(name) {
+    var match = String(name || '').match(/^(.*?)(\.[^.]*)$/);
+    if (!match) return { stem: name || '', ext: '' };
+    return { stem: match[1], ext: match[2] };
+  }
+
+  function inlineRenameFromPreview() {
+    if (!previewNameCode) return;
+    var oldName = previewNameCode.dataset.name || '';
+    if (!oldName) return;
+    var activeCard = grid.querySelector('.media-card.active[data-name="' + oldName.replace(/"/g, '\\"') + '"]') || grid.querySelector('.media-card[data-name="' + oldName.replace(/"/g, '\\"') + '"]');
+    var parts = splitFilename(activeCard ? activeCard.dataset.displayName : oldName);
+    var row = document.createElement('span');
+    row.className = 'media-inline-rename-row';
+    var input = document.createElement('input');
+    input.className = 'form-control form-control-sm media-inline-path-input';
+    input.value = parts.stem;
+    var ext = document.createElement('span');
+    ext.className = 'media-rename-extension';
+    ext.textContent = parts.ext;
+    var loading = document.createElement('span');
+    loading.className = 'media-inline-loading';
+    loading.textContent = '保存中...';
+    loading.hidden = true;
+    row.appendChild(input);
+    if (parts.ext) row.appendChild(ext);
+    row.appendChild(loading);
+    previewNameCode.replaceWith(row);
+    input.focus();
+    input.select();
+
+    function restore(displayText, apiName) {
+      var code = document.createElement('code');
+      code.setAttribute('data-preview-name', '');
+      code.title = '点击修改文件名';
+      code.dataset.name = apiName || oldName;
+      code.textContent = displayText;
+      previewNameCode = code;
+      row.replaceWith(code);
+      code.addEventListener('click', inlineRenameFromPreview);
+    }
+
+    function finish(save) {
+      if (!save) {
+        restore(activeCard ? activeCard.dataset.displayName : oldName, oldName);
+        return;
+      }
+      var stem = input.value.trim();
+      if (!stem || stem === parts.stem) {
+        restore(activeCard ? activeCard.dataset.displayName : oldName, oldName);
+        return;
+      }
+      var newName = stem + parts.ext;
+      loading.hidden = false;
+      input.disabled = true;
+      setStatus('正在保存文件名...', 'muted');
+      fetch('/api/media/rename?site={{ site.slug }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ old_name: oldName, new_name: newName })
+      }).then(function(r) {
+        return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+      }).then(function(result) {
+        if (!result.ok || result.data.ok === false) throw new Error(result.data.error || '保存失败');
+        var data = result.data;
+        var newApiName = data.name || data.filename || newName;
+        var newUrl = data.url || ('/assets/uploads/' + newName);
+        if (activeCard) {
+          activeCard.dataset.name = newApiName;
+          activeCard.dataset.displayName = newName;
+          activeCard.dataset.url = newUrl;
+          var nameEl = activeCard.querySelector('.media-name');
+          if (nameEl) { nameEl.textContent = newName; nameEl.title = newName; }
+          var thumbImg = activeCard.querySelector('.media-thumb img');
+          if (thumbImg) thumbImg.src = newUrl;
+          var download = activeCard.querySelector('a[download]');
+          if (download) download.href = newUrl;
+        }
+        previewBody.querySelectorAll('img,video,iframe').forEach(function(el) { el.src = newUrl; });
+        if (previewUrlCode) previewUrlCode.textContent = newUrl;
+        restore(newName, newApiName);
+        setStatus('文件名已保存', 'success');
+      }).catch(function(err) {
+        setStatus(err.message || '保存失败', 'danger');
+        restore(activeCard ? activeCard.dataset.displayName : oldName, oldName);
+      });
+    }
+
+    input.addEventListener('blur', function() { finish(true); });
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') input.blur();
+      if (e.key === 'Escape') finish(false);
+    });
+  }
+  function preview(card) {
+    // 切换激活状态，高亮当前选中的媒体卡片
+    grid.querySelectorAll('.media-card.active').forEach(function(c) { c.classList.remove('active'); });
+    card.classList.add('active');
+
+    var name = card.dataset.name;
+    var displayName = card.dataset.displayName;
+    var url = card.dataset.url;
+    var category = card.dataset.category;
+    var size = card.dataset.size;
+
+    // 根据媒体类型渲染预览内容
+    if (category === 'image') {
+      previewBody.innerHTML = '<div class="media-preview-zoom-stage" title="移动鼠标查看细节"><img class="media-preview-zoom-image" src="' + url + '" alt="' + displayName + '"></div>';
+    } else if (category === 'video') {
+      previewBody.innerHTML = '<video src="' + url + '" controls style="max-width:100%;height:auto;border-radius: 0;"></video>';
+    } else if (category === 'package') {
+      previewBody.innerHTML = '<iframe src="' + url + '" style="width:100%;height:400px;border:1px solid var(--border-color, #e0e0e0);border-radius: 0;"></iframe>';
+    } else if (category === 'document') {
+      previewBody.innerHTML = '<div class="media-preview-placeholder"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h6"/></svg><div>文档文件，点击下载查看</div></div>';
+    } else {
+      previewBody.innerHTML = '<div class="media-preview-placeholder"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><div>不支持预览此文件类型</div></div>';
+    }
+
+    // 更新信息面板（大小、路径、文件名）
+    previewInfo.hidden = false;
+    var sizeEl = previewInfo.querySelector('[data-preview-size]');
+    if (sizeEl) sizeEl.textContent = size;
+    if (previewUrlCode) {
+      previewUrlCode.textContent = url;
+    }
+    if (previewNameCode) {
+      previewNameCode.textContent = displayName;
+      previewNameCode.dataset.name = name;
+    }
+  }
+
+  previewBody.addEventListener('pointermove', function(event) {
+    var stage = event.target.closest('.media-preview-zoom-stage');
+    if (!stage) return;
+    var image = stage.querySelector('.media-preview-zoom-image');
+    if (!image) return;
+    var rect = stage.getBoundingClientRect();
+    var x = Math.max(0, Math.min(100, (event.clientX - rect.left) / rect.width * 100));
+    var y = Math.max(0, Math.min(100, (event.clientY - rect.top) / rect.height * 100));
+    image.style.transformOrigin = x + '% ' + y + '%';
+  });
+
+  previewBody.addEventListener('pointerleave', function() {
+    var image = previewBody.querySelector('.media-preview-zoom-image');
+    if (image) image.style.transformOrigin = '50% 50%';
+  });
+
+  function deleteCard(card) {
+    var name = card.dataset.name;
+    references(name).then(function(result) {
+      var refs = result.data.refs || [];
+      if (refs.length) {
+        setStatus('该媒体文件已被引用，不能删除。', 'danger');
+        previewBody.innerHTML = '<div class="media-ref-warning">' + refsHtml(refs) + '</div>';
+        previewInfo.hidden = true;
+        return;
+      }
+      if (!confirm('确认删除该媒体文件？')) return;
+      return fetch('/api/media/delete?site={{ site.slug }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: name })
+      }).then(function(r) {
+        return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+      }).then(function(result) {
+        if (!result.ok || result.data.ok === false) throw new Error(result.data.error || '删除失败');
+        card.remove();
+        setStatus('Deleted', 'success');
+        applyCurrentFilter();
+      });
+    }).catch(function(err) {
+      setStatus(err.message || '删除失败', 'danger');
+    });
+  }
+
+  function upload(file) {
+    if (!file) return;
+    var fd = new FormData();
+    fd.append('file', file);
+    setStatus('正在上传...', 'muted');
+    fetch('/api/media/upload?site={{ site.slug }}', { method: 'POST', body: fd })
+      .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+      .then(function(result) {
+        if (!result.ok || result.data.ok === false) throw new Error(result.data.error || '上传失败');
+        setStatus('上传成功', 'success');
+        refreshPanel();
+      })
+      .catch(function(err) { setStatus(err.message || '上传失败', 'danger'); });
+  }
+
+  var currentSort = { by: 'name', asc: true };  // 默认按文件名升序
+  var PAGE_SIZE = 30;        // 每批显示数量，减轻首屏加载压力
+  var visibleCount = PAGE_SIZE;  // 当前已显示数量
+
+  function sortMediaCards() {
+    var cards = Array.from(grid.querySelectorAll('.media-card'));
+    cards.sort(function(a, b) {
+      var va, vb;
+      if (currentSort.by === 'name') {
+        va = (a.dataset.displayName || '').toLowerCase();
+        vb = (b.dataset.displayName || '').toLowerCase();
+      } else if (currentSort.by === 'size') {
+        va = parseInt(a.dataset.size || '0', 10) || 0;
+        vb = parseInt(b.dataset.size || '0', 10) || 0;
+      } else if (currentSort.by === 'category') {
+        va = a.dataset.categoryLabel || '';
+        vb = b.dataset.categoryLabel || '';
+      } else if (currentSort.by === 'refs') {
+        va = parseInt(a.dataset.referenceCount || '0', 10) || 0;
+        vb = parseInt(b.dataset.referenceCount || '0', 10) || 0;
+      } else {
+        va = a.dataset.displayName || '';
+        vb = b.dataset.displayName || '';
+      }
+      if (va < vb) return currentSort.asc ? -1 : 1;
+      if (va > vb) return currentSort.asc ? 1 : -1;
+      return 0;
+    });
+    cards.forEach(function(card) { grid.appendChild(card); });
+  }
+
+  function applyCurrentFilter() {
+    var active = panel.querySelector('.media-tab.active');
+    var filter = active ? active.dataset.mediaFilter : 'all';
+    var allCards = grid.querySelectorAll('.media-card');
+    var matchingCards = [];
+    allCards.forEach(function(card) {
+      var show = filter === 'all' || card.dataset.category === filter;
+      if (filter === 'unreferenced') show = Number(card.dataset.referenceCount || 0) === 0;
+      card.hidden = true;  // 先全部隐藏
+      if (show) matchingCards.push(card);
+    });
+    sortMediaCards();  // 排序
+    // 只显示前 PAGE_SIZE 个
+    visibleCount = Math.min(PAGE_SIZE, matchingCards.length);
+    for (var i = 0; i < matchingCards.length; i++) {
+      matchingCards[i].hidden = i >= visibleCount;
+    }
+    updateVisibleMediaCount();
+    empty.hidden = matchingCards.length > 0;
+    updateLoadMoreBtn();
+    updateBulkSelection();
+  }
+
+  function deleteSelectedCards() {
+    var cards = selectedCards();
+    if (!cards.length) return;
+    if (!confirm('确认删除选中的 ' + cards.length + ' 个未引用媒体文件？此操作不可撤销。')) return;
+    var names = cards.map(function(card) { return card.dataset.name; });
+    if (batchDeleteBtn) batchDeleteBtn.disabled = true;
+    setStatus('正在批量删除 ' + names.length + ' 个媒体文件...', 'muted');
+    fetch('/api/media/delete-batch?site={{ site.slug }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ names: names })
+    }).then(function(r) {
+      return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+    }).then(function(result) {
+      if (!result.ok || result.data.ok === false) throw new Error(result.data.error || '批量删除失败');
+      var deleted = new Set(result.data.deleted || names);
+      cards.forEach(function(card) {
+        if (deleted.has(card.dataset.name)) card.remove();
+      });
+      setStatus('已删除 ' + deleted.size + ' 个未引用媒体文件', 'success');
+      applyCurrentFilter();
+    }).catch(function(err) {
+      setStatus(err.message || '批量删除失败', 'danger');
+      updateBulkSelection();
+    });
+  }
+
+  function showMoreCards() {
+    var allCards = grid.querySelectorAll('.media-card');
+    var hidden = [];
+    allCards.forEach(function(c) {
+      if (c.hidden) {
+        var active = panel.querySelector('.media-tab.active');
+        var filter = active ? active.dataset.mediaFilter : 'all';
+        var show = filter === 'all' || c.dataset.category === filter;
+        if (filter === 'unreferenced') show = Number(c.dataset.referenceCount || 0) === 0;
+        if (show) hidden.push(c);
+      }
+    });
+    if (!hidden.length) return false;
+    var toShow = Math.min(PAGE_SIZE, hidden.length);
+    for (var i = 0; i < toShow; i++) {
+      hidden[i].hidden = false;
+      // 移到列表底部，确保新增卡片出现在已有内容下方
+      grid.appendChild(hidden[i]);
+    }
+    visibleCount += toShow;
+    updateVisibleMediaCount();
+    return toShow > 0;
+  }
+
+  // 加载更多按钮
+  var loadMoreBtn = document.getElementById('mediaLoadMoreBtn');
+  var loadingMore = false;  // 防止重复点击
+
+  function updateLoadMoreBtn() {
+    if (!loadMoreBtn) return;
+    // 只检查匹配当前筛选且仍隐藏的卡片
+    var active = panel.querySelector('.media-tab.active');
+    var filter = active ? active.dataset.mediaFilter : 'all';
+    var cards = grid.querySelectorAll('.media-card');
+    var hasHidden = false;
+    cards.forEach(function(c) {
+      if (!c.hidden) return;
+      var show = filter === 'all' || c.dataset.category === filter;
+      if (filter === 'unreferenced') show = Number(c.dataset.referenceCount || 0) === 0;
+      if (show) hasHidden = true;
+    });
+    loadMoreBtn.hidden = !hasHidden;
+  }
+
+  function tryLoadMore() {
+    if (loadingMore) return;
+    loadingMore = true;
+    showMoreCards();
+    updateLoadMoreBtn();
+    requestAnimationFrame(function() {
+      setTimeout(function() { loadingMore = false; }, 200);
+    });
+  }
+
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', tryLoadMore);
+  }
+
+  // 初始检查：如果首屏内容不足，显示按钮
+  setTimeout(function() { updateLoadMoreBtn(); }, 100);
+
+  function clampPreviewWidth(width) {
+    if (!managerLayout) return width;
+    var rect = managerLayout.getBoundingClientRect();
+    var styles = window.getComputedStyle(managerLayout);
+    var gap = parseFloat(styles.columnGap || styles.gap || '16') || 16;
+    var maxByLayout = Math.max(360, rect.width - gap - 360);
+    return Math.max(360, Math.min(width, Math.min(1200, maxByLayout)));
+  }
+
+  function setPreviewWidth(width) {
+    if (!managerLayout) return;
+    managerLayout.style.setProperty('--media-preview-width', clampPreviewWidth(width) + 'px');
+  }
+
+  function initPreviewResize() {
+    if (!managerLayout || !previewCard || !previewResizer || !window.PointerEvent) return;
+    previewResizer.addEventListener('pointerdown', function(e) {
+      if (window.matchMedia('(max-width: 1280px)').matches) return;
+      e.preventDefault();
+      var startX = e.clientX;
+      var startWidth = previewCard.getBoundingClientRect().width;
+      previewResizer.setPointerCapture(e.pointerId);
+      document.body.classList.add('media-resizing');
+
+      function onMove(moveEvent) {
+        setPreviewWidth(startWidth + startX - moveEvent.clientX);
+      }
+
+      function onUp(upEvent) {
+        previewResizer.releasePointerCapture(upEvent.pointerId);
+        previewResizer.removeEventListener('pointermove', onMove);
+        previewResizer.removeEventListener('pointerup', onUp);
+        previewResizer.removeEventListener('pointercancel', onUp);
+        document.body.classList.remove('media-resizing');
+      }
+
+      previewResizer.addEventListener('pointermove', onMove);
+      previewResizer.addEventListener('pointerup', onUp);
+      previewResizer.addEventListener('pointercancel', onUp);
+    });
+  }
+
+  panel.querySelectorAll('.media-tab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      panel.querySelectorAll('.media-tab').forEach(function(item) { item.classList.remove('active'); });
+      btn.classList.add('active');
+      applyCurrentFilter();
+    });
+  });
+
+  grid.addEventListener('click', function(e) {
+    var actionEl = e.target.closest('[data-action]');
+    if (!actionEl) return;
+    var card = e.target.closest('.media-card');
+    if (!card) return;
+    var action = actionEl.dataset.action;
+    if (action === 'preview') preview(card);
+    if (action === 'delete') deleteCard(card);
+  });
+
+  grid.addEventListener('change', function(e) {
+    if (e.target.classList.contains('media-select-checkbox')) updateBulkSelection();
+  });
+
+  if (selectAll) {
+    selectAll.addEventListener('change', function() {
+      unreferencedCards().forEach(function(card) {
+        var checkbox = card.querySelector('.media-select-checkbox');
+        if (checkbox) checkbox.checked = selectAll.checked;
+      });
+      updateBulkSelection();
+    });
+  }
+  if (batchDeleteBtn) batchDeleteBtn.addEventListener('click', deleteSelectedCards);
+
+  uploadZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    uploadZone.classList.add('is-dragover');
+  });
+  uploadZone.addEventListener('dragleave', function() {
+    uploadZone.classList.remove('is-dragover');
+  });
+  uploadZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    uploadZone.classList.remove('is-dragover');
+    upload(e.dataTransfer.files && e.dataTransfer.files[0]);
+  });
+  uploadInput.addEventListener('change', function() {
+    upload(uploadInput.files && uploadInput.files[0]);
+    uploadInput.value = '';
+  });
+
+  // 排序控件事件绑定
+  var sortBy = document.getElementById('mediaSortBy');
+  var sortDirBtn = document.getElementById('mediaSortDir');
+  if (sortBy) {
+    sortBy.addEventListener('change', function() {
+      currentSort.by = this.value;
+      sortMediaCards();
+    });
+  }
+  if (sortDirBtn) {
+    sortDirBtn.addEventListener('click', function() {
+      currentSort.asc = !currentSort.asc;
+      this.classList.toggle('is-desc', !currentSort.asc);
+      sortMediaCards();
+    });
+  }
+
+  // 初始分页：首屏只显示前 PAGE_SIZE 个
+  applyCurrentFilter();
+
+  initPreviewResize();
+  if (previewNameCode) previewNameCode.addEventListener('click', inlineRenameFromPreview);
+})();
+</script>

@@ -1,0 +1,261 @@
+{% extends "_base.html" %}
+{% block title %}{{ product.name | default(product.title) }} - {{ t.company }}{% endblock %}
+{% block description %}{{ product.summary | default(product.description) }}{% endblock %}
+
+{% block content %}
+{% set product_name = product.name | default(product.title) %}
+{% set product_summary = product.summary | default(product.description) %}
+{% set _path_parts = current_path.strip('/').split('/') %}
+{% set _list_path = _path_parts[:-1] | join('/') %}
+{% set _list_title = page.title | default(t.pages[page_key] | default(page_key | replace('-', ' ') | title)) %}
+{% set crumb = namespace(list_title=_list_title) %}
+{% macro resolve_list_title(items) %}
+  {% for item in items %}
+    {% if item.url and item.url.strip('/') == _list_path %}
+      {% set crumb.list_title = item.label %}
+    {% endif %}
+    {% if item.children %}
+      {{ resolve_list_title(item.children) }}
+    {% endif %}
+  {% endfor %}
+{% endmacro %}
+{{ resolve_list_title(settings.menu) }}
+{# 从菜单动态查找联系页 URL，避免硬编码 /contact/——即使用户在后台修改菜单 target 也能正确链接 #}
+{% set ns = namespace(contact_url=base_url + '/' + lang + '/contact/') %}
+{% macro _resolve_contact(items) %}
+  {% for item in items %}
+    {% if item.type == 'page' and item.target == 'contact' %}
+      {% set ns.contact_url = base_url + '/' + lang + '/' + item.target + '/' %}
+    {% elif item.children %}
+      {{ _resolve_contact(item.children) }}
+    {% endif %}
+  {% endfor %}
+{% endmacro %}
+{{ _resolve_contact(settings.menu) }}
+
+<nav class="breadcrumb detail-breadcrumb" aria-label="Breadcrumb">
+  <div class="container">
+    <div class="breadcrumb-list">
+      <a href="{{ base_url }}/{{ lang }}/" class="breadcrumb-item">{{ t.detail.home | default(t.pages.home | default('首页')) }}</a>
+      <span class="breadcrumb-separator">/</span>
+      <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="breadcrumb-item">{{ crumb.list_title }}</a>
+      {% if product_name %}
+      <span class="breadcrumb-separator">/</span>
+      <span class="breadcrumb-item active" aria-current="page">{{ product_name }}</span>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+{% if product.slug == 'silent-booth' %}
+{% set ps = t.product_silent %}
+<section class="sb-hero">
+  <div class="sb-hero__bg">
+    {% if product.image %}<img src="{{ product.image }}" alt="{{ ps.heroTag }}" />{% endif %}
+    <div class="sb-hero__overlay"></div>
+  </div>
+  <div class="container sb-hero__content">
+    <span class="sb-hero__tag">{{ ps.heroTag }}</span>
+    <h1 class="sb-hero__title">{{ ps.heroTitle }}</h1>
+    <p class="sb-hero__desc">{{ ps.heroDesc }}</p>
+    {% if product.price %}<div class="product-detail-price">{{ product.price }}</div>{% endif %}
+    <div class="sb-hero__actions">
+      <a href="{{ ps.bookingUrl }}" target="_blank" rel="noopener" class="sb-btn sb-btn--primary sb-btn--lg">{{ t.actions.bookNow }} →</a>
+    </div>
+  </div>
+</section>
+
+<section class="sb-section sb-sensing">
+  <div class="container">
+    <div class="sb-section-header">
+      <span class="sb-section-label">{{ ps.sensingLabel }}</span>
+      <h2 class="sb-section-title">{{ ps.sensingTitle }}</h2>
+      <p class="sb-section-desc">{{ ps.sensingDesc }}</p>
+    </div>
+    <div class="sb-sensing-grid">
+      <div class="sb-sensing-card"><div class="sb-sensing__icon sb-sensing__icon--temp"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg></div><h3>{{ ps.sensorTemp }}</h3><p class="sb-sensing-unit">°C</p><span class="sb-sensing-badge">P-01</span></div>
+      <div class="sb-sensing-card"><div class="sb-sensing__icon sb-sensing__icon--humidity"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div><h3>{{ ps.sensorHumidity }}</h3><p class="sb-sensing-unit">%RH</p><span class="sb-sensing-badge">P-02</span></div>
+      <div class="sb-sensing-card"><div class="sb-sensing__icon sb-sensing__icon--noise"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12h2M6 8l1.5 1.5M6 16l1.5-1.5M18 8l-1.5 1.5M18 16l-1.5-1.5M20 12h2"/><circle cx="12" cy="12" r="4"/></svg></div><h3>{{ ps.sensorNoise }}</h3><p class="sb-sensing-unit">dB</p><span class="sb-sensing-badge">P-03</span></div>
+      <div class="sb-sensing-card"><div class="sb-sensing__icon sb-sensing__icon--pm25"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="12" r="1"/><circle cx="12" cy="8" r="1"/><circle cx="16" cy="12" r="1"/><circle cx="12" cy="16" r="1"/></svg></div><h3>{{ ps.sensorPM25 }}</h3><p class="sb-sensing-unit">μg/m³</p><span class="sb-sensing-badge">P-04</span></div>
+      <div class="sb-sensing-card"><div class="sb-sensing__icon sb-sensing__icon--human"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><h3>{{ ps.sensorHuman }}</h3><p class="sb-sensing-unit">BOOL</p><span class="sb-sensing-badge">P-06</span></div>
+      <div class="sb-sensing-card"><div class="sb-sensing__icon sb-sensing__icon--door"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/><line x1="14" y1="12" x2="14.01" y2="12"/></svg></div><h3>{{ ps.sensorDoor }}</h3><p class="sb-sensing-unit">BOOL</p><span class="sb-sensing-badge">P-05</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sb-section sb-products">
+  <div class="container">
+    <div class="sb-section-header">
+      <span class="sb-section-label">{{ ps.productSeriesLabel }}</span>
+      <h2 class="sb-section-title">{{ ps.productSeriesTitle }}</h2>
+    </div>
+    <div class="sb-products-grid">
+      <div class="sb-product-card">{% if ps.productS1Image %}<div class="sb-product__image"><img src="{{ ps.productS1Image }}" alt="{{ ps.productS1Name }}" /></div>{% endif %}<div class="sb-product__body"><span class="sb-product__badge sb-product__badge--accent">{{ ps.productS1Badge }}</span><h3 class="sb-product__title">{{ ps.productS1Name }}</h3><p class="sb-product__desc">{{ ps.productS1Desc }}</p><ul class="sb-product__specs"><li><span>{{ t.product_silent.specLabelSize | default('尺寸') }}</span> {{ ps.productS1SpecSize }}</li><li><span>{{ t.product_silent.specLabelSound | default('降噪') }}</span> {{ ps.productS1SpecSound }}</li><li><span>{{ t.product_silent.specLabelConfig | default('配置') }}</span> {{ ps.productS1SpecConfig }}</li></ul></div></div>
+      <div class="sb-product-card sb-product-card--featured">{% if ps.productS2Image %}<div class="sb-product__image"><img src="{{ ps.productS2Image }}" alt="{{ ps.productS2Name }}" /></div>{% endif %}<div class="sb-product__body"><span class="sb-product__badge">{{ ps.productS2Badge }}</span><h3 class="sb-product__title">{{ ps.productS2Name }}</h3><p class="sb-product__desc">{{ ps.productS2Desc }}</p><ul class="sb-product__specs"><li><span>{{ t.product_silent.specLabelSize | default('尺寸') }}</span> {{ ps.productS2SpecSize }}</li><li><span>{{ t.product_silent.specLabelSound | default('降噪') }}</span> {{ ps.productS2SpecSound }}</li><li><span>{{ t.product_silent.specLabelConfig | default('配置') }}</span> {{ ps.productS2SpecConfig }}</li></ul></div></div>
+      <div class="sb-product-card">{% if ps.productS4Image %}<div class="sb-product__image"><img src="{{ ps.productS4Image }}" alt="{{ ps.productS4Name }}" /></div>{% endif %}<div class="sb-product__body"><span class="sb-product__badge sb-product__badge--green">{{ ps.productS4Badge }}</span><h3 class="sb-product__title">{{ ps.productS4Name }}</h3><p class="sb-product__desc">{{ ps.productS4Desc }}</p><ul class="sb-product__specs"><li><span>{{ t.product_silent.specLabelSize | default('尺寸') }}</span> {{ ps.productS4SpecSize }}</li><li><span>{{ t.product_silent.specLabelSound | default('降噪') }}</span> {{ ps.productS4SpecSound }}</li><li><span>{{ t.product_silent.specLabelConfig | default('配置') }}</span> {{ ps.productS4SpecConfig }}</li></ul></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="sb-section sb-scenarios">
+  <div class="container"><div class="sb-section-header"><span class="sb-section-label">{{ ps.scenariosLabel }}</span><h2 class="sb-section-title">{{ ps.scenariosTitle }}</h2></div>
+    <div class="sb-scenarios-grid">
+      <div class="sb-scenario">{% if ps.scenarioOpenImage %}<div class="sb-scenario__image"><img src="{{ ps.scenarioOpenImage }}" alt="{{ ps.scenarioOpen }}" /></div>{% endif %}<div class="sb-scenario__body"><h3>{{ ps.scenarioOpen }}</h3><p>{{ ps.scenarioOpenDesc }}</p></div></div>
+      <div class="sb-scenario">{% if ps.scenarioHRImage %}<div class="sb-scenario__image"><img src="{{ ps.scenarioHRImage }}" alt="{{ ps.scenarioHR }}" /></div>{% endif %}<div class="sb-scenario__body"><h3>{{ ps.scenarioHR }}</h3><p>{{ ps.scenarioHRDesc }}</p></div></div>
+      <div class="sb-scenario">{% if ps.scenarioVideoImage %}<div class="sb-scenario__image"><img src="{{ ps.scenarioVideoImage }}" alt="{{ ps.scenarioVideo }}" /></div>{% endif %}<div class="sb-scenario__body"><h3>{{ ps.scenarioVideo }}</h3><p>{{ ps.scenarioVideoDesc }}</p></div></div>
+      <div class="sb-scenario">{% if ps.scenarioFocusImage %}<div class="sb-scenario__image"><img src="{{ ps.scenarioFocusImage }}" alt="{{ ps.scenarioFocus }}" /></div>{% endif %}<div class="sb-scenario__body"><h3>{{ ps.scenarioFocus }}</h3><p>{{ ps.scenarioFocusDesc }}</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="sb-cta"><div class="container"><div class="sb-cta-wrapper">
+    <h2 class="sb-cta__title">{{ ps.ctaTitle }}</h2>
+    <p class="sb-cta__desc">{{ ps.ctaDesc }}</p>
+    <div class="sb-cta__actions"><a href="{{ ns.contact_url }}" class="btn btn-primary btn-lg">{{ t.actions.contactUs }}</a></div>
+</div></div></section>
+
+{% elif product.slug == 'props-display' %}
+{% set pp = t.product_props %}
+<section class="pd-hero">
+  <div class="pd-hero__bg">
+    {% if product.image %}<img src="{{ product.image }}" alt="{{ pp.heroTag }}" />{% endif %}
+    <div class="pd-hero__overlay"></div>
+  </div>
+  <div class="container pd-hero__content">
+    <span class="pd-hero__tag">{{ pp.heroTag }}</span>
+    <h1 class="pd-hero__title">{{ pp.heroTitle }}</h1>
+    <p class="pd-hero__desc">{{ pp.heroDesc }}</p>
+    {% if product.price %}<div class="product-detail-price">{{ product.price }}</div>{% endif %}
+    <div class="pd-hero__actions">
+      <a href="#features" class="pd-btn pd-btn--primary pd-btn--lg">{{ t.actions.viewProducts }} →</a>
+      <a href="{{ ns.contact_url }}" class="pd-btn pd-btn--outline pd-btn--lg">{{ t.actions.contactUs }}</a>
+    </div>
+  </div>
+</section>
+
+<section id="features" class="pd-section"><div class="container"><div class="pd-section-header">
+    <span class="pd-section-label">{{ t.sections.keyFeatures }}</span>
+    <h2 class="pd-section-title">{{ pp.featuresTitle }}</h2>
+    <p class="pd-section-desc">{{ pp.featuresDesc }}</p>
+</div>
+<div class="pd-features-grid">
+  <div class="pd-feature-card"><div class="pd-feature-icon pd-feature-icon--primary"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div><h3 class="pd-feature-title">{{ pp.featureCustom }}</h3><p class="pd-feature-desc">{{ pp.featureCustomDesc }}</p></div>
+  <div class="pd-feature-card"><div class="pd-feature-icon pd-feature-icon--accent"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 16V8"/></svg></div><h3 class="pd-feature-title">{{ pp.featureLED }}</h3><p class="pd-feature-desc">{{ pp.featureLEDDesc }}</p></div>
+  <div class="pd-feature-card"><div class="pd-feature-icon pd-feature-icon--green"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.93 4.93l14.14 14.14M9.17 9.17l5.66 5.66M2 12h2M20 12h2M12 2v2M12 20v2"/></svg></div><h3 class="pd-feature-title">{{ pp.featureWireless }}</h3><p class="pd-feature-desc">{{ pp.featureWirelessDesc }}</p></div>
+  <div class="pd-feature-card"><div class="pd-feature-icon pd-feature-icon--purple"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 12a8 8 0 01-8 8 8 8 0 01-8-8 8 8 0 018-8 8 8 0 018 8z"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></div><h3 class="pd-feature-title">{{ pp.featureSensor }}</h3><p class="pd-feature-desc">{{ pp.featureSensorDesc }}</p></div>
+</div></div></section>
+
+<section class="pd-section pd-products-section"><div class="container">
+  <div class="pd-section-header"><h2 class="pd-section-title">{{ pp.seriesTitle }}</h2><p class="pd-section-desc">{{ pp.seriesDesc }}</p></div>
+  <div class="pd-series-container">
+    <div class="pd-series-item">{% if pp.seriesHostImage %}<div class="pd-series-image"><img src="{{ pp.seriesHostImage }}" alt="{{ pp.seriesHost }}" /></div>{% endif %}<div class="pd-series-content"><h3 class="pd-series-name">{{ pp.seriesHost }}</h3><p class="pd-series-desc">{{ pp.seriesHostDesc }}</p><div class="pd-series-features"><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesHostFeat1 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesHostFeat2 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesHostFeat3 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesHostFeat4 }}</span></div></div></div></div>
+    <div class="pd-series-item pd-series-reverse">{% if pp.seriesLEDImage %}<div class="pd-series-image"><img src="{{ pp.seriesLEDImage }}" alt="{{ pp.seriesLED }}" /></div>{% endif %}<div class="pd-series-content"><h3 class="pd-series-name">{{ pp.seriesLED }}</h3><p class="pd-series-desc">{{ pp.seriesLEDDesc }}</p><div class="pd-series-features"><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesLEDFeat1 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesLEDFeat2 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesLEDFeat3 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesLEDFeat4 }}</span></div></div></div></div>
+    <div class="pd-series-item">{% if pp.seriesAlumImage %}<div class="pd-series-image"><img src="{{ pp.seriesAlumImage }}" alt="{{ pp.seriesAlum }}" /></div>{% endif %}<div class="pd-series-content"><h3 class="pd-series-name">{{ pp.seriesAlum }}</h3><p class="pd-series-desc">{{ pp.seriesAlumDesc }}</p><div class="pd-series-features"><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesAlumFeat1 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesAlumFeat2 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesAlumFeat3 }}</span></div><div class="pd-series-feature"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>{{ pp.seriesAlumFeat4 }}</span></div></div></div></div>
+  </div>
+</div></section>
+
+<section class="pd-section pd-contact-section"><div class="container"><div class="pd-contact-wrapper">
+  <div class="pd-contact-content">
+    <h2 class="pd-contact-title">{{ t.sections.contactUs }}</h2>
+    <p class="pd-contact-desc">{{ t.sections.contactDesc }}</p>
+    <div class="pd-contact-info">
+      <div class="pd-contact-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg><span>{{ settings.contact.phone | default('') }}</span></div>
+      <div class="pd-contact-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><span>{{ settings.contact.email | default('') }}</span></div>
+    </div>
+    <a href="{{ ns.contact_url }}" class="pd-btn pd-btn--primary pd-btn--lg">{{ t.actions.contactNow }}</a>
+  </div>
+  {% if pp.seriesAlumImage %}<div class="pd-contact-image"><img src="{{ pp.seriesAlumImage }}" alt="{{ t.actions.contactUs }}" /></div>{% endif %}
+</div></div></section>
+
+{% elif product.slug == 'dry-ice-machine' %}
+{% set pd = t.product_dim %}
+<section class="dim-hero">
+  <div class="dim-hero__bg">
+    {% if product.image %}<img src="{{ product.image }}" alt="{{ pd.heroTitle }}" />{% endif %}
+    <div class="dim-hero__overlay"></div>
+  </div>
+  <div class="container dim-hero__content">
+    <span class="dim-hero__tag">{{ pd.heroTag }}</span>
+    <h1 class="dim-hero__title">{{ pd.heroTitle }}</h1>
+    <p class="dim-hero__desc">{{ pd.heroDesc }}</p>
+    {% if product.price %}<div class="product-detail-price">{{ product.price }}</div>{% endif %}
+    <div class="dim-hero__actions">
+      <a href="{{ ns.contact_url }}" class="dim-btn dim-btn--primary dim-btn--lg">{{ t.actions.contactNow }} →</a>
+      <a href="#specifications" class="dim-btn dim-btn--outline dim-btn--lg">{{ t.actions.viewDetails }}</a>
+    </div>
+  </div>
+</section>
+
+<section class="dim-section dim-overview"><div class="container">
+  <span class="dim-section-label">{{ t.sections.ourProducts }}</span>
+  <h2 class="dim-section-title">{{ pd.overviewTitle }}</h2>
+  <p class="dim-overview__desc">{{ pd.overviewDesc }}</p>
+  <div class="dim-features-grid">
+    <div class="dim-feature-card"><div class="dim-feature-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div><h3 class="dim-feature-title">{{ pd.featureEfficiency }}</h3><p class="dim-feature-desc">{{ pd.featureEfficiencyDesc }}</p></div>
+    <div class="dim-feature-card"><div class="dim-feature-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M8 12h8M12 16V8"/></svg></div><h3 class="dim-feature-title">{{ pd.featureEco }}</h3><p class="dim-feature-desc">{{ pd.featureEcoDesc }}</p></div>
+    <div class="dim-feature-card"><div class="dim-feature-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3 class="dim-feature-title">{{ pd.featureQuality }}</h3><p class="dim-feature-desc">{{ pd.featureQualityDesc }}</p></div>
+  </div>
+</div></section>
+
+<section id="specifications" class="dim-section dim-specifications"><div class="container">
+  <span class="dim-section-label">{{ pd.specsTitle }}</span>
+  <h2 class="dim-section-title">{{ pd.specsTitle }}</h2>
+  <div class="dim-specs-grid">
+    <div class="dim-specs-category"><h3 class="dim-specs-category-title">{{ pd.specCatPerf }}</h3><div class="dim-specs-table"><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelOutputRange | default('产量范围') }}</span><span class="dim-specs-value">10-50kg/h</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelPurity | default('纯度') }}</span><span class="dim-specs-value">≥99.9%</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelParticleSize | default('颗粒尺寸') }}</span><span class="dim-specs-value">3mm/16mm</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelCoolingMethod | default('冷却方式') }}</span><span class="dim-specs-value">Compression</span></div></div></div>
+    <div class="dim-specs-category"><h3 class="dim-specs-category-title">{{ pd.specCatElec }}</h3><div class="dim-specs-table"><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelRatedPower | default('额定功率') }}</span><span class="dim-specs-value">3.5-8.5kW</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelRatedVoltage | default('额定电压') }}</span><span class="dim-specs-value">380V/50Hz</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelRatedCurrent | default('额定电流') }}</span><span class="dim-specs-value">6.5-16A</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelProtectionLevel | default('防护等级') }}</span><span class="dim-specs-value">IP54</span></div></div></div>
+    <div class="dim-specs-category"><h3 class="dim-specs-category-title">{{ pd.specCatPhys }}</h3><div class="dim-specs-table"><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelDimensions | default('外形尺寸') }}</span><span class="dim-specs-value">800×600×1200mm</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelWeight | default('重量') }}</span><span class="dim-specs-value">150-350kg</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelNoiseLevel | default('噪音等级') }}</span><span class="dim-specs-value">≤65dB</span></div><div class="dim-specs-row"><span class="dim-specs-name">{{ pd.specLabelWorkingTemp | default('工作温度') }}</span><span class="dim-specs-value">-20°C ~ +40°C</span></div></div></div>
+  </div>
+</div></section>
+
+<section class="dim-section dim-applications"><div class="container">
+  <span class="dim-section-label">{{ pd.appsTitle }}</span>
+  <h2 class="dim-section-title">{{ pd.appsTitle }}</h2>
+  <div class="dim-apps-grid">
+    <div class="dim-app-card">{% if pd.appFoodImage %}<div class="dim-app-image"><img src="{{ pd.appFoodImage }}" alt="{{ pd.appFood }}" /></div>{% endif %}<div class="dim-app-content"><h3 class="dim-app-title">{{ pd.appFood }}</h3><p class="dim-app-desc">{{ pd.appFoodDesc }}</p></div></div>
+    <div class="dim-app-card">{% if pd.appStageImage %}<div class="dim-app-image"><img src="{{ pd.appStageImage }}" alt="{{ pd.appStage }}" /></div>{% endif %}<div class="dim-app-content"><h3 class="dim-app-title">{{ pd.appStage }}</h3><p class="dim-app-desc">{{ pd.appStageDesc }}</p></div></div>
+    <div class="dim-app-card">{% if pd.appIndustryImage %}<div class="dim-app-image"><img src="{{ pd.appIndustryImage }}" alt="{{ pd.appIndustry }}" /></div>{% endif %}<div class="dim-app-content"><h3 class="dim-app-title">{{ pd.appIndustry }}</h3><p class="dim-app-desc">{{ pd.appIndustryDesc }}</p></div></div>
+    <div class="dim-app-card">{% if pd.appMedicalImage %}<div class="dim-app-image"><img src="{{ pd.appMedicalImage }}" alt="{{ pd.appMedical }}" /></div>{% endif %}<div class="dim-app-content"><h3 class="dim-app-title">{{ pd.appMedical }}</h3><p class="dim-app-desc">{{ pd.appMedicalDesc }}</p></div></div>
+  </div>
+</div></section>
+
+<section class="dim-section dim-principle"><div class="container">
+  <span class="dim-section-label">{{ pd.principleTitle }}</span>
+  <h2 class="dim-section-title">{{ pd.principleTitle }}</h2>
+  <p class="dim-principle__desc">{{ pd.principleDesc }}</p>
+  <div class="dim-steps">
+    <div class="dim-step"><div class="dim-step-number">01</div><div class="dim-step-content"><h3 class="dim-step-title">{{ pd.principleStep1 }}</h3><p class="dim-step-desc">{{ pd.principleStep1Desc }}</p></div></div>
+    <div class="dim-step"><div class="dim-step-number">02</div><div class="dim-step-content"><h3 class="dim-step-title">{{ pd.principleStep2 }}</h3><p class="dim-step-desc">{{ pd.principleStep2Desc }}</p></div></div>
+    <div class="dim-step"><div class="dim-step-number">03</div><div class="dim-step-content"><h3 class="dim-step-title">{{ pd.principleStep3 }}</h3><p class="dim-step-desc">{{ pd.principleStep3Desc }}</p></div></div>
+  </div>
+</div></section>
+
+<section class="dim-section dim-contact"><div class="container"><div class="dim-contact-wrapper">
+  <h2 class="dim-contact-title">{{ pd.ctaTitleDim }}</h2>
+  <p class="dim-contact-desc">{{ pd.ctaDescDim }}</p>
+  <a href="{{ ns.contact_url }}" class="dim-btn dim-btn--primary dim-btn--lg">{{ t.actions.contactNow }} →</a>
+</div></div></section>
+
+{% else %}
+{# 默认产品详情：完全数据驱动，对齐 claude 模板——只渲染店主在数据集编辑里配置的模块，
+   店主没配任何模块时回退渲染一个默认 item_data。绝不硬编码正文，
+   否则会和下面的 modules 各渲染一次，造成标题/摘要重复（曾出现的 bug）。 #}
+{% set modules = product.modules | default([]) %}
+{% for module in modules %}
+  <div class="builder-module" data-builder-module-index="{{ loop.index0 }}" data-builder-module-type="{{ module.type }}" data-builder-page-key="{{ page_key }}">
+    {{- render_block(module) }}
+  </div>
+{% endfor %}
+{% if not modules %}
+  <div class="builder-module" data-builder-module-index="0" data-builder-module-type="item_data" data-builder-page-key="{{ page_key }}">
+    {{- render_block({'type': 'item_data', 'variant': 'default', 'data': {}}) }}
+  </div>
+{% endif %}
+{% endif %}
+
+<div class="detail-back-section">
+  <div class="container">
+    <a href="{{ base_url }}/{{ lang }}/{{ _list_path }}/" class="btn btn-ghost detail-back-button">← {{ t.detail.back | default('返回') }}</a>
+  </div>
+</div>
+
+{% endblock %}

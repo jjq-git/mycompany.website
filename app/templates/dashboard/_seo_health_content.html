@@ -1,0 +1,191 @@
+<div class="panel-section">
+  <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+    <div>
+      <div class="panel-section-title mb-1">健康评分</div>
+      <div class="text-muted small">系统自动生成技术 SEO，这里只检查内容是否足够完整。</div>
+    </div>
+    <div class="text-end">
+      <div class="fs-3 fw-bold text-primary">{{ report.score }}</div>
+      <div class="text-muted small">/ 100</div>
+    </div>
+  </div>
+  <div class="row g-2">
+    <div class="col-4">
+      <div class="border rounded p-2 text-center">
+        <div class="fw-semibold text-success">{{ report.ok_count }}</div>
+        <div class="text-muted small">正常</div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="border rounded p-2 text-center">
+        <div class="fw-semibold text-warning">{{ report.warn_count }}</div>
+        <div class="text-muted small">建议处理</div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="border rounded p-2 text-center">
+        <div class="fw-semibold text-secondary">{{ report.info_count }}</div>
+        <div class="text-muted small">可优化</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="panel-section">
+  <div class="panel-section-title">页面 SEO</div>
+  <div class="text-muted small mb-2">
+    集中查看会发布的页面标题和简介状态。系统会自动生成技术标签，简介可手动改写，也可{% if report.ai_configured %}用 AI 生成{% else %}先用本地摘要生成（配置 AI 后可自动润色）{% endif %}。  </div>
+  <button type="button" class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#seoHealthModal">
+    打开 SEO 健康检查  </button>
+</div>
+
+<div class="panel-section">
+  <div class="panel-section-title">系统检查</div>
+  <div class="d-flex flex-column gap-2">
+    {% for check in report.checks %}
+    <div class="border rounded p-2 d-flex align-items-start justify-content-between gap-2">
+      <div>
+        <div class="fw-semibold small">
+          {% if check.status == 'ok' %}
+          <span class="badge text-bg-success me-1">正常</span>
+          {% elif check.status == 'warn' %}
+          <span class="badge text-bg-warning me-1">建议</span>
+          {% else %}
+          <span class="badge text-bg-secondary me-1">优化</span>
+          {% endif %}
+          {{ check.title }}
+        </div>
+        <div class="text-muted small mt-1">{{ check.detail }}</div>
+      </div>
+      {% if check.status != 'ok' and check.action_url %}
+      <button type="button" class="seo-check-link" data-panel-url="{{ check.action_url }}" data-action-kind="{{ check.action_kind or 'link' }}" onclick="return seoRunCheckAction(this)" title="点击跳转到编辑面板" style="flex-shrink:0;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius: 0;font-size:14px;border:1px solid var(--seo-primary-border, rgba(0,0,0,.15));color:var(--seo-primary, inherit);text-decoration:none;white-space:nowrap;background:none;cursor:pointer">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </button>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="modal fade" id="seoHealthModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title mb-0">SEO 健康检查</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+      </div>
+      <div class="modal-body">
+        <div class="small text-muted mb-3">这里只列出菜单中实际发布的页面。标题和简介用于搜索结果、社交分享和 AI 检索摘要。{% if not report.ai_configured %}当前未配置 AI Key，生成按钮会先使用本地摘要兜底。{% endif %}</div>
+        <div class="d-flex flex-column gap-3">
+          {% for row in report.pages %}
+          <form class="seo-page-row border rounded p-3" data-page-key="{{ row.key }}" data-generate-url="{{ row.generate_url }}" data-save-url="{{ row.save_url }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+              <div>
+                <div class="fw-semibold">{{ row.title }}</div>
+                <div class="text-muted small">/{{ row.key }}/ · {{ row.status_detail }}</div>
+              </div>
+              {% if row.status == 'ok' %}
+              <span class="badge text-bg-success">已设置</span>
+              {% elif row.status == 'auto' %}
+              <span class="badge text-bg-info">可自动生成</span>
+              {% else %}
+              <span class="badge text-bg-warning">需处理</span>
+              {% endif %}
+            </div>
+            <div class="row g-2">
+              <div class="col-md-4">
+                <label class="form-label small mb-1 text-muted">椤甸潰标题</label>
+                <input class="form-control form-control-sm" name="title" value="{{ row.title }}">
+              </div>
+              <div class="col-md-8">
+                <label class="form-label small mb-1 text-muted">椤甸潰简介/label>
+                <textarea class="form-control form-control-sm seo-description" name="description" rows="2" placeholder="{{ row.auto_description }}">{{ row.description }}</textarea>
+              </div>
+            </div>
+            <div class="d-flex align-items-center justify-content-between mt-2 gap-2">
+              <div class="small text-muted seo-row-msg"></div>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="seoGenerateDescription(this)">{% if report.ai_configured %}AI 生成{% else %}自动生成{% endif %}</button>
+                <button type="button" class="btn btn-sm btn-primary" onclick="seoSavePage(this)" title="保存" aria-label="保存">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                </button>
+              </div>
+            </div>
+          </form>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function seoRowOf(btn) {
+  return btn.closest('.seo-page-row');
+}
+function seoSetMsg(row, text, ok) {
+  var msg = row ? row.querySelector('.seo-row-msg') : null;
+  if (!msg) return;
+  msg.textContent = text || '';
+  msg.classList.toggle('text-success', !!ok);
+  msg.classList.toggle('text-danger', ok === false);
+}
+function seoGenerateDescription(btn) {
+  var row = seoRowOf(btn);
+  if (!row) return;
+  seoSetMsg(row, '生成中...', true);
+  var url = (row.dataset.generateUrl || '').replace(/&amp;/g, '&');
+  fetch(url, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.ok) throw new Error(data.error || '生成失败');
+      var textarea = row.querySelector('.seo-description');
+      if (textarea) textarea.value = data.description || '';
+      var source = data.source === 'ai' ? 'AI 已生成' : '已用本地摘要生成';
+      if (data.warning) source += '（' + data.warning + '）';
+      seoSetMsg(row, source + '，可继续修改后保存', true);
+    })
+    .catch(function(err) { seoSetMsg(row, err.message || '生成失败', false); });
+}
+function seoSavePage(btn) {
+  var row = seoRowOf(btn);
+  if (!row) return;
+  seoSetMsg(row, '保存中...', true);
+  var url = (row.dataset.saveUrl || '').replace(/&amp;/g, '&');
+  fetch(url, { method: 'POST', body: new FormData(row) })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.ok) throw new Error(data.error || '保存失败');
+      seoSetMsg(row, '已保存', true);
+      if (typeof markPreviewDirty === 'function') markPreviewDirty();
+    })
+    .catch(function(err) { seoSetMsg(row, err.message || '保存失败', false); });
+}
+function seoRunCheckAction(btn) {
+  var url = (btn.dataset.panelUrl || '').replace(/&amp;/g, '&');
+  if (!url) return false;
+  if (btn.dataset.actionKind !== 'post') {
+    return openSeoActionLink(url);
+  }
+  btn.disabled = true;
+  fetch(url, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.ok) throw new Error(data.error || '修复失败');
+      alert('已补齐 ' + (data.count || 0) + ' 个图片 alt');
+      if (typeof markPreviewDirty === 'function') markPreviewDirty();
+      if (typeof loadPanel === 'function') {
+        var current = window.location.pathname + window.location.search;
+        loadPanel(current);
+      } else {
+        window.location.reload();
+      }
+    })
+    .catch(function(err) {
+      alert(err.message || '修复失败');
+      btn.disabled = false;
+    });
+  return false;
+}
+</script>

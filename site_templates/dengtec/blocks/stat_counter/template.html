@@ -1,0 +1,51 @@
+<section data-name="stat_counter" data-type="group" data-hideable data-style="cols" class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 data-name="heading" data-type="text" class="section-title">数据统计</h2>
+      <p data-name="subheading" data-type="text" class="section-description">区块副标题</p>
+    </div>
+    <div data-name="stats" data-type="list" class="sc-grid">
+      <div data-name="stat" data-type="group" class="sc-card">
+        <div data-name="icon" data-type="icon" class="sc-icon"></div>
+        <div data-name="number" data-type="text" class="sc-number">0</div>
+        <span data-name="suffix" data-type="text" class="sc-suffix">+</span>
+        <div data-name="label" data-type="text" class="sc-label">统计项</div>
+      </div>
+    </div>
+  </div>
+  <script>
+(function(){
+  /* 数字滚动动画：从 0 增长到 .sc-number 注入的目标值（读 textContent，
+     原版用 data-target，改造后用 data-* 渲染会清掉它，故改读文字）。
+     脚本放在 section 内（根子树），用最近的 .sc-grid 定位。 */
+  var grid = document.currentScript.closest('section').querySelector('.sc-grid');
+  if (!grid) return;
+  var cards = grid.querySelectorAll('.sc-number');
+  if (!cards.length) return;
+  var animated = false;
+  function animate(card) {
+    var target = parseInt(card.textContent) || 0;
+    if (!target) return;
+    var duration = 1200, start = performance.now();
+    function step(now) {
+      var progress = Math.min((now - start) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      card.textContent = Math.floor(eased * target);
+      if (progress < 1) requestAnimationFrame(step);
+      else card.textContent = target;
+    }
+    requestAnimationFrame(step);
+  }
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting && !animated) {
+        animated = true;
+        cards.forEach(function(c) { animate(c); });
+        observer.disconnect();
+      }
+    });
+  }, { threshold: 0.3 });
+  observer.observe(grid);
+})();
+</script>
+</section>

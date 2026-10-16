@@ -1,0 +1,41 @@
+<!-- 联系方式模块 - 数据来自网站设置（data-* 声明式） -->
+<section class="section" data-name="contact_info" data-type="group" data-hideable data-from="settings:contact">
+  <div class="container">
+    <div class="section-header">
+      <h2 data-name="title" data-type="text" class="section-title"></h2>
+      <p data-name="subtitle" data-type="text" class="section-description"></p>
+    </div>
+    <div class="ci-grid">
+      <!-- 电话 -->
+      <div data-name="phone_card" data-type="group" data-hideable class="ci-card">
+        <div class="ci-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"></path></svg></div>
+        <div class="ci-label" data-i18n="contact.phone">电话</div>
+        <a data-name="phone" data-type="text" data-href-template="tel:{phone}" class="ci-value"></a>
+      </div>
+      <!-- 手机 -->
+      <div data-name="mobile_card" data-type="group" data-hideable class="ci-card">
+        <div class="ci-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg></div>
+        <div class="ci-label" data-i18n="contact.mobile">手机</div>
+        <a data-name="mobile" data-type="text" data-href-template="tel:{mobile}" class="ci-value"></a>
+      </div>
+      <!-- 邮箱 -->
+      <div data-name="email_card" data-type="group" data-hideable class="ci-card">
+        <div class="ci-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></div>
+        <div class="ci-label" data-i18n="contact.email">邮箱</div>
+        <a data-name="email" data-type="text" data-href-template="mailto:{email}" class="ci-value"></a>
+      </div>
+      <!-- 地址 -->
+      <div data-name="address_card" data-type="group" data-hideable class="ci-card">
+        <div class="ci-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>
+        <div class="ci-label" data-i18n="contact.address">地址</div>
+        <div data-name="address" data-type="text" class="ci-value"></div>
+      </div>
+      <!-- 营业时间 -->
+      <div data-name="hours_card" data-type="group" data-hideable class="ci-card">
+        <div class="ci-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
+        <div class="ci-label" data-i18n="contact.businessHours">营业时间</div>
+        <div data-name="business_hours" data-type="text" class="ci-value"></div>
+      </div>
+    </div>
+  </div>
+</section>

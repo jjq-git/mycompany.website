@@ -1,32 +1,224 @@
-{% extends "base.html" %}
+{% extends "dashboard/onboarding_base.html" %}
 {% block title %}新建站点{% endblock %}
 
+{% block head %}
+<style>
+  .site-create-card{border:1px solid #dbe3ea;background:#fff;box-shadow:0 10px 24px rgba(15,23,42,.05)}
+  .site-create-card .panel-section{padding:22px 24px;border-bottom:1px solid #e5e9ed}
+  .site-create-card .panel-section-title{margin-bottom:16px;font-weight:700}
+  .template-pick-card{display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:center;padding:18px 24px;border:1px solid #dbe3ea;background:#fff}
+  .template-pick-thumb{display:grid;place-items:center;height:76px;background:#eef2f5;color:#0d9488}
+  .template-pick-name{font-size:17px;font-weight:700}.template-pick-meta,.template-pick-desc{margin-top:5px;color:#718096;font-size:13px}
+  .site-create-actions{display:flex;gap:10px;padding:18px 24px}
+  /* 本页面向不懂技术的小老板，是创建站点的关键引导步骤，默认 Bootstrap 的 small 字号偏小，
+     这里针对性调大：区块标题、字段标签、说明文字、输入框，只作用于本页不影响全局 */
+  .site-create-card .panel-section-title{font-size:17px}
+  .site-create-card .form-label{font-size:14.5px;font-weight:600;color:#2d3748}
+  .site-create-card .form-label.small{font-size:14.5px}   /* 覆盖 Bootstrap .small 的 0.875em */
+  .site-create-card .form-text{font-size:13.5px;color:#64748b}
+  .site-create-card .form-control,.site-create-card .form-select,
+  .site-create-card .input-group-text{font-size:15px}
+  .site-create-card .form-control-sm,.site-create-card .form-select-sm{min-height:40px;padding:8px 12px}
+  @media(max-width:600px){.template-pick-card{grid-template-columns:1fr}.site-create-card .panel-section{padding:18px 16px}}
+</style>
+{% endblock %}
+
 {% block content %}
-<a class="muted" href="{{ url_for('core.templates_gallery') }}">← 返回模板库</a>
-<h1 class="page-title" style="margin-top: 12px;">新建站点</h1>
-<p class="page-subtitle">基于模板 <strong>{{ template.display_name }}</strong></p>
+<div>
+  <a href="{{ url_for('core.templates_gallery') }}" class="onboard-back">← 返回模板选择</a>
+  <div class="onboard-step">步骤 2 / 2</div>
+  <h1 class="onboard-title">设置站点信息</h1>
+  <p class="onboard-subtitle">填写基本信息并选择语言版本，创建完成后将直接进入站点概览。</p>
 
-{% if error %}
-<div class="card" style="max-width: 720px; background: #fef2f2; border-color: #fecaca; color: #991b1b;">{{ error }}</div>
-{% endif %}
+  {% if error %}
+  <div class="alert alert-danger py-2 small">{{ error }}</div>
+  {% endif %}
 
-<form method="post" action="{{ url_for('core.site_new', template=template.name) }}">
-<div class="card" style="max-width: 720px;">
-  <div class="form-row">
-    <label>站点名（你自己看的，例如：RIMU 官网）</label>
-    <input type="text" name="name" value="{{ form.name or '' }}" required>
+  {# 已选模板卡片 #}
+  {% if template %}
+  <div class="template-pick-card mb-3">
+    <div class="template-pick-thumb">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+    </div>
+    <div class="template-pick-body">
+      <div class="template-pick-name">{{ template.display_name }}</div>
+      <div class="template-pick-meta">{{ template.industry }} · v{{ template.current_version or '1.0.0' }}</div>
+      <div class="template-pick-desc">{{ template.description }}</div>
+    </div>
   </div>
-  <div class="form-row">
-    <label>Slug（站点的英文标识，3–30 字符 [a–z 0–9 -]）</label>
-    <input type="text" name="slug" value="{{ form.slug or '' }}" required
-           pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]"
-           placeholder="rimu / acme-co / my-shop">
-    <p class="muted" style="font-size: 13px; margin: 4px 0 0;">将来可以绑定到 yourcompany.com，未绑定时通过 {slug}.mycompany.website 访问。</p>
-  </div>
-  <div class="form-actions">
-    <button class="btn btn-primary" type="submit">创建</button>
-    <a class="btn" href="{{ url_for('core.templates_gallery') }}">取消</a>
-  </div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('core.site_new', template=template.name if template else '') }}{% if request.args.get('_fragment') %}{{ '?_fragment=1' }}{% endif %}" id="siteNewForm" class="site-create-card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="panel-section">
+      <div class="panel-section-title">站点信息</div>
+
+      {% if not template %}
+      <div class="mb-3">
+        <label class="form-label small mb-1" for="templateSelect">选择模板</label>
+        <select class="form-select form-select-sm" id="templateSelect" name="template_name">
+          <option value="">留空使用默认模板</option>
+          {% for tpl in templates %}
+          <option value="{{ tpl.name }}" {% if form.template_name == tpl.name %}selected{% endif %}>{{ tpl.display_name }}（{{ tpl.industry }}）</option>
+          {% endfor %}
+        </select>
+        <div class="form-text">选择站点使用的模板，创建后不可更改。</div>
+      </div>
+      {% else %}
+      <input type="hidden" name="template_name" value="{{ template.name }}">
+      {% endif %}
+
+      <div class="mb-3">
+        <label class="form-label small mb-1">站点名称</label>
+        <input type="text" class="form-control form-control-sm" name="name"
+               value="{{ form.name or '' }}" required
+               placeholder="例如：RIMU 官网、Acme 企业站">
+        <div class="form-text">给自己看的名称，可随时修改。</div>
+      </div>
+
+      <div class="mb-0">
+        <label class="form-label small mb-1">站点标识（Slug）</label>
+        <div class="input-group input-group-sm slug-input-group">
+          <input type="text" class="form-control" name="slug"
+                 value="{{ form.slug or '' }}" required
+                 pattern="[a-z0-9][a-z0-9\-]{1,28}[a-z0-9]"
+                 placeholder="my-company">
+          <span class="input-group-text text-muted">.{{ platform_domain }}</span>
+        </div>
+        <div class="form-text">用于后台识别和生成上方平台默认地址。绑定独立域名后，仍作为内部标识和备用地址；仅支持 3–30 位小写字母、数字或连字符。</div>
+        <div class="small mt-1" id="siteSlugStatus" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">语言版本</div>
+      <div class="form-text mb-2">请选择该模板支持的语言版本，至少选择一种。</div>
+      <div class="d-flex flex-wrap gap-2" id="templateLanguageOptions"></div>
+      <div class="text-danger small mt-2" id="templateLanguageError" style="display:none;">请选择至少一种语言版本</div>
+    </div>
+
+    <div class="site-create-actions">
+      <button type="submit" class="btn btn-primary btn-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="me-1"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        创建站点
+      </button>
+      <a href="{{ url_for('core.templates_gallery') }}" class="btn btn-outline-secondary btn-sm">取消</a>
+    </div>
+  </form>
 </div>
-</form>
+
+<script>
+(function(){
+  var IS_FRAGMENT = {{ (request.args.get('_fragment') is not none) | tojson }};
+  var TEMPLATE_LANGUAGES = {{ template_language_map | tojson }};
+  var TEMPLATE_DEFAULT_LANGS = {{ template_default_language_map | tojson }};
+  var SELECTED_LANGS = {{ (form.enabled_languages | default([])) | tojson }};
+  var form = document.getElementById('siteNewForm');
+  if (!form) return;
+
+  function currentTemplateName() {
+    var select = document.getElementById('templateSelect');
+    var hidden = form.querySelector('input[name="template_name"]');
+    var name = select ? select.value.trim() : (hidden ? hidden.value.trim() : '');
+    return name || Object.keys(TEMPLATE_LANGUAGES)[0] || '';
+  }
+
+  function renderLanguageOptions() {
+    var box = document.getElementById('templateLanguageOptions');
+    if (!box) return;
+    var tplName = currentTemplateName();
+    var langs = TEMPLATE_LANGUAGES[tplName] || [];
+    var defaultLang = TEMPLATE_DEFAULT_LANGS[tplName] || (langs[0] && langs[0].code) || '';
+    var selected = SELECTED_LANGS.length ? SELECTED_LANGS : (defaultLang ? [defaultLang] : []);
+    box.innerHTML = '';
+    langs.forEach(function(lang){
+      var label = document.createElement('label');
+      label.className = 'd-flex align-items-center gap-2 px-2 py-1 rounded';
+      label.style.cssText = 'border:1px solid #e5e7eb;background:#f8fafc;cursor:pointer;font-size:14.5px;padding:6px 12px;';
+      label.innerHTML = '<input class="form-check-input mt-0" type="checkbox" name="enabled_lang" value="' +
+        String(lang.code).replace(/"/g, '&quot;') + '"' + (selected.indexOf(lang.code) !== -1 ? ' checked' : '') +
+        '><span>' + (lang.name || lang.code) + '</span>';
+      box.appendChild(label);
+    });
+  }
+
+  document.getElementById('templateSelect')?.addEventListener('change', function(){
+    SELECTED_LANGS = [];
+    renderLanguageOptions();
+  });
+  renderLanguageOptions();
+
+  var slugInput = form.querySelector('input[name="slug"]');
+  var slugCheckTimer = null;
+  function checkSlugAvailability() {
+    if (!slugInput) return;
+    var slug = slugInput.value.trim().toLowerCase();
+    slugInput.value = slug;
+    var status = document.getElementById('siteSlugStatus');
+    if (!slug) { slugInput.setCustomValidity(''); if (status) status.textContent = ''; return; }
+    fetch('{{ url_for("core.site_slug_available") }}?slug=' + encodeURIComponent(slug))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        slugInput.setCustomValidity(data.available ? '' : (data.message || '该 Slug 不可用'));
+        if (status) {
+          status.textContent = data.message || '';
+          status.className = 'small mt-1 ' + (data.available ? 'text-success' : 'text-danger');
+        }
+      });
+  }
+  slugInput?.addEventListener('input', function(){
+    slugInput.setCustomValidity('');
+    clearTimeout(slugCheckTimer);
+    slugCheckTimer = setTimeout(checkSlugAvailability, 350);
+  });
+  slugInput?.addEventListener('blur', checkSlugAvailability);
+
+  form.addEventListener('submit', function(e){
+    var checkedLangs = form.querySelectorAll('input[name="enabled_lang"]:checked');
+    if (!checkedLangs.length) {
+      e.preventDefault();
+      var langError = document.getElementById('templateLanguageError');
+      if (langError) langError.style.display = '';
+      return;
+    }
+    if (!IS_FRAGMENT) return;
+    e.preventDefault();
+
+    var btn = form.querySelector('button[type="submit"]');
+    var origText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>创建中...';
+
+    var formData = new FormData(form);
+    fetch(form.action, { method: 'POST', body: formData })
+      .then(function(r){
+        if (r.redirected) {
+          window.location.href = r.url;
+          return;
+        }
+        return r.text();
+      })
+      .then(function(html){
+        if (html) {
+          var panelBody = document.getElementById('rightPanelBody');
+          panelBody.innerHTML = html;
+          if (typeof runPanelScripts === 'function') {
+            runPanelScripts(panelBody);
+          } else {
+            panelBody.querySelectorAll('script').forEach(function(s){
+              if ((s.type || '').indexOf('json') >= 0) return;
+              try { (0, eval)(s.textContent || ''); } catch (e) { console.warn('Panel script failed:', e); }
+              s.remove();
+            });
+          }
+        }
+      })
+      .catch(function(err){
+        console.error(err);
+        btn.disabled = false;
+        btn.innerHTML = origText;
+      });
+  });
+})();
+</script>
 {% endblock %}

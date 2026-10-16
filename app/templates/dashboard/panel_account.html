@@ -1,0 +1,16 @@
+{# 兼容旧的右侧账户面板：账户管理已迁移到独立工作区，这里只保留入口。 #}
+{% set visible_identifier = account_identifier or user.email %}
+{% set account_name = user.display_name or visible_identifier.split('@')[0] %}
+{% if not initial_account_panel|default(false) %}<div class="fw-semibold mb-3">账户中心</div>{% endif %}
+<div class="account-profile">
+  <div class="account-profile-avatar" aria-hidden="true">{{ account_name[:1].upper() }}</div>
+  <div class="account-profile-main">
+    <div class="account-profile-email">{{ account_name }}</div>
+    <div class="account-profile-meta">{{ visible_identifier }}{% if site_count is defined %} · {{ site_count }} 个站点{% endif %}</div>
+  </div>
+</div>
+<div class="panel-section account-section">
+  <div class="panel-section-title">账户管理</div>
+  <p class="small text-muted mb-3">个人资料、站点管理和账号安全已集中到账户中心。</p>
+  <button class="btn btn-primary btn-sm w-100" type="button" onclick="openAccountWorkspace()">打开账户中心</button>
+</div>

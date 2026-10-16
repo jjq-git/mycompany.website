@@ -54,6 +54,10 @@ template.html + module.data ──注入──▶ 干净静态 HTML（剥掉 dat
 - **CSS 变量默认值只写在 CSS 里**（`var(--cols, 3)`），HTML 与注册表不重复。
 - **Header / Footer 也是 block**：写在 `blocks/header/`、`blocks/footer/`，必显（不加 `data-hideable`）。其中导航菜单、语言切换不靠用户手填——用保留数据源 `data-source="menu"` / `"languages"` 由 builder 注入；页眉 / 页脚的不同排版走 block 变体（`variants/*.html`，对应 `settings.header.variant` / `settings.footer.variant`）。
 
+## 功能型 block 的阶段性约定
+
+- **联系表单（`contact_form`）已内置留言系统**：`form_action` 留空时表单自动提交到平台后端 API（`/api/contact/<site_id>`），留言存入 `contact_messages` 表，店主在后台"留言管理"页面查看。反垃圾：蜜罐隐藏字段 + 速率限制（每分钟 10 条）。CORS 开放、CSRF 豁免（静态站点无法生成 token）。`form_action` 填了第三方 URL 则仍走外部提交（兼容原有行为）。
+
 ## 不做
 
 - 不开放像素级样式微调。

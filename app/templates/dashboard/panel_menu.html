@@ -1,0 +1,1033 @@
+{# 菜单配置面板 #}
+<style>
+.settings-workspace--menu {
+  padding: 28px 32px 88px;
+}
+.settings-workspace--menu .settings-workspace-inner {
+  max-width: 1200px;
+}
+.settings-workspace--menu .settings-workspace-panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.settings-workspace--menu .settings-workspace-panel > .d-flex:first-of-type {
+  margin: 0 0 12px !important;
+  padding: 0;
+  border: 0;
+  color: #718096;
+  font-size: 15px;
+}
+.settings-workspace--menu .menu-config-layout {
+  display: grid;
+  grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+  gap: 16px;
+  align-items: start;
+}
+.settings-workspace--menu .menu-config-tree-panel,
+.settings-workspace--menu .menu-config-inspector {
+  min-width: 0;
+  padding: 0;
+  border: 1px solid #e1e6eb;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, .08);
+}
+.settings-workspace--menu .menu-config-inspector {
+  position: sticky;
+  top: 16px;
+}
+.settings-workspace--menu .menu-config-card-title {
+  padding: 16px 26px 14px;
+  border-bottom: 1px solid #e8ecf0;
+  color: #172033;
+  font-size: 15px;
+  font-weight: 600;
+}
+.settings-workspace--menu .menu-config-card-body {
+  padding: 20px 26px 22px;
+}
+.settings-workspace--menu .menu-config-inspector .menu-config-card-body {
+  background: #fff;
+}
+.settings-workspace--menu .menu-tree {
+  gap: 0;
+  border: 1px solid #e2e8f0;
+}
+.settings-workspace--menu .menu-tree-row + .menu-tree-row > .menu-tree-card {
+  border-top: 1px solid #e8edf2;
+}
+.settings-workspace--menu .menu-tree-card {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-left: 0;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: none;
+}
+.settings-workspace--menu .menu-tree-card::before {
+  display: none;
+}
+.settings-workspace--menu .menu-tree-card-row {
+  min-height: 58px;
+  padding: 8px 12px;
+}
+.settings-workspace--menu .menu-tree-picker-card.selected {
+  background: #fff;
+  box-shadow: none;
+}
+.settings-workspace--menu .menu-tree-picker-card:hover {
+  background: #f8fafc;
+  box-shadow: none;
+}
+.settings-workspace--menu .menu-tree-picker-card.selected:hover {
+  background: #fff;
+}
+.settings-workspace--menu .menu-tree-picker-card.selected > .menu-tree-card-row {
+  background: rgba(var(--admin-primary-rgb), .09);
+  box-shadow: inset 3px 0 0 var(--admin-primary);
+}
+.settings-workspace--menu .menu-tree-picker-card.selected:hover > .menu-tree-card-row {
+  background: rgba(var(--admin-primary-rgb), .11);
+}
+.settings-workspace--menu .menu-tree-select {
+  gap: 10px;
+}
+.settings-workspace--menu .menu-tree-drag-handle {
+  flex: 0 0 auto;
+  color: #cbd5e1;
+  font-size: 15px;
+  line-height: 1;
+  cursor: grab;
+}
+.settings-workspace--menu .menu-tree-branch {
+  width: 15px;
+  flex: 0 0 15px;
+  color: #b7c3d0;
+  font-size: 16px;
+}
+.settings-workspace--menu .menu-tree-icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  color: var(--admin-primary);
+}
+.settings-workspace--menu .menu-tree-icon svg,
+.settings-workspace--menu .menu-icon-current svg,
+.settings-workspace--menu .menu-icon-option svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.settings-workspace--menu .menu-type-locked-note {
+  margin-top: 5px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+.settings-workspace--menu .menu-inspector-primary-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+.settings-workspace--menu .menu-inspector-primary-row > .menu-inspector-section {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+}
+.settings-workspace--menu .menu-inspector-primary-row + .menu-inspector-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e8ecf0;
+}
+.settings-workspace--menu .menu-inspector-secondary-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e8ecf0;
+  align-items: start;
+}
+.settings-workspace--menu .menu-inspector-secondary-row.has-target {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.settings-workspace--menu .menu-inspector-secondary-row > .menu-inspector-section {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+}
+.settings-workspace--menu .menu-inspector-secondary-row + .menu-url-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e8ecf0;
+}
+@media (max-width: 640px) {
+  .settings-workspace--menu .menu-inspector-primary-row,
+  .settings-workspace--menu .menu-inspector-secondary-row.has-target {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.settings-workspace--menu .menu-icon-picker {
+  position: relative;
+}
+.settings-workspace--menu .menu-icon-picker-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid #d8e0e8;
+  background: #fff;
+  color: #475569;
+  text-align: left;
+}
+.settings-workspace--menu .menu-icon-picker-toggle::after {
+  content: '▾';
+  margin-left: auto;
+  color: #94a3b8;
+}
+.settings-workspace--menu .menu-icon-popover {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(15,23,42,.16);
+}
+.settings-workspace--menu .menu-icon-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: 250px;
+  margin-top: 8px;
+  overflow: auto;
+}
+.settings-workspace--menu .menu-icon-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 0;
+  background: transparent;
+  color: #475569;
+  text-align: left;
+}
+.settings-workspace--menu .menu-icon-option:hover,
+.settings-workspace--menu .menu-icon-option.selected {
+  color: var(--admin-primary);
+  background: rgba(var(--admin-primary-rgb), .09);
+}
+.settings-workspace--menu .menu-icon-option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-workspace--menu .menu-tree-title {
+  color: #172033;
+  font-size: 14px;
+  font-weight: 600;
+}
+.settings-workspace--menu .menu-tree-meta {
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.settings-workspace--menu .menu-tree-actions {
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+.settings-workspace--menu .menu-tree-card:hover > .menu-tree-card-row .menu-tree-actions,
+.settings-workspace--menu .menu-tree-picker-card.selected > .menu-tree-card-row .menu-tree-actions {
+  opacity: 1;
+}
+.settings-workspace--menu .menu-tree-child-count {
+  height: auto;
+  padding: 3px 7px;
+  border-radius: 0;
+  /* color: #2563eb; */
+  background: #eff6ff;
+  font-size: 12px;
+  line-height: 1.2;
+}
+.settings-workspace--menu .menu-tree-children {
+  gap: 0;
+  margin: 0 !important;
+  /* padding: 0 0 0 28px; */
+  border-top: 1px solid #e8edf2;
+  border-left: 0;
+  background: #fff;
+}
+.settings-workspace--menu .menu-tree-children > .menu-tree-row + .menu-tree-row > .menu-tree-card {
+  border-top: 1px solid #e8edf2;
+}
+.settings-workspace--menu .menu-tree-children .menu-tree-card-row {
+  min-height: 54px;
+}
+.settings-workspace--menu .menu-tree-children:empty {
+  display: none;
+}
+.settings-workspace--menu .menu-tree-collapsible {
+  margin: 0;
+}
+.settings-workspace--menu #menuTreeForm > .panel-save-bar {
+  position: static;
+  display: flex;
+  justify-content: flex-end;
+  width: max-content;
+  max-width: 100%;
+  margin: 16px 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+@media (max-width: 900px) {
+  .settings-workspace--menu {
+    padding: 18px 16px 80px;
+  }
+  .settings-workspace--menu .menu-config-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-workspace--menu .menu-config-inspector {
+    position: static;
+    margin-top: 0;
+  }
+}
+</style>
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <span class="fw-semibold">菜单配置</span>
+  <span class="small text-muted">首页固定在第一项</span>
+</div>
+{% if translation_enabled and languages and languages|length > 1 and current_lang != default_lang %}
+{# AI 翻译栏 #}
+<div class="d-flex align-items-center gap-1 mb-3 p-2 rounded flex-wrap" style="background:#f0f7ff;font-size:12px;">
+  {% set target_lang_opt = (languages | selectattr('code', 'equalto', current_lang) | list | first) %}
+  <span class="text-muted text-nowrap">🌐 AI 翻译：{{ default_lang }} → {{ target_lang_opt.name if target_lang_opt else current_lang }}</span>
+  <button class="btn btn-sm btn-outline-info text-nowrap" id="aiTranslateBtn" style="font-size:12px;">从默认语言翻译</button>
+  <span class="text-muted text-nowrap" style="font-size:12px;">翻译后请手动检查并保存</span>
+</div>
+{% endif %}
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}
+    <div class="alert alert-success py-1 px-2 small mb-2">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+
+{% set menu_form_action = menu_form_action | default(url_for('core.menu_edit', _fragment='1', site=site.id, lang=current_lang)) %}
+<form method="post" action="{{ menu_form_action }}" id="menuTreeForm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="menu_json" id="menuJson">
+  <div class="menu-config-layout">
+    <section class="menu-config-tree-panel">
+      <div class="menu-config-card-title">菜单结构</div>
+      <div class="menu-config-card-body">
+        <div id="menuTree" class="menu-tree menu-tree-picker"></div>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+          <button type="button" class="btn btn-outline-primary btn-sm menu-add-button" id="addRootMenu">+ 添加一级菜单</button>
+          <button type="button" class="btn btn-outline-primary btn-sm menu-add-button" id="addComparisonMenu">+ 产品参数对比页</button>
+        </div>
+      </div>
+    </section>
+    <aside class="menu-config-inspector">
+      <div class="menu-config-card-title">菜单属性</div>
+      <div class="menu-config-card-body" id="menuInspector"></div>
+    </aside>
+  </div>
+  <div class="panel-save-bar">
+    <button class="btn btn-primary btn-sm w-100" type="submit">保存菜单</button>
+  </div>
+</form>
+
+<script>
+(function(){
+  const initialMenu = {{ items | tojson }};
+  const typeLabels = {home: '首页', list: '列表', page: '单页', link: '链接', group: '容器'};
+  const typeIcons = {
+    home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+    list: '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+    page: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+    link: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
+    group: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'
+  };
+  const menuIcons = [
+    'alert-circle','alert-triangle','arrow-down','arrow-left','arrow-right','arrow-up',
+    'audio','award','bar-chart','bluetooth','bookmark','briefcase','calendar','camera',
+    'clock','cpu','external-link','file-text','folder','globe','grid','heart','image','info',
+    'mail','map-pin','package','phone','search','settings','star','user','users'
+  ];
+  const ACTION_SVG = {
+    moveUp: '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>',
+    moveDown: '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>',
+    delete: '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+  };
+  const tree = document.getElementById('menuTree');
+  const form = document.getElementById('menuTreeForm');
+  const jsonInput = document.getElementById('menuJson');
+  const inspector = document.getElementById('menuInspector');
+  let selectedItem = null;
+
+  function newItem() {
+    return {label: '新菜单', type: 'page', target: '', children: []};
+  }
+
+  function newComparisonItem() {
+    return {
+      label: '产品参数对比',
+      type: 'list',
+      target: 'product-comparison',
+      dataset: 'products',
+      preset: 'product_comparison',
+      generate_details: false,
+      children: []
+    };
+  }
+
+  function menuIconSvg(name) {
+    return name ? '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#menu-icon-' + name + '"></use></svg>' : '';
+  }
+
+  function escapeAttr(value) {
+    return String(value || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  function cleanItem(item) {
+    const type = item.type || 'page';
+    const result = {
+      label: String(item.label || '').trim(),
+      type: type,
+      children: (item.children || []).map(cleanItem)
+    };
+    if (item.id) result.id = String(item.id);
+    if (menuIcons.indexOf(item.icon) !== -1) result.icon = item.icon;
+    if (item.hidden === true && type !== 'home') result.hidden = true;
+    if (type === 'list' || type === 'page' || type === 'group') {
+      const target = String(item.target || '').trim();
+      if (target) result.target = target;
+    }
+    if (type === 'list') {
+      const dataset = String(item.dataset || '').trim();
+      if (dataset && dataset !== result.target) result.dataset = dataset;
+      if (item.preset === 'product_comparison') result.preset = 'product_comparison';
+      if (item.generate_details === false) result.generate_details = false;
+    }
+    if (type === 'link') {
+      const url = String(item.url || '').trim();
+      if (url) result.url = url;
+    }
+    return result;
+  }
+
+  function itemLabel(item) {
+    return item.label || typeLabels[item.type] || '未命名菜单';
+  }
+
+  function itemPath(item) {
+    const type = item.type || 'page';
+    if (type === 'home') return '/';
+    if (type === 'link') return item.url || '外部链接';
+    if (item.target) return '/' + String(item.target).replace(/^\/+|\/+$/g, '') + (type === 'list' ? '/' : '');
+    return typeLabels[type] || '菜单';
+  }
+
+  function walkItems(items, callback, parentItems) {
+    (items || []).forEach(function(item, index) {
+      callback(item, index, items, parentItems || null);
+      walkItems(item.children || [], callback, items);
+    });
+  }
+
+  function datasetOptions() {
+    const seen = {};
+    const values = [];
+    walkItems(initialMenu, function(item) {
+      if (item.type !== 'list') return;
+      const key = String(item.dataset || item.target || '').trim();
+      if (key && !seen[key]) {
+        seen[key] = true;
+        values.push(key);
+      }
+    });
+    if (!seen.products) values.unshift('products');
+    return values;
+  }
+
+  function ensureSelected() {
+    let exists = false;
+    walkItems(initialMenu, function(item) {
+      if (item === selectedItem) exists = true;
+    });
+    if (!exists) selectedItem = initialMenu[0] || null;
+  }
+
+  function render(items, container, depth) {
+    container.innerHTML = '';
+    items.forEach(function(item) {
+      if (!Array.isArray(item.children)) item.children = [];
+      const isHome = item.type === 'home';
+      const childCount = item.children.length;
+      if (item._collapsed === undefined) item._collapsed = true;
+      const isCollapsed = item._collapsed === true;
+      const row = document.createElement('div');
+      row.className = 'menu-tree-row';
+      row.dataset.depth = depth;
+      row._item = item;
+
+      var collapseHtml = childCount > 0
+        ? '<button type="button" class="menu-tree-btn menu-tree-collapse-toggle toggle-collapse' + (isCollapsed ? ' is-collapsed' : '') + '" title="' + (isCollapsed ? '展开子菜单' : '收起子菜单') + '" aria-label="' + (isCollapsed ? '展开子菜单' : '收起子菜单') + '" aria-expanded="' + (!isCollapsed) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>'
+        : '<span class="menu-tree-collapse-spacer" aria-hidden="true"></span>';
+
+      // 子菜单计数徽章
+      var badgeHtml = childCount > 0 ? '<span class="menu-tree-child-count">' + childCount + ' 个子项</span>' : '';
+      var branchHtml = depth > 0 ? '<span class="menu-tree-branch" aria-hidden="true">↳</span>' : '';
+
+      row.innerHTML =
+        '<div class="menu-tree-card menu-tree-picker-card' + (isCollapsed ? ' menu-tree-collapsed' : '') + (item === selectedItem ? ' selected' : '') + '" data-type="' + item.type + '" draggable="' + (isHome ? 'false' : 'true') + '" ondragstart="menuDragStart(event, this)" ondragover="menuDragOver(event, this)" ondragleave="menuDragLeave(event, this)" ondrop="menuDrop(event, this)" ondragend="menuDragEnd(event, this)">' +
+          '<div class="menu-tree-card-row">' +
+            collapseHtml +
+            '<button type="button" class="menu-tree-select">' +
+              branchHtml +
+              '<span class="menu-tree-drag-handle" aria-hidden="true">⠿</span>' +
+              '<span class="menu-tree-icon" aria-hidden="true">' + (item.icon ? menuIconSvg(item.icon) : (typeIcons[item.type] || typeIcons.page)) + '</span>' +
+              '<span><span class="menu-tree-title">' + escapeAttr(itemLabel(item)) + '</span>' +
+              '<span class="menu-tree-meta">' + escapeAttr(itemPath(item)) + '</span></span>' +
+            '</button>' +
+            '<span class="menu-tree-actions">' +
+              badgeHtml +
+              '<button type="button" class="menu-tree-btn move-up" title="上移"' + (isHome ? ' disabled' : '') + '>' + ACTION_SVG.moveUp + '</button>' +
+              '<button type="button" class="menu-tree-btn move-down" title="下移"' + (isHome ? ' disabled' : '') + '>' + ACTION_SVG.moveDown + '</button>' +
+              '<button type="button" class="menu-tree-btn menu-tree-btn-danger delete-item" title="删除"' + (isHome ? ' disabled' : '') + '>' + ACTION_SVG.delete + '</button>' +
+            '</span>' +
+          '</div>' +
+          '<div class="menu-tree-collapsible">' +
+            '<div class="menu-tree-children mt-2"></div>' +
+          '</div>' +
+        '</div>';
+      container.appendChild(row);
+      render(item.children, row.querySelector('.menu-tree-children'), depth + 1);
+    });
+  }
+
+  function rowsIn(container) {
+    return Array.from(container.children).filter(function(el){ return el.classList.contains('menu-tree-row'); });
+  }
+
+  function renderInspector() {
+    ensureSelected();
+    if (!selectedItem) {
+      inspector.innerHTML = '<div class="menu-inspector-empty">请先在左侧选择一个菜单</div>';
+      return;
+    }
+    const isHome = selectedItem.type === 'home';
+    const isPersisted = !!selectedItem.id;
+    const type = selectedItem.type || 'page';
+    const iconOptions = [''].concat(menuIcons).map(function(name) {
+      const label = name || '（无图标）';
+      return '<button type="button" class="menu-icon-option' + ((selectedItem.icon || '') === name ? ' selected' : '') + '" data-icon="' + name + '" data-search="' + escapeAttr(label.toLowerCase()) + '">' + menuIconSvg(name) + '<span>' + escapeAttr(label) + '</span></button>';
+    }).join('');
+    inspector.innerHTML =
+      '<div class="menu-inspector-primary-row">' +
+        '<div class="menu-inspector-section">' +
+          '<label class="form-label small text-muted mb-1">菜单名称</label>' +
+          '<input class="form-control form-control-sm menu-inspector-label" value="' + escapeAttr(selectedItem.label) + '"' + (isHome ? ' readonly' : '') + '>' +
+        '</div>' +
+        '<div class="menu-inspector-section">' +
+          '<label class="form-label small text-muted mb-1">菜单类型</label>' +
+          '<select class="form-select form-select-sm menu-inspector-type-select"' + ((isHome || isPersisted) ? ' disabled' : '') + '>' +
+            Object.keys(typeLabels).filter(function(t){ return isHome || t !== 'home'; }).map(function(t){ return '<option value="' + t + '"' + (type === t ? ' selected' : '') + '>' + typeLabels[t] + '</option>'; }).join('') +
+          '</select>' +
+          (isPersisted ? '<div class="menu-type-locked-note">菜单保存后类型不可修改</div>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="menu-inspector-secondary-row' + ((type !== 'home' && type !== 'link') ? ' has-target' : '') + '">' +
+        '<div class="menu-inspector-section">' +
+          '<label class="form-label small text-muted mb-1">菜单图标</label>' +
+          '<div class="menu-icon-picker">' +
+            '<button type="button" class="menu-icon-picker-toggle"><span class="menu-icon-current">' + menuIconSvg(selectedItem.icon) + '</span><span>' + escapeAttr(selectedItem.icon || '（无图标）') + '</span></button>' +
+            '<div class="menu-icon-popover" hidden>' +
+              '<input type="search" class="form-control form-control-sm menu-icon-search" placeholder="搜索图标">' +
+              '<div class="menu-icon-options">' + iconOptions + '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="menu-inspector-section menu-target-section">' +
+          '<label class="form-label small text-muted mb-1">页面路径</label>' +
+          '<input class="form-control form-control-sm menu-inspector-target" placeholder="如: products" value="' + escapeAttr(selectedItem.target) + '">' +
+        '</div>' +
+      '</div>' +
+      '<div class="menu-inspector-section menu-dataset-section">' +
+        '<label class="form-label small text-muted mb-1">内容数据源</label>' +
+        '<input class="form-control form-control-sm menu-inspector-dataset" list="menuDatasetOptions" placeholder="如: products" value="' + escapeAttr(selectedItem.dataset || selectedItem.target) + '">' +
+        '<datalist id="menuDatasetOptions">' + datasetOptions().map(function(key){ return '<option value="' + escapeAttr(key) + '"></option>'; }).join('') + '</datalist>' +
+        '<div class="menu-type-locked-note">可以让不同页面共用同一批产品；留空时与页面路径相同。</div>' +
+        '<label class="form-check form-switch mt-2 mb-0">' +
+          '<input class="form-check-input menu-inspector-generate-details" type="checkbox" ' + (selectedItem.generate_details === false ? '' : ' checked') + '>' +
+          '<span class="form-check-label small fw-semibold">在此路径生成内容详情页</span>' +
+        '</label>' +
+      '</div>' +
+      '<div class="menu-inspector-section menu-url-section">' +
+        '<label class="form-label small text-muted mb-1">链接地址</label>' +
+        '<input class="form-control form-control-sm menu-inspector-url" placeholder="https://..." value="' + escapeAttr(selectedItem.url) + '">' +
+      '</div>' +
+      '<div class="menu-inspector-section">' +
+        '<label class="form-check form-switch mb-0">' +
+          '<input class="form-check-input menu-inspector-visible" type="checkbox" ' + (selectedItem.hidden === true ? '' : ' checked') + (isHome ? ' disabled' : '') + '>' +
+          '<span class="form-check-label small fw-semibold">显示在导航菜单</span>' +
+        '</label>' +
+      '</div>' +
+      '<div class="menu-inspector-actions">' +
+        '<button type="button" class="btn btn-outline-primary btn-sm menu-inspector-add-child menu-add-button">+ 添加子菜单</button>' +
+      '</div>';
+    updateInspectorFields();
+  }
+
+  function updateInspectorFields() {
+    const type = selectedItem ? selectedItem.type : '';
+    const targetSection = inspector.querySelector('.menu-target-section');
+    const datasetSection = inspector.querySelector('.menu-dataset-section');
+    const urlSection = inspector.querySelector('.menu-url-section');
+    if (targetSection) targetSection.style.display = (type === 'home' || type === 'link') ? 'none' : '';
+    if (datasetSection) datasetSection.style.display = type === 'list' ? '' : 'none';
+    if (urlSection) urlSection.style.display = type === 'link' ? '' : 'none';
+  }
+
+  /* ---- 拖拽排序状态 ---- */
+  let dragSourceItem = null;
+  let dragSourceParent = null;
+  let dragSourceIndex = -1;
+
+  function clearDragClasses() {
+    tree.querySelectorAll('.menu-tree-picker-card').forEach(function(c) {
+      c.classList.remove('drag-over-before', 'drag-over-after', 'drag-over-inside', 'drag-over-invalid', 'dragging');
+    });
+  }
+
+  function rerenderAll() {
+    ensureSelected();
+    render(initialMenu, tree, 0);
+    renderInspector();
+  }
+
+  tree.addEventListener('click', function(e) {
+    const row = e.target.closest('.menu-tree-row');
+    if (!row) return;
+    const action = e.target.closest('button');
+    if (!action || action.classList.contains('menu-tree-select')) {
+      const wasSelected = selectedItem === row._item;
+      selectedItem = row._item;
+      // 首次选中父菜单时展开；再次点击同一个父菜单时切换收起/展开。
+      if (row._item.children && row._item.children.length > 0) {
+        row._item._collapsed = wasSelected ? !row._item._collapsed : false;
+      }
+      rerenderAll();
+      return;
+    }
+    const parentContainer = row.parentElement;
+    const parentRow = parentContainer.closest('.menu-tree-row');
+    const parentItems = parentRow ? parentRow._item.children : initialMenu;
+    const index = rowsIn(parentContainer).indexOf(row);
+    if (action.classList.contains('toggle-collapse')) {
+      row._item._collapsed = !row._item._collapsed;
+    } else if (action.classList.contains('delete-item')) {
+      if (row._item.type !== 'home') {
+        parentItems.splice(index, 1);
+        if (selectedItem === row._item) selectedItem = initialMenu[0] || null;
+      }
+    } else if (action.classList.contains('add-child')) {
+      row._item.children.push(newItem());
+      row._item._collapsed = false;
+    } else if (action.classList.contains('move-up') && index > 0) {
+      const item = parentItems.splice(index, 1)[0];
+      parentItems.splice(index - 1, 0, item);
+    } else if (action.classList.contains('move-down') && index < parentItems.length - 1) {
+      const item = parentItems.splice(index, 1)[0];
+      parentItems.splice(index + 1, 0, item);
+    } else {
+      return;
+    }
+    rerenderAll();
+  });
+
+  inspector.addEventListener('input', function(e) {
+    if (!selectedItem) return;
+    if (e.target.classList.contains('menu-inspector-label')) {
+      selectedItem.label = e.target.value.trim();
+      render(initialMenu, tree, 0);
+    } else if (e.target.classList.contains('menu-inspector-target')) {
+      selectedItem.target = e.target.value.trim();
+    } else if (e.target.classList.contains('menu-inspector-dataset')) {
+      selectedItem.dataset = e.target.value.trim();
+    } else if (e.target.classList.contains('menu-inspector-url')) {
+      selectedItem.url = e.target.value.trim();
+    } else if (e.target.classList.contains('menu-icon-search')) {
+      const query = e.target.value.trim().toLowerCase();
+      inspector.querySelectorAll('.menu-icon-option').forEach(function(option) {
+        option.hidden = !!query && option.dataset.search.indexOf(query) === -1;
+      });
+    }
+  });
+
+  inspector.addEventListener('change', function(e) {
+    if (!selectedItem) return;
+    if (e.target.classList.contains('menu-inspector-type-select')) {
+      selectedItem.type = e.target.value;
+      if (selectedItem.type === 'link') {
+        delete selectedItem.target;
+      } else {
+        delete selectedItem.url;
+      }
+      if (selectedItem.type !== 'list') {
+        delete selectedItem.dataset;
+        delete selectedItem.preset;
+        delete selectedItem.generate_details;
+      }
+      rerenderAll();
+    } else if (e.target.classList.contains('menu-inspector-visible')) {
+      if (e.target.checked) delete selectedItem.hidden;
+      else selectedItem.hidden = true;
+    } else if (e.target.classList.contains('menu-inspector-generate-details')) {
+      if (e.target.checked) delete selectedItem.generate_details;
+      else selectedItem.generate_details = false;
+    }
+  });
+
+  inspector.addEventListener('click', function(e) {
+    if (!selectedItem) return;
+    const pickerToggle = e.target.closest('.menu-icon-picker-toggle');
+    if (pickerToggle) {
+      const popover = inspector.querySelector('.menu-icon-popover');
+      if (popover) {
+        popover.hidden = !popover.hidden;
+        if (!popover.hidden) popover.querySelector('.menu-icon-search')?.focus();
+      }
+      return;
+    }
+    const iconOption = e.target.closest('.menu-icon-option');
+    if (iconOption) {
+      const icon = iconOption.dataset.icon || '';
+      if (icon) selectedItem.icon = icon;
+      else delete selectedItem.icon;
+      rerenderAll();
+      return;
+    }
+    if (!e.target.closest('.menu-inspector-add-child')) return;
+    if (!Array.isArray(selectedItem.children)) selectedItem.children = [];
+    const child = newItem();
+    selectedItem.children.push(child);
+    selectedItem._collapsed = false;
+    selectedItem = child;
+    rerenderAll();
+  });
+
+  document.getElementById('addRootMenu').addEventListener('click', function() {
+    const item = newItem();
+    initialMenu.push(item);
+    selectedItem = item;
+    rerenderAll();
+  });
+
+  document.getElementById('addComparisonMenu').addEventListener('click', function() {
+    const item = newComparisonItem();
+    initialMenu.push(item);
+    selectedItem = item;
+    rerenderAll();
+  });
+
+    /* ---- 拖拽排序事件 ---- */
+  window.menuDragStart = function(e, card) {
+    e.stopPropagation();
+    var row = card.closest('.menu-tree-row');
+    if (!row || !row._item || row._item.type === 'home') {
+      e.preventDefault();
+      return;
+    }
+    dragSourceItem = row._item;
+    var parentContainer = row.parentElement;
+    var parentRow = parentContainer.closest('.menu-tree-row');
+    dragSourceParent = parentRow ? parentRow._item.children : initialMenu;
+    dragSourceIndex = rowsIn(parentContainer).indexOf(row);
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
+  };
+
+  window.menuDragEnd = function(e, card) {
+    e.stopPropagation();
+    clearDragClasses();
+    dragSourceItem = null;
+    dragSourceParent = null;
+    dragSourceIndex = -1;
+  };
+
+  window.menuDragOver = function(e, card) {
+    e.preventDefault();
+    e.stopPropagation();
+    var row = card.closest('.menu-tree-row');
+    if (!row || !row._item || !dragSourceItem) return;
+    if (row._item === dragSourceItem) {
+      clearDragClasses();
+      card.classList.add('drag-over-invalid');
+      return;
+    }
+    var targetContainer = row.parentElement;
+    var targetParentRow = targetContainer.closest('.menu-tree-row');
+    var targetParent = targetParentRow ? targetParentRow._item.children : initialMenu;
+    if (targetParent !== dragSourceParent || row._item.type === 'home') {
+      clearDragClasses();
+      card.classList.add('drag-over-invalid');
+      e.dataTransfer.dropEffect = 'none';
+      return;
+    }
+    clearDragClasses();
+    var rect = card.getBoundingClientRect();
+    var y = e.clientY - rect.top;
+    if (y < rect.height / 2) {
+      card.classList.add('drag-over-before');
+    } else {
+      card.classList.add('drag-over-after');
+    }
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  window.menuDragLeave = function(e, card) {
+    e.stopPropagation();
+    card.classList.remove('drag-over-before', 'drag-over-after', 'drag-over-inside', 'drag-over-invalid');
+  };
+
+  window.menuDrop = function(e, card) {
+    e.preventDefault();
+    e.stopPropagation();
+    var row = card.closest('.menu-tree-row');
+    if (!row || !row._item || !dragSourceItem) {
+      clearDragClasses();
+      return;
+    }
+    if (row._item === dragSourceItem) { clearDragClasses(); return; }
+    if (row._item.type === 'home') { clearDragClasses(); return; }
+
+    var targetContainer = row.parentElement;
+    var targetParentRow = targetContainer.closest('.menu-tree-row');
+    var targetParent = targetParentRow ? targetParentRow._item.children : initialMenu;
+    if (targetParent !== dragSourceParent) { clearDragClasses(); return; }
+    var rect = card.getBoundingClientRect();
+    var position = (e.clientY - rect.top) < rect.height / 2 ? 'before' : 'after';
+    var targetIndex = rowsIn(targetContainer).indexOf(row);
+    if (position === 'after') targetIndex += 1;
+
+    // 从原位置移除
+    var removed = dragSourceParent.splice(dragSourceIndex, 1)[0];
+
+    // 同父级且源在目标之前 → 目标索引需减 1
+    if (dragSourceIndex < targetIndex) {
+      targetIndex -= 1;
+    }
+    targetParent.splice(targetIndex, 0, removed);
+
+    clearDragClasses();
+    dragSourceItem = null;
+    dragSourceParent = null;
+    dragSourceIndex = -1;
+    if (selectedItem === removed) selectedItem = removed;
+    rerenderAll();
+  };
+
+  // tree 容器允许 drop（dragOver 默认阻止才能触发 drop）
+  tree.addEventListener('dragover', function(e) { e.preventDefault(); });
+  tree.addEventListener('drop', function(e) { e.preventDefault(); });
+
+
+  form.addEventListener('submit', function() {
+    jsonInput.value = JSON.stringify(initialMenu.map(cleanItem));
+  });
+
+  window.menuEditorApi = {
+    collectLabels: function() {
+      const labels = [];
+      walkItems(initialMenu, function(item) {
+        labels.push(String(item.label || '').trim());
+      });
+      return labels;
+    },
+    applyTranslations: function(translations, sourceLabels) {
+      let i = 0;
+      walkItems(initialMenu, function(item) {
+        const current = String(item.label || '').trim();
+        const key = sourceLabels && sourceLabels[i] ? sourceLabels[i] : current;
+        i += 1;
+        if (translations[key] !== undefined && translations[key] !== null) {
+          item.label = translations[key];
+        }
+      });
+      rerenderAll();
+    }
+  };
+
+  selectedItem = initialMenu[0] || null;
+  rerenderAll();
+})();
+</script>
+
+{% if translation_enabled %}
+<script>
+(function(){
+  var STORAGE_KEY = 'pending_translation_menu';
+  var CURRENT_LANG = '{{ current_lang }}';
+  var DEFAULT_LANG = '{{ default_lang }}';
+  var SOURCE_MENU = {{ (source_menu | default([])) | tojson }};
+  var LANG_LABELS = {};
+  {{ languages | tojson }}.forEach(function(l){ LANG_LABELS[l.code] = l.name; });
+
+  // 页面加载时检查是否有待恢复的译文
+  (function restorePending() {
+    var raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    var pending = JSON.parse(raw);
+    if (pending.targetLang !== CURRENT_LANG) return;
+    sessionStorage.removeItem(STORAGE_KEY);
+    var translations = pending.translations;
+    if (window.menuEditorApi) {
+      window.menuEditorApi.applyTranslations(translations, collectSourceLabels(SOURCE_MENU));
+    }
+  })();
+
+  var btn = document.getElementById('aiTranslateBtn');
+  if (!btn) return;
+
+  btn.addEventListener('click', function(){
+    showTranslateConfirm(
+      'AI 翻译',
+      '<p>将默认语言 <strong>' + (LANG_LABELS[DEFAULT_LANG] || DEFAULT_LANG) + '</strong> 菜单名称翻译到当前 <strong>' + (LANG_LABELS[CURRENT_LANG] || CURRENT_LANG) + '</strong>？</p><p class="text-muted small mb-0">译文会填入当前菜单表单，检查后请手动保存。</p>',
+      function() { doTranslate(CURRENT_LANG); }
+    );
+  });
+
+  function collectSourceLabels(items, result) {
+    result = result || [];
+    (items || []).forEach(function(item) {
+      if (item && item.label) result.push(item.label);
+      if (item && item.children) collectSourceLabels(item.children, result);
+    });
+    return result;
+  }
+
+  function doTranslate(targetLang) {
+    var labels = [];
+    var originals = [];
+    var sourceLabels = collectSourceLabels(SOURCE_MENU);
+    var currentLabels = window.menuEditorApi ? window.menuEditorApi.collectLabels() : [];
+    currentLabels.forEach(function(label, i){
+      var val = (sourceLabels[i] || label || '').trim();
+      if (!val) return;
+      if (/^[#\d]/.test(val) && val.length < 10) return;
+      labels.push(val);
+      originals.push(label.trim());
+    });
+
+    if (labels.length === 0) {
+      showTranslateMsg('AI 翻译', '未找到可翻译的菜单名称');
+      return;
+    }
+
+    // 构建 texts 对象
+    var texts = {};
+    labels.forEach(function(l, i){ texts['label_' + i] = l; });
+
+    btn.disabled = true;
+    btn.textContent = '翻译中...';
+
+    fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texts: texts, source_lang: DEFAULT_LANG, target_lang: targetLang })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.error) { showTranslateMsg('翻译失败', data.error); return; }
+      if (!data.translated) { showTranslateMsg('翻译失败', '翻译结果为空'); return; }
+
+      var t = data.translated;
+      var translatedMap = {};
+      labels.forEach(function(original, i){
+        var translated = t['label_' + i];
+        if (translated !== undefined && translated !== null && translated !== original) {
+          translatedMap[original] = translated;
+        }
+      });
+
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        targetLang: targetLang,
+        translations: translatedMap
+      }));
+
+      if (window.menuEditorApi) {
+        window.menuEditorApi.applyTranslations(translatedMap, sourceLabels);
+      }
+
+      showTranslateMsg('翻译完成', '<p>菜单名称已填入当前 <strong>' + (LANG_LABELS[targetLang] || targetLang) + '</strong> 表单，请检查后保存。</p>');
+    })
+    .catch(function(err){
+      showTranslateMsg('翻译失败', err.message || '网络错误');
+    })
+    .finally(function(){
+      btn.disabled = false;
+      btn.textContent = '从默认语言翻译';
+    });
+  }
+
+  function showTranslateConfirm(title, body, onConfirm) {
+    var modalEl = document.getElementById('translateModal');
+    if (!modalEl) { onConfirm(); return; }
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    document.getElementById('translateModalTitle').textContent = title;
+    document.getElementById('translateModalBody').innerHTML = body;
+    document.getElementById('translateModalConfirm').style.display = '';
+    document.getElementById('translateModalCancel').style.display = '';
+    document.getElementById('translateModalConfirm').onclick = function() { modal.hide(); onConfirm(); };
+    modal.show();
+  }
+
+  function showTranslateMsg(title, body) {
+    var modalEl = document.getElementById('translateModal');
+    if (!modalEl) { alert(body.replace(/<[^>]*>/g, '')); return; }
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    document.getElementById('translateModalTitle').textContent = title;
+    document.getElementById('translateModalBody').innerHTML = '<p>' + body + '</p>';
+    document.getElementById('translateModalConfirm').style.display = '';
+    document.getElementById('translateModalCancel').style.display = 'none';
+    document.getElementById('translateModalConfirm').onclick = function() { modal.hide(); };
+    modal.show();
+  }
+})();
+</script>
+
+{# Bootstrap 翻译提示弹框 #}
+<div class="modal fade" id="translateModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="translateModalTitle">AI 翻译</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="translateModalBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" id="translateModalCancel" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary btn-sm" id="translateModalConfirm">确认</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}

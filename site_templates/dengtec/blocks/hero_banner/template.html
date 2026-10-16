@@ -1,0 +1,65 @@
+<!-- Hero Banner 模块 - 全屏轮播（data-* 声明式） -->
+<section data-name="hero_banner" data-type="group" data-hideable data-style="text-align" class="section hero-banner">
+  <div class="container" style="height:100%;max-width:none">
+    <div data-name="slides" data-type="list" class="hero-banner-slides">
+      <div data-name="slide" data-type="group" class="hero-banner-slide">
+        <div class="hero-banner-media">
+          <img data-name="image" data-type="image" src="" alt="" loading="lazy" class="hero-banner-image">
+          <video data-name="video" data-type="video" src="" autoplay muted loop playsinline preload="none" class="hero-banner-video"></video>
+        </div>
+        <div class="hero-banner-overlay"></div>
+        <div class="hero-banner-content">
+          <h2 data-name="title" data-type="text" class="hero-banner-title"></h2>
+          <p data-name="subtitle" data-type="text" class="hero-banner-subtitle"></p>
+          <div class="hero-banner-actions">
+            <a data-name="primaryBtn" data-type="text" data-href="primaryLink" class="btn btn-primary btn-lg"></a>
+            <a data-name="secondaryBtn" data-type="text" data-href="secondaryLink" class="btn btn-secondary btn-lg"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-banner-dots"></div>
+  <button class="hero-banner-nav hero-banner-nav-prev" aria-label="Previous">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <button class="hero-banner-nav hero-banner-nav-next" aria-label="Next">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+  <script>
+    (function() {
+      var section = document.currentScript.parentElement;
+      var slides = section.querySelectorAll('.hero-banner-slide');
+      var dotsContainer = section.querySelector('.hero-banner-dots');
+      var prevBtn = section.querySelector('.hero-banner-nav-prev');
+      var nextBtn = section.querySelector('.hero-banner-nav-next');
+      var current = 0;
+      var total = slides.length;
+      if (!total) return;
+      /* 动态创建圆点导航（原 Jinja2 服务端生成） */
+      for (var i = 0; i < total; i++) {
+        var dot = document.createElement('button');
+        dot.className = 'hero-banner-dot';
+        dot.setAttribute('data-slide', i);
+        dot.setAttribute('aria-label', 'Slide ' + (i + 1));
+        dotsContainer.appendChild(dot);
+      }
+      if (total === 1) { slides[0].classList.add('active'); return; }
+      function showSlide(index) {
+        slides.forEach(function(s, i) { s.classList.toggle('active', i === index); });
+        var dots = dotsContainer.querySelectorAll('.hero-banner-dot');
+        dots.forEach(function(d, i) { d.classList.toggle('active', i === index); });
+        current = index;
+      }
+      showSlide(0);
+      function next() { showSlide((current + 1) % total); }
+      function prev() { showSlide((current - 1 + total) % total); }
+      if (prevBtn) prevBtn.addEventListener('click', prev);
+      if (nextBtn) nextBtn.addEventListener('click', next);
+      dotsContainer.querySelectorAll('.hero-banner-dot').forEach(function(dot) {
+        dot.addEventListener('click', function() { showSlide(parseInt(dot.getAttribute('data-slide'))); });
+      });
+      setInterval(next, 8000);
+    })();
+  </script>
+</section>

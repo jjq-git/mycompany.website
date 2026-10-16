@@ -23,11 +23,11 @@ sites/<name>/
   output/              构建产物（静态站，导出即打包它；非源）
 ```
 
-根目录的 `settings.yaml` / `pages/` / `data/` 是**源语言**内容 —— 用户建站时选的、用来填真实内容的语言（`settings.default_language` 记录它），不固定为某种语言。源语言内容由建站时把所选主题 `themes/<name>/i18n/<源语言>/` 整套拷到 `sites/<name>/` 而来，再由用户用母语填真实内容。`lang/<目标语言>/` 是把源语言逐篇 AI 翻译成目标语言的产出；其下同名文件覆盖源语言，缺失字段回退源语言。
+根目录的 `settings.yaml` / `pages/` / `data/` 是**源语言**内容 —— 用户建站时选的、用来填真实内容的语言（`settings.default_language` 记录它），不固定为某种语言。源语言内容由建站时把所选主题 `site_templates/<name>/seed_data/` 整套（settings.yaml + pages/ + data/）拷到 `sites/<name>/` 而来，再由用户用母语填真实内容。`lang/<目标语言>/` 是把源语言逐篇 AI 翻译成目标语言的产出；其下同名文件覆盖源语言，缺失字段回退源语言。
+
+> 文档目标是改为 `site_templates/<name>/i18n/<源语言>/` 每语言独立一套 seed，代码尚未跟进。详见 [TODO-code.md](../TODO-code.md)。
 
 > 构建后生成的页面与 URL（`/index.html`、`/products.html`、`/products/<slug>.html` 等）见 [output.md](output.md)。
-
-
 
 ### settings.yaml
 
@@ -42,7 +42,7 @@ sites/<name>/
 modules:
   - {type: hero_banner, data: {title: ..., image: ...}}
   - {type: feature_grid, data: {items: [...]}}
-  - {type: product_grid, data: {target: products, limit: 6}}
+  - {type: data_grid, data: {target: products, limit: 6}}
 ```
 
 模块的字段与渲染见 [themes/blocks/](../themes/blocks/)。
@@ -66,7 +66,7 @@ modules:
   ...
 ```
 
-一个站点有哪些数据集，由所选主题 `i18n/<lang>/data/` 提供的整套 seed 决定（如产品、博客、案例）。
+一个站点有哪些数据集，由所选主题 `seed_data/` 提供的整套 seed 决定（如产品、博客、案例）。
 
 ### 内容模型：页面 / 数据集 / 分类
 

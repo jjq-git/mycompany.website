@@ -1,0 +1,22 @@
+<!-- Contact Form -->
+<section data-name="contact_form" data-type="group" data-hideable class="section surface-canvas">
+  <div class="container container--narrow">
+    <h2 data-name="title" data-type="text" class="section-header__title text-center mb-sm"></h2>
+    <p data-name="subtitle" data-type="text" class="section-header__desc mb-xl"></p>
+    <form data-name="form_action" data-type="url" data-href="form_action" action="" method="POST" class="contact-form card-feature">
+      <div class="form-group">
+        <label class="form-label" data-i18n="contact.name">Name</label>
+        <input type="text" name="name" class="input-text" placeholder="Name" data-i18n-placeholder="contact.name" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="contact.email">Email</label>
+        <input type="email" name="email" class="input-text" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="contact.message">Message</label>
+        <textarea name="message" class="textarea" placeholder="How can we help?" data-i18n-placeholder="contact.sendMessage" rows="5" required></textarea>
+      </div>
+      <button type="submit" data-name="submit_text" data-type="text" data-i18n="actions.sendMessage" class="btn btn-primary">Send Message</button>
+    </form>
+  </div>
+</section>

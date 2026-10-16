@@ -1,0 +1,46 @@
+{% if site_create_step == 'templates' %}
+<header class="account-heading heading-row">
+  <div><h1>选择模板</h1><p>选择一个模板创建新站点，创建完成后再进入工作台编辑。</p></div>
+  <a class="secondary-btn icon-btn" href="{{ url_for('core.account', section='sites') }}" title="返回我的站点" aria-label="返回我的站点">{{ action_icon('left') }}</a>
+</header>
+<div class="account-template-grid">
+  {% for tpl in site_templates %}
+  <article class="account-card account-template-card">
+    <div class="account-template-cover">
+      {% if tpl.cover_image %}<img src="{{ tpl.cover_image }}" alt="{{ tpl.display_name }}">{% endif %}
+    </div>
+    <div class="account-template-info">
+      <div><h2>{{ tpl.display_name }}</h2><p>{{ tpl.description }}</p></div>
+      <div class="site-actions">
+        <a class="secondary-btn icon-btn" href="{{ url_for('core.template_preview', template_name=tpl.name) }}" target="_blank" title="预览模板" aria-label="预览模板">{{ action_icon('view') }}</a>
+        <a class="primary-btn icon-btn" href="{{ url_for('core.account', section='sites', create='form', template=tpl.name) }}" title="选择模板" aria-label="选择模板">{{ action_icon('right') }}</a>
+      </div>
+    </div>
+  </article>
+  {% else %}<section class="account-card empty-state"><h2>暂无可用模板</h2></section>{% endfor %}
+</div>
+{% elif site_create_step == 'form' and selected_site_template %}
+<header class="account-heading heading-row">
+  <div><h1>新建站点</h1><p>填写站点信息；创建完成后进入工作台继续编辑。</p></div>
+  <a class="secondary-btn icon-btn" href="{{ url_for('core.account', section='sites', create='templates') }}" title="返回模板列表" aria-label="返回模板列表">{{ action_icon('left') }}</a>
+</header>
+<form method="post" action="{{ url_for('core.site_new') }}" class="account-card account-create-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="template_name" value="{{ selected_site_template.name }}">
+  <div class="selected-template-summary">
+    {% if selected_site_template.cover_image %}<img src="{{ selected_site_template.cover_image }}" alt="{{ selected_site_template.display_name }}">{% endif %}
+    <div><h2>{{ selected_site_template.display_name }}</h2><p>{{ selected_site_template.description }}</p></div>
+  </div>
+  <div class="form-grid">
+    <label>站点名称<input name="name" required maxlength="120" placeholder="例如：RIMU 官网、Acme 企业站"></label>
+    <label>站点标识（Slug）<input name="slug" required minlength="3" maxlength="30" pattern="[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?" placeholder="my-company"><small>用于后台识别和生成平台默认地址。绑定独立域名后，仍作为内部标识和备用地址；仅支持 3–30 位小写字母、数字或连字符。</small></label>
+  </div>
+  <fieldset class="language-options">
+    <legend>语言版本</legend>
+    <div class="language-choice-list">
+      {% for lang in selected_template_languages %}<label><input type="checkbox" name="enabled_lang" value="{{ lang.code }}" {{ 'checked' if loop.first else '' }}><span>{{ lang.name or lang.code }}</span></label>{% endfor %}
+    </div>
+  </fieldset>
+  <div class="card-actions"><button class="primary-btn icon-btn" type="submit" title="创建站点" aria-label="创建站点">{{ action_icon('add') }}</button></div>
+</form>
+{% endif %}
